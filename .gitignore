@@ -17,6 +17,17 @@ server/data/radar.json
 server/data/prompt-evolution.json
 server/data/prompt-evolution-config.json
 
+# Base SQLite du Blackboard (kernel) — runtime, jamais versionnée
+server/data/blackboard.sqlite
+server/data/blackboard.sqlite-shm
+server/data/blackboard.sqlite-wal
+
+# Script de pilotage jetable des runs de validation — jamais versionné
+run-driver.mjs
+
+# Plan de run de validation — local, non versionné
+RUN-PLAN.md
+
 # Livrable d'audit local (non versionné)
 *AUDIT COMPLET*.md
 .claude/
