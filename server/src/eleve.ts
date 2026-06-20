@@ -20,6 +20,7 @@ import { query } from "@anthropic-ai/claude-agent-sdk";
 import { parseContract } from "./contract.js";
 import { executeContract } from "./executor.js";
 import { inspectProject, type Inspection } from "./inspection.js";
+import { hasBackend, BACKEND_DIR_NAME } from "./backend-generator.js";
 import { axiomsFingerprint, selectAxioms } from "./axioms.js";
 import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
@@ -319,15 +320,26 @@ async function askEleveDispatch(system: string, user: string): Promise<string> {
   return ELEVE_PROVIDER === "openai" ? askEleveOpenAI(system, user) : askEleveOllama(system, user);
 }
 
-async function ensureDepsNpm(projectDir: string, log: (s: string) => void): Promise<void> {
-  if (fs.existsSync(path.join(projectDir, "node_modules"))) return;
-  if (!fs.existsSync(path.join(projectDir, "package.json"))) return;
-  log("npm install (dépendances manquantes)…");
+async function npmInstallIfNeeded(dir: string, log: (s: string) => void, label: string): Promise<void> {
+  if (fs.existsSync(path.join(dir, "node_modules"))) return;
+  if (!fs.existsSync(path.join(dir, "package.json"))) return;
+  log(`npm install (${label})…`);
   await new Promise<void>((resolve) => {
-    const p = spawn("npm install", { cwd: projectDir, shell: true, windowsHide: true });
+    const p = spawn("npm install", { cwd: dir, shell: true, windowsHide: true });
     p.on("exit", () => resolve());
     p.on("error", () => resolve());
   });
+}
+
+async function ensureDepsNpm(projectDir: string, log: (s: string) => void): Promise<void> {
+  await npmInstallIfNeeded(projectDir, log, "dépendances manquantes");
+  // Projet full-stack : le backend généré (api/) a son propre package.json et
+  // doit être installé pour que l'inspection (tsc --noEmit) ne renvoie pas un
+  // faux "backend-no-deps". hasBackend est false tant que l'Élève n'a pas créé
+  // api/ → cet appel n'installe le backend qu'une fois qu'il existe.
+  if (hasBackend(projectDir)) {
+    await npmInstallIfNeeded(path.join(projectDir, BACKEND_DIR_NAME), log, "backend api/");
+  }
 }
 
 // ── Cerveau Maître par défaut : Claude corrige + écrit l'axiome ────────────────
@@ -423,6 +435,18 @@ export async function runRelay(
   // Sans dépendances, l'inspection renverrait un faux "no-deps" — on les pose une fois.
   await deps.ensureDeps(projectDir, push);
 
+  // Inspecte, et si l'Élève a généré un backend (api/) sans dépendances, les pose
+  // une fois puis ré-inspecte — sinon le backend renverrait un faux "backend-no-deps".
+  const inspectReady = async (): Promise<Inspection> => {
+    let insp = await deps.inspect(projectDir);
+    if (insp.signal === "backend-no-deps") {
+      push("📦 Installation des dépendances backend (api/)…");
+      await deps.ensureDeps(projectDir, push);
+      insp = await deps.inspect(projectDir);
+    }
+    return insp;
+  };
+
   let lastError = "";
   let lastInspection: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
 
@@ -454,7 +478,7 @@ export async function runRelay(
       continue;
     }
 
-    lastInspection = await deps.inspect(projectDir);
+    lastInspection = await inspectReady();
     if (lastInspection.ok) {
       // #104 Phase 2 — porte FONCTIONNELLE : un build vert ne suffit pas si l'app
       // est vide. Si la porte est active ET qu'un juge est fourni ET qu'il reste
@@ -485,7 +509,7 @@ export async function runRelay(
   // ── Escalade vers le Maître ──
   push(`⤴ ${maxAttempts} échec(s) objectif(s) — ESCALADE vers le MAÎTRE (Claude/${maitreModel})`);
   const esc = await deps.escalate({ task, projectDir, lastError, maitreModel });
-  lastInspection = await deps.inspect(projectDir);
+  lastInspection = await inspectReady();
 
   if (lastInspection.ok) {
     push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);

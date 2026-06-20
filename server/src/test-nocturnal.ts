@@ -1,5 +1,7 @@
-// Tests purs du juge nocturne (#59). Lancer : npx tsx src/test-nocturnal.ts
-import { parseJudgeOutput, nocturnalRepairPrompt } from "./nocturnal.js";
+// Tests purs du juge nocturne (#59) + boucle de build/réparation (#35 backend).
+// Lancer : npx tsx src/test-nocturnal.ts
+import { parseJudgeOutput, nocturnalRepairPrompt, ensureBuildPasses } from "./nocturnal.js";
+import type { InspectionSignal } from "./inspection.js";
 
 let pass = 0, fail = 0;
 function check(label: string, cond: boolean): void {
@@ -52,6 +54,94 @@ check("vide → null", parseJudgeOutput("") === null);
   const p = nocturnalRepairPrompt(err);
   check("repair — réinjecte la sortie d'erreur du build", p.includes(err));
   check("repair — interdit d'ajouter une feature", p.includes("SANS ajouter de fonctionnalité"));
+}
+
+// ── ensureBuildPasses — frontend ET backend généré (api/) ───────────────────
+console.log("═".repeat(56));
+console.log("nocturnal — ensureBuildPasses (gate frontend + backend api/)");
+console.log("─".repeat(56));
+
+// Fabrique un `inspect` qui rend les signaux dans l'ordre (le dernier se répète).
+function mkInspect(signals: InspectionSignal[]) {
+  let i = 0;
+  return async (_dir: string) => {
+    const s = signals[Math.min(i, signals.length - 1)];
+    i++;
+    return { ok: s === "ok", signal: s, detail: `detail:${s}` };
+  };
+}
+
+{
+  let repairs = 0, installs = 0;
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["build-failed", "ok"]),
+    repairTurn: async () => { repairs++; },
+    ensureBackendDeps: async () => { installs++; },
+  });
+  check("frontend build-failed → réparé → ok (non-régression)", r.ok && r.signal === "ok" && r.attempts === 1 && repairs === 1);
+  check("frontend build-failed → aucune install backend", installs === 0);
+}
+
+{
+  let repairs = 0, installs = 0;
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["backend-failed", "ok"]),
+    repairTurn: async () => { repairs++; },
+    ensureBackendDeps: async () => { installs++; },
+  });
+  check("backend-failed → réparé par un tour → ok", r.ok && r.signal === "ok" && r.attempts === 1 && repairs === 1);
+  check("backend-failed → pas d'install (deps déjà là)", installs === 0);
+}
+
+{
+  let repairs = 0, installs = 0;
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["backend-no-deps", "ok"]),
+    repairTurn: async () => { repairs++; },
+    ensureBackendDeps: async () => { installs++; },
+  });
+  check("backend-no-deps → install puis ok", r.ok && r.signal === "ok");
+  check("backend-no-deps → install backend exactement 1×", installs === 1);
+  check("install backend n'est PAS un tour de réparation (attempts 0)", r.attempts === 0 && repairs === 0);
+}
+
+{
+  let repairs = 0, installs = 0;
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["backend-no-deps", "backend-failed", "ok"]),
+    repairTurn: async () => { repairs++; },
+    ensureBackendDeps: async () => { installs++; },
+  });
+  check("séquence no-deps → install → failed → réparé → ok", r.ok && r.signal === "ok");
+  check("séquence : install 1× puis réparation 1×", installs === 1 && repairs === 1 && r.attempts === 1);
+}
+
+{
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["backend-no-deps"]),
+    repairTurn: async () => {},
+  });
+  check("backend-no-deps sans installeur (test) → reste KO honnête", !r.ok && r.signal === "backend-no-deps");
+}
+
+{
+  let installs = 0;
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["backend-no-deps"]), // l'install ne résout jamais
+    repairTurn: async () => {},
+    ensureBackendDeps: async () => { installs++; },
+  });
+  check("install backend tentée 1× max (pas de boucle infinie)", installs === 1);
+  check("install inefficace → KO honnête, pas de blocage", !r.ok && r.signal === "backend-no-deps");
+}
+
+{
+  let repairs = 0;
+  const r = await ensureBuildPasses("d", {
+    inspect: mkInspect(["build-failed"]), // jamais résolu
+    repairTurn: async () => { repairs++; },
+  });
+  check("build jamais réparable → plafond (2) atteint puis KO", r.attempts === 2 && repairs === 2 && !r.ok);
 }
 
 console.log("═".repeat(56));

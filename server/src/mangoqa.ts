@@ -5,9 +5,14 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { WORKSPACE_DIR } from './projects.js'
+import { appendHistory } from './history.js'
 
 const QA_DIR = '.mangoqa'
 const VERDICT_TIMEOUT = parseInt(process.env.QA_VERDICT_TIMEOUT ?? '60000', 10)
+// Surfaçage ASYNCHRONE : le tour ne bloque plus sur le verdict (architecture
+// « audit fantôme »). Le watcher attend bien plus longtemps que l'ancien blocage
+// 60 s — un gros projet met ~143 s — puis injecte le verdict dans l'historique.
+const VERDICT_ASYNC_TIMEOUT = parseInt(process.env.QA_VERDICT_ASYNC_TIMEOUT ?? '300000', 10)
 const POLL_INTERVAL = 800
 const SENTINEL_MAX_AGE_MS = 300_000 // stale après 5 min — le runner met à jour toutes les 10 s mais l'event loop Windows peut être lente
 
@@ -75,10 +80,14 @@ export function emitPhaseComplete(
 }
 
 // Attend le verdict de Mango QA. Renvoie null si timeout (Mango QA non lancé).
-export async function waitForVerdict(projectName: string): Promise<QAVerdict | null> {
+// `timeoutMs` paramétrable : court (bloquant, legacy) ou long (watcher async).
+export async function waitForVerdict(
+  projectName: string,
+  timeoutMs: number = VERDICT_TIMEOUT,
+): Promise<QAVerdict | null> {
   const projDir = projectDir(projectName)
   const verdictFile = path.join(qaDir(projDir), 'audit-verdict.json')
-  const deadline = Date.now() + VERDICT_TIMEOUT
+  const deadline = Date.now() + timeoutMs
 
   while (Date.now() < deadline) {
     if (fs.existsSync(verdictFile)) {
@@ -105,4 +114,58 @@ export function buildRejectionMessage(verdict: QAVerdict): string {
 **Règle :** \`${r.rule_ref}\`
 
 Corrige ce point avant de continuer. MangoOS relancera l'audit automatiquement.`
+}
+
+// Message de chat à partir d'un verdict — pur. Feu Rouge → message de rejet,
+// Feu Vert → confirmation, sinon null (rien à surfacer).
+export function buildVerdictMessage(verdict: QAVerdict): string | null {
+  if (verdict.verdict === 'red') return buildRejectionMessage(verdict) || null
+  if (verdict.verdict === 'green') return '✅ Mango QA — Feu Vert'
+  return null
+}
+
+// Dépendances injectables du watcher (testable sans I/O réelle).
+export interface VerdictWatcherDeps {
+  wait: (projectName: string, timeoutMs: number) => Promise<QAVerdict | null>
+  append: (historyDir: string, text: string) => void
+}
+
+const defaultWatcherDeps: VerdictWatcherDeps = {
+  wait: waitForVerdict,
+  append: (dir, text) => appendHistory(dir, [{ role: 'status', text, ts: new Date().toISOString() }]),
+}
+
+// Attend le verdict (timeout long) puis l'écrit dans l'historique du projet —
+// le chat le re-fetch et l'affiche, même arrivé bien après la fin du tour.
+// Renvoie le message surfacé (ou null si timeout / rien à dire). Logique pure
+// sur ses deps → testable sans filesystem ni vrai audit.
+export async function surfaceVerdict(
+  projectName: string,
+  historyDir: string,
+  deps: VerdictWatcherDeps = defaultWatcherDeps,
+  timeoutMs: number = VERDICT_ASYNC_TIMEOUT,
+): Promise<string | null> {
+  const verdict = await deps.wait(projectName, timeoutMs)
+  if (!verdict) return null
+  const msg = buildVerdictMessage(verdict)
+  if (msg) deps.append(historyDir, msg)
+  return msg
+}
+
+// Un watcher actif au plus par projet (évite deux surfaçages concurrents si deux
+// tours rapides s'enchaînent ; emitPhaseComplete a déjà purgé l'ancien verdict).
+const watching = new Set<string>()
+
+// Lance le surfaçage du verdict en fire-and-forget — NE bloque jamais le tour.
+export function spawnVerdictWatcher(
+  projectName: string,
+  historyDir: string,
+  deps: VerdictWatcherDeps = defaultWatcherDeps,
+): void {
+  if (watching.has(projectName)) return
+  watching.add(projectName)
+  void surfaceVerdict(projectName, historyDir, deps)
+    .then(msg => { if (msg) console.log(`[mangoqa] verdict surfacé (${projectName})`) })
+    .catch(err => console.warn('[mangoqa]', err instanceof Error ? err.message : err))
+    .finally(() => { watching.delete(projectName) })
 }

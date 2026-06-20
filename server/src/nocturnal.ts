@@ -14,6 +14,7 @@ import { createProject, projectDir, WORKSPACE_DIR } from "./projects.js";
 import { runAgent } from "./agent.js";
 import { appendHistory, formatToolLine, loadHistory, type ChatEntry } from "./history.js";
 import { inspectProject, type InspectionSignal } from "./inspection.js";
+import { installBackendDepsAsync } from "./backend-generator.js";
 import { generateUniquePrompts } from "./train-loop.js";
 import { resolveProvider } from "./llm-engine.js";
 import { getBrain } from "./kernel.js";
@@ -187,10 +188,11 @@ const AUTONOMOUS_SUFFIX =
 // ne corrige à la main). Borné pour ne pas brûler la nuit sur un projet rétif.
 const MAX_NOCTURNAL_REPAIRS = 2;
 
-/** Prompt de réparation : on réinjecte la sortie d'erreur du build et on demande
- * une correction stricte (pas de nouvelle feature). Pur → testable. */
+/** Prompt de réparation : on réinjecte la sortie d'erreur (build frontend OU
+ * `tsc --noEmit` du backend api/) et on demande une correction stricte (pas de
+ * nouvelle feature). Pur → testable. */
 export function nocturnalRepairPrompt(buildError: string): string {
-  return `Le build de l'app ÉCHOUE (npm run build / vite). Corrige la ou les erreurs ci-dessous — SANS ajouter de fonctionnalité, en gardant le design en place — puis assure-toi que le projet compile proprement. Sortie du build :\n\n${buildError}`;
+  return `La compilation de l'app ÉCHOUE (build frontend vite, ou \`tsc --noEmit\` du backend api/). Corrige la ou les erreurs ci-dessous — SANS ajouter de fonctionnalité, en gardant le design en place — puis assure-toi que le projet compile proprement (frontend ET backend api/ s'il existe). Sortie de la compilation :\n\n${buildError}`;
 }
 
 // Dépendances injectables de la boucle de réparation : en prod ce sont
@@ -199,14 +201,21 @@ export function nocturnalRepairPrompt(buildError: string): string {
 export interface RepairDeps {
   inspect: (dir: string) => Promise<{ ok: boolean; signal: InspectionSignal; detail: string }>;
   repairTurn: (prompt: string) => Promise<void>;
+  // Install déterministe des dépendances du backend généré (api/) — appelée une
+  // seule fois sur `backend-no-deps`, ce n'est PAS un tour de réparation (pas
+  // de coût agent). Absente en test → la branche est inerte.
+  ensureBackendDeps?: (dir: string) => Promise<void>;
   onStatus?: (msg: string) => void;
 }
 
-/** Vérifie objectivement que le projet compile et, si le build échoue, lance
- * jusqu'à `maxRepairs` tours de réparation autonome (sortie d'erreur réinjectée).
- * S'arrête dès que le build passe, au plafond, ou sur un signal non réparable
- * (≠ build-failed). Renvoie l'inspection finale (`ok` = compile VRAIMENT) et le
- * nombre de tentatives. Logique pure sur ses deps → testable sans réseau. */
+/** Vérifie objectivement que le projet compile (frontend ET backend api/ s'il
+ * existe) et, en cas d'échec compilable, lance jusqu'à `maxRepairs` tours de
+ * réparation autonome (sortie d'erreur réinjectée). Deux signaux sont
+ * réparables par l'agent — `build-failed` (frontend) et `backend-failed` (api/
+ * via `tsc --noEmit`) ; `backend-no-deps` est résolu une seule fois par une
+ * install déterministe (pas un tour). S'arrête dès que tout passe, au plafond,
+ * ou sur un signal non réparable. Renvoie l'inspection finale (`ok` = compile
+ * VRAIMENT) et le nombre de tentatives. Logique pure sur ses deps → testable. */
 export async function ensureBuildPasses(
   dir: string,
   deps: RepairDeps,
@@ -214,11 +223,27 @@ export async function ensureBuildPasses(
 ): Promise<{ ok: boolean; signal: InspectionSignal; attempts: number }> {
   let inspection = await deps.inspect(dir);
   let attempts = 0;
-  while (attempts < maxRepairs && inspection.signal === "build-failed") {
-    attempts++;
-    deps.onStatus?.(`🔧 Build en échec — réparation autonome (tentative ${attempts}/${maxRepairs})…`);
-    await deps.repairTurn(nocturnalRepairPrompt(inspection.detail));
-    inspection = await deps.inspect(dir);
+  let backendInstalled = false;
+  while (true) {
+    const repairable = inspection.signal === "build-failed" || inspection.signal === "backend-failed";
+    if (repairable && attempts < maxRepairs) {
+      attempts++;
+      const what = inspection.signal === "backend-failed" ? "Backend (api/)" : "Build";
+      deps.onStatus?.(`🔧 ${what} en échec — réparation autonome (tentative ${attempts}/${maxRepairs})…`);
+      await deps.repairTurn(nocturnalRepairPrompt(inspection.detail));
+      inspection = await deps.inspect(dir);
+      continue;
+    }
+    // Backend généré sans dépendances : on les pose UNE fois (déterministe), puis
+    // on ré-inspecte — l'inspection peut alors devenir ok ou backend-failed.
+    if (inspection.signal === "backend-no-deps" && deps.ensureBackendDeps && !backendInstalled) {
+      backendInstalled = true;
+      deps.onStatus?.("📦 Installation des dépendances backend (api/)…");
+      await deps.ensureBackendDeps(dir);
+      inspection = await deps.inspect(dir);
+      continue;
+    }
+    break;
   }
   return { ok: inspection.ok, signal: inspection.signal, attempts };
 }
@@ -273,6 +298,7 @@ async function buildOne(
     const verdict = await ensureBuildPasses(dir, {
       inspect: (d) => inspectProject(d),
       repairTurn: (p) => consumeTurn(p),
+      ensureBackendDeps: (d) => installBackendDepsAsync(d),
       onStatus: (msg) => record("status", msg),
     });
     // success = le projet compile VRAIMENT (seul "ok" compte). Un build cassé

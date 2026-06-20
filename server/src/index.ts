@@ -48,7 +48,7 @@ import { registerModelRouterRoutes } from "./model-router.js";
 import { registerDocGeneratorRoutes } from "./docgenerator.js";
 import { registerVersionGraphRoutes } from "./version-graph.js";
 import { registerControleurRoutes } from "./qa-temporal.js";
-import { emitPhaseComplete, waitForVerdict, buildRejectionMessage, isMangoQaActive } from "./mangoqa.js";
+import { emitPhaseComplete, spawnVerdictWatcher, isMangoQaActive } from "./mangoqa.js";
 import { registerStripeRoutes } from "./stripe.js";
 import { registerCronRoutes } from "./cron-scheduler.js";
 import { registerMetricsDashboardRoutes } from "./metrics-dashboard.js";
@@ -420,18 +420,17 @@ app.post("/api/chat", async (req, res) => {
           /* publier le rendu ne casse jamais un tour */
         }
 
-        // Mango QA — audit autonome (si le runner est actif — détection automatique par sentinelle)
+        // Mango QA — audit autonome (si le runner est actif — détection automatique par sentinelle).
+        // ASYNCHRONE (architecture « audit fantôme ») : on émet le signal et on
+        // lance un watcher fire-and-forget — le tour ne bloque JAMAIS sur le
+        // verdict. Le watcher l'écrit dans l'historique dès qu'il arrive (même
+        // au-delà de l'ancien timeout 60 s : un gros projet met ~143 s) et le
+        // chat le re-fetch, comme les patrouilleurs #73. historyDir est null en
+        // mode Miroir → pas de surfaçage (cohérent avec la patrouille).
         if (isMangoQaActive()) {
           emitPhaseComplete(projectName, mode ?? 'elite', patrolFiles.current);
-          send({ type: "status", text: "🛡️ Mango QA — audit en cours…" });
-          const qaVerdict = await waitForVerdict(projectName);
-          if (qaVerdict?.verdict === 'red') {
-            const msg = buildRejectionMessage(qaVerdict);
-            record("status", msg);
-            send({ type: "status", text: msg });
-          } else if (qaVerdict?.verdict === 'green') {
-            send({ type: "status", text: "✅ Mango QA — Feu Vert" });
-          }
+          send({ type: "status", text: "🛡️ Mango QA — audit lancé (le verdict s'affichera dès qu'il est prêt)" });
+          if (historyDir) spawnVerdictWatcher(projectName, historyDir);
         }
         // Idée #80 — le tour a changé quelque chose : capture le "after" (Vite HMR
         // a déjà rafraîchi) et envoie le diff avant/après au chat en SSE live.

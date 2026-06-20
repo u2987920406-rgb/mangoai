@@ -3,12 +3,42 @@
 import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import crypto from "node:crypto";
 
 // Base of the scan range. We never bind this port blindly: findFreePort() walks
 // up from here to the first genuinely free port (see the bug note in startPreview).
 const PREVIEW_PORT_BASE = Number(process.env.PREVIEW_PORT ?? 5174);
 
-let current: { projectDir: string; proc: ChildProcess; url: string; port: number } | null = null;
+let current: { projectDir: string; proc: ChildProcess; url: string; port: number; configHash: string } | null = null;
+
+// Fingerprint of the files that decide how Vite behaves. When a project is
+// regenerated IN-PLACE with a different framework (e.g. plugin-svelte →
+// plugin-vue), vite.config.* and package.json change. The running dev server
+// holds the OLD config in memory, so reusing it (fast path) would serve a stale
+// preview even though the fresh build is green. Comparing this hash lets us
+// detect the change and restart instead. Pure (reads files) → testable.
+export function configFingerprint(projectDir: string): string {
+  const parts: string[] = [];
+  for (const f of ["vite.config.js", "vite.config.ts", "vite.config.mjs", "package.json"]) {
+    try {
+      parts.push(`${f}:${fs.readFileSync(path.join(projectDir, f), "utf8")}`);
+    } catch {
+      /* fichier absent → ignoré (un projet n'a pas forcément les deux configs) */
+    }
+  }
+  return crypto.createHash("sha1").update(parts.join("\n")).digest("hex");
+}
+
+// Removes Vite's dependency pre-bundle cache. Needed when the framework/deps
+// change in-place: even with a fresh process, a stale node_modules/.vite would
+// hand back deps optimised for the OLD framework.
+function purgeViteCache(projectDir: string): void {
+  try {
+    fs.rmSync(path.join(projectDir, "node_modules", ".vite"), { recursive: true, force: true });
+  } catch {
+    /* best effort — absence/erreur de purge ne doit jamais casser le lancement */
+  }
+}
 
 // ANSI SGR escape codes vite wraps its banner in (color/bold) — stripped before
 // we parse the Local url out of stdout.
@@ -24,13 +54,27 @@ export function previewStatus() {
 }
 
 export async function startPreview(projectDir: string): Promise<{ url: string }> {
-  // Fast path: same project, process alive AND the server still answers. The
-  // health check matters — a process can be alive but its server dead/zombied;
-  // without it we'd hand back a URL that renders nothing.
-  if (current && current.projectDir === projectDir && current.proc.exitCode === null) {
+  // Fast path: same project, SAME config, process alive AND the server still
+  // answers. The health check matters — a process can be alive but its server
+  // dead/zombied; without it we'd hand back a URL that renders nothing. The
+  // config-hash check matters too: a project regenerated in-place with another
+  // framework keeps the same dir but a different vite.config/package.json, and
+  // the running server still holds the OLD config in memory → stale preview.
+  const fp = configFingerprint(projectDir);
+  const configChangedInPlace = current?.projectDir === projectDir && current.configHash !== fp;
+  if (
+    current &&
+    current.projectDir === projectDir &&
+    current.proc.exitCode === null &&
+    current.configHash === fp
+  ) {
     if (await serverAlive(current.url)) return { url: current.url };
   }
   await stopPreview();
+
+  // Framework/deps changed in the same project folder → drop the stale Vite
+  // dep-bundle cache so the fresh server doesn't reuse deps for the old framework.
+  if (configChangedInPlace) purgeViteCache(projectDir);
 
   if (!fs.existsSync(path.join(projectDir, "package.json"))) {
     throw new Error(`No package.json in ${projectDir}`);
@@ -53,7 +97,7 @@ export async function startPreview(projectDir: string): Promise<{ url: string }>
     { cwd: projectDir, stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" },
   );
   // url is filled in from vite's stdout below.
-  current = { projectDir, proc, url: "", port: 0 };
+  current = { projectDir, proc, url: "", port: 0, configHash: fp };
 
   proc.on("exit", (code) => {
     console.log(`[preview] dev server exited (code ${code})`);
@@ -63,7 +107,7 @@ export async function startPreview(projectDir: string): Promise<{ url: string }>
   const url = await readViteUrl(proc, 30_000);
   if (current?.proc === proc) {
     const port = Number(new URL(url).port) || PREVIEW_PORT_BASE;
-    current = { projectDir, proc, url, port };
+    current = { projectDir, proc, url, port, configHash: fp };
   }
   // A final health check: vite announced the url, make sure it actually serves.
   await waitForServerOrExit(url, proc, 15_000);

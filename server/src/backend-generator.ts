@@ -33,6 +33,14 @@ export function hasBackend(projectDir: string): boolean {
   return fs.existsSync(path.join(projectDir, BACKEND_DIR_NAME, "package.json"));
 }
 
+/** État des dépendances du backend généré — pur (fs seul), donc testable sans
+ * réseau. "absent" = pas de backend ; "no-deps" = backend présent mais
+ * api/node_modules manquant ; "ready" = installable/installé. */
+export function backendDepsState(projectDir: string): "ready" | "no-deps" | "absent" {
+  if (!hasBackend(projectDir)) return "absent";
+  return fs.existsSync(path.join(projectDir, BACKEND_DIR_NAME, "node_modules")) ? "ready" : "no-deps";
+}
+
 // ── Scaffold ──────────────────────────────────────────────────────────────────
 
 /** Copies the built-in Express template into <projectDir>/api/ (idempotent). */
@@ -74,6 +82,19 @@ export function installBackendDeps(projectDir: string): void {
     cwd: apiDir,
     stdio: "inherit",
     timeout: 120_000,
+  });
+}
+
+/** Async, non-bloquant : npm install dans api/ si node_modules absent. Utilisé
+ * par les orchestrateurs (nocturnal/eleve) qui tournent dans l'event loop du
+ * serveur — l'execSync de installBackendDeps gèlerait le thread jusqu'à 120 s. */
+export async function installBackendDepsAsync(projectDir: string): Promise<void> {
+  if (backendDepsState(projectDir) !== "no-deps") return;
+  const apiDir = path.join(projectDir, BACKEND_DIR_NAME);
+  await new Promise<void>((resolve) => {
+    const p = spawn("npm install", { cwd: apiDir, shell: true, windowsHide: true });
+    p.on("exit", () => resolve());
+    p.on("error", () => resolve());
   });
 }
 

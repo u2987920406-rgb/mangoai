@@ -348,11 +348,15 @@ export default function Chat({
       setBusy(false);
       if (wasPlanPhase) setAwaitingPlanConfirm(true);
       onAgentDone();
-      // Surface the background agents' status lines (review + patrol #73) once
-      // they've had time to finish, without keeping the stream open.
+      // Surface the background agents' status lines (review + patrol #73 +
+      // Mango QA verdict) once they've had time to finish, without keeping the
+      // stream open. The later delays cover slow QA audits (~143s on big
+      // projects) that the 6s/14s window would miss. refetchHistory is guarded
+      // (same project + idle), so the late re-fetches are no-ops if irrelevant.
       const pName = projectName;
-      setTimeout(() => refetchHistory(pName), 6000);
-      setTimeout(() => refetchHistory(pName), 14000);
+      [6000, 14000, 30000, 60000, 90000, 130000, 180000, 240000].forEach((d) =>
+        setTimeout(() => refetchHistory(pName), d),
+      );
     }
   }
 
