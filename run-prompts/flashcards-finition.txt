@@ -1,0 +1,13 @@
+Passe MangoCartes en mode FINITION pour corriger des points PRÉCIS remontés par un audit qualité. Feature Freeze STRICT : n'ajoute AUCUNE fonctionnalité, corrige uniquement ce qui suit.
+
+1. DRY (architecture) — la fonction `todayStr()` est dupliquée à l'identique dans `src/utils/spacing.ts` et `src/lib/storage.ts` (même corps : `new Date().toISOString().split('T')[0]`). Exporte-la depuis `src/utils/spacing.ts` (`export function todayStr`) et importe-la dans `src/lib/storage.ts` à la place de la redéfinition locale. Une seule source de vérité.
+
+2. Accessibilité — le graphique à barres de `src/components/StatsPage.tsx` (progression par paquet) n'a AUCUNE alternative textuelle : il est inaccessible aux lecteurs d'écran. Ajoute une alternative accessible — par ex. un résumé textuel visually-hidden (`sr-only`) listant la progression par paquet, et/ou `role="img"` + `aria-label` décrivant les données. Garde le focus visible et le contraste WCAG AA.
+
+3. Tests — la fonction `computeStreak` (dans `src/lib/storage.ts`) porte de la logique métier mais n'est couverte par AUCUN test. Si nécessaire, extrais-la dans un module PUR testable (ex. `src/utils/stats.ts`) puis ajoute des tests Vitest : jours consécutifs → streak correct, rupture de streak, historique vide → 0. Lance `npx vitest run` et assure-toi que TOUS les tests passent (les 11 existants + les nouveaux).
+
+4. Design system (mineur) — `src/components/StatsPage.tsx` contient des couleurs hex en dur (`#F2A33C`, `#C4B39A`) dans les props Recharts et les swatches de légende, alors que le reste du code utilise des tokens `var(--…)`. Crée des tokens CSS (ex. `--color-chart-total`, `--color-chart-due`) + une constante JS partagée pour les props Recharts, et consomme `var(…)` pour les swatches.
+
+À la fin, `npm run build` doit rester VERT et `npx vitest run` doit passer.
+
+Mode autonome : ne pose AUCUNE question et ne t'arrête PAS pour validation — corrige directement.

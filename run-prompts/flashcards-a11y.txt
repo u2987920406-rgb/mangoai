@@ -1,0 +1,9 @@
+Finition CIBLÉE (Feature Freeze strict : ne change RIEN d'autre que ce qui suit). Un audit d'accessibilité a relevé UN seul point :
+
+Dans `src/components/DeckList.tsx`, le bouton icône-seul « ✕ » (annulation du renommage, vers la ligne 102) n'a pas d'`aria-label` — son nom accessible est juste le caractère ✕, ce qui ne communique pas sa fonction aux lecteurs d'écran (WCAG 2.2 — 4.1.2 Name, Role, Value).
+
+Ajoute `aria-label="Annuler le renommage"` à ce bouton.
+
+Puis vérifie l'ENSEMBLE des composants (`src/components/**`) pour d'autres boutons icône-seul (✕, +, icônes sans texte) dépourvus d'`aria-label`, et ajoute un libellé accessible et descriptif à chacun.
+
+`npm run build` doit rester VERT et `npx vitest run` doit toujours passer. Ne pose AUCUNE question, corrige directement.
