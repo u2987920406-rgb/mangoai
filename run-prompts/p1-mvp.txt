@@ -1,0 +1,16 @@
+Construis "MangoBoard", un kanban personnel (gestion de tâches en colonnes), en MVP.
+
+STACK IMPOSÉE (famille Svelte) — reconfigure le projet pour cette stack :
+- Svelte + Vite (remplace le scaffolding React du template : installe `svelte` et `@sveltejs/vite-plugin-svelte`, réécris `vite.config.js`, `index.html` et `src/` en Svelte ; supprime les fichiers React devenus inutiles).
+- Styling : UnoCSS (atomic) — installe `unocss` + le plugin Vite, classes utilitaires atomiques.
+- État : Svelte stores (`writable`).
+- Données : persistance locale via IndexedDB avec Dexie (`dexie`).
+- TypeScript.
+
+PÉRIMÈTRE MVP (rester simple, pas de design system élaboré, pas de tests) :
+- 3 colonnes : "À faire", "En cours", "Terminé".
+- Ajouter une carte (titre) dans une colonne.
+- Déplacer une carte d'une colonne à l'autre (boutons de déplacement suffisent pour le MVP).
+- Persistance locale (Dexie/IndexedDB) : les cartes survivent au rechargement.
+
+Objectif : un MVP qui COMPILE (`npm run build`) et fonctionne. Va à l'essentiel.

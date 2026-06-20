@@ -1,0 +1,12 @@
+Fais passer MangoBoard du MVP au niveau ÉLITE. Garde la stack en place (Svelte + Vite + UnoCSS + Svelte stores + Dexie/IndexedDB + TS). N'ajoute pas de nouvelle stack, raffine l'existant.
+
+Améliorations Élite à livrer :
+- Design system "Mango" : applique la palette imposée du Perfect Plan (mango #F2A33C, charcoal #1E1B16, cream #FBF3E4, teal #2BB3A3, coral #E8624A) via des design tokens (variables CSS / config UnoCSS). Déploie le moodboard : capture la référence (linear.app) avec Sharingan pour l'inspiration de mise en page, PUIS impose la palette Mango.
+- Drag & drop des cartes accessible au CLAVIER (déplacement par flèches + annonce ARIA), en plus de la souris.
+- États vides soignés (colonne vide = empty state clair) et états de chargement.
+- Accessibilité WCAG AA : contrastes conformes, focus visibles, labels, navigation clavier complète.
+- Thème clair / sombre (cream vs charcoal) basculable.
+- Quelques tests Vitest sur la logique pure (store : ajout/déplacement/persistance).
+- Durcissement sécurité : retire tout CORS wildcard en dev (pas de `server.cors: true` dans vite.config — laisse le défaut ou restreins l'origine).
+
+Mode autonome (run de validation) : ne pose AUCUNE question de cadrage et ne t'arrête PAS pour une validation humaine — prends les meilleures décisions toi-même et construis directement. Assure-toi que `npm run build` passe au vert à la fin.

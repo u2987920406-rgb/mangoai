@@ -1,0 +1,15 @@
+Construis "MangoPulse", un mini-dashboard analytics, en MVP.
+
+STACK IMPOSÉE (famille React full-stack) — garde React mais adopte ces choix :
+- React + Vite (le template est déjà React+Vite : conserve-le).
+- Styling : styled-components (CSS-in-JS) — installe `styled-components`.
+- État : Zustand (`zustand`).
+- Graphiques : Chart.js via `react-chartjs-2` + `chart.js`.
+- TypeScript.
+
+PÉRIMÈTRE MVP (rester simple, pas de design system élaboré, pas de tests, données factices) :
+- Layout dashboard : sidebar + zone principale.
+- 3-4 cartes de KPI (chiffres factices).
+- 2 graphiques Chart.js (ex. courbe de visites + barres par source) avec des données factices en dur.
+
+Objectif : un MVP qui COMPILE (`npm run build`) et fonctionne. Va à l'essentiel.

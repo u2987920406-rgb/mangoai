@@ -1,0 +1,15 @@
+Construis "MangoNotes", une app de notes markdown avec tags et recherche, en MVP.
+
+STACK IMPOSÉE (famille Vue) — reconfigure le projet pour cette stack :
+- Vue 3 + Vite (remplace le scaffolding React du template : installe `vue` et `@vitejs/plugin-vue`, réécris `vite.config.js`, `index.html` et `src/` en Vue 3 `<script setup>` ; supprime les fichiers React devenus inutiles).
+- Styling : CSS vanilla + custom properties (variables CSS), PAS de framework CSS.
+- État : Pinia (`pinia`).
+- Données : persistance via localStorage.
+- TypeScript.
+
+PÉRIMÈTRE MVP (rester simple, pas de design system élaboré, pas de tests) :
+- CRUD de notes : créer, éditer, supprimer une note (titre + contenu markdown).
+- Rendu du markdown (utilise une lib légère type `marked`).
+- Persistance localStorage : les notes survivent au rechargement.
+
+Objectif : un MVP qui COMPILE (`npm run build`) et fonctionne. Va à l'essentiel.

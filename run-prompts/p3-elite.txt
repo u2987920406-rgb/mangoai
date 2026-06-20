@@ -1,0 +1,11 @@
+Fais passer MangoPulse du MVP au niveau ÉLITE. Garde la stack frontend en place (React + Vite + styled-components + Zustand + Chart.js + TS). N'ajoute pas de nouvelle stack frontend, raffine l'existant.
+
+Améliorations Élite à livrer :
+- VRAI backend : un serveur Express + better-sqlite3 (`express`, `better-sqlite3`) dans un sous-dossier `server/` du projet, qui sert les données analytics depuis une base SQLite (seed de données factices au démarrage). Le frontend consomme l'API au lieu des données en dur. Documente comment lancer le backend dans un README. Le frontend (`npm run build` à la racine) doit RESTER vert indépendamment.
+- Design system "Mango" : applique la palette imposée du Perfect Plan (mango #F2A33C, charcoal #1E1B16, cream #FBF3E4, teal #2BB3A3, coral #E8624A) via le thème styled-components (ThemeProvider + tokens). RÉUTILISE l'architecture de tokens couleur déjà éprouvée sur les projets précédents si elle est en mémoire. Déploie le moodboard (Sharingan sur posthog.com), PUIS impose la palette Mango.
+- Responsive (mobile → desktop).
+- Accessibilité des graphiques : titres, descriptions textuelles/résumés accessibles des charts, contrastes WCAG AA, focus visibles.
+- Thème clair / sombre (cream vs charcoal) basculable.
+- Quelques tests Vitest sur la logique pure (transformation des données analytics, store Zustand).
+
+Mode autonome (run de validation) : ne pose AUCUNE question de cadrage et ne t'arrête PAS pour une validation humaine — prends les meilleures décisions toi-même et construis directement. Assure-toi que `npm run build` (frontend) passe au vert à la fin.

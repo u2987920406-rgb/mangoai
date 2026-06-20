@@ -2058,3 +2058,22 @@ Avec α = 0.4, un saut de cible est absorbé sur ~4-5 nuits au lieu d'être enca
 **Vérifs.** Nouveau `test-preview.ts` **5/5** : empreinte idempotente, Svelte ≠ Vue, changement de framework in-place détecté, ajout d'une dépendance (`package.json`) détecté, dossier sans config → empreinte définie. `tsc` serveur **0**, backend rechargé en watch sans erreur. UI non touchée. Le lifecycle du process Vite (spawn, lecture de l'URL) reste couvert par le run réel, comme toujours.
 
 **🎉 Les 3 bugs d'intégration ouverts du run de validation 2026-06-20 sont tous corrigés** : #4 (gate backend full-stack), #3 (latence d'audit MangoQA), #2 (cache Vite de l'aperçu). Le « vrai trésor » du run — la liste de défauts d'intégration que seul un usage réel pouvait sortir — est résorbé.
+
+### Idée #97 — App flashcards Supabase « MangoCartes » construite via MangoOS ✅ (2026-06-20)
+
+**Quoi.** Premier full-stack de la roadmap de démos (#94-98), construit en **dogfood** : MangoOS pilote sa propre génération via `POST /api/chat` (driver `run-driver.mjs`, hérité du run de validation, étendu d'un flag `--template`). Deux tours autonomes — `mvp` puis `elite` — avec la clause « ne pose AUCUNE question de cadrage » dans le prompt pour passer les portes humaines d'Élite en headless.
+
+**Résultat.**
+- **MVP** : $0.9448 · 24 tours · build vert 1.87s · version `7b593f8`. CRUD paquets/cartes, mode révision basique, `lib/storage.ts` (couche d'abstraction Supabase si configuré, sinon localStorage).
+- **Élite** : $1.7949 · 28 tours · build vert 1.73s · **11/11 tests Vitest** · version `a46234c`. Auth email/mot de passe Supabase + **RLS** (`supabase/schema.sql`, policies `user_id = auth.uid()`), **algorithme de répétition espacée PUR** isolé dans `utils/spacing.ts` (`rateCard` Facile +4j / Difficile +1j, `isDue`, `getDueCards`) avec sa suite `spacing.test.ts` (11 cas), stats recharts, thème clair/sombre (`ThemeContext`), responsive + a11y, dégradation propre sans clés Supabase.
+
+**Le résultat secondaire le plus précieux — la mémoire cross-projet prouvée en live.** `GET /api/reuse` après le tour Élite : `reuseRatePct: 50`, `byKind: {palette: 1}`, `topReused: palette:mangopulse`. La **palette Mango** créée sur un projet du run précédent (`mangopulse`) a été **réinjectée puis réutilisée** par MangoCartes — la chaîne complète #117 (Blackboard SQLite persistant) → #118 (réinjection avant le build) → #122 (mesure de réutilisation de palette) fonctionne sur du réel, entre deux sessions distinctes. C'est exactement le gradient de réutilisation que les boucles #121-130 cherchent à nourrir.
+
+**Enseignement d'environnement (piloter MangoOS depuis Claude Code).** Trois échecs avant le succès, tous d'environnement, aucun lié au code de l'app :
+1. `npm install exited with 3221225794` (0xC0000142, `STATUS_DLL_INIT_FAILED`) à la création du projet — le backend que MangoOS interrogeait était un **process node orphelin du run nocturne (PID démarré à 03:29)** qui squattait le port 3000 ; tournant dans une session devenue **non-interactive**, ses spawns de `cmd.exe` (npm, vite, git) échouaient à s'initialiser.
+2. `Cannot find module run-driver.mjs` — un `cd` dans un test manuel avait déplacé le cwd du shell ; corrigé en relançant depuis la racine.
+3. `Command failed: git init` — encore l'orphelin (git init OK manuellement).
+
+**Résolution** : identifier le process qui écoute réellement sur le port (`Get-NetTCPConnection -LocalPort 3000`), constater qu'il datait d'avant la session, le **tuer**, puis démarrer un backend frais **dans la session active** (qui, elle, spawne correctement — `npm install`/`git init` manuels y réussissaient). Règle pour les prochaines fois : avant de piloter MangoOS, vérifier qu'aucun backend d'une session précédente ne tient le port 3000. (À noter : le backend Git Bash bootait correctement ; l'instance PowerShell, elle, restait bloquée avant `app.listen` — préférer la voie qui boote.)
+
+**Honnêteté.** #97 s'appuie sur **Supabase (BaaS)**, pas sur le backend Express `api/` — il ne teste donc PAS le correctif gate backend #4 (qui cible les apps `api/`). L'app se construit et tourne en dégradation localStorage tant que les clés Supabase ne sont pas fournies (`.credentials/supabase.md`) ; la valider en cloud réel (auth + RLS) demande de poser `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY`. MangoQA n'était pas lancé pendant cette génération (pas d'audit des 3 visages sur ce build).

@@ -1,0 +1,15 @@
+Fais passer MangoCartes du MVP au niveau ÉLITE. Garde la stack en place (React + Vite + TypeScript + @supabase/supabase-js). Raffine l'existant, n'ajoute PAS de nouvelle stack frontend.
+
+Améliorations Élite à livrer :
+- Auth Supabase email / mot de passe : inscription / connexion / déconnexion. Si les clés Supabase sont absentes, dégrade proprement (mode local sans auth) pour que le build reste vert.
+- Schéma Supabase + RLS : fournis le SQL (en commentaire en tête d'un fichier dédié et dans le README) pour les tables `decks` et `cards` avec Row Level Security — chaque utilisateur ne voit QUE ses données (policies sur user_id = auth.uid()).
+- Algorithme de répétition espacée SIMPLE et PUR, isolé dans `src/utils/spacing.ts` : "Facile" repousse l'échéance de +4 jours, "Difficile" de +1 jour ; chaque carte porte une date d'échéance (due_date) stockée en base. Le mode révision ne présente QUE les cartes DUES (échéance ≤ aujourd'hui).
+- Mode révision complet : recto → clic → verso → Facile/Difficile met à jour l'échéance via l'algorithme.
+- Statistiques (recharts) : nombre de cartes dues, streak de révision (jours consécutifs), progression par paquet. Installe `recharts`.
+- Architecture modulaire : `src/hooks/useDecks.ts` + `src/hooks/useReview.ts` + `src/utils/spacing.ts` (composants < 200 lignes, logique séparée des vues).
+- Tests Vitest sur la logique PURE de répétition espacée (`src/utils/spacing.ts`) : "Facile" → +4 jours, "Difficile" → +1 jour, sélection correcte des cartes dues. Installe Vitest à la demande (`npm i -D vitest` + script "test") et lance `npx vitest run` pour confirmer.
+- Design system "Mango" : applique la palette imposée via des tokens (mango #F2A33C, charcoal #1E1B16, cream #FBF3E4, teal #2BB3A3, coral #E8624A). RÉUTILISE l'architecture de tokens couleur déjà éprouvée sur les projets précédents si elle est en mémoire.
+- Thème clair / sombre (cream vs charcoal) basculable.
+- Responsive mobile → desktop, accessibilité : focus visibles, labels de formulaires, contraste WCAG AA.
+
+Mode autonome (run de validation) : ne pose AUCUNE question de cadrage et ne t'arrête PAS pour une validation humaine — prends les meilleures décisions toi-même et construis directement. Assure-toi que `npm run build` (frontend) passe au vert à la fin.

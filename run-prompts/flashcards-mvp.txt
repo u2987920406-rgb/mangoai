@@ -1,0 +1,13 @@
+Construis "MangoCartes", une application de flashcards / révision espacée (type Anki), en MVP.
+
+STACK : React + Vite + TypeScript (le template Supabase est déjà en place — conserve-le et utilise @supabase/supabase-js). Si les clés Supabase (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY) sont ABSENTES, dégrade proprement vers un stockage localStorage afin que l'app tourne et que le build passe — mais structure le code pour brancher Supabase dès que les clés sont présentes.
+
+PÉRIMÈTRE MVP (rester simple : pas de design system élaboré, pas de tests, pas d'auth, pas d'algorithme) :
+- CRUD de paquets (decks) : créer, renommer, supprimer un paquet.
+- CRUD de cartes dans un paquet : recto / verso, ajout / édition / suppression.
+- Mode révision basique : afficher le recto → clic pour révéler le verso → boutons "Facile" / "Difficile" qui passent simplement à la carte suivante (sans algorithme pour l'instant).
+- Persistance : Supabase si configuré, sinon localStorage.
+
+Objectif : un MVP qui COMPILE (npm run build) et fonctionne. Va à l'essentiel.
+
+Mode autonome (run de validation) : ne pose AUCUNE question de cadrage et ne t'arrête PAS pour une validation humaine — prends les meilleures décisions toi-même et construis directement. Assure-toi que `npm run build` passe au vert à la fin.

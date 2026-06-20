@@ -1,0 +1,13 @@
+Fais passer MangoNotes du MVP au niveau ÉLITE. Garde la stack en place (Vue 3 + Vite + CSS vanilla/custom properties + Pinia + localStorage + TS). N'ajoute pas de nouvelle stack, raffine l'existant.
+
+Améliorations Élite à livrer :
+- Design system "Mango" : applique la palette imposée du Perfect Plan (mango #F2A33C, charcoal #1E1B16, cream #FBF3E4, teal #2BB3A3, coral #E8624A) via des design tokens en custom properties CSS. RÉUTILISE l'architecture de tokens couleur déjà éprouvée sur les projets précédents si elle est disponible en mémoire. Déploie le moodboard (Sharingan sur bear.app pour la mise en page), PUIS impose la palette Mango.
+- Tags : chips de tags par note, filtrage par tag.
+- Recherche plein-texte dans les notes (titre + contenu).
+- Accessibilité WCAG AA : contrastes conformes, focus visibles, labels, navigation clavier.
+- Thème clair / sombre (cream vs charcoal) basculable.
+- Quelques tests Vitest sur la logique pure (store Pinia : CRUD, filtrage par tag, recherche).
+
+Nettoyage : il existe peut-être un doublon `vite.config.js` ET `vite.config.ts` — garde UN SEUL fichier de config Vite (supprime l'autre) pour éviter la dérive silencieuse.
+
+Mode autonome (run de validation) : ne pose AUCUNE question de cadrage et ne t'arrête PAS pour une validation humaine — prends les meilleures décisions toi-même et construis directement. Assure-toi que `npm run build` passe au vert à la fin.
