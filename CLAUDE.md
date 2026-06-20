@@ -11,6 +11,21 @@ Lire aussi `fondation.md` — le document fondateur (architecture, vision 10 ans
 
 **Ne PAS lire `historique.md` au démarrage** — ce fichier est lourd (~220 ko). Le lire uniquement quand l'utilisateur demande explicitement le détail d'une idée ou d'une session passée.
 
+## ⚠️ Vérification anti-serveur-orphelin (IMPÉRATIF à chaque démarrage du backend)
+
+**Avant de lancer le backend Express (port 3000), TOUJOURS vérifier qu'aucun process orphelin ne squatte le port.** Cette erreur s'est produite plusieurs fois : la session automatique nocturne de Raf laisse un `node` mort-vivant sur le port 3000 dans une session non-interactive. Tous ses spawns (npm/git/vite) échouent alors avec des codes obscurs (`3221225794` / `0xC0000142`, `git init` qui plante), ce qui bloque toute génération d'app.
+
+**Procédure obligatoire avant chaque lancement backend :**
+
+```powershell
+$conns = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
+if (-not $conns) { "PORT 3000 LIBRE" }
+else { $conns | ForEach-Object { Get-Process -Id $_.OwningProcess } | Format-Table Id,ProcessName,StartTime,SessionId }
+```
+
+- **Port libre** → lancer le backend normalement.
+- **Listener présent** → c'est presque toujours un orphelin de la run nocturne. Le tuer (`Stop-Process -Id <PID> -Force`) **puis** lancer un backend FRAIS dans la session active. Ne jamais essayer de réutiliser le serveur orphelin (sa session est morte, ses spawns échoueront).
+
 ## Comment accéder à l'historique
 
 L'utilisateur peut demander :
