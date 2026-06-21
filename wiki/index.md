@@ -30,6 +30,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[bureau-os]] | Bureau iconique + fenêtres superposables — #136 (Window Manager, chat, palette iOS) | ✅ écrite |
 | [[flux]] | Architecture de navigation + contrat de cohérence — audit 2026-06-21, refonte P0→P4 complète | ✅ écrite |
 | [[composer-os]] | Assembler la production : suite d'apps (#138, type Office) ou gros projet unique (#139, socle+Kanban) — concept validé | ✅ écrite |
+| [[pre-requis-gros-projet]] | Briques externes (TypeScript · router fichier · LSP-MCP · tree-sitter · sqlite-vec) pour les gros projets #139 | ✅ écrite |
 
 ## Pistes de pages futures
 

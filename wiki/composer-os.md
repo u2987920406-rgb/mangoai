@@ -45,7 +45,7 @@ Deux cas distincts (à ne pas confondre — c'est la confusion qui fait rater le
 - **Kanban de pages/stages** (à faire / en cours / fait, 1 carte = 1 incrément) = la bonne orchestration (borne le contexte, zéro oubli).
 - **Jeu vidéo** : moteur d'abord, stages = niveaux chargés.
 
-**Faisable aujourd'hui ?** À moitié : la boucle de chat **édite déjà le même projet** (site page-par-page manuel OK), Perfect Plan + réutilisation [[blackboard]]. Manque : scaffold auto du squelette · **router** (apps SPA sans router par défaut) · tableau Kanban · gestion du contexte sur gros projet (index/RAG des fichiers du projet).
+**Faisable aujourd'hui ?** À moitié : la boucle de chat **édite déjà le même projet** (site page-par-page manuel OK), Perfect Plan + réutilisation [[blackboard]]. Manque : scaffold auto du squelette · **router** (apps SPA sans router par défaut) · tableau Kanban · gestion du contexte sur gros projet (index/RAG des fichiers du projet). **Les briques externes pour combler ces manques sont consignées dans [[pre-requis-gros-projet]]** (TypeScript · router fichier · LSP-MCP · tree-sitter · sqlite-vec — local-first + standards).
 
 ## Graines déjà présentes (réutiliser, pas réinventer)
 
