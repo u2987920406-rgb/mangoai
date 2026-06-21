@@ -53,6 +53,18 @@ export default function App() {
     localStorage.setItem("mangoos.mode", md);
   }, []);
 
+  // #139 Gros Projet — « Construire » un incrément du Kanban : bascule en mode
+  // projet et envoie un tour borné à cette page/stage (Chat consomme buildRequest).
+  const buildIncrement = useCallback((inc) => {
+    setMode("projet");
+    localStorage.setItem("mangoos.mode", "projet");
+    setChatBusy(true);
+    const prompt = `Construis l'incrément « ${inc.title} »${inc.route ? ` (route ${inc.route})` : ""}. `
+      + `Ne touche qu'à cette page/stage, réutilise le squelette existant (router, layout, design tokens, modèle de données), `
+      + `puis marque cet incrément "done" dans .project-plan.json.`;
+    setBuildRequest({ id: Date.now(), prompt, incrementId: inc.id });
+  }, []);
+
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [cost, setCost] = useState(0);
@@ -63,6 +75,11 @@ export default function App() {
   const [inspecting, setInspecting] = useState(false);
   const [seedInput, setSeedInput] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
+  // #139 Gros Projet — requête de build d'incrément (Kanban → Chat) + nonce de
+  // rafraîchissement du Kanban après chaque tour + busy pour griser « Construire ».
+  const [buildRequest, setBuildRequest] = useState(null);
+  const [planRefresh, setPlanRefresh] = useState(0);
+  const [chatBusy, setChatBusy] = useState(false);
   const [showThinking, setShowThinking] = useState(() => localStorage.getItem("mangoos.showThinking") !== "false");
   const [deploying, setDeploying] = useState(false);
   const [deployedUrl, setDeployedUrl] = useState(null);
@@ -546,6 +563,9 @@ export default function App() {
     },
     onOpenMirror: () => openProject("__mirror__"),
     onMangoQA: () => setScreen("controleur"),
+    onBuildIncrement: buildIncrement,
+    planRefresh,
+    agentBusy: chatBusy,
   };
 
   return (
@@ -611,6 +631,9 @@ export default function App() {
                   setPreviewKey((k) => k + 1);
                   refreshVersions();
                   refreshProjects();
+                  // #139 — un tour est fini : rafraîchir le Kanban + libérer « Construire ».
+                  setChatBusy(false);
+                  setPlanRefresh((n) => n + 1);
                 }}
                 autoPrompt={pendingPrompt}
                 onAutoPromptConsumed={() => setPendingPrompt(null)}
@@ -623,6 +646,8 @@ export default function App() {
                 onToast={pushToast}
                 tutorialId={tutorialActive ? tutorialId : null}
                 clientMode={clientMode}
+                buildRequest={buildRequest}
+                onBuildConsumed={() => setBuildRequest(null)}
               />
               <Preview
                 url={previewUrl}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Brain, Cloud, Gauge, Gem, Globe, GraduationCap, Loader2, Rocket, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
+import { ArrowLeft, Brain, Building2, Cloud, Gauge, Gem, Globe, GraduationCap, Loader2, Rocket, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
 import Dropdown, { DropdownItem } from "./Dropdown.jsx";
 import { NEUTRAL, t } from "../neutral.js";
 
@@ -21,6 +21,7 @@ const MODES = [
   { id: "elite", label: "Élite", hint: "Qualité max — analyse + vérif visuelle", icon: Gem },
   { id: "finition", label: "Finition", hint: "Durcissement & QA — pas de nouvelle feature", icon: Shield },
   { id: "esthetique", label: "Esthétique", hint: "Raffinement graphique — micro-interactions, animations, finitions", icon: Sparkles },
+  { id: "projet", label: "Gros Projet", hint: "Site multi-pages / jeu multi-stages — socle-d'abord puis page par page (Kanban)", icon: Building2 },
 ];
 
 export default function Header({

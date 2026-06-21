@@ -37,6 +37,8 @@ export default function Chat({
   seedHistory = null,
   nocturnalEntry = null,
   onReviewed = () => {},
+  buildRequest = null,
+  onBuildConsumed = () => {},
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -259,11 +261,24 @@ export default function Chat({
     }
   }, [seedInput]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function send(textArg) {
+  // #139 Gros Projet — un clic « Construire » sur le Kanban envoie un tour borné
+  // (mode projet + id d'incrément). On attend que le chat soit libre avant de
+  // consommer la requête (sinon send() avorterait sur busy et on la perdrait).
+  useEffect(() => {
+    if (!buildRequest || busy) return;
+    onBuildConsumed?.();
+    send(buildRequest.prompt, { incrementId: buildRequest.incrementId, modeOverride: "projet" });
+  }, [buildRequest, busy]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function send(textArg, opts) {
     const typed = (typeof textArg === "string" ? textArg : input).trim();
     // Auto-prompts (fix requests) never carry attachments
     const files = typeof textArg === "string" ? [] : attachments;
     if ((!typed && files.length === 0) || busy) return;
+    // #139 Gros Projet : un build d'incrément force mode "projet" et joint l'id
+    // de l'incrément (réconcilié côté serveur après commit).
+    const turnMode = opts?.modeOverride ?? mode;
+    const turnIncrementId = opts?.incrementId;
     // Planifier mode : détecter dès l'appel (var locale — safe à travers l'async)
     const isPlanner = model === "opus" && mode === "elite";
     const wasPlanPhase = isPlanner && !awaitingPlanConfirm;
@@ -312,12 +327,13 @@ export default function Chat({
           prompt: apiPrompt,
           projectName,
           model,
-          mode,
+          mode: turnMode,
           template: template || undefined,
           sessionId: sessionRef.current ?? undefined,
           editTarget: useEdit ?? undefined,
           tutorialId: tutorialId ?? undefined,
           clientMode: clientMode || undefined,
+          incrementId: turnIncrementId ?? undefined,
         }),
       });
       if (!res.ok) {

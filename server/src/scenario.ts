@@ -31,9 +31,10 @@ import { preferencesPromptSection } from "./preferences.js";
 import { recoveryPromptSection } from "./orchestrator.js";
 import { SELF_CRITIQUE_RULES } from "./self-critique.js";
 import { perfectPlanSection } from "./perfect-plan.js";
+import { projectPlanSection, skeletonDone, SCAFFOLD_RULES, PROJET_MODE_RULES } from "./project-plan.js";
 
 export type PromptContext = {
-  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss";
+  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet";
   model: string;
   projectDir: string;
   // Idée #56 Chantier C — présent quand l'utilisateur construit DANS le tutoriel
@@ -126,6 +127,9 @@ Mode 🌙 Génération nocturne — full autonomy, polished design:
 - You MAY write plan.md as an internal design doc to organise yourself, but it is NEVER a gate: do not stop to have it validated, just build.`,
   esthetique: `
 Mode ✨ Esthétique — high-fidelity graphic polish phase (the project is built and works; now make it BEAUTIFUL). This is a polish phase, NOT a construction phase: the graphic-polish protocol below governs this turn.`,
+  // Mode 🏗️ Gros Projet (#139) — construction incrémentale d'UN grand produit
+  // (socle-d'abord puis incréments bornés). La posture vit dans project-plan.ts.
+  projet: PROJET_MODE_RULES,
   // Mode 💬 Discussion uses the `discuss` block (DISCUSS_RULES) directly in its
   // scenario rather than this `mode` block; this entry only completes the type
   // over the Mode union so MODE_RULES[ctx.mode] stays exhaustively indexable.
@@ -371,13 +375,20 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   artifacts: (ctx) => ctx.artifactsSection ?? "",
   // Mode discussion — posture conversationnelle (zéro build automatique).
   discuss: () => DISCUSS_RULES,
+  // #139 Mode Gros Projet — squelette-d'abord : injecté UNIQUEMENT tant que le
+  // socle n'est pas posé (skeleton.status !== "done"). Une fois le squelette là,
+  // "" → on passe en construction incrément par incrément.
+  scaffold: (ctx) => (ctx.mode === "projet" && !skeletonDone(ctx.projectDir) ? SCAFFOLD_RULES : ""),
+  // #139 — état du chantier (.project-plan.json) rendu en board : l'agent voit
+  // ce qui est fait / à faire à chaque tour. "" si le manifest n'existe pas encore.
+  projectPlan: (ctx) => projectPlanSection(ctx.projectDir),
 };
 
 // ── Scenarios: ordered block pipelines per effort mode ──────────────────────
 // Élite runs the full arsenal; MVP omits the analytic ritual and Mango Plan
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
-const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss", string[]> = {
+const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet", string[]> = {
   elite: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
   mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
@@ -398,6 +409,11 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // génération : juste la posture conversationnelle + contexte projet (notes,
   // mémoire, identité) pour que Claude puisse conseiller pertinemment.
   discuss: ["discuss", "memory", "notes", "identity"],
+  // #139 Gros Projet — arsenal Élite SANS les portes humaines questionneuses
+  // (cadrage/clarification/Miroir/tutorial) NI le scoping Mango Plan : le cadrage
+  // EST le Perfect Plan + le manifest. `scaffold` (socle-d'abord) et `projectPlan`
+  // (board du chantier) en tête, juste après la posture et le contrat.
+  projet: ["mode", "perfectPlan", "projectPlan", "scaffold", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
 };
 
 /** Assembles the system-prompt append for a turn by running the scenario's

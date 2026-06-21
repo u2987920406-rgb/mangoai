@@ -49,6 +49,7 @@ import { registerDocGeneratorRoutes } from "./docgenerator.js";
 import { registerVersionGraphRoutes } from "./version-graph.js";
 import { registerControleurRoutes } from "./qa-temporal.js";
 import { emitPhaseComplete, spawnVerdictWatcher, isMangoQaActive } from "./mangoqa.js";
+import { loadPlan, replaceIncrements, markIncrementDone, loadFluxCounts } from "./project-plan.js";
 import { registerStripeRoutes } from "./stripe.js";
 import { registerCronRoutes } from "./cron-scheduler.js";
 import { registerMetricsDashboardRoutes } from "./metrics-dashboard.js";
@@ -115,6 +116,36 @@ app.delete("/api/projects/:name", async (req, res) => {
   }
 });
 
+// #139 Gros Projet — le manifest d'orchestration (.project-plan.json) lu par le
+// Kanban du cockpit. `plan` = null tant qu'aucun squelette n'a été scaffoldé ;
+// `flux` = compteurs de cohérence de l'Auditeur de Flux (MangoQA) si présents.
+app.get("/api/projects/:name/plan", (req, res) => {
+  const name = req.params["name"] as string;
+  if (!projectExists(name)) {
+    res.status(404).json({ error: `Project "${name}" not found` });
+    return;
+  }
+  const dir = projectDir(name);
+  res.json({ plan: loadPlan(dir), flux: loadFluxCounts(dir) });
+});
+
+// Édition Kanban : réordre / ajout / renommage des incréments (PAS le build, qui
+// passe par /api/chat avec mode:"projet"). Le squelette n'est jamais touché ici.
+app.put("/api/projects/:name/plan", (req, res) => {
+  const name = req.params["name"] as string;
+  if (!projectExists(name)) {
+    res.status(404).json({ error: `Project "${name}" not found` });
+    return;
+  }
+  const { increments } = req.body as { increments?: unknown };
+  const plan = replaceIncrements(projectDir(name), increments);
+  if (!plan) {
+    res.status(409).json({ error: "Aucun plan de chantier pour ce projet (squelette pas encore posé)." });
+    return;
+  }
+  res.json({ plan });
+});
+
 // ── Chat d'accueil — conversation directe avec MangoOS (sans projectName) ──
 app.post("/api/home-chat", async (req, res) => {
   const { messages, model } = req.body as {
@@ -154,7 +185,7 @@ app.post("/api/home-chat", async (req, res) => {
 // Body: { prompt: string, projectName: string, sessionId?: string }
 // Streams AgentEvent objects as SSE. Creates the project on first message.
 app.post("/api/chat", async (req, res) => {
-  const { prompt, projectName, sessionId, model, mode, template, editTarget, tutorialId, clientMode } = req.body as {
+  const { prompt, projectName, sessionId, model, mode, template, editTarget, tutorialId, clientMode, incrementId } = req.body as {
     prompt?: string;
     projectName?: string;
     sessionId?: string;
@@ -164,6 +195,7 @@ app.post("/api/chat", async (req, res) => {
     editTarget?: EditTarget; // #6 : cible d'une édition visuelle (clic→source)
     tutorialId?: number; // #56 Chantier C : tour joué DANS le tutoriel (posture pédagogue)
     clientMode?: boolean; // Mode Client : désactive le goût personnel, ancre sur les fichiers du client
+    incrementId?: string; // #139 Gros Projet : id de l'incrément Kanban construit ce tour (réconcilié après commit)
   };
   // Posture tutoriel injectée dans le system prompt quand on construit dans un tuto.
   const tutorial = typeof tutorialId === "number" && tutorialId >= 1 ? { id: tutorialId } : null;
@@ -428,6 +460,17 @@ app.post("/api/chat", async (req, res) => {
         send({ type: "version", ...version });
         // Capture the turn's delta for the patrol (#73) — spawned in `finally`.
         patrolFiles.current = await changedFilesInLastCommit(dir).catch(() => []);
+
+        // #139 Gros Projet — garde-fou : si ce tour construisait un incrément
+        // Kanban précis, on le marque `done` dans le manifest (au cas où l'agent
+        // aurait oublié de cocher .project-plan.json). No-op hors mode projet.
+        if (chosenMode === "projet" && incrementId) {
+          try {
+            markIncrementDone(dir, incrementId, patrolFiles.current);
+          } catch {
+            /* réconcilier le manifest ne casse jamais un tour */
+          }
+        }
 
         // Kernel — publie le RENDU design sur le Bus : palette déclarée + couleurs
         // + paires de contraste extraites des fichiers de STYLE changés ce tour.

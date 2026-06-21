@@ -8,6 +8,9 @@ maj: 2026-06-20
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-21] ingest | #139 Mode « Gros Projet » — spine livrée & validée e2e
+Mise à jour de [[composer-os]] : la spine de #139 est construite (additif sur [[coque-souple]]). Mode `projet` (Header 🏗️ + scénario), `SCAFFOLD_RULES` (TS + React Router v7 + tokens + layout + pages placeholder + manifest, sans délégation aux builders) + `PROJET_MODE_RULES` (un incrément borné/tour), manifest `.project-plan.json` (`server/src/project-plan.ts`, lecture défensive) + routes `GET/PUT /api/projects/:name/plan`, **Kanban « Chantier »** dans le rail workspace (`ProjectKanban.jsx`). Validé en live : site 4 pages → scaffold TS+RRv7+placeholders → construire 1 page (Kanban 1/4) ; `tsc`+build verts, `test-project-plan.ts` 26/26. Phase 2 (RAG intra-projet tree-sitter+embeddings, LSP-MCP) reportée — voir [[pre-requis-gros-projet]]. Débloque #138, résout #140 #1/#2 dans les apps générées, prépare [[vault-projet]]. Zéro git.
+
 ## [2026-06-21] ingest | #144 Mango Command Center — app perso livrée (build direct)
 Création de la page-entité [[command-center]] : le poste de pilotage des idées/chantiers (#13→#143), premier outil du dossier `apps/` (outils persos, distinct de `workspace/`). Stack Vite+React 19+TS strict, CSS main, local-first localStorage, aucun backend, port 5180. **Prototype vivant du Kanban de [[composer-os]] (#139)** + pas vers [[vault-projet]] (#141). Seed = ~38 cartes réelles extraites de [[statut]]. Vérifié au Sharingan (7 captures) + test fonctionnel (drag&drop, persistance, zéro erreur console ; bug de pureté StrictMode corrigé). `index.md` mis à jour (nouvelle ligne). Zéro git.
 

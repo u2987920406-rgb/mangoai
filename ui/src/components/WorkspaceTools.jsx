@@ -1,11 +1,12 @@
 import { useState } from "react";
 import {
   Briefcase, BrainCircuit, ClipboardCheck, Download, Eye, EyeOff,
-  GitFork, History, Loader2, Server, ShieldCheck, Sparkles, Squircle, Trash2,
+  GitFork, Hammer, History, Loader2, Server, ShieldCheck, Sparkles, Squircle, Trash2,
 } from "lucide-react";
 import Knowledge from "./Knowledge.jsx";
 import BuildReview from "./BuildReview.jsx";
 import PanelShell from "./PanelShell.jsx";
+import ProjectKanban from "./ProjectKanban.jsx";
 
 // ─── Bouton du rail d'outils projet ───────────────────────────────────────────
 function RailBtn({ icon: Icon, label, active = false, onClick, badge }) {
@@ -237,6 +238,9 @@ export default function WorkspaceTools({
   onDeletePerfectPlan,
   onOpenMirror,
   onMangoQA,
+  onBuildIncrement,
+  planRefresh = 0,
+  agentBusy = false,
 }) {
   const [active, setActive] = useState(null);
   const toggle = (id) => setActive((v) => (v === id ? null : id));
@@ -258,6 +262,8 @@ export default function WorkspaceTools({
           <RailBtn icon={GitFork} label="GitHub" active={active === "github"} onClick={() => toggle("github")} />
         )}
         <RailBtn icon={Sparkles} label="Perfect Plan" active={active === "perfectPlan" || Boolean(perfectPlanContract)} onClick={() => toggle("perfectPlan")} />
+        {/* #139 Gros Projet — le Kanban de pages/stages du chantier */}
+        <RailBtn icon={Hammer} label="Chantier (Gros Projet)" active={active === "chantier"} onClick={() => toggle("chantier")} />
 
         <Sep />
 
@@ -285,9 +291,9 @@ export default function WorkspaceTools({
         )}
       </div>
 
-      {/* Panneau contextuel */}
+      {/* Panneau contextuel (le Chantier est plus large pour ses 3 colonnes) */}
       {active && (
-        <div className="w-72 overflow-hidden border-l border-edge bg-panel">
+        <div className={`${active === "chantier" ? "w-[560px]" : "w-72"} overflow-hidden border-l border-edge bg-panel`}>
           {active === "memoire" && (
             <PanelShell title="Mémoire" onClose={close}>
               <Knowledge projectName={projectName} />
@@ -324,6 +330,16 @@ export default function WorkspaceTools({
               onDelete={() => { onDeletePerfectPlan?.(); close(); }}
               onClose={close}
             />
+          )}
+          {active === "chantier" && (
+            <PanelShell title="Chantier — Gros Projet" onClose={close}>
+              <ProjectKanban
+                projectName={projectName}
+                onBuild={onBuildIncrement}
+                refreshKey={planRefresh}
+                busy={agentBusy}
+              />
+            </PanelShell>
           )}
         </div>
       )}

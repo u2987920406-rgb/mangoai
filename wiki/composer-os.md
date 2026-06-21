@@ -1,8 +1,8 @@
 ---
 type: concept
 tags: [composition, os-apps, gros-projet, shell, contrat, données-partagées, kanban, micro-frontend]
-statut: concept-validé · à-construire-après-#137
-sources: [statut#138, statut#139, historique#échange-2026-06-21, plan.md]
+statut: "#139 spine livrée & validée e2e (2026-06-21) · #138 concept-validé à-construire-après-#139"
+sources: [statut#138, statut#139, historique#échange-2026-06-21, historique#139-spine, plan.md]
 maj: 2026-06-21
 ---
 
@@ -45,7 +45,13 @@ Deux cas distincts (à ne pas confondre — c'est la confusion qui fait rater le
 - **Kanban de pages/stages** (à faire / en cours / fait, 1 carte = 1 incrément) = la bonne orchestration (borne le contexte, zéro oubli).
 - **Jeu vidéo** : moteur d'abord, stages = niveaux chargés.
 
-**Faisable aujourd'hui ?** À moitié : la boucle de chat **édite déjà le même projet** (site page-par-page manuel OK), Perfect Plan + réutilisation [[blackboard]]. Manque : scaffold auto du squelette · **router** (apps SPA sans router par défaut) · tableau Kanban · gestion du contexte sur gros projet (index/RAG des fichiers du projet). **Les briques externes pour combler ces manques sont consignées dans [[pre-requis-gros-projet]]** (TypeScript · router fichier · LSP-MCP · tree-sitter · sqlite-vec — local-first + standards).
+**✅ SPINE LIVRÉE & validée e2e (2026-06-21).** Implémentation **purement additive sur la [[coque-souple]]** (aucune refonte d'archi) :
+- **Mode `projet`** (sélecteur Header 🏗️ + scénario dédié = arsenal Élite sans les portes humaines questionneuses). Deux blocs : `SCAFFOLD_RULES` (injecté tant que le squelette n'est pas posé — **interdit la délégation aux builders**, impose **TypeScript** + **React Router v7** + design tokens + layout partagé + pages **placeholder** + écriture du manifest) et `PROJET_MODE_RULES` (un incrément borné par tour, réutilise le squelette, cohérence de nav).
+- **Manifest `.project-plan.json`** (`server/src/project-plan.ts`, source de vérité, lecture **défensive** car écrit par l'agent) ; routes `GET/PUT /api/projects/:name/plan` + réconciliation post-commit (`markIncrementDone`).
+- **Kanban « Chantier »** dans le rail workspace (`ui/src/components/ProjectKanban.jsx`, 3 colonnes todo/doing/done, bouton **Construire** → tour `/api/chat` borné avec `incrementId`, ajout/déplacement d'incréments, badge de cohérence flux [[mangoqa]]).
+- **Test live** : site 4 pages « Mango Café » → tour 1 scaffolde TS+RRv7+placeholders+manifest (tout `todo`), puis Construire Accueil → page étoffée + `done`, les 3 autres `todo`. `tsc`+build verts, `test-project-plan.ts` 26/26. *(1ʳᵉ itération a dévié — délégation aux builders → JS + tout d'un coup ; `SCAFFOLD_RULES` durci, re-testé OK.)*
+
+**Phase 2 reportée** (assumée) : **index/RAG intra-projet** (tree-sitter repo-map + embeddings code) + **LSP-MCP** — pas nécessaires sous ~12 pages, le squelette + le manifest **bornent déjà le contexte**. Les briques sont consignées dans [[pre-requis-gros-projet]] (TypeScript ✅ fait ici · router fichier ✅ fait ici · LSP-MCP · tree-sitter · sqlite-vec).
 
 ## Graines déjà présentes (réutiliser, pas réinventer)
 
@@ -53,7 +59,7 @@ Deux cas distincts (à ne pas confondre — c'est la confusion qui fait rater le
 
 ## Séquencement
 
-[[flux]] **#137 (Auditeur de Flux) d'abord** — il est le **QA de cohérence** dont #138/#139 ont besoin. Puis **#139 avant #138** : le « socle-d'abord + Kanban » sert *aussi* à bâtir le shell de #138, et les gros projets uniques sont un besoin plus fréquent que la suite multi-apps.
+[[flux]] **#137 (Auditeur de Flux) d'abord** ✅ — il est le **QA de cohérence** dont #138/#139 ont besoin. Puis **#139 avant #138** ✅ (spine #139 livrée) : le « socle-d'abord + Kanban » sert *aussi* à bâtir le shell de #138, et les gros projets uniques sont un besoin plus fréquent que la suite multi-apps. **Reste #138** (compositeur d'apps) + la **Phase 2 de #139** (RAG/LSP).
 
 ## Liens
 
