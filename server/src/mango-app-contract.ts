@@ -76,6 +76,28 @@ export function saveManifest(
   return manifest;
 }
 
+// ── ACL par app (#138 Phase 2) ──────────────────────────────────────────────
+// Garde-fou de CONFORMANCE (pas de sécurité — local-first, pas de frontière de
+// confiance) : une app qui a déclaré une collection en `read` ne doit pas y
+// écrire. L'app s'identifie par l'en-tête `X-MangoApp-Id` = l'`id` de son
+// manifest ; le backend retrouve le manifest et vérifie l'accès déclaré.
+
+/** L'accès déclaré autorise-t-il l'écriture (write/readwrite) ? */
+export function accessAllowsWrite(access: CollectionAccess | null | undefined): boolean {
+  return access === "write" || access === "readwrite";
+}
+
+/** Cherche le manifest d'une app par `id` parmi des dossiers de projets.
+ * Pur (délègue à loadManifest) — les dossiers sont fournis par l'appelant. */
+export function findManifestById(dirs: string[], id: string): MangoAppManifest | null {
+  if (!id) return null;
+  for (const d of dirs) {
+    const m = loadManifest(d);
+    if (m && m.id === id) return m;
+  }
+  return null;
+}
+
 /** Bloc de prompt injecté en mode 🧩 « App composable ». "" hors contexte
  * (projectDir vide) → zéro poids. Décrit le contrat que l'app DOIT respecter. */
 export function mangoAppContractSection(dir: string): string {

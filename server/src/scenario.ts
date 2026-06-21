@@ -196,8 +196,9 @@ Shared data column (how sibling apps actually talk) — when your app reads or w
   - read:   GET    \`\${BASE}/api/shared/:collection/:key\`       → { collection, key, value }
   - write:  PUT    \`\${BASE}/api/shared/:collection/:key\`  body { value }  (creates or replaces)
   - delete: DELETE \`\${BASE}/api/shared/:collection/:key\`
-- Declare every shared collection you touch in .mangoapp.json with the right access (read | write | readwrite).
-- Sync by SHORT POLLING (refetch the collection every 1-2s with setInterval, clear it on unmount) so a change made in a sibling app shows up here. No websockets.
+  - live:   GET (SSE) \`\${BASE}/api/shared/:collection/stream\`  → \`event: snapshot\` { collection, docs:[...] } then \`event: change\` { type:'put'|'delete', collection, key, value? }
+- Declare every shared collection you touch in .mangoapp.json with the right access (read | write | readwrite). On every WRITE (PUT/DELETE) send the header \`X-MangoApp-Id: <your manifest id>\` so the backend can enforce your declared access (an app that declared a collection \`read\` is refused a write with 403). Read your id once from your .mangoapp.json (or hardcode the same id constant in mangoData.ts).
+- Sync in REAL TIME with the SSE stream: open \`new EventSource(\\\`\${BASE}/api/shared/\${collection}/stream\\\`)\`, seed your state from the \`snapshot\` event, then apply each \`change\` event (put → upsert by key, delete → remove by key). Close it on unmount (\`es.close()\`). FALLBACK: if EventSource errors/closes, fall back to short polling (refetch every 1-2s) so the app keeps syncing even if the stream drops. This replaces blind polling — a change in a sibling app shows up here instantly.
 - Degrade gracefully: if the shared service is unreachable, the app must still render (show a discreet "données partagées hors-ligne" notice and keep working on local state) — never crash on a failed fetch.`;
 
 // Idea 24 — automated tests for the generated project, Élite-only & optional.

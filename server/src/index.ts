@@ -74,8 +74,9 @@ import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
 import { registerAgentFactoryRoutes } from "./agent-routes.js";
 import { restoreAgents } from "./agent-runtime.js";
 // #138 OS d'apps — colonne de données partagée + surface Suite (la spine).
-import { listDocs, getDoc, putDoc, deleteDoc, slug } from "./shared-data.js";
+import { listDocs, getDoc, putDoc, deleteDoc, slug, subscribe } from "./shared-data.js";
 import { registerSuiteRoutes } from "./suite-routes.js";
+import { loadManifest, findManifestById, accessAllowsWrite } from "./mango-app-contract.js";
 
 // Last-resort safety net: a bug in a fire-and-forget background task (review,
 // compaction) or any forgotten await must never take the whole server down —
@@ -786,6 +787,21 @@ app.post("/api/stop", async (_req, res) => {
 // directement, donc le partage est cross-framework. Garde-fous : collection/clé
 // slugifiées, valeur JSON bornée (256 ko) pour ne pas gonfler le store.
 const SHARED_MAX_BYTES = 256 * 1024;
+// #138 Phase 2 — ACL de CONFORMANCE par app. Une app s'identifie via l'en-tête
+// `X-MangoApp-Id` (= l'id de son manifest) ; si elle a déclaré la collection en
+// `read`, une écriture est refusée (403). Sans en-tête (app non instrumentée /
+// outil externe) ou app inconnue (peut être en cours de génération) → on laisse
+// passer : c'est un garde-fou de cohérence, pas une frontière de sécurité
+// (local-first). Renvoie un message de refus, ou null si l'écriture est permise.
+function aclDenyWrite(req: express.Request, collection: string): string | null {
+  const appId = String(req.header("x-mangoapp-id") ?? "").trim();
+  if (!appId) return null;
+  const manifest = findManifestById(listProjects().map((p) => projectDir(p)), appId);
+  if (!manifest) return null;
+  const decl = manifest.collections.find((c) => slug(c.name) === collection);
+  if (accessAllowsWrite(decl?.access)) return null;
+  return `L'app « ${manifest.name} » a déclaré « ${collection} » en ${decl?.access ?? "non déclarée"} — écriture refusée (ACL de conformance #138).`;
+}
 app.get("/api/shared/:collection", (req, res) => {
   const collection = slug(req.params["collection"] as string);
   if (!collection) {
@@ -793,6 +809,31 @@ app.get("/api/shared/:collection", (req, res) => {
     return;
   }
   res.json({ collection, docs: listDocs(collection) });
+});
+// #138 Phase 2 — Sync TEMPS RÉEL (SSE) : une app sœur s'abonne et voit les
+// mutations sans poller. Doit être déclarée AVANT `/:collection/:key` (sinon
+// « stream » serait pris pour une clé). Snapshot initial puis push par mutation.
+app.get("/api/shared/:collection/stream", (req, res) => {
+  const collection = slug(req.params["collection"] as string);
+  if (!collection) {
+    res.status(400).json({ error: "Collection invalide" });
+    return;
+  }
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache");
+  res.setHeader("Connection", "keep-alive");
+  res.flushHeaders();
+  // État courant d'abord (l'abonné démarre cohérent), puis le flux des changements.
+  res.write(`event: snapshot\ndata: ${JSON.stringify({ collection, docs: listDocs(collection) })}\n\n`);
+  const unsub = subscribe(collection, (change) => {
+    res.write(`event: change\ndata: ${JSON.stringify(change)}\n\n`);
+  });
+  // Battement de cœur : garde la connexion ouverte à travers proxies/timeouts.
+  const heartbeat = setInterval(() => res.write(`: ping\n\n`), 25000);
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    unsub();
+  });
 });
 app.get("/api/shared/:collection/:key", (req, res) => {
   const collection = slug(req.params["collection"] as string);
@@ -824,6 +865,11 @@ app.put("/api/shared/:collection/:key", (req, res) => {
     res.status(413).json({ error: "Valeur trop volumineuse (max 256 ko)" });
     return;
   }
+  const denied = aclDenyWrite(req, collection);
+  if (denied) {
+    res.status(403).json({ error: denied });
+    return;
+  }
   const savedKey = putDoc(collection, key, value);
   res.json({ collection, key: savedKey, value });
 });
@@ -832,6 +878,11 @@ app.delete("/api/shared/:collection/:key", (req, res) => {
   const key = slug(req.params["key"] as string);
   if (!collection || !key) {
     res.status(400).json({ error: "Collection ou clé invalide" });
+    return;
+  }
+  const denied = aclDenyWrite(req, collection);
+  if (denied) {
+    res.status(403).json({ error: denied });
     return;
   }
   res.json({ ok: deleteDoc(collection, key) });

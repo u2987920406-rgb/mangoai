@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hasManifest, loadManifest, saveManifest, mangoAppContractSection } from "./mango-app-contract.js";
+import { hasManifest, loadManifest, saveManifest, mangoAppContractSection, accessAllowsWrite, findManifestById } from "./mango-app-contract.js";
 import { assembleSystemPrompt } from "./scenario.js";
 import { ALLOWED_MODES } from "./agent.js";
 
@@ -60,7 +60,9 @@ const prompt = assembleSystemPrompt({ mode: "compose", model: "sonnet", projectD
 check("scénario compose : posture App composable", /App composable/.test(prompt));
 check("scénario compose : contrat MangoApp injecté", /MangoApp contract/.test(prompt) || /CONTRAT MANGOAPP/.test(prompt));
 check("scénario compose : règles données partagées (api/shared)", /\/api\/shared\//.test(prompt));
-check("scénario compose : polling court imposé", /SHORT POLLING/.test(prompt));
+check("scénario compose : sync SSE temps réel imposée (#138-P2)", /EventSource/.test(prompt) && /\/stream/.test(prompt));
+check("scénario compose : repli polling conservé", /fall back to short polling/i.test(prompt));
+check("scénario compose : en-tête ACL X-MangoApp-Id (#138-P2)", /X-MangoApp-Id/.test(prompt));
 check("scénario compose : garde l'arsenal Élite (analytic)", /native extended thinking/.test(prompt));
 // Garde-fou : le mode compose ne traîne PAS le scaffold/projectPlan du mode
 // projet (marqueur distinctif = le manifest de chantier .project-plan.json).
@@ -68,6 +70,16 @@ check("scénario compose : garde l'arsenal Élite (analytic)", /native extended 
 const projet = assembleSystemPrompt({ mode: "projet", model: "sonnet", projectDir: dir });
 check("scénario compose : pas de socle-d'abord (.project-plan.json absent)", !/\.project-plan\.json/.test(prompt));
 check("témoin : le mode projet porte bien le socle-d'abord", /\.project-plan\.json/.test(projet));
+
+// 6. ACL par app (#138 Phase 2) — helpers purs.
+check("accessAllowsWrite: readwrite → true", accessAllowsWrite("readwrite") === true);
+check("accessAllowsWrite: write → true", accessAllowsWrite("write") === true);
+check("accessAllowsWrite: read → false", accessAllowsWrite("read") === false);
+check("accessAllowsWrite: non déclarée (null) → false", accessAllowsWrite(null) === false);
+// findManifestById sur de vrais dossiers : `dir` porte un manifest id mango-taches.
+check("findManifestById trouve l'app par id", findManifestById([dir], "mango-taches")?.name === "Mango Tâches");
+check("findManifestById: id inconnu → null", findManifestById([dir], "inconnu") === null);
+check("findManifestById: id vide → null", findManifestById([dir], "") === null);
 
 fs.rmSync(dir, { recursive: true, force: true });
 line("═");

@@ -41,7 +41,10 @@ Deux cas distincts (à ne pas confondre — c'est la confusion qui fait rater le
 - **Fenêtre Suite** (le shell) — `server/src/suite-routes.ts` (`GET /api/suite/apps` = apps conformes **+ graphe des collections** lecteurs/écrivains/docCount live ; `/collection/:name`) + `ui/src/components/SuiteWindow.jsx` (apps + bouton Ouvrir, graphe « qui écrit → qui lit », aperçu **live** poll 2 s). Câblée dock ([[bureau-os]]) + Launcher.
 - **Test live** : 2 apps (« Mango Tâches » écrit `tasks` / « Mango Tableau » lit `tasks`) partagent la collection — l'écriture de l'une est lue par l'autre via REST ; `/api/suite/apps` rend le graphe exact (écrit:Tâches → lu:les deux, 2 docs) ; Sharingan de la Suite lu (apps + graphe + JSON live). `tsc`+build verts, `test-shared-data.ts` 14/14 + `test-mango-app-contract.ts` 19/19.
 
-**Phase 2 reportée** (assumée) : sync **SSE temps réel** (vs poll) · **validation de schéma + ACL** par app · **aperçus simultanés** (pool de ports Vite — contrainte : un seul aperçu à la fois, la Suite ouvre en séquence) · audit [[mangoqa]] **cross-app** · partage de **composants UI** (impliquerait de standardiser React).
+**Phase 2 — en cours** :
+- ✅ **Sync SSE temps réel** (2026-06-21) : pub/sub dans `shared-data.ts` + route `GET /api/shared/:collection/stream` (SSE `snapshot`→`change`). `MANGO_DATA_RULES` SSE-first (EventSource, repli polling). Remplace le poll aveugle.
+- ✅ **ACL de conformance par app** (2026-06-21) : en-tête `X-MangoApp-Id` → une app qui a déclaré une collection `read` est refusée (403) en écriture. Helpers purs `accessAllowsWrite`/`findManifestById`. Garde-fou local-first (pas une frontière de sécurité), rétro-compatible.
+- ⏳ **Reste** : aperçus simultanés (pool de ports Vite — `preview.ts` est un singleton `current`, refonte infra L) · audit [[mangoqa]] **cross-app** · **validation de schéma** par collection · partage de **composants UI** (impliquerait de standardiser React).
 
 ## #139 — Mode « Gros Projet » (build incrémental d'un produit unique)
 

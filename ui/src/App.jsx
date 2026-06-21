@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useState } from "react";
 import { Squircle } from "lucide-react";
 import Chat from "./Chat.jsx";
 import Preview from "./Preview.jsx";
@@ -12,6 +12,7 @@ import SidePanel from "./components/SidePanel.jsx";
 import Onboarding from "./components/Onboarding.jsx";
 import { NEUTRAL } from "./neutral.js";
 import { slugify } from "./slugify.js";
+import { SCREENS } from "./nav.js";
 
 // Panneaux lourds chargés à la demande (code-splitting)
 // NB : les apps « bureau » (Ideation, NotesRAG, DocGenerator, PromptLab,
@@ -24,6 +25,11 @@ const MetricsDashboard= lazy(() => import("./components/MetricsDashboard.jsx"));
 const Tutorial        = lazy(() => import("./components/Tutorial.jsx"));
 const Radar           = lazy(() => import("./components/Radar.jsx"));
 const Reglages        = lazy(() => import("./components/Reglages.jsx"));
+import { useToasts } from "./hooks/useToasts.js";
+import { useTutorial } from "./hooks/useTutorial.js";
+import { useBackendServer } from "./hooks/useBackendServer.js";
+import { useProjectDelivery } from "./hooks/useProjectDelivery.js";
+import { useVersions } from "./hooks/useVersions.js";
 import { useWindowManager } from "./hooks/useWindowManager.js";
 import WindowManager from "./components/WindowManager.jsx";
 
@@ -36,7 +42,7 @@ function PanelLoader() {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState("home");
+  const [screen, setScreen] = useState(SCREENS.HOME);
   const [projectName, setProjectName] = useState(
     () => localStorage.getItem("mangoos.project") ?? "mon-app",
   );
@@ -69,7 +75,6 @@ export default function App() {
   const [previewKey, setPreviewKey] = useState(0);
   const [cost, setCost] = useState(0);
   const [context, setContext] = useState(null);
-  const [versions, setVersions] = useState([]);
   const [previewErrors, setPreviewErrors] = useState([]);
   const [pendingPrompt, setPendingPrompt] = useState(null);
   const [inspecting, setInspecting] = useState(false);
@@ -81,32 +86,41 @@ export default function App() {
   const [planRefresh, setPlanRefresh] = useState(0);
   const [chatBusy, setChatBusy] = useState(false);
   const [showThinking, setShowThinking] = useState(() => localStorage.getItem("mangoos.showThinking") !== "false");
-  const [deploying, setDeploying] = useState(false);
-  const [deployedUrl, setDeployedUrl] = useState(null);
   const [githubEnabled, setGithubEnabled] = useState(false);
-  const [githubUrl, setGithubUrl] = useState(null);
-  const [pushingGithub, setPushingGithub] = useState(false);
-  const [backendStatus, setBackendStatus] = useState(null);
-  const [toasts, setToasts] = useState([]);
   const [confirmCfg, setConfirmCfg] = useState(null);
   const [sidePanelOpen, setSidePanelOpen] = useState(false);
   const [workspaceOrigin, setWorkspaceOrigin] = useState(null);
   const [initialTask, setInitialTask] = useState(null);
   const [nocturnalEntry, setNocturnalEntry] = useState(null);
   const [clientMode, setClientMode] = useState(false);
-  const [tutorialActive, setTutorialActive] = useState(false);
-  const [tutorialId, setTutorialId] = useState(null);
-  const [tutorialNextId, setTutorialNextId] = useState(1);
   const [onboardingNeeded, setOnboardingNeeded] = useState(false);
   const [perfectPlanContract, setPerfectPlanContract] = useState(null);
-  const toastId = useRef(1);
   const { windows, openWindow, closeWindow, focusWindow, moveWindow, resizeWindow } = useWindowManager();
-
-  const pushToast = useCallback((kind, text, linkUrl) => {
-    const id = toastId.current++;
-    setToasts((prev) => [...prev, { id, kind, text, linkUrl }]);
-    setTimeout(() => setToasts((prev) => prev.filter((t) => t.id !== id)), 8000);
-  }, []);
+  const { toasts, pushToast, dismissToast } = useToasts();
+  const {
+    active: tutorialActive,
+    id: tutorialId,
+    nextId: tutorialNextId,
+    start: startTutorial,
+    enterContext: enterTutorialContext,
+    exit: exitTutorial,
+    startNext: startNextTutorial,
+    complete: completeTutorial,
+  } = useTutorial({ setScreen, pushToast });
+  const {
+    status: backendStatus,
+    scaffold: scaffoldBackend,
+    start: startBackend,
+    stop: stopBackend,
+  } = useBackendServer({ projectName, pushToast });
+  const { deployedUrl, githubUrl, deploying, pushingGithub, deploy, pushGithub } =
+    useProjectDelivery({ projectName, pushToast });
+  const { versions, refresh: refreshVersions, askRollback } = useVersions({
+    projectName,
+    pushToast,
+    confirm: setConfirmCfg,
+    onRolledBack: () => setPreviewKey((k) => k + 1),
+  });
 
   useEffect(() => { localStorage.setItem("mangoos.project", projectName); }, [projectName]);
   useEffect(() => { localStorage.setItem("mangoos.model", model); }, [model]);
@@ -164,57 +178,8 @@ export default function App() {
       .catch(() => {});
   }, []);
 
-  const refreshTutorialProgress = useCallback(() => {
-    fetch("/api/tutorial/progress")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setTutorialNextId(d ? d.nextTutorialId : 1))
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => { refreshTutorialProgress(); }, [refreshTutorialProgress]);
-
-  const startTutorial = useCallback((tutId) => {
-    setTutorialId(tutId);
-    setTutorialActive(true);
-  }, []);
-
-  const enterTutorialContext = useCallback((ctx) => {
-    if (ctx) setScreen(ctx);
-  }, []);
-
-  const exitTutorial = useCallback(() => {
-    setTutorialActive(false);
-    setTutorialId(null);
-    setScreen("home");
-    refreshTutorialProgress();
-  }, [refreshTutorialProgress]);
-
-  const startNextTutorial = useCallback(
-    (tutId) => {
-      refreshTutorialProgress();
-      setTutorialId(tutId);
-      setTutorialActive(true);
-    },
-    [refreshTutorialProgress],
-  );
-
-  const completeTutorial = useCallback(
-    (nextId) => {
-      setTutorialNextId(nextId);
-      setTutorialActive(false);
-      setTutorialId(null);
-      setScreen("home");
-      if (nextId) {
-        pushToast("success", `Tutoriel terminé 🎓 — prochain : ${nextId}/10`);
-      } else {
-        pushToast("success", "Tous les tutoriels sont terminés 🎉");
-      }
-    },
-    [pushToast],
-  );
-
   useEffect(() => {
-    if (screen !== "workspace" || !projectName.trim()) return;
+    if (screen !== SCREENS.WORKSPACE || !projectName.trim()) return;
     fetch(`/api/preview/${encodeURIComponent(projectName)}`, { method: "POST" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
@@ -253,60 +218,13 @@ export default function App() {
     return () => window.removeEventListener("message", onMessage);
   }, [pushToast]);
 
-  const refreshVersions = useCallback(() => {
-    if (!projectName.trim()) {
-      setVersions([]);
-      return;
-    }
-    fetch(`/api/versions/${encodeURIComponent(projectName)}`)
-      .then((r) => (r.ok ? r.json() : { versions: [] }))
-      .then((d) => setVersions(d.versions ?? []))
-      .catch(() => setVersions([]));
-  }, [projectName]);
-
-  useEffect(() => { refreshVersions(); }, [refreshVersions]);
-
   useEffect(() => {
-    if (screen !== "workspace" || !projectName.trim()) { setPerfectPlanContract(null); return; }
+    if (screen !== SCREENS.WORKSPACE || !projectName.trim()) { setPerfectPlanContract(null); return; }
     fetch(`/api/perfect-plan/${encodeURIComponent(projectName)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => setPerfectPlanContract(d))
       .catch(() => setPerfectPlanContract(null));
   }, [screen, projectName]);
-
-  const refreshBackendStatus = useCallback(() => {
-    if (!projectName.trim()) { setBackendStatus(null); return; }
-    fetch(`/api/backend-server/${encodeURIComponent(projectName)}/status`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => setBackendStatus(d))
-      .catch(() => setBackendStatus(null));
-  }, [projectName]);
-
-  useEffect(() => { refreshBackendStatus(); }, [refreshBackendStatus]);
-
-  async function scaffoldBackend() {
-    await fetch(`/api/backend-server/${encodeURIComponent(projectName)}/scaffold`, { method: "POST" });
-    pushToast("ok", "Backend Express scaffoldé dans api/ — cliquer 'Démarrer api' pour le lancer");
-    refreshBackendStatus();
-  }
-
-  async function startBackend() {
-    pushToast("info", "Démarrage du backend (npm install si nécessaire)…");
-    const r = await fetch(`/api/backend-server/${encodeURIComponent(projectName)}/start`, { method: "POST" });
-    const d = await r.json();
-    if (d.ok) {
-      pushToast("ok", `Backend actif sur ${d.url}`);
-    } else {
-      pushToast("err", `Erreur backend : ${d.error}`);
-    }
-    refreshBackendStatus();
-  }
-
-  async function stopBackend() {
-    await fetch(`/api/backend-server/${encodeURIComponent(projectName)}/stop`, { method: "POST" });
-    pushToast("ok", "Backend arrêté");
-    refreshBackendStatus();
-  }
 
   async function openProject(name, { template: tpl = "", prompt = null, origin = null, task = null, nocturnal = null, contract = null } = {}) {
     if (contract) {
@@ -326,12 +244,10 @@ export default function App() {
     setNocturnalEntry(nocturnal);
     setPreviewUrl(null);
     setPreviewErrors([]);
-    setDeployedUrl(null);
-    setGithubUrl(null);
     setContext(null);
     setPerfectPlanContract(null);
     setClientMode(localStorage.getItem(`mangoos.clientMode.${name}`) === "true");
-    setScreen("workspace");
+    setScreen(SCREENS.WORKSPACE);
   }
 
   function handleClientMode(val) {
@@ -341,84 +257,7 @@ export default function App() {
 
   function goHome() {
     refreshProjects();
-    setScreen("home");
-  }
-
-  async function deploy(target = "cloudflare") {
-    if (deploying) return;
-    setDeploying(true);
-    try {
-      const res = await fetch(`/api/deploy/${encodeURIComponent(projectName)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        pushToast("error", d.error ?? `Erreur HTTP ${res.status}`);
-        return;
-      }
-      setDeployedUrl(d.url);
-      pushToast("success", "Site publié en ligne 🎉", d.url);
-    } catch (err) {
-      pushToast("error", String(err));
-    } finally {
-      setDeploying(false);
-    }
-  }
-
-  async function pushGithub(targetRepo) {
-    if (pushingGithub) return;
-    setPushingGithub(true);
-    try {
-      const res = await fetch(`/api/github/${encodeURIComponent(projectName)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ private: true, ...(targetRepo ? { targetRepo } : {}) }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        pushToast("error", d.error ?? `Erreur HTTP ${res.status}`);
-        return;
-      }
-      setGithubUrl(d.url);
-      pushToast("success", "Projet poussé sur GitHub 🐙", d.url);
-    } catch (err) {
-      pushToast("error", String(err));
-    } finally {
-      setPushingGithub(false);
-    }
-  }
-
-  function askRollback(hash) {
-    const v = versions.find((x) => x.hash === hash);
-    if (!v) return;
-    setConfirmCfg({
-      title: "Revenir à cette version ?",
-      body: `« ${v.message} »\nLes versions plus récentes seront définitivement perdues.`,
-      confirmLabel: "Revenir",
-      onConfirm: () => rollback(hash),
-    });
-  }
-
-  async function rollback(hash) {
-    try {
-      const res = await fetch("/api/rollback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectName, hash }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        pushToast("error", d.error ?? `Erreur HTTP ${res.status}`);
-        return;
-      }
-      setVersions(d.versions ?? []);
-      setPreviewKey((k) => k + 1);
-      pushToast("success", "Version restaurée");
-    } catch (err) {
-      pushToast("error", String(err));
-    }
+    setScreen(SCREENS.HOME);
   }
 
   function requestFix() {
@@ -444,7 +283,7 @@ export default function App() {
   const globalChrome = (
     <>
       {tutorialOverlay}
-      <Toasts toasts={toasts} onDismiss={(id) => setToasts((p) => p.filter((t) => t.id !== id))} />
+      <Toasts toasts={toasts} onDismiss={dismissToast} />
       <ConfirmModal config={confirmCfg} onClose={() => setConfirmCfg(null)} />
       <WindowManager
         windows={windows}
@@ -460,11 +299,11 @@ export default function App() {
   // vivent dans Réglages ; `metrics` reste routé ici car le tutoriel #9 y mène
   // (enterTutorialContext("metrics")) ; `controleur` est ouvert par le rail projet.
   let panelContent = null;
-  if (screen === "controleur") panelContent = <ControleurPanel projectName={projectName} onBack={() => setScreen("workspace")} />;
-  if (screen === "metrics") panelContent = <MetricsDashboard onBack={() => setScreen("home")} />;
-  if (screen === "reglages") panelContent = (
+  if (screen === SCREENS.CONTROLEUR) panelContent = <ControleurPanel projectName={projectName} onBack={() => setScreen(SCREENS.WORKSPACE)} />;
+  if (screen === SCREENS.METRICS) panelContent = <MetricsDashboard onBack={() => setScreen(SCREENS.HOME)} />;
+  if (screen === SCREENS.REGLAGES) panelContent = (
     <Reglages
-      onBack={() => setScreen("home")}
+      onBack={() => setScreen(SCREENS.HOME)}
       onOpenProject={(name, entry) => openProject(name, { origin: "nocturnal", task: entry?.task ?? null, nocturnal: entry ? { id: entry.id, reviewed: Boolean(entry.reviewed) } : null })}
     />
   );
@@ -567,7 +406,7 @@ export default function App() {
       setPerfectPlanContract(null);
     },
     onOpenMirror: () => openProject("__mirror__"),
-    onMangoQA: () => setScreen("controleur"),
+    onMangoQA: () => setScreen(SCREENS.CONTROLEUR),
     onBuildIncrement: buildIncrement,
     planRefresh,
     agentBusy: chatBusy,
@@ -580,7 +419,7 @@ export default function App() {
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {panelContent ? (
           <Suspense fallback={<PanelLoader />}>{panelContent}</Suspense>
-        ) : screen === "home" ? (
+        ) : screen === SCREENS.HOME ? (
           <Home
             onOpen={openProject}
             onOpenWindow={openWindow}

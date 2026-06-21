@@ -22,6 +22,11 @@ server/data/blackboard.sqlite
 server/data/blackboard.sqlite-shm
 server/data/blackboard.sqlite-wal
 
+# Base SQLite temporaire des tests/démos du backend — runtime, jamais versionnée
+server/.tmp-spine.db
+server/.tmp-spine.db-shm
+server/.tmp-spine.db-wal
+
 # Script de pilotage jetable des runs de validation — jamais versionné
 run-driver.mjs
 

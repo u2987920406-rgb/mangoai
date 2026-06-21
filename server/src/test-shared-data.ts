@@ -3,7 +3,7 @@
 //
 // Lancer :  npx tsx src/test-shared-data.ts
 import { Blackboard, setBlackboard, resetBlackboard } from "./kernel-blackboard.js";
-import { listDocs, getDoc, putDoc, deleteDoc, slug, collectionScope } from "./shared-data.js";
+import { listDocs, getDoc, putDoc, deleteDoc, slug, collectionScope, subscribe, subscriberCount, type SharedChange } from "./shared-data.js";
 
 const line = (c = "─") => console.log(c.repeat(64));
 let failures = 0;
@@ -51,6 +51,21 @@ check("slug d'une clé sale reste cohérent", (() => {
   const k = putDoc("tasks", "T 1 #x", { ok: true });
   return k === "t-1-x" && getDoc("tasks", "T 1 #x") !== undefined;
 })());
+
+// 7. Pub/sub temps réel (#138 Phase 2) — abonnement + émission sur put/delete.
+const events: SharedChange[] = [];
+const unsub = subscribe("tasks", (c) => events.push(c));
+check("subscriberCount = 1 après abonnement", subscriberCount("tasks") === 1);
+putDoc("tasks", "live1", { title: "via SSE" });
+check("put émet un change 'put'", events.length === 1 && events[0]?.type === "put" && events[0]?.key === "live1");
+check("le change porte la valeur", JSON.stringify(events[0]?.value).includes("via SSE"));
+deleteDoc("tasks", "live1");
+check("delete émet un change 'delete'", events.length === 2 && events[1]?.type === "delete" && events[1]?.key === "live1");
+check("delete d'un absent n'émet RIEN", (() => { const n = events.length; deleteDoc("tasks", "ghost"); return events.length === n; })());
+check("isolation : un abonné 'tasks' n'entend pas 'notes'", (() => { const n = events.length; putDoc("notes", "x", 1); return events.length === n; })());
+unsub();
+check("désabonnement → subscriberCount = 0", subscriberCount("tasks") === 0);
+check("après unsub, plus aucun change reçu", (() => { const n = events.length; putDoc("tasks", "y", 1); return events.length === n; })());
 
 resetBlackboard();
 line("═");
