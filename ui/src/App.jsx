@@ -12,7 +12,7 @@ import SidePanel from "./components/SidePanel.jsx";
 import Onboarding from "./components/Onboarding.jsx";
 import { NEUTRAL } from "./neutral.js";
 import { slugify } from "./slugify.js";
-import { SCREENS } from "./nav.js";
+import { SCREENS, WINDOWS } from "./nav.js";
 
 // Panneaux lourds chargés à la demande (code-splitting)
 // NB : les apps « bureau » (Ideation, NotesRAG, DocGenerator, PromptLab,
@@ -271,7 +271,7 @@ export default function App() {
 
   // Ouvre la fenêtre Mango App Builder (liste + création de projets)
   const openProjectsWindow = () => openWindow({
-    type: "projects",
+    type: WINDOWS.PROJECTS,
     title: "Mango App Builder",
     width: 820,
     height: 560,
@@ -281,27 +281,27 @@ export default function App() {
   // Ouvre une app « bureau » en fenêtre flottante (uniformisation OS — P4)
   const openAppWindow = (id) => {
     switch (id) {
-      case "ideation":
+      case WINDOWS.IDEATION:
         return openWindow({
-          type: "ideation", title: "Ideation", width: 900, height: 680,
+          type: WINDOWS.IDEATION, title: "Ideation", width: 900, height: 680,
           props: { onStartCoding: (desc) => openProject(slugify(desc), { prompt: desc }) },
         });
-      case "notes":
-        return openWindow({ type: "notes", title: "Notes & RAG", width: 960, height: 680, props: { onToast: pushToast } });
-      case "docs":
-        return openWindow({ type: "docs", title: "Générateur de docs", width: 900, height: 680 });
-      case "promptlab":
-        return openWindow({ type: "promptlab", title: "Prompt Lab", width: 1000, height: 680 });
-      case "design":
-        return openWindow({ type: "design", title: "Design Review", width: 1000, height: 720, props: { projectName } });
-      case "multi":
-        return openWindow({ type: "multi", title: "Multi-Projet", width: 1000, height: 720 });
-      case "superagent":
-        return openWindow({ type: "superagent", title: "Super Agent Builder", width: 900, height: 700, props: { projectName } });
-      case "suite":
+      case WINDOWS.NOTES:
+        return openWindow({ type: WINDOWS.NOTES, title: "Notes & RAG", width: 960, height: 680, props: { onToast: pushToast } });
+      case WINDOWS.DOCS:
+        return openWindow({ type: WINDOWS.DOCS, title: "Générateur de docs", width: 900, height: 680 });
+      case WINDOWS.PROMPTLAB:
+        return openWindow({ type: WINDOWS.PROMPTLAB, title: "Prompt Lab", width: 1000, height: 680 });
+      case WINDOWS.DESIGN:
+        return openWindow({ type: WINDOWS.DESIGN, title: "Design Review", width: 1000, height: 720, props: { projectName } });
+      case WINDOWS.MULTI:
+        return openWindow({ type: WINDOWS.MULTI, title: "Multi-Projet", width: 1000, height: 720 });
+      case WINDOWS.SUPERAGENT:
+        return openWindow({ type: WINDOWS.SUPERAGENT, title: "Super Agent Builder", width: 900, height: 700, props: { projectName } });
+      case WINDOWS.SUITE:
         // #138 OS d'apps — fenêtre Suite : liste les apps composables et leur
         // donnée partagée. `onOpen` = openProject pour le bouton Ouvrir.
-        return openWindow({ type: "suite", title: "Suite — OS d'apps", width: 1000, height: 720, props: { onOpen: openProject } });
+        return openWindow({ type: WINDOWS.SUITE, title: "Suite — OS d'apps", width: 1000, height: 720, props: { onOpen: openProject } });
       default:
         return undefined;
     }
@@ -309,7 +309,7 @@ export default function App() {
 
   // Ouvre le Launcher (grille de toutes les apps & outils)
   const openLauncher = () => openWindow({
-    type: "launcher",
+    type: WINDOWS.LAUNCHER,
     title: "Toutes les apps",
     width: 720,
     height: 560,

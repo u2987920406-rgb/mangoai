@@ -4,6 +4,7 @@ import {
   Moon, Music2, Settings, Sun,
 } from "lucide-react";
 import { getTheme, toggleTheme } from "../theme.js";
+import { WINDOWS } from "../nav.js";
 
 // ─── Bouton icône primaire ────────────────────────────────────────────────────
 function SideBtn({ icon: Icon, label, haloColor, active = false, onClick, dataTour }) {
@@ -101,13 +102,13 @@ export default function Sidebar({
           icon={ImageIcon}
           label="Image Creator"
           haloColor="#FFCC00"
-          onClick={() => onOpenWindow?.({ type: "image-creator", title: "Image Creator", width: 900, height: 640 })}
+          onClick={() => onOpenWindow?.({ type: WINDOWS.IMAGE_CREATOR, title: "Image Creator", width: 900, height: 640 })}
         />
         <SideBtn
           icon={Music2}
           label="Music Creator"
           haloColor="#FF3B30"
-          onClick={() => onOpenWindow?.({ type: "music-creator", title: "Music Creator", width: 900, height: 640 })}
+          onClick={() => onOpenWindow?.({ type: WINDOWS.MUSIC_CREATOR, title: "Music Creator", width: 900, height: 640 })}
         />
 
         {/* Suite — OS d'apps composables (#138) */}

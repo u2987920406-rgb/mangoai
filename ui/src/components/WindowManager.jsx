@@ -7,6 +7,7 @@ import {
 import Window from "./Window.jsx";
 import ConfirmDelete from "./ConfirmDelete.jsx";
 import { slugify } from "../slugify.js";
+import { WINDOWS } from "../nav.js";
 
 const AgentFactory      = lazy(() => import("./AgentFactory.jsx"));
 const Artifacts         = lazy(() => import("./Artifacts.jsx"));
@@ -207,9 +208,9 @@ const LAUNCHER_SECTIONS = [
     items: [
       { id: "projects",   label: "App Builder",   icon: FolderOpen,   run: (a) => a.onOpenProjects?.() },
       { id: "suite",      label: "OS d'apps",     icon: Boxes,        run: (a) => a.onOpenApp?.("suite") },
-      { id: "image",      label: "Image Creator", icon: ImageIcon,    run: (a) => a.onOpenWindow?.({ type: "image-creator", title: "Image Creator", width: 900, height: 640 }) },
-      { id: "music",      label: "Music Creator", icon: Music2,       run: (a) => a.onOpenWindow?.({ type: "music-creator", title: "Music Creator", width: 900, height: 640 }) },
-      { id: "agent",      label: "Agent Factory", icon: Bot,          run: (a) => a.onOpenWindow?.({ type: "agent-factory", title: "Agent Factory", width: 1100, height: 700 }) },
+      { id: "image",      label: "Image Creator", icon: ImageIcon,    run: (a) => a.onOpenWindow?.({ type: WINDOWS.IMAGE_CREATOR, title: "Image Creator", width: 900, height: 640 }) },
+      { id: "music",      label: "Music Creator", icon: Music2,       run: (a) => a.onOpenWindow?.({ type: WINDOWS.MUSIC_CREATOR, title: "Music Creator", width: 900, height: 640 }) },
+      { id: "agent",      label: "Agent Factory", icon: Bot,          run: (a) => a.onOpenWindow?.({ type: WINDOWS.AGENT_FACTORY, title: "Agent Factory", width: 1100, height: 700 }) },
       { id: "superagent", label: "Super Agent",   icon: Network,      run: (a) => a.onOpenApp?.("superagent") },
       { id: "ideation",   label: "Ideation",      icon: Lightbulb,    run: (a) => a.onOpenApp?.("ideation") },
       { id: "multi",      label: "Multi-Projet",  icon: Layers,       run: (a) => a.onOpenApp?.("multi") },
@@ -222,8 +223,8 @@ const LAUNCHER_SECTIONS = [
   {
     title: "Outils",
     items: [
-      { id: "artifacts", label: "Artefacts",      icon: Sparkles,   run: (a) => a.onOpenWindow?.({ type: "artifacts", title: "Artefacts · Blackboard", width: 780, height: 600 }) },
-      { id: "guide",     label: "Aide",           icon: HelpCircle, run: (a) => a.onOpenWindow?.({ type: "guide", title: "Aide", width: 740, height: 600 }) },
+      { id: "artifacts", label: "Artefacts",      icon: Sparkles,   run: (a) => a.onOpenWindow?.({ type: WINDOWS.ARTIFACTS, title: "Artefacts · Blackboard", width: 780, height: 600 }) },
+      { id: "guide",     label: "Aide",           icon: HelpCircle, run: (a) => a.onOpenWindow?.({ type: WINDOWS.GUIDE, title: "Aide", width: 740, height: 600 }) },
       { id: "editor",    label: "Éditeur visuel", icon: Sliders,    run: (a) => a.onOpenSidePanel?.() },
     ],
   },
@@ -262,27 +263,27 @@ function LauncherWindow({ win, onClose }) {
 }
 
 function WindowContent({ win, onClose }) {
-  if (win.type === "projects") {
+  if (win.type === WINDOWS.PROJECTS) {
     return <ProjectsWindow win={win} onClose={onClose} />;
   }
-  if (win.type === "launcher") {
+  if (win.type === WINDOWS.LAUNCHER) {
     return <LauncherWindow win={win} onClose={onClose} />;
   }
-  if (win.type === "artifacts") {
+  if (win.type === WINDOWS.ARTIFACTS) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <Artifacts />
       </Suspense>
     );
   }
-  if (win.type === "guide") {
+  if (win.type === WINDOWS.GUIDE) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <Guide />
       </Suspense>
     );
   }
-  if (win.type === "ideation") {
+  if (win.type === WINDOWS.IDEATION) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <Ideation
@@ -292,63 +293,63 @@ function WindowContent({ win, onClose }) {
       </Suspense>
     );
   }
-  if (win.type === "notes") {
+  if (win.type === WINDOWS.NOTES) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <NotesRAG onBack={() => onClose(win.id)} onToast={win.props?.onToast} />
       </Suspense>
     );
   }
-  if (win.type === "docs") {
+  if (win.type === WINDOWS.DOCS) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <DocGenerator onBack={() => onClose(win.id)} />
       </Suspense>
     );
   }
-  if (win.type === "promptlab") {
+  if (win.type === WINDOWS.PROMPTLAB) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <PromptLab onBack={() => onClose(win.id)} />
       </Suspense>
     );
   }
-  if (win.type === "design") {
+  if (win.type === WINDOWS.DESIGN) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <DesignReview onBack={() => onClose(win.id)} projectName={win.props?.projectName} />
       </Suspense>
     );
   }
-  if (win.type === "multi") {
+  if (win.type === WINDOWS.MULTI) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <MultiProject onBack={() => onClose(win.id)} />
       </Suspense>
     );
   }
-  if (win.type === "superagent") {
+  if (win.type === WINDOWS.SUPERAGENT) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <SuperAgentBuilder onBack={() => onClose(win.id)} projectName={win.props?.projectName} />
       </Suspense>
     );
   }
-  if (win.type === "suite") {
+  if (win.type === WINDOWS.SUITE) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <SuiteWindow win={win} onClose={onClose} />
       </Suspense>
     );
   }
-  if (win.type === "agent-factory") {
+  if (win.type === WINDOWS.AGENT_FACTORY) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <AgentFactory onBack={() => onClose(win.id)} />
       </Suspense>
     );
   }
-  if (win.type === "image-creator") {
+  if (win.type === WINDOWS.IMAGE_CREATOR) {
     return (
       <ComingSoon
         icon={ImageIcon}
@@ -358,7 +359,7 @@ function WindowContent({ win, onClose }) {
       />
     );
   }
-  if (win.type === "music-creator") {
+  if (win.type === WINDOWS.MUSIC_CREATOR) {
     return (
       <ComingSoon
         icon={Music2}

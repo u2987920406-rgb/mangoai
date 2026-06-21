@@ -36,4 +36,13 @@ describe("nav — fenêtres", () => {
     const v = windowValues();
     expect(new Set(v).size).toBe(v.length);
   });
+  it("WINDOWS est figé (immuable)", () => {
+    expect(Object.isFrozen(WINDOWS)).toBe(true);
+  });
+  it("tout type de fenêtre est une chaîne kebab-case non vide", () => {
+    for (const t of windowValues()) {
+      expect(typeof t).toBe("string");
+      expect(t).toMatch(/^[a-z][a-z-]*$/);
+    }
+  });
 });

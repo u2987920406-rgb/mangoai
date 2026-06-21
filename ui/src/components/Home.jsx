@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, Copy, Download, FolderOpen, GitBr
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ConfirmDelete from "./ConfirmDelete.jsx";
+import { WINDOWS } from "../nav.js";
 
 /* ── Sélecteur de modèle ─────────────────────────────────────────────────── */
 const MODELS = [
@@ -163,17 +164,17 @@ function HamburgerMenu({ onOpenWindow, onOpenAppBuilder, onOpenLauncher, inputRe
       label: "App Builder",
       run: () => (onOpenAppBuilder
         ? onOpenAppBuilder()
-        : onOpenWindow?.({ type: "projects", title: "Mango App Builder", width: 820, height: 580 })),
+        : onOpenWindow?.({ type: WINDOWS.PROJECTS, title: "Mango App Builder", width: 820, height: 580 })),
     },
     {
       icon: ImageIcon,
       label: "Image Creator",
-      run: () => onOpenWindow?.({ type: "image-creator", title: "Image Creator", width: 900, height: 640 }),
+      run: () => onOpenWindow?.({ type: WINDOWS.IMAGE_CREATOR, title: "Image Creator", width: 900, height: 640 }),
     },
     {
       icon: Music2,
       label: "Music Creator",
-      run: () => onOpenWindow?.({ type: "music-creator", title: "Music Creator", width: 900, height: 640 }),
+      run: () => onOpenWindow?.({ type: WINDOWS.MUSIC_CREATOR, title: "Music Creator", width: 900, height: 640 }),
     },
     {
       icon: LayoutGrid,
@@ -235,7 +236,7 @@ function HamburgerMenu({ onOpenWindow, onOpenAppBuilder, onOpenLauncher, inputRe
             </div>
 
             <button
-              onClick={() => { (onOpenAppBuilder ?? (() => onOpenWindow?.({ type: "projects", title: "Mango App Builder", width: 820, height: 580 })))(); setOpen(false); }}
+              onClick={() => { (onOpenAppBuilder ?? (() => onOpenWindow?.({ type: WINDOWS.PROJECTS, title: "Mango App Builder", width: 820, height: 580 })))(); setOpen(false); }}
               className="flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] text-dim hover:bg-edge-soft transition-colors"
             >
               <FolderOpen size={14} className="shrink-0 text-faint" />
