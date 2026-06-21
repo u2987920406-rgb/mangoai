@@ -8,6 +8,9 @@ maj: 2026-06-20
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-21] ingest | #144 Mango Command Center — app perso livrée (build direct)
+Création de la page-entité [[command-center]] : le poste de pilotage des idées/chantiers (#13→#143), premier outil du dossier `apps/` (outils persos, distinct de `workspace/`). Stack Vite+React 19+TS strict, CSS main, local-first localStorage, aucun backend, port 5180. **Prototype vivant du Kanban de [[composer-os]] (#139)** + pas vers [[vault-projet]] (#141). Seed = ~38 cartes réelles extraites de [[statut]]. Vérifié au Sharingan (7 captures) + test fonctionnel (drag&drop, persistance, zéro erreur console ; bug de pureté StrictMode corrigé). `index.md` mis à jour (nouvelle ligne). Zéro git.
+
 ## [2026-06-20] init | Création du wiki MangoOS
 Slice initial du *vault* Obsidian : squelette ([[_schema]], [[index]], [[log]]) + 5 pages-entités phares synthétisées depuis [[statut]]/[[memory]]/[[historique]] : [[kernel]], [[blackboard]], [[mangoqa]], [[boucle-curation]], [[eleve-local]]. Sources brutes laissées intactes.
 

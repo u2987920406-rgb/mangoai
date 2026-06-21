@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-06-20
+maj: 2026-06-21
 ---
 
 # Index du wiki MangoOS
@@ -33,6 +33,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[pre-requis-gros-projet]] | Briques externes (TypeScript · router fichier · LSP-MCP · tree-sitter · sqlite-vec) pour les gros projets #139 | ✅ écrite |
 | [[dette-technique]] | Les 4 points fragiles de l'archi (App.jsx god-component · nav stringly-typed · regex flux · tests UI) à renforcer — #140 | ✅ écrite |
 | [[vault-projet]] | Vault Obsidian auto-cartographié par gros projet (carte vivante navigable agent+humain) — #141 | ✅ écrite |
+| [[command-center]] | Mango Command Center — poste de pilotage perso des idées/chantiers, Kanban local-first (prototype du #139) — #144 | ✅ écrite |
 
 ## Pistes de pages futures
 
