@@ -193,7 +193,7 @@ export default function NotesRAG({ onBack, onToast = () => {} }) {
     : "text-faint hover:text-ink";
 
   return (
-    <div className="min-h-screen bg-bg text-ink p-4 md:p-6">
+    <div className="h-full overflow-y-auto bg-bg text-ink p-4 md:p-6">
       <div className="max-w-5xl mx-auto">
         <div className="flex items-center gap-3 mb-6">
           <button

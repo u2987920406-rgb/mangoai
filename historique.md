@@ -2087,3 +2087,178 @@ Avec α = 0.4, un saut de cible est absorbé sur ~4-5 nuits au lieu d'être enca
 - **Audit passe 3** : **5/6 branches 🟢** (sécurité, a11y, perf, tests, design). Seul `architecture` reste 🔴, et sur un point **subjectif** : `DeckList` fait son data-fetching inline plutôt que dans un hook `useDeckStats` (séparation des responsabilités). **Ce n'est pas un bug** — et c'est **exactement le méta-pattern déjà identifié au run** (« la branche architecture tire au rouge sur les 3 Élite : précieuse ou trop stricte ? »). MangoQA Visage 2 étant un **conseil** (`fondation.md` §V : propose, ne bloque pas), le « 6/6 parfait » recule à chaque passe vers des raffinements de plus en plus fins → c'est à Raf d'arbitrer. Décision : on s'arrête là, tous les défauts concrets corrigés.
 
 **Données produites par la boucle** : MangoQA a démontré sa valeur (2 vrais défauts + 1 vrai bug révélé par les tests sur du code Claude « réussi »), le correctif #3 (surfaçage async du verdict) a été vu en action (message « audit lancé, le verdict s'affichera dès qu'il est prêt »), et le méta-pattern « branche architecture trop zélée » est reconfirmé hors run de validation — un point d'arbitrage produit à remonter.
+
+---
+
+### Session 2026-06-20 — Bureau OS #136 — Phase 1 (Window Manager + bureau iconique)
+
+**Contexte :** MangoOS est conceptuellement un OS (`fondation.md` : « agents = applications, skills = drivers ») mais l'UI restait un chat avec sidebar. Raf demande une refonte vers un bureau iconique avec fenêtres superposables (style VS Code/macOS). Choix validés par AskUserQuestion : style Hybride (sidebar iconique 48px + zone centrale), 4 apps v1 (App Builder + Agent Factory + Image Creator FLUX + Music Creator AudioCraft), navigation par fenêtres flottantes.
+
+**Travaux réalisés (Phase 1 — Window Manager pur, zéro nouveau backend) :**
+
+1. **`ui/src/hooks/useWindowManager.js`** — état `windows[]` avec `openWindow` (dédup par type → focus si déjà ouverte, cascade `offset=(prev.length%6)*28`), `closeWindow`, `focusWindow` (z-index dynamique), `moveWindow`, `resizeWindow`. Zéro dépendance externe.
+
+2. **`ui/src/components/Window.jsx`** — coquille `position:fixed` draggable + redimensionnable :
+   - Barre de titre `cursor:move` + `onMouseDown` → drag natif `document.addEventListener('mousemove'/'mouseup')`, clamp `[0, innerWidth-120] × [0, innerHeight-40]`
+   - Chrome macOS : bouton rouge `bg-[#ff5f57]` close
+   - Poignée resize coin bas-droit (SVG), MIN_W=400 / MIN_H=280 enforced
+   - `pointer-events-auto` pour recevoir les clics dans l'overlay fixed
+
+3. **`ui/src/components/WindowManager.jsx`** — rend le stack de fenêtres :
+   - Lazy-import `AgentFactory` (React.lazy + Suspense)
+   - Router : `agent-factory` → `<AgentFactory onBack={() => onClose(id)} />`, `image-creator`/`music-creator` → `<ComingSoon>` (placeholder avec hint `REPLICATE_API_TOKEN`)
+   - Retourne `null` si `windows.length === 0` (pas d'overlay quand tout est fermé)
+
+4. **`ui/src/App.jsx`** — intégration :
+   - Import `useWindowManager` + `WindowManager`
+   - Suppression du lazy `AgentFactory` (déplacé dans WindowManager) et du `if (screen === "agents")` case
+   - `<WindowManager>` rendu dans `globalChrome` (persistant sur tous les écrans)
+   - Prop `onOpenAgentFactory` → `onOpenWindow` + appel `openWindow({type:"agent-factory",...})` dans le bouton home
+
+5. **`ui/src/components/Sidebar.jsx`** — mise à jour sidebar :
+   - Lucide icons : ajout `Image as ImageIcon, Music2`
+   - Prop `onOpenAgentFactory` → `onOpenWindow`
+   - Nouveau groupe « Applications MangoOS » : 3 boutons Agent Factory / Image Creator / Music Creator qui appellent `onOpenWindow({type, title, width, height})`
+
+**Décisions architecturales :**
+- `allowMultiple: false` (défaut) : ouvrir la même app deux fois la ramène au premier plan. `allowMultiple: true` disponible pour les cas futurs.
+- Zéro nouvelle dépendance npm — drag/resize natifs (cohérent avec la philosophie MangoOS natif-d'abord)
+- `WindowManager` dans `globalChrome` = les fenêtres persistent quelle que soit la valeur de `screen` (workspace, home, etc.)
+
+**Vérification :** `tsc --noEmit` server/ = 0 erreur · `npm run build` ui/ = vert (9.95s, avertissement chunk size >500kB non bloquant, pré-existant).
+
+**Phase 2 et 3 (à venir) :** Image Creator (`REPLICATE_API_TOKEN` + `server/src/image-creator.ts` + `ImageCreator.jsx`) et Music Creator (même clé + AudioCraft/MusicGen).
+
+---
+
+### Session 2026-06-21 — Bureau OS #136 — Refonte navigation COMPLÈTE : audit + P0→P4 (+ finition cockpit & palette iOS)
+
+**Contexte :** longue session de finition du cockpit (chat d'accueil) qui dérive vers une question de fond posée par Raf : « est-ce que tout marche, dans quel flux ? ». On découvre que la refonte chat a **cassé la création d'app**. Décision : auditer le flux complet avant de faire du design.
+
+**A) Finition du cockpit (chat) :**
+- **Menu hamburger en cascade** « Nouveau projet » → sous-menu App Builder / Image / Music / Tools (flyout au survol, `group/sub`).
+- **Historique de conversations** : `localStorage` (`mangoos.conversations`, 30 gardées, 10 affichées), titre = 1er message, chargement/suppression via `ConfirmDelete` (popover juste sous la poubelle — le `overflow-y-auto` rognait la confirmation, retiré).
+- **Flèche de retour** en mode chat (`goIdle` → vide les messages, `currentId=null`).
+- **Dropdown modèles** : s'ouvrait vers le bas et était coupé par le `overflow-hidden` de la barre → prop `openUp` (s'ouvre vers le haut, aligné à droite) + `overflow-hidden` retiré de la `BottomBar`.
+- **Logo** : itérations multiples (texte signature SVG → images détourées). Final = **wordmark image « MangoOS »** détouré par **clé de saturation pure** (les contours de lettres deviennent transparents) ; nettoyage des franges blanches par clé combinée saturation + luminance + érosion 1px (**0 pixel clair résiduel**, vérifié au zoom). Le PNG source avait un damier incrusté (alpha=255 partout) — piège identifié : le damier du visualiseur Read ≠ transparence réelle.
+- **Markdown rendu** : `react-markdown` + **`remark-gfm`** (sans lui, les tableaux GFM s'affichaient en `| pipes |` bruts). Classe `.md-chat`.
+- **Style texte « Dégradé linéaire minimaliste » (Proposition 3 de Raf)** : titres en **dégradé violet→corail** (`background-clip:text`) soulignés d'un **filet dégradé** (`::after`), **code en pastille ambre** `#FFB043`, **tableaux épurés** (hairlines, en-tête vert translucide `rgba(52,199,89,.12)` comme le badge modèle, séparateur vertical après la 1re colonne, aucun fond), gras blanc net.
+- **Voile** gris-violet `rgba(124,92,255,.045)` derrière la conversation (boîte arrondie) + **contraste adouci** : `--color-ink-soft #d6d2c8` (crème) pour le corps des messages, citations en **boîte arrondie diffuse** + texte crème `#ece7db`.
+- **Sidebar** : **rail visible** au repos (`translate-x-[calc(100%-14px)]` + poignée 3 points orange/jaune/vert) qui se déploie au survol.
+- **Palette globale = couleurs système iOS/Apple** (échantillonnées sur la carte perfect-plan) en tokens `@theme` `--color-sys-*` (Indigo #5856D6 · Pink #FF2D55 · Red #FF3B30 · Orange #FF9500 · Yellow #FFCC00 · Gray #8E8E93 · Blue #34AADC · Teal #5AC8FA · Green #34C759) ; sémantiques realignées (`ok`/`warn`/`err`), violet `#7c5cff` gardé en accent. **Process snap Sharingan (Playwright) systématisé** + 3 mémoires écrites (vérif visuelle, process snap, style Apple+palette).
+
+**B) Audit de flux + P0 (le vrai chantier) :**
+- **Audit** via 3 explorations parallèles (flux création projet · table de navigation `screen` · inventaire sidebar/Outils). Constats : création d'app **cassée** (Home 100% conversationnelle, n'appelle plus `/api/chat` avec `projectName` ; le backend crée pourtant tout au 1er message) ; **écran fantôme `"chat"`** (`setScreen("chat")` appelé mais jamais rendu) ; **~30 outils** entassés dans un seul panneau « Outils » sur **4 surfaces mélangées** ; **doublons** (Versions, Mode Miroir).
+- **Architecture cible** (validée avec Raf) — 4 plans : **Bureau** (chat) · **Apps en fenêtres** + Launcher · **Réglages groupés** (sous-sections) · **Workspace contextuel** (outils projet façon VS Code). Principe directeur : *la navigation fait le pont technique↔humain, chemin le plus fluide*. Roadmap P0→P3 (+P4 option).
+- **P0 LIVRÉ** : `ProjectsWindow` (`WindowManager.jsx`) gagne **« Nouveau projet »** → `NewProjectForm` (description → nom slug auto, modifiable) → `onOpen(slug,{prompt})` → `openProject` → workspace + build + preview. Écran fantôme `"chat"` supprimé : Versions/MangoQA `onBack → setScreen("workspace")`, Ideation `onStartCoding → openProject(slugify(desc),{prompt})`. `slugify` factorisé dans **`ui/src/slugify.js`** (copie morte retirée de Home). Vérifié Sharingan (bascule workspace OK, nom de projet dans l'en-tête). Le toast « Agent is already working » au 1er rendu = double-fire StrictMode en dev (inoffensif, absent en prod).
+- **Décision stratégique** : **Auditeur de Flux** (#137) — agent conseil, dimension de MangoQA, étagé, cost-aware — à construire **après P1→P3** (bâti par-dessus une nav canonique = expert dès le départ ; le « contrat de flux » de la refonte = son cerveau). Lié au Brain Adaptateur #135 : c'est le filet qui le rend viable quand des modèles faibles coderont.
+
+**C) P1 LIVRÉ — outils projet → rail contextuel workspace (façon VS Code) :**
+- **Constat** : les outils du projet (Mémoire, Revue du build, Versions, Backend, GitHub, Perfect Plan) + actions (Export, Mode Client, Réflexion, MangoQA, Mode Miroir) vivaient dans la section « Projet » du panneau Outils **global** (côté droit, hors contexte projet) — viole la règle de flux #4 (surfaces homogènes : un outil **projet** doit être une surface **workspace**).
+- **Livraison** : nouveau **`ui/src/components/WorkspaceTools.jsx`** = barre d'activité verticale (rail 56px) à gauche du workspace, rendue dans `App.jsx` entre rien et `<Chat>` (`rail │ panneau │ Chat │ Preview`). Clic sur une icône → panneau contextuel 288px à droite du rail ; actions directes (MangoQA→`setScreen("controleur")`, Miroir→`openProject("__mirror__")`, Mode Client, Réflexion, Export zip) sans panneau. Badge de comptage sur Versions.
+- **Réutilisation stricte** : `Knowledge`, `BuildReview`, et les panneaux `VersionsPanel`/`BackendPanel`/`GithubPanel`/`PerfectPlanPanel` **déplacés tels quels** (zéro réécriture de logique). La coque `PanelShell` extraite dans **`ui/src/components/PanelShell.jsx`** (partagée Sidebar globale ↔ rail projet, fin de la duplication).
+- **Sidebar globale allégée** (`Sidebar.jsx`) : section « Projet » + ses 6 panneaux + ~10 props workspace **retirés** ; ne reste que Analyse / Créer / Contenu / Système. Imports d'icônes purgés. `App.jsx` : `sidebarProps` scindé en `sidebarProps` (global) + `workspaceToolsProps` (projet).
+- **Vérifié Sharingan** (Playwright `localhost:5173`, projet `mango-flashcards`) : rail complet rendu à gauche (Mémoire/Revue/Versions ×9/Backend/Perfect Plan + MangoQA/Miroir/Client/Réflexion/Export) ; panneau **Mémoire** s'ouvre bien en contextuel ; layout tient à 1440px.
+- **Note** : les 3 boutons flottants workspace (Miroir/Versions/MangoQA, coin bas-droit) deviennent des doublons du rail — leur suppression est planifiée en **P3** (dock + Launcher).
+
+**D) P2 LIVRÉ — écran Réglages unique (master-detail) :**
+- **Constat** : 10 outils système/diagnostic dispersés dans 3 sections du panneau Outils global (Analyse : Métriques, Traces, Radar, Dashboard ; Contenu : Veille, Tokeniseur ; Système : Billing, Cron, Review nocturne, Auto-Ablation). Aucun « toit » commun → viole les règles de flux #1 (la technique doit être rangée) et #4.
+- **Livraison** : nouvel écran **`ui/src/components/Reglages.jsx`** = master-detail. Colonne gauche `w-60` = sous-navigation **groupée** (Compte · Automatisation · Diagnostics Kernel · Veille & outils) ; panneau droit `flex-1 overflow-y-auto` qui **monte le composant existant** (lazy) selon la catégorie. Routé via `screen === "reglages"` dans `App.jsx`. `onOpenProject` transmis à `NocturnalReview` (ouverture projet depuis la review).
+- **Réutilisation stricte** : `Billing`, `CronManager`, `NocturnalReview`, `MetricsDashboard`, `AutoAblation`, `Radar`, `Veille`, `Tokenizer` montés tels quels (gardent leur propre bouton retour-accueil = retour unique). `Metrics` et `Traces` (qui n'avaient pas d'en-tête — ils vivaient en `PanelShell` dans la sidebar) sont enveloppés d'un petit `PaneHeader` (← Accueil + titre) pour homogénéiser. `NEUTRAL` masque le groupe « Diagnostics Kernel ».
+- **Sidebar globale allégée** (`Sidebar.jsx`) : les 10 items retirés de Analyse/Contenu/Système ; la section Système devient `[Réglages (gear), Éditeur visuel]`. Imports `Metrics`/`Traces` + leurs cas de panneau supprimés (la sidebar ne rend plus que Artefacts/Aide en panneau) ; imports d'icônes et `NEUTRAL` purgés.
+- **Vérifié Sharingan** (3 captures) : Réglages → **Facturation** (Billing, retour unique « ← Retour »), → **Tokeniseur**, → **Métriques** (wrapper `PaneHeader` « ← Accueil · Métriques · Kernel »). Sous-nav groupée + état actif corrects. (Léger rognage à droite des écrans pleins = rail fixe de la sidebar globale qui surplombe — **préexistant**, corrigé par le dock en P3.)
+
+**E) P3 LIVRÉ — dock épuré + Launcher (refonte nav complète) :**
+- **Constat** : la Sidebar restait un déversoir (panneau « Outils » à 4 sections, ~20 items même après P1/P2) ; et le workspace gardait 3 boutons flottants (Miroir/Versions/MangoQA) devenus **doublons** du rail projet P1.
+- **Dock** : `Sidebar.jsx` **réécrit** en dock épuré — `SideBtn` ×6 (App Builder · Image Creator · Music Creator · **Launcher** · Réglages · Tutoriels) + toggle thème, hover-reveal et poignée 3-points conservés. Suppression totale du `ToolBtn`, du panneau Outils flottant et des panneaux `active` (Artefacts/Aide). Imports purgés (plus de `Metrics`/`Traces`/`Artifacts`/`Guide`/`PanelShell`/`NEUTRAL` dans la sidebar).
+- **Launcher** : nouveau `type:"launcher"` dans `WindowManager.jsx` → `LauncherWindow` = grille (sections **Apps** : App Builder, Image, Music, Agent Factory, Super Agent, Ideation, Multi-Projet, Notes&RAG, Doc, Prompt Lab, Design Review ; **Outils** : Artefacts, Aide, Éditeur visuel). Chaque tuile = `item.run(actions)` puis ferme le launcher. Les actions (`onOpenProjects`/`onOpenWindow`/`onSetScreen`/`onOpenSidePanel`) passées via `win.props.actions`.
+- **Artefacts & Aide** deviennent des **fenêtres** (`type:"artifacts"`/`"guide"`, composants `Artifacts`/`Guide` montés en lazy) — ils n'ont plus de panneau sidebar où vivre.
+- **App.jsx** : `openProjectsWindow` + `openLauncher` factorisés ; `sidebarProps` réduit à 6 callbacks ; état `sidebarTools` supprimé ; **3 boutons flottants retirés** ; imports `GitBranch`/`ShieldCheck` retirés (`Squircle` gardé pour la bannière Miroir).
+- **Home.jsx** : `onOpenTools` renommé `onOpenLauncher` ; entrée hamburger « Tools » (Wrench) → « **Toutes les apps** » (`LayoutGrid`) ouvrant le Launcher.
+- **Vérifié Sharingan** (3 captures) : **dock** révélé (6 icônes + thème, tooltip « Toutes les apps »), **Launcher** (grille Apps/Outils complète), **workspace épuré** (plus aucun bouton flottant ; Versions/MangoQA/Miroir désormais dans le rail projet à gauche).
+
+**Vérification (P3) :** UI build vert 9.76s · server tsc vert (serveur inchangé). Reste P4.
+
+**F) P4 LIVRÉ — toute app = une fenêtre (refonte nav complète) :**
+- **Constat** : 7 apps « bureau » s'ouvraient encore en **écran plein** (via `screen` dans `App.jsx`) alors qu'App Builder/Image/Music/Agent Factory/Artefacts/Aide étaient déjà des fenêtres → surfaces hétérogènes (viole flux #4).
+- **Exploration préalable (2 agents Explore)** : (1) props & aptitude au fenêtrage des 7 composants ; (2) couplages à risque. Verdict : **zéro risque** — aucune étape de tutoriel (`server/src/tutorial.ts`, tutos 1-10) n'utilise un `context` parmi ces 7 noms (seuls `"workspace"`/`"metrics"`), `screen` n'est ni persisté ni deep-linké, et les seuls points d'entrée sont les 7 conditionnels de rendu + les 7 tuiles du Launcher.
+- **WindowManager.jsx** : +7 `lazy(import)` (Ideation/NotesRAG/DocGenerator/PromptLab/DesignReview/MultiProject/SuperAgentBuilder) ; +7 cas dans `WindowContent` (modèle des cas `artifacts`/`guide`) avec `onBack={() => onClose(win.id)}` et extras tirés de `win.props`. Cas `ideation` spécial : `onStartCoding={(desc) => { win.props?.onStartCoding?.(desc); onClose(win.id); }}` (ouvre le projet **et** ferme la fenêtre). `notes`→`onToast`, `design`/`superagent`→`projectName`. Les 7 tuiles du Launcher : `onSetScreen("x")` → `onOpenApp("x")`.
+- **App.jsx** : nouveau `openAppWindow(id)` (switch → `openWindow({type,title,width,height,props})`, réutilise `openProject`/`slugify`/`projectName`/`pushToast`) ; `onOpenApp: openAppWindow` ajouté aux `actions` du Launcher ; les 7 `if (screen === ...)` et les 7 `lazy(...)` correspondants **retirés** (Tokenizer/Veille/Billing/Cron/Metrics/Ablation/Radar/Nocturnal/Reglages restent). Tailles : Ideation 900×680 · Notes 960×680 · Doc 900×680 · Prompt Lab 1000×680 (2 colonnes) · Design 1000×720 · Multi 1000×720 · Super Agent 900×700.
+- **4 composants `min-h-screen`→`h-full`** (Ideation, NotesRAG, MultiProject, SuperAgentBuilder) + scroll interne (`overflow-y-auto` sur la racine ou la zone de contenu). Motif : `Window` donne à son enfant une zone `min-h-0 flex-1 overflow-hidden` de hauteur **définie** → `min-h-screen` (≥100vh) déborderait et serait clippé sans scroll. (DocGenerator/PromptLab/DesignReview déjà en `h-full`.) Sans risque : ces composants ne sont plus ouverts qu'en fenêtre.
+- **Vérifié Sharingan** (3 captures) : **Ideation** (fenêtre, hauteur propre sans scroll fantôme, « Retour » ferme), **Prompt Lab** (layout 2 colonnes intact à 1000px), **Super Agent** (en-tête sticky, contenu scrollable). Les fenêtres cascadent, draggable/resizable.
+
+**Vérification (P4) :** UI build vert 9.83s · server tsc vert (serveur inchangé). **Refonte navigation P0→P4 COMPLÈTE** — chantier suivant : l'**Auditeur de Flux** #137 (bâti sur cette nav désormais canonique ; son cerveau = le contrat de flux appliqué tout du long). Hors-scope confirmé : le design-system attend ; **aucun ADN visuel du cockpit ne descend dans les apps générées**.
+
+---
+
+### Échange 2026-06-21 — Concepts #138 (OS d'apps / Office) & #139 (Mode Gros Projet)
+
+Après la refonte nav, Raf soulève une intuition stratégique née de l'expérience de l'OS : *« on a généré plein de mini-apps isolées (todo, dashboards, mind maps) — peut-on un agent compilateur qui les fond en un OS spécialisé ? Et pour un gros projet (site de 20 pages, jeu multi-stages), comment fait-on : tout d'un coup, par blocs de 5, page par page en Kanban ? »* Puis l'analogie qui débloque tout : *« ce qu'on vient de faire, dans le monde Windows, c'est un Office — Word/Excel/PowerPoint réunis mais qui se parlent. C'est ça le shell, non ? »*
+
+**Exploration (2 agents) pour fonder l'avis** : structure des apps générées (`workspace/`) → chaque app = **projet Vite 100 % indépendant**, **frameworks hétérogènes** (`dashboard-tonight` React, `mangonotes` Vue), `node_modules` isolés, SPA **sans router**, imports en dur. Seul lien inter-apps aujourd'hui = le **Blackboard** (palettes/composants cross-app, recherche sémantique) + injection multi-projet dans le prompt + libs curées. **Aucun** endpoint merge/compose/monorepo.
+
+**Verdict d'architecture (donné à Raf, validé)** — la confusion à lever : ce ne sont pas un mais **deux problèmes distincts**, et le *foncteur commun* est « socle/contrat partagé d'abord, puis incréments bornés qui s'y conforment » :
+
+- **#138 — OS d'apps (= Office).** Des apps **distinctes** qui se parlent. ❌ « compilateur » qui fusionne le code = enfer micro-frontend (frameworks hétérogènes, deps isolées, CSS/imports qui collisionnent) + chaque régénération re-casse la fusion → rejeté (`fondation.md` : ne pas réinventer un problème dur). ❌ monolithe géant = perd la boucle « générer vite », contexte qui gonfle. ✅ **shell + contrat hébergeant des apps autonomes** (= le pattern bureau-os déjà construit). Cohérence en 3 couches : design partagé · **colonne de données partagée** (*la vraie valeur d'OS* — sans elle, un Launcher = un menu Démarrer plus joli) · shell de nav. Le rôle de l'agent **bascule** : non « fusionner après » mais **« composer à la génération »**. 2 niveaux : L1 coexistence (≈ déjà là) / L2 intégration (donnée partagée, implique de standardiser sur React pour les apps composables).
+- **#139 — Mode Gros Projet (un seul produit : site 20 pages, jeu).** Pas une suite d'apps : **un produit** à **squelette commun**. Méthode = **socle-d'abord** (Perfect Plan → scaffold unique : design system + **router multi-pages** + layout + modèle de données) puis **page/stage par page/stage** (delta borné, MangoQA vérifie chaque delta). « Blocs de 5 » = simple batching ; **Kanban de pages/stages** = la bonne orchestration (borne le contexte). Jeu = **moteur d'abord**, stages = niveaux chargés. Faisable aujourd'hui à moitié (la boucle de chat édite déjà le même projet) ; manque = scaffold auto du squelette · router par défaut · Kanban · gestion du contexte (index/RAG du projet).
+
+**Décision de Raf** : *« valider le concept »* — on consigne, on ne construit rien. **Séquencement** : #137 (Auditeur de Flux = le QA de cohérence dont #138/#139 ont besoin) **d'abord** ; puis #139 avant #138 (le « socle-d'abord + Kanban » sert *aussi* à bâtir le shell de #138, et les gros projets uniques sont un besoin plus fréquent que la suite multi-apps). Détail complet : `plan.md` (section CONCEPT) + `wiki/composer-os.md`. **Zéro git.**
+
+---
+
+### Session 2026-06-21 — #137 Auditeur de Flux (Tier 0 déterministe) ✅
+
+Premier chantier post-refonte. **Scoping** (2 explorations) → découverte structurante : **MangoQA est un repo SÉPARÉ** (`D:\IA\MangoQA`), un fantôme indépendant qui observe MangoOS par fichiers-signaux (`.mangoqa/phase-complete.json` → répond `audit-verdict.json` / `design-observations.json`). **Décisions de Raf (critère = fiabilité)** : construire **dans MangoQA** (gardien indépendant de ce qu'il surveille, `fondation.md`) ; **Tier 0 déterministe seul** (zéro LLM = zéro hallucination, reproductible, $0 ; le déterministe est le plus fiable, comme le Disjoncteur).
+
+**Architecture — calque exact de `design-eye/`** (`D:\IA\MangoQA/src/flux-eye/`) :
+- **`graph.ts`** (pur) : reconstruit le graphe de nav par heuristiques regex **conservatrices** (chaînes littérales seules). **Auto-découverte** de la machine à états (`const [x, setX] = useState("init")` confirmée si `setX("y")` existe — pas de « screen » codé en dur, colle à n'importe quelle app générée). Capte écrans (`x === "y"`), fenêtres (`win.type === "y"`, `openWindow({type})`, `onOpenApp`), routes (`<Route path>`, `to=`, `navigate`). Gère le **chaînage optionnel `?.`** et la **convention prop `on`+Setter** (`onSetScreen`).
+- **`eye.ts`** (pur) : `inspectFlux(graph)`. **Principe de fiabilité** (comme l'Œil) : **mesuré** = le SEUL fait dur = cible fenêtre/route **sans handler** (aucun fallback ⇒ blanc certain — R3). **convergence** = tout l'incertain en QUESTIONS : inatteignabilité (R1/R5, car un setter passé en prop / une cible dynamique ne se prouvent pas statiquement), fantôme d'état (R3 doux : peut retomber sur un else), doublons (R2). `blocking:false` invariant.
+- **`runner.ts`** : `runFluxEye(projDir, deps)` lit **tout le `src/`** (le graphe se juge en entier, pas le delta), écrit `.mangoqa/flux-observations.json`, deps injectables, fail-open.
+- **Câblage** `src/index.ts` `handleSignal` : bloc jumeau après l'Œil Design, fail-open, log `🧭`. **CLI** `run-flux-eye.ts <dir>` (audit ponctuel, y compris le cockpit). **Tests** `test-flux-eye.ts` **29/29** (auto-découverte, R3 dur/doux, R5, routes+catch-all, R2, invariant, runner fail-open) ajoutés à `npm test` (→ 38+67+29).
+
+**Surfaçage MangoOS** (`server/src/mangoqa.ts`, seul contact côté MangoOS) : `readFluxObservations` + `buildFluxMessage` (purs) + dep `readFlux` dans `surfaceVerdict` → une ligne **🧭 Auditeur de Flux** ajoutée au chat à côté du verdict (lecture seule, ne bloque rien). `test-mangoqa.ts` **17/17** (server tsc 0).
+
+**Validation empirique sur le cockpit** (`run-flux-eye.ts D:\IA\MangoOS\ui`) : itéré jusqu'à **zéro faux positif dur** (corrigés en route : `.type ===` qui attrapait les `d.type` de postMessage → restreint à `win.type` ; `?.` non géré → image-creator/agent-factory faussement signalés ; `onSetScreen` non relié → reglages faux positif). Résultat final : **mesuré = 0**, et 9 **suspects** honnêtes = **les ~8 routes d'écran mortes** laissées en P2/P4 (billing, cron, ablation, nocturnal, veille, tokenizer, radar, versions — atteignables seulement via les composants montés dans Réglages) + `metrics` (atteint dynamiquement par le tutoriel). **L'Auditeur trouve une vraie dette de flux** — preuve qu'il marche, et liste de nettoyage offerte.
+
+**Ménage post-Auditeur (boucle bouclée)** : l'Auditeur ayant signalé 8 routes d'écran **mortes** (`billing/cron/ablation/radar/veille/tokeniseur/nocturne/versions` — vestiges de P2/P4 : déplacées dans Réglages comme composants, plus aucun `setScreen`), vérifiées une à une (grep : aucun `setScreen("x")`, tutoriels n'utilisent que `workspace`/`metrics`), puis **supprimées** de `App.jsx` (8 routes + 8 imports lazy). `metrics` gardé (tutoriel #9 `enterTutorialContext("metrics")`), `controleur` gardé (rail projet). Build UI vert 9.72s. **Auditeur re-passé → 9 suspects → 1** (`metrics`, atteint dynamiquement = limite connue des heuristiques littérales). Les 3 questions restantes sont toutes légitimes (`metrics` dynamique · `workspace` = fallback du ternaire · `image-creator`/`music-creator` = raccourcis dock+Launcher+hamburger voulus). `VersionGraph.jsx` reste sur disque (non importé) si on veut le recâbler plus tard.
+
+**Reste Tier 1** : audit LLM (via le `llm.ts` de MangoQA, pointable local/cheap) déclenché par les signaux de `workspace/.metrics.jsonl` (coût/tours/`resolvedBy='maitre'`/erreurs) → couvre R4 (surfaces homogènes) + cohérence sémantique. Conseil, jamais bloquant. **Zéro git.**
+
+---
+
+### Session 2026-06-20 (suite) — Bureau OS #136 — Finition Home conversationnel + Sidebar droite + titre signature
+
+**Contexte :** après la Phase 1.5 (Home néon + Sidebar globale), Raf affine l'UX en plusieurs allers-retours visuels. Objectifs : un vrai chat conversationnel à l'accueil (parler à MangoAI via l'abonnement Claude Code), une sidebar qui se révèle au survol depuis la droite, et un logo qui tienne la route.
+
+**Travaux réalisés :**
+
+1. **Home chat type claude.ai (`ui/src/components/Home.jsx`)** — deux états : *idle* (layout centré, textarea + dropdowns modèle/mode/template) et *conversation* (bulles `UserBubble`/`AssistantBubble`, `ThinkingIndicator`, barre `BottomBar` fixe en bas) déclenché dès `messages.length > 0`. `sendMessage()` POST `/api/home-chat`, scroll auto via `bottomRef`. **Séparé** de l'App Builder (le workspace garde `Chat.jsx`).
+
+2. **Endpoint `/api/home-chat` (`server/src/index.ts`)** — conversation directe sans projet : `{ messages[], model }` → historique formaté en system prompt → `askLLM()`. Mapping `sonnet/opus/haiku` → IDs Anthropic complets. Passe par l'**abonnement** Claude Code ($0), distinct du SSE `/api/chat`.
+
+3. **Fix `llm-engine.ts`** — `askClaude` : `maxTurns 1→5`. Le preset `claude_code` consommait le tour unique en setup → erreur « Reached maximum number of turns (1) ». 
+
+4. **Sidebar à droite + hover-reveal (`ui/src/components/Sidebar.jsx`)** — wrapper `fixed right-0 top-0 z-30`, état `expanded` piloté par `onMouseEnter/Leave`, bande d'icônes `translate-x-full`↔`translate-x-0` (300ms), **hotzone** invisible de 8px toujours présent sur le bord pour capter le survol. Tooltips inversés (`right-full mr-3`, flèche `border-l-panel`), panneaux secondaires `right-16` bordure gauche.
+
+5. **Titre signature (remplace le logo image)** — après plusieurs tentatives de détourage d'images de mangue (flood-fill seuil-blanc, luminance, saturation+flood-fill, masque radial — toutes vérifiées au composite sur fond `#0b0d12`), Raf abandonne l'image. Le titre devient « Mango**O****S** » : « Mango » violet néon, « O » dégradé `#FFE04D`→`#FF9A3D`, « S » `#FF7A30`→`#FF4D4D` (via `background-clip:text`), avec **tige en bois courbe** (dégradé `woodGrad`) + **feuille verte** SVG sortant du sommet de la mangue « OS ». Itéré au **Sharingan** (capture Playwright de `localhost:5173`, lecture image, ajustement des `path`/rotations).
+
+**Leçon (mémoire) :** sur tout travail visuel, regarder le rendu réel (composite sur fond cible / capture navigateur) avant de déclarer « réglé » — le damier du visualiseur Read ≠ preuve de propreté. Cf. `feedback-verif-visuelle-avant-done`.
+
+**Vérification :** `npx tsc --noEmit` server/ = 0 erreur · `npm run build` ui/ = vert (9.87s). Playwright (Chromium headless) installé pour la capture visuelle.
+
+---
+
+### Idée #136 — Bureau OS : refonte en bureau iconique + fenêtres superposables (Phase 1 ✅ 2026-06-20)
+
+MangoOS bascule visuellement de « chat avec sidebar » vers un **bureau iconique à fenêtres superposables**, cohérent avec la vision `fondation.md` (agents = applications).
+
+**Fichiers créés/modifiés :**
+- `ui/src/hooks/useWindowManager.js` — NEW
+- `ui/src/components/Window.jsx` — NEW
+- `ui/src/components/WindowManager.jsx` — NEW
+- `ui/src/App.jsx` — modifié (intégration hook, suppression `screen="agents"`)
+- `ui/src/components/Sidebar.jsx` — modifié (prop renommée, icônes FLUX+AudioCraft, groupe Apps)
+
+**Types de fenêtres Phase 1 :** `agent-factory` (AgentFactory existant), `image-creator` (ComingSoon FLUX), `music-creator` (ComingSoon AudioCraft). App Builder reste dans la zone centrale workspace (non migré en fenêtre flottante à ce stade).
+
+**Roadmap :** Phase 2 = Image Creator (FLUX via Replicate) · Phase 3 = Music Creator (AudioCraft/MusicGen via Replicate). Même `REPLICATE_API_TOKEN`.

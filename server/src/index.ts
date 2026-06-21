@@ -115,6 +115,42 @@ app.delete("/api/projects/:name", async (req, res) => {
   }
 });
 
+// ── Chat d'accueil — conversation directe avec MangoOS (sans projectName) ──
+app.post("/api/home-chat", async (req, res) => {
+  const { messages, model } = req.body as {
+    messages?: Array<{ role: string; content: string }>;
+    model?: string;
+  };
+  if (!messages?.length) {
+    res.status(400).json({ error: "messages required" });
+    return;
+  }
+  const MODEL_MAP: Record<string, string> = {
+    sonnet: "claude-sonnet-4-6",
+    opus:   "claude-opus-4-8",
+    haiku:  "claude-haiku-4-5-20251001",
+  };
+  const resolvedModel = MODEL_MAP[model ?? "sonnet"] ?? "claude-sonnet-4-6";
+  const last = messages[messages.length - 1];
+  const history = messages
+    .slice(0, -1)
+    .map((m) => `${m.role === "user" ? "Humain" : "MangoOS"} : ${m.content}`)
+    .join("\n");
+  const system = [
+    "Tu es MangoOS, l'assistant IA personnel de Raf. Tu es chaleureux, direct et concis.",
+    "Réponds en français sauf si on te parle en anglais.",
+    history ? `\n— Historique —\n${history}` : "",
+  ].filter(Boolean).join("\n");
+
+  try {
+    const { askLLM } = await import("./llm-engine.js");
+    const text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+    res.json({ text });
+  } catch (err) {
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 // Body: { prompt: string, projectName: string, sessionId?: string }
 // Streams AgentEvent objects as SSE. Creates the project on first message.
 app.post("/api/chat", async (req, res) => {

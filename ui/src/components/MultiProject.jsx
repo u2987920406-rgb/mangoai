@@ -500,7 +500,7 @@ export default function MultiProject({ onBack }) {
   );
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg text-ink">
+    <div className="flex h-full flex-col overflow-y-auto bg-bg text-ink">
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-edge bg-panel/90 backdrop-blur px-6 py-4">
         <div className="mx-auto max-w-4xl flex items-center gap-4">

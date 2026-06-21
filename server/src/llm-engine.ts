@@ -100,7 +100,7 @@ async function askClaude(system: string, user: string, model: string): Promise<s
     options: {
       model,
       systemPrompt: { type: 'preset', preset: 'claude_code', append: system },
-      maxTurns: 1,
+      maxTurns: 5,
       allowedTools: [],
       env,
     },

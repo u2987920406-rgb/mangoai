@@ -81,7 +81,7 @@ export default function Ideation({ onBack, onStartCoding }) {
   }
 
   return (
-    <div className="min-h-screen bg-bg text-ink flex flex-col">
+    <div className="h-full bg-bg text-ink flex flex-col">
       {/* Header */}
       <div className="border-b border-edge bg-panel px-6 py-4 flex items-center gap-4">
         <button
@@ -100,7 +100,7 @@ export default function Ideation({ onBack, onStartCoding }) {
       </div>
 
       {/* Main */}
-      <div className="flex-1 px-6 py-8 max-w-4xl mx-auto w-full">
+      <div className="flex-1 min-h-0 overflow-y-auto px-6 py-8 max-w-4xl mx-auto w-full">
         {/* Form */}
         <div className="bg-panel border border-edge rounded-xl p-6 mb-8">
           <label className="block text-sm font-medium text-accent-soft mb-2">

@@ -131,7 +131,7 @@ export default function SuperAgentBuilder({ onBack, projectName }) {
   }, [fetchAgents, result, showToast])
 
   return (
-    <div className="min-h-screen bg-bg text-ink font-mono">
+    <div className="h-full overflow-y-auto bg-bg text-ink font-mono">
       {/* Toast */}
       {toast && (
         <div className="fixed top-4 right-4 z-50 bg-accent-soft text-bg px-4 py-2 rounded-lg shadow-lg text-sm animate-fade-in flex items-center gap-2">

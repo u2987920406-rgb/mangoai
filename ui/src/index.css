@@ -11,14 +11,31 @@
   --color-edge: #232734;
   --color-edge-soft: #1c202c;
   --color-ink: #e8eaf0;
+  /* Crème adouci pour le corps de texte du chat — moins de contraste, repose l'œil */
+  --color-ink-soft: #d6d2c8;
   --color-dim: #8b91a3;
   --color-faint: #565c6e;
   --color-accent: #7c5cff;
   --color-accent-soft: #9678ff;
   --color-bubble: #1f2330;
-  --color-ok: #3ecf8e;
-  --color-warn: #f0b35e;
-  --color-err: #ff5c5c;
+
+  /* Palette système (inspirée iOS / Apple) — langage couleur global MangoOS.
+     Le violet #7c5cff reste la signature ; ces teintes servent aux statuts,
+     catégories et accents. Toujours en faible opacité pour le rendu minimaliste. */
+  --color-sys-indigo: #5856d6;
+  --color-sys-pink: #ff2d55;
+  --color-sys-red: #ff3b30;
+  --color-sys-orange: #ff9500;
+  --color-sys-yellow: #ffcc00;
+  --color-sys-gray: #8e8e93;
+  --color-sys-blue: #34aadc;
+  --color-sys-teal: #5ac8fa;
+  --color-sys-green: #34c759;
+
+  /* Couleurs sémantiques alignées sur la palette système */
+  --color-ok: #34c759;
+  --color-warn: #ff9500;
+  --color-err: #ff3b30;
   --color-code-bg: #0b0d12;
   --color-scroll: #2a2f3e;
   --color-scroll-hover: #363c4f;
@@ -56,6 +73,7 @@
     }
   }
 }
+
 
 /* ☀️ Mode clair — alternative dérivée de la même palette (violet signature gardé).
    Surcharge les tokens sous [data-theme="light"] ; les utilitaires Tailwind v4
@@ -173,4 +191,158 @@ body {
 }
 .md strong {
   font-weight: 600;
+}
+
+/* ── Markdown enrichi du chat d'accueil (.md-chat) ──────────────────────────
+   Hiérarchie visuelle marquée : titres colorés + marqueur mangue, paragraphes
+   aérés, listes à puces colorées, tableaux lisibles, citations accentuées. */
+.md-chat > :first-child {
+  margin-top: 0;
+}
+.md-chat > :last-child {
+  margin-bottom: 0;
+}
+.md-chat p {
+  margin: 0.85em 0;
+}
+/* ── Style « Dégradé linéaire minimaliste » (Proposition 3) ──────────────────
+   Titres en dégradé violet→corail + filet dégradé sous le titre. Code en
+   pastille ambre. Tableaux épurés (hairlines, sans remplissage). Gras blanc net. */
+
+/* Dégradé signature, réutilisé partout */
+:root {
+  --grad-line: linear-gradient(95deg, #7b52f2, #c95c9a 50%, #f56754);
+}
+
+.md-chat h1,
+.md-chat h2,
+.md-chat h3,
+.md-chat h4 {
+  display: block;
+  position: relative;
+  margin: 1.6em 0 0.7em;
+  padding-bottom: 0.35em;
+  line-height: 1.3;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  background: var(--grad-line);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  width: fit-content;
+  max-width: 100%;
+}
+.md-chat h1 { font-size: 1.34em; }
+.md-chat h2 { font-size: 1.2em; }
+.md-chat h3 { font-size: 1.08em; }
+.md-chat h4 { font-size: 1.02em; padding-bottom: 0; }
+/* Filet dégradé sous le titre (s'estompe vers la droite) */
+.md-chat h1::after,
+.md-chat h2::after,
+.md-chat h3::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1.5px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(123, 82, 242, 0.85), rgba(201, 92, 154, 0.7) 45%, rgba(245, 103, 84, 0));
+}
+.md-chat ul,
+.md-chat ol {
+  padding-left: 1.4em;
+  margin: 0.6em 0;
+}
+.md-chat li {
+  margin: 0.4em 0;
+  padding-left: 0.2em;
+}
+.md-chat ul li::marker {
+  color: #7b52f2; /* puces violet */
+}
+.md-chat ol li::marker {
+  color: #7b52f2;
+  font-weight: 700;
+}
+/* Gras = blanc net, minimaliste (sans surlignage) */
+.md-chat strong {
+  font-weight: 700;
+  color: var(--color-ink);
+}
+.md-chat em {
+  color: var(--color-dim);
+  font-style: italic;
+}
+/* Code inline = pastille ambre */
+.md-chat code {
+  font-family: var(--font-mono);
+  font-size: 0.85em;
+  background: rgba(255, 176, 67, 0.13);
+  color: #ffb043;
+  border: 1px solid rgba(255, 176, 67, 0.24);
+  border-radius: 6px;
+  padding: 1px 6px;
+}
+.md-chat pre code {
+  background: none;
+  border: none;
+  color: inherit;
+  padding: 0;
+}
+.md-chat a {
+  color: #7b52f2; /* liens violet */
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Séparateur = filet dégradé violet→corail estompé */
+.md-chat hr {
+  height: 1.5px;
+  border: none;
+  margin: 1.6em 0;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, rgba(123, 82, 242, 0.7) 30%, rgba(245, 103, 84, 0.6) 70%, transparent);
+}
+/* Citation = boîte arrondie, fond très diffus/transparent, texte crème */
+.md-chat blockquote {
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.022);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-left: 2px solid rgba(123, 82, 242, 0.45);
+  padding: 0.7em 1.1em;
+  margin: 1em 0;
+  color: #ece7db; /* crème légèrement plus blanc */
+}
+.md-chat blockquote p {
+  margin: 0.3em 0;
+}
+/* Tableaux minimalistes : hairlines, sans remplissage ni bandeau coloré */
+.md-chat table {
+  border-collapse: collapse;
+  width: 100%;
+  margin: 1.2em 0;
+  font-size: 0.92em;
+}
+.md-chat th,
+.md-chat td {
+  padding: 9px 14px;
+  text-align: left;
+  vertical-align: top;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+/* Fine séparation verticale après la 1re colonne (libellés) */
+.md-chat th:first-child,
+.md-chat td:first-child {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+}
+.md-chat tr:last-child td {
+  border-bottom: none;
+}
+/* En-tête = gras + filet dégradé sous la ligne d'en-tête, aucun fond */
+.md-chat th {
+  color: var(--color-ink);
+  font-weight: 700;
+  border-bottom: 1.5px solid transparent;
+  border-image: linear-gradient(90deg, rgba(123, 82, 242, 0.7), rgba(245, 103, 84, 0.4)) 1;
 }
