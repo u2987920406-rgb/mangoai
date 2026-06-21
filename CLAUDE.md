@@ -11,6 +11,14 @@ Lire aussi `fondation.md` — le document fondateur (architecture, vision 10 ans
 
 **Ne PAS lire `historique.md` au démarrage** — ce fichier est lourd (~220 ko). Le lire uniquement quand l'utilisateur demande explicitement le détail d'une idée ou d'une session passée.
 
+## Wiki de connaissance (`wiki/`, vault Obsidian)
+
+Le dossier `wiki/` est une **couche de synthèse interconnectée** par-dessus les docs brutes (pattern *LLM Wiki* / Obsidian). Les sources (`statut.md`, `historique.md`, `fondation.md`, `memory.md`) restent **immuables** ; le wiki les relie en pages-entités vivantes (une par concept : [[kernel]], [[mangoqa]], [[boucle-curation]], etc.).
+
+- **Conventions** : lire `wiki/_schema.md`. **Catalogue** : `wiki/index.md`. **Journal** : `wiki/log.md`.
+- Pour répondre à une question d'architecture, **lire d'abord `wiki/index.md`** puis la page-entité pertinente — souvent plus rapide que de parcourir `historique.md`.
+- Le vault Obsidian = ouvrir `D:\IA\MangoOS` en entier (les `[[liens]]` se résolvent par nom de fichier).
+
 ## ⚠️ Vérification anti-serveur-orphelin (IMPÉRATIF à chaque démarrage du backend)
 
 **Avant de lancer le backend Express (port 3000), TOUJOURS vérifier qu'aucun process orphelin ne squatte le port.** Cette erreur s'est produite plusieurs fois : la session automatique nocturne de Raf laisse un `node` mort-vivant sur le port 3000 dans une session non-interactive. Tous ses spawns (npm/git/vite) échouent alors avec des codes obscurs (`3221225794` / `0xC0000142`, `git init` qui plante), ce qui bloque toute génération d'app.
@@ -55,4 +63,5 @@ L'utilisateur peut demander :
 **À la fin de chaque module ou amélioration** (dès que `tsc` + build UI sont verts) :
 1. Mettre à jour `statut.md` — passer l'idée en ✅ FAIT + mettre à jour le bloc "Où on en est"
 2. Mettre à jour `historique.md` — ajouter le détail technique dans la section de l'idée + une entrée dans le Journal des sessions
-3. Attendre la permission de Raf avant tout git.
+3. **Mettre à jour le wiki** (`wiki/`) — éditer la/les page(s)-entité(s) touchée(s) par le changement (et en créer une si un nouveau concept apparaît, en suivant `wiki/_schema.md`), puis **ajouter une entrée datée dans `wiki/log.md`** (`## [date] ingest | titre`). Mettre à jour `wiki/index.md` si une page est créée. C'est du bookkeeping léger : viser le delta, pas une réécriture.
+4. Attendre la permission de Raf avant tout git.
