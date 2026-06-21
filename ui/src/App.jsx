@@ -30,6 +30,7 @@ import { useTutorial } from "./hooks/useTutorial.js";
 import { useBackendServer } from "./hooks/useBackendServer.js";
 import { useProjectDelivery } from "./hooks/useProjectDelivery.js";
 import { useVersions } from "./hooks/useVersions.js";
+import { usePreview } from "./hooks/usePreview.js";
 import { useWindowManager } from "./hooks/useWindowManager.js";
 import WindowManager from "./components/WindowManager.jsx";
 
@@ -71,15 +72,9 @@ export default function App() {
     setBuildRequest({ id: Date.now(), prompt, incrementId: inc.id });
   }, []);
 
-  const [previewUrl, setPreviewUrl] = useState(null);
-  const [previewKey, setPreviewKey] = useState(0);
   const [cost, setCost] = useState(0);
   const [context, setContext] = useState(null);
-  const [previewErrors, setPreviewErrors] = useState([]);
   const [pendingPrompt, setPendingPrompt] = useState(null);
-  const [inspecting, setInspecting] = useState(false);
-  const [seedInput, setSeedInput] = useState(null);
-  const [editTarget, setEditTarget] = useState(null);
   // #139 Gros Projet — requête de build d'incrément (Kanban → Chat) + nonce de
   // rafraîchissement du Kanban après chaque tour + busy pour griser « Construire ».
   const [buildRequest, setBuildRequest] = useState(null);
@@ -97,6 +92,16 @@ export default function App() {
   const [perfectPlanContract, setPerfectPlanContract] = useState(null);
   const { windows, openWindow, closeWindow, focusWindow, moveWindow, resizeWindow } = useWindowManager();
   const { toasts, pushToast, dismissToast } = useToasts();
+  const {
+    previewUrl, setPreviewUrl,
+    previewKey, bumpPreview,
+    previewErrors, clearErrors,
+    inspecting, toggleInspect,
+    seedInput, setSeedInput, clearSeed,
+    editTarget, clearEditTarget,
+    requestFix,
+    resetForProject: resetPreview,
+  } = usePreview({ screen, projectName, pushToast, onRequestFix: setPendingPrompt });
   const {
     active: tutorialActive,
     id: tutorialId,
@@ -119,7 +124,7 @@ export default function App() {
     projectName,
     pushToast,
     confirm: setConfirmCfg,
-    onRolledBack: () => setPreviewKey((k) => k + 1),
+    onRolledBack: bumpPreview,
   });
 
   useEffect(() => { localStorage.setItem("mangoos.project", projectName); }, [projectName]);
@@ -179,46 +184,6 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (screen !== SCREENS.WORKSPACE || !projectName.trim()) return;
-    fetch(`/api/preview/${encodeURIComponent(projectName)}`, { method: "POST" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((d) => {
-        if (d?.url) {
-          setPreviewUrl(d.url);
-          setPreviewKey((k) => k + 1);
-        }
-      })
-      .catch(() => {});
-  }, [screen, projectName]);
-
-  useEffect(() => {
-    const onMessage = (e) => {
-      const d = e.data;
-      if (!d || d.source !== "mangoos-preview") return;
-      if (d.type === "inspect-pick") {
-        setInspecting(false);
-        const label = d.text ? `« ${d.text} »` : `<${d.tag}>`;
-        if (d.src) {
-          setEditTarget({ src: d.src, tag: d.tag, text: d.text });
-          setSeedInput(`Modifie l'élément ${label} (source : ${d.src}) : `);
-          pushToast("success", `Élément ciblé : ${d.src}`);
-        } else {
-          setEditTarget(null);
-          setSeedInput(`Modifie l'élément <${d.tag}> ${label} : `);
-          pushToast("error", "Élément ciblé (source non tracée — recharge l'aperçu)");
-        }
-        return;
-      }
-      if (!d.message) return;
-      setPreviewErrors((prev) =>
-        prev.includes(d.message) || prev.length >= 10 ? prev : [...prev, d.message],
-      );
-    };
-    window.addEventListener("message", onMessage);
-    return () => window.removeEventListener("message", onMessage);
-  }, [pushToast]);
-
-  useEffect(() => {
     if (screen !== SCREENS.WORKSPACE || !projectName.trim()) { setPerfectPlanContract(null); return; }
     fetch(`/api/perfect-plan/${encodeURIComponent(projectName)}`)
       .then((r) => (r.ok ? r.json() : null))
@@ -242,8 +207,7 @@ export default function App() {
     setWorkspaceOrigin(origin);
     setInitialTask(task);
     setNocturnalEntry(nocturnal);
-    setPreviewUrl(null);
-    setPreviewErrors([]);
+    resetPreview();
     setContext(null);
     setPerfectPlanContract(null);
     setClientMode(localStorage.getItem(`mangoos.clientMode.${name}`) === "true");
@@ -258,13 +222,6 @@ export default function App() {
   function goHome() {
     refreshProjects();
     setScreen(SCREENS.HOME);
-  }
-
-  function requestFix() {
-    if (previewErrors.length === 0) return;
-    const list = previewErrors.map((e) => `- ${e}`).join("\n");
-    setPendingPrompt(`Corrige ces erreurs détectées dans l'aperçu de l'app :\n${list}`);
-    setPreviewErrors([]);
   }
 
   const tutorialOverlay =
@@ -471,8 +428,8 @@ export default function App() {
                 onCost={(c) => setCost((prev) => prev + c)}
                 onContext={setContext}
                 onAgentDone={() => {
-                  setPreviewErrors([]);
-                  setPreviewKey((k) => k + 1);
+                  clearErrors();
+                  bumpPreview();
                   refreshVersions();
                   refreshProjects();
                   // #139 — un tour est fini : rafraîchir le Kanban + libérer « Construire ».
@@ -482,9 +439,9 @@ export default function App() {
                 autoPrompt={pendingPrompt}
                 onAutoPromptConsumed={() => setPendingPrompt(null)}
                 seedInput={seedInput}
-                onSeedConsumed={() => setSeedInput(null)}
+                onSeedConsumed={clearSeed}
                 editTarget={editTarget}
-                onEditTargetConsumed={() => setEditTarget(null)}
+                onEditTargetConsumed={clearEditTarget}
                 showThinking={showThinking}
                 onChatMode={handleChatMode}
                 onToast={pushToast}
@@ -498,12 +455,12 @@ export default function App() {
                 reloadKey={previewKey}
                 errors={previewErrors}
                 onFix={requestFix}
-                onReload={() => setPreviewKey((k) => k + 1)}
+                onReload={bumpPreview}
                 inspecting={inspecting}
-                onToggleInspect={() => setInspecting((v) => !v)}
+                onToggleInspect={toggleInspect}
                 selectedElement={editTarget}
-                onClearSelection={() => setEditTarget(null)}
-                onApplyStyle={(msg) => setSeedInput(msg)}
+                onClearSelection={clearEditTarget}
+                onApplyStyle={setSeedInput}
               />
             </div>
           </>

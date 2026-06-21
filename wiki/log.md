@@ -8,6 +8,9 @@ maj: 2026-06-21
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-21] ingest | #140 — décomposition de App.jsx : le hub couplé preview↔chat extrait (6ᵉ hook)
+Mise à jour de [[dette-technique]] (section renforcement → gros œuvre du point #1 fait). 6ᵉ et dernier gros hook extrait : `usePreview` = **le cœur enchevêtré** d'App.jsx (URL/clé d'aperçu, erreurs iframe, pont d'inspection inspect-pick → seed du Chat) — tenu ensemble par UN seul listener `message`, donc un hook unique. Injection de dépendance (`screen`/`projectName`/`pushToast`/`onRequestFix`) pour laisser `pendingPrompt` côté App (partagé avec `openProject`, qui consomme désormais `resetPreview()`). `useVersions.onRolledBack` rebranché sur `bumpPreview`. `App.jsx` 517→446 l. (6 `useState` de plus sortis ; 15 au total depuis 600). Build vert (10.5s), `npm test` 13/13, **snap workspace live** : aperçu Vite démarré (iframe `127.0.0.1:5179`), inspection togglée, **zéro erreur console**. Reste : `WINDOWS.*` dans WindowManager, tests UI élargis (#4), tree-sitter flux (#3). Zéro git.
+
 ## [2026-06-21] ingest | #140 — décomposition de App.jsx amorcée (5 hooks)
 Mise à jour de [[dette-technique]] (section renforcement). Point #1 attaqué sous filet : 5 hooks cohérents extraits vers `ui/src/hooks/` — `useToasts`, `useTutorial` (dépend de setScreen/pushToast injectés), `useBackendServer`, `useProjectDelivery` (deploy+GitHub, reset au changement de projet), `useVersions` (historique+rollback, modal de confirm injecté). `App.jsx` 600→517 l. (9 `useState` sortis). Build + `npm test` (13/13) verts à chaque extraction, cockpit snappé (zéro erreur console, zéro régression). Reste : hub couplé preview↔chat + `openProject` (avec workspace live), `WINDOWS.*` dans WindowManager, tests UI élargis (#4), tree-sitter flux (#3). Zéro git.
 
