@@ -5,7 +5,10 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { hasManifest, loadManifest, saveManifest, mangoAppContractSection, accessAllowsWrite, findManifestById } from "./mango-app-contract.js";
+import {
+  hasManifest, loadManifest, saveManifest, mangoAppContractSection, accessAllowsWrite, findManifestById,
+  normalizeSchema, validateAgainstSchema, findCollectionSchema, type MangoAppManifest,
+} from "./mango-app-contract.js";
 import { assembleSystemPrompt } from "./scenario.js";
 import { ALLOWED_MODES } from "./agent.js";
 
@@ -80,6 +83,43 @@ check("accessAllowsWrite: non déclarée (null) → false", accessAllowsWrite(nu
 check("findManifestById trouve l'app par id", findManifestById([dir], "mango-taches")?.name === "Mango Tâches");
 check("findManifestById: id inconnu → null", findManifestById([dir], "inconnu") === null);
 check("findManifestById: id vide → null", findManifestById([dir], "") === null);
+
+// 7. Validation de schéma par collection (#138 Phase 2) — helpers purs.
+const taskSchema = { title: "string", done: "boolean", priority: "number?" };
+check("schéma : doc conforme → ok", validateAgainstSchema({ title: "Acheter", done: false, priority: 2 }, taskSchema).ok === true);
+check("schéma : champ optionnel absent → ok", validateAgainstSchema({ title: "Acheter", done: false }, taskSchema).ok === true);
+check("schéma : champ HORS schéma toléré → ok", validateAgainstSchema({ title: "x", done: true, note: "libre" }, taskSchema).ok === true);
+check("schéma : champ requis manquant → rejet", validateAgainstSchema({ done: true }, taskSchema).ok === false);
+check("schéma : mauvais type (done=string) → rejet", validateAgainstSchema({ title: "x", done: "oui" }, taskSchema).ok === false);
+check("schéma : NaN n'est pas un number → rejet", validateAgainstSchema({ title: "x", done: true, priority: NaN }, taskSchema).ok === false);
+check("schéma : valeur non-objet → rejet", validateAgainstSchema(["pas", "un", "objet"], taskSchema).ok === false);
+check("schéma : array reconnu", validateAgainstSchema({ tags: ["a", "b"] }, { tags: "array" }).ok === true);
+check("schéma : object reconnu (array ≠ object)", validateAgainstSchema({ meta: { k: 1 } }, { meta: "object" }).ok === true && validateAgainstSchema({ meta: [1] }, { meta: "object" }).ok === false);
+check("schéma : type 'any' accepte tout", validateAgainstSchema({ x: 5 }, { x: "any" }).ok === true && validateAgainstSchema({ x: "s" }, { x: "any" }).ok === true);
+const rej = validateAgainstSchema({ done: true }, taskSchema);
+check("schéma : message d'erreur nomme le champ fautif", rej.ok === false && /title/.test(rej.error));
+
+// normalizeSchema — parsing défensif.
+check("normalizeSchema : objet de strings → schéma", JSON.stringify(normalizeSchema({ a: "string", b: "number?" })) === JSON.stringify({ a: "string", b: "number?" }));
+check("normalizeSchema : valeurs non-string filtrées", JSON.stringify(normalizeSchema({ a: "string", b: 42, c: null })) === JSON.stringify({ a: "string" }));
+check("normalizeSchema : non-objet → undefined", normalizeSchema("x") === undefined && normalizeSchema(null) === undefined && normalizeSchema(["string"]) === undefined);
+check("normalizeSchema : objet vide → undefined", normalizeSchema({}) === undefined);
+
+// loadManifest relit le schéma d'une collection.
+const sdir = fs.mkdtempSync(path.join(os.tmpdir(), "mangoapp-schema-"));
+saveManifest(sdir, { id: "mango-taches", name: "Mango Tâches", icon: "📋", color: "#f59e0b", navEntry: { label: "Tâches", route: "/" }, collections: [{ name: "tasks", access: "readwrite", schema: { title: "string", done: "boolean" } }] });
+const sloaded = loadManifest(sdir);
+check("loadManifest relit le schéma de collection", sloaded?.collections[0]?.schema?.title === "string" && sloaded?.collections[0]?.schema?.done === "boolean");
+fs.rmSync(sdir, { recursive: true, force: true });
+
+// findCollectionSchema — préfère l'écrivain.
+const idn = (s: string) => s;
+const writer: MangoAppManifest = { id: "w", name: "W", icon: "📝", color: "#000", navEntry: { label: "W", route: "/" }, collections: [{ name: "tasks", access: "write", schema: { title: "string" } }], createdAt: "" };
+const reader: MangoAppManifest = { id: "r", name: "R", icon: "👁", color: "#000", navEntry: { label: "R", route: "/" }, collections: [{ name: "tasks", access: "read", schema: { title: "any" } }], createdAt: "" };
+check("findCollectionSchema : préfère le schéma de l'écrivain", findCollectionSchema([reader, writer], "tasks", idn)?.title === "string");
+check("findCollectionSchema : repli sur un lecteur si pas d'écrivain", findCollectionSchema([reader], "tasks", idn)?.title === "any");
+check("findCollectionSchema : aucune déclaration → null", findCollectionSchema([{ ...reader, collections: [{ name: "tasks", access: "read" }] }], "tasks", idn) === null);
+check("findCollectionSchema : collection inconnue → null", findCollectionSchema([writer], "autre", idn) === null);
 
 fs.rmSync(dir, { recursive: true, force: true });
 line("═");

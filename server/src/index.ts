@@ -76,7 +76,10 @@ import { restoreAgents } from "./agent-runtime.js";
 // #138 OS d'apps — colonne de données partagée + surface Suite (la spine).
 import { listDocs, getDoc, putDoc, deleteDoc, slug, subscribe } from "./shared-data.js";
 import { registerSuiteRoutes } from "./suite-routes.js";
-import { loadManifest, findManifestById, accessAllowsWrite } from "./mango-app-contract.js";
+import {
+  loadManifest, findManifestById, accessAllowsWrite,
+  findCollectionSchema, validateAgainstSchema, type MangoAppManifest,
+} from "./mango-app-contract.js";
 
 // Last-resort safety net: a bug in a fire-and-forget background task (review,
 // compaction) or any forgotten await must never take the whole server down —
@@ -808,6 +811,18 @@ function aclDenyWrite(req: express.Request, collection: string): string | null {
   if (accessAllowsWrite(decl?.access)) return null;
   return `L'app « ${manifest.name} » a déclaré « ${collection} » en ${decl?.access ?? "non déclarée"} — écriture refusée (ACL de conformance #138).`;
 }
+// #138 Phase 2 — Validation de SCHÉMA. Si une app déclare la forme d'une
+// collection (`schema`), une écriture non conforme est refusée (422) → les apps
+// sœurs lisent une donnée fiable. Aucun schéma déclaré → aucune contrainte.
+function schemaRejectWrite(collection: string, value: unknown): string | null {
+  const manifests = listProjects()
+    .map((p) => loadManifest(projectDir(p)))
+    .filter((m): m is MangoAppManifest => m !== null);
+  const schema = findCollectionSchema(manifests, collection, slug);
+  if (!schema) return null;
+  const r = validateAgainstSchema(value, schema);
+  return r.ok ? null : `Schéma de « ${collection} » non respecté : ${r.error} (validation de schéma #138-P2).`;
+}
 app.get("/api/shared/:collection", (req, res) => {
   const collection = slug(req.params["collection"] as string);
   if (!collection) {
@@ -874,6 +889,11 @@ app.put("/api/shared/:collection/:key", (req, res) => {
   const denied = aclDenyWrite(req, collection);
   if (denied) {
     res.status(403).json({ error: denied });
+    return;
+  }
+  const schemaErr = schemaRejectWrite(collection, value);
+  if (schemaErr) {
+    res.status(422).json({ error: schemaErr });
     return;
   }
   const savedKey = putDoc(collection, key, value);
