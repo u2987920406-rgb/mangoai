@@ -157,18 +157,49 @@ export function buildFluxMessage(obs: FluxObservationLite | null): string | null
   return lines.join('\n')
 }
 
+// Tier 1 (#137) — audit LLM conseil. flux-deep-observations.json (ecrit par MangoQA
+// quand un declencheur cost-aware s'arme). Surface seulement si l'audit a tourne ET
+// a des observations. Conseil, jamais bloquant.
+export interface FluxDeepObservationLite {
+  ran?: boolean
+  findings?: Array<{ observation?: string }>
+  summary?: string
+}
+
+export function readFluxDeepObservations(projectName: string): FluxDeepObservationLite | null {
+  const file = path.join(qaDir(projectDir(projectName)), 'flux-deep-observations.json')
+  try {
+    if (!fs.existsSync(file)) return null
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as FluxDeepObservationLite
+  } catch {
+    return null
+  }
+}
+
+export function buildFluxDeepMessage(obs: FluxDeepObservationLite | null): string | null {
+  if (!obs || !obs.ran) return null
+  const findings = (obs.findings ?? []).filter(f => f && typeof f.observation === 'string')
+  if (findings.length === 0) return null
+  const lines = [`🧭+ **Auditeur de Flux — audit profond** ${(obs.summary ?? '').trim()}`.trim()]
+  for (const f of findings.slice(0, 6)) lines.push(`- ${(f.observation as string).trim()}`)
+  return lines.join('\n')
+}
+
 // Dépendances injectables du watcher (testable sans I/O réelle).
 export interface VerdictWatcherDeps {
   wait: (projectName: string, timeoutMs: number) => Promise<QAVerdict | null>
   append: (historyDir: string, text: string) => void
   /** Lecture des observations de flux (#137) — injectable pour les tests. */
   readFlux?: (projectName: string) => FluxObservationLite | null
+  /** Lecture des observations de flux profondes Tier 1 (#137) — injectable. */
+  readFluxDeep?: (projectName: string) => FluxDeepObservationLite | null
 }
 
 const defaultWatcherDeps: VerdictWatcherDeps = {
   wait: waitForVerdict,
   append: (dir, text) => appendHistory(dir, [{ role: 'status', text, ts: new Date().toISOString() }]),
   readFlux: readFluxObservations,
+  readFluxDeep: readFluxDeepObservations,
 }
 
 // Attend le verdict (timeout long) puis l'écrit dans l'historique du projet —
@@ -188,6 +219,8 @@ export async function surfaceVerdict(
   // Auditeur de Flux (#137) : surfaçage additionnel, en plus du verdict. Conseil.
   const flux = buildFluxMessage((deps.readFlux ?? readFluxObservations)(projectName))
   if (flux) deps.append(historyDir, flux)
+  const fluxDeep = buildFluxDeepMessage((deps.readFluxDeep ?? readFluxDeepObservations)(projectName))
+  if (fluxDeep) deps.append(historyDir, fluxDeep)
   return msg
 }
 

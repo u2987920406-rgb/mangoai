@@ -3,7 +3,7 @@
 // (deps injectées). Le polling fichier de waitForVerdict reste couvert par le
 // run réel, comme l'attente l'a toujours été.
 // Lancer : npx tsx src/test-mangoqa.ts
-import { buildVerdictMessage, buildFluxMessage, surfaceVerdict, type QAVerdict, type VerdictWatcherDeps } from "./mangoqa.js"
+import { buildVerdictMessage, buildFluxMessage, buildFluxDeepMessage, surfaceVerdict, type QAVerdict, type VerdictWatcherDeps } from "./mangoqa.js"
 
 let pass = 0, fail = 0
 function check(label: string, cond: boolean): void {
@@ -105,6 +105,23 @@ check("flux cohérent (0/0) → null", buildFluxMessage({ counts: { measured: 0,
   deps.readFlux = () => ({ counts: { measured: 0, convergence: 0 } })
   await surfaceVerdict("proj", "/h/proj", deps, 1000)
   check("flux cohérent → pas de ligne 🧭 (1 entrée)", appended.length === 1)
+}
+
+// Tier 1 — audit profond (buildFluxDeepMessage + surfaçage).
+check("deep null → null", buildFluxDeepMessage(null) === null)
+check("deep ran=false → null", buildFluxDeepMessage({ ran: false, findings: [{ observation: "x" }] }) === null)
+check("deep ran=true sans findings → null", buildFluxDeepMessage({ ran: true, findings: [] }) === null)
+{
+  const m = buildFluxDeepMessage({ ran: true, summary: "2 obs.", findings: [{ observation: "image-creator sur 3 surfaces" }, { observation: "chemin confus" }] })
+  check("deep avec findings → message 🧭+", !!m && m.includes("🧭+") && m.includes("image-creator"))
+}
+{
+  // surfaceVerdict surface le deep EN PLUS (verdict + flux + deep = 3 entrées).
+  const { deps, appended } = mkDeps(greenVerdict)
+  deps.readFlux = () => ({ counts: { measured: 1, convergence: 0 }, measured: { phantomTargets: [{}] }, summary: "1 fantôme" })
+  deps.readFluxDeep = () => ({ ran: true, summary: "1 obs.", findings: [{ observation: "surfaces hétérogènes" }] })
+  await surfaceVerdict("proj", "/h/proj", deps, 1000)
+  check("deep surfacé en plus (verdict + flux + deep = 3)", appended.length === 3 && appended[2]?.text.includes("🧭+"))
 }
 
 console.log("═".repeat(56))
