@@ -1,6 +1,6 @@
 import { useState } from "react";
 import {
-  FolderOpen, GraduationCap, Image as ImageIcon, LayoutGrid,
+  Boxes, FolderOpen, GraduationCap, Image as ImageIcon, LayoutGrid,
   Moon, Music2, Settings, Sun,
 } from "lucide-react";
 import { getTheme, toggleTheme } from "../theme.js";
@@ -59,6 +59,7 @@ export default function Sidebar({
   onOpenProjects,
   onOpenWindow,
   onOpenLauncher,
+  onOpenSuite,
   onSetScreen,
   onStartTutorial,
   nextTutorialId,
@@ -107,6 +108,15 @@ export default function Sidebar({
           label="Music Creator"
           haloColor="#FF3B30"
           onClick={() => onOpenWindow?.({ type: "music-creator", title: "Music Creator", width: 900, height: 640 })}
+        />
+
+        {/* Suite — OS d'apps composables (#138) */}
+        <SideBtn
+          icon={Boxes}
+          label="OS d'apps — la suite"
+          haloColor="#7C5CFF"
+          onClick={onOpenSuite}
+          dataTour="suite"
         />
 
         {/* Launcher — toutes les apps */}

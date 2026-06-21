@@ -502,6 +502,10 @@ export default function App() {
         return openWindow({ type: "multi", title: "Multi-Projet", width: 1000, height: 720 });
       case "superagent":
         return openWindow({ type: "superagent", title: "Super Agent Builder", width: 900, height: 700, props: { projectName } });
+      case "suite":
+        // #138 OS d'apps — fenêtre Suite : liste les apps composables et leur
+        // donnée partagée. `onOpen` = openProject pour le bouton Ouvrir.
+        return openWindow({ type: "suite", title: "Suite — OS d'apps", width: 1000, height: 720, props: { onOpen: openProject } });
       default:
         return undefined;
     }
@@ -528,6 +532,7 @@ export default function App() {
     onOpenProjects: openProjectsWindow,
     onOpenWindow: openWindow,
     onOpenLauncher: openLauncher,
+    onOpenSuite: () => openAppWindow("suite"),
     onSetScreen: setScreen,
     onStartTutorial: startTutorial,
     nextTutorialId: tutorialNextId,

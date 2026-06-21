@@ -1,12 +1,15 @@
 ---
 type: meta
 tags: [wiki, log]
-maj: 2026-06-20
+maj: 2026-06-21
 ---
 
 # Journal du wiki
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
+
+## [2026-06-21] ingest | #138 OS d'apps — spine livrée & prouvée e2e
+Mise à jour de [[composer-os]] : la spine de #138 est construite (additif sur [[coque-souple]]). **Colonne de données partagée** (`server/src/shared-data.ts` = wrapper mince sur [[blackboard]], scope `shared:<collection>`) + routes REST `/api/shared/...` (CORS ouvert → cross-framework, slug + 256 ko). **Contrat MangoApp** (`mango-app-contract.ts`, manifest `.mangoapp.json` calqué `perfect-plan.ts`). **Mode 🧩 `compose`** (`agent.ts`, `scenario.ts` `MANGO_APP_RULES`+`MANGO_DATA_RULES` calqué `SUPABASE_RULES`, scénario Élite avec contrat+données en tête, sans socle-d'abord ; Header `Puzzle`). **Fenêtre Suite** (`suite-routes.ts` graphe des collections lecteurs/écrivains + `SuiteWindow.jsx` apps+graphe+aperçu live poll 2 s ; câblée dock [[bureau-os]]+Launcher). Validé live : 2 apps (Tâches écrit / Tableau lit) partagent `tasks`, graphe exact, Sharingan de la Suite lu (apps+graphe+JSON live) ; `tsc`+build verts, `test-shared-data.ts` 14/14 + `test-mango-app-contract.ts` 19/19. Anti-orphelin port 3000 appliqué (backend stale tué sur accord de Raf, backend frais relancé). Phase 2 reportée (SSE, schéma/ACL, aperçus simultanés, MangoQA cross-app, composants UI). Zéro git.
 
 ## [2026-06-21] note | Modèle « photogrammétrie → indexation IA » ([[cartographie-projet]])
 Page-concept posée à la demande de Raf (« note ça, le jour où on en a besoin, il faudra le sortir »). Le parallèle photogrammétrie (Metashape/RealityCapture : EXIF + keypoints + chunks + points de contrôle → nuage de points recalé) ↔ cartographie de projet IA (métadonnées AST + embeddings + modules + liens `[[...]]` → graphe). Insight de Raf : le nuage de points relié = la vue graphe d'Obsidian. Dicte l'ordre de la Phase 2 de #139 : tree-sitter (EXIF) d'abord, embeddings ensuite, vault [[vault-projet]] comme couche de recalage, maintenance incrémentale. **À SORTIR au déclenchement de la Phase 2 (RAG intra-projet), pas avant.** `index.md` mis à jour. Zéro git.

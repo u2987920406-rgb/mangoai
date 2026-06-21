@@ -73,6 +73,9 @@ import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboardi
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
 import { registerAgentFactoryRoutes } from "./agent-routes.js";
 import { restoreAgents } from "./agent-runtime.js";
+// #138 OS d'apps — colonne de données partagée + surface Suite (la spine).
+import { listDocs, getDoc, putDoc, deleteDoc, slug } from "./shared-data.js";
+import { registerSuiteRoutes } from "./suite-routes.js";
 
 // Last-resort safety net: a bug in a fire-and-forget background task (review,
 // compaction) or any forgotten await must never take the whole server down —
@@ -776,6 +779,64 @@ app.post("/api/stop", async (_req, res) => {
   agentBusy = false;
   res.json({ stopped });
 });
+
+// #138 OS d'apps — Colonne de données partagée (la spine). CRUD REST sur le
+// Blackboard, scope `shared:<collection>`. CORS est ouvert (app.use(cors())
+// ci-dessus) → une app générée sur un autre port (5174…) lit/écrit ici
+// directement, donc le partage est cross-framework. Garde-fous : collection/clé
+// slugifiées, valeur JSON bornée (256 ko) pour ne pas gonfler le store.
+const SHARED_MAX_BYTES = 256 * 1024;
+app.get("/api/shared/:collection", (req, res) => {
+  const collection = slug(req.params["collection"] as string);
+  if (!collection) {
+    res.status(400).json({ error: "Collection invalide" });
+    return;
+  }
+  res.json({ collection, docs: listDocs(collection) });
+});
+app.get("/api/shared/:collection/:key", (req, res) => {
+  const collection = slug(req.params["collection"] as string);
+  const key = slug(req.params["key"] as string);
+  if (!collection || !key) {
+    res.status(400).json({ error: "Collection ou clé invalide" });
+    return;
+  }
+  const value = getDoc(collection, key);
+  if (value === undefined) {
+    res.status(404).json({ error: "Document introuvable" });
+    return;
+  }
+  res.json({ collection, key, value });
+});
+app.put("/api/shared/:collection/:key", (req, res) => {
+  const collection = slug(req.params["collection"] as string);
+  const key = slug(req.params["key"] as string);
+  if (!collection || !key) {
+    res.status(400).json({ error: "Collection ou clé invalide" });
+    return;
+  }
+  const { value } = req.body as { value?: unknown };
+  if (value === undefined) {
+    res.status(400).json({ error: "Champ 'value' requis" });
+    return;
+  }
+  if (JSON.stringify(value).length > SHARED_MAX_BYTES) {
+    res.status(413).json({ error: "Valeur trop volumineuse (max 256 ko)" });
+    return;
+  }
+  const savedKey = putDoc(collection, key, value);
+  res.json({ collection, key: savedKey, value });
+});
+app.delete("/api/shared/:collection/:key", (req, res) => {
+  const collection = slug(req.params["collection"] as string);
+  const key = slug(req.params["key"] as string);
+  if (!collection || !key) {
+    res.status(400).json({ error: "Collection ou clé invalide" });
+    return;
+  }
+  res.json({ ok: deleteDoc(collection, key) });
+});
+registerSuiteRoutes(app);
 
 registerPromptLabRoutes(app);
 registerTraceRoutes(app);

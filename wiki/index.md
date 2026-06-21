@@ -29,7 +29,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[deploiement]] | GitHub #16, Supabase #17, Cloudflare/Vercel/Netlify #18 | ✅ écrite |
 | [[bureau-os]] | Bureau iconique + fenêtres superposables — #136 (Window Manager, chat, palette iOS) | ✅ écrite |
 | [[flux]] | Architecture de navigation + contrat de cohérence — audit 2026-06-21, refonte P0→P4 complète | ✅ écrite |
-| [[composer-os]] | Assembler la production : suite d'apps (#138, type Office) ou gros projet unique (#139, socle+Kanban) — concept validé | ✅ écrite |
+| [[composer-os]] | Assembler la production : suite d'apps (#138, type Office) ou gros projet unique (#139, socle+Kanban) — **2 spines livrées & prouvées e2e** | ✅ écrite |
 | [[pre-requis-gros-projet]] | Briques externes (TypeScript · router fichier · LSP-MCP · tree-sitter · sqlite-vec) pour les gros projets #139 | ✅ écrite |
 | [[dette-technique]] | Les 4 points fragiles de l'archi (App.jsx god-component · nav stringly-typed · regex flux · tests UI) à renforcer — #140 | ✅ écrite |
 | [[vault-projet]] | Vault Obsidian auto-cartographié par gros projet (carte vivante navigable agent+humain) — #141 | ✅ écrite |

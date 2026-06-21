@@ -1,8 +1,8 @@
 ---
 type: concept
 tags: [composition, os-apps, gros-projet, shell, contrat, données-partagées, kanban, micro-frontend]
-statut: "#139 spine livrée & validée e2e (2026-06-21) · #138 concept-validé à-construire-après-#139"
-sources: [statut#138, statut#139, historique#échange-2026-06-21, historique#139-spine, plan.md]
+statut: "#138 spine livrée & prouvée e2e (2026-06-21) · #139 spine livrée & validée e2e (2026-06-21)"
+sources: [statut#138, statut#139, historique#échange-2026-06-21, historique#138-spine, historique#139-spine, plan.md]
 maj: 2026-06-21
 ---
 
@@ -32,7 +32,16 @@ Deux cas distincts (à ne pas confondre — c'est la confusion qui fait rater le
 
 **Cohérence = 3 couches du contrat « MangoApp »** : design partagé (tokens — [[blackboard]] partage déjà les palettes) · **colonne de données partagée** (*la vraie valeur d'OS* ; sans elle, un Launcher de 20 apps = un menu Démarrer plus joli — à décider **en amont**) · shell de nav ([[flux]]).
 
-**Le rôle de l'agent bascule** : non pas « fusionner après » mais **« composer à la génération »** (générer chaque app déjà conforme au contrat : point de montage, tokens, lit/écrit la donnée commune, entrée de nav). 2 niveaux : **L1 coexistence** (≈ déjà là) / **L2 intégration** (donnée partagée → vrai OS ; implique de **standardiser sur React** pour les apps composables — la donnée se partage cross-framework, pas les composants).
+**Le rôle de l'agent bascule** : non pas « fusionner après » mais **« composer à la génération »** (générer chaque app déjà conforme au contrat : point de montage, tokens, lit/écrit la donnée commune, entrée de nav). 2 niveaux : **L1 coexistence** (≈ déjà là) / **L2 intégration** (donnée partagée → vrai OS). **Raffinement de la spine** : la donnée passe par **REST** (`/api/shared`, CORS ouvert) → **cross-framework** ; standardiser sur React n'est nécessaire que pour partager des *composants UI* (hors scope), pas pour la donnée.
+
+**✅ SPINE LIVRÉE & prouvée e2e (2026-06-21).** Implémentation **purement additive sur la [[coque-souple]]** :
+- **Colonne de données partagée** (le cœur) — `server/src/shared-data.ts` = wrapper mince sur [[blackboard]], scope `shared:<collection>` (`list/get/put/deleteDoc` + `slug`). Routes REST `GET /api/shared/:collection` · `GET/PUT/DELETE /api/shared/:collection/:key` (CORS ouvert → app sur un autre port = cross-framework ; garde-fous slug + valeur ≤ 256 ko). Sync = **polling court** côté apps.
+- **Contrat MangoApp** — `server/src/mango-app-contract.ts` : manifest `.mangoapp.json` ({id,name,icon,color,navEntry,collections[{name,access}]}) calqué sur `perfect-plan.ts` (lecture défensive) + `mangoAppContractSection` (bloc de prompt).
+- **Mode 🧩 « App composable »** — `agent.ts` (`ALLOWED_MODES`+`compose`), `scenario.ts` (`MANGO_APP_RULES` + `MANGO_DATA_RULES` calqué sur `SUPABASE_RULES` : client `src/lib/mangoData.ts` → `/api/shared` via `VITE_API_URL`, polling, dégradation propre ; `SCENARIOS.compose` = arsenal Élite **+ contrat+données en tête**, **sans** le socle-d'abord du mode projet). Sélecteur Header 🧩.
+- **Fenêtre Suite** (le shell) — `server/src/suite-routes.ts` (`GET /api/suite/apps` = apps conformes **+ graphe des collections** lecteurs/écrivains/docCount live ; `/collection/:name`) + `ui/src/components/SuiteWindow.jsx` (apps + bouton Ouvrir, graphe « qui écrit → qui lit », aperçu **live** poll 2 s). Câblée dock ([[bureau-os]]) + Launcher.
+- **Test live** : 2 apps (« Mango Tâches » écrit `tasks` / « Mango Tableau » lit `tasks`) partagent la collection — l'écriture de l'une est lue par l'autre via REST ; `/api/suite/apps` rend le graphe exact (écrit:Tâches → lu:les deux, 2 docs) ; Sharingan de la Suite lu (apps + graphe + JSON live). `tsc`+build verts, `test-shared-data.ts` 14/14 + `test-mango-app-contract.ts` 19/19.
+
+**Phase 2 reportée** (assumée) : sync **SSE temps réel** (vs poll) · **validation de schéma + ACL** par app · **aperçus simultanés** (pool de ports Vite — contrainte : un seul aperçu à la fois, la Suite ouvre en séquence) · audit [[mangoqa]] **cross-app** · partage de **composants UI** (impliquerait de standardiser React).
 
 ## #139 — Mode « Gros Projet » (build incrémental d'un produit unique)
 
@@ -59,7 +68,7 @@ Deux cas distincts (à ne pas confondre — c'est la confusion qui fait rater le
 
 ## Séquencement
 
-[[flux]] **#137 (Auditeur de Flux) d'abord** ✅ — il est le **QA de cohérence** dont #138/#139 ont besoin. Puis **#139 avant #138** ✅ (spine #139 livrée) : le « socle-d'abord + Kanban » sert *aussi* à bâtir le shell de #138, et les gros projets uniques sont un besoin plus fréquent que la suite multi-apps. **Reste #138** (compositeur d'apps) + la **Phase 2 de #139** (RAG/LSP).
+[[flux]] **#137 (Auditeur de Flux) d'abord** ✅ — il est le **QA de cohérence** dont #138/#139 ont besoin. Puis **#139 avant #138** ✅ : le « socle-d'abord + Kanban » a servi *aussi* à bâtir le shell de #138. **Les deux spines sont désormais livrées** ✅. **Reste** : la **Phase 2 de #138** (SSE, schéma/ACL, aperçus simultanés, MangoQA cross-app) et la **Phase 2 de #139** (RAG/LSP intra-projet).
 
 ## Liens
 

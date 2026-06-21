@@ -32,9 +32,10 @@ import { recoveryPromptSection } from "./orchestrator.js";
 import { SELF_CRITIQUE_RULES } from "./self-critique.js";
 import { perfectPlanSection } from "./perfect-plan.js";
 import { projectPlanSection, skeletonDone, SCAFFOLD_RULES, PROJET_MODE_RULES } from "./project-plan.js";
+import { mangoAppContractSection } from "./mango-app-contract.js";
 
 export type PromptContext = {
-  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet";
+  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose";
   model: string;
   projectDir: string;
   // Idée #56 Chantier C — présent quand l'utilisateur construit DANS le tutoriel
@@ -130,6 +131,14 @@ Mode ✨ Esthétique — high-fidelity graphic polish phase (the project is buil
   // Mode 🏗️ Gros Projet (#139) — construction incrémentale d'UN grand produit
   // (socle-d'abord puis incréments bornés). La posture vit dans project-plan.ts.
   projet: PROJET_MODE_RULES,
+  // Mode 🧩 App composable (#138) — l'app fait partie d'un OS d'apps qui se
+  // parlent. Posture : qualité Élite, MAIS l'app se déclare (manifest) et partage
+  // sa donnée par REST. Le détail du contrat vit dans les blocs mangoAppContract
+  // + mangoData injectés en tête de scénario.
+  compose: `
+Mode 🧩 App composable — tu construis UNE app d'une SUITE qui se parle :
+- Qualité Élite (analyse, vérif visuelle, soin du détail) — déploie l'arsenal ci-dessous.
+- DIFFÉRENCE CLÉ : ton app n'est pas un silo. Elle se DÉCLARE (manifest .mangoapp.json) et PARTAGE sa donnée avec les apps sœurs via le service partagé REST. Respecte le contrat MangoApp et les règles de données partagées en tête.`,
   // Mode 💬 Discussion uses the `discuss` block (DISCUSS_RULES) directly in its
   // scenario rather than this `mode` block; this entry only completes the type
   // over the Mode union so MODE_RULES[ctx.mode] stays exhaustively indexable.
@@ -166,6 +175,30 @@ Backend, database and auth (Supabase) — when the app needs data persistence, u
 - The user supplies the keys: tell them (briefly, in French) to create a free project at supabase.com and put VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in the project's .env, then restart the preview.
 - You cannot run migrations — when a table is needed, give the user the exact SQL to paste in the Supabase SQL editor, and ALWAYS enable Row Level Security with sensible policies (a public app must not leave tables world-writable).
 - Degrade gracefully: if the keys are missing, the app must still render (show a clear "connecte Supabase" notice rather than crash).`;
+
+// #138 OS d'apps — Contrat MangoApp : l'app est UN composant d'une suite. Le
+// détail du manifest existant (s'il y en a un) est injecté séparément par le bloc
+// `mangoAppContract` (mango-app-contract.ts) ; ces RULES posent la posture.
+const MANGO_APP_RULES = `
+MangoApp contract — you are building ONE app of a composable SUITE (an OS of personal apps that talk to each other), NOT an isolated silo:
+- DECLARE the app: write a .mangoapp.json manifest at the project root (id, name, icon, color, navEntry {label, route}, collections [{name, access}]). The Suite window scans it to map "who talks to whom". Keep it up to date when you add a shared collection.
+- This is a React + TypeScript app like the others in the suite (the template ships Vite + React + Tailwind v4). Provide a clear nav entry — your app may be opened standalone OR inside the suite shell.
+- Visual coherence ACROSS sibling apps: harmonise with the shared design system (same palette tokens, typography, radii). Do not drift into an isolated style — the suite must feel like one product.`;
+
+// #138 OS d'apps — Colonne de données partagée : modèle EXACT de SUPABASE_RULES
+// (un client mince, dégradation propre si le service est absent), mais pointé sur
+// le service partagé local /api/shared (Blackboard) au lieu de Supabase.
+const MANGO_DATA_RULES = `
+Shared data column (how sibling apps actually talk) — when your app reads or writes data that ANOTHER app in the suite should see:
+- Create a single thin client in src/lib/mangoData.ts that talks to the shared REST service. Base URL = import.meta.env.VITE_API_URL ?? "http://localhost:3000". NEVER hardcode another origin.
+- A COLLECTION is a named bucket of JSON documents shared across apps (e.g. "tasks"). The API:
+  - list:   GET    \`\${BASE}/api/shared/:collection\`            → { collection, docs: [{ key, value }] }
+  - read:   GET    \`\${BASE}/api/shared/:collection/:key\`       → { collection, key, value }
+  - write:  PUT    \`\${BASE}/api/shared/:collection/:key\`  body { value }  (creates or replaces)
+  - delete: DELETE \`\${BASE}/api/shared/:collection/:key\`
+- Declare every shared collection you touch in .mangoapp.json with the right access (read | write | readwrite).
+- Sync by SHORT POLLING (refetch the collection every 1-2s with setInterval, clear it on unmount) so a change made in a sibling app shows up here. No websockets.
+- Degrade gracefully: if the shared service is unreachable, the app must still render (show a discreet "données partagées hors-ligne" notice and keep working on local state) — never crash on a failed fetch.`;
 
 // Idea 24 — automated tests for the generated project, Élite-only & optional.
 // On-demand: Vitest isn't preinstalled (test-less projects stay lean for the
@@ -382,13 +415,19 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // #139 — état du chantier (.project-plan.json) rendu en board : l'agent voit
   // ce qui est fait / à faire à chaque tour. "" si le manifest n'existe pas encore.
   projectPlan: (ctx) => projectPlanSection(ctx.projectDir),
+  // #138 — contrat MangoApp : posture (l'app est un composant de suite) + état du
+  // manifest .mangoapp.json déjà déclaré (s'il existe). "" hors contexte projet.
+  mangoAppContract: (ctx) => MANGO_APP_RULES + mangoAppContractSection(ctx.projectDir),
+  // #138 — règles de la colonne de données partagée (client mangoData.ts → REST
+  // /api/shared). Prompt-only, toujours présent en mode compose.
+  mangoData: () => MANGO_DATA_RULES,
 };
 
 // ── Scenarios: ordered block pipelines per effort mode ──────────────────────
 // Élite runs the full arsenal; MVP omits the analytic ritual and Mango Plan
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
-const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet", string[]> = {
+const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose", string[]> = {
   elite: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
   mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
@@ -414,6 +453,12 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // EST le Perfect Plan + le manifest. `scaffold` (socle-d'abord) et `projectPlan`
   // (board du chantier) en tête, juste après la posture et le contrat.
   projet: ["mode", "perfectPlan", "projectPlan", "scaffold", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  // #138 App composable — arsenal Élite, avec le contrat MangoApp (manifest) et
+  // la colonne de données partagée (mangoData) en TÊTE (juste après la posture),
+  // pour que l'app se déclare et partage sa donnée dès le premier tour. On retire
+  // les portes humaines questionneuses (cadrage/clarification/Miroir) comme en
+  // projet : le cadrage, ici, c'est le contrat de suite.
+  compose: ["mode", "mangoAppContract", "mangoData", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
 };
 
 /** Assembles the system-prompt append for a turn by running the scenario's

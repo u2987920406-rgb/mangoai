@@ -88,7 +88,7 @@ export function dedupeColors(rawColors: string[]): string[] {
 export function setVisionContext(
   dir: string,
   url: string,
-  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" = "elite",
+  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" = "elite",
 ): void {
   projectDir = dir;
   previewUrl = url;

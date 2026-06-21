@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useEffect } from "react";
 import {
-  BookOpen, Bot, FileText, FlaskConical, FolderOpen, HelpCircle,
+  BookOpen, Bot, Boxes, FileText, FlaskConical, FolderOpen, HelpCircle,
   Image as ImageIcon, Layers, Lightbulb, Music2, Network, Palette,
   Plus, Search, Sliders, Sparkles, Trash2,
 } from "lucide-react";
@@ -18,6 +18,7 @@ const PromptLab         = lazy(() => import("./PromptLab.jsx"));
 const DesignReview      = lazy(() => import("./DesignReview.jsx"));
 const MultiProject      = lazy(() => import("./MultiProject.jsx"));
 const SuperAgentBuilder = lazy(() => import("./SuperAgentBuilder.jsx"));
+const SuiteWindow       = lazy(() => import("./SuiteWindow.jsx"));
 
 function PanelLoader() {
   return (
@@ -205,6 +206,7 @@ const LAUNCHER_SECTIONS = [
     title: "Apps",
     items: [
       { id: "projects",   label: "App Builder",   icon: FolderOpen,   run: (a) => a.onOpenProjects?.() },
+      { id: "suite",      label: "OS d'apps",     icon: Boxes,        run: (a) => a.onOpenApp?.("suite") },
       { id: "image",      label: "Image Creator", icon: ImageIcon,    run: (a) => a.onOpenWindow?.({ type: "image-creator", title: "Image Creator", width: 900, height: 640 }) },
       { id: "music",      label: "Music Creator", icon: Music2,       run: (a) => a.onOpenWindow?.({ type: "music-creator", title: "Music Creator", width: 900, height: 640 }) },
       { id: "agent",      label: "Agent Factory", icon: Bot,          run: (a) => a.onOpenWindow?.({ type: "agent-factory", title: "Agent Factory", width: 1100, height: 700 }) },
@@ -329,6 +331,13 @@ function WindowContent({ win, onClose }) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <SuperAgentBuilder onBack={() => onClose(win.id)} projectName={win.props?.projectName} />
+      </Suspense>
+    );
+  }
+  if (win.type === "suite") {
+    return (
+      <Suspense fallback={<PanelLoader />}>
+        <SuiteWindow win={win} onClose={onClose} />
       </Suspense>
     );
   }
