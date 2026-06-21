@@ -1,15 +1,47 @@
-// Manages the Vite dev server of the currently previewed generated project.
-// One preview at a time, on a FRESH free port each start (see startPreview).
+// Manages the Vite dev servers of previewed generated projects.
+//
+// #138-P2 — APERÇUS SIMULTANÉS : ce module gérait UN seul aperçu à la fois
+// (singleton `current`). Pour que l'OS d'apps montre deux apps côte à côte qui se
+// synchronisent en live, on tient désormais un POOL borné (`pool`, clé = dossier
+// projet résolu), plafonné à MAX_PREVIEWS avec éviction LRU. Chaque app a son
+// process Vite sur son PROPRE port (vite marche jusqu'au 1er port libre, pas de
+// --strictPort → pas de collision). Le flux mono-aperçu du workspace est inchangé :
+// `startPreview(dir)` rend toujours `{url}` ; il n'arrête simplement plus les autres.
+//
+// Le lancement Vite (spawn + lecture d'URL + health-check) est injectable
+// (`PreviewDeps.launch`) pour que la logique du pool soit testable sans process réel.
 import { spawn, type ChildProcess } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
 import crypto from "node:crypto";
 
-// Base of the scan range. We never bind this port blindly: findFreePort() walks
-// up from here to the first genuinely free port (see the bug note in startPreview).
+// Base of the scan range. We never bind this port blindly: vite walks up from here
+// to the first genuinely free port (see the bug note in defaultLaunch).
 const PREVIEW_PORT_BASE = Number(process.env.PREVIEW_PORT ?? 5174);
+// Combien d'aperçus Vite simultanés au maximum (chacun = un process lourd). Au-delà,
+// on évince le moins récemment utilisé (LRU). Borne le coût machine.
+const MAX_PREVIEWS = Math.max(1, Number(process.env.MAX_PREVIEWS ?? 3));
 
-let current: { projectDir: string; proc: ChildProcess; url: string; port: number; configHash: string } | null = null;
+/** Un serveur Vite vivant du pool. */
+interface LiveServer {
+  projectDir: string;
+  url: string;
+  port: number;
+  configHash: string;
+  lastUsed: number;
+  isAlive: () => Promise<boolean>;
+  stop: () => Promise<void>;
+}
+
+/** Lanceur d'un serveur Vite : injectable pour les tests (sans spawn réel). */
+export type Launcher = (projectDir: string, configHash: string) => Promise<Omit<LiveServer, "lastUsed">>;
+export interface PreviewDeps {
+  launch?: Launcher;
+}
+
+// Le pool, clé = chemin projet résolu (canonique).
+const pool = new Map<string, LiveServer>();
+const keyOf = (projectDir: string): string => path.resolve(projectDir);
 
 // Fingerprint of the files that decide how Vite behaves. When a project is
 // regenerated IN-PLACE with a different framework (e.g. plugin-svelte →
@@ -45,91 +77,149 @@ function purgeViteCache(projectDir: string): void {
 // eslint-disable-next-line no-control-regex
 const ANSI = /\x1b\[[0-9;]*m/g;
 
-export function previewStatus() {
-  return {
-    running: current !== null && current.proc.exitCode === null,
-    projectDir: current?.projectDir ?? null,
-    url: current?.url ?? null,
-  };
+/** L'aperçu le plus récemment utilisé (rétro-compat : l'ancien `current`). */
+function mru(): LiveServer | null {
+  let best: LiveServer | null = null;
+  for (const s of pool.values()) if (!best || s.lastUsed > best.lastUsed) best = s;
+  return best;
 }
 
-export async function startPreview(projectDir: string): Promise<{ url: string }> {
-  // Fast path: same project, SAME config, process alive AND the server still
-  // answers. The health check matters — a process can be alive but its server
-  // dead/zombied; without it we'd hand back a URL that renders nothing. The
-  // config-hash check matters too: a project regenerated in-place with another
-  // framework keeps the same dir but a different vite.config/package.json, and
-  // the running server still holds the OLD config in memory → stale preview.
-  const fp = configFingerprint(projectDir);
-  const configChangedInPlace = current?.projectDir === projectDir && current.configHash !== fp;
-  if (
-    current &&
-    current.projectDir === projectDir &&
-    current.proc.exitCode === null &&
-    current.configHash === fp
-  ) {
-    if (await serverAlive(current.url)) return { url: current.url };
+/** Statut de l'aperçu « actif » (MRU) — forme historique pour les consommateurs existants. */
+export function previewStatus() {
+  const s = mru();
+  return { running: s !== null, projectDir: s?.projectDir ?? null, url: s?.url ?? null };
+}
+
+/** Tous les aperçus vivants (pour la surface « aperçus simultanés »). */
+export function previewList(): { projectDir: string; url: string; port: number }[] {
+  return [...pool.values()]
+    .sort((a, b) => b.lastUsed - a.lastUsed)
+    .map((s) => ({ projectDir: s.projectDir, url: s.url, port: s.port }));
+}
+
+/** Un aperçu tourne-t-il déjà pour ce projet ? (garde-fous suppression/agent occupé). */
+export function isPreviewing(projectDir: string): boolean {
+  return pool.has(keyOf(projectDir));
+}
+
+/** Évince le moins récemment utilisé tant que le pool est plein (en faisant de la place). */
+async function evictToFit(): Promise<void> {
+  while (pool.size >= MAX_PREVIEWS) {
+    let victimKey: string | null = null;
+    let oldest = Infinity;
+    for (const [k, s] of pool) {
+      if (s.lastUsed < oldest) { oldest = s.lastUsed; victimKey = k; }
+    }
+    if (victimKey === null) break;
+    const victim = pool.get(victimKey)!;
+    pool.delete(victimKey);
+    await victim.stop();
   }
-  await stopPreview();
+}
 
-  // Framework/deps changed in the same project folder → drop the stale Vite
-  // dep-bundle cache so the fresh server doesn't reuse deps for the old framework.
-  if (configChangedInPlace) purgeViteCache(projectDir);
+export async function startPreview(projectDir: string, deps: PreviewDeps = {}): Promise<{ url: string }> {
+  const launch = deps.launch ?? defaultLaunch;
+  const key = keyOf(projectDir);
+  const fp = configFingerprint(projectDir);
+  const existing = pool.get(key);
 
+  // Fast path : même projet, MÊME config, process vivant ET le serveur répond
+  // encore. Le health-check compte (un process vivant peut héberger un serveur
+  // mort/zombi) ; le hash de config compte aussi (projet régénéré en place avec un
+  // autre framework → même dossier mais vite.config/package.json différents → le
+  // serveur en cours tient l'ANCIENNE config en mémoire → aperçu périmé).
+  if (existing && existing.configHash === fp && (await existing.isAlive())) {
+    existing.lastUsed = Date.now();
+    return { url: existing.url };
+  }
+
+  // Entrée présente mais inutilisable (config changée en place, ou serveur mort) :
+  // on l'arrête et, si la config a changé, on purge le cache de deps Vite périmé.
+  if (existing) {
+    pool.delete(key);
+    await existing.stop();
+    if (existing.configHash !== fp) purgeViteCache(projectDir);
+  }
+
+  // Fait de la place AVANT de lancer (n'évince jamais l'app qu'on relance, déjà retirée).
+  await evictToFit();
+
+  const server = await launch(projectDir, fp);
+  pool.set(key, { ...server, lastUsed: Date.now() });
+  return { url: server.url };
+}
+
+/** Arrête UN aperçu (par dossier) ou TOUS (sans argument — « repartir propre »). */
+export async function stopPreview(projectDir?: string): Promise<void> {
+  if (projectDir !== undefined) {
+    const key = keyOf(projectDir);
+    const s = pool.get(key);
+    if (!s) return;
+    pool.delete(key);
+    await s.stop();
+    return;
+  }
+  const all = [...pool.values()];
+  pool.clear();
+  await Promise.all(all.map((s) => s.stop()));
+}
+
+// ─── Lanceur Vite réel (par défaut) ──────────────────────────────────────────
+
+const defaultLaunch: Launcher = async (projectDir, configHash) => {
   if (!fs.existsSync(path.join(projectDir, "package.json"))) {
     throw new Error(`No package.json in ${projectDir}`);
   }
 
   // This is the fix for the "preview frozen on the wrong project" bug. The old
   // code pinned a fixed port with --strictPort; when an orphaned preview from a
-  // previous backend session (one this process can't kill, and bound on the
-  // localhost/IPv6 side where a naive free-port check doesn't see it) kept
-  // holding the port, the new vite died on --strictPort while waitForServer was
-  // fooled by the orphan's 200 — so the iframe stayed on the old project, for
-  // every project, forever.
-  //
-  // Now we let vite pick its OWN free port (no --strictPort → it walks past any
-  // squatted port) and we read the REAL url straight from its stdout. No port
-  // guessing, no interface/IPv4-vs-IPv6 mismatch: vite tells us where it landed.
+  // previous backend session kept holding the port, the new vite died on
+  // --strictPort while waitForServer was fooled by the orphan's 200. Now we let
+  // vite pick its OWN free port (no --strictPort → it walks past any squatted
+  // port) and we read the REAL url straight from its stdout. This is ALSO what
+  // makes simultaneous previews work: a 2nd vite started at the same base port
+  // walks up to the next free one on its own.
   const proc = spawn(
     process.platform === "win32" ? "npm.cmd" : "npm",
     ["run", "dev", "--", "--port", String(PREVIEW_PORT_BASE), "--host", "127.0.0.1"],
     { cwd: projectDir, stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" },
   );
-  // url is filled in from vite's stdout below.
-  current = { projectDir, proc, url: "", port: 0, configHash: fp };
 
+  // Si le process meurt, retirer son entrée du pool (par identité, pour ne pas
+  // évincer un remplaçant relancé entre-temps sur la même clé).
+  const key = keyOf(projectDir);
   proc.on("exit", (code) => {
     console.log(`[preview] dev server exited (code ${code})`);
-    if (current?.proc === proc) current = null;
+    const s = pool.get(key);
+    if (s && s.stop === stopThis) pool.delete(key);
   });
 
   const url = await readViteUrl(proc, 30_000);
-  if (current?.proc === proc) {
-    const port = Number(new URL(url).port) || PREVIEW_PORT_BASE;
-    current = { projectDir, proc, url, port, configHash: fp };
-  }
+  const port = Number(new URL(url).port) || PREVIEW_PORT_BASE;
   // A final health check: vite announced the url, make sure it actually serves.
   await waitForServerOrExit(url, proc, 15_000);
-  return { url };
-}
 
-export async function stopPreview(): Promise<void> {
-  if (!current) return;
-  const { proc } = current;
-  current = null;
-  // Best-effort kill — correctness no longer depends on it (the next start uses
-  // a different port), this only avoids leaking processes within our own session.
-  if (proc.exitCode === null) {
-    if (process.platform === "win32" && proc.pid) {
-      // Kill the whole tree on Windows (npm spawns vite as a child).
-      spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
-    } else {
-      proc.kill("SIGTERM");
+  async function stopThis(): Promise<void> {
+    if (proc.exitCode === null) {
+      if (process.platform === "win32" && proc.pid) {
+        // Kill the whole tree on Windows (npm spawns vite as a child).
+        spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
+      } else {
+        proc.kill("SIGTERM");
+      }
     }
+    await new Promise((r) => setTimeout(r, 300));
   }
-  await new Promise((r) => setTimeout(r, 300));
-}
+
+  return {
+    projectDir,
+    url,
+    port,
+    configHash,
+    isAlive: async () => proc.exitCode === null && (await serverAlive(url)),
+    stop: stopThis,
+  };
+};
 
 // Reads the actual dev-server url from vite's stdout (the "➜  Local: http://…"
 // line), forwarding every line to our log meanwhile. This is the source of

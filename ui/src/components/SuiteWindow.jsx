@@ -5,7 +5,10 @@
 // aperçu LIVE de la donnée d'une collection (polling 2 s). Lecture seule —
 // aucune génération ici. Esthétique calquée sur ProjectsWindow / le reste de l'OS.
 import { useEffect, useState, useCallback } from "react";
-import { Boxes, FolderOpen, ArrowRight, Database, Eye, RefreshCw } from "lucide-react";
+import {
+  Boxes, FolderOpen, ArrowRight, Database, Eye, RefreshCw,
+  LayoutGrid, Play, Square, Loader2, AlertTriangle,
+} from "lucide-react";
 
 const POLL_MS = 2000;
 
@@ -16,6 +19,35 @@ export default function SuiteWindow({ win, onClose }) {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null); // collection name sous aperçu live
   const [docs, setDocs] = useState([]);
+  const [liveGrid, setLiveGrid] = useState(false); // grille d'aperçus live (opt-in : démarre des serveurs Vite)
+  const [previews, setPreviews] = useState({});    // project -> { status: starting|live|error, url?, error? }
+
+  // Démarre (ou réutilise) l'aperçu Vite de chaque app — le pool serveur les tient
+  // côte à côte, chacun sur son port (#138-P2). Séquentiel : un vite à la fois au boot.
+  const startPreviews = useCallback(async (list) => {
+    for (const { project } of list) {
+      setPreviews((p) => ({ ...p, [project]: { status: "starting" } }));
+      try {
+        const r = await fetch(`/api/preview/${encodeURIComponent(project)}`, { method: "POST" });
+        const d = await r.json();
+        setPreviews((p) => ({
+          ...p,
+          [project]: r.ok && d.url ? { status: "live", url: d.url } : { status: "error", error: d.error },
+        }));
+      } catch {
+        setPreviews((p) => ({ ...p, [project]: { status: "error" } }));
+      }
+    }
+  }, []);
+
+  const toggleLiveGrid = useCallback(() => {
+    setLiveGrid((on) => {
+      const next = !on;
+      if (next) startPreviews(apps);
+      else setPreviews({});
+      return next;
+    });
+  }, [apps, startPreviews]);
 
   const loadSuite = useCallback(async () => {
     try {
@@ -69,6 +101,20 @@ export default function SuiteWindow({ win, onClose }) {
           <p className="text-[14px] font-semibold text-ink">OS d'apps — la suite composable</p>
           <p className="text-[11px] text-faint">Les apps conformes partagent leurs données et se parlent.</p>
         </div>
+        {apps.length > 0 && (
+          <button
+            onClick={toggleLiveGrid}
+            title={liveGrid ? "Arrêter les aperçus live" : "Lancer les aperçus live côte à côte"}
+            className={`flex h-7 items-center gap-1.5 rounded-lg border px-2.5 text-[11px] font-medium transition-colors ${
+              liveGrid
+                ? "border-accent/50 bg-accent/[0.12] text-accent-soft"
+                : "border-edge text-dim hover:text-accent-soft hover:border-accent/40"
+            }`}
+          >
+            {liveGrid ? <Square size={12} /> : <Play size={12} />}
+            Aperçus live
+          </button>
+        )}
         <button
           onClick={loadSuite}
           title="Rafraîchir"
@@ -126,6 +172,70 @@ export default function SuiteWindow({ win, onClose }) {
               ))}
             </div>
           </section>
+
+          {/* (a-bis) Grille d'aperçus LIVE — le cockpit de l'OS : les apps côte à côte,
+              chacune sur son port (pool #138-P2), qui se synchronisent en direct. */}
+          {liveGrid && (
+            <section>
+              <p className="mb-2 flex items-center gap-1.5 px-0.5 text-[10px] font-semibold uppercase tracking-widest text-faint">
+                <LayoutGrid size={11} className="text-accent-soft" /> Aperçus live · côte à côte
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {apps.map(({ project, manifest }) => {
+                  const pv = previews[project] ?? { status: "starting" };
+                  return (
+                    <div
+                      key={project}
+                      className="flex flex-col overflow-hidden rounded-2xl border border-edge bg-panel/70 shadow-lg shadow-black/20 backdrop-blur-sm"
+                    >
+                      {/* barre de titre translucide */}
+                      <div className="flex items-center gap-2 border-b border-edge/70 bg-bg/40 px-2.5 py-1.5">
+                        <span
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[11px]"
+                          style={{ backgroundColor: (manifest.color ?? "#f59e0b") + "22" }}
+                        >
+                          {manifest.icon ?? "📦"}
+                        </span>
+                        <p className="min-w-0 flex-1 truncate text-[11.5px] font-medium text-ink">{manifest.name}</p>
+                        {pv.status === "live" && (
+                          <span className="flex items-center gap-1 text-[9.5px] font-semibold uppercase tracking-wide text-emerald-400/90">
+                            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" /> live
+                          </span>
+                        )}
+                      </div>
+                      {/* surface d'aperçu */}
+                      <div className="relative h-52 bg-bg">
+                        {pv.status === "live" && pv.url ? (
+                          <iframe
+                            key={pv.url}
+                            src={pv.url}
+                            title={manifest.name}
+                            className="h-full w-full border-0 bg-white"
+                            sandbox="allow-scripts allow-same-origin allow-forms"
+                          />
+                        ) : pv.status === "error" ? (
+                          <div className="flex h-full flex-col items-center justify-center gap-1.5 px-3 text-center">
+                            <AlertTriangle size={18} className="text-amber-400/80" />
+                            <p className="text-[11px] text-dim">Aperçu indisponible</p>
+                            <p className="text-[10px] text-faint">{pv.error ?? "le serveur n'a pas démarré"}</p>
+                          </div>
+                        ) : (
+                          <div className="flex h-full flex-col items-center justify-center gap-2 text-faint">
+                            <Loader2 size={18} className="animate-spin text-accent-soft" />
+                            <p className="text-[11px]">Démarrage de l'aperçu…</p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="mt-2 px-0.5 text-[10.5px] text-faint">
+                Modifie une donnée partagée dans une app : elle apparaît en direct dans les autres (chacune lit la
+                même collection via <code className="rounded bg-edge-soft px-1 font-mono text-accent">/api/shared</code>).
+              </p>
+            </section>
+          )}
 
           {/* (b) Graphe des collections partagées */}
           <section>

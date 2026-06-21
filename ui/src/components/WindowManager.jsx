@@ -56,7 +56,9 @@ function ComingSoon({ icon: Icon, title, subtitle, envKey }) {
 }
 
 // ─── Formulaire de création de projet ────────────────────────────────────────
-function NewProjectForm({ onCreate, onCancel }) {
+// Exporté (nommé) pour être testé isolément : c'est le point d'entrée « créer une
+// app », le flux dont la casse (#136) a fait naître l'Auditeur de Flux #137.
+export function NewProjectForm({ onCreate, onCancel }) {
   const [desc, setDesc] = useState("");
   const [name, setName] = useState("");
   const [nameEdited, setNameEdited] = useState(false);

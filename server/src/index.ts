@@ -13,7 +13,7 @@ import { createProject, deleteProject, listProjects, listTemplates, projectDir, 
 import { axiomStats } from "./axioms.js";
 import { computeInsights } from "./metrics-insights.js";
 import { inferProjectType } from "./blueprints.js";
-import { previewStatus, startPreview, stopPreview } from "./preview.js";
+import { previewStatus, previewList, isPreviewing, startPreview, stopPreview } from "./preview.js";
 import { clearSession, getSession, saveSession } from "./sessions.js";
 import { commitVersion, ensureRepo, changedFilesInLastCommit } from "./versions.js";
 import { ensureErrorRelay, ensureInspectRelay } from "./relay.js";
@@ -110,8 +110,8 @@ app.delete("/api/projects/:name", async (req, res) => {
     // Si l'aperçu tourne sur CE projet, l'arrêter d'abord : sinon le dev server
     // Vite garde le dossier verrouillé (Windows) et rmSync échoue.
     const dir = path.resolve(projectDir(name));
-    if (previewStatus().projectDir && path.resolve(previewStatus().projectDir!) === dir) {
-      await stopPreview();
+    if (isPreviewing(dir)) {
+      await stopPreview(dir);
     }
     deleteProject(name);
     res.json({ ok: true });
@@ -644,9 +644,9 @@ app.post("/api/snap", async (req, res) => {
     return;
   }
   const dir = projectDir(projectName);
-  // Reusing the running preview is always safe; switching the preview to
-  // another project while the agent works is not.
-  if (agentBusy && previewStatus().projectDir !== dir) {
+  // Reusing the running preview is always safe; starting one for a NOT-yet-
+  // previewed project while the agent works is not.
+  if (agentBusy && !isPreviewing(dir)) {
     res.status(409).json({ error: "L'agent travaille — la capture suivra le projet actif" });
     return;
   }
@@ -682,6 +682,12 @@ app.post("/api/inspect", (req, res) => {
     return;
   }
   res.json(result);
+});
+
+// Liste des aperçus Vite vivants (surface « aperçus simultanés » #138-P2 :
+// permet d'afficher plusieurs apps de la Suite côte à côte, chacune sur son port).
+app.get("/api/preview", (_req, res) => {
+  res.json({ previews: previewList() });
 });
 
 // Start (or reuse) the live preview of an existing project — lets the UI
