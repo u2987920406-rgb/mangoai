@@ -35,7 +35,7 @@ import { projectPlanSection, skeletonDone, SCAFFOLD_RULES, PROJET_MODE_RULES } f
 import { mangoAppContractSection } from "./mango-app-contract.js";
 
 export type PromptContext = {
-  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose";
+  mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout";
   model: string;
   projectDir: string;
   // Idée #56 Chantier C — présent quand l'utilisateur construit DANS le tutoriel
@@ -144,6 +144,13 @@ Mode 🧩 App composable — tu construis UNE app d'une SUITE qui se parle :
   // over the Mode union so MODE_RULES[ctx.mode] stays exhaustively indexable.
   discuss: `
 Mode 💬 Discussion — think and advise, do not build (see the discussion protocol below).`,
+  // Agents spécialisés (#145) — ces modes routent via la boucle relay locale
+  // (runRelay) et n'atteignent jamais assembleSystemPrompt. Ces entrées complètent
+  // le type pour que MODE_RULES[ctx.mode] reste exhaustivement indexable.
+  uxui: `
+Mode 🎨 Agent UX/UI — spécialiste composants React, shadcn, accessibilité, micro-interactions (Gemma local).`,
+  layout: `
+Mode 📐 Agent Layout — spécialiste CSS Grid, Flexbox, Container Queries, responsive (Gemma local).`,
 } as const;
 
 // Jalon "mode vision avancé": universal visual inputs + closed feedback loop.
@@ -428,7 +435,7 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
 // Élite runs the full arsenal; MVP omits the analytic ritual and Mango Plan
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
-const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose", string[]> = {
+const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout", string[]> = {
   elite: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
   mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
@@ -460,6 +467,10 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // les portes humaines questionneuses (cadrage/clarification/Miroir) comme en
   // projet : le cadrage, ici, c'est le contrat de suite.
   compose: ["mode", "mangoAppContract", "mangoData", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  // Agents sp��cialisés (#145) — ces modes routent via la boucle relay (runRelay),
+  // jamais via assembleSystemPrompt. Ces entrées sont des filets de sécurité.
+  uxui:   ["mode", "base", "axioms", "memory"],
+  layout: ["mode", "base", "axioms", "memory"],
 };
 
 /** Assembles the system-prompt append for a turn by running the scenario's

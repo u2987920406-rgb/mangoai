@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-06-21
+maj: 2026-06-22
 ---
 
 # Index du wiki MangoOS
@@ -35,6 +35,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[vault-projet]] | Vault Obsidian auto-cartographié par gros projet (carte vivante navigable agent+humain) — #141 | ✅ écrite |
 | [[command-center]] | Mango Command Center — poste de pilotage perso des idées/chantiers, Kanban local-first (prototype du #139) — #144 | ✅ écrite |
 | [[cartographie-projet]] | Modèle « photogrammétrie → indexation IA » : EXIF/AST + keypoints/embeddings + recalage/vault — à sortir à la Phase 2 de #139 | ✅ écrite |
+| [[agents-specialises]] | Constellation UX/UI · Layout · PDF — spécialistes Gemma locaux, `ModelProfile`, relay paramétrable — #145 | ✅ écrite |
 
 ## Pistes de pages futures
 

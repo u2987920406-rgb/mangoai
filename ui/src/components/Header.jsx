@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Brain, Building2, Cloud, Gauge, Gem, Globe, GraduationCap, Loader2, Puzzle, Rocket, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
+import { ArrowLeft, Brain, Building2, Cloud, Gauge, Gem, Globe, GraduationCap, Layers, LayoutGrid, Loader2, Puzzle, Rocket, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
 import Dropdown, { DropdownItem } from "./Dropdown.jsx";
 import { NEUTRAL, t } from "../neutral.js";
 
@@ -23,6 +23,8 @@ const MODES = [
   { id: "esthetique", label: "Esthétique", hint: "Raffinement graphique — micro-interactions, animations, finitions", icon: Sparkles },
   { id: "projet", label: "Gros Projet", hint: "Site multi-pages / jeu multi-stages — socle-d'abord puis page par page (Kanban)", icon: Building2 },
   { id: "compose", label: "App composable", hint: "Une app d'une suite qui se parle — manifest + données partagées (OS d'apps)", icon: Puzzle },
+  { id: "uxui",   label: "Agent UX/UI",   hint: "shadcn · accessibilité · micro-interactions — Gemma local (#145)", icon: Layers },
+  { id: "layout", label: "Agent Layout",  hint: "CSS Grid · Flex · Container Queries · responsive — Gemma local (#145)", icon: LayoutGrid },
 ];
 
 export default function Header({

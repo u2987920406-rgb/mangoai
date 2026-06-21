@@ -14,6 +14,7 @@ import { runRelay, defaultRelayDeps, type RelayDeps } from "./eleve.js";
 import { judgeProject } from "./nocturnal.js";
 import { learnFromSolution } from "./reverse-learn.js";
 import { reindexProcedures, listProcedures } from "./procedures.js";
+import { LEARN_TASKS } from "./tonight-specs.js";
 
 const FINISH_BILAN = path.join(WORKSPACE_DIR, ".finish.bilan.md");
 const SNAP_DIR     = path.join(WORKSPACE_DIR, ".gemma-snapshots");
@@ -28,11 +29,9 @@ function log(msg: string): void {
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // Tâches d'origine (= ce que Claude a réellement implémenté en Phase 0).
-const TASKS: Record<string, string> = {
-  "landing-tonight": "Landing page SaaS complète : header, hero, 6 fonctionnalités, social proof, pricing avec toggle mensuel/annuel, FAQ accordéon, formulaire email validé, footer.",
-  "dashboard-tonight": "Dashboard analytics : sidebar, dark mode, 4 KPI, graphiques courbe + barres (recharts), table triable/recherche/pagination, états loading/empty.",
-  "flashcards-tonight": "App flashcards type Anki en localStorage : CRUD paquets + cartes, mode révision, répétition espacée, stats (dues, streak, progression).",
-};
+//    Source unique : tonight-specs.ts (mêmes apps que run-tonight / run-finish).
+//    run-learn ne diffe QUE les projets ayant une archive Gemma (.gemma-snapshots/<name>) — voir boucle.
+const TASKS: Record<string, string> = LEARN_TASKS;
 
 // Juge réel branché dans la boucle (Phase 2) : expose le score FONCTIONNEL.
 const judge: RelayDeps["judge"] = async (dir, task) => {
@@ -62,7 +61,7 @@ async function main(): Promise<void> {
   const nowIso = new Date().toISOString();
   const learned: { project: string; ok: boolean; name?: string; reason?: string }[] = [];
 
-  // ── 2. Reverse-engineering des 3 paires Gemma→Claude ───────────────────────
+  // ── 2. Reverse-engineering des paires Gemma→Claude (celles ayant une archive) ──
   for (const [name, task] of Object.entries(TASKS)) {
     const gemmaDir = path.join(SNAP_DIR, name);
     const claudeDir = projectDir(name);

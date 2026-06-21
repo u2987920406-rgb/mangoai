@@ -18,6 +18,7 @@ import { runRelay, defaultRelayDeps } from "./eleve.js";
 import { judgeProject } from "./nocturnal.js";
 import { runEvolution } from "./prompt-evolution.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "./vision.js";
+import { TONIGHT, type Spec } from "./tonight-specs.js";
 
 const STATE_FILE   = path.join(WORKSPACE_DIR, ".tonight.state.json");
 const LOG_FILE     = path.join(WORKSPACE_DIR, ".tonight.log");
@@ -135,11 +136,7 @@ async function buildMoodboard(leaders: string[]): Promise<{ block: string; palet
 }
 
 // ── Un projet : snap avant → moodboard → Gemma → snap après → juge ─────────────
-interface Spec {
-  name: string; effort: string; template: string;
-  task: string; leaders: string[]; port: number;
-}
-
+// (le type Spec et la liste des projets viennent de tonight-specs.ts)
 async function runProject(spec: Spec, state: State): Promise<ProjectResult | null> {
   if (state.done.includes(`done-${spec.name}`)) {
     log(`⏭  ${spec.name} déjà fait.`);
@@ -212,7 +209,7 @@ function writeBilan(results: ProjectResult[], evolutionSummary: string): void {
   const now = new Date().toISOString();
   const L: string[] = [
     `# Bilan run nocturne — ${now}`, "",
-    `Objectif : 3 projets (M/L/XL) construits par **Gemma 4 12B** avec un **Sharingan pré-calculé** ($0),`,
+    `Objectif : ${results.length} projets construits par **Gemma 4 12B** avec un **Sharingan pré-calculé** ($0),`,
     `Claude réduit à l'**escalade** sur échec de build.`, "",
     "## Tableau", "",
     "| Projet | Effort | Template | Build | Brain | Claude ? | Score | Coût | Durée |",
@@ -249,45 +246,13 @@ function writeBilan(results: ProjectResult[], evolutionSummary: string): void {
   log(`\n📋 Bilan : ${BILAN_FILE}`);
 }
 
-// ── Specs des 3 projets ────────────────────────────────────────────────────────
-const SPECS: Spec[] = [
-  {
-    name: "landing-tonight", effort: "M", template: "daisy", port: 5191,
-    leaders: ["https://stripe.com", "https://linear.app"],
-    task: `Crée une landing page SaaS complète et 100% FONCTIONNELLE en React + DaisyUI/Tailwind v4 : ` +
-      `(1) header sticky avec navigation + bouton CTA ; (2) hero avec titre fort, sous-titre, 2 boutons et un mockup produit en CSS ; ` +
-      `(3) section 6 fonctionnalités avec icônes et descriptions ; (4) social proof (rangée de logos + 3 témoignages avec avatar) ; ` +
-      `(5) pricing 3 paliers avec un toggle mensuel/annuel qui CHANGE réellement les prix au clic ; ` +
-      `(6) FAQ en accordéon de 8 questions (ouverture/fermeture fonctionnelle) ; ` +
-      `(7) section CTA finale avec formulaire email VALIDÉ (regex, message d'erreur si invalide, message de succès si ok) ; ` +
-      `(8) footer complet multi-colonnes. Responsive mobile-first.`,
-  },
-  {
-    name: "dashboard-tonight", effort: "L", template: "mantine", port: 5192,
-    leaders: ["https://linear.app", "https://vercel.com"],
-    task: `Crée un dashboard analytics SaaS complet et 100% FONCTIONNEL en React + Mantine v7 : ` +
-      `barre latérale de navigation ; toggle dark/light mode FONCTIONNEL ; ` +
-      `page Vue d'ensemble avec 4 cartes KPI chiffrées ; un graphique en courbe sur 30 jours et un graphique en barres par catégorie (recharts, données factices réalistes) ; ` +
-      `une table de données FONCTIONNELLE : tri par colonne au clic, recherche texte, pagination. ` +
-      `Gère les états loading (skeletons) et empty (message clair). Architecture propre (composants < 200 lignes, hooks séparés).`,
-  },
-  {
-    name: "flashcards-tonight", effort: "XL", template: "shadcn", port: 5193,
-    leaders: ["https://quizlet.com", "https://linear.app"],
-    task: `Crée une application de flashcards type Anki, complète et 100% FONCTIONNELLE, en React + shadcn/Tailwind v4, ` +
-      `PERSISTÉE EN localStorage (AUCUN backend, aucune clé requise — tout survit au refresh) : ` +
-      `(1) CRUD de paquets (créer / renommer / supprimer un deck) ; (2) CRUD de cartes recto/verso dans un deck ; ` +
-      `(3) mode révision : afficher le recto → clic pour révéler le verso → boutons Facile / Difficile ; ` +
-      `(4) algorithme de répétition espacée simple : Facile = prochaine révision +4 jours, Difficile = +1 jour, date stockée par carte ; ` +
-      `(5) page stats : nombre de cartes dues aujourd'hui, streak de jours consécutifs, progression par deck (graphe recharts). ` +
-      `Sépare la logique en hooks (useDecks, useReview) et utils (spacing.js). Responsive.`,
-  },
-];
+// ── Specs des projets (source unique : tonight-specs.ts) ───────────────────────
+const SPECS: Spec[] = TONIGHT;
 
 // ── Main ────────────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
   log("\n🌙 ═══════════════════════════════════════════════════════════════");
-  log("   RUN NOCTURNE — 2026-06-19 · 3 projets M/L/XL");
+  log(`   RUN NOCTURNE — ${SPECS.length} apps (entraînement de l'Élève)`);
   log("   Gemma 4 12B + Sharingan pré-calculé ($0) · Claude = escalade seule");
   log("═══════════════════════════════════════════════════════════════════\n");
 

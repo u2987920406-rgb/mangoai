@@ -12,6 +12,8 @@
 
 import { GENERIC } from "./generic.js";
 import { gemmaProfile } from "./gemma.js";
+import { uxuiProfile } from "./uxui.js";
+import { layoutProfile } from "./layout.js";
 
 export interface ModelProfile {
   /** Identifiant court de la famille ("gemma", "generic"). */
@@ -36,7 +38,7 @@ export interface ModelProfile {
 
 // Registre des familles reconnues. L'ordre compte : première correspondance
 // gagne. Un modèle non reconnu retombe sur GENERIC (= comportement actuel exact).
-const PROFILES: ModelProfile[] = [gemmaProfile];
+const PROFILES: ModelProfile[] = [gemmaProfile, uxuiProfile, layoutProfile];
 
 /** Résout la partition d'un modèle ; fallback GENERIC (non-régression garantie). */
 export function resolveProfile(model: string): ModelProfile {

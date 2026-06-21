@@ -28,6 +28,8 @@ import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./visio
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
 import { runRelay } from "./eleve.js";
+import { uxuiProfile } from "./models/uxui.js";
+import { layoutProfile } from "./models/layout.js";
 import { getBus } from "./kernel-bus.js";
 import { installMangoQaBridge } from "./kernel-mangoqa-bridge.js";
 import { Blackboard, setBlackboard } from "./kernel-blackboard.js";
@@ -64,6 +66,7 @@ import { registerCouncilSkillsRoutes } from "./council-skills-routes.js";
 import { registerBackendServerRoutes } from "./backend-server-routes.js";
 import { registerProjectIORoutes } from "./project-io-routes.js";
 import { registerFeedbackRoutes } from "./feedback-routes.js";
+import { registerPdfRoutes } from "./pdf-routes.js";
 import { registerTutorialRoutes } from "./tutorial.js";
 import { registerNocturnalRoutes } from "./nocturnal.js";
 import { registerPromptEvolutionRoutes } from "./prompt-evolution.js";
@@ -209,7 +212,7 @@ app.post("/api/chat", async (req, res) => {
   // Third brain option (Phase Ultime jalon D): "eleve" routes the turn to the
   // local student (Gemma via Ollama) through the relay loop instead of Claude.
   // Claude stays the escalation tier. Any other value = a normal Claude turn.
-  const useEleve = model === "eleve";
+  const useEleve = model === "eleve" || model === "uxui" || model === "layout";
   const chosenModel = ALLOWED_MODELS.includes(model as ModelChoice)
     ? (model as ModelChoice)
     : undefined;
@@ -404,11 +407,22 @@ app.post("/api/chat", async (req, res) => {
     };
 
     if (useEleve) {
-      // Élève path (jalon D): the local student attempts the task at zero cost,
-      // an objective build judges it, and only an objective failure escalates to
-      // Claude. We stream the relay trace as status lines.
-      send({ type: "status", text: "🎓 L'Élève local (Gemma) prend la main…" });
+      // Élève path (jalon D + agents spécialisés #145) : le modèle local tente la
+      // tâche à coût zéro, un juge objectif évalue, escalade vers Claude si besoin.
+      // Pour uxui/layout, le profil spécialisé est injecté dans runRelay.
+      const specialistProfile =
+        model === "uxui" ? uxuiProfile :
+        model === "layout" ? layoutProfile :
+        undefined;
+      const specialistModel = specialistProfile
+        ? (model === "uxui"
+            ? (process.env.UXUI_AGENT_MODEL ?? process.env.ELEVE_MODEL ?? "gemma4:12b")
+            : (process.env.LAYOUT_AGENT_MODEL ?? process.env.ELEVE_MODEL ?? "gemma4:12b"))
+        : undefined;
+      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : "Gemma";
+      send({ type: "status", text: `🎓 L'agent ${agentLabel} local prend la main…` });
       const r = await runRelay(agentPrompt, dir, {
+        ...(specialistProfile ? { profile: specialistProfile, eleveModel: specialistModel } : {}),
         onLog: (line) => {
           record("status", line);
           send({ type: "status", text: line });
@@ -418,10 +432,10 @@ app.post("/api/chat", async (req, res) => {
       lastResult.current = { costUsd: r.costUsd, numTurns: r.attempts };
       const verdict =
         r.resolvedBy === "eleve"
-          ? `✅ Résolu par l'Élève (Gemma local) en ${r.attempts} tentative(s) — coût Claude $0.00.`
+          ? `✅ Résolu par l'agent ${agentLabel} (local) en ${r.attempts} tentative(s) — coût Claude $0.00.`
           : r.resolvedBy === "maitre"
-            ? `👑 L'Élève a buté → escaladé au Maître (Claude), corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
-            : `❌ Échec : ni l'Élève ni le Maître n'ont fait passer le build (${r.inspection.signal}).`;
+            ? `👑 L'agent a buté → escaladé au Maître (Claude), corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
+            : `❌ Échec : ni l'agent ni le Maître n'ont fait passer le build (${r.inspection.signal}).`;
       if (r.success) {
         record("agent", verdict);
         send({ type: "text", text: verdict });
@@ -942,6 +956,11 @@ registerPromptEvolutionRoutes(app);
 registerBuildReviewRoutes(app);
 registerPerfectPlanRoutes(app);
 registerAgentFactoryRoutes(app);
+// Agent PDF (#145, Chantier 3) — async (charge pdfjs-dist + Ollama paresseusement),
+// best-effort : un échec d'init ne doit jamais empêcher le serveur de démarrer.
+registerPdfRoutes(app).catch((err) =>
+  console.error("[pdf] init routes échouée :", err instanceof Error ? err.message : err),
+);
 
 app.get("/api/onboarding/status", (_req, res) => {
   res.json({ hasProfile: hasProfile(WORKSPACE_DIR) });

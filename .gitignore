@@ -22,6 +22,11 @@ server/data/blackboard.sqlite
 server/data/blackboard.sqlite-shm
 server/data/blackboard.sqlite-wal
 
+# Base SQLite de l'Agent PDF (#145) — runtime, jamais versionnée
+server/data/pdf-store.db
+server/data/pdf-store.db-shm
+server/data/pdf-store.db-wal
+
 # Base SQLite temporaire des tests/démos du backend — runtime, jamais versionnée
 server/.tmp-spine.db
 server/.tmp-spine.db-shm

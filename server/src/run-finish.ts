@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
 import { judgeProject } from "./nocturnal.js";
+import { FINISH_SPECS } from "./tonight-specs.js";
 
 const BASE = process.env.MANGO_URL ?? "http://localhost:3000";
 const STATE_FILE   = path.join(WORKSPACE_DIR, ".finish.state.json");
@@ -125,20 +126,8 @@ async function runPhase(
 }
 
 // ── Specs (= la liste des features à RÉELLEMENT implémenter) ─────────────────
-const SPECS: Record<string, string> = {
-  "landing-tonight":
-    "Landing SaaS : header sticky + nav + CTA ; hero (titre, sous-titre, 2 boutons, mockup CSS) ; 6 fonctionnalités à icônes ; " +
-    "social proof (logos + 3 témoignages) ; pricing 3 paliers avec toggle mensuel/annuel FONCTIONNEL (prix qui changent) ; " +
-    "FAQ accordéon 8 questions (ouverture/fermeture) ; CTA finale avec formulaire email VALIDÉ (regex, erreur, succès) ; footer complet.",
-  "dashboard-tonight":
-    "Dashboard analytics Mantine : sidebar de navigation ; toggle dark/light FONCTIONNEL ; vue d'ensemble avec 4 KPI chiffrés ; " +
-    "graphique courbe 30 jours + barres par catégorie (recharts, données factices) ; table FONCTIONNELLE (tri colonne, recherche, pagination) ; " +
-    "états loading (skeletons) et empty.",
-  "flashcards-tonight":
-    "App flashcards type Anki persistée en localStorage (aucun backend) : CRUD paquets ; CRUD cartes recto/verso ; " +
-    "mode révision (recto → révéler verso → Facile/Difficile) ; répétition espacée (Facile +4j, Difficile +1j, date par carte) ; " +
-    "page stats (cartes dues, streak, progression par deck en recharts). Hooks useDecks/useReview + utils/spacing.js. Responsive.",
-};
+//    Source unique : tonight-specs.ts (mêmes apps que run-tonight / run-learn).
+const SPECS: Record<string, string> = FINISH_SPECS;
 
 function phasesFor(name: string): Array<{ id: string; mode: string; prompt: string }> {
   const spec = SPECS[name];
@@ -172,7 +161,7 @@ function phasesFor(name: string): Array<{ id: string; mode: string; prompt: stri
 interface ProjectResult { name: string; phases: PhaseResult[]; buildOk: boolean; costUsd: number; score?: number; dims?: Record<string, number>; comment?: string; }
 function writeBilan(results: ProjectResult[]): void {
   const L: string[] = [
-    `# Bilan Phase 0 (#104) — Claude finit les 3 — ${new Date().toISOString()}`, "",
+    `# Bilan Phase 0 (#104) — Claude finit ${results.length} app(s) — ${new Date().toISOString()}`, "",
     "| Projet | Build | Phases OK | Score | Coût |",
     "|--------|-------|-----------|-------|------|",
   ];
@@ -197,7 +186,7 @@ function writeBilan(results: ProjectResult[]): void {
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
   log("\n🎯 ═══════════════════════════════════════════════════════════════");
-  log("   PHASE 0 (#104) — Claude finit landing/dashboard/flashcards");
+  log(`   PHASE 0 (#104) — Claude finit ${Object.keys(SPECS).length} app(s) du run`);
   log("   Archive Gemma → elite (features) → esthetique → finition → juge");
   log("═══════════════════════════════════════════════════════════════════\n");
 
@@ -209,7 +198,17 @@ async function main(): Promise<void> {
   const results: ProjectResult[] = [];
   fs.mkdirSync(SNAP_DIR, { recursive: true });
 
+  // Garde-budget : Claude finit les apps une par une ; dès que le cumul atteint
+  // FINISH_BUDGET_USD, on s'arrête PROPREMENT (les apps non finies restent en
+  // l'état Gemma — toujours exploitables en Phase 2 via leur snapshot). $0 / absent = illimité.
+  const budgetUsd = Number(process.env.FINISH_BUDGET_USD ?? 0);
+  const spent = () => results.reduce((s, r) => s + r.costUsd, 0);
+
   for (const name of Object.keys(SPECS)) {
+    if (budgetUsd > 0 && spent() >= budgetUsd) {
+      log(`\n💰 Budget $${budgetUsd} atteint (dépensé $${spent().toFixed(2)}) — arrêt propre. Apps restantes laissées en l'état Gemma.`);
+      break;
+    }
     if (!projectExists(name)) { log(`✗ ${name} introuvable — skip`); continue; }
     log(`\n═══ ${name} ═══`);
 

@@ -25,7 +25,7 @@ import { axiomsFingerprint, selectAxioms } from "./axioms.js";
 import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
-import { resolveProfile } from "./models/profile.js";
+import { resolveProfile, type ModelProfile } from "./models/profile.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
 // constellations #74). Import sync, sans cycle (ces modules n'importent pas eleve).
 import { listProcedures, loadProcedure } from "./procedures.js";
@@ -38,15 +38,10 @@ const ELEVE_MODEL = process.env.ELEVE_MODEL ?? "gemma4:12b";
 // caps et routage d'escalade viennent du PROFIL (server/src/models/). Le cœur
 // reste agnostique ; un modèle non reconnu retombe sur GENERIC = comportement
 // actuel exact. Les ENV restent prioritaires (override global ponctuel).
+// Profil par défaut (famille du modèle global ELEVE_MODEL). Sert de fallback
+// quand runRelay est appelé sans opts.profile. Les surcharges par appel lisent
+// callProfile = opts.profile ?? PROFILE (résolution locale dans runRelay).
 const PROFILE = resolveProfile(ELEVE_MODEL);
-const MAX_ELEVE_ATTEMPTS = Number(process.env.ELEVE_MAX_ATTEMPTS ?? PROFILE.caps.maxAttempts);
-// Anti-saturation : nombre max d'axiomes injectés à l'Élève (modèle faible).
-const ELEVE_AXIOM_CAP = Number(process.env.ELEVE_AXIOM_CAP ?? PROFILE.caps.axiomCap);
-// Contenu des fichiers fourni à l'Élève (piste future n°1) : sans lui, un <edit>
-// sur un fichier existant devine un <find> qui ne matche pas. Plafonné pour ne
-// pas saturer un petit modèle : budget total + cap par fichier (caractères).
-const ELEVE_FILE_BUDGET = Number(process.env.ELEVE_FILE_BUDGET ?? PROFILE.caps.fileBudget);
-const ELEVE_FILE_MAX = Number(process.env.ELEVE_FILE_MAX ?? PROFILE.caps.fileMax);
 
 // Provider de l'Élève (« Élève turbo », optionnel). Par défaut « ollama » = le
 // modèle LOCAL ($0, souverain). En option « openai » = un endpoint compatible
@@ -91,6 +86,10 @@ export interface RelayOptions {
   // #104 Phase 3 — injecter à l'Élève les moyens text qu'il n'avait pas
   // (procédures #75, constellations #74). OFF par défaut (ou .env RELAY_INJECT_MEANS=1).
   injectMeans?: boolean;
+  /** Surcharge le ModelProfile pour cet appel (agents spécialisés : uxui, layout…). */
+  profile?: ModelProfile;
+  /** Surcharge le modèle Ollama/API pour cet appel (ex. UXUI_AGENT_MODEL). */
+  eleveModel?: string;
 }
 
 /** Les deux cerveaux + les effets de bord, injectables pour les tests. */
@@ -109,13 +108,9 @@ export interface EscalationContext {
   projectDir: string;
   lastError: string;
   maitreModel: string;
+  /** Partition active — détermine axiomFiles et escalateAppendix. Défaut = PROFILE. */
+  profile?: ModelProfile;
 }
-
-// ── Face ENTRÉE du contrat : la forme imposée à l'Élève ───────────────────────
-// Fournie par la PARTITION de la famille du modèle (models/) : GENERIC = le
-// format historique (write + edit) ; gemma = variante Write-only. Le core ne
-// connaît aucune famille, il lit simplement PROFILE.system.
-const ELEVE_SYSTEM = PROFILE.system;
 
 function listProjectFiles(projectDir: string, cap = 40): string[] {
   const out: string[] = [];
@@ -149,6 +144,8 @@ function readListedFiles(
   projectDir: string,
   files: string[],
   task: string,
+  fileBudget: number,
+  fileMax: number,
 ): Array<{ path: string; content: string; truncated: boolean }> {
   const taskLow = task.toLowerCase();
   const relevant = files.filter((f) => {
@@ -156,7 +153,7 @@ function readListedFiles(
     return taskLow.includes(f.toLowerCase()) || taskLow.includes(base);
   });
   const out: Array<{ path: string; content: string; truncated: boolean }> = [];
-  let budget = ELEVE_FILE_BUDGET;
+  let budget = fileBudget;
   for (const f of relevant) {
     if (budget <= 0) break;
     let raw: string;
@@ -165,7 +162,7 @@ function readListedFiles(
     } catch {
       continue; // binaire/illisible → on saute
     }
-    const cap = Math.min(ELEVE_FILE_MAX, budget);
+    const cap = Math.min(fileMax, budget);
     const truncated = raw.length > cap;
     const content = truncated ? raw.slice(0, cap) : raw;
     budget -= content.length;
@@ -217,7 +214,13 @@ function injectedMeansSection(task: string): string {
   ].join("\n");
 }
 
-function buildEleveUser(task: string, projectDir: string, lastError: string, injectMeans = false): string {
+function buildEleveUser(
+  task: string,
+  projectDir: string,
+  lastError: string,
+  injectMeans: boolean,
+  callCaps: { axiomCap: number; axiomFiles: string[]; fileBudget: number; fileMax: number },
+): string {
   const files = listProjectFiles(projectDir);
   // v2.1 : type de projet détecté de façon robuste — la tâche d'abord, puis la
   // MÉMOIRE du projet si la tâche est neutre (ex. "ajoute un bouton" sur un
@@ -230,8 +233,8 @@ function buildEleveUser(task: string, projectDir: string, lastError: string, inj
   const axioms = selectAxioms(WORKSPACE_DIR, {
     task,
     projectType,
-    max: ELEVE_AXIOM_CAP,
-    files: PROFILE.axiomFiles, // universel + mécaniques de la famille
+    max: callCaps.axiomCap,
+    files: callCaps.axiomFiles,
   });
   const parts = [
     `TÂCHE : ${task}`,
@@ -242,7 +245,7 @@ function buildEleveUser(task: string, projectDir: string, lastError: string, inj
   // Contenu des fichiers (piste n°1) : indispensable pour les <edit> ciblés —
   // le <find> doit reprendre un extrait EXACT du contenu ci-dessous. Limité aux
   // fichiers cités par la tâche (sinon on sature l'Élève — mesuré par l'audit).
-  const contents = readListedFiles(projectDir, files, task);
+  const contents = readListedFiles(projectDir, files, task, callCaps.fileBudget, callCaps.fileMax);
   if (contents.length) {
     parts.push(
       "",
@@ -270,12 +273,12 @@ function buildEleveUser(task: string, projectDir: string, lastError: string, inj
 }
 
 // ── Cerveau Élève par défaut : Gemma local via Ollama ──────────────────────────
-async function askEleveOllama(system: string, user: string): Promise<string> {
+async function askEleveOllama(system: string, user: string, model?: string): Promise<string> {
   const res = await fetch(`${OLLAMA}/api/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      model: ELEVE_MODEL,
+      model: model ?? ELEVE_MODEL,
       stream: false,
       options: { temperature: 0 },
       messages: [
@@ -293,7 +296,7 @@ async function askEleveOllama(system: string, user: string): Promise<string> {
 // Même contrat d'E/S (system + user → texte) que la version Ollama → la boucle
 // de relais est INCHANGÉE. ⚠ Payant : la note n'est PAS captée dans les
 // métriques (le tour Élève reste compté coût 0 ; seule l'escalade Claude l'est).
-async function askEleveOpenAI(system: string, user: string): Promise<string> {
+async function askEleveOpenAI(system: string, user: string, model?: string): Promise<string> {
   if (!ELEVE_API_KEY) {
     throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
   }
@@ -301,7 +304,7 @@ async function askEleveOpenAI(system: string, user: string): Promise<string> {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${ELEVE_API_KEY}` },
     body: JSON.stringify({
-      model: ELEVE_MODEL,
+      model: model ?? ELEVE_MODEL,
       stream: false,
       temperature: 0,
       messages: [
@@ -316,8 +319,8 @@ async function askEleveOpenAI(system: string, user: string): Promise<string> {
 }
 
 // Aiguillage du cerveau Élève selon le provider (.env). Défaut : Ollama local.
-async function askEleveDispatch(system: string, user: string): Promise<string> {
-  return ELEVE_PROVIDER === "openai" ? askEleveOpenAI(system, user) : askEleveOllama(system, user);
+async function askEleveDispatch(system: string, user: string, model?: string): Promise<string> {
+  return ELEVE_PROVIDER === "openai" ? askEleveOpenAI(system, user, model) : askEleveOllama(system, user, model);
 }
 
 async function npmInstallIfNeeded(dir: string, log: (s: string) => void, label: string): Promise<void> {
@@ -364,7 +367,8 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
   // axiome rangé dans .axioms.<famille>.md compte aussi), via une empreinte NON
   // plafonnée : un nouvel axiome est appendé en fin de registre, donc au-delà du
   // cap d'injection dès que l'union est volumineuse — le diff plafonné le raterait.
-  const axBefore = axiomsFingerprint(WORKSPACE_DIR, PROFILE.axiomFiles);
+  const escProfile = ctx.profile ?? PROFILE;
+  const axBefore = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles);
   // cwd = workspace si le projet y vit (Claude atteint code + .axioms.md en
   // relatif, comme la revue) ; sinon repli sur le projet seul.
   const rel = path.relative(WORKSPACE_DIR, ctx.projectDir).replaceAll("\\", "/");
@@ -383,7 +387,7 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
     axBefore || "(vide)",
     "",
     "Corrige le build, puis ajoute l'unique axiome, puis arrête-toi.",
-    PROFILE.escalateAppendix, // "" pour GENERIC → prompt inchangé
+    escProfile.escalateAppendix, // "" pour GENERIC → prompt inchangé
   ].join("\n");
 
   const q = query({
@@ -400,7 +404,7 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
   let costUsd = 0;
   for await (const m of q) if (m.type === "result") costUsd = m.total_cost_usd ?? 0;
 
-  const axiom = axiomsFingerprint(WORKSPACE_DIR, PROFILE.axiomFiles) !== axBefore;
+  const axiom = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles) !== axBefore;
   return { axiom, costUsd };
 }
 
@@ -418,10 +422,22 @@ export async function runRelay(
   opts: RelayOptions = {},
   deps: RelayDeps = defaultRelayDeps,
 ): Promise<RelayResult> {
-  const maxAttempts = opts.maxEleveAttempts ?? MAX_ELEVE_ATTEMPTS;
+  // Résolution locale — permet la surcharge par appel (agents spécialisés uxui, layout…).
+  // Les ENV restent des overrides globaux prioritaires ; les valeurs du profil servent
+  // de défaut lorsque l'ENV n'est pas défini. Comportement inchangé si opts est vide.
+  const callProfile    = opts.profile ?? PROFILE;
+  const callModel      = opts.eleveModel ?? ELEVE_MODEL;
+  const callMaxAttempts = opts.maxEleveAttempts ?? Number(process.env.ELEVE_MAX_ATTEMPTS ?? callProfile.caps.maxAttempts);
+  const callAxiomCap   = Number(process.env.ELEVE_AXIOM_CAP   ?? callProfile.caps.axiomCap);
+  const callFileBudget = Number(process.env.ELEVE_FILE_BUDGET ?? callProfile.caps.fileBudget);
+  const callFileMax    = Number(process.env.ELEVE_FILE_MAX    ?? callProfile.caps.fileMax);
+  const callCaps       = { axiomCap: callAxiomCap, axiomFiles: callProfile.axiomFiles, fileBudget: callFileBudget, fileMax: callFileMax };
+  // Si le modèle de l'appel diffère du modèle global, enveloppe avec le bon modèle.
+  const callAskEleve: (sys: string, usr: string) => Promise<string> =
+    callModel !== ELEVE_MODEL
+      ? (sys, usr) => askEleveDispatch(sys, usr, callModel)
+      : deps.askEleve;
   const maitreModel = opts.maitreModel ?? "sonnet";
-  // #104 — options lues au moment de l'appel (env = défaut global, option =
-  // override par appel). OFF par défaut → boucle historique inchangée.
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
   const functionalMin = opts.functionalMin ?? Number(process.env.RELAY_FUNCTIONAL_MIN ?? 5);
   const injectMeans = opts.injectMeans ?? (process.env.RELAY_INJECT_MEANS === "1");
@@ -450,12 +466,12 @@ export async function runRelay(
   let lastError = "";
   let lastInspection: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
 
-  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-    push(`Tentative ${attempt}/${maxAttempts} — l'Élève (${ELEVE_MODEL}) travaille…`);
+  for (let attempt = 1; attempt <= callMaxAttempts; attempt++) {
+    push(`Tentative ${attempt}/${callMaxAttempts} — l'Élève (${callModel}) travaille…`);
 
     let raw: string;
     try {
-      raw = await deps.askEleve(ELEVE_SYSTEM, buildEleveUser(task, projectDir, lastError, injectMeans));
+      raw = await callAskEleve(callProfile.system, buildEleveUser(task, projectDir, lastError, injectMeans, callCaps));
     } catch (e) {
       lastError = `appel Élève impossible : ${(e as Error).message}`;
       push(`✗ ${lastError}`);
@@ -485,7 +501,7 @@ export async function runRelay(
       // des tentatives, on vérifie le score fonctionnel ; trop bas → on RELANCE
       // l'Élève avec un feedback STRUCTURÉ (ce qui manque + comment), pas
       // « réessaie ». Sans judge (cas par défaut) la porte est inerte.
-      if (functionalGate && deps.judge && attempt < maxAttempts) {
+      if (functionalGate && deps.judge && attempt < callMaxAttempts) {
         let verdict: { fonctionnel: number; note: string } | null = null;
         try { verdict = await deps.judge(projectDir, task); } catch { verdict = null; }
         if (verdict && verdict.fonctionnel < functionalMin) {
@@ -507,14 +523,14 @@ export async function runRelay(
   }
 
   // ── Escalade vers le Maître ──
-  push(`⤴ ${maxAttempts} échec(s) objectif(s) — ESCALADE vers le MAÎTRE (Claude/${maitreModel})`);
-  const esc = await deps.escalate({ task, projectDir, lastError, maitreModel });
+  push(`⤴ ${callMaxAttempts} échec(s) objectif(s) — ESCALADE vers le MAÎTRE (Claude/${maitreModel})`);
+  const esc = await deps.escalate({ task, projectDir, lastError, maitreModel, profile: callProfile });
   lastInspection = await inspectReady();
 
   if (lastInspection.ok) {
     push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
-    return { resolvedBy: "maitre", attempts: maxAttempts, success: true, inspection: lastInspection, axiom: esc.axiom, costUsd: esc.costUsd, log };
+    return { resolvedBy: "maitre", attempts: callMaxAttempts, success: true, inspection: lastInspection, axiom: esc.axiom, costUsd: esc.costUsd, log };
   }
   push(`✗ build encore cassé après escalade — échec`);
-  return { resolvedBy: "none", attempts: maxAttempts, success: false, inspection: lastInspection, axiom: esc.axiom, costUsd: esc.costUsd, log };
+  return { resolvedBy: "none", attempts: callMaxAttempts, success: false, inspection: lastInspection, axiom: esc.axiom, costUsd: esc.costUsd, log };
 }

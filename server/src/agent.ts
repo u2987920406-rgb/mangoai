@@ -22,7 +22,9 @@ export type ModelChoice = (typeof ALLOWED_MODELS)[number];
 // rigour). MVP = fast and cheap (no analytic ritual, no extended thinking,
 // minimal visual loop); Élite = the full arsenal. This is the switch every
 // future advanced feature (Mango Plan, moodboard, temporal QA…) plugs into.
-export const ALLOWED_MODES = ["mvp", "elite", "finition", "esthetique", "discuss", "projet", "compose"] as const;
+// "uxui"   = agent spécialisé UX/UI (shadcn, accessibilité, micro-interactions — Gemma local #145).
+// "layout" = agent spécialisé CSS Layout (Grid, Flex, Container Queries, responsive — Gemma local #145).
+export const ALLOWED_MODES = ["mvp", "elite", "finition", "esthetique", "discuss", "projet", "compose", "uxui", "layout"] as const;
 // "nocturne" = mode INTERNE de génération autonome (boucle nocturne #58) : il
 // déploie l'arsenal DESIGN d'Élite (moodboard Sharingan + recherche web +
 // design-system) mais SANS les portes humaines (cadrage qui sollicite,
