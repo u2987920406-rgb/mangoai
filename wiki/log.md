@@ -8,6 +8,9 @@ maj: 2026-06-20
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-21] note | Modèle « photogrammétrie → indexation IA » ([[cartographie-projet]])
+Page-concept posée à la demande de Raf (« note ça, le jour où on en a besoin, il faudra le sortir »). Le parallèle photogrammétrie (Metashape/RealityCapture : EXIF + keypoints + chunks + points de contrôle → nuage de points recalé) ↔ cartographie de projet IA (métadonnées AST + embeddings + modules + liens `[[...]]` → graphe). Insight de Raf : le nuage de points relié = la vue graphe d'Obsidian. Dicte l'ordre de la Phase 2 de #139 : tree-sitter (EXIF) d'abord, embeddings ensuite, vault [[vault-projet]] comme couche de recalage, maintenance incrémentale. **À SORTIR au déclenchement de la Phase 2 (RAG intra-projet), pas avant.** `index.md` mis à jour. Zéro git.
+
 ## [2026-06-21] ingest | #139 Mode « Gros Projet » — spine livrée & validée e2e
 Mise à jour de [[composer-os]] : la spine de #139 est construite (additif sur [[coque-souple]]). Mode `projet` (Header 🏗️ + scénario), `SCAFFOLD_RULES` (TS + React Router v7 + tokens + layout + pages placeholder + manifest, sans délégation aux builders) + `PROJET_MODE_RULES` (un incrément borné/tour), manifest `.project-plan.json` (`server/src/project-plan.ts`, lecture défensive) + routes `GET/PUT /api/projects/:name/plan`, **Kanban « Chantier »** dans le rail workspace (`ProjectKanban.jsx`). Validé en live : site 4 pages → scaffold TS+RRv7+placeholders → construire 1 page (Kanban 1/4) ; `tsc`+build verts, `test-project-plan.ts` 26/26. Phase 2 (RAG intra-projet tree-sitter+embeddings, LSP-MCP) reportée — voir [[pre-requis-gros-projet]]. Débloque #138, résout #140 #1/#2 dans les apps générées, prépare [[vault-projet]]. Zéro git.
 
