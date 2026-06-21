@@ -3,7 +3,7 @@
 // (deps injectées). Le polling fichier de waitForVerdict reste couvert par le
 // run réel, comme l'attente l'a toujours été.
 // Lancer : npx tsx src/test-mangoqa.ts
-import { buildVerdictMessage, surfaceVerdict, type QAVerdict, type VerdictWatcherDeps } from "./mangoqa.js"
+import { buildVerdictMessage, buildFluxMessage, surfaceVerdict, type QAVerdict, type VerdictWatcherDeps } from "./mangoqa.js"
 
 let pass = 0, fail = 0
 function check(label: string, cond: boolean): void {
@@ -73,6 +73,38 @@ function mkDeps(verdict: QAVerdict | null): { deps: VerdictWatcherDeps; appended
   const msg = await surfaceVerdict("proj", "/h/proj", deps, 1000)
   check("timeout → rien renvoyé", msg === null)
   check("timeout → AUCUNE écriture dans l'historique", appended.length === 0)
+}
+
+console.log("═".repeat(56))
+console.log("mangoqa — Auditeur de Flux #137 (buildFluxMessage + surfaçage)")
+console.log("─".repeat(56))
+
+check("flux null → null", buildFluxMessage(null) === null)
+check("flux cohérent (0/0) → null", buildFluxMessage({ counts: { measured: 0, convergence: 0 } }) === null)
+{
+  const obs = {
+    summary: "Auditeur de Flux : 1 cible fantôme DURE.",
+    measured: { phantomTargets: [{}] },
+    convergence: ["X rendue jamais ciblée ?"],
+    counts: { measured: 1, convergence: 1 },
+  }
+  const m = buildFluxMessage(obs)
+  check("flux non trivial → message 🧭 avec résumé", !!m && m.includes("🧭") && m.includes("cible fantôme"))
+  check("flux → inclut les questions de convergence", !!m && m.includes("jamais ciblée"))
+}
+{
+  // surfaceVerdict surface AUSSI le flux (verdict + flux = 2 entrées).
+  const { deps, appended } = mkDeps(greenVerdict)
+  deps.readFlux = () => ({ summary: "s", convergence: ["q"], counts: { measured: 0, convergence: 1 } })
+  await surfaceVerdict("proj", "/h/proj", deps, 1000)
+  check("flux surfacé EN PLUS du verdict (2 entrées)", appended.length === 2 && appended[1]?.text.includes("🧭"))
+}
+{
+  // Flux cohérent → seul le verdict est surfacé (1 entrée).
+  const { deps, appended } = mkDeps(greenVerdict)
+  deps.readFlux = () => ({ counts: { measured: 0, convergence: 0 } })
+  await surfaceVerdict("proj", "/h/proj", deps, 1000)
+  check("flux cohérent → pas de ligne 🧭 (1 entrée)", appended.length === 1)
 }
 
 console.log("═".repeat(56))

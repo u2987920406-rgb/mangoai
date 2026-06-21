@@ -124,15 +124,51 @@ export function buildVerdictMessage(verdict: QAVerdict): string | null {
   return null
 }
 
+// ── Auditeur de Flux (#137) — surfaçage des observations dans le chat ─────────
+// L'Auditeur (visage de Mango QA, repo MangoQA) écrit flux-observations.json à
+// côté du verdict. On le lit en SEULE LECTURE et on ajoute une ligne 🧭 au chat
+// si quelque chose mérite l'attention de Raf. Conseil, jamais bloquant.
+export interface FluxObservationLite {
+  measured?: { phantomTargets?: unknown[] }
+  convergence?: string[]
+  summary?: string
+  counts?: { measured?: number; convergence?: number }
+}
+
+export function readFluxObservations(projectName: string): FluxObservationLite | null {
+  const file = path.join(qaDir(projectDir(projectName)), 'flux-observations.json')
+  try {
+    if (!fs.existsSync(file)) return null
+    return JSON.parse(fs.readFileSync(file, 'utf8')) as FluxObservationLite
+  } catch {
+    return null
+  }
+}
+
+// Message de chat à partir des observations de flux — pur. Rien à dire si le flux
+// est cohérent (aucun fait mesuré ni question). Sinon un résumé + les questions.
+export function buildFluxMessage(obs: FluxObservationLite | null): string | null {
+  if (!obs) return null
+  const measured = obs.counts?.measured ?? obs.measured?.phantomTargets?.length ?? 0
+  const conv = obs.counts?.convergence ?? obs.convergence?.length ?? 0
+  if (measured === 0 && conv === 0) return null
+  const lines = [`🧭 **Auditeur de Flux** — ${(obs.summary ?? '').trim()}`.trim()]
+  for (const q of (obs.convergence ?? []).slice(0, 5)) lines.push(`- ${q}`)
+  return lines.join('\n')
+}
+
 // Dépendances injectables du watcher (testable sans I/O réelle).
 export interface VerdictWatcherDeps {
   wait: (projectName: string, timeoutMs: number) => Promise<QAVerdict | null>
   append: (historyDir: string, text: string) => void
+  /** Lecture des observations de flux (#137) — injectable pour les tests. */
+  readFlux?: (projectName: string) => FluxObservationLite | null
 }
 
 const defaultWatcherDeps: VerdictWatcherDeps = {
   wait: waitForVerdict,
   append: (dir, text) => appendHistory(dir, [{ role: 'status', text, ts: new Date().toISOString() }]),
+  readFlux: readFluxObservations,
 }
 
 // Attend le verdict (timeout long) puis l'écrit dans l'historique du projet —
@@ -149,6 +185,9 @@ export async function surfaceVerdict(
   if (!verdict) return null
   const msg = buildVerdictMessage(verdict)
   if (msg) deps.append(historyDir, msg)
+  // Auditeur de Flux (#137) : surfaçage additionnel, en plus du verdict. Conseil.
+  const flux = buildFluxMessage((deps.readFlux ?? readFluxObservations)(projectName))
+  if (flux) deps.append(historyDir, flux)
   return msg
 }
 
