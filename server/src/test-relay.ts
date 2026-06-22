@@ -15,6 +15,8 @@ import { spawnSync } from "node:child_process";
 import { runRelay, type RelayDeps } from "./eleve.js";
 import type { Inspection } from "./inspection.js";
 import { inspectProject } from "./inspection.js";
+import { resolveProfile } from "./models/profile.js";
+import type { PostFn, ToolCall } from "./eleve-runtime.js";
 
 const LIVE = process.argv.includes("--live");
 const line = (c = "─") => console.log(c.repeat(64));
@@ -68,7 +70,7 @@ async function deterministic(): Promise<void> {
   // B) L'Élève échoue 2× (build cassé) → le Maître corrige + axiome
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-B-"));
-    let escalated = false;
+    let escalated: boolean = false;
     const deps: RelayDeps = {
       askEleve: async () => writeMarker("BAD"), // toujours cassé
       inspect: async (d) => markerInspect(d),
@@ -154,6 +156,84 @@ async function deterministic(): Promise<void> {
     console.log("\n  [E2] Porte OFF par défaut → comportement historique :");
     check("succès dès la 1re tentative", eleveCalls === 1 && r.attempts === 1 && r.success);
     check("juge JAMAIS appelé (porte inerte)", judgeCalls === 0);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // F) #146 Phase 2 — MOTEUR AGENTIQUE : profil `agentic` + transport injecté
+  // (agenticPost) → la tentative DEVIENT la boucle outils, sans réseau.
+  const glm = resolveProfile("glm-5.2:cloud"); // profil agentic:true
+  const call = (name: string, args: object, n: number): ToolCall => ({ id: `t${n}`, function: { name, arguments: JSON.stringify(args) } });
+  const agenticScript = (steps: ToolCall[][]): PostFn => {
+    let i = 0;
+    return async () => {
+      const tc = steps[Math.min(i, steps.length - 1)];
+      i++;
+      return { content: "", toolCalls: tc };
+    };
+  };
+
+  {
+    // F1 — le moteur écrit marker.txt=OK via write_file puis finish → succès Élève.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F1-"));
+    let escalated: boolean = false;
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"), // ne doit PAS être utilisé (chemin agentique)
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0 }; },
+      agenticPost: agenticScript([
+        [call("write_file", { path: "marker.txt", content: "OK" }, 1)],
+        [call("finish", { summary: "marker posé" }, 2)],
+      ]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [F1] Moteur agentique → succès Élève :");
+    check("profil agentic détecté (glm)", glm.agentic === true);
+    check("résolu par l'Élève via outils (write_file)", r.resolvedBy === "eleve" && r.success);
+    check("marker.txt réellement écrit par l'outil", fs.readFileSync(path.join(dir, "marker.txt"), "utf8").trim() === "OK");
+    check("escalade NON déclenchée", !escalated);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  {
+    // F2 — le moteur laisse le build cassé → escalade vers le Maître (inchangée).
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F2-"));
+    let escalated: boolean = false;
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async (ctx) => { escalated = true; fs.writeFileSync(path.join(ctx.projectDir, "marker.txt"), "OK"); return { axiom: true, costUsd: 0.1 }; },
+      agenticPost: agenticScript([
+        [call("write_file", { path: "marker.txt", content: "BAD" }, 1)],
+        [call("finish", { summary: "fini (mais cassé)" }, 2)],
+      ]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [F2] Moteur agentique échoue → escalade Maître :");
+    check("moteur n'a pas réparé → escalade", escalated);
+    check("résolu par le Maître + axiome", r.resolvedBy === "maitre" && r.success && r.axiom);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  {
+    // F3 — ELEVE_AGENTIC=off : même profil agentic → on REPASSE au contrat <mangoos>.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F3-"));
+    let agenticUsed: boolean = false;
+    const prev = process.env.ELEVE_AGENTIC;
+    process.env.ELEVE_AGENTIC = "off";
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("OK"), // chemin contrat
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async () => ({ axiom: false, costUsd: 0 }),
+      agenticPost: async () => { agenticUsed = true; return { content: "", toolCalls: [] }; },
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    if (prev === undefined) delete process.env.ELEVE_AGENTIC; else process.env.ELEVE_AGENTIC = prev;
+    console.log("\n  [F3] ELEVE_AGENTIC=off → repli contrat (réversibilité) :");
+    check("moteur agentique NON emprunté", !agenticUsed);
+    check("résolu par le contrat <mangoos>", r.resolvedBy === "eleve" && r.success);
     fs.rmSync(dir, { recursive: true, force: true });
   }
 }

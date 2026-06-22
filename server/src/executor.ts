@@ -147,3 +147,37 @@ export async function executeContract(
 
   return { ok: true, applied: outcomes.length, outcomes };
 }
+
+// ── Primitives unitaires sûres (Élève agentique #146 Phase 2) ────────────────
+//
+// Les outils d'action de l'Élève (eleve-action-tools.ts) ont besoin d'écrire /
+// éditer / exécuter UNE action à la fois. Plutôt que de redéclarer la sécurité,
+// chaque primitive délègue à executeContract avec un Action[] d'UNE action :
+// resolveInside (confinement), FORBIDDEN_RUN (blacklist), timeout + killTree, et
+// la garde d'ambiguïté du <find> sont réutilisés TELS QUELS. Renvoie le détail en
+// cas de succès, LÈVE avec le message d'erreur exact sinon (réinjecté au modèle
+// pour qu'il se corrige).
+
+async function applyOne(action: Action, projectDir: string, opts?: ExecOptions): Promise<string> {
+  const res = await executeContract([action], projectDir, opts);
+  const outcome = res.outcomes[0];
+  if (!res.ok || !outcome || outcome.status !== "done") {
+    throw new Error(outcome && outcome.status === "failed" ? outcome.error : "échec inconnu");
+  }
+  return outcome.detail;
+}
+
+/** Écrit/écrase un fichier complet (chemin relatif, confiné au projet). */
+export function applyWrite(projectDir: string, filePath: string, content: string): Promise<string> {
+  return applyOne({ kind: "write", path: filePath, content }, projectDir);
+}
+
+/** Remplace un extrait UNIQUE d'un fichier (le <find> doit exister et être non ambigu). */
+export function applyEdit(projectDir: string, filePath: string, find: string, replace: string): Promise<string> {
+  return applyOne({ kind: "edit", path: filePath, find, replace }, projectDir);
+}
+
+/** Lance une commande shell dans le projet (FORBIDDEN_RUN + timeout appliqués). */
+export function applyRun(projectDir: string, command: string, timeoutMs?: number): Promise<string> {
+  return applyOne({ kind: "run", command }, projectDir, { runTimeoutMs: timeoutMs });
+}

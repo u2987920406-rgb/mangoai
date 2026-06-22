@@ -26,8 +26,11 @@ import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
-import { toOpenAITools, type ToolRegistry } from "./kernel-mcp.js";
+import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
+import { buildEleveActionTools } from "./eleve-action-tools.js";
+import { buildAgentic, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
+import { getTracer } from "./kernel-trace.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
 // constellations #74). Import sync, sans cycle (ces modules n'importent pas eleve).
 import { listProcedures, loadProcedure } from "./procedures.js";
@@ -92,6 +95,11 @@ export interface RelayOptions {
   profile?: ModelProfile;
   /** Surcharge le modèle Ollama/API pour cet appel (ex. UXUI_AGENT_MODEL). */
   eleveModel?: string;
+  /** Prompt système COMPLET (toute la coquille : skills, design system, identité…)
+   * assemblé par l'appelant (index.ts via assembleSystemPrompt). Utilisé par le
+   * moteur agentique pour que le cerveau pilote la coquille entière, pas un prompt
+   * nu. Absent → repli sur une base minimale. */
+  systemFull?: string;
 }
 
 /** Les deux cerveaux + les effets de bord, injectables pour les tests. */
@@ -103,6 +111,10 @@ export interface RelayDeps {
   // #104 Phase 2 — juge fonctionnel optionnel (injectable). Absent de
   // defaultRelayDeps → la porte ne peut JAMAIS se déclencher par défaut.
   judge?: (projectDir: string, task: string) => Promise<{ fonctionnel: number; note: string } | null>;
+  // #146 Phase 2 — transport du MOTEUR agentique, injectable pour les tests.
+  // Absent en prod → elevePost (vrai endpoint OpenAI-compat). Fourni → active le
+  // moteur même hors provider openai (tests déterministes sans réseau).
+  agenticPost?: PostFn;
 }
 
 export interface EscalationContext {
@@ -225,6 +237,9 @@ function buildEleveUser(
   // Résumé d'EXPLORATION agentique (cerveau fort qui a lu/cherché le projet avec
   // ses outils avant de coder). "" pour les profils non agentiques (inchangé).
   explorationNote = "",
+  // true → consigne FINALE adaptée au moteur agentique (outils), pas au contrat
+  // <mangoos>. Le reste (axiomes, contenus de fichiers) est identique.
+  agentic = false,
 ): string {
   const files = listProjectFiles(projectDir);
   // v2.1 : type de projet détecté de façon robuste — la tâche d'abord, puis la
@@ -280,7 +295,12 @@ function buildEleveUser(
       lastError,
     );
   }
-  parts.push("", "Réponds UNIQUEMENT dans le format <mangoos>.");
+  parts.push(
+    "",
+    agentic
+      ? "Construis le projet en appelant tes OUTILS (write_file, edit_file, run_command, read_file, check_build). Après chaque écriture importante, appelle check_build ; s'il échoue, lis l'erreur et CORRIGE avant de continuer. Quand la tâche est faite ET le build vert, appelle finish(summary). N'appelle jamais npm install ni git."
+      : "Réponds UNIQUEMENT dans le format <mangoos>.",
+  );
   return parts.join("\n");
 }
 
@@ -359,6 +379,68 @@ interface AgenticResult {
   toolTrace: Array<{ name: string; args: string }>; // outils appelés (log/diagnostic)
 }
 
+// Transport OpenAI-compat partagé : UN tour de modèle (avec ou sans outils).
+// Factorisé pour être réutilisé par la passe d'exploration (askEleveAgentic) ET
+// par le runtime de build (elevePost → buildAgentic, Phase 2). Source unique du
+// POST `tools`/`tool_calls`.
+async function postEleveCompletions(
+  messages: ChatMessage[],
+  tools: OpenAITool[] | null,
+  model?: string,
+): Promise<{ content: string; toolCalls?: ToolCall[] }> {
+  const res = await fetch(completionsUrl(ELEVE_API_URL), {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ELEVE_API_KEY}` },
+    body: JSON.stringify({
+      model: model ?? ELEVE_MODEL,
+      stream: false,
+      temperature: 0,
+      messages,
+      ...(tools ? { tools, tool_choice: "auto" } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`API Élève HTTP ${res.status}`);
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
+  };
+  const msg = data.choices?.[0]?.message;
+  if (!msg) throw new Error("réponse Élève vide");
+  return { content: msg.content ?? "", toolCalls: msg.tool_calls };
+}
+
+/** Le transport injecté au runtime agentique (eleve-runtime.buildAgentic), lié à
+ * la config Élève courante. Exige l'endpoint OpenAI-compat (function-calling). */
+export function elevePost(model?: string): PostFn {
+  if (ELEVE_PROVIDER !== "openai") {
+    throw new Error("runtime agentique : ELEVE_PROVIDER doit être « openai » (function-calling).");
+  }
+  if (!ELEVE_API_KEY) {
+    throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
+  }
+  return (messages, tools) => postEleveCompletions(messages, tools, model);
+}
+
+// Base système minimale du moteur agentique quand l'appelant ne fournit pas le
+// prompt complet (opts.systemFull). En prod (index.ts), systemFull porte toute la
+// coquille (skills, design system, identité, mémoire…) ; ceci n'est qu'un filet.
+const AGENTIC_FALLBACK_SYSTEM =
+  "Tu es l'agent constructeur de MangoOS. Tu réalises la tâche demandée dans un vrai projet, " +
+  "avec rigueur et soin, en t'appuyant sur les outils mis à ta disposition.";
+
+// Contrat d'OUTILS du moteur agentique — REMPLACE le contrat <mangoos> sur ce
+// chemin (ne JAMAIS mélanger balises et outils, sinon le cerveau hésite).
+const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (function-calling) :
+- read_file / list_files / search_code : explorer le projet existant
+- write_file : créer ou réécrire un fichier complet
+- edit_file : remplacer un extrait précis et unique d'un fichier
+- run_command : lancer une commande (ex. \`npx tsc --noEmit\`) — INTERDIT : npm install, git, rm
+- check_build : vérifier objectivement l'état du build
+- finish : déclarer la tâche terminée (build vert) avec un résumé
+
+Méthode : explore si besoin → écris → APRÈS chaque écriture importante, appelle check_build →
+en cas d'erreur, lis-la et CORRIGE, puis recommence → quand tout est vert et la tâche faite,
+appelle finish(summary). Implémente RÉELLEMENT chaque fonctionnalité (pas de template de démo).`;
+
 export async function askEleveAgentic(
   system: string,
   user: string,
@@ -374,33 +456,14 @@ export async function askEleveAgentic(
     throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
   }
   const tools = toOpenAITools(registry);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const messages: any[] = [
+  const messages: ChatMessage[] = [
     { role: "system", content: system },
     { role: "user", content: user },
   ];
   const toolTrace: AgenticResult["toolTrace"] = [];
 
-  const callModel = async (withTools: boolean): Promise<{ content: string; toolCalls?: Array<{ id: string; function: { name: string; arguments: string } }> }> => {
-    const res = await fetch(completionsUrl(ELEVE_API_URL), {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ELEVE_API_KEY}` },
-      body: JSON.stringify({
-        model: opts.model ?? ELEVE_MODEL,
-        stream: false,
-        temperature: 0,
-        messages,
-        ...(withTools ? { tools, tool_choice: "auto" } : {}),
-      }),
-    });
-    if (!res.ok) throw new Error(`API Élève HTTP ${res.status}`);
-    const data = (await res.json()) as {
-      choices?: Array<{ message?: { content?: string; tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }> } }>;
-    };
-    const msg = data.choices?.[0]?.message;
-    if (!msg) throw new Error("réponse Élève vide");
-    return { content: msg.content ?? "", toolCalls: msg.tool_calls };
-  };
+  const callModel = (withTools: boolean) =>
+    postEleveCompletions(messages, withTools ? tools : null, opts.model);
 
   for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
     const { content, toolCalls } = await callModel(true);
@@ -573,6 +636,56 @@ export async function runRelay(
     return insp;
   };
 
+  // Escalade vers le Maître (Claude), factorisée : partagée par le chemin contrat
+  // ET le chemin moteur agentique. INCHANGÉE — Claude reste le seul filet.
+  const finalizeEscalation = async (lastErr: string, attempts: number): Promise<RelayResult> => {
+    push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})`);
+    const esc = await deps.escalate({ task, projectDir, lastError: lastErr, maitreModel, profile: callProfile });
+    const insp = await inspectReady();
+    if (insp.ok) {
+      push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
+      return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: esc.axiom, costUsd: esc.costUsd, log };
+    }
+    push(`✗ build encore cassé après escalade — échec`);
+    return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: esc.axiom, costUsd: esc.costUsd, log };
+  };
+
+  // ── MOTEUR AGENTIQUE (Phase 2 — « posséder le moteur ») ───────────────────────
+  // Pour un cerveau fort (profil `agentic`) branché en function-calling
+  // (ELEVE_PROVIDER=openai), la tentative DEVIENT la boucle agentique maison :
+  // le cerveau lit/écrit/exécute/vérifie/corrige en boucle, pilotant TOUTE la
+  // coquille (prompt complet + axiomes + outils), au lieu de produire un contrat
+  // <mangoos> en un coup. Additif et RÉVERSIBLE (ELEVE_AGENTIC=off → contrat ;
+  // Gemma & co. jamais concernés). Claude reste l'escalade (finalizeEscalation).
+  if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (ELEVE_PROVIDER === "openai" || deps.agenticPost)) {
+    push(`🤖 Moteur agentique — l'Élève (${callModel}) construit avec ses outils…`);
+    const registry = buildEleveActionTools(projectDir);
+    const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
+    const user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
+    let agErr = "";
+    try {
+      const result = await buildAgentic(`${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`, user, registry, {
+        post: deps.agenticPost ?? elevePost(callModel),
+        tracer: getTracer(),
+        onTool: (n, a) => push(`  🔧 ${n} ${a.slice(0, 100)}`),
+        onLog: push,
+      });
+      push(
+        `✓ moteur : ${result.iterations} itération(s), ${result.toolTrace.length} appel(s) d'outil` +
+          (result.finished ? " (finish)" : result.stuck ? " (bloqué)" : " (plafond)"),
+      );
+    } catch (e) {
+      agErr = `moteur agentique : ${(e as Error).message}`;
+      push(`⚠ ${agErr} — on laisse le juge trancher puis on escalade au besoin`);
+    }
+    const insp = await inspectReady();
+    if (insp.ok) {
+      push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);
+      return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log };
+    }
+    return await finalizeEscalation(agErr || `build cassé (${insp.signal}) : ${insp.detail.slice(-300)}`, 1);
+  }
+
   // ── Passe d'EXPLORATION agentique (Phase 1 — vers « Mango = Claude ») ─────────
   // Pour un cerveau assez fort (profil `agentic`, ex. GLM), on le laisse d'abord
   // EXPLORER le projet avec ses outils (read/list/search) et résumer ce qui compte
@@ -657,14 +770,6 @@ export async function runRelay(
   }
 
   // ── Escalade vers le Maître ──
-  push(`⤴ ${callMaxAttempts} échec(s) objectif(s) — ESCALADE vers le MAÎTRE (Claude/${maitreModel})`);
-  const esc = await deps.escalate({ task, projectDir, lastError, maitreModel, profile: callProfile });
-  lastInspection = await inspectReady();
-
-  if (lastInspection.ok) {
-    push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
-    return { resolvedBy: "maitre", attempts: callMaxAttempts, success: true, inspection: lastInspection, axiom: esc.axiom, costUsd: esc.costUsd, log };
-  }
-  push(`✗ build encore cassé après escalade — échec`);
-  return { resolvedBy: "none", attempts: callMaxAttempts, success: false, inspection: lastInspection, axiom: esc.axiom, costUsd: esc.costUsd, log };
+  push(`⤴ ${callMaxAttempts} échec(s) objectif(s) — escalade…`);
+  return await finalizeEscalation(lastError, callMaxAttempts);
 }

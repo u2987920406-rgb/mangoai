@@ -464,8 +464,14 @@ app.post("/api/chat", async (req, res) => {
       // « local » pour Ollama local, « cloud » pour un endpoint distant (Ollama Cloud, etc.).
       const agentTier = ELEVE_PROVIDER === "openai" ? "cloud" : "local";
       send({ type: "status", text: `🎓 L'agent ${agentLabel} (${agentTier}) prend la main…` });
+      // Prompt système COMPLET (toute la coquille : skills, design system, identité,
+      // mémoire…) — mêmes blocs que Claude. Le moteur agentique (profil fort + GLM)
+      // s'en sert pour piloter la coquille entière, pas un prompt nu. Sur le chemin
+      // contrat (Gemma) runRelay l'ignore → zéro impact.
+      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir });
       const r = await runRelay(agentPrompt, dir, {
         ...(specialistProfile ? { profile: specialistProfile, eleveModel: specialistModel } : {}),
+        systemFull,
         onLog: (line) => {
           record("status", line);
           send({ type: "status", text: line });
