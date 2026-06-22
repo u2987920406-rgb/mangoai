@@ -29,7 +29,7 @@ import { resolveProfile, type ModelProfile } from "./models/profile.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
-import { buildAgentic, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
+import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
 import { getTracer } from "./kernel-trace.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
 // constellations #74). Import sync, sans cycle (ces modules n'importent pas eleve).
@@ -435,11 +435,13 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 - edit_file : remplacer un extrait précis et unique d'un fichier
 - run_command : lancer une commande (ex. \`npx tsc --noEmit\`) — INTERDIT : npm install, git, rm
 - check_build : vérifier objectivement l'état du build
+- delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
 
 Méthode : explore si besoin → écris → APRÈS chaque écriture importante, appelle check_build →
 en cas d'erreur, lis-la et CORRIGE, puis recommence → quand tout est vert et la tâche faite,
-appelle finish(summary). Implémente RÉELLEMENT chaque fonctionnalité (pas de template de démo).`;
+appelle finish(summary). Pour une grande tâche à PARTIES INDÉPENDANTES, tu peux déléguer chaque
+partie via delegate, puis intégrer. Implémente RÉELLEMENT chaque fonctionnalité (pas de template de démo).`;
 
 export async function askEleveAgentic(
   system: string,
@@ -659,13 +661,21 @@ export async function runRelay(
   // Gemma & co. jamais concernés). Claude reste l'escalade (finalizeEscalation).
   if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (ELEVE_PROVIDER === "openai" || deps.agenticPost)) {
     push(`🤖 Moteur agentique — l'Élève (${callModel}) construit avec ses outils…`);
-    const registry = buildEleveActionTools(projectDir);
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
     const user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     let agErr = "";
     try {
-      const result = await buildAgentic(`${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`, user, registry, {
+      // runAgenticTask = la boucle + la DÉLÉGATION (Phase D) : l'orchestrateur peut
+      // confier des sous-tâches à des sous-agents bornés (profondeur + budget partagé).
+      const result = await runAgenticTask(user, {
+        projectDir,
+        system: `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`,
         post: deps.agenticPost ?? elevePost(callModel),
+        buildRegistry: (pd) => buildEleveActionTools(pd),
+        buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
+        depth: 0,
+        maxDepth: Number(process.env.ELEVE_DELEGATE_MAX_DEPTH ?? 2),
+        budget: { spawned: 0, max: Number(process.env.ELEVE_DELEGATE_MAX_AGENTS ?? 4) },
         tracer: getTracer(),
         onTool: (n, a) => push(`  🔧 ${n} ${a.slice(0, 100)}`),
         onLog: push,

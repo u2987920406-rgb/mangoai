@@ -9,7 +9,8 @@
 // (`post`) est INJECTÉ — eleve.ts fournit le vrai (OpenAI-compat), les tests un
 // faux scripté. D'où une boucle 100 % testable sans réseau ni vrai build.
 
-import { ToolRegistry, toOpenAITools, type OpenAITool } from "./kernel-mcp.js";
+import { z } from "zod";
+import { ToolRegistry, toOpenAITools, type OpenAITool, type KernelTool } from "./kernel-mcp.js";
 import { FINISH_TOOL } from "./eleve-action-tools.js";
 import type { KernelTracer } from "./kernel-trace.js";
 
@@ -176,4 +177,79 @@ export async function buildAgentic(
   });
   const final = await opts.post(messages, null);
   return { text: final.content, toolTrace, finished: false, iterations: maxIter, stuck: false };
+}
+
+// ── DÉLÉGATION : l'orchestrateur lance des SOUS-AGENTS (#146 Phase D) ─────────
+//
+// Le maillon « appeler un agent » : un sous-agent = une instance bornée du MÊME
+// buildAgentic. Élégance clé : `delegate` n'est qu'UN OUTIL DE PLUS dans le
+// registre — quand le cerveau l'appelle, son handler relance runAgenticTask sur
+// la sous-tâche (profondeur +1) et renvoie le résumé. buildAgentic n'a rien à
+// savoir de la délégation : il invoque `delegate` comme n'importe quel outil.
+// Récursion bornée par la PROFONDEUR (depth/maxDepth) et un BUDGET PARTAGÉ de
+// sous-agents (budget.spawned/max), tout deux passés par référence vers le bas.
+
+export const DELEGATE_TOOL = "delegate";
+
+export interface AgenticRunCtx {
+  projectDir: string;
+  /** System de base (coquille complète + contrat d'outils). */
+  system: string;
+  post: PostFn;
+  /** Fabrique du registre d'outils d'action (= buildEleveActionTools). Injectée
+   * pour garder ce module PUR (aucun import d'eleve.ts). */
+  buildRegistry: (projectDir: string) => ToolRegistry;
+  /** Construit le prompt user d'une (sous-)tâche (= buildEleveUser …, agentic). */
+  buildUser: (subtask: string) => string;
+  depth: number;
+  maxDepth: number;
+  /** Budget PARTAGÉ (même objet à tous les niveaux) : borne le nb total de sous-agents. */
+  budget: { spawned: number; max: number };
+  tracer?: KernelTracer;
+  maxIterations?: number;
+  onTool?: (name: string, args: string) => void;
+  onLog?: (line: string) => void;
+}
+
+/** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
+ * qu'on n'a pas atteint la profondeur max. Trace chaque niveau (span imbriqué). */
+export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<AgenticBuildResult> {
+  const registry = ctx.buildRegistry(ctx.projectDir);
+  if (ctx.depth < ctx.maxDepth) registry.register(makeDelegateTool(ctx));
+
+  const runOnce = () =>
+    buildAgentic(ctx.system, user, registry, {
+      post: ctx.post,
+      maxIterations: ctx.maxIterations,
+      onTool: ctx.onTool,
+      onLog: ctx.onLog,
+    });
+
+  if (!ctx.tracer) return runOnce();
+  return ctx.tracer.withSpan(`eleve.agentic.d${ctx.depth}`, () => runOnce(), { attributes: { depth: ctx.depth } });
+}
+
+/** L'outil `delegate` : confie une sous-tâche à un sous-agent borné. */
+function makeDelegateTool(ctx: AgenticRunCtx): KernelTool {
+  return {
+    name: DELEGATE_TOOL,
+    description:
+      "Délègue une SOUS-TÂCHE bien bornée et autonome à un sous-agent disposant des mêmes outils (lecture/écriture/build) sur le même projet. Sers-t'en pour découper une grande tâche en morceaux indépendants. Renvoie le résumé du sous-agent.",
+    inputSchema: { subtask: z.string().describe("La sous-tâche précise et autonome à confier au sous-agent") },
+    handler: async (args) => {
+      const subtask = String((args as Record<string, unknown>).subtask ?? "").trim();
+      if (!subtask) return { text: "sous-tâche vide", isError: true };
+      if (ctx.budget.spawned >= ctx.budget.max) {
+        return {
+          text: `budget de sous-agents épuisé (${ctx.budget.max}) — réalise cette sous-tâche toi-même avec tes outils.`,
+          isError: true,
+        };
+      }
+      ctx.budget.spawned++;
+      ctx.onLog?.(`  ↳ délégation #${ctx.budget.spawned} (profondeur ${ctx.depth + 1}) : ${subtask.slice(0, 80)}`);
+      const sub = await runAgenticTask(ctx.buildUser(subtask), { ...ctx, depth: ctx.depth + 1 });
+      const head = sub.finished ? "✓ sous-agent terminé" : sub.stuck ? "⚠ sous-agent bloqué" : "⚠ sous-agent non conclu";
+      return { text: `${head} : ${sub.text || "(pas de résumé)"}` };
+    },
+  };
 }

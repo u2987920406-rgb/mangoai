@@ -5,7 +5,7 @@
 
 import { z } from "zod";
 import { ToolRegistry } from "./kernel-mcp.js";
-import { buildAgentic, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
+import { buildAgentic, runAgenticTask, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
 
 let pass = 0;
 let fail = 0;
@@ -101,6 +101,62 @@ async function run() {
     const r = await buildAgentic("sys", "?", reg, { post, maxIterations: 5 });
     check("finished === false (pas de finish)", r.finished === false);
     check("texte = contenu du modèle", r.text === "voici ma réponse");
+  }
+
+  console.log("\n[5] Délégation (Phase D) : sous-agents bornés");
+  {
+    // 5a — délégation nominale : le parent confie l'écriture à un sous-agent.
+    const writes: Array<Record<string, unknown>> = [];
+    const budget = { spawned: 0, max: 4 };
+    const { post } = scriptedPost([
+      { toolCalls: [call("delegate", { subtask: "écris a.js" })] }, // parent → délègue
+      { toolCalls: [call("write_file", { path: "a.js", content: "x" })] }, // sous-agent
+      { toolCalls: [call("finish", { summary: "a.js fait" })] }, // sous-agent termine
+      { toolCalls: [call("finish", { summary: "tout fait" })] }, // parent termine
+    ]);
+    const r = await runAgenticTask("construis", {
+      projectDir: ".", system: "sys", post,
+      buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
+      depth: 0, maxDepth: 2, budget,
+    });
+    check("parent termine (finish) avec son propre résumé", r.finished && r.text === "tout fait");
+    check("le SOUS-AGENT a écrit a.js (pas le parent)", writes.length === 1 && writes[0].path === "a.js");
+    check("1 sous-agent lancé (budget partagé)", budget.spawned === 1);
+    check("le parent a bien appelé delegate", r.toolTrace.some((t) => t.name === "delegate"));
+  }
+  {
+    // 5b — profondeur max 0 : l'outil delegate n'est même pas offert.
+    const writes: Array<Record<string, unknown>> = [];
+    const budget = { spawned: 0, max: 4 };
+    const { post } = scriptedPost([
+      { toolCalls: [call("delegate", { subtask: "x" })] }, // tenté mais outil absent → erreur
+      { toolCalls: [call("finish", { summary: "fin" })] },
+    ]);
+    const r = await runAgenticTask("t", {
+      projectDir: ".", system: "s", post,
+      buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
+      depth: 0, maxDepth: 0, budget,
+    });
+    check("profondeur max 0 → aucun sous-agent lancé", budget.spawned === 0);
+    check("le parent termine quand même", r.finished === true);
+  }
+  {
+    // 5c — budget épuisé : la 2e délégation est refusée (pas de 2e sous-agent).
+    const writes: Array<Record<string, unknown>> = [];
+    const budget = { spawned: 0, max: 1 };
+    const { post } = scriptedPost([
+      { toolCalls: [call("delegate", { subtask: "s1" })] }, // parent → sub1 (ok)
+      { toolCalls: [call("finish", { summary: "s1 ok" })] }, // sub1 termine
+      { toolCalls: [call("delegate", { subtask: "s2" })] }, // parent → refusé (budget)
+      { toolCalls: [call("finish", { summary: "fin" })] }, // parent termine
+    ]);
+    const r = await runAgenticTask("t", {
+      projectDir: ".", system: "s", post,
+      buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
+      depth: 0, maxDepth: 2, budget,
+    });
+    check("budget plafonné à 1 sous-agent (2e refusé)", budget.spawned === 1);
+    check("le parent termine malgré le refus", r.finished === true);
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);
