@@ -320,10 +320,17 @@ function HamburgerMenu({ onOpenWindow, onOpenAppBuilder, onOpenLauncher, inputRe
 }
 
 /* ── Bulle utilisateur ───────────────────────────────────────────────────── */
-function UserBubble({ content }) {
+function UserBubble({ content, onRegenerate, thinking }) {
   const { files, clean } = splitFileBlocks(content);
+  const [copied, setCopied] = useState(false);
+  function copy() {
+    navigator.clipboard.writeText(clean).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    });
+  }
   return (
-    <div className="flex justify-end">
+    <div className="flex flex-col items-end gap-1">
       <div className="max-w-[85%] rounded-2xl bg-raised px-5 py-3 text-[17px] text-ink-soft leading-7">
         {files.length > 0 && (
           <div className="mb-2 flex flex-wrap justify-end gap-1.5">
@@ -336,18 +343,37 @@ function UserBubble({ content }) {
         )}
         {clean}
       </div>
+      <div className="flex items-center gap-2 pr-1">
+        <button
+          onClick={onRegenerate}
+          disabled={thinking}
+          title="Relancer — régénérer la réponse à ce message"
+          className="flex items-center gap-1 text-[11px] text-faint hover:text-accent-soft disabled:opacity-30 transition-colors"
+        >
+          <RefreshCw size={12} /> Relancer
+        </button>
+        <button onClick={copy} title="Copier" className="flex items-center gap-1 text-[11px] text-faint hover:text-dim transition-colors">
+          <Copy size={12} /> {copied ? "Copié !" : "Copier"}
+        </button>
+      </div>
     </div>
   );
 }
 
 /* ── Bulle assistant ─────────────────────────────────────────────────────── */
-function AssistantBubble({ content }) {
+function AssistantBubble({ content, onFeedback }) {
   const [copied, setCopied] = useState(false);
+  const [voted, setVoted] = useState(null); // "like" | "dislike" | null
   function copy() {
     navigator.clipboard.writeText(content).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 1500);
     });
+  }
+  function vote(rating) {
+    if (voted) return;
+    setVoted(rating);
+    onFeedback?.(rating, content);
   }
   return (
     <div className="flex flex-col gap-2">
@@ -358,6 +384,29 @@ function AssistantBubble({ content }) {
         <button onClick={copy} title="Copier" className="flex items-center gap-1 text-[11px] text-faint hover:text-dim transition-colors">
           <Copy size={12} /> {copied ? "Copié !" : "Copier"}
         </button>
+        <button
+          onClick={() => vote("like")}
+          disabled={!!voted}
+          title="J'aime — MangoOS en retient le pattern"
+          className={`rounded-lg px-1.5 py-0.5 text-xs transition-colors disabled:cursor-default ${
+            voted === "like" ? "bg-green-500/20 text-green-500" : voted ? "text-faint opacity-30" : "text-faint hover:text-green-500 hover:bg-green-500/10"
+          }`}
+        >
+          👍
+        </button>
+        <button
+          onClick={() => vote("dislike")}
+          disabled={!!voted}
+          title="Je n'aime pas — MangoOS évitera ce pattern"
+          className={`rounded-lg px-1.5 py-0.5 text-xs transition-colors disabled:cursor-default ${
+            voted === "dislike" ? "bg-err/20 text-err" : voted ? "text-faint opacity-30" : "text-faint hover:text-err hover:bg-err/10"
+          }`}
+        >
+          👎
+        </button>
+        {voted && (
+          <span className="text-[10px] text-faint">{voted === "like" ? "Pattern retenu ✓" : "Pattern évité ✓"}</span>
+        )}
       </div>
     </div>
   );
@@ -532,6 +581,35 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
     if (id === currentId) { setMessages([]); setCurrentId(null); setInput(""); }
   }
 
+  // Un tour : envoie l'historique à GLM et ajoute sa réponse. Partagé par l'envoi
+  // d'un nouveau message ET le « Relancer » (régénération). `history` se termine
+  // par le message utilisateur auquel répondre.
+  async function runTurn(history, id) {
+    setThinking(true);
+    try {
+      const res = await fetch("/api/home-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: history, model }),
+      });
+      if (!res.ok) {
+        const why = res.status === 413 ? "pièce(s) jointe(s) trop volumineuse(s)" : `erreur serveur (HTTP ${res.status})`;
+        throw new Error(why);
+      }
+      const data = await res.json();
+      const withAnswer = [...history, { role: "assistant", content: data.text ?? "Erreur de réponse." }];
+      setMessages(withAnswer);
+      upsertConversation(id, withAnswer);
+    } catch (e) {
+      const reason = e?.message ?? "serveur injoignable";
+      const withErr = [...history, { role: "assistant", content: `⚠️ Échec — ${reason}. Réessaie, ou réduis/retire les pièces jointes.` }];
+      setMessages(withErr);
+      upsertConversation(id, withErr);
+    } finally {
+      setThinking(false);
+    }
+  }
+
   async function sendMessage() {
     const val = input.trim();
     if ((!val && attachments.length === 0) || thinking) return;
@@ -539,35 +617,38 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
     // pour que GLM le lise — masqué à l'affichage par UserBubble.
     const fileBlocks = attachments.map((a) => buildFileBlock(a.name, a.content)).join("");
     const content = fileBlocks + (val || "Analyse le(s) fichier(s) joint(s) et dis-moi ce que tu en comprends.");
-    const userMsg = { role: "user", content };
-    const withUser = [...messages, userMsg];
+    const withUser = [...messages, { role: "user", content }];
     setMessages(withUser);
     setInput("");
     setAttachments([]);
-    setThinking(true);
-
-    // Identifie (ou crée) la conversation courante et la sauvegarde aussitôt
     let id = currentId;
     if (!id) { id = `c${Date.now()}`; setCurrentId(id); }
     upsertConversation(id, withUser);
+    runTurn(withUser, id);
+  }
 
-    try {
-      const res = await fetch("/api/home-chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: withUser, model }),
-      });
-      const data = await res.json();
-      const withAnswer = [...withUser, { role: "assistant", content: data.text ?? "Erreur de réponse." }];
-      setMessages(withAnswer);
-      upsertConversation(id, withAnswer);
-    } catch {
-      const withErr = [...withUser, { role: "assistant", content: "Impossible de joindre le serveur." }];
-      setMessages(withErr);
-      upsertConversation(id, withErr);
-    } finally {
-      setThinking(false);
-    }
+  // « Relancer » sous un message utilisateur : on coupe la conversation juste
+  // après ce message (on jette l'ancienne réponse + la suite) et on régénère.
+  function regenerateFrom(i) {
+    if (thinking) return;
+    const upTo = messages.slice(0, i + 1);
+    setMessages(upTo);
+    const id = currentId ?? `c${Date.now()}`;
+    if (!currentId) setCurrentId(id);
+    upsertConversation(id, upTo);
+    runTurn(upTo, id);
+  }
+
+  // 👍/👎 sous une réponse : enregistre un vrai axiome RLHF (#41) côté serveur.
+  // Le chat d'accueil n'a pas de projet → bucket sentinelle « __home__ ». On passe
+  // `model` : en mode GLM, le serveur fait extraire l'axiome PAR GLM (souveraineté
+  // — le pouce appartient à GLM/Mango, jamais à Claude).
+  function homeFeedback(rating, text) {
+    fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ projectName: "__home__", rating, text, model }),
+    }).catch(() => {});
   }
 
   function handleKey(e) {
@@ -748,9 +829,9 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
           >
             {messages.map((m, i) =>
               m.role === "user" ? (
-                <UserBubble key={i} content={m.content} />
+                <UserBubble key={i} content={m.content} thinking={thinking} onRegenerate={() => regenerateFrom(i)} />
               ) : (
-                <AssistantBubble key={i} content={m.content} />
+                <AssistantBubble key={i} content={m.content} onFeedback={homeFeedback} />
               )
             )}
             {thinking && <ThinkingIndicator label={modelLabel} />}

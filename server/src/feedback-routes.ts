@@ -5,21 +5,25 @@ import type { Express, Request, Response } from "express";
 import { processFeedback, checkAndUpdateStreak, resetStreak, processEscalationReference, type FeedbackRating } from "./feedback.js";
 import { transcribeAudio } from "./transcribe.js";
 import { WORKSPACE_DIR } from "./projects.js";
+import { chatEleve } from "./eleve.js";
 
 const audioUpload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 25 * 1024 * 1024 } });
 
 export function registerFeedbackRoutes(app: Express): void {
   // Interrupt the agent currently working (if any)
   app.post("/api/feedback", async (req: Request, res: Response) => {
-    const { projectName, rating, text } = req.body as { projectName?: string; rating?: string; text?: string };
+    const { projectName, rating, text, model } = req.body as { projectName?: string; rating?: string; text?: string; model?: string };
     if (!projectName || !text || (rating !== "like" && rating !== "dislike")) {
       res.status(400).json({ error: "projectName, text et rating (like|dislike) requis" });
       return;
     }
     const escalate = checkAndUpdateStreak(projectName, rating as FeedbackRating);
     res.json({ ok: true, escalate });
+    // Souveraineté : un pouce sur une réponse de l'Élève (GLM) est traité PAR GLM
+    // (extraction de l'axiome), jamais par Claude — la boucle reste GLM + Mango.
+    const ask = model === "eleve" ? (system: string, prompt: string) => chatEleve(system, prompt) : undefined;
     // Traitement en arrière-plan — ne bloque pas l'UI
-    processFeedback(WORKSPACE_DIR, rating as FeedbackRating, text, projectName).catch((err) =>
+    processFeedback(WORKSPACE_DIR, rating as FeedbackRating, text, projectName, ask).catch((err) =>
       console.error("[feedback]", err instanceof Error ? err.message : err)
     );
   });

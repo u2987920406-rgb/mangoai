@@ -8,6 +8,12 @@ maj: 2026-06-22
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-22] fix | Pièces jointes volumineuses : limite JSON Express 100 Ko → 25 Mo + échecs visibles
+Mise à jour de [[eleve-local]]. « Relancer » échouait sur un message avec statut.md (194 Ko) : `express.json()` était à la limite par défaut 100 Ko → 413 silencieux (le contenu du fichier est embarqué dans le JSON du message). Fix : `index.ts` `express.json({ limit:"25mb" })` ; `Home.jsx runTurn` vérifie `res.ok` et affiche l'échec dans le chat (413 → « pièce(s) jointe(s) trop volumineuse(s) »). Test live : home-chat avec statut.md+memory.md (body 222 Ko) → HTTP 200 en 18 s, GLM lit/résume les deux. Zéro git.
+
+## [2026-06-22] ingest | Actions messages (Relancer/Copier/👍👎) + souveraineté du feedback (GLM mode → GLM)
+Mise à jour de [[eleve-local]]. Chat d'accueil (`Home.jsx`) : `UserBubble` → Relancer (régénère, `regenerateFrom` + `runTurn` factorisé) + Copier ; `AssistantBubble` → 👍/👎 (RLHF #41) + Copier. **Souveraineté** : un pouce sur une réponse GLM est traité PAR GLM, jamais Claude — `feedback.ts processFeedback(..., ask?)` (cerveau d'extraction injectable), `feedback-routes.ts` passe `chatEleve` quand `model==="eleve"` ; `homeFeedback`/`Chat.jsx handleFeedback` passent `model`. L'axiome va dans le `.axioms.md` global (cerveau de Mango). tsc+build verts ; test live : POST feedback 👍 model=eleve → axiome écrit PAR GLM (.axioms.md 216→221), Claude jamais appelé. Vérif visuelle boutons à confirmer côté navigateur. Zéro git.
+
 ## [2026-06-22] ingest | Épure du composer d'accueil (modèle en bas, Mode/Template supprimés, trombone)
 Mise à jour de [[eleve-local]]. `Home.jsx` : le chat d'accueil discute (ne build pas → `home-chat` n'envoie que `model`), donc Mode (Élite) + Template retirés des deux composers. Composer d'accueil réagencé : header modèle du haut supprimé ; barre du bas = trombone 📎 + pastille live + badge modèle (openUp) à gauche, micro + envoi à droite ; pièces jointes (chips/drag&drop/coller) ajoutées ; envoi avec pièces jointes seules. État mode/template laissé (persistance), dropdowns devenus code mort. build UI vert. Rendu à confirmer côté navigateur. Zéro git.
 

@@ -280,7 +280,9 @@ export default function Chat({
     fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ projectName, rating, text }),
+      // `model` : en mode Élève (GLM), le serveur fait traiter le pouce PAR GLM
+      // — souveraineté, la boucle d'apprentissage reste GLM + Mango.
+      body: JSON.stringify({ projectName, rating, text, model }),
     })
       .then((r) => r.json())
       .then((d) => {
@@ -289,7 +291,7 @@ export default function Chat({
         }
       })
       .catch(() => {});
-  }, [projectName]);
+  }, [projectName, model]);
 
   // Groupes stables tant que `messages` ne change pas : sans ça, groupMessages
   // recrée des objets à chaque frappe et casse la mémoïsation de ToolGroup.

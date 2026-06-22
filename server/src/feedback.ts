@@ -34,6 +34,10 @@ export async function processFeedback(
   rating: FeedbackRating,
   messageText: string,
   projectName: string,
+  // Souveraineté : si fourni (ex. réponse de GLM en mode Élève), l'extraction de
+  // l'axiome est faite par CE cerveau au lieu du FEEDBACK_PROVIDER (Claude) par
+  // défaut — le pouce appartient à GLM/Mango, jamais à Claude.
+  ask?: (system: string, prompt: string) => Promise<string>,
 ): Promise<void> {
   const tag = rating === "like" ? "validé-utilisateur" : "à-éviter";
   const axiomCat = rating === "like" ? "UX" : "AVOID";
@@ -63,10 +67,12 @@ AXIOME-${axiomCat}-XX [candidat] [${tag}]
 - Règle d'or: (ce qu'il faut faire à la place)
 - Source: 👎 utilisateur (${today}) — projet ${projectName}`;
 
-  const axiomText = await getBrain().complete('', prompt, {
-    provider: resolveProvider(process.env.FEEDBACK_PROVIDER),
-    maxTokens: 400,
-  });
+  const axiomText = ask
+    ? await ask('', prompt)
+    : await getBrain().complete('', prompt, {
+        provider: resolveProvider(process.env.FEEDBACK_PROVIDER),
+        maxTokens: 400,
+      });
 
   if (!axiomText.startsWith("AXIOME-")) return;
 

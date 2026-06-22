@@ -98,7 +98,11 @@ process.on("uncaughtException", (err) => {
 const PORT = Number(process.env.PORT ?? 3000);
 const app = express();
 app.use(cors());
-app.use(express.json());
+// Limite de corps relevée à 25 Mo : les pièces jointes du chat (ex. statut.md
+// ~200 Ko, voire plusieurs fichiers) embarquent leur contenu dans le JSON du
+// message. La limite Express par défaut (100 Ko) faisait échouer ces requêtes en
+// 413 silencieux. 25 Mo = large marge sans risque (local-first, pas exposé).
+app.use(express.json({ limit: "25mb" }));
 
 let agentBusy = false;
 
