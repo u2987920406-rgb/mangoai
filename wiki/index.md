@@ -21,6 +21,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[mangoqa]] | Audit autonome « fantôme » à 3 visages (Disjoncteur / Observateur / Œil) | ✅ écrite |
 | [[boucle-curation]] | Mesurer → réinjecter → prouver → orienter la réutilisation — #117→#130 | ✅ écrite |
 | [[eleve-local]] | Boucle d'apprentissage : Élève Gemma 4 local ($0) + escalade Claude — Jalon D | ✅ écrite |
+| [[examen-cerveau]] | « Révélateur de cerveau » : scan d'audit d'entrée d'un modèle inconnu → verdict de placement — #148 | ✅ écrite |
 | [[coque-souple]] | Assemblage du prompt par blocs/scénario, modes MVP/Élite/Finition — jalon A | ✅ écrite |
 | [[coque-rigide]] | Contrat d'E/S `<mangoos>`, `executor.ts`, `inspection.ts` — jalon C/D | ✅ écrite |
 | [[memoire-expertise]] | 4 magasins (mémoire projet, profil, skills, axiomes), boucle Hermes | ✅ écrite |
