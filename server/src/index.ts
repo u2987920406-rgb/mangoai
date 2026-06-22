@@ -181,12 +181,24 @@ app.post("/api/home-chat", async (req, res) => {
   const system = [
     "Tu es MangoOS, l'assistant IA personnel de Raf. Tu es chaleureux, direct et concis.",
     "Réponds en français sauf si on te parle en anglais.",
+    // Garde-fou anti-dérive : MangoOS est une application AUTONOME. Aucun modèle
+    // (Claude inclus) ne doit se prendre pour « Claude Code » ni renvoyer Raf vers
+    // un terminal/des réglages externes — tout se passe DANS MangoOS.
+    "Tu es une application autonome qui tourne sur la machine de Raf — tu n'es NI Claude Code, NI un terminal, NI un outil externe. Ne mentionne jamais « Claude Code », ne renvoie jamais vers un terminal, une commande slash, ou des réglages d'un autre logiciel : tout (permissions, actions, génération) se fait à l'intérieur de MangoOS.",
+    "ACCÈS AUX FICHIERS : dans cette conversation tu n'as AUCUN accès direct au disque — tu ne peux pas lire un chemin (ex. D:\\...) ni « demander une permission » d'accès fichier (ça n'existe pas ici, ne lance JAMAIS de fausse demande d'autorisation). Pour qu'on te montre un fichier, demande simplement à Raf de l'ATTACHER avec le bouton trombone 📎 (ou d'en coller le contenu) : le contenu t'arrivera alors directement dans le message, entre des balises [[FILE:nom]]…[[/FILE]]. Ne prétends jamais avoir lu un fichier que tu n'as pas reçu de cette façon.",
     history ? `\n— Historique —\n${history}` : "",
   ].filter(Boolean).join("\n");
 
   try {
-    const { askLLM } = await import("./llm-engine.js");
-    const text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+    let text: string;
+    if (model === "eleve") {
+      // Élève sélectionné → réponse EN INTERNE par GLM-5.2 (chatEleve), pas Claude.
+      // C'est ce que Raf attend quand il choisit « Élève · GLM-5.2 » sur l'accueil.
+      text = await chatEleve(system, last.content);
+    } else {
+      const { askLLM } = await import("./llm-engine.js");
+      text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+    }
     res.json({ text });
   } catch (err) {
     res.status(500).json({ error: String(err) });

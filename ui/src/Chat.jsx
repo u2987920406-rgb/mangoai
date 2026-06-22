@@ -8,6 +8,41 @@ import DiffSlider from "./components/DiffSlider.jsx";
 let nextId = 1;
 const uid = () => nextId++;
 
+// Réponse guidée : l'agent peut clore son message par une demande de décision
+// (PROTOCOLE DE RÉPONSE GUIDÉE du prompt), sous deux formes :
+//  • [OUI/NON]                       → box Oui / Non (touches Y/N)
+//  • [[OPTIONS]] - a | desc … [[/OPTIONS]]  → box de 2-4 choix (touches 1-4)
+// On les détecte pour afficher une box cliquable, et on les masque à l'affichage.
+const YESNO_RE = /\s*\[\s*oui\s*\/\s*non\s*\]\s*$/i;
+const OPTIONS_RE = /\[\[\s*options\s*\]\]([\s\S]*?)\[\[\s*\/\s*options\s*\]\]/i;
+
+function parseOptionsBlock(text = "") {
+  const m = text.match(OPTIONS_RE);
+  if (!m) return null;
+  const options = m[1]
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.startsWith("-"))
+    .map((l) => {
+      const body = l.replace(/^-\s*/, "");
+      const [label, ...rest] = body.split("|");
+      return { label: label.trim(), description: rest.join("|").trim() || null };
+    })
+    .filter((o) => o.label);
+  return options.length ? options : null;
+}
+
+// → { kind: "yesno" | "options" | null, options: [{label, description}] }
+function parseQuestion(text = "") {
+  const options = parseOptionsBlock(text);
+  if (options) return { kind: "options", options };
+  if (YESNO_RE.test(text)) return { kind: "yesno", options: [{ label: "Oui" }, { label: "Non" }] };
+  return { kind: null, options: [] };
+}
+
+const stripQuestionMarkers = (text = "") =>
+  text.replace(OPTIONS_RE, "").replace(YESNO_RE, "").trimEnd();
+
 // Les 3 actions de la chatbox. Le MODÈLE n'est plus codé en dur par action :
 // chaque action a son propre modèle, configurable par bouton (menu déroulant) et
 // mémorisé. Par défaut tout est sur l'Élève (GLM-5.2) → « rester sur GLM » vaut
@@ -259,6 +294,36 @@ export default function Chat({
   // Groupes stables tant que `messages` ne change pas : sans ça, groupMessages
   // recrée des objets à chaque frappe et casse la mémoïsation de ToolGroup.
   const grouped = useMemo(() => groupMessages(messages), [messages]);
+
+  // Réponse guidée : si le dernier message de l'agent pose une question structurée
+  // (oui/non ou choix multiple) et que l'agent ne travaille plus, on affiche une
+  // box de réponses cliquables + raccourcis clavier. L'utilisateur peut toujours
+  // taper une réponse libre dans la zone de saisie (les raccourcis sont ignorés
+  // quand le focus est dans un champ de saisie).
+  const lastMsg = messages[messages.length - 1];
+  const question = !busy && lastMsg?.role === "agent" ? parseQuestion(lastMsg.text) : { kind: null, options: [] };
+  const answerConfirm = (ans) => { if (!busy) send(ans); };
+  useEffect(() => {
+    if (!question.kind) return;
+    const onKey = (e) => {
+      const el = document.activeElement;
+      const typing = el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT" || el.isContentEditable);
+      if (typing || e.metaKey || e.ctrlKey || e.altKey) return; // ne pas voler la frappe
+      if (question.kind === "yesno") {
+        const k = e.key.toLowerCase();
+        if (k === "y" || k === "o") { e.preventDefault(); answerConfirm("Oui"); }
+        else if (k === "n") { e.preventDefault(); answerConfirm("Non"); }
+      } else {
+        const idx = parseInt(e.key, 10);
+        if (idx >= 1 && idx <= question.options.length) {
+          e.preventDefault();
+          answerConfirm(question.options[idx - 1].label);
+        }
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lastMsg?.id, question.kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Keep the refs in sync so the post-turn poll sees current values.
   useEffect(() => { projectNameRef.current = projectName; }, [projectName]);
@@ -566,6 +631,50 @@ export default function Chat({
         {/* Projet généré la nuit : reviewer directement sous le prompt (#58/#59). */}
         {nocturnalEntry && !nocturnalEntry.reviewed && !busy && (
           <NocturnalReviewForm id={nocturnalEntry.id} onToast={onToast} onReviewed={onReviewed} />
+        )}
+        {/* Réponse guidée émise par l'agent : Oui/Non ([OUI/NON]) ou box de choix ([[OPTIONS]]). */}
+        {question.kind === "yesno" && (
+          <div className="flex items-center justify-center gap-2 py-3">
+            <span className="text-xs text-faint">Ta réponse&nbsp;:</span>
+            <button
+              onClick={() => answerConfirm("Oui")}
+              className="flex items-center gap-1.5 rounded-xl bg-ok/90 px-4 py-2 text-sm font-semibold text-white shadow-md transition-colors hover:bg-ok"
+            >
+              ✓ Oui
+              <kbd className="ml-0.5 rounded bg-white/20 px-1 text-[10px] font-bold">Y</kbd>
+            </button>
+            <button
+              onClick={() => answerConfirm("Non")}
+              className="flex items-center gap-1.5 rounded-xl bg-err/90 px-4 py-2 text-sm font-semibold text-white shadow-md transition-colors hover:bg-err"
+            >
+              ✕ Non
+              <kbd className="ml-0.5 rounded bg-white/20 px-1 text-[10px] font-bold">N</kbd>
+            </button>
+          </div>
+        )}
+        {question.kind === "options" && (
+          <div className="animate-fade-up w-full max-w-[95%] self-start rounded-2xl border border-accent/25 bg-accent/[0.04] p-2.5">
+            <div className="mb-1.5 px-1 text-[11px] font-semibold tracking-wide text-accent-soft">
+              CHOISIS UNE RÉPONSE
+            </div>
+            <div className="flex flex-col gap-1.5">
+              {question.options.map((o, i) => (
+                <button
+                  key={i}
+                  onClick={() => answerConfirm(o.label)}
+                  className="group flex items-start gap-2.5 rounded-xl border border-edge bg-bg px-3 py-2 text-left transition-colors hover:border-accent/50 hover:bg-accent/[0.07]"
+                >
+                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-edge-soft text-[11px] font-bold text-faint transition-colors group-hover:bg-accent/20 group-hover:text-accent">
+                    {i + 1}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-sm font-medium text-ink">{o.label}</span>
+                    {o.description && <span className="mt-0.5 block text-xs leading-snug text-faint">{o.description}</span>}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
         )}
         {awaitingPlanConfirm && !busy && (
           <div className="flex justify-center py-3">
@@ -944,7 +1053,7 @@ const Message = memo(function Message({ m, showThinking = true, onFeedback }) {
             MangoOS
           </div>
           <div className="md rounded-2xl rounded-tl-md border border-accent/15 bg-accent/[0.06] px-3.5 py-2.5 text-sm leading-relaxed break-words">
-            <ReactMarkdown>{m.text}</ReactMarkdown>
+            <ReactMarkdown>{stripQuestionMarkers(m.text)}</ReactMarkdown>
           </div>
           <div className="mt-1 flex items-center gap-1.5">
             <button

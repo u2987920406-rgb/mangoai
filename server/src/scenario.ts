@@ -76,6 +76,23 @@ export type PromptContext = {
 
 // ── Prompt text blocks (moved verbatim from agent.ts) ──────────────────────
 
+// Protocole d'autorisation oui/non : quand l'agent a besoin du feu vert de
+// l'utilisateur, il termine par le marqueur [OUI/NON] que l'UI transforme en
+// boutons Oui/Non (+ touches Y/N). Partagé par les modes build et discussion.
+const CONFIRM_PROTOCOL = `
+PROTOCOLE DE RÉPONSE GUIDÉE — dès qu'une décision de l'utilisateur t'aide à avancer, NE pose PAS une question ouverte : propose-lui des réponses CLIQUABLES. Deux formats, toujours à la TOUTE FIN de ton message :
+
+• Oui / Non (autorisation, validation, choix binaire « je continue ? ») — termine par ce marqueur EXACT, seul sur la dernière ligne :
+[OUI/NON]
+
+• Choix multiple (2 à 4 options cohérentes, distinctes et réellement pertinentes pour la question) — pose ta question en une phrase, puis ferme avec un bloc EXACT, une option par ligne au format « Libellé court | brève explication » (l'explication après « | » est optionnelle) :
+[[OPTIONS]]
+- Libellé 1 | ce que ça implique
+- Libellé 2 | ce que ça implique
+[[/OPTIONS]]
+
+Règles : n'emploie ces formats QUE pour une VRAIE demande de décision (jamais pour une question ouverte, ni une simple remarque). Les libellés doivent être courts et la réponse de l'utilisateur = le libellé choisi. L'interface affiche alors une box de réponses cliquables (+ raccourcis clavier : Y/N pour oui/non, 1-4 pour les options).`;
+
 const SYSTEM_APPEND = `
 You are the engine of a local "Lovable-like" app builder.
 You work inside an existing React + Vite project (already scaffolded, dependencies installed).
@@ -89,7 +106,8 @@ Rules:
 - Never remove or modify the <script data-mangoos="error-relay"> block in index.html — the host application needs it.
 - Answer the user briefly in French; code and comments stay in English.
 - For large requests made of several INDEPENDENT parts (multiple sections, pages or components that don't touch the same files), delegate each part to a "builder" subagent and launch them in parallel (multiple Agent calls in one message), then integrate and verify the result yourself. For small or interdependent changes, work directly — delegation has overhead.
-${MEMORY_RULES}`;
+${MEMORY_RULES}
+${CONFIRM_PROTOCOL}`;
 
 // Backlog item "raisonnement analytique" — appended only when the chosen model
 // supports native extended thinking (opus/sonnet); haiku stays lightweight.
@@ -106,7 +124,8 @@ Mode 💬 Discussion — réflexion et conseil :
 - Engage naturellement : pose des questions de clarification, propose des approches, partage les compromis, aide à structurer l'idée.
 - Sois concis et direct — c'est une conversation, pas une livraison. Une réponse claire vaut mieux qu'un mur de texte.
 - Si l'utilisateur dit "go", "construis" ou "implémente", il a changé d'intention — bascule en mode build.
-- Réponds toujours en français.`;
+- Réponds toujours en français.
+${CONFIRM_PROTOCOL}`;
 
 // Mode posture, prepended so it frames everything else. Two orthogonal axes:
 // the model is the brain, the mode is the rigour dial.

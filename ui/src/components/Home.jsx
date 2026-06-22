@@ -1,9 +1,29 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronDown, ChevronRight, Copy, Download, FolderOpen, GitBranch, Image as ImageIcon, LayoutGrid, Loader2, Menu, MessageSquare, Mic, Music2, Plus, RefreshCw, Send, Settings, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronDown, ChevronRight, Copy, Download, FolderOpen, GitBranch, Image as ImageIcon, LayoutGrid, Loader2, Menu, MessageSquare, Mic, Music2, Paperclip, Plus, RefreshCw, Send, Settings, Trash2, X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ConfirmDelete from "./ConfirmDelete.jsx";
 import { WINDOWS } from "../nav.js";
+
+/* ── Pièces jointes du chat d'accueil ────────────────────────────────────────
+   Le chat d'accueil n'a PAS d'accès disque : pour qu'il "lise" un fichier, on
+   lit son contenu côté client (texte) et on l'injecte dans le message, entre
+   des balises [[FILE:nom]]…[[/FILE]] — envoyées à GLM, masquées à l'affichage
+   (la bulle montre juste une puce 📎 nom + le texte tapé). */
+const FILE_BLOCK_RE = /\[\[FILE:([^\]]+)\]\]\n([\s\S]*?)\n\[\[\/FILE\]\]\n?/g;
+const buildFileBlock = (name, content) => `[[FILE:${name}]]\n${content}\n[[/FILE]]\n`;
+function splitFileBlocks(content = "") {
+  const files = [];
+  const clean = content.replace(FILE_BLOCK_RE, (_, name) => { files.push(name.trim()); return ""; }).trim();
+  return { files, clean };
+}
+const readFileText = (file) =>
+  new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result ?? ""));
+    reader.onerror = () => resolve("");
+    reader.readAsText(file);
+  });
 
 /* ── Sélecteur de modèle ─────────────────────────────────────────────────── */
 const MODELS = [
@@ -301,10 +321,20 @@ function HamburgerMenu({ onOpenWindow, onOpenAppBuilder, onOpenLauncher, inputRe
 
 /* ── Bulle utilisateur ───────────────────────────────────────────────────── */
 function UserBubble({ content }) {
+  const { files, clean } = splitFileBlocks(content);
   return (
     <div className="flex justify-end">
       <div className="max-w-[85%] rounded-2xl bg-raised px-5 py-3 text-[17px] text-ink-soft leading-7">
-        {content}
+        {files.length > 0 && (
+          <div className="mb-2 flex flex-wrap justify-end gap-1.5">
+            {files.map((f, i) => (
+              <span key={i} className="flex items-center gap-1 rounded-lg border border-accent/30 bg-accent/10 px-2 py-0.5 text-xs text-accent-soft">
+                <Paperclip size={11} /> {f}
+              </span>
+            ))}
+          </div>
+        )}
+        {clean}
       </div>
     </div>
   );
@@ -334,17 +364,18 @@ function AssistantBubble({ content }) {
 }
 
 /* ── Indicateur de réflexion ─────────────────────────────────────────────── */
-function ThinkingIndicator() {
+function ThinkingIndicator({ label = "MangoOS" }) {
   return (
-    <div className="flex items-center gap-2 text-[13px] text-faint">
-      <Loader2 size={14} className="animate-spin" />
-      <span>MangoOS réfléchit…</span>
+    <div className="flex items-center gap-2 self-start rounded-xl border border-accent/25 bg-accent/[0.07] px-3.5 py-2 text-[13px] font-medium text-accent-soft shadow-sm">
+      <Loader2 size={15} className="animate-spin" />
+      <span>{label} réfléchit<span className="animate-pulse">…</span></span>
     </div>
   );
 }
 
 /* ── Barre de saisie (mode chat) ─────────────────────────────────────────── */
-function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, onMode, template, onTemplate, inputRef }) {
+function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, onMode, template, onTemplate, inputRef, attachments = [], onAddFiles = () => {}, onRemoveAttachment = () => {} }) {
+  const fileRef = useRef(null);
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -352,14 +383,35 @@ function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, 
     }
   }
   return (
-    <div className="rounded-2xl border border-accent/20 bg-panel/70 shadow-2xl shadow-accent/8 backdrop-blur-xl">
+    <div
+      className="rounded-2xl border border-accent/20 bg-panel/70 shadow-2xl shadow-accent/8 backdrop-blur-xl"
+      onDragOver={(e) => e.preventDefault()}
+      onDrop={(e) => { e.preventDefault(); onAddFiles(e.dataTransfer.files); }}
+    >
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 px-4 pt-3">
+          {attachments.map((a, i) => (
+            <span key={`${a.name}-${i}`} className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-2 py-1 text-xs text-accent-soft">
+              <Paperclip size={11} className="shrink-0" />
+              <span className="max-w-44 truncate font-mono">{a.name}</span>
+              <button onClick={() => onRemoveAttachment(i)} title="Retirer" className="text-accent-soft/60 hover:text-err transition-colors">
+                <X size={11} />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
       <textarea
         ref={inputRef}
         value={input}
         onChange={(e) => setInput(e.target.value)}
         onKeyDown={handleKey}
+        onPaste={(e) => {
+          const files = [...e.clipboardData.items].filter((it) => it.kind === "file").map((it) => it.getAsFile()).filter(Boolean);
+          if (files.length > 0) { e.preventDefault(); onAddFiles(files); }
+        }}
         disabled={thinking}
-        placeholder="Écrire un message…"
+        placeholder="Écrire un message… (ou glisse/joins un fichier 📎)"
         rows={2}
         className="w-full resize-none bg-transparent px-5 py-4 text-[16px] text-ink
                    placeholder:text-faint/50 focus:outline-none disabled:opacity-60 leading-relaxed"
@@ -367,11 +419,23 @@ function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, 
       />
       <div className="flex items-center justify-between border-t border-edge/50 px-3 py-2">
         <div className="flex items-center gap-1.5">
-          <ModeDropdown mode={mode} onMode={onMode} />
-          <TemplateDropdown template={template} onTemplate={onTemplate} />
+          <button
+            onClick={() => fileRef.current?.click()}
+            title="Joindre un fichier (texte, code, .md…)"
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-edge/70 bg-panel/60 text-dim hover:text-accent-soft transition-colors"
+          >
+            <Paperclip size={15} />
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            multiple
+            className="hidden"
+            onChange={(e) => { onAddFiles(e.target.files); e.target.value = ""; }}
+          />
+          <ModelBadge model={model} onModel={onModel} openUp />
         </div>
         <div className="flex items-center gap-2">
-          <ModelBadge model={model} onModel={onModel} openUp />
           <div className="flex items-center">
             <button
               title="Wispr Flow — dictée vocale"
@@ -383,7 +447,7 @@ function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, 
             </button>
             <button
               onClick={onSubmit}
-              disabled={!input.trim() || thinking}
+              disabled={(!input.trim() && attachments.length === 0) || thinking}
               className="flex h-9 w-9 items-center justify-center rounded-r-xl
                          bg-accent text-white shadow-md shadow-accent/30
                          hover:opacity-90 disabled:opacity-40 transition-all"
@@ -411,9 +475,28 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
     catch { return []; }
   });
   const [currentId, setCurrentId] = useState(null);
+  const [attachments, setAttachments] = useState([]); // [{ name, content, size }]
   const inputRef = useRef(null);
   const bottomRef = useRef(null);
+  const welcomeFileRef = useRef(null);
   const hasChat = messages.length > 0;
+  const modelLabel = MODELS.find((m) => m.id === model)?.label ?? "MangoOS";
+
+  // Lecture côté client du CONTENU des fichiers joints (texte/code/.md…). Garde-fous :
+  // 5 fichiers max, ≤ 300 ko chacun (le contenu part dans le prompt → on borne).
+  async function addFiles(fileList) {
+    const picked = [...(fileList ?? [])].slice(0, 5);
+    const loaded = [];
+    for (const f of picked) {
+      if (f.size > 300_000) continue;
+      const content = await readFileText(f);
+      if (content) loaded.push({ name: f.name, content, size: f.size });
+    }
+    if (loaded.length) setAttachments((prev) => [...prev, ...loaded].slice(0, 5));
+  }
+  function removeAttachment(i) {
+    setAttachments((prev) => prev.filter((_, j) => j !== i));
+  }
 
   useEffect(() => {
     if (hasChat) {
@@ -451,11 +534,16 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
 
   async function sendMessage() {
     const val = input.trim();
-    if (!val || thinking) return;
-    const userMsg = { role: "user", content: val };
+    if ((!val && attachments.length === 0) || thinking) return;
+    // Le contenu des fichiers joints est embarqué dans le message (balises FILE),
+    // pour que GLM le lise — masqué à l'affichage par UserBubble.
+    const fileBlocks = attachments.map((a) => buildFileBlock(a.name, a.content)).join("");
+    const content = fileBlocks + (val || "Analyse le(s) fichier(s) joint(s) et dis-moi ce que tu en comprends.");
+    const userMsg = { role: "user", content };
     const withUser = [...messages, userMsg];
     setMessages(withUser);
     setInput("");
+    setAttachments([]);
     setThinking(true);
 
     // Identifie (ou crée) la conversation courante et la sauvegarde aussitôt
@@ -531,16 +619,26 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
           </div>
 
           {/* ── Fenêtre de chat ── */}
-          <div className="w-full overflow-hidden rounded-2xl border border-accent/20 bg-panel/70
-                          shadow-2xl shadow-accent/8 backdrop-blur-xl">
-
-            {/* Header modèle */}
-            <div className="flex items-center justify-between border-b border-edge/50 px-4 py-3">
-              <div className="flex items-center gap-2">
-                <span className="h-2 w-2 animate-pulse rounded-full bg-ok" />
-                <ModelBadge model={model} onModel={onModel} />
+          <div
+            className="w-full overflow-hidden rounded-2xl border border-accent/20 bg-panel/70
+                       shadow-2xl shadow-accent/8 backdrop-blur-xl"
+            onDragOver={(e) => e.preventDefault()}
+            onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
+          >
+            {/* Pièces jointes */}
+            {attachments.length > 0 && (
+              <div className="flex flex-wrap gap-1.5 px-4 pt-3">
+                {attachments.map((a, i) => (
+                  <span key={`${a.name}-${i}`} className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-2 py-1 text-xs text-accent-soft">
+                    <Paperclip size={11} className="shrink-0" />
+                    <span className="max-w-44 truncate font-mono">{a.name}</span>
+                    <button onClick={() => removeAttachment(i)} title="Retirer" className="text-accent-soft/60 hover:text-err transition-colors">
+                      <X size={11} />
+                    </button>
+                  </span>
+                ))}
               </div>
-            </div>
+            )}
 
             {/* Textarea principale */}
             <textarea
@@ -548,6 +646,10 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKey}
+              onPaste={(e) => {
+                const files = [...e.clipboardData.items].filter((it) => it.kind === "file").map((it) => it.getAsFile()).filter(Boolean);
+                if (files.length > 0) { e.preventDefault(); addFiles(files); }
+              }}
               disabled={thinking}
               placeholder="Comment vas-tu ? Ça fait plaisir de te revoir…"
               rows={5}
@@ -557,11 +659,25 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
               autoFocus
             />
 
-            {/* Barre du bas */}
+            {/* Barre du bas : trombone + modèle à gauche, micro + envoi à droite */}
             <div className="flex items-center justify-between border-t border-edge/50 px-3 py-2">
-              <div className="flex items-center gap-1.5">
-                <ModeDropdown mode={mode} onMode={setMode} />
-                <TemplateDropdown template={template} onTemplate={setTemplate} />
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => welcomeFileRef.current?.click()}
+                  title="Joindre un fichier (texte, code, .md…)"
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-edge/70 bg-panel/60 text-dim hover:text-accent-soft transition-colors"
+                >
+                  <Paperclip size={15} />
+                </button>
+                <input
+                  ref={welcomeFileRef}
+                  type="file"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
+                />
+                <span className="h-2 w-2 animate-pulse rounded-full bg-ok" />
+                <ModelBadge model={model} onModel={onModel} openUp />
               </div>
               <div className="flex items-center">
                 <button
@@ -574,7 +690,7 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
                 </button>
                 <button
                   onClick={sendMessage}
-                  disabled={!input.trim() || thinking}
+                  disabled={(!input.trim() && attachments.length === 0) || thinking}
                   className="flex h-9 w-9 items-center justify-center rounded-r-xl
                              bg-accent text-white shadow-md shadow-accent/30
                              hover:opacity-90 disabled:opacity-40 transition-all"
@@ -637,7 +753,7 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
                 <AssistantBubble key={i} content={m.content} />
               )
             )}
-            {thinking && <ThinkingIndicator />}
+            {thinking && <ThinkingIndicator label={modelLabel} />}
             <div ref={bottomRef} />
           </div>
         </div>
@@ -658,6 +774,9 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
             template={template}
             onTemplate={setTemplate}
             inputRef={inputRef}
+            attachments={attachments}
+            onAddFiles={addFiles}
+            onRemoveAttachment={removeAttachment}
           />
         </div>
       </div>
