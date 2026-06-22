@@ -3,7 +3,7 @@ type: entite
 tags: [architecture, nocturne, entrainement, cli]
 statut: actif
 sources: [memory, statut]
-maj: 2026-06-20
+maj: 2026-06-22
 ---
 
 # Boucle nocturne
@@ -21,6 +21,7 @@ maj: 2026-06-20
 - **Nettoyage disque** : chaque projet supprimé après mesure, garde `--keep` réussites (défaut 5) — sinon saturation (~200 Mo/projet). Journal `workspace/.train.jsonl`. `--dry-run N` = aperçu.
 - Lancer : `cd server && npx tsx src/train-loop.ts --minutes 480 --max-escalations 6 --keep 5` (préreq : `ollama serve`).
 - **`nocturnal.ts`** (orchestrateur de lot nocturne) : applique la **directive de curation** de [[boucle-curation]] au prompt de génération initial, et `ensureBuildPasses` répare `build-failed`/`backend-failed` + pose les deps backend une seule fois.
+- **Cycle d'apprentissage 3 phases (#106)** — distinct du `train-loop` (qui jette les apps) : `run-tonight.ts` (Gemma génère N apps + escalade Claude → **axiomes incrémentaux** réinjectés aux apps suivantes du même run) → `run-finish.ts` (Claude **FINIT** chaque app, archive Gemma dans `.gemma-snapshots/`) → `run-learn.ts`+`reverse-learn.ts` (Gemma distille une **procédure** du diff Gemma→Claude + validation boucle fermée). **Source unique des apps** : `tonight-specs.ts` (12 apps + charte Mango, dérivés `FINISH_SPECS`/`LEARN_TASKS`, `TONIGHT_LIMIT` pour dry-run). **Orchestrateur** : `run-night.ts` (`--budget` → garde-budget `FINISH_BUDGET_USD` qui borne le coût Claude de la Phase 1 et s'arrête proprement entre projets ; `--limit` dry-run). Lancer : `npx tsx src/run-night.ts --budget 20`.
 
 ## Liens
 

@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowUp, Bookmark, BrainCircuit, FileCode, FolderOpen, Mic, MicOff, Paperclip, Scan, Sparkles, Square, X } from "lucide-react";
+import { ArrowUp, Bookmark, BrainCircuit, ChevronDown, FileCode, FolderOpen, Mic, MicOff, Paperclip, Scan, Sparkles, Square, X } from "lucide-react";
 import ToolGroup from "./components/ToolGroup.jsx";
 import NocturnalReviewForm from "./components/NocturnalReviewForm.jsx";
 import DiffSlider from "./components/DiffSlider.jsx";
@@ -8,11 +8,33 @@ import DiffSlider from "./components/DiffSlider.jsx";
 let nextId = 1;
 const uid = () => nextId++;
 
-const CHAT_MODES = [
-  { id: "construire", label: "Construire", model: "sonnet", mode: "elite" },
-  { id: "planifier",  label: "Planifier",  model: "opus",   mode: "elite" },
-  { id: "discuter",   label: "Discuter",   model: "haiku",  mode: "discuss" },
+// Les 3 actions de la chatbox. Le MODÈLE n'est plus codé en dur par action :
+// chaque action a son propre modèle, configurable par bouton (menu déroulant) et
+// mémorisé. Par défaut tout est sur l'Élève (GLM-5.2) → « rester sur GLM » vaut
+// pour Discuter, Planifier ET Construire. Construire = build (elite/runRelay côté
+// Élève) ; Planifier & Discuter = tour conversationnel (mode discuss, zéro build).
+const CHAT_ACTIONS = [
+  { id: "construire", label: "Construire", mode: "elite"   },
+  { id: "planifier",  label: "Planifier",  mode: "discuss" },
+  { id: "discuter",   label: "Discuter",   mode: "discuss" },
 ];
+const ACTION_MODEL_OPTIONS = [
+  { id: "eleve",  label: "GLM-5.2"   },
+  { id: "sonnet", label: "Sonnet 4.6" },
+  { id: "opus",   label: "Opus 4.8"   },
+  { id: "haiku",  label: "Haiku 4.5"  },
+];
+const DEFAULT_ACTION_MODELS = { construire: "eleve", planifier: "eleve", discuter: "eleve" };
+const ACTION_MODELS_KEY = "mangoos.actionModels";
+function loadActionModels() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(ACTION_MODELS_KEY) || "{}");
+    return { ...DEFAULT_ACTION_MODELS, ...raw };
+  } catch {
+    return { ...DEFAULT_ACTION_MODELS };
+  }
+}
+const actionModelLabel = (id) => ACTION_MODEL_OPTIONS.find((m) => m.id === id)?.label ?? id;
 
 export default function Chat({
   projectName,
@@ -62,6 +84,28 @@ export default function Chat({
   const [fileList, setFileList] = useState([]);            // fichiers du projet
   const [fileSearch, setFileSearch] = useState("");
   const pickerRef = useRef(null);
+  // Modèle par action (Construire/Planifier/Discuter), configurable + mémorisé.
+  const [actionModels, setActionModels] = useState(loadActionModels);
+  const [activeAction, setActiveAction] = useState("construire"); // bouton actif (highlight + planificateur)
+  const [modelMenuFor, setModelMenuFor] = useState(null);         // id de l'action dont le menu modèle est ouvert
+  useEffect(() => {
+    try { localStorage.setItem(ACTION_MODELS_KEY, JSON.stringify(actionModels)); } catch { /* localStorage indispo */ }
+  }, [actionModels]);
+  // Clic sur un bouton d'action → active l'action et applique SON modèle + mode.
+  const pickAction = (a) => {
+    setActiveAction(a.id);
+    onChatMode({ model: actionModels[a.id], mode: a.mode });
+  };
+  // Choix du modèle d'une action (menu déroulant) → mémorise et, si l'action est
+  // active, applique aussitôt le nouveau modèle.
+  const setActionModel = (actionId, modelId) => {
+    setActionModels((prev) => ({ ...prev, [actionId]: modelId }));
+    setModelMenuFor(null);
+    if (activeAction === actionId) {
+      const a = CHAT_ACTIONS.find((x) => x.id === actionId);
+      onChatMode({ model: modelId, mode: a.mode });
+    }
+  };
 
   useEffect(() => {
     if (!filePicker) return;
@@ -279,8 +323,9 @@ export default function Chat({
     // de l'incrément (réconcilié côté serveur après commit).
     const turnMode = opts?.modeOverride ?? mode;
     const turnIncrementId = opts?.incrementId;
-    // Planifier mode : détecter dès l'appel (var locale — safe à travers l'async)
-    const isPlanner = model === "opus" && mode === "elite";
+    // Planifier : piloté par l'ACTION active (plus par le modèle) → marche quel que
+    // soit le modèle choisi pour le bouton, GLM compris.
+    const isPlanner = activeAction === "planifier";
     const wasPlanPhase = isPlanner && !awaitingPlanConfirm;
     if (awaitingPlanConfirm) setAwaitingPlanConfirm(false);
     // Cible d'édition visuelle (#6) : seulement pour un envoi utilisateur (pas un
@@ -527,8 +572,8 @@ export default function Chat({
             <button
               onClick={() => {
                 setAwaitingPlanConfirm(false);
-                const cm = CHAT_MODES.find((c) => c.id === "construire");
-                onChatMode({ model: cm.model, mode: cm.mode });
+                setActiveAction("construire");
+                onChatMode({ model: actionModels.construire, mode: "elite" });
                 setInput("Confirmé — construis maintenant selon ce plan.");
                 requestAnimationFrame(() => inputRef.current?.focus());
               }}
@@ -586,21 +631,53 @@ export default function Chat({
               ))}
             </div>
           )}
-          <div className="flex gap-1 px-1.5 pb-2">
-            {CHAT_MODES.map((cm) => {
-              const active = cm.model === model && cm.mode === mode;
+          <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
+            {CHAT_ACTIONS.map((a) => {
+              const active = activeAction === a.id;
               return (
-                <button
-                  key={cm.id}
-                  onClick={() => onChatMode({ model: cm.model, mode: cm.mode })}
-                  className={`rounded-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                    active
-                      ? "bg-accent/15 text-accent"
-                      : "text-faint hover:text-dim hover:bg-edge-soft"
-                  }`}
-                >
-                  {cm.label}
-                </button>
+                <div key={a.id} className="relative flex items-center">
+                  {/* Le bouton d'action : active l'action + applique son modèle/mode */}
+                  <button
+                    onClick={() => pickAction(a)}
+                    className={`rounded-l-lg px-2.5 py-1 text-xs font-medium transition-colors ${
+                      active ? "bg-accent/15 text-accent" : "text-faint hover:text-dim hover:bg-edge-soft"
+                    }`}
+                  >
+                    {a.label}
+                  </button>
+                  {/* Le sélecteur de modèle PROPRE à ce bouton (mémorisé) */}
+                  <button
+                    onClick={() => setModelMenuFor(modelMenuFor === a.id ? null : a.id)}
+                    title="Choisir le modèle de ce bouton"
+                    className={`flex items-center gap-0.5 rounded-r-lg border-l px-1.5 py-1 text-[10px] font-medium transition-colors ${
+                      active
+                        ? "border-accent/20 bg-accent/15 text-accent"
+                        : "border-edge/40 text-faint hover:text-dim hover:bg-edge-soft"
+                    }`}
+                  >
+                    {actionModelLabel(actionModels[a.id])}
+                    <ChevronDown size={9} />
+                  </button>
+                  {modelMenuFor === a.id && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setModelMenuFor(null)} />
+                      <div className="absolute bottom-full left-0 z-50 mb-1 w-36 overflow-hidden rounded-lg border border-edge bg-panel shadow-2xl">
+                        {ACTION_MODEL_OPTIONS.map((m) => (
+                          <button
+                            key={m.id}
+                            onClick={() => setActionModel(a.id, m.id)}
+                            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-edge-soft ${
+                              actionModels[a.id] === m.id ? "text-accent font-medium" : "text-dim"
+                            }`}
+                          >
+                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${actionModels[a.id] === m.id ? "bg-accent" : "border border-edge"}`} />
+                            {m.label}
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               );
             })}
           </div>

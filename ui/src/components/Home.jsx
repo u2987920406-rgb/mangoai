@@ -10,6 +10,7 @@ const MODELS = [
   { id: "sonnet", label: "Claude Sonnet 4.6" },
   { id: "opus",   label: "Claude Opus 4.8"   },
   { id: "haiku",  label: "Claude Haiku 4.5"  },
+  { id: "eleve",  label: "Élève · GLM-5.2"   },
 ];
 
 function ModelBadge({ model, onModel, openUp = false }) {

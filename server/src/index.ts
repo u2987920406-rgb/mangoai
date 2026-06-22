@@ -8,7 +8,7 @@ import cors from "cors";
 import path from "node:path";
 import fs from "node:fs";
 import { ALLOWED_MODELS, ALLOWED_MODES, interruptAgent, runAgent, type AgentEvent, type Mode, type ModelChoice } from "./agent.js";
-import { appendHistory, formatToolLine, type ChatEntry } from "./history.js";
+import { appendHistory, loadHistory, formatToolLine, type ChatEntry } from "./history.js";
 import { createProject, deleteProject, listProjects, listTemplates, projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
 import { axiomStats } from "./axioms.js";
 import { computeInsights } from "./metrics-insights.js";
@@ -27,7 +27,8 @@ import { saveUpload } from "./uploads.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
-import { runRelay } from "./eleve.js";
+import { runRelay, chatEleve, ELEVE_PROVIDER } from "./eleve.js";
+import { assembleSystemPrompt } from "./scenario.js";
 import { uxuiProfile } from "./models/uxui.js";
 import { layoutProfile } from "./models/layout.js";
 import { getBus } from "./kernel-bus.js";
@@ -406,7 +407,31 @@ app.post("/api/chat", async (req, res) => {
       return "ok";
     };
 
-    if (useEleve) {
+    if (useEleve && model === "eleve" && chosenMode === "discuss") {
+      // Tour CONVERSATIONNEL de l'Élève (boutons Discuter / Planifier) : l'Élève
+      // (GLM-5.2 cloud ou Gemma local) répond en TEXTE, ZÉRO build. Même posture
+      // que le mode discuss de Claude (DISCUSS_RULES + contexte projet via
+      // assembleSystemPrompt), mais le cerveau est l'Élève. Ainsi « rester sur
+      // l'Élève » vaut pour les 3 actions, pas seulement Construire.
+      const agentTier = ELEVE_PROVIDER === "openai" ? "cloud" : "local";
+      const eleveName = process.env.ELEVE_MODEL ?? "Élève";
+      send({ type: "status", text: `💬 L'agent ${eleveName} (${agentTier}) réfléchit…` });
+      const system = assembleSystemPrompt({ mode: "discuss", model: "eleve", projectDir: dir });
+      // L'Élève n'a pas de session SDK persistante comme Claude : on lui repasse
+      // le fil récent comme contexte (loadHistory lit les tours ANTÉRIEURS ; le
+      // message courant est ajouté en fin — il sera persisté dans le `finally`).
+      const recent = loadHistory(dir)
+        .filter((e) => e.role === "user" || e.role === "agent")
+        .slice(-12)
+        .map((e) => `${e.role === "user" ? "Humain" : "MangoOS"} : ${e.text}`)
+        .join("\n");
+      const userMsg = recent ? `${recent}\n\nHumain : ${prompt}` : prompt;
+      const answer = (await chatEleve(system, userMsg)).trim() || "(réponse vide de l'Élève)";
+      record("agent", answer);
+      send({ type: "text", text: answer });
+      lastResult.current = { costUsd: 0, numTurns: 1 };
+      relayMeta.current = { resolvedBy: "eleve", attempts: 1 };
+    } else if (useEleve) {
       // Élève path (jalon D + agents spécialisés #145) : le modèle local tente la
       // tâche à coût zéro, un juge objectif évalue, escalade vers Claude si besoin.
       // Pour uxui/layout, le profil spécialisé est injecté dans runRelay.
@@ -419,8 +444,10 @@ app.post("/api/chat", async (req, res) => {
             ? (process.env.UXUI_AGENT_MODEL ?? process.env.ELEVE_MODEL ?? "gemma4:12b")
             : (process.env.LAYOUT_AGENT_MODEL ?? process.env.ELEVE_MODEL ?? "gemma4:12b"))
         : undefined;
-      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : "Gemma";
-      send({ type: "status", text: `🎓 L'agent ${agentLabel} local prend la main…` });
+      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : (process.env.ELEVE_MODEL ?? "Élève");
+      // « local » pour Ollama local, « cloud » pour un endpoint distant (Ollama Cloud, etc.).
+      const agentTier = ELEVE_PROVIDER === "openai" ? "cloud" : "local";
+      send({ type: "status", text: `🎓 L'agent ${agentLabel} (${agentTier}) prend la main…` });
       const r = await runRelay(agentPrompt, dir, {
         ...(specialistProfile ? { profile: specialistProfile, eleveModel: specialistModel } : {}),
         onLog: (line) => {
@@ -432,7 +459,7 @@ app.post("/api/chat", async (req, res) => {
       lastResult.current = { costUsd: r.costUsd, numTurns: r.attempts };
       const verdict =
         r.resolvedBy === "eleve"
-          ? `✅ Résolu par l'agent ${agentLabel} (local) en ${r.attempts} tentative(s) — coût Claude $0.00.`
+          ? `✅ Résolu par l'agent ${agentLabel} (${agentTier}) en ${r.attempts} tentative(s) — coût Claude $0.00.`
           : r.resolvedBy === "maitre"
             ? `👑 L'agent a buté → escaladé au Maître (Claude), corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
             : `❌ Échec : ni l'agent ni le Maître n'ont fait passer le build (${r.inspection.signal}).`;

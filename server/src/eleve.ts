@@ -323,6 +323,16 @@ async function askEleveDispatch(system: string, user: string, model?: string): P
   return ELEVE_PROVIDER === "openai" ? askEleveOpenAI(system, user, model) : askEleveOllama(system, user, model);
 }
 
+// ── Tour CONVERSATIONNEL de l'Élève (modes Discuter / Planifier) ──────────────
+// Hors de la boucle de relais : l'Élève répond en TEXTE, sans build ni contrat
+// <mangoos>. Même cerveau (Ollama local OU cloud selon ELEVE_PROVIDER), mais on
+// veut une réponse de conseil/plan, pas une construction. Modèle = ELEVE_MODEL
+// (l'Élève actif), surchargeable par appel. Le system prompt (posture Discussion
+// + contexte projet) est fourni par l'appelant (assembleSystemPrompt mode discuss).
+export async function chatEleve(system: string, user: string, model?: string): Promise<string> {
+  return askEleveDispatch(system, user, model);
+}
+
 async function npmInstallIfNeeded(dir: string, log: (s: string) => void, label: string): Promise<void> {
   if (fs.existsSync(path.join(dir, "node_modules"))) return;
   if (!fs.existsSync(path.join(dir, "package.json"))) return;

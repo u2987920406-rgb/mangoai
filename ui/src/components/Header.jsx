@@ -13,7 +13,7 @@ const MODELS = [
   { id: "haiku", label: "Haiku", hint: "Rapide, projets simples", icon: Zap },
   { id: "sonnet", label: "Sonnet", hint: "Équilibré (recommandé)", icon: Gauge },
   { id: "opus", label: "Opus", hint: "Puissant, plus cher", icon: Brain },
-  { id: "eleve", label: t("Élève local", "Local"), hint: t("Gemma local (gratuit) — Claude en secours", "Modèle local gratuit"), icon: GraduationCap },
+  { id: "eleve", label: t("Élève · GLM-5.2", "Student · GLM-5.2"), hint: t("GLM-5.2 cloud (Ollama) — Claude en secours", "GLM-5.2 cloud — Claude as backup"), icon: GraduationCap },
 ];
 
 const MODES = [
