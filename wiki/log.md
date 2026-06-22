@@ -8,6 +8,9 @@ maj: 2026-06-22
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-22] ingest | #146 Élève agentique Phase 1 — des outils pour l'Élève (vers « Mango = Claude »)
+Mise à jour de [[eleve-local]]. Le seul écart restant avec Claude = la boucle agentique à outils. Phase 1 (dé-risquage) : `eleve-tools.ts` (4 KernelTool lecture seule read_file/list_files/search_code/check_build, projet-scopés, garde-fous executor.ts) + `eleve.ts askEleveAgentic` (boucle function-calling bornée, réutilise le Kernel #108 `toOpenAITools`) + flag `agentic` sur profil (GLM seul, #135) + passe d'exploration dans `runRelay` (gatée GLM, additive, jamais bloquante). Étape 0 : GLM-5.2 cloud renvoie bien `tool_calls`. tsc 0 ; test-eleve-tools 14/14 + non-régression kernel-mcp 23/23 + relay ; live : GLM explore un projet (list_files→search_code→read_file) et répond juste, runRelay injecte le résumé d'exploration. Reste Phase 2 (outils d'action en boucle) + Phase 3 (multi-cerveaux + local). Zéro git.
+
 ## [2026-06-22] fix | Pièces jointes volumineuses : limite JSON Express 100 Ko → 25 Mo + échecs visibles
 Mise à jour de [[eleve-local]]. « Relancer » échouait sur un message avec statut.md (194 Ko) : `express.json()` était à la limite par défaut 100 Ko → 413 silencieux (le contenu du fichier est embarqué dans le JSON du message). Fix : `index.ts` `express.json({ limit:"25mb" })` ; `Home.jsx runTurn` vérifie `res.ok` et affiche l'échec dans le chat (413 → « pièce(s) jointe(s) trop volumineuse(s) »). Test live : home-chat avec statut.md+memory.md (body 222 Ko) → HTTP 200 en 18 s, GLM lit/résume les deux. Zéro git.
 

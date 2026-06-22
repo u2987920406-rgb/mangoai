@@ -26,6 +26,8 @@ import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
+import { toOpenAITools, type ToolRegistry } from "./kernel-mcp.js";
+import { buildEleveTools } from "./eleve-tools.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
 // constellations #74). Import sync, sans cycle (ces modules n'importent pas eleve).
 import { listProcedures, loadProcedure } from "./procedures.js";
@@ -220,6 +222,9 @@ function buildEleveUser(
   lastError: string,
   injectMeans: boolean,
   callCaps: { axiomCap: number; axiomFiles: string[]; fileBudget: number; fileMax: number },
+  // Résumé d'EXPLORATION agentique (cerveau fort qui a lu/cherché le projet avec
+  // ses outils avant de coder). "" pour les profils non agentiques (inchangé).
+  explorationNote = "",
 ): string {
   const files = listProjectFiles(projectDir);
   // v2.1 : type de projet détecté de façon robuste — la tâche d'abord, puis la
@@ -253,6 +258,13 @@ function buildEleveUser(
       ...contents.map(
         (c) => `\n----- ${c.path}${c.truncated ? " (tronqué)" : ""} -----\n${c.content}`,
       ),
+    );
+  }
+  if (explorationNote) {
+    parts.push(
+      "",
+      "Ce que tu as découvert en explorant le projet avec tes outils (sers-t'en, ne re-devine pas) :",
+      explorationNote,
     );
   }
   if (axioms) parts.push("", axioms);
@@ -331,6 +343,94 @@ async function askEleveDispatch(system: string, user: string, model?: string): P
 // + contexte projet) est fourni par l'appelant (assembleSystemPrompt mode discuss).
 export async function chatEleve(system: string, user: string, model?: string): Promise<string> {
   return askEleveDispatch(system, user, model);
+}
+
+// ── Boucle AGENTIQUE de l'Élève (function-calling) — vers « Mango = Claude » ────
+// L'Élève voit de vrais OUTILS (read/list/search/build…), les appelle, lit les
+// résultats, raisonne, itère — comme Claude, au lieu de produire un contrat figé
+// en un seul coup. Branchée sur le provider OpenAI-compat (Ollama Cloud, qui
+// supporte nativement `tools`/`tool_calls`). Le registre d'outils est PROJET-SCOPÉ
+// (eleve-tools.buildEleveTools). Bornée : itérations + taille des résultats.
+const MAX_TOOL_ITERATIONS = 12;
+const MAX_TOOL_RESULT = 12_000; // caractères max d'un résultat d'outil réinjecté
+
+interface AgenticResult {
+  text: string; // réponse finale du modèle (après exploration)
+  toolTrace: Array<{ name: string; args: string }>; // outils appelés (log/diagnostic)
+}
+
+export async function askEleveAgentic(
+  system: string,
+  user: string,
+  registry: ToolRegistry,
+  opts: { model?: string; onTool?: (name: string, args: string) => void } = {},
+): Promise<AgenticResult> {
+  // La boucle à outils n'est branchée que sur l'endpoint OpenAI-compat. En Ollama
+  // local pur, repli texte (le function-calling local sera traité en Phase 2).
+  if (ELEVE_PROVIDER !== "openai") {
+    return { text: await askEleveOllama(system, user, opts.model), toolTrace: [] };
+  }
+  if (!ELEVE_API_KEY) {
+    throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
+  }
+  const tools = toOpenAITools(registry);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const messages: any[] = [
+    { role: "system", content: system },
+    { role: "user", content: user },
+  ];
+  const toolTrace: AgenticResult["toolTrace"] = [];
+
+  const callModel = async (withTools: boolean): Promise<{ content: string; toolCalls?: Array<{ id: string; function: { name: string; arguments: string } }> }> => {
+    const res = await fetch(completionsUrl(ELEVE_API_URL), {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${ELEVE_API_KEY}` },
+      body: JSON.stringify({
+        model: opts.model ?? ELEVE_MODEL,
+        stream: false,
+        temperature: 0,
+        messages,
+        ...(withTools ? { tools, tool_choice: "auto" } : {}),
+      }),
+    });
+    if (!res.ok) throw new Error(`API Élève HTTP ${res.status}`);
+    const data = (await res.json()) as {
+      choices?: Array<{ message?: { content?: string; tool_calls?: Array<{ id: string; function: { name: string; arguments: string } }> } }>;
+    };
+    const msg = data.choices?.[0]?.message;
+    if (!msg) throw new Error("réponse Élève vide");
+    return { content: msg.content ?? "", toolCalls: msg.tool_calls };
+  };
+
+  for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+    const { content, toolCalls } = await callModel(true);
+    messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
+
+    // Pas d'outil demandé → le modèle a fini de raisonner, on rend sa réponse.
+    if (!toolCalls?.length) return { text: content, toolTrace };
+
+    for (const tc of toolCalls) {
+      const name = tc.function.name;
+      const rawArgs = tc.function.arguments || "{}";
+      toolTrace.push({ name, args: rawArgs });
+      opts.onTool?.(name, rawArgs);
+      let resultText: string;
+      try {
+        const args = JSON.parse(rawArgs) as Record<string, unknown>;
+        const r = await registry.invoke(name, args);
+        resultText = r.text;
+      } catch (e) {
+        resultText = `Erreur outil "${name}" : ${(e as Error).message}`;
+      }
+      messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, MAX_TOOL_RESULT) });
+    }
+  }
+
+  // Plafond d'itérations atteint → un dernier appel SANS outils pour forcer une
+  // conclusion à partir de tout ce que l'Élève a exploré.
+  messages.push({ role: "user", content: "Limite d'outils atteinte. Conclus maintenant ta réponse à partir de ce que tu as exploré, sans appeler d'autre outil." });
+  const final = await callModel(false);
+  return { text: final.content, toolTrace };
 }
 
 async function npmInstallIfNeeded(dir: string, log: (s: string) => void, label: string): Promise<void> {
@@ -473,6 +573,30 @@ export async function runRelay(
     return insp;
   };
 
+  // ── Passe d'EXPLORATION agentique (Phase 1 — vers « Mango = Claude ») ─────────
+  // Pour un cerveau assez fort (profil `agentic`, ex. GLM), on le laisse d'abord
+  // EXPLORER le projet avec ses outils (read/list/search) et résumer ce qui compte
+  // pour la tâche — comme Claude « regarde avant de coder ». Le résumé enrichit le
+  // contexte de génération. ADDITIF, gaté (GLM seul), JAMAIS bloquant (un échec
+  // retombe sur le chemin contrat normal). Opt-out global : ELEVE_AGENTIC=off.
+  let explorationNote = "";
+  if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off") {
+    try {
+      push("🔎 Exploration agentique du projet (outils)…");
+      const reg = buildEleveTools(projectDir);
+      const explore = await askEleveAgentic(
+        "Tu es un développeur qui PRÉPARE une tâche. Explore le projet avec tes outils (read_file, list_files, search_code) pour comprendre ce qui est pertinent. Termine par un RÉSUMÉ bref et factuel : fichiers clés, structure, points à connaître pour réaliser la tâche. N'écris AUCUN code ici, ne propose pas de solution — juste ce que tu as constaté.",
+        `Tâche à préparer : ${task}`,
+        reg,
+        { model: callModel, onTool: (n, a) => push(`  🔧 ${n} ${a.slice(0, 120)}`) },
+      );
+      explorationNote = explore.text.trim();
+      push(`✓ Exploration : ${explore.toolTrace.length} appel(s) d'outil, contexte prêt`);
+    } catch (e) {
+      push(`⚠ Exploration agentique sautée (${(e as Error).message}) — on continue sans.`);
+    }
+  }
+
   let lastError = "";
   let lastInspection: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
 
@@ -481,7 +605,7 @@ export async function runRelay(
 
     let raw: string;
     try {
-      raw = await callAskEleve(callProfile.system, buildEleveUser(task, projectDir, lastError, injectMeans, callCaps));
+      raw = await callAskEleve(callProfile.system, buildEleveUser(task, projectDir, lastError, injectMeans, callCaps, explorationNote));
     } catch (e) {
       lastError = `appel Élève impossible : ${(e as Error).message}`;
       push(`✗ ${lastError}`);

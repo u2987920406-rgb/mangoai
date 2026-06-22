@@ -48,4 +48,7 @@ export const glmProfile: ModelProfile = {
   // Caps généreuses : gros modèle capable, on ne le bride pas comme un petit local.
   // Valeurs de départ, à affiner à l'usage.
   caps: { axiomCap: 10, fileBudget: 24000, fileMax: 6000, maxAttempts: 3 },
+  // GLM-5.2 pilote le function-calling de façon fiable (vérifié) → boucle agentique
+  // à outils autorisée (lire/chercher/vérifier comme Claude). Vers « Mango = Claude ».
+  agentic: true,
 };

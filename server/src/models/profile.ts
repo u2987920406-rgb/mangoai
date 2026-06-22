@@ -35,6 +35,11 @@ export interface ModelProfile {
     fileMax: number; // cap par fichier (caractères)
     maxAttempts: number; // tentatives de l'Élève avant escalade
   };
+  /** Modèle assez fort pour piloter une boucle AGENTIQUE à outils (function-calling :
+   *  read/list/search/build…) ? Réservé aux cerveaux forts (GLM) — les petits
+   *  modèles ratent souvent les appels d'outils fiables (frontière #135). Absent
+   *  ou false → boucle par contrat <mangoos> classique (comportement prouvé). */
+  agentic?: boolean;
 }
 
 // Registre des familles reconnues. L'ordre compte : première correspondance
