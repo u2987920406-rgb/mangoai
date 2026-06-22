@@ -114,6 +114,7 @@ export async function buildAgentic(
   const toolTrace: AgenticBuildResult["toolTrace"] = [];
   const seen = new Map<string, number>(); // (name+args) → nb d'appels identiques
   let corrections = 0; // nb de relances correctives injectées
+  let errorStreak = 0; // échecs d'outils CONSÉCUTIFS (anti-tâtonnement)
 
   for (let iter = 0; iter < maxIter; iter++) {
     compact(messages, ctxMax);
@@ -148,8 +149,10 @@ export async function buildAgentic(
       const count = (seen.get(key) ?? 0) + 1;
       seen.set(key, count);
       let resultText: string;
+      let isErr = false;
       if (count > repeatLimit) {
         corrections++;
+        isErr = true;
         resultText =
           "⚠ Tu répètes le même appel sans progresser. Change d'approche : lis un autre fichier, " +
           "appelle check_build pour voir l'état réel, ou appelle finish si la tâche est faite.";
@@ -157,9 +160,27 @@ export async function buildAgentic(
         try {
           const r = await registry.invoke(name, JSON.parse(rawArgs) as Record<string, unknown>);
           resultText = r.text;
+          isErr = !!r.isError;
         } catch (e) {
           resultText = `Erreur outil "${name}" : ${(e as Error).message}`;
+          isErr = true;
         }
+      }
+      // Anti-tâtonnement : des outils qui échouent À LA SUITE (typiquement run_command
+      // shell sous Windows pour LIRE un fichier) → on coupe court et on réoriente vers
+      // les bons outils. Alimente `corrections` → la sortie contrôlée finit par fermer.
+      if (isErr) {
+        errorStreak++;
+        if (errorStreak >= 3) {
+          corrections++;
+          errorStreak = 0;
+          resultText +=
+            "\n\n⚠ Plusieurs outils ont échoué de suite. Tu es sous Windows : pour LIRE un fichier, utilise " +
+            "read_file (jamais cat/ls/type/Get-Content). Arrête de tâtonner — fais directement ton edit " +
+            "(edit_file/write_file), ou appelle finish si la tâche est faite.";
+        }
+      } else {
+        errorStreak = 0;
       }
       messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, maxToolResult) });
     }

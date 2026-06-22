@@ -481,7 +481,9 @@ app.post("/api/chat", async (req, res) => {
       lastResult.current = { costUsd: r.costUsd, numTurns: r.attempts };
       const verdict =
         r.resolvedBy === "eleve"
-          ? `✅ Résolu par l'agent ${agentLabel} (${agentTier}) en ${r.attempts} tentative(s) — coût Claude $0.00.`
+          ? (r.incomplete
+              ? `⚠ Build vert, mais l'agent ${agentLabel} s'est arrêté sans terminer la tâche (plafond/blocage) — la modification n'est peut-être pas complète. Relance-moi pour que je continue.`
+              : `✅ Résolu par l'agent ${agentLabel} (${agentTier}) en ${r.attempts} tentative(s) — coût Claude $0.00.`)
           : r.resolvedBy === "maitre"
             ? `👑 L'agent a buté → escaladé au Maître (Claude), corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
             : `❌ Échec : ni l'agent ni le Maître n'ont fait passer le build (${r.inspection.signal}).`;

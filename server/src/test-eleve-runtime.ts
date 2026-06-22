@@ -47,6 +47,7 @@ function stubRegistry(writes: Array<Record<string, unknown>>): ToolRegistry {
   reg.register({ name: "write_file", description: "", inputSchema: { path: z.string(), content: z.string() }, handler: (a) => { writes.push(a); return { text: "écrit" }; } });
   reg.register({ name: "check_build", description: "", inputSchema: {}, handler: () => ({ text: "BUILD VERT" }) });
   reg.register({ name: "read_big", description: "", inputSchema: {}, handler: () => ({ text: "X".repeat(1000) }) });
+  reg.register({ name: "run_command", description: "", inputSchema: { command: z.string() }, handler: () => ({ text: "FAILED", isError: true }) });
   reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
   return reg;
 }
@@ -157,6 +158,18 @@ async function run() {
     });
     check("budget plafonné à 1 sous-agent (2e refusé)", budget.spawned === 1);
     check("le parent termine malgré le refus", r.finished === true);
+  }
+
+  console.log("\n[6] Anti-tâtonnement : outils en échec répété (args variés) → sortie contrôlée");
+  {
+    const reg = stubRegistry([]);
+    let i = 0;
+    // run_command qui échoue, avec un argument DIFFÉRENT à chaque tour (l'anti-répétition
+    // par clé ne se déclenche pas → c'est bien la garde d'échecs consécutifs qui agit).
+    const post: PostFn = async () => ({ content: "", toolCalls: [call("run_command", { command: `essai${i++}` })] });
+    const r = await buildAgentic("sys", "fais", reg, { post, maxIterations: 40, repeatLimit: 3 });
+    check("sortie contrôlée (stuck) sur échecs consécutifs", r.stuck === true && r.finished === false);
+    check("borné bien avant le plafond", r.iterations < 40);
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);

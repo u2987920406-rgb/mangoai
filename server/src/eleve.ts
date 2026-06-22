@@ -29,7 +29,7 @@ import { resolveProfile, type ModelProfile } from "./models/profile.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
-import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
+import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult } from "./eleve-runtime.js";
 import { getTracer } from "./kernel-trace.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
 // constellations #74). Import sync, sans cycle (ces modules n'importent pas eleve).
@@ -74,6 +74,9 @@ export interface RelayResult {
   axiom: boolean; // un axiome a-t-il été écrit lors de l'escalade
   costUsd: number; // coût Claude (0 si l'Élève a suffi)
   log: string[]; // trace lisible
+  // Moteur agentique : build vert MAIS le moteur s'est arrêté sans conclure
+  // (plafond/blocage) → la tâche n'est peut-être pas terminée (honnêteté #146).
+  incomplete?: boolean;
 }
 
 export interface RelayOptions {
@@ -438,10 +441,17 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
 
-Méthode : explore si besoin → écris → APRÈS chaque écriture importante, appelle check_build →
-en cas d'erreur, lis-la et CORRIGE, puis recommence → quand tout est vert et la tâche faite,
-appelle finish(summary). Pour une grande tâche à PARTIES INDÉPENDANTES, tu peux déléguer chaque
-partie via delegate, puis intégrer. Implémente RÉELLEMENT chaque fonctionnalité (pas de template de démo).`;
+⚠ ENVIRONNEMENT : tu tournes sous Windows. N'utilise JAMAIS run_command pour LIRE/lister un fichier
+(cat, ls, type, Get-Content, pwd… échouent ou varient selon l'OS). Pour lire/lister/chercher, utilise
+EXCLUSIVEMENT read_file / list_files / search_code — read_file te renvoie déjà le contenu, ne le redouble
+pas par du shell. Réserve run_command aux builds/vérifs (npx tsc --noEmit, npx vite build).
+
+Méthode : explore avec read_file/list_files/search_code → écris (write_file/edit_file) → APRÈS chaque
+écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand
+tout est vert et la tâche faite, appelle finish(summary). Si un outil échoue, NE le répète pas en boucle :
+change d'approche (read_file au lieu du shell, ou fais directement ton edit). Pour une grande tâche à
+PARTIES INDÉPENDANTES, tu peux déléguer chaque partie via delegate, puis intégrer. Implémente RÉELLEMENT
+chaque fonctionnalité (pas de template de démo).`;
 
 export async function askEleveAgentic(
   system: string,
@@ -664,10 +674,11 @@ export async function runRelay(
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
     const user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     let agErr = "";
+    let result: AgenticBuildResult | null = null;
     try {
       // runAgenticTask = la boucle + la DÉLÉGATION (Phase D) : l'orchestrateur peut
       // confier des sous-tâches à des sous-agents bornés (profondeur + budget partagé).
-      const result = await runAgenticTask(user, {
+      result = await runAgenticTask(user, {
         projectDir,
         system: `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`,
         post: deps.agenticPost ?? elevePost(callModel),
@@ -690,8 +701,19 @@ export async function runRelay(
     }
     const insp = await inspectReady();
     if (insp.ok) {
-      push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);
-      return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log };
+      // HONNÊTETÉ DU PLAFOND : un build vert ne prouve PAS que la tâche est faite.
+      // Si le moteur s'est arrêté SANS `finish` (plafond d'itérations ou blocage),
+      // il a peut-être juste « rien cassé » — on le DIT au lieu d'annoncer « Résolu ».
+      const concluded = result?.finished ?? false;
+      if (concluded) {
+        push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);
+        return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log };
+      }
+      push(
+        `⚠ build vert MAIS le moteur s'est arrêté sans conclure (${result?.stuck ? "blocage" : "plafond d'itérations"}) — ` +
+          `la modification n'est peut-être PAS terminée. Relance pour qu'il continue, ou précise la demande.`,
+      );
+      return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
     }
     return await finalizeEscalation(agErr || `build cassé (${insp.signal}) : ${insp.detail.slice(-300)}`, 1);
   }

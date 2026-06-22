@@ -70,22 +70,31 @@ export default function Sidebar({
   const [expanded, setExpanded] = useState(false);
 
   return (
-    <div
-      className="fixed right-0 top-0 z-30 flex h-full"
-      onMouseEnter={() => setExpanded(true)}
-      onMouseLeave={() => setExpanded(false)}
-    >
-      {/* Dock — replié, un mince rail reste visible sur le bord droit */}
-      <div className={`relative z-10 flex w-16 flex-col items-center gap-0.5 border-l border-[#FF9500]/25 bg-panel py-2 px-1.5 transition-transform duration-300 ease-out ${expanded ? "translate-x-0" : "translate-x-[calc(100%-14px)]"}`}>
+    // Conteneur pointer-events-none : il ne capte RIEN par défaut → le décor sous
+    // le bord droit reste cliquable/atteignable. Seules la poignée et le dock
+    // (re)prennent les events.
+    <div className="pointer-events-none fixed right-0 top-0 z-30 flex h-full">
 
-        {/* Poignée — 3 points visibles dans le rail quand le dock est replié */}
+      {/* Poignée centrale — le SEUL déclencheur du survol (les 3 points). Petite
+          zone (14×64px) centrée verticalement, au lieu de toute la colonne. */}
+      {!expanded && (
         <div
-          className={`pointer-events-none absolute left-1 top-1/2 flex -translate-y-1/2 flex-col gap-1 transition-opacity duration-200 ${expanded ? "opacity-0" : "opacity-100"}`}
+          onMouseEnter={() => setExpanded(true)}
+          title="Ouvrir le dock"
+          className="pointer-events-auto absolute right-0 top-1/2 flex h-16 w-3.5 -translate-y-1/2 cursor-pointer flex-col items-center justify-center gap-1 rounded-l-md border-y border-l border-[#FF9500]/30 bg-panel/85 backdrop-blur transition-colors hover:bg-panel"
         >
-          <span className="h-1 w-1 rounded-full bg-[#FF9500]/70" />
-          <span className="h-1 w-1 rounded-full bg-[#FFCC00]/70" />
-          <span className="h-1 w-1 rounded-full bg-[#34C759]/70" />
+          <span className="h-1 w-1 rounded-full bg-[#FF9500]/80" />
+          <span className="h-1 w-1 rounded-full bg-[#FFCC00]/80" />
+          <span className="h-1 w-1 rounded-full bg-[#34C759]/80" />
         </div>
+      )}
+
+      {/* Dock — entièrement caché à droite quand replié ; révélé au survol de la
+          poignée. onMouseLeave referme. */}
+      <div
+        onMouseLeave={() => setExpanded(false)}
+        className={`pointer-events-auto relative z-10 flex w-16 flex-col items-center gap-0.5 border-l border-[#FF9500]/25 bg-panel py-2 px-1.5 transition-transform duration-300 ease-out ${expanded ? "translate-x-0" : "translate-x-full"}`}
+      >
 
         {/* Spacer haut — centre les icônes verticalement */}
         <div className="flex-1" />

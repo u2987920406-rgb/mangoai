@@ -12,7 +12,7 @@ import SidePanel from "./components/SidePanel.jsx";
 import Onboarding from "./components/Onboarding.jsx";
 import { NEUTRAL } from "./neutral.js";
 import { slugify } from "./slugify.js";
-import { SCREENS, WINDOWS } from "./nav.js";
+import { SCREENS, WINDOWS, isScreen } from "./nav.js";
 
 // Panneaux lourds chargés à la demande (code-splitting)
 // NB : les apps « bureau » (Ideation, NotesRAG, DocGenerator, PromptLab,
@@ -43,7 +43,16 @@ function PanelLoader() {
 }
 
 export default function App() {
-  const [screen, setScreen] = useState(SCREENS.HOME);
+  // Écran courant PERSISTÉ : un F5 reste là où on était (Workspace, Réglages…)
+  // au lieu de retomber sur l'Accueil. Garde isScreen → un identifiant invalide
+  // (ancien/corrompu) retombe proprement sur HOME (pas d'écran fantôme).
+  const [screen, setScreen] = useState(() => {
+    const saved = localStorage.getItem("mangoos.screen");
+    return isScreen(saved) ? saved : SCREENS.HOME;
+  });
+  useEffect(() => {
+    localStorage.setItem("mangoos.screen", screen);
+  }, [screen]);
   const [projectName, setProjectName] = useState(
     () => localStorage.getItem("mangoos.project") ?? "mon-app",
   );

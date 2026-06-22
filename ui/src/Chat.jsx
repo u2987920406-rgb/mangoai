@@ -142,6 +142,17 @@ export default function Chat({
     }
   };
 
+  // Au MONTAGE : synchronise le mode parent sur le bouton actif (Construire→elite).
+  // Sans ça, après un remontage (F5, bascule de projet) le highlight revient sur
+  // "construire" tandis que le mode parent reste collé sur un ancien "discuss"
+  // (issu d'un tour Planifier/Discuter) → un envoi « Construire » partait à tort en
+  // conversation. Désormais highlight et mode ne peuvent plus diverger.
+  useEffect(() => {
+    const a = CHAT_ACTIONS.find((x) => x.id === activeAction);
+    if (a) onChatMode({ model: actionModels[a.id], mode: a.mode });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   useEffect(() => {
     if (!filePicker) return;
     fetch(`/api/files/${encodeURIComponent(projectName)}`)
