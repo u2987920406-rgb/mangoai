@@ -68,6 +68,18 @@ Pipeline document indépendant, 100 % local : extraction `pdfjs-dist` (pur JS, b
 - Tout injectable (`PdfDeps`) → `test-pdf-pipeline.ts` **34/34** sans réseau ni PDF réel ; extracteur `pdfjs-dist` prouvé sur un vrai PDF
 - Env : `PDF_AGENT_MODEL` (fallback modèle Ollama par défaut)
 
+#### PDF-Vision — Mango VOIT les PDF (#147, 2026-06-22)
+
+L'Agent PDF #145 ne lisait que le **texte**. #147 ajoute le **rendu visuel** : `server/src/pdf-render.ts` rastérise une page en PNG via `pdfjs-dist` (legacy Node) + **`@napi-rs/canvas`** (binaires précompilés, zéro build MSVC sur Windows ; polyfill `DOMMatrix`/`Path2D`/`ImageData`). **Insight** : 3 lacunes (vision/zoom/crop pointées par GLM lui-même dans son auto-diagnostic) = **une seule primitive**.
+
+- `renderPdfPage(path, page, {scale, crop?}) → {png, width, height, pageCount, scale}` — scale borné [0.25, 8], dimension plafonnée ≤5000 px, crop clampé au cadre (2ᵉ canvas + `drawImage`), fond blanc. **Vision** = `Read(png)` ; **zoom** = scale↑ + crop ; **crop** = `cropRegion`.
+- `extractPdfImages(path)` — images EMBARQUÉES (#32) : parcourt l'operator-list pdfjs (`paintImageXObject`/inline), décode kind 1/2/3 → PNG, borné `MAX_IMAGES=100`, best-effort.
+- Routes : le binaire uploadé est **conservé** par `docId` (au lieu d'être supprimé post-indexation) → `GET /api/pdf/:docId/page/:n?scale=&crop=x,y,w,h` (image/png) · `GET /:docId/images` (PNG base64) ; `DELETE` nettoie aussi le binaire.
+- `test-pdf-render.ts` **17/17** (PDF générés en interne, offsets xref calculés) ; **vérif live** (port 3001 frais, anti-orphelin) : page rendue + texte + image embarquée **lus à l'écran**, crop, extraction, DELETE.
+- **La primitive est prête à devenir l'outil vision de l'Élève agentique** (Phase 2 de #146, cf. [[eleve-local]]) — c'est la **souveraineté de la boucle visuelle**.
+
+**Comble 4 des 5 lacunes PDF** (#32 images · #33 zoom · #34 crop · #35 vision). **Reste backlog** : OCR scanné #36 (rendu→PNG = pré-requis fait ; manque un modèle vision local Qwen-VL/Gemma-VL) · KernelTool `render_pdf_page` (avec la Phase 2 agentique) · fenêtre visualiseur PDF dans le [[bureau-os]].
+
 **Reste optionnel** : surface UI (fenêtre PDF dans le [[bureau-os]]).
 
 ## Liens

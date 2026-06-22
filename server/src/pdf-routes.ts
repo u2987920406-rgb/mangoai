@@ -19,10 +19,16 @@ import {
   defaultPdfDeps,
   type PdfDeps,
 } from "./pdf-pipeline.js";
+import { renderPdfPage, extractPdfImages, type PdfCrop } from "./pdf-render.js";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const UPLOAD_DIR = path.join(DATA_DIR, "pdf-uploads");
 const DB_PATH = path.join(DATA_DIR, "pdf-store.db");
+
+/** Chemin du binaire PDF conservé pour le rendu visuel (clé = docId). */
+function pdfFilePath(docId: string): string {
+  return path.join(UPLOAD_DIR, `${docId}.pdf`);
+}
 
 const pdfUpload = multer({
   storage: multer.diskStorage({
@@ -73,12 +79,68 @@ export async function registerPdfRoutes(app: Express, depsOverride?: PdfDeps): P
     const docId = randomUUID();
     try {
       const meta = await indexPdf(file.path, docId, file.originalname, getPdfBoard(), deps);
+      // On CONSERVE le binaire (renommé par docId) pour le rendu visuel (#147) :
+      // vision PDF, zoom, crop, extraction d'images. Supprimé via DELETE /:docId.
+      try {
+        fs.renameSync(file.path, pdfFilePath(docId));
+      } catch {
+        fs.rm(file.path, { force: true }, () => {});
+      }
       res.json({ docId, meta });
     } catch (err) {
-      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
-    } finally {
-      // Le texte est indexé ; le binaire ne sert plus.
+      // En cas d'échec d'indexation, le binaire ne sert à rien.
       fs.rm(file.path, { force: true }, () => {});
+      res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
+  // GET /api/pdf/:docId/page/:n — rastérise une page en PNG (#147).
+  // Query : scale (0.25–8), crop=x,y,w,h (pixels du rendu). Renvoie image/png.
+  app.get("/api/pdf/:docId/page/:n", async (req: Request, res: Response) => {
+    const file = pdfFilePath(String(req.params.docId));
+    if (!fs.existsSync(file)) {
+      res.status(404).json({ error: "document introuvable (binaire non conservé)" });
+      return;
+    }
+    const pageNum = Number.parseInt(String(req.params.n), 10);
+    const scale = req.query.scale !== undefined ? Number(req.query.scale) : undefined;
+    let crop: PdfCrop | undefined;
+    if (typeof req.query.crop === "string") {
+      const [x, y, w, h] = req.query.crop.split(",").map(Number);
+      if ([x, y, w, h].every(Number.isFinite)) crop = { x, y, w, h };
+    }
+    try {
+      const out = await renderPdfPage(file, pageNum, { scale, crop });
+      res.setHeader("Content-Type", "image/png");
+      res.setHeader("X-Pdf-Page-Count", String(out.pageCount));
+      res.setHeader("X-Pdf-Render-Scale", out.scale.toFixed(3));
+      res.send(out.png);
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  });
+
+  // GET /api/pdf/:docId/images — images embarquées en PNG base64 (#147, lacune #32).
+  app.get("/api/pdf/:docId/images", async (req: Request, res: Response) => {
+    const file = pdfFilePath(String(req.params.docId));
+    if (!fs.existsSync(file)) {
+      res.status(404).json({ error: "document introuvable (binaire non conservé)" });
+      return;
+    }
+    try {
+      const imgs = await extractPdfImages(file);
+      res.json({
+        count: imgs.length,
+        images: imgs.map((im) => ({
+          index: im.index,
+          pageNum: im.pageNum,
+          width: im.width,
+          height: im.height,
+          dataUrl: `data:image/png;base64,${im.png.toString("base64")}`,
+        })),
+      });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
     }
   });
 
@@ -119,9 +181,11 @@ export async function registerPdfRoutes(app: Express, depsOverride?: PdfDeps): P
     res.json(listPdfDocs(getPdfBoard()));
   });
 
-  // DELETE /api/pdf/:docId — supprime un document (chunks + métadonnée).
+  // DELETE /api/pdf/:docId — supprime un document (chunks + métadonnée + binaire).
   app.delete("/api/pdf/:docId", (req: Request, res: Response) => {
-    const removed = deletePdfDoc(String(req.params.docId), getPdfBoard());
+    const docId = String(req.params.docId);
+    const removed = deletePdfDoc(docId, getPdfBoard());
+    fs.rm(pdfFilePath(docId), { force: true }, () => {}); // binaire conservé pour le rendu (#147)
     res.json({ ok: true, chunksRemoved: removed });
   });
 }
