@@ -3,6 +3,7 @@
 import {
   extractCssVarNames, extractRootCss, skinTokens,
   collectColorLiterals, applyColorMap, parseColorMap, remapLiterals,
+  firstSectionRange, extractSectionJsx, redesignHero,
   type SkinAsk,
 } from "./taste-generate.js";
 
@@ -86,6 +87,21 @@ check("remapLiterals édite le fichier (hero remappé)", rr.edits.length === 1 &
 check("remapLiterals sans littéral → aucun édit", (await remapLiterals([{ path: "x.ts", content: "const a = 1;" }], SRC, ok.css!, remapAsk)).edits.length === 0);
 const failRemap: SkinAsk = async () => { throw new Error("down"); };
 check("remapLiterals fail-open (cerveau down → map vide, pas de crash)", (await remapLiterals([{ path: "a", content: HARD }], SRC, ok.css!, failRemap)).edits.length === 0);
+
+// ── redesign du hero ──
+const PAGE = `export default function A(){return(<div>\n<section style={{background:"#fff"}}><h1>Salut</h1></section>\n<section>autre</section>\n</div>);}`;
+const range = firstSectionRange(PAGE);
+check("firstSectionRange isole le 1er <section> équilibré", !!range && range.hero.startsWith("<section") && range.hero.endsWith("</section>") && range.hero.includes("Salut") && !range.hero.includes("autre"));
+check("firstSectionRange → null sans section", firstSectionRange("const x = 1;") === null);
+check("extractSectionJsx tolère fences + prose", extractSectionJsx("Voici:\n```jsx\n<section>x</section>\n```\nvoilà")?.trim() === "<section>x</section>");
+check("extractSectionJsx → null si pas de section", extractSectionJsx("pas de section ici") === null);
+
+const heroAsk: SkinAsk = async () => `<section style={{backgroundImage:"url(https://img/x.jpg)"}}><h1>Hero</h1></section>`;
+const rd = await redesignHero("<section><h1>old</h1></section>", "direction X", "https://img/x.jpg", heroAsk);
+check("redesignHero valide accepté", rd.ok === true && rd.hero?.includes("backgroundImage") === true);
+check("redesignHero rejette des balises déséquilibrées", (await redesignHero("<section/>", "x", "u", async () => "<section><div></section></section>")).ok === false);
+check("redesignHero rejette sortie sans section", (await redesignHero("<section/>", "x", "u", async () => "désolé")).ok === false);
+check("redesignHero fail-open si cerveau throw", (await redesignHero("<section/>", "x", "u", async () => { throw new Error("ko"); })).ok === false);
 
 console.log(`\n${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

@@ -326,6 +326,26 @@ export function describeAxes(axes: Record<Axis, number>): string {
  * Rend une direction en fragment de prompt pour GLM (consigne d'habillage STRICT).
  * Le moteur préfixera ce fragment par les VRAIS tokens captés par le Sharingan.
  */
+export const IMAGE_MOODS: Record<string, string> = {
+  "minimal-froid": "minimal clean light",
+  "editorial-chaud": "warm cozy morning",
+  "bold-contraste": "bold vibrant colorful",
+  "glass-sombre": "dark moody bokeh",
+  "neo-brutalist": "graphic flat bold",
+  "pastel-doux": "soft pastel bright",
+  "luxe-sobre": "elegant minimal luxury",
+  "tech-neon": "dark neon night",
+  "corporate-clair": "bright professional clean",
+  "organique-naturel": "natural wood plants",
+  "mono-typographique": "monochrome black white",
+  "cinematique-gradient": "cinematic moody gradient",
+};
+
+/** Mots-clés d'ambiance (EN) d'une direction pour la recherche d'image réelle (repli "modern"). */
+export function directionMood(id: string): string {
+  return IMAGE_MOODS[id] ?? "modern";
+}
+
 export function directionBrief(d: TasteDirection): string {
   return [
     `Direction esthétique : « ${d.name} » — ${d.blurb}`,

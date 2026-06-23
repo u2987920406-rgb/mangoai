@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { findTokensFile, walkStyleFiles, generateTasteSkins, type TasteRenderDeps } from "./taste-render.js";
+import { findTokensFile, walkStyleFiles, findHeroFile, deriveSubject, generateTasteSkins, type TasteRenderDeps } from "./taste-render.js";
 import type { CaptureDeps } from "./taste-engine.js";
 import type { SkinAsk } from "./taste-generate.js";
 
@@ -74,6 +74,13 @@ const badAsk: SkinAsk = async (system) => (/remappeur/i.test(system) ? "{}" : "d
 const bad = await generateTasteSkins(PROJ, { directions: ["minimal-froid"], outDir: OUT, k: 1 }, () => {}, { ...deps, ask: badAsk });
 check("skin invalide → ok:false sans crash", bad.length === 1 && bad[0].ok === false);
 check("tokens restaurés même après skin invalide", fs.readFileSync(TOKENS, "utf8") === TOKENS_SRC);
+
+// ── findHeroFile / deriveSubject ──
+check("deriveSubject extrait le sujet du nom de projet", deriveSubject(path.join("x", "mango-cafe-ts")) === "cafe");
+check("deriveSubject repli si rien d'utile", deriveSubject(path.join("x", "mango")) === "modern interior");
+check("findHeroFile → null si aucune <section>", findHeroFile(PROJ) === null); // la page du test n'a pas de <section>
+fs.writeFileSync(path.join(PROJ, "src", "pages", "Home.tsx"), "export default () => (<section><h1>hi</h1></section>);\n");
+check("findHeroFile repère une page avec <section>", findHeroFile(PROJ)?.endsWith("Home.tsx") === true);
 
 console.log(`\n${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

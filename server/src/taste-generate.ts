@@ -200,3 +200,83 @@ export async function remapLiterals(
   }
   return { map, edits };
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// REDESIGN du hero (#149 v1.5) : GLM réécrit le <section> hero pour un layout
+// RADICALEMENT différent + une vraie image de fond. Bien plus que le re-coloriage.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const HERO_SYSTEM = `Tu es un designer-développeur React de haut niveau.
+On te donne le HERO (un seul <section>) de la page d'accueil d'un site, une DIRECTION esthétique
+avec ses références réelles, et une URL d'IMAGE DE FOND réelle (photo pertinente).
+Réécris CE <section> pour un layout RADICALEMENT différent de l'original (image plein écran +
+overlay, OU split image|texte, OU bandeau éditorial) — change la COMPOSITION, pas que les couleurs.
+RÈGLES STRICTES :
+- L'image DOIT couvrir toute sa zone : background-size:cover + background-position:center (ou une
+  <img> object-fit:cover width:100% height:100%). AUCUN espace ni couleur de remplissage visible.
+- Le <section> fait 100% de largeur, SANS marge ni largeur fixe en px qui déborde (pas de scroll horizontal).
+- Texte TOUJOURS lisible : overlay/scrim rgba entre l'image et le texte.
+- Respecte palette/typo via var(--color-...) / var(--font-...).
+- Styles INLINE comme l'original, AUCUN nouvel import, AUCUNE nouvelle dépendance, AUCUN composant externe.
+- Renvoie UN SEUL <section>…</section> autonome qui compile (balises fermées, accolades équilibrées).
+Sors UNIQUEMENT le JSX du <section>, sans prose ni markdown.`;
+
+/** Localise le 1er <section>…</section> (balisage équilibré) d'un composant. */
+export function firstSectionRange(src: string): { before: string; hero: string; after: string } | null {
+  const open = src.indexOf("<section");
+  if (open === -1) return null;
+  const re = /<\/?section\b/g;
+  re.lastIndex = open;
+  let depth = 0;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(src))) {
+    if (m[0].startsWith("</")) {
+      depth--;
+      if (depth === 0) {
+        const end = src.indexOf(">", m.index) + 1;
+        return { before: src.slice(0, open), hero: src.slice(open, end), after: src.slice(end) };
+      }
+    } else depth++;
+  }
+  return null;
+}
+
+/** Extrait un bloc <section>…</section> d'une sortie de modèle (fences/prose tolérés). */
+export function extractSectionJsx(text: string): string | null {
+  const cleaned = text.replace(/```[a-z]*\n?/gi, "").trim();
+  const a = cleaned.indexOf("<section");
+  const b = cleaned.lastIndexOf("</section>");
+  if (a === -1 || b === -1 || b < a) return null;
+  return cleaned.slice(a, b + "</section>".length);
+}
+
+export interface RedesignResult {
+  ok: boolean;
+  hero?: string;
+  reason?: string;
+}
+
+/**
+ * GLM réécrit le hero pour incarner la direction (layout radical + image de fond réelle).
+ * Garde-fou : un seul <section> aux balises équilibrées. Ne lève jamais (→ repli token-only).
+ */
+export async function redesignHero(currentHero: string, brief: string, imageUrl: string, ask: SkinAsk): Promise<RedesignResult> {
+  const user = [
+    "DIRECTION + RÉFÉRENCES :", brief, "",
+    `IMAGE DE FOND (utilise EXACTEMENT cette URL) : ${imageUrl}`, "",
+    "HERO ACTUEL à réécrire :", currentHero, "",
+    "Réécris le <section>.",
+  ].join("\n");
+  let raw: string;
+  try {
+    raw = await ask(HERO_SYSTEM, user);
+  } catch (err) {
+    return { ok: false, reason: err instanceof Error ? err.message.split("\n")[0] : String(err) };
+  }
+  const hero = extractSectionJsx(raw);
+  if (!hero) return { ok: false, reason: "aucun <section> en sortie" };
+  const opens = (hero.match(/<section\b/g) || []).length;
+  const closes = (hero.match(/<\/section>/g) || []).length;
+  if (opens === 0 || opens !== closes) return { ok: false, reason: "balises <section> déséquilibrées" };
+  return { ok: true, hero };
+}
