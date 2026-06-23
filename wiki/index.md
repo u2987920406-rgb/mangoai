@@ -40,6 +40,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[command-center]] | Mango Command Center — poste de pilotage perso des idées/chantiers, Kanban local-first (prototype du #139) — #144 | ✅ écrite |
 | [[cartographie-projet]] | Modèle « photogrammétrie → indexation IA » : EXIF/AST + keypoints/embeddings + recalage/vault — à sortir à la Phase 2 de #139 | ✅ écrite |
 | [[agents-specialises]] | Constellation UX/UI · Layout · PDF — spécialistes Gemma locaux, `ModelProfile`, relay paramétrable — #145 | ✅ écrite |
+| [[audit-general]] | Super audit rétrospectif + empirique : évolution, validé vs manquant, 3 écarts honnêtes (souveraineté minoritaire · coût cloud non tracé · promesses de périphérie) — 2026-06 | ✅ écrite |
 
 ## Pistes de pages futures
 
