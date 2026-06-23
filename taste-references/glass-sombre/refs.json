@@ -1,0 +1,12 @@
+{
+  "direction": "glass-sombre",
+  "name": "Glassmorphism sombre",
+  "urls": [
+    "https://stripe.com",
+    "https://www.apple.com"
+  ],
+  "images": [
+    "glass-sombre.jpg"
+  ],
+  "notes": ""
+}

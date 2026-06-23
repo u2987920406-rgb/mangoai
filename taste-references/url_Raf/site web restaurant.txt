@@ -1,0 +1,63 @@
+chaque ligne repreente le nom d'un restaurant , fais une recherche sur le web:
+
+Fuga (France) – Design narratif, navigation fluide, branding fort : une immersion digitale dans l’univers créatif et engagé de la chaîne Fuga.
+
+Girl & the Goat (Chicago) – Une navigation latérale innovante, des photos immersives et une mise en page originale qui met l’eau à la bouche dès l’arrivée sur le site.
+
+Tiki Chick (New York) – Couleurs tropicales, branding joyeux et intégration d’Instagram pour une ambiance décontractée et festive qui reflète parfaitement l’identité du lieu.
+
+Sweet Jesus (Toronto) – Un site exubérant avec des visuels XXL, une direction artistique assumée et une navigation simple pour commander ses glaces les plus folles.
+
+Sunday in Brooklyn (New York) – Esthétique douce, typographie raffinée, et storytelling chaleureux : l’UX traduit fidèlement l’atmosphère du brunch.
+
+Mizlala (Los Angeles) – Design épuré, boutons clairs pour la commande en ligne, et visuels alléchants qui valorisent chaque plat du menu.
+
+Chubby’s Jamaican Kitchen (Toronto) – Ambiance tropicale, carrousel immersif et agencement soigné : un voyage digital au cœur des Caraïbes.
+
+Lucky Folks (France) – Identité visuelle forte, univers graphique ludique et parcours de réservation intuitif. L’exemple parfait d’un site qui attire et convertit.
+
+Flaner (France) – Animations élégantes, interface moderne et expérience utilisateur fluide : le site donne envie de s’y attarder comme on flâne en terrasse.
+
+Gucci Osteria Florence (Italie) – Luxe, calme et volupté : ce site mise sur l’élégance pour refléter la qualité de son restaurant étoilé.
+
+HEAT (France) – Une plateforme urbaine où le design brut et les visuels XXL soulignent l’esprit food court nouvelle génération.
+
+Pinza! (Dubaï) – Un ton humoristique, un menu bien structuré et un tunnel de commande ultra efficace : un modèle d’accessibilité pour les restaurants en ligne.
+
+Quay Restaurant (Sydney) – Site minimaliste avec de superbes photos en plein écran. Chaque section met en valeur l’excellence de la cuisine australienne contemporaine.
+
+Pujol (Mexico City) – Le site incarne la haute gastronomie mexicaine à travers un design sobre, une typographie élégante et des contenus parfaitement structurés.
+
+Noma (Copenhague) – Interface ultra sobre et efficace, reflets du minimalisme scandinave. Réserver une table devient une expérience à part entière.
+
+El Nacional (Barcelone) – Le site met en scène l’architecture du lieu à travers une visite immersive, appuyée par des photos de très haute qualité.
+
+The Cheesecake Factory (International) – Une plateforme dense mais bien organisée, avec un menu en ligne riche, des photos de plats variés et une navigation intuitive.
+
+Ultraviolet by Paul Pairet (Shanghai) – Expérimental dans le fond comme dans la forme, le site reflète l’expérience multi-sensorielle du restaurant.
+
+Mercato Centrale (Italie) – L’identité visuelle est conviviale, colorée, bilingue, et portée par des contenus bien pensés pour présenter les différents stands et cuisines.
+
+Sublimotion (Ibiza) – Un site qui ose tout : vidéo, effets sonores, animation 3D. À l’image de l’expérience gastronomique unique du lieu.
+
+Septime (Paris) – Sobriété élégante, belles photos de plats et une mise en page verticale épurée : le site respecte les codes de la gastronomie étoilée moderne.
+
+Mirazur (Menton) – Le site propose une immersion visuelle dans l’univers végétal et raffiné du chef Mauro Colagreco, avec un contenu très bien organisé.
+
+Arpège (Paris) – Menu saisonnier mis en avant, texte concis et navigation épurée : le site fait la part belle à la cuisine responsable et végétale.
+
+Osteria Francescana (Modène) – L’un des plus grands restaurants du monde méritait un site à son image : élégant, discret, avec une touche de poésie.
+
+L’Abysse (Paris) – Fusion franco-japonaise dans l’assiette et dans le web design. L’expérience utilisateur est fluide et minimaliste.
+
+Restaurant Kei (Paris) – Le site reflète la finesse de la cuisine franco-japonaise du chef Kei Kobayashi, avec un accent mis sur le visuel et le calme.
+
+Tickets (Barcelone) – Couleurs vives, animations ludiques et structure dynamique : un site à l’image de la créativité du chef Albert Adrià.
+
+Eleven Madison Park (New York) – Sobriété et clarté. Le site s’efface pour laisser parler les valeurs durables du restaurant et sa nouvelle carte végétale.
+
+Le Bernardin (New York) – Navigation classique mais efficace, avec une forte présence visuelle de l’équipe et des plats signatures.
+
+Central (Lima) – Le site évoque l’exploration, avec une structure narrative unique et des contenus immersifs pour découvrir les saveurs du Pérou.
+
+Girl & the Goat (Chicago) – Une navigation latérale innovante, des photos immersives et une mise en page originale qui met l’eau à la bouche dès l’arrivée sur le site.

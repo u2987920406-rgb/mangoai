@@ -1,0 +1,12 @@
+{
+  "direction": "cinematique-gradient",
+  "name": "Cinématique gradient",
+  "urls": [
+    "https://stripe.com",
+    "https://www.framer.com"
+  ],
+  "images": [
+    "cinematique-gradient.jpg"
+  ],
+  "notes": ""
+}

@@ -1,0 +1,12 @@
+{
+  "direction": "minimal-froid",
+  "name": "Minimal froid",
+  "urls": [
+    "https://linear.app",
+    "https://vercel.com"
+  ],
+  "images": [
+    "minimal-froid.jpg"
+  ],
+  "notes": ""
+}

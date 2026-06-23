@@ -1,0 +1,12 @@
+{
+  "direction": "corporate-clair",
+  "name": "Corporate clair",
+  "urls": [
+    "https://www.intercom.com",
+    "https://www.hubspot.com"
+  ],
+  "images": [
+    "corporate-clair.jpg"
+  ],
+  "notes": ""
+}

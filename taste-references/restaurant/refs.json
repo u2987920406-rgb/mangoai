@@ -1,0 +1,15 @@
+{
+  "direction": "restaurant",
+  "name": "Pack domaine — Restaurant",
+  "kind": "domain",
+  "urls": [
+    "https://fuga-restaurant.fr",
+    "https://www.girlandthegoat.com",
+    "https://www.tikichick.com",
+    "https://www.sweetjesusicecream.com",
+    "https://www.sundayinbrooklyn.com",
+    "https://mizlala.com"
+  ],
+  "images": [],
+  "notes": "Pack de DOMAINE (références pour un TYPE de projet : sites de restaurant), pas une direction esthétique. Source : Restaurant-Lien.csv de Raf. 6 URLs fournies sur ~30 du brief — ajoute les autres au CSV quand tu veux."
+}

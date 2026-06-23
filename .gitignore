@@ -42,7 +42,7 @@ run-driver.mjs
 
 # Bancs d'essai jetables du Moteur de Goût (#149) — non versionnés
 server/src/exp-taste-*.ts
-server/snap-cockpit*.mjs
+server/snap-*.mjs
 
 # Plan de run de validation — local, non versionné
 RUN-PLAN.md
