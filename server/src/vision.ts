@@ -983,6 +983,22 @@ async function sampleImagePixels(dataUrl: string): Promise<RgbaPixel[]> {
   }
 }
 
+/** File path → dominant palette + perceptual ambiance — the IMAGE mouth of the
+ *  Sharingan, factored out of sharingan_image so the Moteur de Goût (#149) can reuse
+ *  it directly (no MCP tool). Throws on unsupported format / missing file. */
+export async function analyzeImageFile(absPath: string): Promise<{ palette: string[]; ambiance: string; samples: number }> {
+  const ext = path.extname(absPath).toLowerCase();
+  const mime = IMAGE_MIME[ext];
+  if (!mime) throw new Error(`Format d'image non supporté : ${ext || "(sans extension)"}`);
+  if (!fs.existsSync(absPath)) throw new Error(`Fichier introuvable : ${absPath}`);
+  const imgBuf = fs.readFileSync(absPath);
+  const dataUrl = `data:${mime};base64,${imgBuf.toString("base64")}`;
+  const pixels = await sampleImagePixels(dataUrl);
+  const opaque = pixels.filter((p) => p.a >= 10);
+  const palette = dedupeColors(topColorsFromBuckets(quantizePixels(pixels)));
+  return { palette, ambiance: ambianceDescriptor(opaque), samples: opaque.length };
+}
+
 const sharinganImageTool = tool(
   "sharingan_image",
   "Extracts a structured color palette + perceptual ambiance (luminosity, saturation, temperature) from an attached image file. " +

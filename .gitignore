@@ -40,6 +40,9 @@ server/.tmp-spine.db-wal
 # Script de pilotage jetable des runs de validation — jamais versionné
 run-driver.mjs
 
+# Bancs d'essai jetables du Moteur de Goût (#149) — non versionnés
+server/src/exp-taste-*.ts
+
 # Plan de run de validation — local, non versionné
 RUN-PLAN.md
 
