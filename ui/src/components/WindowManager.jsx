@@ -2,7 +2,7 @@ import { Suspense, lazy, useState, useEffect } from "react";
 import {
   BookOpen, Bot, Boxes, FileText, FlaskConical, FolderOpen, HelpCircle,
   Image as ImageIcon, Layers, Lightbulb, Music2, Network, Palette,
-  Plus, Search, Sliders, Sparkles, Trash2,
+  Plus, Search, Sliders, Sparkles, Trash2, Wand2,
 } from "lucide-react";
 import Window from "./Window.jsx";
 import ConfirmDelete from "./ConfirmDelete.jsx";
@@ -20,6 +20,7 @@ const DesignReview      = lazy(() => import("./DesignReview.jsx"));
 const MultiProject      = lazy(() => import("./MultiProject.jsx"));
 const SuperAgentBuilder = lazy(() => import("./SuperAgentBuilder.jsx"));
 const SuiteWindow       = lazy(() => import("./SuiteWindow.jsx"));
+const TasteGallery      = lazy(() => import("./TasteGallery.jsx"));
 
 function PanelLoader() {
   return (
@@ -220,6 +221,7 @@ const LAUNCHER_SECTIONS = [
       { id: "docs",       label: "Doc",           icon: FileText,     run: (a) => a.onOpenApp?.("docs") },
       { id: "promptlab",  label: "Prompt Lab",    icon: FlaskConical, run: (a) => a.onOpenApp?.("promptlab") },
       { id: "design",     label: "Design Review", icon: Palette,      run: (a) => a.onOpenApp?.("design") },
+      { id: "taste",      label: "Variantes de goût", icon: Wand2,    run: (a) => a.onOpenApp?.("taste") },
     ],
   },
   {
@@ -306,6 +308,13 @@ function WindowContent({ win, onClose }) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <DocGenerator onBack={() => onClose(win.id)} />
+      </Suspense>
+    );
+  }
+  if (win.type === WINDOWS.TASTE) {
+    return (
+      <Suspense fallback={<PanelLoader />}>
+        <TasteGallery win={win} />
       </Suspense>
     );
   }

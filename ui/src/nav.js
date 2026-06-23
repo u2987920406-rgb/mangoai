@@ -32,6 +32,7 @@ export const WINDOWS = Object.freeze({
   AGENT_FACTORY: "agent-factory",
   IMAGE_CREATOR: "image-creator",
   MUSIC_CREATOR: "music-creator",
+  TASTE: "taste",
 });
 
 const SCREEN_VALUES = Object.freeze(Object.values(SCREENS));

@@ -303,6 +303,8 @@ export default function App() {
         return openWindow({ type: WINDOWS.PROMPTLAB, title: "Prompt Lab", width: 1000, height: 680 });
       case WINDOWS.DESIGN:
         return openWindow({ type: WINDOWS.DESIGN, title: "Design Review", width: 1000, height: 720, props: { projectName } });
+      case WINDOWS.TASTE:
+        return openWindow({ type: WINDOWS.TASTE, title: "Variantes de goût", width: 1120, height: 780, props: { projectName } });
       case WINDOWS.MULTI:
         return openWindow({ type: WINDOWS.MULTI, title: "Multi-Projet", width: 1000, height: 720 });
       case WINDOWS.SUPERAGENT:
