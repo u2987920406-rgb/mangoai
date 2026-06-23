@@ -219,6 +219,31 @@ async function run() {
     check("le label du cerveau apparaît dans le résultat de délégation", r.toolTrace.some((t) => t.name === "delegate"));
   }
 
+  console.log("\n[#3] Anti-relecture : relire le même fichier → on ne ré-exécute pas, on pousse à agir");
+  {
+    let reads = 0;
+    const reg = new ToolRegistry();
+    reg.register({ name: "read_file", description: "", inputSchema: { path: z.string() }, handler: () => { reads++; return { text: "contenu du fichier" }; } });
+    reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+    const { post } = scriptedPost([
+      { toolCalls: [call("read_file", { path: "a.js" })] },
+      { toolCalls: [call("read_file", { path: "a.js" })] }, // RELECTURE identique
+      { toolCalls: [call("finish", { summary: "fait" })] },
+    ]);
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 10 });
+    check("read_file exécuté UNE seule fois (relecture court-circuitée)", reads === 1);
+    check("le moteur conclut quand même (finish)", r.finished === true);
+  }
+
+  console.log("\n[#3b] Relectures EN BOUCLE → sortie contrôlée (stuck)");
+  {
+    const reg = new ToolRegistry();
+    reg.register({ name: "read_file", description: "", inputSchema: { path: z.string() }, handler: () => ({ text: "c" }) });
+    const { post } = scriptedPost([{ toolCalls: [call("read_file", { path: "a.js" })] }]); // ne fait QUE relire
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20, repeatLimit: 3 });
+    check("relectures persistantes → stuck", r.stuck === true && r.finished === false);
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

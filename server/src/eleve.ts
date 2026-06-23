@@ -158,6 +158,11 @@ export interface EscalationContext {
   maitreModel: string;
   /** Partition active — détermine axiomFiles et escalateAppendix. Défaut = PROFILE. */
   profile?: ModelProfile;
+  /** #1 — true : l'Élève s'est ARRÊTÉ sans conclure (build vert mais tâche incomplète).
+   * Le Maître doit TERMINER la tâche, pas réparer un build cassé. */
+  incomplete?: boolean;
+  /** Résumé de ce que l'Élève a fait avant de se bloquer (pour orienter le Maître). */
+  eleveSummary?: string;
 }
 
 function listProjectFiles(projectDir: string, cap = 40): string[] {
@@ -657,6 +662,25 @@ passe pas). Deux missions, dans l'ordre :
    "candidat". Plafond ~12 axiomes / 3000 car. : fusionne plutôt que gonfler.
 Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
 
+// #1 — Mode « terminer » : l'Élève s'est arrêté sans conclure (build vert mais tâche
+// incomplète). Le Maître ne répare pas un build cassé, il TERMINE la tâche.
+const ESCALATE_FINISH_SYSTEM = `Tu es le MAÎTRE dans MangoOS. Un modèle ÉLÈVE local a
+travaillé sur une tâche mais s'est ARRÊTÉ AVANT DE LA TERMINER (sur-exploration /
+limite atteinte). Le build PASSE déjà, mais la modification demandée n'est probablement
+PAS complète. Deux missions, dans l'ordre :
+1. TERMINE la tâche demandée — complète la modification, proprement et MINIMALEMENT
+   (pas de refonte). Lis/édite ce qu'il faut et lance "npm run build" pour vérifier
+   qu'il passe toujours à la fin.
+2. Puis distille EXACTEMENT UN axiome universel dans .axioms.md (racine du workspace)
+   sur ce qui a fait CALER l'Élève (sur-exploration, indécision à passer à l'action…) —
+   la RÈGLE/le POURQUOI, jamais le code. Format, en français, une ligne vide entre axiomes :
+     AXIOME-[CAT]-[NN] (maturité: candidat · vu: AAAA-MM-JJ)
+     - Contexte : intention générale d'ingénierie/UX
+     - Piège : le piège invisible
+     - Règle d'or : la règle universelle verrouillante
+   CAT ∈ {VISION,UIUX,ARCH,DATA,PERF,A11Y,BUILD}. Toujours "candidat". Plafond ~12 / 3000 car.
+Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
+
 async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number }> {
   // Détection de l'axiome appris sur l'UNION des fichiers de la partition (un
   // axiome rangé dans .axioms.<famille>.md compte aussi), via une empreinte NON
@@ -671,17 +695,20 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
   const cwd = inside ? WORKSPACE_DIR : ctx.projectDir;
   const projRef = inside ? rel : ".";
 
+  const incomplete = ctx.incomplete === true;
   const prompt = [
-    `Projet à réparer : ./${projRef}`,
+    incomplete ? `Projet : ./${projRef}` : `Projet à réparer : ./${projRef}`,
     `Tâche demandée à l'Élève : ${ctx.task}`,
     "",
-    "Échec objectif constaté :",
-    ctx.lastError,
+    incomplete ? "L'Élève s'est arrêté sans terminer. Ce qu'il a fait avant de caler :" : "Échec objectif constaté :",
+    (incomplete ? ctx.eleveSummary || ctx.lastError : ctx.lastError) || "(pas de détail)",
     "",
     `Registre d'axiomes (.axioms.md) actuel :`,
     axBefore || "(vide)",
     "",
-    "Corrige le build, puis ajoute l'unique axiome, puis arrête-toi.",
+    incomplete
+      ? "TERMINE la tâche, vérifie que le build passe, puis ajoute l'unique axiome, puis arrête-toi."
+      : "Corrige le build, puis ajoute l'unique axiome, puis arrête-toi.",
     escProfile.escalateAppendix, // "" pour GENERIC → prompt inchangé
   ].join("\n");
 
@@ -693,7 +720,7 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
       maxTurns: 24,
       permissionMode: "acceptEdits",
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
-      systemPrompt: { type: "preset", preset: "claude_code", append: ESCALATE_SYSTEM },
+      systemPrompt: { type: "preset", preset: "claude_code", append: incomplete ? ESCALATE_FINISH_SYSTEM : ESCALATE_SYSTEM },
     },
   });
   let costUsd = 0;
@@ -764,9 +791,16 @@ export async function runRelay(
 
   // Escalade vers le Maître (Claude), factorisée : partagée par le chemin contrat
   // ET le chemin moteur agentique. INCHANGÉE — Claude reste le seul filet.
-  const finalizeEscalation = async (lastErr: string, attempts: number): Promise<RelayResult> => {
-    push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})`);
-    const esc = await deps.escalate({ task, projectDir, lastError: lastErr, maitreModel, profile: callProfile });
+  const finalizeEscalation = async (
+    lastErr: string,
+    attempts: number,
+    esc2?: { incomplete?: boolean; eleveSummary?: string },
+  ): Promise<RelayResult> => {
+    push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})${esc2?.incomplete ? " — TERMINER la tâche" : ""}`);
+    const esc = await deps.escalate({
+      task, projectDir, lastError: lastErr, maitreModel, profile: callProfile,
+      incomplete: esc2?.incomplete, eleveSummary: esc2?.eleveSummary,
+    });
     const insp = await inspectReady();
     if (insp.ok) {
       push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
@@ -845,8 +879,19 @@ export async function runRelay(
         push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);
         return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log };
       }
+      // #1 — Build vert MAIS l'Élève s'est arrêté sans conclure (blocage/plafond).
+      // Au lieu de demander à Raf de relancer à la main, on ESCALADE AUTO vers le
+      // Maître pour TERMINER la tâche. Réversible : ELEVE_ESCALATE_ON_BLOCK=off.
+      const blockReason = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
+      if (process.env.ELEVE_ESCALATE_ON_BLOCK !== "off") {
+        push(`⚠ Élève arrêté sans conclure (${blockReason}) — escalade AUTO vers le Maître pour terminer`);
+        return await finalizeEscalation(`L'Élève s'est arrêté sans terminer (${blockReason}).`, 1, {
+          incomplete: true,
+          eleveSummary: result?.text || `${result?.toolTrace.length ?? 0} appel(s) d'outil, sans conclusion.`,
+        });
+      }
       push(
-        `⚠ build vert MAIS le moteur s'est arrêté sans conclure (${result?.stuck ? "blocage" : "plafond d'itérations"}) — ` +
+        `⚠ build vert MAIS le moteur s'est arrêté sans conclure (${blockReason}) — ` +
           `la modification n'est peut-être PAS terminée. Relance pour qu'il continue, ou précise la demande.`,
       );
       return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };

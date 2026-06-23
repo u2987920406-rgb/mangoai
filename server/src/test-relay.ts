@@ -236,6 +236,25 @@ async function deterministic(): Promise<void> {
     check("résolu par le contrat <mangoos>", r.resolvedBy === "eleve" && r.success);
     fs.rmSync(dir, { recursive: true, force: true });
   }
+
+  {
+    // F4 — #1 build VERT mais l'Élève ne conclut JAMAIS (bloqué) → auto-escalade pour TERMINER.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F4-"));
+    let escIncomplete = false;
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d), // marker OK → build vert
+      ensureDeps: noEnsure,
+      escalate: async (ctx) => { escIncomplete = ctx.incomplete === true; return { axiom: false, costUsd: 0.02 }; },
+      // Le moteur écrit le marker (build vert) mais ne finit JAMAIS → seen/corrections → stuck.
+      agenticPost: agenticScript([[call("write_file", { path: "marker.txt", content: "OK" }, 1)]]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [F4] Build vert mais Élève bloqué → auto-escalade (terminer) :");
+    check("escalade AUTO déclenchée en mode 'terminer' (incomplete)", escIncomplete);
+    check("résolu par le Maître (pas laissé 'incomplete')", r.resolvedBy === "maitre" && r.success && !r.incomplete);
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 // ── LIVE : vrai Gemma sur une copie junctionnée de test-pipeline ───────────────
