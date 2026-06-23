@@ -20,6 +20,19 @@ import { applyWrite, applyEdit, applyRun } from "./executor.js";
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
 const RUN_TIMEOUT_MS = Number(process.env.ELEVE_RUN_TIMEOUT_MS ?? 120_000);
 
+// Garde anti-shell-lecture (#146 révision 2026-06-24) : run_command sert AUX BUILDS,
+// jamais à LIRE/lister un fichier. GLM contournait l'anti-sur-exploration en lisant
+// via `powershell Get-Content … | Select-Object` (qui réussit → échappe à toutes les
+// gardes). On REFUSE déterministement ces commandes de lecture/listing et on le
+// renvoie vers les bons outils. Tokens repérés comme MOT (début / après pipe / espace).
+const SHELL_READ_PATTERN =
+  /(?:^|[\s|;&(])(get-content|gc|cat|type|more|head|tail|nl|ls|dir|gci|get-childitem|tree|select-string|sls|findstr|grep|select-object|get-location|pwd)(?=$|[\s|;&)])/i;
+
+/** Vrai si la commande shell ne sert qu'à LIRE/lister (interdit : utiliser read_file). */
+export function isShellReadCommand(command: string): boolean {
+  return SHELL_READ_PATTERN.test(command);
+}
+
 /** Wrap un appel pouvant lever en KernelToolResult (l'erreur revient au modèle). */
 async function guarded(fn: () => Promise<string>): Promise<KernelToolResult> {
   try {
@@ -82,7 +95,22 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
       description:
         "Lance une commande shell dans le projet (ex. `npx tsc --noEmit`). INTERDIT : npm install, git, rm -rf, et autres commandes destructrices. Renvoie le code de sortie et la sortie.",
       inputSchema: { command: z.string().describe("La commande shell à exécuter") },
-      handler: (args) => guarded(() => applyRun(projectDir, String(args.command ?? ""), RUN_TIMEOUT_MS)),
+      handler: (args) => {
+        const command = String(args.command ?? "");
+        // Refus déterministe : lire/lister via le shell est INTERDIT (anti-tâtonnement
+        // Windows). Renvoie une erreur pédagogique vers les bons outils — l'isError
+        // alimente aussi la garde anti-tâtonnement du runtime.
+        if (isShellReadCommand(command)) {
+          return Promise.resolve<KernelToolResult>({
+            text:
+              "⚠ run_command est INTERDIT pour LIRE ou lister un fichier (cat / type / Get-Content / ls / dir / " +
+              "Select-Object / findstr…) — sous Windows ça tâtonne. Utilise read_file pour lire, list_files pour " +
+              "lister, search_code pour chercher. Réserve run_command aux builds/vérifs (npx tsc --noEmit, npx vite build).",
+            isError: true,
+          });
+        }
+        return guarded(() => applyRun(projectDir, command, RUN_TIMEOUT_MS));
+      },
     },
     {
       name: "finish",

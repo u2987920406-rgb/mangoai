@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildEleveActionTools, FINISH_TOOL } from "./eleve-action-tools.js";
+import { buildEleveActionTools, FINISH_TOOL, isShellReadCommand } from "./eleve-action-tools.js";
 import { toOpenAITools } from "./kernel-mcp.js";
 
 let pass = 0;
@@ -76,6 +76,21 @@ async function run() {
     check("write/edit/read/check_build/finish conservés", ["write_file", "edit_file", "read_file", "check_build", "finish"].every((n) => gated.has(n)));
     const full = buildEleveActionTools(dir, { allowRun: true });
     check("run_command présent quand allowRun=true (défaut)", full.has("run_command") && reg.has("run_command"));
+  }
+
+  console.log("\n[7] Garde anti-shell-lecture (run_command refuse de LIRE)");
+  {
+    // Le cas réel observé : GLM lit App.jsx via PowerShell pour contourner l'anti-sur-exploration.
+    const r1 = await reg.invoke("run_command", { command: "powershell -Command Get-Content src/App.jsx | Select-Object -First 200" });
+    check("Get-Content | Select-Object refusé (isError)", r1.isError === true);
+    check("erreur pédagogique → renvoie vers read_file", /read_file/.test(r1.text));
+    const r2 = await reg.invoke("run_command", { command: "cat src/App.jsx" });
+    check("cat refusé", r2.isError === true);
+    const r3 = await reg.invoke("run_command", { command: "dir src" });
+    check("dir refusé", r3.isError === true);
+    // Une commande de build/vérif ne contient pas de token de lecture → la garde la laisse passer.
+    check("npx tsc --noEmit NON bloqué par la garde", !isShellReadCommand("npx tsc --noEmit"));
+    check("npx vite build NON bloqué par la garde", !isShellReadCommand("npx vite build"));
   }
 
   fs.rmSync(dir, { recursive: true, force: true });

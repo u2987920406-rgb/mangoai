@@ -50,6 +50,14 @@ const KEEP_RECENT = 6; // messages récents jamais compactés
 // Outils de LECTURE : relire le même fichier ne fait pas avancer → on coupe court
 // dès la 1re relecture identique (anti-sur-exploration, #149 fix GLM bloqué).
 const READ_ONLY_TOOLS = ["read_file", "list_files", "search_code"];
+// Outils d'ÉCRITURE/ACTION : leur appel réussi prouve que le modèle AGIT → remet à
+// zéro le compteur d'exploration (anti-exploration-stérile ci-dessous).
+const WRITE_TOOLS = ["write_file", "edit_file"];
+// Anti-exploration-stérile (#146 révision 2026-06-24) : enchaîner les lectures —
+// même DISTINCTES et réussies — sans jamais écrire ne termine pas la tâche. C'est le
+// VRAI motif de blocage de GLM sur grosses apps (12 search_code, 0 écriture, plafond).
+// Au seuil, on refuse une lecture de plus et on POUSSE à agir. On lui apprend le rythme.
+const DEFAULT_EXPLORE_BEFORE_ACT = Number(process.env.ELEVE_EXPLORE_BEFORE_ACT_MAX ?? 6);
 
 export interface AgenticOptions {
   /** Transport (obligatoire). Réel en prod (eleve.elevePost), faux en test. */
@@ -60,6 +68,7 @@ export interface AgenticOptions {
   maxToolResult?: number;
   repeatLimit?: number;
   maxCorrections?: number; // seuil de correctifs cumulés avant sortie « bloqué »
+  exploreBeforeAct?: number; // lectures consécutives tolérées sans écrire (défaut 6)
   readOnlyTools?: string[]; // override des outils de lecture (défaut READ_ONLY_TOOLS)
   /** Tracer optionnel (best-effort). Absent → aucun span (tests purs). */
   tracer?: KernelTracer;
@@ -116,7 +125,10 @@ export async function buildAgentic(
   const maxToolResult = opts.maxToolResult ?? DEFAULT_MAX_TOOL_RESULT;
   const repeatLimit = opts.repeatLimit ?? DEFAULT_REPEAT_LIMIT;
   const maxCorrections = opts.maxCorrections ?? DEFAULT_MAX_CORRECTIONS;
+  const exploreMax = opts.exploreBeforeAct ?? DEFAULT_EXPLORE_BEFORE_ACT;
   const readOnly = new Set(opts.readOnlyTools ?? READ_ONLY_TOOLS);
+  // Une écriture, une édition OU une délégation prouvent que le modèle agit.
+  const writeTools = new Set([...WRITE_TOOLS, DELEGATE_TOOL]);
   const tools = toOpenAITools(registry);
 
   const messages: ChatMessage[] = [
@@ -128,6 +140,7 @@ export async function buildAgentic(
   const readKeys = new Set<string>(); // outils de lecture déjà appelés (anti-relecture #3)
   let corrections = 0; // nb de relances correctives injectées
   let errorStreak = 0; // échecs d'outils CONSÉCUTIFS (anti-tâtonnement)
+  let readsSinceWrite = 0; // lectures réussies depuis la dernière écriture (anti-exploration-stérile)
 
   for (let iter = 0; iter < maxIter; iter++) {
     compact(messages, ctxMax);
@@ -176,6 +189,26 @@ export async function buildAgentic(
         continue;
       }
 
+      // Anti-exploration-stérile : trop de lectures (même DISTINCTES, même réussies)
+      // sans une seule écriture ne fait PAS avancer. Au seuil, on refuse la lecture et
+      // on POUSSE à agir — la garde qui manquait pour les blocages GLM en sur-exploration.
+      if (readOnly.has(name) && readsSinceWrite >= exploreMax) {
+        corrections++;
+        messages.push({
+          role: "tool",
+          tool_call_id: tc.id,
+          content:
+            `⚠ Tu as exploré ${readsSinceWrite} fois d'affilée SANS écrire une seule ligne. Explorer ne ` +
+            "termine pas la tâche. ÉCRIS MAINTENANT : write_file/edit_file pour la modification demandée " +
+            "(ou delegate une partie, ou finish si c'est déjà fait). N'appelle plus read_file/list_files/search_code.",
+        });
+        if (corrections >= maxCorrections) {
+          opts.onLog?.("⚠ Élève bloqué (exploration sans action) — sortie contrôlée.");
+          return { text: "", toolTrace, finished: false, iterations: iter + 1, stuck: true };
+        }
+        continue;
+      }
+
       // Anti-répétition : même appel identique au-delà de la limite → on n'exécute
       // plus, on injecte un correctif. Si ça persiste → sortie contrôlée (échec).
       const count = (seen.get(key) ?? 0) + 1;
@@ -214,7 +247,11 @@ export async function buildAgentic(
       } else {
         errorStreak = 0;
       }
-      if (readOnly.has(name) && !isErr) readKeys.add(key); // #3 — mémorise la lecture réussie
+      if (readOnly.has(name) && !isErr) {
+        readKeys.add(key); // #3 — mémorise la lecture réussie
+        readsSinceWrite++; // … et compte vers le budget d'exploration
+      }
+      if (writeTools.has(name) && !isErr) readsSinceWrite = 0; // une action remet le budget à zéro
       messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, maxToolResult) });
     }
 

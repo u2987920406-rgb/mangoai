@@ -244,6 +244,38 @@ async function run() {
     check("relectures persistantes → stuck", r.stuck === true && r.finished === false);
   }
 
+  console.log("\n[#3d] Anti-exploration-stérile : lectures DISTINCTES sans écrire → poussé à agir → stuck");
+  {
+    const reg = new ToolRegistry();
+    reg.register({ name: "search_code", description: "", inputSchema: { q: z.string() }, handler: () => ({ text: "résultat" }) });
+    reg.register({ name: "write_file", description: "", inputSchema: { path: z.string(), content: z.string() }, handler: () => ({ text: "écrit" }) });
+    // le modèle ne fait QUE des search_code DISTINCTS (q croissant), jamais d'écriture :
+    // ni l'anti-relecture (args différents) ni l'anti-tâtonnement (réussites) ne le voient.
+    let q = 0;
+    const post: PostFn = async () => ({ content: "", toolCalls: [call("search_code", { q: "x" + q++ })] });
+    const r = await buildAgentic("sys", "fais", reg, { post, maxIterations: 30, exploreBeforeAct: 4, maxCorrections: 3 });
+    check("exploration stérile → stuck", r.stuck === true && r.finished === false);
+    check("coupé bien avant le plafond (la garde a mordu)", r.iterations < 30);
+  }
+
+  console.log("\n[#3e] L'écriture RÉINITIALISE le budget d'exploration → la tâche peut conclure");
+  {
+    const reg = new ToolRegistry();
+    reg.register({ name: "search_code", description: "", inputSchema: { q: z.string() }, handler: () => ({ text: "r" }) });
+    reg.register({ name: "write_file", description: "", inputSchema: { path: z.string(), content: z.string() }, handler: () => ({ text: "écrit" }) });
+    reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+    const { post } = scriptedPost([
+      { toolCalls: [call("search_code", { q: "a" })] },
+      { toolCalls: [call("search_code", { q: "b" })] },
+      { toolCalls: [call("write_file", { path: "x.js", content: "1" })] }, // remet le compteur à 0
+      { toolCalls: [call("search_code", { q: "c" })] },
+      { toolCalls: [call("search_code", { q: "d" })] },
+      { toolCalls: [call("finish", { summary: "ok" })] },
+    ]);
+    const r = await buildAgentic("sys", "fais", reg, { post, maxIterations: 20, exploreBeforeAct: 3 });
+    check("jamais 3 lectures d'affilée sans écrire → conclut (finish)", r.finished === true && r.stuck === false);
+  }
+
   console.log("\n[#3c] MARGE (révision 2026-06-24) : maxCorrections découplé de repeatLimit");
   {
     // L'Élève relit en boucle, repeatLimit bas (1) MAIS maxCorrections haut (6) :
