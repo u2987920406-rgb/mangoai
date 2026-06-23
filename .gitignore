@@ -16,6 +16,11 @@ server/data/nocturnal-config.json
 server/data/radar.json
 server/data/prompt-evolution.json
 server/data/prompt-evolution-config.json
+server/data/curation-ledger.json
+server/data/curation-tuning.json
+
+# Registre des cerveaux mesurés (#135 Phase E) — runtime, jamais versionné
+.brains/
 
 # Base SQLite du Blackboard (kernel) — runtime, jamais versionnée
 server/data/blackboard.sqlite
