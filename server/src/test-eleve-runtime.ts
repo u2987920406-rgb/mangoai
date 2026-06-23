@@ -76,7 +76,7 @@ async function run() {
     const reg = stubRegistry(writes);
     const { post } = scriptedPost([{ toolCalls: [call("write_file", { path: "a.js", content: "x" })] }]);
     // args identiques à chaque tour (le call() ci-dessus est figé dans steps[0]).
-    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 30, repeatLimit: 2 });
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 30, repeatLimit: 2, maxCorrections: 2 });
     check("stuck === true", r.stuck === true);
     check("finished === false", r.finished === false);
     check("outil exécuté au plus repeatLimit fois (pas à l'infini)", writes.length <= 2);
@@ -167,7 +167,7 @@ async function run() {
     // run_command qui échoue, avec un argument DIFFÉRENT à chaque tour (l'anti-répétition
     // par clé ne se déclenche pas → c'est bien la garde d'échecs consécutifs qui agit).
     const post: PostFn = async () => ({ content: "", toolCalls: [call("run_command", { command: `essai${i++}` })] });
-    const r = await buildAgentic("sys", "fais", reg, { post, maxIterations: 40, repeatLimit: 3 });
+    const r = await buildAgentic("sys", "fais", reg, { post, maxIterations: 40, repeatLimit: 3, maxCorrections: 3 });
     check("sortie contrôlée (stuck) sur échecs consécutifs", r.stuck === true && r.finished === false);
     check("borné bien avant le plafond", r.iterations < 40);
   }
@@ -240,8 +240,22 @@ async function run() {
     const reg = new ToolRegistry();
     reg.register({ name: "read_file", description: "", inputSchema: { path: z.string() }, handler: () => ({ text: "c" }) });
     const { post } = scriptedPost([{ toolCalls: [call("read_file", { path: "a.js" })] }]); // ne fait QUE relire
-    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20, repeatLimit: 3 });
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20, repeatLimit: 3, maxCorrections: 3 });
     check("relectures persistantes → stuck", r.stuck === true && r.finished === false);
+  }
+
+  console.log("\n[#3c] MARGE (révision 2026-06-24) : maxCorrections découplé de repeatLimit");
+  {
+    // L'Élève relit en boucle, repeatLimit bas (1) MAIS maxCorrections haut (6) :
+    // il doit avoir la MARGE de plusieurs correctifs avant la sortie « bloqué »
+    // (au lieu d'être étouffé dès le 1er-3e correctif et de courir vers Claude).
+    const reg = new ToolRegistry();
+    reg.register({ name: "read_file", description: "", inputSchema: { path: z.string() }, handler: () => ({ text: "c" }) });
+    let iters = 0;
+    const post: PostFn = async () => { iters++; return { content: "", toolCalls: [call("read_file", { path: "a.js" })] }; };
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 30, repeatLimit: 1, maxCorrections: 6 });
+    check("la marge tient : pas de stuck avant ~maxCorrections correctifs", r.iterations >= 6);
+    check("finit quand même par sortir (stuck) une fois la marge épuisée", r.stuck === true);
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);

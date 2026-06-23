@@ -40,7 +40,12 @@ export type PostFn = (
 const DEFAULT_MAX_ITER = Number(process.env.ELEVE_AGENTIC_MAX_ITER ?? 24);
 const DEFAULT_CTX_MAX = Number(process.env.ELEVE_AGENTIC_CTX_MAX ?? 60_000);
 const DEFAULT_MAX_TOOL_RESULT = 12_000; // taille max d'un résultat d'outil réinjecté
-const DEFAULT_REPEAT_LIMIT = 3; // au-delà, on considère le modèle bloqué
+const DEFAULT_REPEAT_LIMIT = 3; // un MÊME appel identique au-delà → on injecte un correctif
+// Seuil de blocage : nb de correctifs CUMULÉS tolérés avant la sortie « bloqué ».
+// DÉCOUPLÉ de repeatLimit (révision 2026-06-24, « apprendre pas secourir ») : on
+// donne à l'Élève (GLM, classe Fable 5) la MARGE de se corriger lui-même plusieurs
+// fois plutôt que de l'étouffer dès 3 correctifs et de courir vers Claude.
+const DEFAULT_MAX_CORRECTIONS = Number(process.env.ELEVE_AGENTIC_MAX_CORRECTIONS ?? 8);
 const KEEP_RECENT = 6; // messages récents jamais compactés
 // Outils de LECTURE : relire le même fichier ne fait pas avancer → on coupe court
 // dès la 1re relecture identique (anti-sur-exploration, #149 fix GLM bloqué).
@@ -54,6 +59,7 @@ export interface AgenticOptions {
   ctxMaxChars?: number;
   maxToolResult?: number;
   repeatLimit?: number;
+  maxCorrections?: number; // seuil de correctifs cumulés avant sortie « bloqué »
   readOnlyTools?: string[]; // override des outils de lecture (défaut READ_ONLY_TOOLS)
   /** Tracer optionnel (best-effort). Absent → aucun span (tests purs). */
   tracer?: KernelTracer;
@@ -109,6 +115,7 @@ export async function buildAgentic(
   const ctxMax = opts.ctxMaxChars ?? DEFAULT_CTX_MAX;
   const maxToolResult = opts.maxToolResult ?? DEFAULT_MAX_TOOL_RESULT;
   const repeatLimit = opts.repeatLimit ?? DEFAULT_REPEAT_LIMIT;
+  const maxCorrections = opts.maxCorrections ?? DEFAULT_MAX_CORRECTIONS;
   const readOnly = new Set(opts.readOnlyTools ?? READ_ONLY_TOOLS);
   const tools = toOpenAITools(registry);
 
@@ -162,7 +169,7 @@ export async function buildAgentic(
             "⚠ Tu as DÉJÀ lu ceci plus haut — ne le relis pas. AGIS maintenant : edit_file/write_file pour " +
             "la modification demandée, ou finish si la tâche est faite.",
         });
-        if (corrections >= repeatLimit) {
+        if (corrections >= maxCorrections) {
           opts.onLog?.("⚠ Élève bloqué (relectures répétées) — sortie contrôlée.");
           return { text: "", toolTrace, finished: false, iterations: iter + 1, stuck: true };
         }
@@ -211,7 +218,7 @@ export async function buildAgentic(
       messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, maxToolResult) });
     }
 
-    if (corrections >= repeatLimit) {
+    if (corrections >= maxCorrections) {
       opts.onLog?.("⚠ Élève bloqué (appels répétés) — sortie contrôlée.");
       return { text: "", toolTrace, finished: false, iterations: iter + 1, stuck: true };
     }

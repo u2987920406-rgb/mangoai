@@ -566,7 +566,13 @@ Méthode : explore avec read_file/list_files/search_code → écris (write_file/
 tout est vert et la tâche faite, appelle finish(summary). Si un outil échoue, NE le répète pas en boucle :
 change d'approche (read_file au lieu du shell, ou fais directement ton edit). Pour une grande tâche à
 PARTIES INDÉPENDANTES, tu peux déléguer chaque partie via delegate, puis intégrer. Implémente RÉELLEMENT
-chaque fonctionnalité (pas de template de démo).`;
+chaque fonctionnalité (pas de template de démo).
+
+⚖ ÉCONOMIE DE LECTURE (capital) : lis le STRICT MINIMUM nécessaire avant d'agir — typiquement le(s)
+fichier(s) que tu vas modifier, pas tout le projet. NE relis JAMAIS un fichier déjà lu : tu as son contenu
+en mémoire. Un bon agent passe vite de l'exploration à l'ACTION et écrit du code ; explorer sans écrire ne
+fait PAS avancer la tâche. Au moindre doute « lire encore ou écrire ? » → ÉCRIS. Et tant que tu n'as pas
+appelé finish, la tâche n'est PAS terminée — va jusqu'au finish, ne t'arrête pas en cours de route.`;
 
 export async function askEleveAgentic(
   system: string,
@@ -840,59 +846,86 @@ export async function runRelay(
         label: b.card.label,
       };
     };
+    // Contexte commun à chaque (re)lancement du moteur. Seul le prompt `user`
+    // change entre relances (on y ajoute un coup de pouce) — d'où l'extraction ici.
+    const runCtx = {
+      projectDir,
+      system: agenticSystem,
+      post: deps.agenticPost ?? elevePost(callModel, callProvider),
+      buildRegistry: (pd: string) => buildEleveActionTools(pd, { allowRun: callPolicy.allowRun }),
+      buildUser: (subtask: string) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
+      depth: 0,
+      maxDepth: Number(process.env.ELEVE_DELEGATE_MAX_DEPTH ?? 2),
+      budget: { spawned: 0, max: Number(process.env.ELEVE_DELEGATE_MAX_AGENTS ?? 4) },
+      allowDelegate: callPolicy.allowDelegate,
+      resolveDelegateCtx,
+      tracer: getTracer(),
+      onTool: (n: string, a: string) => push(`  🔧 ${n} ${a.slice(0, 100)}`),
+      onLog: push,
+    };
+
+    // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage
+    // build-vert, AU LIEU de courir vers Claude, on AUTO-RELANCE l'Élève (GLM, classe
+    // Fable 5) avec un coup de pouce « arrête de lire, AGIS et termine » — il finit
+    // LUI-MÊME, à coût 0. L'escalade Claude devient un dernier recours OPT-IN.
+    const selfRelanceMax = Number(process.env.ELEVE_SELF_RELANCE_MAX ?? 2);
     let agErr = "";
     let result: AgenticBuildResult | null = null;
-    try {
-      // runAgenticTask = la boucle + la DÉLÉGATION (Phase D/E3) : l'orchestrateur
-      // confie des sous-tâches à des sous-agents bornés (profondeur + budget partagé),
-      // chacun pouvant prendre SON cerveau par intention. Outils gatés par la politique.
-      result = await runAgenticTask(user, {
-        projectDir,
-        system: agenticSystem,
-        post: deps.agenticPost ?? elevePost(callModel, callProvider),
-        buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: callPolicy.allowRun }),
-        buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
-        depth: 0,
-        maxDepth: Number(process.env.ELEVE_DELEGATE_MAX_DEPTH ?? 2),
-        budget: { spawned: 0, max: Number(process.env.ELEVE_DELEGATE_MAX_AGENTS ?? 4) },
-        allowDelegate: callPolicy.allowDelegate,
-        resolveDelegateCtx,
-        tracer: getTracer(),
-        onTool: (n, a) => push(`  🔧 ${n} ${a.slice(0, 100)}`),
-        onLog: push,
-      });
-      push(
-        `✓ moteur : ${result.iterations} itération(s), ${result.toolTrace.length} appel(s) d'outil` +
-          (result.finished ? " (finish)" : result.stuck ? " (bloqué)" : " (plafond)"),
-      );
-    } catch (e) {
-      agErr = `moteur agentique : ${(e as Error).message}`;
-      push(`⚠ ${agErr} — on laisse le juge trancher puis on escalade au besoin`);
-    }
-    const insp = await inspectReady();
-    if (insp.ok) {
-      // HONNÊTETÉ DU PLAFOND : un build vert ne prouve PAS que la tâche est faite.
-      // Si le moteur s'est arrêté SANS `finish` (plafond d'itérations ou blocage),
-      // il a peut-être juste « rien cassé » — on le DIT au lieu d'annoncer « Résolu ».
-      const concluded = result?.finished ?? false;
-      if (concluded) {
+    let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
+    let relances = 0;
+    let nudge = "";
+    for (;;) {
+      agErr = "";
+      try {
+        // runAgenticTask = la boucle + la DÉLÉGATION (Phase D/E3) : l'orchestrateur
+        // confie des sous-tâches à des sous-agents bornés (profondeur + budget partagé),
+        // chacun pouvant prendre SON cerveau par intention. Outils gatés par la politique.
+        result = await runAgenticTask(nudge ? `${user}\n\n${nudge}` : user, runCtx);
+        push(
+          `✓ moteur : ${result.iterations} itération(s), ${result.toolTrace.length} appel(s) d'outil` +
+            (result.finished ? " (finish)" : result.stuck ? " (bloqué)" : " (plafond)"),
+        );
+      } catch (e) {
+        agErr = `moteur agentique : ${(e as Error).message}`;
+        push(`⚠ ${agErr} — on laisse le juge trancher puis on escalade au besoin`);
+      }
+      insp = await inspectReady();
+      // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
+      if (!insp.ok || agErr) break;
+      // Build vert + finish explicite → résolu par l'Élève, coût 0.
+      if (result?.finished) {
         push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);
         return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log };
       }
-      // #1 — Build vert MAIS l'Élève s'est arrêté sans conclure (blocage/plafond).
-      // Au lieu de demander à Raf de relancer à la main, on ESCALADE AUTO vers le
-      // Maître pour TERMINER la tâche. Réversible : ELEVE_ESCALATE_ON_BLOCK=off.
+      // Build vert MAIS arrêt sans `finish` (blocage/plafond) : l'Élève se RELANCE.
+      if (relances < selfRelanceMax) {
+        relances++;
+        const why = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
+        push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève — il termine lui-même (souveraineté, coût 0)`);
+        nudge =
+          `⚠ Tu t'es arrêté sans appeler finish (${why}). Tu as DÉJÀ exploré le projet — n'explore PLUS, ne relis rien. ` +
+          `AGIS maintenant : fais directement les edit_file/write_file qui manquent pour terminer la tâche, ` +
+          `vérifie avec check_build, puis appelle finish. (relance ${relances}/${selfRelanceMax})`;
+        continue;
+      }
+      break; // relances épuisées, toujours bloqué sur build vert
+    }
+
+    if (insp.ok && !agErr) {
+      // HONNÊTETÉ DU PLAFOND : un build vert ne prouve PAS que la tâche est faite.
       const blockReason = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
-      if (process.env.ELEVE_ESCALATE_ON_BLOCK !== "off") {
-        push(`⚠ Élève arrêté sans conclure (${blockReason}) — escalade AUTO vers le Maître pour terminer`);
+      // Point 3 — escalade Claude = OPT-IN strict (ELEVE_ESCALATE_ON_BLOCK=on). Par
+      // défaut on N'appelle PAS le Maître : on laisse la main à Raf (souveraineté).
+      if (process.env.ELEVE_ESCALATE_ON_BLOCK === "on") {
+        push(`⚠ Élève toujours bloqué après ${relances} relance(s) (${blockReason}) — escalade vers le Maître (opt-in)`);
         return await finalizeEscalation(`L'Élève s'est arrêté sans terminer (${blockReason}).`, 1, {
           incomplete: true,
           eleveSummary: result?.text || `${result?.toolTrace.length ?? 0} appel(s) d'outil, sans conclusion.`,
         });
       }
       push(
-        `⚠ build vert MAIS le moteur s'est arrêté sans conclure (${blockReason}) — ` +
-          `la modification n'est peut-être PAS terminée. Relance pour qu'il continue, ou précise la demande.`,
+        `⚠ build vert MAIS l'Élève n'a pas appelé finish après ${relances} auto-relance(s) (${blockReason}) — ` +
+          `la modification n'est peut-être PAS terminée. Relance-le ou précise la demande.`,
       );
       return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
     }

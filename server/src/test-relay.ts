@@ -238,21 +238,83 @@ async function deterministic(): Promise<void> {
   }
 
   {
-    // F4 — #1 build VERT mais l'Élève ne conclut JAMAIS (bloqué) → auto-escalade pour TERMINER.
-    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F4-"));
-    let escIncomplete = false;
+    // F4a — RÉVISION 2026-06-24 « apprendre, pas secourir » : build VERT mais l'Élève
+    // ne conclut JAMAIS (bloqué). DÉFAUT = on N'appelle PAS Claude ; auto-relances
+    // épuisées → on rend la main à Raf (resolvedBy eleve, incomplete), coût 0.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F4a-"));
+    let escalated = false;
+    const prevR = process.env.ELEVE_SELF_RELANCE_MAX, prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_SELF_RELANCE_MAX = "1"; // 2 passes au total → test rapide
+    delete process.env.ELEVE_ESCALATE_ON_BLOCK; // défaut : escalade OFF
     const deps: RelayDeps = {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d), // marker OK → build vert
       ensureDeps: noEnsure,
-      escalate: async (ctx) => { escIncomplete = ctx.incomplete === true; return { axiom: false, costUsd: 0.02 }; },
+      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0.02 }; },
       // Le moteur écrit le marker (build vert) mais ne finit JAMAIS → seen/corrections → stuck.
       agenticPost: agenticScript([[call("write_file", { path: "marker.txt", content: "OK" }, 1)]]),
     };
     const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
-    console.log("\n  [F4] Build vert mais Élève bloqué → auto-escalade (terminer) :");
-    check("escalade AUTO déclenchée en mode 'terminer' (incomplete)", escIncomplete);
-    check("résolu par le Maître (pas laissé 'incomplete')", r.resolvedBy === "maitre" && r.success && !r.incomplete);
+    console.log("\n  [F4a] Défaut : Élève bloqué → auto-relance, PAS de Claude :");
+    check("Claude (Maître) JAMAIS appelé sur blocage", !escalated);
+    check("rendu à Raf : resolvedBy eleve + incomplete, coût 0", r.resolvedBy === "eleve" && r.incomplete === true && r.costUsd === 0);
+    if (prevR === undefined) delete process.env.ELEVE_SELF_RELANCE_MAX; else process.env.ELEVE_SELF_RELANCE_MAX = prevR;
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  {
+    // F4b — CŒUR de la révision : l'auto-relance RÉUSSIT. L'Élève cale au 1er passage,
+    // puis le coup de pouce (« arrête de lire, AGIS et termine ») le débloque → finish.
+    // Il finit LUI-MÊME, sans Claude, coût 0 (souveraineté).
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F4b-"));
+    let escalated = false;
+    const prevR = process.env.ELEVE_SELF_RELANCE_MAX;
+    process.env.ELEVE_SELF_RELANCE_MAX = "2";
+    // Le post inspecte le prompt user : tant que le coup de pouce (« relance ») n'est pas
+    // là, il écrit sans finir (→ stuck) ; dès qu'il arrive, il conclut par finish.
+    const post: PostFn = async (messages) => {
+      const userMsg = messages.find((m) => m.role === "user")?.content ?? "";
+      return userMsg.includes("relance")
+        ? { content: "", toolCalls: [call("finish", { summary: "terminé après relance" }, 9)] }
+        : { content: "", toolCalls: [call("write_file", { path: "marker.txt", content: "OK" }, 1)] };
+    };
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0.02 }; },
+      agenticPost: post,
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [F4b] Auto-relance réussie → l'Élève finit seul, sans Claude :");
+    check("Claude JAMAIS appelé", !escalated);
+    check("résolu par l'ÉLÈVE, succès, non incomplet, coût 0", r.resolvedBy === "eleve" && r.success && !r.incomplete && r.costUsd === 0);
+    if (prevR === undefined) delete process.env.ELEVE_SELF_RELANCE_MAX; else process.env.ELEVE_SELF_RELANCE_MAX = prevR;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  {
+    // F4c — escalade Claude = OPT-IN : avec ELEVE_ESCALATE_ON_BLOCK=on, après relances
+    // épuisées, on escalade en mode « terminer » (incomplete) → résolu par le Maître.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F4c-"));
+    let escIncomplete = false;
+    const prevR = process.env.ELEVE_SELF_RELANCE_MAX, prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_SELF_RELANCE_MAX = "1";
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on"; // opt-in
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async (ctx) => { escIncomplete = ctx.incomplete === true; return { axiom: false, costUsd: 0.02 }; },
+      agenticPost: agenticScript([[call("write_file", { path: "marker.txt", content: "OK" }, 1)]]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [F4c] Opt-in ELEVE_ESCALATE_ON_BLOCK=on → escalade (terminer) :");
+    check("escalade en mode 'terminer' (incomplete)", escIncomplete);
+    check("résolu par le Maître, pas laissé incomplete", r.resolvedBy === "maitre" && r.success && !r.incomplete);
+    if (prevR === undefined) delete process.env.ELEVE_SELF_RELANCE_MAX; else process.env.ELEVE_SELF_RELANCE_MAX = prevR;
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });
   }
 }

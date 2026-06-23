@@ -1,12 +1,15 @@
 ---
 type: meta
 tags: [wiki, log]
-maj: 2026-06-22
+maj: 2026-06-24
 ---
 
 # Journal du wiki
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
+
+## [2026-06-24] ingest | #146 Révision « apprendre, pas secourir » du moteur agentique
+Mise à jour de [[eleve-local]] (nouveau bullet anti-blocage + révision 4 points ; maj 2026-06-24). Raf recadre : ne plus auto-escalader vers Claude dès que l'Élève se bloque — il faut lui APPRENDRE à finir, pas le SECOURIR (souveraineté, « GLM classe Fable 5 »). Constat : GLM coupé à 8 itérations / plafond 24 (garde anti-tâtonnement trop serrée). 4 points codés : (1) `maxCorrections` découplé du `repeatLimit` (env `ELEVE_AGENTIC_MAX_CORRECTIONS`, défaut 8) → plus de marge ; (2) auto-relance de l'Élève sur blocage+build vert avec coup de pouce injecté (env `ELEVE_SELF_RELANCE_MAX`=2), $0 zéro Claude ; (3) escalade Claude = opt-in strict (`ELEVE_ESCALATE_ON_BLOCK=on`, défaut OFF → main rendue à Raf en `incomplete`) ; (4) contrat d'outils durci (« économie de lecture : lis le minimum, ne relis jamais, va jusqu'au finish »). Tests : eleve-runtime 34/34 (+#3c marge), relay F4a/b/c (défaut sans Claude · auto-relance qui réussit · opt-in escalade). tsc 0. PROUVÉ LIVE le même jour (GLM réel sur formation-toic) : tâche multi-fichiers → plafond 24 sans finish → auto-relance 1/2 → finish en 5 itérations → résolu par l'Élève coût 0, ZÉRO Claude ; modif câblée sur 4 fichiers + vite build vert (49 modules). 3 fichiers (`eleve-runtime.ts`, `eleve.ts`, `test-relay.ts`/`test-eleve-runtime.ts`). Zéro git.
 
 ## [2026-06-23] audit | Super audit général de MangoOS (rétrospective + empirique)
 Création de [[audit-general]] (page-entité) + [[audit-general-2026-06]] (document racine) + entrée dans [[index]]. Premier audit rétrospectif complet : 10 jours (13→23 juin), 85 idées, jalons A-D + moteur A-E, 3 angles croisés (promesse fondation/idée × récit historique/statut/wiki × preuve tests/live/chiffres). Vérité-terrain recalculée depuis workspace/.metrics.jsonl : 1661 tours, 182,87 $ tracés, 89,3 % succès, durée moy 86,9 s ; coût par modèle sonnet 135,16 $ / eleve 30,64 $ / opus 13,97 $ / haiku 3,10 $ ; resolvedBy maitre 1182 vs eleve 134 (souveraineté prouvée mais MINORITAIRE) ; 40 apps / 23 builds / 23 runs nocturnes / 69 axiomes ; RUN 06-20 gradient réutilisation 0→67 %. 3 écarts honnêtes : souveraineté récente non majoritaire · coût cloud GLM non tracé (182,87 $ sous-estimé, askEleveOpenAI n'extrait pas le coût, #134) · dette de promesses de périphérie (A2A, Image/Music/Office, vault, fine-tuning annoncés non construits ; 8 magasins annoncés vs 4 synthétisés). MangoQA en première classe (5 dimensions, ce qu'il a attrapé sur du réel + limites mesurées). Backlog priorisé (11 chantiers, colonnes Modèle+Effort). Verdict : MangoOS a changé de catégorie (clone Lovable → brouillon d'OS IA souverain) ; le cœur tient ses promesses, reste à rendre réel l'annoncé et majoritaire le démontré. Aucun code touché, zéro git.
