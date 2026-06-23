@@ -1,11 +1,12 @@
 import { lazy, Suspense, useState } from "react";
 import {
-  ArrowLeft, Activity, BarChart2, BarChart3, Clock, CreditCard,
+  ArrowLeft, Activity, BarChart2, BarChart3, Brain, Clock, CreditCard,
   Hash, Moon, Rss, Satellite, Scissors, Settings,
 } from "lucide-react";
 import { NEUTRAL } from "../neutral.js";
 
 // Composants système existants — réutilisés tels quels (code-split)
+const Brains           = lazy(() => import("./Brains.jsx"));
 const Billing          = lazy(() => import("./Billing.jsx"));
 const CronManager      = lazy(() => import("./CronManager.jsx"));
 const NocturnalReview  = lazy(() => import("./NocturnalReview.jsx"));
@@ -20,6 +21,10 @@ const Tokenizer        = lazy(() => import("./Tokenizer.jsx"));
 // Catégories de la sous-navigation (groupées). NEUTRAL masque les diagnostics Kernel.
 function buildGroups() {
   return [
+    {
+      title: "Intelligence",
+      items: [{ id: "brains", label: "Cerveaux", icon: Brain }],
+    },
     {
       title: "Compte",
       items: [{ id: "billing", label: "Facturation", icon: CreditCard }],
@@ -81,6 +86,7 @@ export default function Reglages({ onBack, onOpenProject }) {
 
   function renderSection() {
     switch (section) {
+      case "brains":    return <Brains onBack={onBack} />;
       case "billing":   return <Billing onBack={onBack} />;
       case "cron":      return <CronManager onBack={onBack} />;
       case "nocturnal": return <NocturnalReview onBack={onBack} onOpenProject={onOpenProject} />;

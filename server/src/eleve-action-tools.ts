@@ -38,7 +38,17 @@ async function guarded(fn: () => Promise<string>): Promise<KernelToolResult> {
  * appel pour TERMINER proprement le build. Signal de fin explicite, plus fiable
  * qu'un simple « plus aucun tool_call ».
  */
-export function buildEleveActionTools(projectDir: string): ToolRegistry {
+/** Politique d'outils (Phase E3) : gate les outils SENSIBLES selon la force MESURÉE
+ * du cerveau. Un cerveau au function-calling moins fiable (frontière #135) reçoit un
+ * sous-ensemble sûr : pas de shell libre (run_command) — qui est aussi le piège de
+ * tâtonnement Windows déjà durci. Défaut = tout permis (rétrocompatible). */
+export interface ToolPolicy {
+  /** Autorise run_command (shell libre). false → l'Élève n'a que read/write/edit/check_build/finish. */
+  allowRun?: boolean;
+}
+
+export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {}): ToolRegistry {
+  const allowRun = policy.allowRun ?? true;
   // On réutilise et on ÉTEND le registre lecture seule (même instance).
   const reg = buildEleveTools(projectDir);
 
@@ -83,7 +93,10 @@ export function buildEleveActionTools(projectDir: string): ToolRegistry {
     },
   ];
 
-  for (const t of actionTools) reg.register(t);
+  for (const t of actionTools) {
+    if (t.name === "run_command" && !allowRun) continue; // gaté pour cerveau faible
+    reg.register(t);
+  }
   return reg;
 }
 

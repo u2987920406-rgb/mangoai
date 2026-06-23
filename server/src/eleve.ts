@@ -26,10 +26,12 @@ import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
+import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
-import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult } from "./eleve-runtime.js";
+import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
+import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
 import { getTracer } from "./kernel-trace.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
 // constellations #74). Import sync, sans cycle (ces modules n'importent pas eleve).
@@ -63,6 +65,28 @@ export function completionsUrl(base: string): string {
 export const ELEVE_PROVIDER = normalizeEleveProvider(process.env.ELEVE_PROVIDER);
 const ELEVE_API_URL = process.env.ELEVE_API_URL ?? "https://api.deepseek.com/v1";
 const ELEVE_API_KEY = process.env.ELEVE_API_KEY?.trim() ?? "";
+
+// Phase E2 — provider PAR APPEL (multi-cerveaux). Le provider de l'Élève n'est
+// plus uniquement le global : chaque intention peut router vers SON cerveau (cloud
+// openai-compat OU ollama local). Le défaut reste le global (réversibilité totale).
+export const ELEVE_PROVIDER_DEFAULT: LLMProvider = ELEVE_PROVIDER === "openai" ? "openai" : "ollama";
+/** Un provider openai-compatible peut piloter la boucle agentique (function-calling). */
+export function isOpenAICompat(p: LLMProvider): boolean {
+  return p === "openai" || p === "deepseek" || p === "mistral" || p === "groq" || p === "litellm";
+}
+/** Résout l'endpoint (url + clé) d'un provider openai-compat. Défaut = endpoint
+ * Élève (ELEVE_API_URL/KEY, p.ex. Ollama Cloud) ; presets pour deepseek/mistral/groq/litellm. */
+function openAiEndpoint(provider: LLMProvider): { url: string; key: string } {
+  if (provider === "deepseek" || provider === "mistral" || provider === "groq") {
+    const p = PROVIDER_PRESETS[provider];
+    return { url: completionsUrl(p.baseURL), key: (process.env[p.apiKeyEnv] ?? ELEVE_API_KEY).trim() };
+  }
+  if (provider === "litellm") {
+    return { url: completionsUrl(process.env.LITELLM_BASE_URL ?? "http://localhost:4000/v1"), key: (process.env.LITELLM_API_KEY ?? "sk-litellm-local").trim() };
+  }
+  // "openai" générique (inclut Ollama Cloud) → endpoint Élève.
+  return { url: completionsUrl(ELEVE_API_URL), key: ELEVE_API_KEY };
+}
 
 export type ResolvedBy = "eleve" | "maitre" | "none";
 
@@ -98,6 +122,13 @@ export interface RelayOptions {
   profile?: ModelProfile;
   /** Surcharge le modèle Ollama/API pour cet appel (ex. UXUI_AGENT_MODEL). */
   eleveModel?: string;
+  /** Surcharge le PROVIDER pour cet appel (Phase E2 — multi-cerveaux par intention).
+   * Absent → provider global (.env). Permet de router une intention vers un cerveau
+   * cloud (openai-compat) ou local (ollama) indépendamment du global. */
+  provider?: LLMProvider;
+  /** Politique d'outils gatée par la force mesurée du cerveau (Phase E3). Absent →
+   * plein pouvoir (run_command + délégation), = comportement actuel. */
+  toolPolicy?: BrainPolicy;
   /** Prompt système COMPLET (toute la coquille : skills, design system, identité…)
    * assemblé par l'appelant (index.ts via assembleSystemPrompt). Utilisé par le
    * moteur agentique pour que le cerveau pilote la coquille entière, pas un prompt
@@ -331,13 +362,14 @@ async function askEleveOllama(system: string, user: string, model?: string): Pro
 // Même contrat d'E/S (system + user → texte) que la version Ollama → la boucle
 // de relais est INCHANGÉE. ⚠ Payant : la note n'est PAS captée dans les
 // métriques (le tour Élève reste compté coût 0 ; seule l'escalade Claude l'est).
-async function askEleveOpenAI(system: string, user: string, model?: string): Promise<string> {
-  if (!ELEVE_API_KEY) {
-    throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
+async function askEleveOpenAI(system: string, user: string, model?: string, provider: LLMProvider = "openai"): Promise<string> {
+  const { url, key } = openAiEndpoint(provider);
+  if (!key) {
+    throw new Error("Clé API Élève manquante (provider openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
   }
-  const res = await fetch(completionsUrl(ELEVE_API_URL), {
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ELEVE_API_KEY}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: model ?? ELEVE_MODEL,
       stream: false,
@@ -353,9 +385,10 @@ async function askEleveOpenAI(system: string, user: string, model?: string): Pro
   return data.choices?.[0]?.message?.content ?? "";
 }
 
-// Aiguillage du cerveau Élève selon le provider (.env). Défaut : Ollama local.
-async function askEleveDispatch(system: string, user: string, model?: string): Promise<string> {
-  return ELEVE_PROVIDER === "openai" ? askEleveOpenAI(system, user, model) : askEleveOllama(system, user, model);
+// Aiguillage du cerveau Élève selon le provider. Défaut = global (.env) ; un appel
+// peut router vers SON cerveau (Phase E2) : ollama local vs openai-compat cloud.
+async function askEleveDispatch(system: string, user: string, model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT): Promise<string> {
+  return provider === "ollama" ? askEleveOllama(system, user, model) : askEleveOpenAI(system, user, model, provider);
 }
 
 // ── Tour CONVERSATIONNEL de l'Élève (modes Discuter / Planifier) ──────────────
@@ -364,8 +397,8 @@ async function askEleveDispatch(system: string, user: string, model?: string): P
 // veut une réponse de conseil/plan, pas une construction. Modèle = ELEVE_MODEL
 // (l'Élève actif), surchargeable par appel. Le system prompt (posture Discussion
 // + contexte projet) est fourni par l'appelant (assembleSystemPrompt mode discuss).
-export async function chatEleve(system: string, user: string, model?: string): Promise<string> {
-  return askEleveDispatch(system, user, model);
+export async function chatEleve(system: string, user: string, model?: string, provider?: LLMProvider): Promise<string> {
+  return askEleveDispatch(system, user, model, provider ?? ELEVE_PROVIDER_DEFAULT);
 }
 
 // ── Boucle AGENTIQUE de l'Élève (function-calling) — vers « Mango = Claude » ────
@@ -390,10 +423,12 @@ async function postEleveCompletions(
   messages: ChatMessage[],
   tools: OpenAITool[] | null,
   model?: string,
+  provider: LLMProvider = "openai",
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
-  const res = await fetch(completionsUrl(ELEVE_API_URL), {
+  const { url, key } = openAiEndpoint(provider);
+  const res = await fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${ELEVE_API_KEY}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: model ?? ELEVE_MODEL,
       stream: false,
@@ -413,14 +448,89 @@ async function postEleveCompletions(
 
 /** Le transport injecté au runtime agentique (eleve-runtime.buildAgentic), lié à
  * la config Élève courante. Exige l'endpoint OpenAI-compat (function-calling). */
-export function elevePost(model?: string): PostFn {
-  if (ELEVE_PROVIDER !== "openai") {
-    throw new Error("runtime agentique : ELEVE_PROVIDER doit être « openai » (function-calling).");
+// ── E4 — Transport function-calling LOCAL (Ollama /api/chat `tools`) ───────────
+// Souveraineté : la MÊME boucle agentique tourne sur un modèle LOCAL tool-capable
+// (Qwen/GLM quantisé) — zéro cloud. Ollama parle nativement `tools`/`tool_calls`,
+// avec deux différences vs OpenAI : les arguments d'outil sont un OBJET (pas une
+// string JSON) et il n'y a pas d'id de tool_call. On isole la traduction dans des
+// mappers PURS, testables sans réseau.
+interface OllamaToolCall { function: { name: string; arguments: Record<string, unknown> | string } }
+interface OllamaMessage { role: string; content: string; tool_calls?: OllamaToolCall[] }
+
+function safeParseArgs(raw: string): Record<string, unknown> {
+  try { return JSON.parse(raw || "{}") as Record<string, unknown>; } catch { return {}; }
+}
+
+/** Nos ChatMessage → messages Ollama (arguments d'outil en OBJET). PUR. */
+export function toOllamaMessages(messages: ChatMessage[]): OllamaMessage[] {
+  return messages.map((m) => {
+    if (m.role === "assistant" && m.tool_calls?.length) {
+      return {
+        role: "assistant",
+        content: m.content ?? "",
+        tool_calls: m.tool_calls.map((tc) => ({ function: { name: tc.function.name, arguments: safeParseArgs(tc.function.arguments) } })),
+      };
+    }
+    return { role: m.role, content: m.content ?? "" };
+  });
+}
+
+/** Réponse Ollama → notre {content, toolCalls} (arguments re-stringifiés, id généré). PUR. */
+export function fromOllamaResponse(
+  data: { message?: { content?: string; tool_calls?: OllamaToolCall[] } },
+): { content: string; toolCalls?: ToolCall[] } {
+  const msg = data.message;
+  const content = msg?.content ?? "";
+  const tcs = msg?.tool_calls;
+  if (!tcs?.length) return { content };
+  const toolCalls: ToolCall[] = tcs.map((tc, i) => ({
+    id: `ollama_${i}_${tc.function?.name ?? "tool"}`,
+    function: {
+      name: tc.function?.name ?? "",
+      arguments: typeof tc.function?.arguments === "string" ? tc.function.arguments : JSON.stringify(tc.function?.arguments ?? {}),
+    },
+  }));
+  return { content, toolCalls };
+}
+
+async function postEleveOllamaTools(
+  messages: ChatMessage[],
+  tools: OpenAITool[] | null,
+  model?: string,
+): Promise<{ content: string; toolCalls?: ToolCall[] }> {
+  const res = await fetch(`${OLLAMA}/api/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      model: model ?? ELEVE_MODEL,
+      stream: false,
+      options: { temperature: 0 },
+      messages: toOllamaMessages(messages),
+      ...(tools ? { tools } : {}),
+    }),
+  });
+  if (!res.ok) throw new Error(`Ollama tools HTTP ${res.status}`);
+  return fromOllamaResponse((await res.json()) as { message?: { content?: string; tool_calls?: OllamaToolCall[] } });
+}
+
+/** Un provider sait-il piloter une boucle à outils ? openai-compat OU ollama local. */
+export function supportsTools(provider: LLMProvider): boolean {
+  return isOpenAICompat(provider) || provider === "ollama";
+}
+
+export function elevePost(model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT): PostFn {
+  // E4 — local souverain : Ollama tool-capable pilote la même boucle.
+  if (provider === "ollama") {
+    return (messages, tools) => postEleveOllamaTools(messages, tools, model);
   }
-  if (!ELEVE_API_KEY) {
-    throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
+  if (!isOpenAICompat(provider)) {
+    throw new Error(`runtime agentique : provider « ${provider} » non function-calling.`);
   }
-  return (messages, tools) => postEleveCompletions(messages, tools, model);
+  const { key } = openAiEndpoint(provider);
+  if (!key) {
+    throw new Error("Clé API Élève manquante (openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
+  }
+  return (messages, tools) => postEleveCompletions(messages, tools, model, provider);
 }
 
 // Base système minimale du moteur agentique quand l'appelant ne fournit pas le
@@ -612,6 +722,10 @@ export async function runRelay(
   // de défaut lorsque l'ENV n'est pas défini. Comportement inchangé si opts est vide.
   const callProfile    = opts.profile ?? PROFILE;
   const callModel      = opts.eleveModel ?? ELEVE_MODEL;
+  // Phase E2 — provider de l'appel (multi-cerveaux). Défaut = global.
+  const callProvider   = opts.provider ?? ELEVE_PROVIDER_DEFAULT;
+  // Phase E3 — politique d'outils. Défaut = plein pouvoir (= comportement actuel).
+  const callPolicy: BrainPolicy = opts.toolPolicy ?? { allowRun: true, allowDelegate: true };
   const callMaxAttempts = opts.maxEleveAttempts ?? Number(process.env.ELEVE_MAX_ATTEMPTS ?? callProfile.caps.maxAttempts);
   const callAxiomCap   = Number(process.env.ELEVE_AXIOM_CAP   ?? callProfile.caps.axiomCap);
   const callFileBudget = Number(process.env.ELEVE_FILE_BUDGET ?? callProfile.caps.fileBudget);
@@ -619,8 +733,8 @@ export async function runRelay(
   const callCaps       = { axiomCap: callAxiomCap, axiomFiles: callProfile.axiomFiles, fileBudget: callFileBudget, fileMax: callFileMax };
   // Si le modèle de l'appel diffère du modèle global, enveloppe avec le bon modèle.
   const callAskEleve: (sys: string, usr: string) => Promise<string> =
-    callModel !== ELEVE_MODEL
-      ? (sys, usr) => askEleveDispatch(sys, usr, callModel)
+    callModel !== ELEVE_MODEL || callProvider !== ELEVE_PROVIDER_DEFAULT
+      ? (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider)
       : deps.askEleve;
   const maitreModel = opts.maitreModel ?? "sonnet";
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
@@ -669,24 +783,46 @@ export async function runRelay(
   // coquille (prompt complet + axiomes + outils), au lieu de produire un contrat
   // <mangoos> en un coup. Additif et RÉVERSIBLE (ELEVE_AGENTIC=off → contrat ;
   // Gemma & co. jamais concernés). Claude reste l'escalade (finalizeEscalation).
-  if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (ELEVE_PROVIDER === "openai" || deps.agenticPost)) {
+  if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (supportsTools(callProvider) || deps.agenticPost)) {
     push(`🤖 Moteur agentique — l'Élève (${callModel}) construit avec ses outils…`);
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
+    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`;
     const user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
+    // Phase E3 — un sous-agent peut prendre SON cerveau via agentType (= intention),
+    // seulement s'il est explicitement routé, agentique et openai-compat ; sinon il
+    // hérite du cerveau du parent (Phase D). En test (transport injecté), pas de switch.
+    const resolveDelegateCtx = (agentType: string): DelegateOverride | null => {
+      if (deps.agenticPost) return null;
+      if (agentType !== "construire" && agentType !== "planifier" && agentType !== "discuter") return null;
+      const b = resolveBinding(agentType);
+      if (!b.card || !b.profile.agentic || !supportsTools(b.provider)) return null;
+      const pol = policyForBinding(b);
+      return {
+        system: agenticSystem,
+        post: elevePost(b.model, b.provider),
+        buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: pol.allowRun }),
+        buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
+        allowDelegate: pol.allowDelegate,
+        label: b.card.label,
+      };
+    };
     let agErr = "";
     let result: AgenticBuildResult | null = null;
     try {
-      // runAgenticTask = la boucle + la DÉLÉGATION (Phase D) : l'orchestrateur peut
-      // confier des sous-tâches à des sous-agents bornés (profondeur + budget partagé).
+      // runAgenticTask = la boucle + la DÉLÉGATION (Phase D/E3) : l'orchestrateur
+      // confie des sous-tâches à des sous-agents bornés (profondeur + budget partagé),
+      // chacun pouvant prendre SON cerveau par intention. Outils gatés par la politique.
       result = await runAgenticTask(user, {
         projectDir,
-        system: `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`,
-        post: deps.agenticPost ?? elevePost(callModel),
-        buildRegistry: (pd) => buildEleveActionTools(pd),
+        system: agenticSystem,
+        post: deps.agenticPost ?? elevePost(callModel, callProvider),
+        buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: callPolicy.allowRun }),
         buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
         depth: 0,
         maxDepth: Number(process.env.ELEVE_DELEGATE_MAX_DEPTH ?? 2),
         budget: { spawned: 0, max: Number(process.env.ELEVE_DELEGATE_MAX_AGENTS ?? 4) },
+        allowDelegate: callPolicy.allowDelegate,
+        resolveDelegateCtx,
         tracer: getTracer(),
         onTool: (n, a) => push(`  🔧 ${n} ${a.slice(0, 100)}`),
         onLog: push,

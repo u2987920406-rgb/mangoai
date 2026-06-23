@@ -80,6 +80,7 @@ export default function Sidebar({
       {!expanded && (
         <div
           onMouseEnter={() => setExpanded(true)}
+          onClick={() => setExpanded(true)}
           title="Ouvrir le dock"
           className="pointer-events-auto absolute right-0 top-1/2 flex h-16 w-3.5 -translate-y-1/2 cursor-pointer flex-col items-center justify-center gap-1 rounded-l-md border-y border-l border-[#FF9500]/30 bg-panel/85 backdrop-blur transition-colors hover:bg-panel"
         >

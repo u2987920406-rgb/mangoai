@@ -212,6 +212,17 @@ export async function buildAgentic(
 
 export const DELEGATE_TOOL = "delegate";
 
+/** Phase E3 — overrides de contexte pour un sous-agent doté de SON propre cerveau
+ * (résolus par intention/agentType). Injecté par eleve.ts ; le runtime reste pur. */
+export interface DelegateOverride {
+  system?: string;
+  post?: PostFn;
+  buildRegistry?: (projectDir: string) => ToolRegistry;
+  buildUser?: (subtask: string) => string;
+  allowDelegate?: boolean;
+  label?: string; // nom lisible du cerveau du sous-agent (trace)
+}
+
 export interface AgenticRunCtx {
   projectDir: string;
   /** System de base (coquille complète + contrat d'outils). */
@@ -226,6 +237,12 @@ export interface AgenticRunCtx {
   maxDepth: number;
   /** Budget PARTAGÉ (même objet à tous les niveaux) : borne le nb total de sous-agents. */
   budget: { spawned: number; max: number };
+  /** Phase E3 — false → l'outil delegate n'est PAS proposé (cerveau faible : on
+   * protège de la récursion). Défaut = autorisé. */
+  allowDelegate?: boolean;
+  /** Phase E3 — résout le cerveau d'un sous-agent depuis son agentType (= intention).
+   * Absent → le sous-agent hérite du cerveau du parent (comportement Phase D). */
+  resolveDelegateCtx?: (agentType: string) => DelegateOverride | null;
   tracer?: KernelTracer;
   maxIterations?: number;
   onTool?: (name: string, args: string) => void;
@@ -236,7 +253,8 @@ export interface AgenticRunCtx {
  * qu'on n'a pas atteint la profondeur max. Trace chaque niveau (span imbriqué). */
 export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<AgenticBuildResult> {
   const registry = ctx.buildRegistry(ctx.projectDir);
-  if (ctx.depth < ctx.maxDepth) registry.register(makeDelegateTool(ctx));
+  // Délégation proposée seulement si autorisée (cerveau fort) ET sous la profondeur max.
+  if (ctx.allowDelegate !== false && ctx.depth < ctx.maxDepth) registry.register(makeDelegateTool(ctx));
 
   const runOnce = () =>
     buildAgentic(ctx.system, user, registry, {
@@ -255,10 +273,17 @@ function makeDelegateTool(ctx: AgenticRunCtx): KernelTool {
   return {
     name: DELEGATE_TOOL,
     description:
-      "Délègue une SOUS-TÂCHE bien bornée et autonome à un sous-agent disposant des mêmes outils (lecture/écriture/build) sur le même projet. Sers-t'en pour découper une grande tâche en morceaux indépendants. Renvoie le résumé du sous-agent.",
-    inputSchema: { subtask: z.string().describe("La sous-tâche précise et autonome à confier au sous-agent") },
+      "Délègue une SOUS-TÂCHE bien bornée et autonome à un sous-agent sur le même projet. " +
+      "Optionnel : agentType (construire|planifier|discuter) confie la sous-tâche au CERVEAU adapté à cette intention " +
+      "(ex. un spécialiste code) ; sans agentType, le sous-agent emploie ton propre cerveau. Renvoie le résumé du sous-agent.",
+    inputSchema: {
+      subtask: z.string().describe("La sous-tâche précise et autonome à confier au sous-agent"),
+      agentType: z.string().optional().describe("Intention du sous-agent : construire | planifier | discuter (optionnel)"),
+    },
     handler: async (args) => {
-      const subtask = String((args as Record<string, unknown>).subtask ?? "").trim();
+      const a = args as Record<string, unknown>;
+      const subtask = String(a.subtask ?? "").trim();
+      const agentType = String(a.agentType ?? "").trim();
       if (!subtask) return { text: "sous-tâche vide", isError: true };
       if (ctx.budget.spawned >= ctx.budget.max) {
         return {
@@ -267,10 +292,22 @@ function makeDelegateTool(ctx: AgenticRunCtx): KernelTool {
         };
       }
       ctx.budget.spawned++;
-      ctx.onLog?.(`  ↳ délégation #${ctx.budget.spawned} (profondeur ${ctx.depth + 1}) : ${subtask.slice(0, 80)}`);
-      const sub = await runAgenticTask(ctx.buildUser(subtask), { ...ctx, depth: ctx.depth + 1 });
+      // Phase E3 — le sous-agent peut prendre SON cerveau selon agentType (résolveur
+      // injecté). Sinon il hérite du cerveau du parent (Phase D).
+      let subCtx: AgenticRunCtx = { ...ctx, depth: ctx.depth + 1 };
+      let brainNote = "";
+      if (agentType && ctx.resolveDelegateCtx) {
+        const ov = ctx.resolveDelegateCtx(agentType);
+        if (ov) {
+          subCtx = { ...subCtx, ...ov };
+          brainNote = ov.label ? ` [cerveau: ${ov.label}]` : ` [${agentType}]`;
+        }
+      }
+      const buildUser = subCtx.buildUser ?? ctx.buildUser;
+      ctx.onLog?.(`  ↳ délégation #${ctx.budget.spawned} (profondeur ${ctx.depth + 1})${brainNote} : ${subtask.slice(0, 80)}`);
+      const sub = await runAgenticTask(buildUser(subtask), subCtx);
       const head = sub.finished ? "✓ sous-agent terminé" : sub.stuck ? "⚠ sous-agent bloqué" : "⚠ sous-agent non conclu";
-      return { text: `${head} : ${sub.text || "(pas de résumé)"}` };
+      return { text: `${head}${brainNote} : ${sub.text || "(pas de résumé)"}` };
     },
   };
 }

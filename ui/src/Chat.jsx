@@ -451,6 +451,7 @@ export default function Chat({
           projectName,
           model,
           mode: turnMode,
+          intention: activeAction, // Phase E2 — routage multi-cerveaux (construire|planifier|discuter)
           template: template || undefined,
           sessionId: sessionRef.current ?? undefined,
           editTarget: useEdit ?? undefined,

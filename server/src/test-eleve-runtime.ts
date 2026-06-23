@@ -172,6 +172,53 @@ async function run() {
     check("borné bien avant le plafond", r.iterations < 40);
   }
 
+  console.log("\n[7] Phase E3 — allowDelegate=false : l'outil delegate n'est pas offert");
+  {
+    const writes: Array<Record<string, unknown>> = [];
+    const budget = { spawned: 0, max: 4 };
+    const { post } = scriptedPost([
+      { toolCalls: [call("delegate", { subtask: "x" })] }, // tenté → outil absent → erreur
+      { toolCalls: [call("finish", { summary: "fin" })] },
+    ]);
+    const r = await runAgenticTask("t", {
+      projectDir: ".", system: "s", post,
+      buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
+      depth: 0, maxDepth: 2, budget,
+      allowDelegate: false, // cerveau faible → pas de délégation
+    });
+    check("allowDelegate=false → aucun sous-agent lancé", budget.spawned === 0);
+    check("le parent termine quand même", r.finished === true);
+  }
+
+  console.log("\n[8] Phase E3 — agentType : le sous-agent prend SON cerveau (override injecté)");
+  {
+    const parentWrites: Array<Record<string, unknown>> = [];
+    const subWrites: Array<Record<string, unknown>> = [];
+    const budget = { spawned: 0, max: 4 };
+    const { post } = scriptedPost([
+      { toolCalls: [call("delegate", { subtask: "écris b.js", agentType: "construire" })] }, // parent → délègue au cerveau "construire"
+      { toolCalls: [call("write_file", { path: "b.js", content: "y" })] }, // sous-agent (registre OVERRIDE)
+      { toolCalls: [call("finish", { summary: "b.js fait" })] }, // sous-agent termine
+      { toolCalls: [call("finish", { summary: "tout fait" })] }, // parent termine
+    ]);
+    let overrideUsed = false;
+    const r = await runAgenticTask("construis", {
+      projectDir: ".", system: "sys-parent", post,
+      buildRegistry: () => stubRegistry(parentWrites), buildUser: (s) => s,
+      depth: 0, maxDepth: 2, budget,
+      resolveDelegateCtx: (agentType) => {
+        if (agentType !== "construire") return null;
+        overrideUsed = true;
+        // Cerveau du sous-agent = registre DIFFÉRENT (écrit dans subWrites) + label.
+        return { buildRegistry: () => stubRegistry(subWrites), label: "GLM spécialiste", buildUser: (s) => s };
+      },
+    });
+    check("resolveDelegateCtx consulté pour agentType", overrideUsed);
+    check("le sous-agent a utilisé le registre OVERRIDE (subWrites)", subWrites.length === 1 && subWrites[0].path === "b.js");
+    check("le registre du parent n'a PAS écrit", parentWrites.length === 0);
+    check("le label du cerveau apparaît dans le résultat de délégation", r.toolTrace.some((t) => t.name === "delegate"));
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

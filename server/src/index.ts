@@ -28,6 +28,7 @@ import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./visio
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
 import { runRelay, chatEleve, ELEVE_PROVIDER } from "./eleve.js";
+import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { assembleSystemPrompt } from "./scenario.js";
 import { uxuiProfile } from "./models/uxui.js";
 import { layoutProfile } from "./models/layout.js";
@@ -73,6 +74,7 @@ import { registerNocturnalRoutes } from "./nocturnal.js";
 import { registerPromptEvolutionRoutes } from "./prompt-evolution.js";
 import { registerRadarRoutes } from "./radar.js";
 import { registerBuildReviewRoutes } from "./build-review-routes.js";
+import { registerBrainRoutes } from "./brain-routes.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
 import { registerAgentFactoryRoutes } from "./agent-routes.js";
@@ -212,7 +214,7 @@ app.post("/api/home-chat", async (req, res) => {
 // Body: { prompt: string, projectName: string, sessionId?: string }
 // Streams AgentEvent objects as SSE. Creates the project on first message.
 app.post("/api/chat", async (req, res) => {
-  const { prompt, projectName, sessionId, model, mode, template, editTarget, tutorialId, clientMode, incrementId } = req.body as {
+  const { prompt, projectName, sessionId, model, mode, template, editTarget, tutorialId, clientMode, incrementId, intention } = req.body as {
     prompt?: string;
     projectName?: string;
     sessionId?: string;
@@ -223,6 +225,7 @@ app.post("/api/chat", async (req, res) => {
     tutorialId?: number; // #56 Chantier C : tour joué DANS le tutoriel (posture pédagogue)
     clientMode?: boolean; // Mode Client : désactive le goût personnel, ancre sur les fichiers du client
     incrementId?: string; // #139 Gros Projet : id de l'incrément Kanban construit ce tour (réconcilié après commit)
+    intention?: string; // Phase E2 — bouton actif (construire|planifier|discuter) pour le routage multi-cerveaux
   };
   // Posture tutoriel injectée dans le system prompt quand on construit dans un tuto.
   const tutorial = typeof tutorialId === "number" && tutorialId >= 1 ? { id: tutorialId } : null;
@@ -429,8 +432,11 @@ app.post("/api/chat", async (req, res) => {
       // que le mode discuss de Claude (DISCUSS_RULES + contexte projet via
       // assembleSystemPrompt), mais le cerveau est l'Élève. Ainsi « rester sur
       // l'Élève » vaut pour les 3 actions, pas seulement Construire.
-      const agentTier = ELEVE_PROVIDER === "openai" ? "cloud" : "local";
-      const eleveName = process.env.ELEVE_MODEL ?? "Élève";
+      // Phase E2 — multi-cerveaux : Planifier et Discuter routent vers LEUR cerveau
+      // (registre .brains). Sans affectation → repli global (.env), inchangé.
+      const binding = resolveBinding(deriveIntention(true, intention));
+      const agentTier = binding.provider === "ollama" ? "local" : "cloud";
+      const eleveName = binding.card?.label ?? process.env.ELEVE_MODEL ?? "Élève";
       send({ type: "status", text: `💬 L'agent ${eleveName} (${agentTier}) réfléchit…` });
       const system = assembleSystemPrompt({ mode: "discuss", model: "eleve", projectDir: dir });
       // L'Élève n'a pas de session SDK persistante comme Claude : on lui repasse
@@ -442,7 +448,7 @@ app.post("/api/chat", async (req, res) => {
         .map((e) => `${e.role === "user" ? "Humain" : "MangoOS"} : ${e.text}`)
         .join("\n");
       const userMsg = recent ? `${recent}\n\nHumain : ${prompt}` : prompt;
-      const answer = (await chatEleve(system, userMsg)).trim() || "(réponse vide de l'Élève)";
+      const answer = (await chatEleve(system, userMsg, binding.model, binding.provider)).trim() || "(réponse vide de l'Élève)";
       record("agent", answer);
       send({ type: "text", text: answer });
       lastResult.current = { costUsd: 0, numTurns: 1 };
@@ -460,9 +466,14 @@ app.post("/api/chat", async (req, res) => {
             ? (process.env.UXUI_AGENT_MODEL ?? process.env.ELEVE_MODEL ?? "gemma4:12b")
             : (process.env.LAYOUT_AGENT_MODEL ?? process.env.ELEVE_MODEL ?? "gemma4:12b"))
         : undefined;
-      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : (process.env.ELEVE_MODEL ?? "Élève");
+      // Phase E2 — Construire route vers SON cerveau (registre .brains) : modèle,
+      // provider et profil (caps/agentic mesurés) viennent du binding. Spécialistes
+      // (uxui/layout) gardent leur profil explicite. Sans affectation → repli global.
+      const buildBinding = !specialistProfile && model === "eleve" ? resolveBinding(deriveIntention(false, intention)) : null;
+      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : (buildBinding?.card?.label ?? process.env.ELEVE_MODEL ?? "Élève");
       // « local » pour Ollama local, « cloud » pour un endpoint distant (Ollama Cloud, etc.).
-      const agentTier = ELEVE_PROVIDER === "openai" ? "cloud" : "local";
+      const provForTier = buildBinding?.provider ?? (ELEVE_PROVIDER === "openai" ? "openai" : "ollama");
+      const agentTier = provForTier === "ollama" ? "local" : "cloud";
       send({ type: "status", text: `🎓 L'agent ${agentLabel} (${agentTier}) prend la main…` });
       // Prompt système COMPLET (toute la coquille : skills, design system, identité,
       // mémoire…) — mêmes blocs que Claude. Le moteur agentique (profil fort + GLM)
@@ -470,7 +481,11 @@ app.post("/api/chat", async (req, res) => {
       // contrat (Gemma) runRelay l'ignore → zéro impact.
       const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir });
       const r = await runRelay(agentPrompt, dir, {
-        ...(specialistProfile ? { profile: specialistProfile, eleveModel: specialistModel } : {}),
+        ...(specialistProfile
+          ? { profile: specialistProfile, eleveModel: specialistModel }
+          : buildBinding
+            ? { profile: buildBinding.profile, eleveModel: buildBinding.model, provider: buildBinding.provider, toolPolicy: policyForBinding(buildBinding) }
+            : {}),
         systemFull,
         onLog: (line) => {
           record("status", line);
@@ -845,6 +860,7 @@ registerCouncilSkillsRoutes(app);
 registerBackendServerRoutes(app);
 registerProjectIORoutes(app, () => agentBusy);
 registerFeedbackRoutes(app);
+registerBrainRoutes(app);
 
 app.post("/api/stop", async (_req, res) => {
   const stopped = await interruptAgent();

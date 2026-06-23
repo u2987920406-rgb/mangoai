@@ -68,6 +68,16 @@ async function run() {
   const f = await reg.invoke(FINISH_TOOL, { summary: "todo app livrée, build vert" });
   check("finish renvoie le résumé, sans erreur", !f.isError && f.text.includes("todo app"));
 
+  console.log("\n[6] Phase E3 — gating de run_command (cerveau faible)");
+  {
+    const gated = buildEleveActionTools(dir, { allowRun: false });
+    check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
+    check("7 outils (run_command retiré)", gated.names().length === 7);
+    check("write/edit/read/check_build/finish conservés", ["write_file", "edit_file", "read_file", "check_build", "finish"].every((n) => gated.has(n)));
+    const full = buildEleveActionTools(dir, { allowRun: true });
+    check("run_command présent quand allowRun=true (défaut)", full.has("run_command") && reg.has("run_command"));
+  }
+
   fs.rmSync(dir, { recursive: true, force: true });
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-action-tools : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
