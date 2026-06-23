@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildEleveActionTools, FINISH_TOOL, isShellReadCommand } from "./eleve-action-tools.js";
+import { buildEleveActionTools, FINISH_TOOL, isShellReadCommand, isAllowedDependency } from "./eleve-action-tools.js";
 import { toOpenAITools } from "./kernel-mcp.js";
 
 let pass = 0;
@@ -29,13 +29,13 @@ const reg = buildEleveActionTools(dir);
 
 async function run() {
   console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2)");
-  check("8 outils enregistrés", reg.names().length === 8);
+  check("9 outils enregistrés", reg.names().length === 9);
   check(
-    "write_file/edit_file/run_command/finish présents",
-    ["write_file", "edit_file", "run_command", "finish"].every((n) => reg.has(n)),
+    "write_file/edit_file/run_command/add_dependency/finish présents",
+    ["write_file", "edit_file", "run_command", "add_dependency", "finish"].every((n) => reg.has(n)),
   );
   check("outils lecture Phase 1 conservés", ["read_file", "list_files", "search_code", "check_build"].every((n) => reg.has(n)));
-  check("toOpenAITools → 8 functions valides", toOpenAITools(reg).length === 8 && toOpenAITools(reg).every((t) => t.type === "function"));
+  check("toOpenAITools → 9 functions valides", toOpenAITools(reg).length === 9 && toOpenAITools(reg).every((t) => t.type === "function"));
 
   console.log("\n[2] write_file");
   const w = await reg.invoke("write_file", { path: "src/new.js", content: "export const x = 7;\n" });
@@ -72,7 +72,8 @@ async function run() {
   {
     const gated = buildEleveActionTools(dir, { allowRun: false });
     check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
-    check("7 outils (run_command retiré)", gated.names().length === 7);
+    check("8 outils (run_command retiré)", gated.names().length === 8);
+    check("add_dependency conservé même pour cerveau faible (curé, sûr)", gated.has("add_dependency"));
     check("write/edit/read/check_build/finish conservés", ["write_file", "edit_file", "read_file", "check_build", "finish"].every((n) => gated.has(n)));
     const full = buildEleveActionTools(dir, { allowRun: true });
     check("run_command présent quand allowRun=true (défaut)", full.has("run_command") && reg.has("run_command"));
@@ -91,6 +92,17 @@ async function run() {
     // Une commande de build/vérif ne contient pas de token de lecture → la garde la laisse passer.
     check("npx tsc --noEmit NON bloqué par la garde", !isShellReadCommand("npx tsc --noEmit"));
     check("npx vite build NON bloqué par la garde", !isShellReadCommand("npx vite build"));
+  }
+
+  console.log("\n[8] add_dependency : allowlist curée (le cas lucide-react)");
+  {
+    check("lucide-react autorisé", isAllowedDependency("lucide-react"));
+    check("clsx / zod / date-fns autorisés", ["clsx", "zod", "date-fns"].every(isAllowedDependency));
+    check("lib hors liste refusée", !isAllowedDependency("left-pad"));
+    check("nom de paquet malveillant refusé (injection)", !isAllowedDependency("lucide-react; rm -rf /"));
+    // Refus SANS installation (pas de réseau en test) : on n'appelle add_dependency que sur une lib HORS liste.
+    const bad = await reg.invoke("add_dependency", { package: "some-random-unlisted-lib" });
+    check("add_dependency refuse une lib hors liste (isError, sans installer)", bad.isError === true && /autoris/.test(bad.text));
   }
 
   fs.rmSync(dir, { recursive: true, force: true });

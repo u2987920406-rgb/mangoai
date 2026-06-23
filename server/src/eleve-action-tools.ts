@@ -12,6 +12,7 @@
 // d'ambiguïté du <find> sont réutilisés tels quels. Un échec d'outil n'interrompt
 // PAS la boucle : il revient au modèle (isError) qui se corrige tout seul.
 
+import { spawn } from "node:child_process";
 import { z } from "zod";
 import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
@@ -19,6 +20,57 @@ import { applyWrite, applyEdit, applyRun } from "./executor.js";
 
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
 const RUN_TIMEOUT_MS = Number(process.env.ELEVE_RUN_TIMEOUT_MS ?? 120_000);
+/** Timeout d'un `npm install <pkg>` (réseau → marge large). */
+const ADD_DEP_TIMEOUT_MS = Number(process.env.ELEVE_ADD_DEP_TIMEOUT_MS ?? 180_000);
+
+// add_dependency (#146, 2026-06-24) : le moteur interdit `npm install` libre (sécurité),
+// mais l'agent a besoin de VRAIES libs (ex. lucide-react pour des icônes) — sans ça il
+// écrit des imports non résolus → app cassée. On lui donne un outil d'install CURÉ : une
+// ALLOWLIST de libs front populaires et sûres, installées via npm --save (donc persistées
+// dans package.json → build reproductible). Hors liste → refus, écris sans lib externe.
+export const SAFE_DEPENDENCIES = new Set<string>([
+  // icônes / classes utilitaires
+  "lucide-react", "react-icons", "clsx", "classnames", "tailwind-merge",
+  // état
+  "zustand", "jotai", "immer",
+  // dates
+  "date-fns", "dayjs",
+  // graphes
+  "recharts", "chart.js", "react-chartjs-2",
+  // formulaires / validation
+  "react-hook-form", "zod", "yup",
+  // routage / data
+  "react-router-dom", "axios", "swr", "@tanstack/react-query",
+  // animation / ids / utils
+  "framer-motion", "nanoid", "uuid", "lodash-es",
+]);
+
+/** Nom de paquet acceptable ET dans l'allowlist (double garde : pas d'injection shell). */
+export function isAllowedDependency(pkg: string): boolean {
+  return /^[@a-z0-9][@a-z0-9/._-]*$/.test(pkg) && SAFE_DEPENDENCIES.has(pkg);
+}
+
+/** `npm install <pkg> --save` borné, dans le projet (pkg DÉJÀ validé par l'allowlist). */
+function npmAdd(projectDir: string, pkg: string, timeoutMs: number): Promise<{ ok: boolean; output: string }> {
+  return new Promise((resolve) => {
+    const p = spawn(`npm install ${pkg} --save`, { cwd: projectDir, shell: true, windowsHide: true });
+    let out = "";
+    p.stdout?.on("data", (d) => (out += d.toString()));
+    p.stderr?.on("data", (d) => (out += d.toString()));
+    const timer = setTimeout(() => {
+      p.kill();
+      resolve({ ok: false, output: "timeout — npm install trop long" });
+    }, timeoutMs);
+    p.on("exit", (code) => {
+      clearTimeout(timer);
+      resolve({ ok: code === 0, output: out.slice(-2000) });
+    });
+    p.on("error", (e) => {
+      clearTimeout(timer);
+      resolve({ ok: false, output: (e as Error).message });
+    });
+  });
+}
 
 // Garde anti-shell-lecture (#146 révision 2026-06-24) : run_command sert AUX BUILDS,
 // jamais à LIRE/lister un fichier. GLM contournait l'anti-sur-exploration en lisant
@@ -110,6 +162,28 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
           });
         }
         return guarded(() => applyRun(projectDir, command, RUN_TIMEOUT_MS));
+      },
+    },
+    {
+      name: "add_dependency",
+      description:
+        "Installe une dépendance npm du PROJET (depuis une liste de libs autorisées) et l'ajoute à package.json. " +
+        "Appelle-le AVANT d'importer une lib externe (ex. add_dependency('lucide-react') avant d'importer des icônes). " +
+        "Si la lib n'est pas autorisée, écris le code SANS elle (ex. SVG inline pour des icônes). N'utilise JAMAIS run_command pour installer.",
+      inputSchema: { package: z.string().describe("Nom exact du paquet npm, ex. lucide-react") },
+      handler: async (args): Promise<KernelToolResult> => {
+        const pkg = String(args.package ?? "").trim();
+        if (!isAllowedDependency(pkg)) {
+          return {
+            text:
+              `⚠ "${pkg}" n'est pas dans la liste des dépendances autorisées. Permises : ${[...SAFE_DEPENDENCIES].join(", ")}. ` +
+              "Sinon, écris le code SANS lib externe (ex. SVG inline pour des icônes).",
+            isError: true,
+          };
+        }
+        const r = await npmAdd(projectDir, pkg, ADD_DEP_TIMEOUT_MS);
+        if (!r.ok) return { text: `Échec de l'installation de ${pkg} : ${r.output}`, isError: true };
+        return { text: `✓ ${pkg} installé et ajouté à package.json. Tu peux maintenant l'importer.` };
       },
     },
     {

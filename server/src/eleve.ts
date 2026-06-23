@@ -552,6 +552,7 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 - write_file : créer ou réécrire un fichier complet
 - edit_file : remplacer un extrait précis et unique d'un fichier
 - run_command : lancer une commande (ex. \`npx tsc --noEmit\`) — INTERDIT : npm install, git, rm
+- add_dependency : installer une lib npm AUTORISÉE et l'ajouter à package.json (ex. add_dependency('lucide-react'))
 - check_build : vérifier objectivement l'état du build
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
@@ -560,6 +561,11 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 (cat, ls, type, Get-Content, pwd… échouent ou varient selon l'OS). Pour lire/lister/chercher, utilise
 EXCLUSIVEMENT read_file / list_files / search_code — read_file te renvoie déjà le contenu, ne le redouble
 pas par du shell. Réserve run_command aux builds/vérifs (npx tsc --noEmit, npx vite build).
+
+⚠ DÉPENDANCES : pour utiliser une lib externe (ex. lucide-react pour des icônes), appelle D'ABORD
+add_dependency('nom-du-paquet) — n'importe JAMAIS une lib sans l'avoir installée (sinon l'import est non
+résolu et le build casse). Si add_dependency la refuse (hors liste), écris le code SANS elle (ex. SVG inline).
+N'utilise jamais run_command pour npm install.
 
 Méthode : explore avec read_file/list_files/search_code → écris (write_file/edit_file) → APRÈS chaque
 écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand
