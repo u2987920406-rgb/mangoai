@@ -16,6 +16,7 @@ import { spawn } from "node:child_process";
 import { z } from "zod";
 import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
+import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
@@ -199,6 +200,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
     if (t.name === "run_command" && !allowRun) continue; // gaté pour cerveau faible
     reg.register(t);
   }
+
+  // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
+  // défaut OFF → zéro régression). Profite aussi aux sous-agents délégués.
+  if (process.env.ELEVE_VISION === "on") {
+    for (const t of buildEleveVisionTools(projectDir)) reg.register(t);
+  }
+
   return reg;
 }
 

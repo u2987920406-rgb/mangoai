@@ -580,6 +580,15 @@ en mémoire. Un bon agent passe vite de l'exploration à l'ACTION et écrit du c
 fait PAS avancer la tâche. Au moindre doute « lire encore ou écrire ? » → ÉCRIS. Et tant que tu n'as pas
 appelé finish, la tâche n'est PAS terminée — va jusqu'au finish, ne t'arrête pas en cours de route.`;
 
+// Clause VISION (ajoutée au contrat seulement si ELEVE_VISION=on) — donne à
+// l'Élève l'instinct de VOIR son rendu. Encode VISION-01 + UIUX-11.
+const AGENTIC_VISION_CLAUSE = `\n\n👁 VISION (capital) : tu disposes aussi de l'outil vois_ecran(objectif) — il capture le RENDU réel
+de l'app et te renvoie une critique visuelle. Un build vert ne prouve PAS l'apparence. Après tout travail
+d'UI (styles, layout, couleurs, composants visibles), appelle vois_ecran pour VÉRIFIER toi-même la cohérence
+de charte sur TOUT l'écran (pas seulement la devanture) : couleurs/typographie/espacements homogènes,
+lisibilité, alignement, aucun écran resté dans un thème incohérent. Corrige les écarts vus (edit_file), puis
+re-vérifie si besoin AVANT finish. Ne code plus à l'aveugle.`;
+
 export async function askEleveAgentic(
   system: string,
   user: string,
@@ -832,7 +841,8 @@ export async function runRelay(
   if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (supportsTools(callProvider) || deps.agenticPost)) {
     push(`🤖 Moteur agentique — l'Élève (${callModel}) construit avec ses outils…`);
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
-    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}`;
+    const visionClause = process.env.ELEVE_VISION === "on" ? AGENTIC_VISION_CLAUSE : "";
+    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}`;
     const user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     // Phase E3 — un sous-agent peut prendre SON cerveau via agentType (= intention),
     // seulement s'il est explicitement routé, agentique et openai-compat ; sinon il

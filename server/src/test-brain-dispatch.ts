@@ -50,7 +50,7 @@ async function run() {
     // Provider invalide → repli sur le défaut de cet agent.
     fs.writeFileSync(REG, JSON.stringify({ vision: { provider: "pas-un-provider", model: "x" } }));
     const coerced = loadBrainRegistry();
-    check("provider invalide → repli défaut (vision=openai)", coerced.vision.provider === "openai");
+    check("provider invalide → repli défaut (vision=ollama)", coerced.vision.provider === "ollama");
 
     // JSON corrompu → DEFAULT_REGISTRY complet.
     fs.writeFileSync(REG, "{ ceci n'est pas du json ");
@@ -62,7 +62,7 @@ async function run() {
   {
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const b = getBrainConfig("vision");
-    check("vision = openai/glm-4v + baseUrl Zhipu + apiKeyEnv", b.provider === "openai" && b.model === "glm-4v" && !!b.baseUrl && b.apiKeyEnv === "ZHIPU_API_KEY");
+    check("vision = ollama/qwen3.5:cloud (VL cloud souverain)", b.provider === "ollama" && b.model === "qwen3.5:cloud");
   }
 
   console.log("\n[3] parseAgentResponse — 4 niveaux");
@@ -141,6 +141,15 @@ async function run() {
       ask: async (_s, user) => { rawUser = user; return okJson(); },
     });
     check("trustExternal → entrée NON encadrée", rawUser === "contenu de confiance");
+
+    // freeform → pas de contrat Mango, texte brut renvoyé tel quel (cerveau VL en prose).
+    let ffSystem = "";
+    const rFf = await dispatch("vision", "Tu es l'œil.", "objectif", {
+      freeform: true, trustExternal: true, sleep: noSleep,
+      ask: async (system) => { ffSystem = system; return "Charte cohérente, rien à signaler."; },
+    });
+    check("freeform → contrat Mango NON injecté", ffSystem === "Tu es l'œil." && !ffSystem.includes("RÈGLE ABSOLUE"));
+    check("freeform → prose brute dans summary (status ok)", rFf.status === "ok" && rFf.summary === "Charte cohérente, rien à signaler.");
   }
 
   console.log("\n[9] dispatch — circuit breaker, localOnly, timeout");

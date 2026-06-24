@@ -15,10 +15,8 @@
     "timeoutMs": 120000
   },
   "vision": {
-    "provider": "openai",
-    "model": "glm-4v",
-    "baseUrl": "https://open.bigmodel.cn/api/paas/v4",
-    "apiKeyEnv": "ZHIPU_API_KEY",
+    "provider": "ollama",
+    "model": "qwen3.5:cloud",
     "timeoutMs": 60000
   },
   "designer_ux": {

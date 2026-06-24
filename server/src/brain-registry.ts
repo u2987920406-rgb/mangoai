@@ -32,7 +32,7 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   orchestrateur: { provider: "claude", model: "opus", timeoutMs: 30_000 },
   architecte:    { provider: "claude", model: "opus", timeoutMs: 45_000 },
   codeur:        { provider: "ollama", model: "gemma4:12b", timeoutMs: 120_000 },
-  vision:        { provider: "openai", model: "glm-4v", baseUrl: "https://open.bigmodel.cn/api/paas/v4", apiKeyEnv: "ZHIPU_API_KEY", timeoutMs: 60_000 },
+  vision:        { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 60_000 },
   designer_ux:   { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
   extracteur:    { provider: "claude", model: "haiku", timeoutMs: 30_000 },
   testeur:       { provider: "claude", model: "sonnet", timeoutMs: 45_000 },

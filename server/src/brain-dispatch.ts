@@ -25,6 +25,10 @@ export interface DispatchOpts {
   session?: PipelineSession
   /** false (défaut) → `user` est encadré par sanitizeExternal() avant l'envoi. */
   trustExternal?: boolean
+  /** true → mode PROSE LIBRE : n'injecte pas le contrat Mango et ne parse pas de
+   *  JSON ; renvoie le texte brut du modèle dans `summary` (status 'ok'). Pour les
+   *  cerveaux qui répondent en prose (ex. lecteur d'images VL — #vision/Sharingan). */
+  freeform?: boolean
   /** Transport injectable (tests). Défaut : askLLM. */
   ask?: AskFn
   /** Sleep injectable (tests du rate limiter / backoff). Défaut : vrai setTimeout. */
@@ -94,7 +98,7 @@ export async function dispatch(
   opts: DispatchOpts = {},
 ): Promise<AgentResult> {
   const started = Date.now()
-  const { session, trustExternal = false, imageBase64 } = opts
+  const { session, trustExternal = false, imageBase64, freeform = false } = opts
   const ask = opts.ask ?? askLLM
   const sleep = opts.sleep ?? realSleep
 
@@ -114,7 +118,8 @@ export async function dispatch(
   }
 
   // 4 & 5. Injection du contrat + encadrement anti-injection de l'entrée externe.
-  const fullSystem = `${MANGO_CONTRACT_PROMPT}\n\n${system}`
+  // En mode freeform, on n'impose PAS le contrat Mango (le cerveau répond en prose).
+  const fullSystem = freeform ? system : `${MANGO_CONTRACT_PROMPT}\n\n${system}`
   const safeUser = trustExternal ? user : sanitizeExternal(user)
 
   // 6. Rate limiting (avec retry exponentiel interne).
@@ -135,6 +140,12 @@ export async function dispatch(
     const raced = await withAgentTimeout(ask(fullSystem, safeUser, askOpts), brain.timeoutMs ?? DEFAULT_TIMEOUT_MS, agentId)
     if (isTimeout(raced)) {
       result = degraded(agentId, `délai dépassé (${brain.timeoutMs ?? DEFAULT_TIMEOUT_MS} ms)`, Date.now() - started, "timeout")
+    } else if (freeform) {
+      // 8b. Prose libre : pas de parsing, le texte brut EST le résultat.
+      const txt = (raced ?? "").trim()
+      result = txt
+        ? { status: "ok", agent: agentId, summary: txt, data: {}, confidence: 1, durationMs: Date.now() - started }
+        : degraded(agentId, "réponse vide du cerveau", Date.now() - started)
     } else {
       // 8. Parsing robuste.
       result = parseAgentResponse(raced, agentId, Date.now() - started)
