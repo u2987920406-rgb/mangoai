@@ -118,7 +118,7 @@ interface Variant {
 
 export async function generateTasteSkins(
   projectDir: string,
-  opts: { k?: number; directions?: string[]; outDir: string; maille?: "skin" | "hero" },
+  opts: { k?: number; directions?: string[]; outDir: string; maille?: "skin" | "hero"; favorIds?: string[] },
   onProgress: ProgressFn,
   deps: TasteRenderDeps = {},
 ): Promise<SkinRender[]> {
@@ -141,18 +141,24 @@ export async function generateTasteSkins(
   const refs = loadTasteReferences(refDir);
   const k = opts.k ?? 4;
 
+  // Boucle fermée (#149 v2) : amorce le sampler avec les favoris appris (exploitation),
+  // mais PLAFONNÉE à ~la moitié de k → on garde toujours des places d'exploration (le
+  // farthest-point / pas régulier remplit le reste). Aucun favori → undefined → inchangé.
+  const seedFavorites = (ids?: string[]): string[] | undefined =>
+    ids?.length ? ids.slice(0, Math.max(1, Math.floor(k / 2))) : undefined;
+
   // Construction des variantes selon la maille.
   let variants: Variant[];
   if (opts.maille === "hero") {
     // Maille « héros » : STYLE fixe (une direction), K COMPOSITIONS de hero différentes.
     const baseId = opts.directions?.[0];
     const base = (baseId ? catalogDirection(baseId) : null) ?? sampleDirections(1)[0];
-    variants = sampleCompositions(k).map((c) => ({ id: c.id, name: c.name, dir: base, composition: c }));
+    variants = sampleCompositions(k, { favorIds: seedFavorites(opts.favorIds) }).map((c) => ({ id: c.id, name: c.name, dir: base, composition: c }));
   } else {
     // Maille « skin » (défaut) : K DIRECTIONS différentes (composition libre).
     const dirs: TasteDirection[] = opts.directions?.length
       ? opts.directions.map((id) => catalogDirection(id)).filter((d): d is TasteDirection => d !== null)
-      : sampleDirections(k);
+      : sampleDirections(k, { favorIds: seedFavorites(opts.favorIds) });
     variants = dirs.map((d) => ({ id: d.id, name: d.name, dir: d }));
   }
 

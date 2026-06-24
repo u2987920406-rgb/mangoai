@@ -14,6 +14,7 @@ import { listProjects, projectDir, WORKSPACE_DIR } from "./projects.js";
 import { generateTasteSkins, findTokensFile, findHeroFile, type SkinRender } from "./taste-render.js";
 import { judgeSkins, buildJudgeContext } from "./taste-judge.js";
 import { enqueueRun, listPending, pruneOld, genRunId, runSkinsDir, type TasteRun } from "./taste-queue.js";
+import { favoredIds } from "./taste-loop.js";
 import { notifyNtfy } from "./notify.js";
 import { lanBaseUrl } from "./net.js";
 
@@ -92,6 +93,7 @@ export interface EnqueueTasteDeps {
   judge: typeof judgeSkins;
   buildCtx: typeof buildJudgeContext;
   enqueue: typeof enqueueRun;
+  favoredIds: (maille: "skin" | "hero") => string[]; // boucle fermée : goût appris
   now: () => number;
 }
 
@@ -100,6 +102,7 @@ const realEnqueueDeps: EnqueueTasteDeps = {
   judge: judgeSkins,
   buildCtx: buildJudgeContext,
   enqueue: enqueueRun,
+  favoredIds: (maille) => (process.env.TASTE_CLOSED_LOOP !== "off" ? favoredIds(maille) : []),
   now: () => Date.now(),
 };
 
@@ -115,9 +118,10 @@ export async function enqueueTasteRun(
 ): Promise<TasteRun | null> {
   const runId = genRunId(deps.now);
   const outDir = runSkinsDir(project, runId);
+  const favorIds = deps.favoredIds(opts.maille); // boucle fermée : amorce avec le goût appris
   let skins: SkinRender[];
   try {
-    skins = await deps.generate(projectDir(project), { k: opts.k, maille: opts.maille, outDir }, () => {});
+    skins = await deps.generate(projectDir(project), { k: opts.k, maille: opts.maille, outDir, favorIds }, () => {});
   } catch {
     return null;
   }

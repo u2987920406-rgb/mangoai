@@ -17,6 +17,7 @@ import {
   type TasteNocturnalConfig,
 } from "./taste-nocturnal.js";
 import { tasteReviewPage } from "./taste-review-page.js";
+import { favoredIds } from "./taste-loop.js";
 
 function skinsDir(project: string): string {
   return path.join(projectDir(project), ".skins");
@@ -57,9 +58,13 @@ export function registerTasteRoutes(app: Express): void {
 
     try {
       send({ type: "start" });
+      // Boucle fermée (#149 v2) : amorce la génération avec le goût appris (favoris des
+      // runs décidés). Opt-out TASTE_CLOSED_LOOP=off. Aucun historique → undefined → inchangé.
+      const maille = body.maille ?? "skin";
+      const favorIds = process.env.TASTE_CLOSED_LOOP !== "off" ? favoredIds(maille) : undefined;
       const skins = await generateTasteSkins(
         projectDir(project),
-        { k: body.k ?? 4, directions: body.directions, maille: body.maille, outDir: skinsDir(project) },
+        { k: body.k ?? 4, directions: body.directions, maille, outDir: skinsDir(project), favorIds },
         (ev) => {
           if (ev.type === "skin" && ev.skin?.file) ev.skin.image = imgUrl(ev.skin.file);
           send(ev);

@@ -47,6 +47,7 @@ function enqueueDeps(over: Partial<EnqueueTasteDeps> = {}): { deps: EnqueueTaste
     judge: async (_dir, skins) => { skins.forEach((s, i) => { if (i === 0) s.recommended = true; }); return skins; },
     buildCtx: () => ({ tasteAxioms: "", designSystem: "" }),
     enqueue: (run) => { enqueued.push(run); return run; },
+    favoredIds: () => [],
     now: () => Date.parse("2026-06-24T03:00:00Z"),
     ...over,
   };
@@ -77,6 +78,16 @@ function enqueueDeps(over: Partial<EnqueueTasteDeps> = {}): { deps: EnqueueTaste
   const h = enqueueDeps({ judge: async () => { throw new Error("VL down"); } });
   const run = await enqueueTasteRun("app-a", { maille: "skin", k: 2 }, h.deps);
   check("juge qui throw → run enfilé quand même", run !== null && h.enqueued.length === 1);
+}
+{
+  // boucle fermée : les favoris sont transmis à generate
+  let seenFavor: string[] | undefined;
+  const h = enqueueDeps({
+    favoredIds: () => ["carte-flottante"],
+    generate: async (_dir, o) => { seenFavor = o.favorIds; return fakeSkins("a", "b"); },
+  });
+  await enqueueTasteRun("app-a", { maille: "hero", k: 2 }, h.deps);
+  check("boucle fermée : favoredIds transmis à generate", JSON.stringify(seenFavor) === JSON.stringify(["carte-flottante"]));
 }
 
 // ── runNocturnalTasteBatch ──

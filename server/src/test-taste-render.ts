@@ -119,5 +119,19 @@ const skinSkins = await generateTasteSkins(PROJ, { directions: ["minimal-froid"]
 check("maille skin : 1 variante portant l'id de direction", skinSkins.length === 1 && skinSkins[0].id === "minimal-froid");
 check("maille skin : hero redessiné en composition LIBRE (system plain)", heroPlain === 1 && heroComposed === 0);
 
+// ── Boucle fermée (#149 v2) : favorIds amorce le sampler de l'axe qui varie ──
+{
+  // hero : « split-image-gauche » n'est pas dans le top-2 par défaut → le favori l'injecte.
+  const OUT4 = path.join(PROJ, ".skins-fav-hero");
+  const favHero = await generateTasteSkins(PROJ, { maille: "hero", k: 2, outDir: OUT4, favorIds: ["split-image-gauche"] }, () => {}, heroDeps);
+  check("favorIds (héros) injecte la composition favorite", favHero.some((s) => s.id === "split-image-gauche"));
+}
+{
+  // skin : « cinematique-gradient » seed le sampler de directions.
+  const OUT5 = path.join(PROJ, ".skins-fav-skin");
+  const favSkin = await generateTasteSkins(PROJ, { maille: "skin", k: 2, outDir: OUT5, favorIds: ["cinematique-gradient"] }, () => {}, heroDeps);
+  check("favorIds (skin) injecte la direction favorite", favSkin.some((s) => s.id === "cinematique-gradient"));
+}
+
 console.log(`\n${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);
