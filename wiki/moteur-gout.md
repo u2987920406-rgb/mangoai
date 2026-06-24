@@ -1,7 +1,7 @@
 ---
 type: entite
 tags: [gout, preference-learning, design, vision, souverain]
-statut: v2-juge-pixels-livré-prouvé-live
+statut: v2-juge-pixels+maille-héros-livrés-prouvés-live
 sources: [statut #149, historique 2026-06-23, commits 77c160a/c2cce12/524a901]
 maj: 2026-06-24
 ---
@@ -25,7 +25,8 @@ Combler le **seul fossé stratégique** de MangoOS face à Google AI Studio (ren
 - **Surface cockpit** : `taste-routes.ts` (`POST /api/taste/:project/generate` SSE, `GET /skin/:file`, `POST /choose` → axiome souverain via `chatEleve`/GLM) + `TasteGallery.jsx` (fenêtre Launcher `Wand2`). **Piège corrigé** : `.skins` est un dotfile → `res.sendFile(p, {dotfiles:"allow"})` sinon 404 silencieux (même piège latent dans la route diff #80).
 - **Vérif** : 112 tests (directions 23 · engine 26 · generate 33 · render 18 · images 12), `tsc` 0, build UI vert ; **prouvé live sur `mango-cafe-ts`** (v1 re-skin grounded Linear/Stripe → axiome `AXIOME-UX-01` ; v1.5 = 4 redesigns radicalement différents + vraies photos café). Commits `77c160a` / `c2cce12` / `524a901` (push origin).
 - **✅ v2 JUGE-PIXELS #66 (2026-06-24)** — débloqué par [[sharingan-vision-eleve]] #151 : un cerveau VISION (`dispatch('vision')` → `qwen3.5:cloud`, $0) **note 0-100 et trie les K skins AVANT le choix**, selon le **goût appris** de Raf (`selectAxioms` VISION `[validé-utilisateur]` + `.design-system.md`), pas en absolu. `taste-judge.ts` : `buildJudgeContext` · `judgeSystem` (note = goût + qualité universelle + exécution direction, sortie `SCORE: n | CASSÉ: oui/non | raison`) · `parseJudgeScore` (pur) · `judgeSkins` (parallèle, deps injectables, **ne throw jamais**, trie desc, cassés en bas, marque le top `recommended`). Branché au niveau route (`taste-routes.ts`, gaté `TASTE_JUDGE`, gracieux) ; `TasteGallery.jsx` trie + badge **⭐ Recommandé · score** / **⚠ à éviter** (atténué) + **pré-sélectionne** le top (Raf confirme en 1 tap). `test-taste-judge` 19/19. **Prouvé live** : VL note 3 vraies UI 90/88/82 ; route sur `mango-cafe-ts` → Pastel doux 92 ⭐ / Minimal froid 85 (goût contextuel café + WCAG) ; Sharingan galerie OK.
-- **Reste v2** : nocturne + validation téléphone (Remote Control), maille « héros ».
+- **✅ v2 MAILLE « HÉROS » (2026-06-24)** — l'autre axe du goût : là où la maille **skin** varie l'habillage (palette/typo), la maille **héros** fixe le STYLE (une direction) et fait varier la **COMPOSITION du hero** (plein écran, split, éditorial, brutalist…) → on isole le signal de goût pour la mise en page, l'œil triant des **structures** et plus seulement des couleurs. `taste-compositions.ts` (module pur, pendant de `taste-directions.ts`) : **8 compositions nommées** (chacune une consigne structurelle `layout`) + `sampleCompositions` (pas régulier déterministe, amorçable `favorIds`). `redesignHero` accepte une **composition imposée** (`HERO_SYSTEM_COMPOSED`) au lieu de laisser GLM choisir. `generateTasteSkins` `maille:"hero"` : capture Sharingan + skin des tokens **mis en cache par direction** (calculés **1×** pour les K compositions, seuls les hero redesigns bouclent) ; `id`=composition. Bascule **Style | Héros** dans `TasteGallery.jsx`. `test-taste-compositions` 17/17 · `test-taste-render` étendu 26/26 (cache prouvé). **Prouvé live** : k=3 hero sur `mango-cafe-ts` → Minimal froid skinné 1×, 3 compositions contrastées (indices 0/3/6) notées **92 ⭐ / 90 / 88** par l'œil (goût violet/menthe + WCAG), captures = vraies structures différentes (split vs plein écran). Le `favorIds` du sampler prépare la **boucle fermée** (biaiser vers les compositions les mieux notées).
+- **Reste v2** : nocturne + validation téléphone (Remote Control).
 
 ## Liens
 

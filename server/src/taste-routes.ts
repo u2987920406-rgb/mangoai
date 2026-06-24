@@ -42,7 +42,7 @@ export function registerTasteRoutes(app: Express): void {
       res.status(404).json({ error: "projet introuvable" });
       return;
     }
-    const body = (req.body ?? {}) as { k?: number; directions?: string[] };
+    const body = (req.body ?? {}) as { k?: number; directions?: string[]; maille?: "skin" | "hero" };
     res.setHeader("Content-Type", "text/event-stream");
     res.setHeader("Cache-Control", "no-cache");
     res.setHeader("Connection", "keep-alive");
@@ -53,7 +53,7 @@ export function registerTasteRoutes(app: Express): void {
       send({ type: "start" });
       const skins = await generateTasteSkins(
         projectDir(project),
-        { k: body.k ?? 4, directions: body.directions, outDir: skinsDir(project) },
+        { k: body.k ?? 4, directions: body.directions, maille: body.maille, outDir: skinsDir(project) },
         (ev) => {
           if (ev.type === "skin" && ev.skin?.file) ev.skin.image = imgUrl(ev.skin.file);
           send(ev);

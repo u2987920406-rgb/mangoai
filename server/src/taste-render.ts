@@ -9,6 +9,7 @@ import { loadTasteReferences } from "./taste-refs.js";
 import { captureDirectionRefs, buildSkinBrief, catalogDirection, defaultCaptureDeps, type CaptureDeps } from "./taste-engine.js";
 import { skinTokens, remapLiterals, redesignHero, firstSectionRange, defaultSkinAsk, type SkinAsk, type FileContent } from "./taste-generate.js";
 import { sampleDirections, directionMood, type TasteDirection } from "./taste-directions.js";
+import { sampleCompositions, compositionBrief, type HeroComposition } from "./taste-compositions.js";
 import { imageForDirection } from "./taste-images.js";
 import { startPreview as realStart, stopPreview as realStop } from "./preview.js";
 import { capturePreview as realCapture } from "./vision.js";
@@ -106,9 +107,18 @@ export type ProgressFn = (ev: { type: string; text?: string; skin?: SkinRender }
  * Génère et rend K skins du projet. Émet la progression via onProgress. NON-DESTRUCTIF :
  * tous les fichiers touchés sont restaurés en finally (même en cas d'erreur).
  */
+/** Une variante à rendre. En maille « skin » elle porte une DIRECTION (style varié) ;
+ *  en maille « héros » toutes partagent UNE direction (style fixe) et varient la COMPOSITION. */
+interface Variant {
+  id: string; // identifie la variante (= direction.id en skin, = composition.id en héros)
+  name: string; // libellé affiché
+  dir: TasteDirection; // la direction (style) — partagée par toutes en maille héros
+  composition?: HeroComposition; // la composition imposée — uniquement en maille héros
+}
+
 export async function generateTasteSkins(
   projectDir: string,
-  opts: { k?: number; directions?: string[]; outDir: string },
+  opts: { k?: number; directions?: string[]; outDir: string; maille?: "skin" | "hero" },
   onProgress: ProgressFn,
   deps: TasteRenderDeps = {},
 ): Promise<SkinRender[]> {
@@ -129,9 +139,22 @@ export async function generateTasteSkins(
   const settle = deps.hmrSettleMs ?? 2600;
 
   const refs = loadTasteReferences(refDir);
-  const chosen: TasteDirection[] = opts.directions?.length
-    ? (opts.directions.map((id) => catalogDirection(id)).filter((d): d is TasteDirection => d !== null))
-    : sampleDirections(opts.k ?? 4);
+  const k = opts.k ?? 4;
+
+  // Construction des variantes selon la maille.
+  let variants: Variant[];
+  if (opts.maille === "hero") {
+    // Maille « héros » : STYLE fixe (une direction), K COMPOSITIONS de hero différentes.
+    const baseId = opts.directions?.[0];
+    const base = (baseId ? catalogDirection(baseId) : null) ?? sampleDirections(1)[0];
+    variants = sampleCompositions(k).map((c) => ({ id: c.id, name: c.name, dir: base, composition: c }));
+  } else {
+    // Maille « skin » (défaut) : K DIRECTIONS différentes (composition libre).
+    const dirs: TasteDirection[] = opts.directions?.length
+      ? opts.directions.map((id) => catalogDirection(id)).filter((d): d is TasteDirection => d !== null)
+      : sampleDirections(k);
+    variants = dirs.map((d) => ({ id: d.id, name: d.name, dir: d }));
+  }
 
   const srcDir = path.join(projectDir, "src");
   const styleFiles = walkStyleFiles(srcDir, tokensFile);
@@ -144,49 +167,66 @@ export async function generateTasteSkins(
 
   fs.mkdirSync(opts.outDir, { recursive: true });
   const results: SkinRender[] = [];
-  const built: { dir: TasteDirection; tokens: string; edits: FileContent[]; palette: string[] }[] = [];
+  const built: { id: string; name: string; tokens: string; edits: FileContent[]; palette: string[] }[] = [];
 
   const heroFile = findHeroFile(projectDir);
   const subject = deriveSubject(projectDir);
   const origByPath = new Map(originals.map((f) => [f.path, f.content]));
   const origHero = heroFile ? origByPath.get(heroFile) : undefined;
 
+  // Capture (Sharingan) + skin des tokens : CALCULÉS UNE FOIS par direction puis mis en
+  // cache. En maille héros (style fixe), les K compositions réutilisent le même skin.
+  type SkinCache = { ok: true; brief: string; css: string; palette: string[] } | { ok: false; reason?: string; palette: string[] };
+  const skinCache = new Map<string, SkinCache>();
+  async function skinForDir(d: TasteDirection): Promise<SkinCache> {
+    const hit = skinCache.get(d.id);
+    if (hit) return hit;
+    onProgress({ type: "status", text: `Capture des références — ${d.name}` });
+    const dRefs = refs.directions.find((r) => r.id === d.id) ?? {
+      id: d.id, name: d.name, kind: "direction" as const, urls: d.referenceUrls, images: [], notes: "", fromCatalog: false,
+    };
+    const cap = await captureDirectionRefs(dRefs, captureDeps);
+    const brief = buildSkinBrief(d, cap);
+    onProgress({ type: "status", text: `Génération du skin — ${d.name}` });
+    const skin = await skinTokens(originalTokens, brief, ask);
+    const entry: SkinCache = skin.ok
+      ? { ok: true, brief, css: skin.css!, palette: cap.palette }
+      : { ok: false, reason: skin.reason, palette: cap.palette };
+    skinCache.set(d.id, entry);
+    return entry;
+  }
+
   try {
     // 1) Génération (Sharingan + GLM) — aperçu pas encore lancé.
-    for (const [i, d] of chosen.entries()) {
-      onProgress({ type: "status", text: `Capture des références — ${d.name}` });
-      const dRefs = refs.directions.find((r) => r.id === d.id) ?? {
-        id: d.id, name: d.name, kind: "direction", urls: d.referenceUrls, images: [], notes: "", fromCatalog: false,
-      };
-      const cap = await captureDirectionRefs(dRefs, captureDeps);
-      const brief = buildSkinBrief(d, cap);
-      onProgress({ type: "status", text: `Génération du skin — ${d.name}` });
-      const skin = await skinTokens(originalTokens, brief, ask);
-      if (!skin.ok) {
-        results.push({ id: d.id, name: d.name, ok: false, reason: skin.reason, palette: cap.palette });
+    for (const [i, v] of variants.entries()) {
+      const cached = await skinForDir(v.dir);
+      if (!cached.ok) {
+        results.push({ id: v.id, name: v.name, ok: false, reason: cached.reason, palette: cached.palette });
         continue;
       }
 
       // Contenus de départ (originaux) ; on greffe le REDESIGN du hero (layout + vraie image).
+      // En maille héros, la COMPOSITION est imposée ; en maille skin, GLM choisit le layout.
       const finalByPath = new Map(origByPath);
       if (heroFile && origHero) {
         const range = firstSectionRange(origHero);
         if (range) {
-          onProgress({ type: "status", text: `Re-design du hero — ${d.name}` });
-          const img = await image(`${subject} ${directionMood(d.id)}`.trim(), i + 1);
-          const rd = await redesignHero(range.hero, brief, img, ask);
+          onProgress({ type: "status", text: `Re-design du hero — ${v.name}` });
+          const img = await image(`${subject} ${directionMood(v.dir.id)}`.trim(), i + 1);
+          const compBrief = v.composition ? compositionBrief(v.composition) : undefined;
+          const rd = await redesignHero(range.hero, cached.brief, img, ask, compBrief);
           if (rd.ok) finalByPath.set(heroFile, `${range.before}\n${rd.hero}\n${range.after}`); // sinon repli token-only
         }
       }
 
       // Remap des couleurs en dur restantes (CTA, overlays) sur les contenus à jour.
-      const remap = await remapLiterals([...finalByPath].map(([p, content]) => ({ path: p, content })), originalTokens, skin.css!, ask);
+      const remap = await remapLiterals([...finalByPath].map(([p, content]) => ({ path: p, content })), originalTokens, cached.css, ask);
       for (const e of remap.edits) finalByPath.set(e.path, e.content);
 
       const edits: FileContent[] = [...finalByPath]
         .filter(([p, c]) => c !== origByPath.get(p))
         .map(([p, content]) => ({ path: p, content }));
-      built.push({ dir: d, tokens: skin.css!, edits, palette: cap.palette });
+      built.push({ id: v.id, name: v.name, tokens: cached.css, edits, palette: cached.palette });
     }
 
     // 2) Rendu : aperçu up, swap, screenshot.
@@ -197,9 +237,9 @@ export async function generateTasteSkins(
       fs.writeFileSync(tokensFile, b.tokens);
       for (const e of b.edits) fs.writeFileSync(e.path, e.content);
       await sleep(settle);
-      const file = `${b.dir.id}.jpg`;
+      const file = `${b.id}.jpg`;
       fs.writeFileSync(path.join(opts.outDir, file), await capture(url));
-      const r: SkinRender = { id: b.dir.id, name: b.dir.name, ok: true, file, palette: b.palette };
+      const r: SkinRender = { id: b.id, name: b.name, ok: true, file, palette: b.palette };
       results.push(r);
       onProgress({ type: "skin", skin: r });
     }

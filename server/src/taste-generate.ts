@@ -221,6 +221,25 @@ RÈGLES STRICTES :
 - Renvoie UN SEUL <section>…</section> autonome qui compile (balises fermées, accolades équilibrées).
 Sors UNIQUEMENT le JSX du <section>, sans prose ni markdown.`;
 
+// Maille « héros » (#149 v2) : on IMPOSE une composition précise au lieu de laisser GLM
+// choisir librement le layout. La structure imposée prime ; l'image s'y intègre selon la
+// composition (plein écran, split, accent discret pour un hero minimal…).
+export const HERO_SYSTEM_COMPOSED = `Tu es un designer-développeur React de haut niveau.
+On te donne le HERO (un seul <section>) de la page d'accueil d'un site, une DIRECTION esthétique
+avec ses références réelles, une URL d'IMAGE réelle, et surtout une COMPOSITION IMPOSÉE (structure obligatoire).
+Réécris CE <section> en respectant EXACTEMENT la composition imposée (sa structure prime sur tout le reste).
+RÈGLES STRICTES :
+- Suis la COMPOSITION IMPOSÉE à la lettre (placement de l'image, du titre, du CTA, des colonnes).
+- L'image s'intègre SELON la composition : plein écran (cover) si la composition le dit, dans une colonne
+  si c'est un split, en bandeau si éditorial, ou en simple accent si la composition est minimale (alors pas
+  de fond photo plein écran). Là où une image couvre une zone : cover + center, AUCUN espace de remplissage visible.
+- Le <section> fait 100% de largeur, SANS marge ni largeur fixe en px qui déborde (pas de scroll horizontal).
+- Texte TOUJOURS lisible : overlay/scrim rgba si le texte passe sur l'image.
+- Respecte palette/typo via var(--color-...) / var(--font-...).
+- Styles INLINE comme l'original, AUCUN nouvel import, AUCUNE nouvelle dépendance, AUCUN composant externe.
+- Renvoie UN SEUL <section>…</section> autonome qui compile (balises fermées, accolades équilibrées).
+Sors UNIQUEMENT le JSX du <section>, sans prose ni markdown.`;
+
 /** Localise le 1er <section>…</section> (balisage équilibré) d'un composant. */
 export function firstSectionRange(src: string): { before: string; hero: string; after: string } | null {
   const open = src.indexOf("<section");
@@ -259,17 +278,28 @@ export interface RedesignResult {
 /**
  * GLM réécrit le hero pour incarner la direction (layout radical + image de fond réelle).
  * Garde-fou : un seul <section> aux balises équilibrées. Ne lève jamais (→ repli token-only).
+ *
+ * Maille « héros » (#149 v2) : si `compositionBrief` est fourni, on IMPOSE cette composition
+ * (structure obligatoire) au lieu de laisser GLM choisir le layout librement.
  */
-export async function redesignHero(currentHero: string, brief: string, imageUrl: string, ask: SkinAsk): Promise<RedesignResult> {
+export async function redesignHero(
+  currentHero: string,
+  brief: string,
+  imageUrl: string,
+  ask: SkinAsk,
+  compositionBrief?: string,
+): Promise<RedesignResult> {
+  const composed = !!compositionBrief;
   const user = [
     "DIRECTION + RÉFÉRENCES :", brief, "",
+    ...(composed ? [compositionBrief as string, ""] : []),
     `IMAGE DE FOND (utilise EXACTEMENT cette URL) : ${imageUrl}`, "",
     "HERO ACTUEL à réécrire :", currentHero, "",
     "Réécris le <section>.",
   ].join("\n");
   let raw: string;
   try {
-    raw = await ask(HERO_SYSTEM, user);
+    raw = await ask(composed ? HERO_SYSTEM_COMPOSED : HERO_SYSTEM, user);
   } catch (err) {
     return { ok: false, reason: err instanceof Error ? err.message.split("\n")[0] : String(err) };
   }

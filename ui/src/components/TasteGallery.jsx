@@ -7,6 +7,7 @@ export default function TasteGallery({ win }) {
   const initial = win?.props?.projectName || "";
   const [projects, setProjects] = useState([]);
   const [project, setProject] = useState(initial);
+  const [maille, setMaille] = useState("skin"); // "skin" = varie le style · "hero" = varie la composition du hero
   const [skins, setSkins] = useState([]); // { id, name, image, palette, ok, reason }
   const [status, setStatus] = useState("");
   const [busy, setBusy] = useState(false);
@@ -37,7 +38,7 @@ export default function TasteGallery({ win }) {
       const res = await fetch(`/api/taste/${encodeURIComponent(project)}/generate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ k: 4 }),
+        body: JSON.stringify({ k: 4, maille }),
       });
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => ({}));
@@ -124,6 +125,20 @@ export default function TasteGallery({ win }) {
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
+        {/* Maille : on varie le STYLE (skin) ou la COMPOSITION du hero (héros) */}
+        <div className="ml-1 flex overflow-hidden rounded-lg border border-edge text-[11.5px]">
+          {[["skin", "Style"], ["hero", "Héros"]].map(([v, label]) => (
+            <button
+              key={v}
+              onClick={() => !busy && setMaille(v)}
+              disabled={busy}
+              title={v === "skin" ? "Varie l'habillage (palette, typo, ombres)" : "Varie la composition du hero (plein écran, split, éditorial…)"}
+              className={`px-2.5 py-1 transition disabled:opacity-50 ${maille === v ? "bg-accent text-white" : "text-dim hover:text-ink"}`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           onClick={generate}
           disabled={busy || !project}
@@ -148,8 +163,8 @@ export default function TasteGallery({ win }) {
           <div className="grid h-full place-items-center text-center text-[12.5px] text-faint">
             <div>
               <Wand2 size={26} className="mx-auto mb-2 text-edge" />
-              Choisis un projet et lance la génération.<br />
-              MangoOS produit 4 habillages ancrés sur du vrai design, tu choisis ton préféré.
+              Choisis un projet, la maille (Style ou Héros), et lance la génération.<br />
+              MangoOS produit 4 variantes ancrées sur du vrai design — l'œil les note, tu choisis ta préférée.
             </div>
           </div>
         ) : (

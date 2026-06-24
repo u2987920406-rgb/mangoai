@@ -7,6 +7,7 @@ import path from "node:path";
 import { findTokensFile, walkStyleFiles, findHeroFile, deriveSubject, generateTasteSkins, type TasteRenderDeps } from "./taste-render.js";
 import type { CaptureDeps } from "./taste-engine.js";
 import type { SkinAsk } from "./taste-generate.js";
+import { sampleCompositions } from "./taste-compositions.js";
 
 let pass = 0;
 let fail = 0;
@@ -81,6 +82,42 @@ check("deriveSubject repli si rien d'utile", deriveSubject(path.join("x", "mango
 check("findHeroFile → null si aucune <section>", findHeroFile(PROJ) === null); // la page du test n'a pas de <section>
 fs.writeFileSync(path.join(PROJ, "src", "pages", "Home.tsx"), "export default () => (<section><h1>hi</h1></section>);\n");
 check("findHeroFile repère une page avec <section>", findHeroFile(PROJ)?.endsWith("Home.tsx") === true);
+
+// ── Maille « héros » : STYLE fixe, K COMPOSITIONS de hero (PROJ a maintenant un <section>) ──
+let skinTokenCalls = 0, heroComposed = 0, heroPlain = 0;
+const heroCapture: CaptureDeps = {
+  analyzeUrl: async () => ({ palette: ["#5e6ad2", "#0b0d12"], cssVars: {}, fonts: ["Inter"], families: ["Inter"] }),
+  analyzeImage: async () => ({ palette: ["#abcdef"], ambiance: "sombre" }),
+};
+const heroAsk: SkinAsk = async (system) => {
+  if (/remappeur/i.test(system)) return "{}";
+  if (/COMPOSITION IMPOSÉE/.test(system)) { heroComposed++; return "<section><h1>composed</h1></section>"; }
+  if (/designer-développeur/i.test(system)) { heroPlain++; return "<section><h1>plain</h1></section>"; }
+  skinTokenCalls++; // SKIN_SYSTEM (skinner de tokens) : 1 fois par direction
+  return ":root {\n  --color-mango: #5e6ad2;\n  --color-cream: #0b0d12;\n}\n";
+};
+const heroDeps: TasteRenderDeps = {
+  ...deps, captureDeps: heroCapture, ask: heroAsk, image: async () => "http://img/test.jpg",
+};
+const OUT2 = path.join(PROJ, ".skins-hero");
+const heroSkins = await generateTasteSkins(PROJ, { maille: "hero", k: 2, outDir: OUT2 }, () => {}, heroDeps);
+const expectComp = sampleCompositions(2).map((c) => c.id);
+
+check("maille héros rend 2 variantes ok", heroSkins.length === 2 && heroSkins.every((s) => s.ok));
+check("maille héros : ids = compositions (pas directions)",
+  JSON.stringify([...heroSkins.map((s) => s.id)].sort()) === JSON.stringify([...expectComp].sort()));
+check("maille héros : skin des tokens CALCULÉ 1x (style fixe en cache)", skinTokenCalls === 1);
+check("maille héros : composition IMPOSÉE à chaque hero", heroComposed === 2 && heroPlain === 0);
+check("maille héros : images écrites sous les ids de composition",
+  expectComp.every((id) => fs.existsSync(path.join(OUT2, `${id}.jpg`))));
+check("maille héros : tokens restaurés", fs.readFileSync(TOKENS, "utf8") === TOKENS_SRC);
+
+// ── Non-régression : maille skin (défaut) avec hero présent → composition LIBRE (system plain) ──
+heroComposed = 0; heroPlain = 0;
+const OUT3 = path.join(PROJ, ".skins-plain");
+const skinSkins = await generateTasteSkins(PROJ, { directions: ["minimal-froid"], k: 1, outDir: OUT3 }, () => {}, heroDeps);
+check("maille skin : 1 variante portant l'id de direction", skinSkins.length === 1 && skinSkins[0].id === "minimal-froid");
+check("maille skin : hero redessiné en composition LIBRE (system plain)", heroPlain === 1 && heroComposed === 0);
 
 console.log(`\n${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);
