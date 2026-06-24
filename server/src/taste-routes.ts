@@ -11,6 +11,12 @@ import { chatEleve } from "./eleve.js";
 import { processFeedback } from "./feedback.js";
 import { generateTasteSkins, type SkinRender } from "./taste-render.js";
 import { judgeSkins, buildJudgeContext } from "./taste-judge.js";
+import { listPending, getRun, decideRun, runSkinsDir } from "./taste-queue.js";
+import {
+  loadTasteNocturnalConfig, saveTasteNocturnalConfig, runNocturnalTasteBatch,
+  type TasteNocturnalConfig,
+} from "./taste-nocturnal.js";
+import { tasteReviewPage } from "./taste-review-page.js";
 
 function skinsDir(project: string): string {
   return path.join(projectDir(project), ".skins");
@@ -109,6 +115,99 @@ export function registerTasteRoutes(app: Express): void {
       body.note ?? "",
       ask,
     ).catch((err) => console.error("[taste]", err instanceof Error ? err.message : err));
+  });
+
+  // ───────────────────────────────────────────────────────────────────────────
+  // Curation ASYNCHRONE (#149 v2) — file d'attente + validation mobile (LAN).
+  // ───────────────────────────────────────────────────────────────────────────
+
+  // Runs de goût en attente de la décision de Raf (vue allégée pour la boîte mobile).
+  app.get("/api/taste/pending", (_req: Request, res: Response) => {
+    res.json(listPending());
+  });
+
+  // Un run complet (variantes notées + URLs d'images run-scopées).
+  app.get("/api/taste/run/:runId", (req: Request, res: Response) => {
+    const runId = req.params["runId"] as string;
+    const run = getRun(runId);
+    if (!run) { res.status(404).json({ error: "run introuvable" }); return; }
+    const withUrls = {
+      ...run,
+      skins: run.skins.map((s) => (s.ok && s.file
+        ? { ...s, image: `/api/taste/run/${encodeURIComponent(runId)}/skin/${s.file}` }
+        : s)),
+    };
+    res.json(withUrls);
+  });
+
+  // Sert le JPEG d'une variante d'un run (.skins/<runId>/<file>, anti path-traversal).
+  app.get("/api/taste/run/:runId/skin/:file", (req: Request, res: Response) => {
+    const runId = req.params["runId"] as string;
+    const file = req.params["file"] as string;
+    const run = getRun(runId);
+    if (!run) { res.status(404).end(); return; }
+    if (!file || !/^[a-z0-9-]+\.jpg$/i.test(file)) { res.status(400).end(); return; }
+    const dir = runSkinsDir(run.project, runId);
+    const p = path.resolve(path.join(dir, file));
+    if (!p.startsWith(path.resolve(dir) + path.sep) || !fs.existsSync(p)) { res.status(404).end(); return; }
+    res.sendFile(p, { dotfiles: "allow" }); // .skins est un dotfile
+  });
+
+  // Décision de Raf sur un run → axiome de goût souverain (GLM) + run "decided".
+  app.post("/api/taste/run/:runId/decide", (req: Request, res: Response) => {
+    const runId = req.params["runId"] as string;
+    const body = (req.body ?? {}) as { chosenId?: string; note?: string };
+    if (!body.chosenId) { res.status(400).json({ error: "chosenId requis" }); return; }
+    const result = decideRun(runId, body.chosenId, body.note);
+    if (!result.ok) {
+      const code = result.reason === "not-found" ? 404 : result.reason === "already-decided" ? 409 : 400;
+      res.status(code).json({ error: result.reason });
+      return;
+    }
+    res.json({ ok: true });
+    // Distillation souveraine (GLM) en fire-and-forget, hors du chemin de réponse.
+    const run = result.run!;
+    const chosen = run.skins.find((s) => s.id === body.chosenId);
+    distillTaste(
+      run.project,
+      { id: body.chosenId, name: chosen?.name ?? body.chosenId, palette: chosen?.palette ?? [] },
+      run.skins.map((s) => s.name),
+      body.note ?? "",
+      (s, p) => chatEleve(s, p),
+    ).catch((err) => console.error("[taste]", err instanceof Error ? err.message : err));
+  });
+
+  // Déclencheur manuel de la curation nocturne (test / à la demande).
+  app.post("/api/taste/nocturnal/run", (_req: Request, res: Response) => {
+    const cfg = loadTasteNocturnalConfig();
+    res.json({ ok: true, started: true });
+    runNocturnalTasteBatch(cfg).catch((err) => console.error("[taste-nocturnal]", err instanceof Error ? err.message : err));
+  });
+
+  // Config de la curation nocturne (enabled/hour/count/maille/k/ntfyTopic).
+  app.get("/api/taste/nocturnal/config", (_req: Request, res: Response) => {
+    res.json(loadTasteNocturnalConfig());
+  });
+  app.put("/api/taste/nocturnal/config", (req: Request, res: Response) => {
+    const cur = loadTasteNocturnalConfig();
+    const b = (req.body ?? {}) as Partial<TasteNocturnalConfig>;
+    const next: TasteNocturnalConfig = {
+      ...cur,
+      enabled: typeof b.enabled === "boolean" ? b.enabled : cur.enabled,
+      hour: typeof b.hour === "number" ? Math.min(23, Math.max(0, Math.floor(b.hour))) : cur.hour,
+      count: typeof b.count === "number" ? Math.min(10, Math.max(1, Math.floor(b.count))) : cur.count,
+      k: typeof b.k === "number" ? Math.min(6, Math.max(2, Math.floor(b.k))) : cur.k,
+      maille: b.maille === "skin" || b.maille === "hero" ? b.maille : cur.maille,
+      ntfyTopic: typeof b.ntfyTopic === "string" ? b.ntfyTopic.trim() : cur.ntfyTopic,
+    };
+    saveTasteNocturnalConfig(next);
+    res.json(next);
+  });
+
+  // Page de validation MOBILE (servie par Express, ouverte depuis le téléphone en LAN).
+  app.get("/taste/review", (_req: Request, res: Response) => {
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+    res.send(tasteReviewPage());
   });
 }
 

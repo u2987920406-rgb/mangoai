@@ -77,6 +77,8 @@ import { registerBuildReviewRoutes } from "./build-review-routes.js";
 import { registerBrainRoutes } from "./brain-routes.js";
 import { registerBrainDispatchRoutes } from "./brain-dispatch-routes.js";
 import { registerTasteRoutes } from "./taste-routes.js";
+import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
+import { lanIPv4s } from "./net.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
 import { registerAgentFactoryRoutes } from "./agent-routes.js";
@@ -100,6 +102,10 @@ process.on("uncaughtException", (err) => {
 });
 
 const PORT = Number(process.env.PORT ?? 3000);
+// Écoute LAN (#149 v2) : par défaut 0.0.0.0 pour que le téléphone de Raf (même Wi-Fi) puisse
+// ouvrir /taste/review. Repli localhost en posant HOST=localhost. Exposition LAN domicile
+// uniquement — pas d'Internet (cf. décision d'archi : LAN + push ntfy, zéro tunnel).
+const HOST = process.env.HOST ?? "0.0.0.0";
 const app = express();
 app.use(cors());
 // Limite de corps relevée à 25 Mo : les pièces jointes du chat (ex. statut.md
@@ -1046,8 +1052,14 @@ app.post("/api/onboarding", (req, res) => {
   }
 });
 
-const httpServer = app.listen(PORT, () => {
+const httpServer = app.listen(PORT, HOST, () => {
   console.log(`MangoOS backend → http://localhost:${PORT}`);
+  // URL LAN (#149 v2) : à ouvrir sur le téléphone (même Wi-Fi) pour /taste/review.
+  if (HOST === "0.0.0.0") {
+    for (const ip of lanIPv4s()) console.log(`MangoOS LAN     → http://${ip}:${PORT}  (validation goût : /taste/review)`);
+  }
+  // Curation de goût nocturne (#149 v2) — scheduler opt-in (config.enabled défaut false).
+  startTasteNocturnalScheduler();
   restoreAgents().catch((e) => console.warn("[agent-factory] restoreAgents:", e));
   // Kernel : branche MangoQA (fantôme externe) sur l'Event Bus via le pont
   // d'export — l'observateur '*' déverse le flux du bus dans .mangoqa/ que le
