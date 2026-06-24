@@ -15,6 +15,8 @@ export interface OllamaOptions {
   /** Garde-fou : le 1er appel (cold start, chargement du modèle) peut durer
    * ~2 min ; les suivants ~quelques secondes. */
   timeoutMs?: number
+  /** Image en base64 pour les modèles vision (ex. Gemma 4). */
+  imageBase64?: string
 }
 
 /** Un appel chat non-streamé à Ollama. Renvoie le texte de la réponse (trim).
@@ -41,7 +43,11 @@ export async function askOllama(
         keep_alive: '10m',
         messages: [
           { role: 'system', content: system },
-          { role: 'user', content: user },
+          {
+            role: 'user',
+            content: user,
+            ...(opts.imageBase64 ? { images: [opts.imageBase64] } : {}),
+          },
         ],
       }),
       signal: controller.signal,

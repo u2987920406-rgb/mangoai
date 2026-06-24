@@ -1,7 +1,8 @@
 // Idée #2 — Design Pair-Programming
 // Analyse les fichiers source d'un projet et retourne des recommandations UX/UI structurées.
-import { resolveProvider } from './llm-engine.js'
+import { askLLM, resolveProvider } from './llm-engine.js'
 import { getBrain } from './kernel.js'
+import { capturePreview, getPreviewUrl } from './vision.js'
 import type { Express, Request, Response } from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -126,7 +127,7 @@ function buildContext(files: string[]): string {
   return parts.join('')
 }
 
-const SYSTEM_PROMPT = `Tu es un expert UX/UI senior avec 15 ans d'expérience en design de produits numériques.
+const SYSTEM_PROMPT_BASE = `Tu es un expert UX/UI senior avec 15 ans d'expérience en design de produits numériques.
 Analyse le code source fourni et identifie les problèmes de design concrets.
 Réponds UNIQUEMENT avec un objet JSON valide (zéro markdown, zéro backtick, zéro commentaire) ayant exactement ces clés :
 {
@@ -145,6 +146,29 @@ Réponds UNIQUEMENT avec un objet JSON valide (zéro markdown, zéro backtick, z
     "suggestions": ["suggestion concrète..."]
   },
   "components": [{"name": "NomComposant", "issue": "problème précis", "fix": "correction concrète"}],
+  "quickWins": ["action rapide 1", "action rapide 2", "action rapide 3"]
+}`
+
+const SYSTEM_PROMPT_VISION = `Tu es un expert UX/UI senior avec 15 ans d'expérience en design de produits numériques.
+Tu vois le RENDU VISUEL RÉEL de l'app (screenshot joint) ET son code source.
+Base ton analyse sur ce que tu VOIS réellement : couleurs rendues, typographie affichée, espacement, hiérarchie visuelle, cohérence — pas sur ce que le CSS suggère.
+Réponds UNIQUEMENT avec un objet JSON valide (zéro markdown, zéro backtick, zéro commentaire) ayant exactement ces clés :
+{
+  "score": number entre 0 et 100 (qualité design globale — basé sur le rendu visible),
+  "summary": "string — résumé de l'état design en 2-3 phrases, décris ce que tu vois",
+  "palette": {
+    "issues": ["problème visible dans le rendu..."],
+    "suggestions": [{"color": "#hexcode", "usage": "pour quoi utiliser cette couleur"}]
+  },
+  "typography": {
+    "issues": ["problème visible dans le rendu..."],
+    "suggestions": ["suggestion concrète..."]
+  },
+  "layout": {
+    "issues": ["problème visible dans le rendu..."],
+    "suggestions": ["suggestion concrète..."]
+  },
+  "components": [{"name": "NomComposant", "issue": "problème visible précis", "fix": "correction concrète"}],
   "quickWins": ["action rapide 1", "action rapide 2", "action rapide 3"]
 }`
 
@@ -175,15 +199,38 @@ export function registerDesignReviewRoutes(app: Express): void {
 
     const context = buildContext(files)
 
+    // Tentative de capture du rendu visuel — best-effort, jamais bloquant.
+    let imageBase64: string | undefined
+    try {
+      const url = getPreviewUrl()
+      if (url) {
+        const buf = await capturePreview(url)
+        imageBase64 = buf.toString('base64')
+      }
+    } catch {
+      // preview absent ou Playwright indispo — analyse sur code uniquement
+    }
+
+    const hasVision = !!imageBase64
+    const systemPrompt = hasVision ? SYSTEM_PROMPT_VISION : SYSTEM_PROMPT_BASE
+    const visualIntro = hasVision
+      ? 'Voici le rendu visuel de l\'app (screenshot). Analyse d\'abord ce que tu vois, PUIS complète avec le code.\n\n'
+      : ''
     const provider = resolveProvider(process.env.DESIGNREVIEW_PROVIDER, 'claude')
 
     let rawJson: string
     try {
-      rawJson = await getBrain().complete(
-        SYSTEM_PROMPT,
-        `Voici le code source du projet "${projectName}" (${files.length} fichiers analysés) :\n${context}\n\nRetourne le JSON de recommandations design.`,
-        { provider, maxTokens: 2048 },
-      )
+      rawJson = hasVision
+        ? await askLLM(
+            systemPrompt,
+            `${visualIntro}Voici le code source du projet "${projectName}" (${files.length} fichiers analysés) :\n${context}\n\nRetourne le JSON de recommandations design.`,
+            { provider, maxTokens: 2048, imageBase64, imageMimeType: 'image/jpeg' },
+          )
+        : await getBrain().complete(
+            systemPrompt,
+            `Voici le code source du projet "${projectName}" (${files.length} fichiers analysés) :\n${context}\n\nRetourne le JSON de recommandations design.`,
+            { provider, maxTokens: 2048 },
+          )
     } catch (err) {
       res.status(502).json({ error: `Erreur LLM : ${err instanceof Error ? err.message : String(err)}` })
       return

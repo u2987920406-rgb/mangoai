@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-06-22
+maj: 2026-06-24
 ---
 
 # Index du wiki MangoOS
@@ -24,6 +24,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[examen-cerveau]] | « Révélateur de cerveau » : scan d'audit d'entrée d'un modèle inconnu → verdict de placement — #148 | ✅ écrite |
 | [[phase-e-multicerveaux]] | Multi-cerveaux par intention : le bon cerveau par tâche, mesuré + souverain (cloud↔local) — #135/#146 Phase E | ✅ écrite |
 | [[brains]] | Registre `.brains` : fiches cerveau mesurées + routage intention→cerveau + « MangoOS avertit » — Phase E | ✅ écrite |
+| [[brain-dispatch]] | Système multi-agents à cerveaux interchangeables : 10 agents nommés + registre éditable + contrat universel — #150 (atelier, à coder) | ✅ écrite |
 | [[audit-souverainete]] | Recensement des défauts-Claude en 3 niveaux + interrupteurs de repli local (`<FEATURE>_PROVIDER`) — Phase E | ✅ écrite |
 | [[coque-souple]] | Assemblage du prompt par blocs/scénario, modes MVP/Élite/Finition — jalon A | ✅ écrite |
 | [[coque-rigide]] | Contrat d'E/S `<mangoos>`, `executor.ts`, `inspection.ts` — jalon C/D | ✅ écrite |

@@ -33,6 +33,11 @@ export interface AskLLMOptions {
   model?: string
   maxTokens?: number
   timeoutMs?: number
+  /** Image en base64 pour les modèles vision (GLM-4V, Gemma 4…).
+   *  Ignoré si le provider ne supporte pas la vision. */
+  imageBase64?: string
+  /** Type MIME de l'image — défaut 'image/jpeg'. */
+  imageMimeType?: string
 }
 
 interface ProviderPreset {
@@ -156,6 +161,8 @@ async function askOpenAI(
   timeoutMs: number,
   baseURLOverride?: string,
   apiKeyOverride?: string,
+  imageBase64?: string,
+  imageMimeType?: string,
 ): Promise<string> {
   const rawBase = (baseURLOverride ?? process.env.LLM_OPENAI_URL ?? process.env.ELEVE_API_URL ?? 'https://api.deepseek.com/v1')
     .trim()
@@ -163,6 +170,13 @@ async function askOpenAI(
   const url = rawBase.endsWith('/chat/completions') ? rawBase : `${rawBase}/chat/completions`
   const key = (apiKeyOverride ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
   if (!key) throw new Error('Clé OpenAI-compatible manquante (LLM_OPENAI_KEY ou ELEVE_API_KEY dans server/.env).')
+  const mime = imageMimeType ?? 'image/jpeg'
+  const userContent = imageBase64
+    ? [
+        { type: 'text', text: user },
+        { type: 'image_url', image_url: { url: `data:${mime};base64,${imageBase64}` } },
+      ]
+    : user
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
@@ -176,7 +190,7 @@ async function askOpenAI(
         max_tokens: maxTokens,
         messages: [
           { role: 'system', content: system },
-          { role: 'user', content: user },
+          { role: 'user', content: userContent },
         ],
       }),
       signal: controller.signal,
@@ -196,12 +210,13 @@ export async function askLLM(system: string, user: string, opts: AskLLMOptions =
   const model = opts.model ?? defaultModel(provider)
   const maxTokens = opts.maxTokens ?? 1024
   const timeoutMs = opts.timeoutMs ?? 180_000
-  if (provider === 'ollama') return askOllama(system, user, { model, timeoutMs })
+  const { imageBase64, imageMimeType } = opts
+  if (provider === 'ollama') return askOllama(system, user, { model, timeoutMs, imageBase64 })
   if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq') {
     const preset = PROVIDER_PRESETS[provider]
     const key = (process.env[preset.apiKeyEnv] ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
     if (!key) throw new Error(`Clé manquante pour le provider "${provider}" (${preset.apiKeyEnv} dans server/.env).`)
-    return askOpenAI(system, user, model, maxTokens, timeoutMs, preset.baseURL, key)
+    return askOpenAI(system, user, model, maxTokens, timeoutMs, preset.baseURL, key, imageBase64, imageMimeType)
   }
   if (provider === 'litellm') {
     // Proxy LiteLLM = endpoint OpenAI-compat unique vers 100+ modèles. Le proxy
@@ -209,8 +224,8 @@ export async function askLLM(system: string, user: string, opts: AskLLMOptions =
     // proxy ignore (sa propre master-key gère l'accès s'il en a une).
     const baseURL = (process.env.LITELLM_BASE_URL ?? 'http://localhost:4000/v1').trim()
     const key = (process.env.LITELLM_API_KEY ?? 'sk-litellm-local').trim()
-    return askOpenAI(system, user, model, maxTokens, timeoutMs, baseURL, key)
+    return askOpenAI(system, user, model, maxTokens, timeoutMs, baseURL, key, imageBase64, imageMimeType)
   }
-  if (provider === 'openai') return askOpenAI(system, user, model, maxTokens, timeoutMs)
+  if (provider === 'openai') return askOpenAI(system, user, model, maxTokens, timeoutMs, undefined, undefined, imageBase64, imageMimeType)
   return askClaude(system, user, model)
 }

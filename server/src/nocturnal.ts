@@ -16,8 +16,9 @@ import { appendHistory, formatToolLine, loadHistory, type ChatEntry } from "./hi
 import { inspectProject, type InspectionSignal } from "./inspection.js";
 import { installBackendDepsAsync } from "./backend-generator.js";
 import { generateUniquePrompts } from "./train-loop.js";
-import { resolveProvider } from "./llm-engine.js";
+import { askLLM, resolveProvider } from "./llm-engine.js";
 import { getBrain } from "./kernel.js";
+import { capturePreview, getPreviewUrl } from "./vision.js";
 import { loadPreferences } from "./preferences.js";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
@@ -168,11 +169,31 @@ export async function judgeProject(dir: string, task: string): Promise<{ score: 
   const source = collectSource(dir);
   if (!source.trim()) return null;
   const prefs = loadPreferences(WORKSPACE_DIR);
-  const system =
-    "Tu es un juge esthétique et technique senior. Tu notes une app web générée sur 5 axes, de 0 à 10. Tu réponds UNIQUEMENT par un JSON valide, sans markdown.";
-  const user = `Tâche demandée : ${task}\n${prefs ? `\nPréférences connues de l'utilisateur :\n${prefs.slice(0, 800)}\n` : ""}\nCode du projet (échantillon) :\n${source}\n\nNote ce projet de 0 à 10 sur chaque axe et donne un commentaire bref (1 phrase). Réponds EXACTEMENT par :\n{"dims":{"design":N,"fonctionnel":N,"originalite":N,"coherence":N,"qualite":N},"score":N,"comment":"…"}\n- design = esthétique/UI · fonctionnel = ça marche/complet · originalite = sort de l'ordinaire · coherence = fidèle au goût utilisateur ci-dessus · qualite = qualité du code.`;
+
+  // Tentative de capture du rendu visuel — best-effort, jamais bloquant.
+  let imageBase64: string | undefined;
   try {
-    const raw = await getBrain().complete(system, user, { provider: resolveProvider(process.env.NOCTURNAL_JUDGE_PROVIDER, "claude"), maxTokens: 400 });
+    const url = getPreviewUrl();
+    if (url) {
+      const buf = await capturePreview(url);
+      imageBase64 = buf.toString("base64");
+    }
+  } catch {
+    // preview absent ou Playwright indispo — on juge sur le code uniquement
+  }
+
+  const hasVision = !!imageBase64;
+  const system = hasVision
+    ? "Tu es un juge esthétique et technique senior. Tu notes une app web générée sur 5 axes, de 0 à 10. Tu vois le RENDU VISUEL RÉEL (screenshot joint) — base le score 'design' sur ce que tu VOIS réellement, pas sur ce que le code suggère. Tu réponds UNIQUEMENT par un JSON valide, sans markdown."
+    : "Tu es un juge esthétique et technique senior. Tu notes une app web générée sur 5 axes, de 0 à 10. Tu réponds UNIQUEMENT par un JSON valide, sans markdown.";
+  const visualIntro = hasVision
+    ? "Voici le rendu visuel de l'app (screenshot). Analyse ce que tu vois : couleurs, typographie, mise en page, cohérence visuelle — PUIS note.\n\n"
+    : "";
+  const user = `${visualIntro}Tâche demandée : ${task}\n${prefs ? `\nPréférences connues de l'utilisateur :\n${prefs.slice(0, 800)}\n` : ""}\nCode du projet (échantillon) :\n${source}\n\nNote ce projet de 0 à 10 sur chaque axe et donne un commentaire bref (1 phrase). Réponds EXACTEMENT par :\n{"dims":{"design":N,"fonctionnel":N,"originalite":N,"coherence":N,"qualite":N},"score":N,"comment":"…"}\n- design = esthétique/UI · fonctionnel = ça marche/complet · originalite = sort de l'ordinaire · coherence = fidèle au goût utilisateur ci-dessus · qualite = qualité du code.`;
+  try {
+    const raw = hasVision
+      ? await askLLM(system, user, { provider: resolveProvider(process.env.NOCTURNAL_JUDGE_PROVIDER, "claude"), maxTokens: 400, imageBase64, imageMimeType: "image/jpeg" })
+      : await getBrain().complete(system, user, { provider: resolveProvider(process.env.NOCTURNAL_JUDGE_PROVIDER, "claude"), maxTokens: 400 });
     return parseJudgeOutput(raw);
   } catch {
     return null;
