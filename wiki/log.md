@@ -8,6 +8,9 @@ maj: 2026-06-24
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-24] verif | #150 Brain-Dispatch — ✅ FAIT : validation LIVE du routage réel
+`BRAIN_DISPATCH=on` prouvé avec de **vrais appels `gemma4:12b` en local** (gratuit), 10/10 assertions. `dispatch('codeur')` → Ollama (26,8 s, status=ok, contrat Mango parsé) ; `orchestrator.diagnose` route via `dispatch(architecte→ollama)` quand ON et retombe sur `deps.ask` quand OFF (gate opt-in prouvée des deux côtés) ; `patrol.runPatroller` route via `dispatch(optimiseur→ollama)` ; garde souveraineté `localOnly`+cloud → refus sans sortie réseau. Méthode : registre temporaire (`BRAIN_REGISTRY_FILE`) repointant architecte/auditeur sur Ollama pour éprouver le routage gated sans dépenser de cloud. [[brain-dispatch]] statut → **fait-validé-live** + ligne [[statut]] #150 → ✅ FAIT. C'était le dernier verrou avant clôture de #150. Zéro git (en attente Raf).
+
 ## [2026-06-24] verif | #150 Brain-Dispatch — Sharingan du panneau « Cerveaux par agent »
 Snapshot Playwright (Home → App Builder → projet mango-timer → rail Mémoire) du panneau `BrainRegistryPanel` (#150). Rendu conforme à l'ADN Apple/mangue : cartes par agent (badge cloud/local réactif), selects provider, champs model/baseUrl/apiKeyEnv/timeoutMs, checkbox localOnly, badge #150. Interaction validée : changer un provider bascule le badge cloud↔local et active « Sauvegarder » (violet accent) ; zéro erreur console ; aucun PUT involontaire (registre disque intact). Mise à jour de [[brain-dispatch]] (section État → Sharingan fait). Reste pour clore #150 : validation live du routage RÉEL (`BRAIN_DISPATCH=on`). Zéro git.
 

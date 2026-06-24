@@ -1,7 +1,7 @@
 ---
 type: entite
 tags: [multi-agents, cerveaux, orchestration, atelier]
-statut: en-cours-9-étapes-codées
+statut: fait-validé-live
 sources: [statut #150, historique 2026-06-24, docs/plan-106-brain-dispatch.md]
 maj: 2026-06-24
 ---
@@ -28,14 +28,15 @@ Pousser la vision multi-cerveaux de [[phase-e-multicerveaux]] à sa forme la plu
 
 ## État d'implémentation (2026-06-24)
 
-**🔨 EN COURS — les 9 étapes du plan codées, socle testé, routes validées live.**
+**✅ FAIT — 9 étapes codées, socle testé, routage réel validé LIVE.**
 
 - **Socle (couches 2-3-4)** : `brain-registry.ts` (registre + validation + fallback `DEFAULT_REGISTRY`, chemin testable `BRAIN_REGISTRY_FILE`), `agent-contract.ts` (contrat `<<<MANGO>>>` + `parseAgentResponse` 4 niveaux + `sanitizeExternal` + `withAgentTimeout` + `PipelineSession` immuable + `estimatePipelineCost`), `brain-dispatch.ts` (`dispatch`/`dispatchParallel` + rate limiter par provider + retry expo ; **ne throw jamais**).
 - **Câblage (couches 1-5-6)** : `llm-engine.ts` (`baseUrl`/`apiKeyEnv`), `orchestrator.ts` (5 lenses → `agentId`), `patrol.ts` (5 patrouilleurs → `agentId`). Routage **opt-in `BRAIN_DISPATCH=on`** (défaut OFF → comportement actuel exact, réversible, zéro régression).
 - **Routes (7) + UI (8)** : `brain-dispatch-routes.ts` (`GET/PUT /api/brain-registry`, `POST /api/brain-dispatch/estimate`) ; panneau « Cerveaux par agent » dans `Knowledge.jsx` (`BrainRegistryPanel`).
 - **Vérif** : `tsc` 0 · build UI vert · `test-brain-dispatch` 33/33 · orchestrator/patrol non régressés · routes prouvées live (estimate codeur+orchestrateur/500k = $15, warning).
 - **Sharingan (2026-06-24)** : panneau « Cerveaux par agent » snappé via Playwright (Home → App Builder → projet → rail Mémoire). Rendu conforme (cartes par agent, badges cloud/local, selects provider + champs model/baseUrl/apiKeyEnv/timeoutMs + checkbox localOnly, badge #150). Interaction validée : changer un provider bascule le badge cloud↔local en réactif et active le bouton « Sauvegarder » (violet accent) ; zéro erreur console ; aucun PUT involontaire (registre disque intact).
-- **Reste** : validation live du routage RÉEL (`BRAIN_DISPATCH=on`, vrais appels par cerveau) ; git en attente du feu vert de Raf.
+- **Validation LIVE du routage réel (2026-06-24)** : `BRAIN_DISPATCH=on` prouvé avec de **vrais appels `gemma4:12b` en local** (gratuit), **10/10 assertions**. (1) `dispatch('codeur')` → appel Ollama réel (26,8 s), `status=ok`, contrat Mango parsé par le parseur 4 niveaux sur sortie de vrai modèle. (2) `orchestrator.diagnose` route bien via `dispatch(architecte→ollama)` quand le flag est ON, et **retombe sur `deps.ask`** quand il est OFF (gate opt-in prouvée des deux côtés). (3) `patrol.runPatroller` route via `dispatch(optimiseur→ollama)`. (4) Garde de souveraineté : agent `localOnly` + cerveau cloud → `status=error` sans aucune sortie réseau. Méthode : registre temporaire (`BRAIN_REGISTRY_FILE`) repointant `architecte`/`auditeur` sur Ollama pour éprouver le routage gated sans dépenser de tokens cloud.
+- **Reste** : rien pour le socle — #150 est clos. Suites possibles (hors #150) : pipeline multi-agents de bout en bout (`dispatchParallel` en production), cerveaux cloud réels (Zhipu/DeepSeek) en charge. Git en attente du feu vert de Raf.
 
 ## Liens
 
@@ -47,6 +48,6 @@ Pousser la vision multi-cerveaux de [[phase-e-multicerveaux]] à sa forme la plu
 
 ## Sources
 
-- [[statut]] — idée **#150** (⏳ PLAN APPROUVÉ — à coder).
+- [[statut]] — idée **#150** (✅ FAIT — 9/9 codées + validé LIVE).
 - [[historique]] — journal du 2026-06-24 (session atelier — vision LLM + Brain-Dispatch).
 - `docs/plan-106-brain-dispatch.md` — plan détaillé 6 couches + 9 étapes d'implémentation.
