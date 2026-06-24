@@ -10,6 +10,7 @@ import { projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
 import { chatEleve } from "./eleve.js";
 import { processFeedback } from "./feedback.js";
 import { generateTasteSkins, type SkinRender } from "./taste-render.js";
+import { judgeSkins, buildJudgeContext } from "./taste-judge.js";
 
 function skinsDir(project: string): string {
   return path.join(projectDir(project), ".skins");
@@ -59,6 +60,18 @@ export function registerTasteRoutes(app: Express): void {
         },
       );
       for (const s of skins) if (s.ok && s.file) s.image = imgUrl(s.file);
+
+      // Juge-pixels (#149 v2) — l'œil note et trie les variantes selon le goût
+      // appris, AVANT le choix. Opt-out TASTE_JUDGE=off. Jamais bloquant.
+      if (process.env.TASTE_JUDGE !== "off") {
+        try {
+          send({ type: "status", text: "L'œil note les variantes…" });
+          const ctx = buildJudgeContext(WORKSPACE_DIR, project);
+          await judgeSkins(skinsDir(project), skins, ctx);
+        } catch (e) {
+          console.error("[taste] juge:", e instanceof Error ? e.message : e);
+        }
+      }
       send({ type: "done", skins });
     } catch (err) {
       send({ type: "error", error: err instanceof Error ? err.message : String(err) });

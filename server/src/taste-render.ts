@@ -24,6 +24,11 @@ export interface SkinRender {
   image?: string; // URL servie (rempli par la route)
   reason?: string;
   palette: string[];
+  // Juge-pixels (#149 v2) — remplis par taste-judge.ts au niveau route (optionnels).
+  score?: number; // note 0-100 du cerveau vision (selon le goût appris)
+  judgeReason?: string; // une ligne : pourquoi cette note
+  broken?: boolean; // le juge a vu une casse visuelle (débordement, illisible)
+  recommended?: boolean; // le meilleur non-cassé (pré-sélectionné dans la galerie)
 }
 
 export interface TasteRenderDeps {

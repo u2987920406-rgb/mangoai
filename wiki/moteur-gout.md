@@ -1,7 +1,7 @@
 ---
 type: entite
 tags: [gout, preference-learning, design, vision, souverain]
-statut: v1.5-livrée-vérifiée-live
+statut: v2-juge-pixels-livré-prouvé-live
 sources: [statut #149, historique 2026-06-23, commits 77c160a/c2cce12/524a901]
 maj: 2026-06-24
 ---
@@ -24,7 +24,8 @@ Combler le **seul fossé stratégique** de MangoOS face à Google AI Studio (ren
 - **Orchestration** (`taste-render.ts`) : génère K skins → swap → aperçu → screenshot → **RESTAURE** ; deps injectables ; **repli token-only si GLM casse** le redesign.
 - **Surface cockpit** : `taste-routes.ts` (`POST /api/taste/:project/generate` SSE, `GET /skin/:file`, `POST /choose` → axiome souverain via `chatEleve`/GLM) + `TasteGallery.jsx` (fenêtre Launcher `Wand2`). **Piège corrigé** : `.skins` est un dotfile → `res.sendFile(p, {dotfiles:"allow"})` sinon 404 silencieux (même piège latent dans la route diff #80).
 - **Vérif** : 112 tests (directions 23 · engine 26 · generate 33 · render 18 · images 12), `tsc` 0, build UI vert ; **prouvé live sur `mango-cafe-ts`** (v1 re-skin grounded Linear/Stripe → axiome `AXIOME-UX-01` ; v1.5 = 4 redesigns radicalement différents + vraies photos café). Commits `77c160a` / `c2cce12` / `524a901` (push origin).
-- **Reste v2** : juge-pixels #66 (pré-filtre → moins de clics), nocturne + validation téléphone (Remote Control), maille « héros ».
+- **✅ v2 JUGE-PIXELS #66 (2026-06-24)** — débloqué par [[sharingan-vision-eleve]] #151 : un cerveau VISION (`dispatch('vision')` → `qwen3.5:cloud`, $0) **note 0-100 et trie les K skins AVANT le choix**, selon le **goût appris** de Raf (`selectAxioms` VISION `[validé-utilisateur]` + `.design-system.md`), pas en absolu. `taste-judge.ts` : `buildJudgeContext` · `judgeSystem` (note = goût + qualité universelle + exécution direction, sortie `SCORE: n | CASSÉ: oui/non | raison`) · `parseJudgeScore` (pur) · `judgeSkins` (parallèle, deps injectables, **ne throw jamais**, trie desc, cassés en bas, marque le top `recommended`). Branché au niveau route (`taste-routes.ts`, gaté `TASTE_JUDGE`, gracieux) ; `TasteGallery.jsx` trie + badge **⭐ Recommandé · score** / **⚠ à éviter** (atténué) + **pré-sélectionne** le top (Raf confirme en 1 tap). `test-taste-judge` 19/19. **Prouvé live** : VL note 3 vraies UI 90/88/82 ; route sur `mango-cafe-ts` → Pastel doux 92 ⭐ / Minimal froid 85 (goût contextuel café + WCAG) ; Sharingan galerie OK.
+- **Reste v2** : nocturne + validation téléphone (Remote Control), maille « héros ».
 
 ## Liens
 

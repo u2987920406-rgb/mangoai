@@ -60,7 +60,16 @@ export default function TasteGallery({ win }) {
           try { ev = JSON.parse(line.slice(5).trim()); } catch { continue; }
           if (ev.type === "status") setStatus(ev.text);
           else if (ev.type === "skin" && ev.skin) setSkins((prev) => [...prev, ev.skin]);
-          else if (ev.type === "done") setStatus("");
+          else if (ev.type === "done") {
+            setStatus("");
+            // Le juge a noté + trié : on adopte la liste finale et on PRÉ-SÉLECTIONNE
+            // le top (Raf confirme en 1 tap, ou tape une autre carte).
+            if (Array.isArray(ev.skins) && ev.skins.length) {
+              setSkins(ev.skins);
+              const top = ev.skins.find((s) => s.ok !== false && !s.broken);
+              if (top) setChosen((cur) => cur ?? top.id);
+            }
+          }
           else if (ev.type === "error") setStatus("⚠ " + ev.error);
         }
       }
@@ -93,7 +102,10 @@ export default function TasteGallery({ win }) {
     }
   }
 
-  const okSkins = skins.filter((s) => s.ok !== false);
+  // Tri défensif meilleure-d'abord (la route trie déjà ; on sécurise le cas où des
+  // skins ont été streamés avant le verdict du juge). Cassées reléguées en bas.
+  const rank = (s) => (s.broken ? -1 : s.score ?? 50);
+  const okSkins = skins.filter((s) => s.ok !== false).sort((a, b) => rank(b) - rank(a));
 
   return (
     <div className="flex h-full flex-col bg-bg text-ink">
@@ -144,29 +156,55 @@ export default function TasteGallery({ win }) {
           <div className="grid grid-cols-2 gap-3">
             {okSkins.map((s) => {
               const active = chosen === s.id;
+              const hasScore = typeof s.score === "number";
               return (
                 <button
                   key={s.id}
                   onClick={() => { setChosen(s.id); setSaved(false); }}
-                  className={`group overflow-hidden rounded-2xl border text-left shadow-lg shadow-black/20 backdrop-blur-sm transition ${
+                  className={`group relative overflow-hidden rounded-2xl border text-left shadow-lg shadow-black/20 backdrop-blur-sm transition ${
                     active ? "border-accent ring-2 ring-accent/50" : "border-edge hover:border-accent-soft/60"
-                  }`}
+                  } ${s.broken ? "opacity-60" : ""}`}
                 >
                   <div className="relative aspect-[16/10] w-full bg-white">
-                    <img src={s.image} alt={s.name} className="h-full w-full object-cover object-top" />
+                    <img
+                      src={s.image}
+                      alt={s.name}
+                      className={`h-full w-full object-cover object-top ${s.broken ? "grayscale" : ""}`}
+                    />
+                    {/* Verdict du juge : ⭐ recommandé, ⚠ cassé, ou score seul */}
+                    {s.recommended ? (
+                      <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-accent px-2 py-0.5 text-[10.5px] font-semibold text-white shadow">
+                        ⭐ Recommandé{hasScore ? ` · ${s.score}` : ""}
+                      </div>
+                    ) : s.broken ? (
+                      <div className="absolute left-2 top-2 rounded-full bg-sys-red/90 px-2 py-0.5 text-[10.5px] font-semibold text-white shadow">
+                        ⚠ à éviter
+                      </div>
+                    ) : hasScore ? (
+                      <div className="absolute left-2 top-2 rounded-full bg-black/55 px-2 py-0.5 text-[10.5px] font-semibold text-white shadow">
+                        {s.score}
+                      </div>
+                    ) : null}
                     {active && (
                       <div className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-full bg-accent text-white shadow">
                         <Check size={14} />
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 bg-panel/70 px-3 py-2">
-                    <span className="text-[12.5px] font-medium text-ink">{s.name}</span>
-                    <span className="ml-auto flex gap-1">
-                      {(s.palette || []).slice(0, 5).map((c, i) => (
-                        <span key={i} className="h-3 w-3 rounded-full border border-edge/50" style={{ background: c }} />
-                      ))}
-                    </span>
+                  <div className="flex flex-col gap-1 bg-panel/70 px-3 py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[12.5px] font-medium text-ink">{s.name}</span>
+                      <span className="ml-auto flex gap-1">
+                        {(s.palette || []).slice(0, 5).map((c, i) => (
+                          <span key={i} className="h-3 w-3 rounded-full border border-edge/50" style={{ background: c }} />
+                        ))}
+                      </span>
+                    </div>
+                    {s.judgeReason && (
+                      <span className="truncate text-[10.5px] text-faint" title={s.judgeReason}>
+                        👁 {s.judgeReason}
+                      </span>
+                    )}
                   </div>
                 </button>
               );
