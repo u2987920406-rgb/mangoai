@@ -13,6 +13,9 @@ import path from "node:path";
 import fs from "node:fs";
 import { resolveProvider } from "./llm-engine.js";
 import { getBrain } from "./kernel.js";
+import { dispatch } from "./brain-dispatch.js";
+import type { AgentId } from "./brain-registry.js";
+import type { AgentResult } from "./agent-contract.js";
 import { appendHistory } from "./history.js";
 import type { ProjectType } from "./blueprints.js";
 
@@ -32,6 +35,8 @@ export interface Patroller {
   triggers(ctx: PatrolContext): boolean;
   // Angle d'audit injecté en system prompt.
   system: string;
+  /** Brain-Dispatch #150 : cerveau dédié de ce patrouilleur (routé si BRAIN_DISPATCH=on). */
+  agentId?: AgentId;
 }
 
 export interface PatrolFinding {
@@ -121,6 +126,7 @@ export const PATROLLERS: Patroller[] = [
     id: "a11y",
     label: "Accessibilité",
     emoji: "♿",
+    agentId: "auditeur",
     triggers: (ctx) =>
       any(ctx.changedFiles, RE_UI) &&
       ["dashboard", "jeu", "slides", "vitrine", "webapp", "fullstack"].includes(ctx.projectType),
@@ -132,6 +138,7 @@ Report at most 4 concrete issues, each one short bullet: "- problem — file:whe
     id: "security",
     label: "Sécurité",
     emoji: "🔒",
+    agentId: "auditeur",
     triggers: (ctx) =>
       any(ctx.changedFiles, RE_SECURITY_PATH) ||
       any(ctx.changedFiles, RE_BACKEND_FILE) ||
@@ -144,6 +151,7 @@ Report at most 4 issues, each bullet prefixed with severity: "- (haute|moyenne|b
     id: "seo",
     label: "SEO",
     emoji: "🔍",
+    agentId: "chercheur",
     triggers: (ctx) =>
       ["vitrine", "webapp", "fullstack"].includes(ctx.projectType) &&
       (ctx.projectType === "vitrine" ||
@@ -157,6 +165,7 @@ Report at most 4 concrete bullets: "- problem — file:where — fix". If nothin
     id: "perf",
     label: "Performance",
     emoji: "⚡",
+    agentId: "optimiseur",
     triggers: (ctx) =>
       any(ctx.changedFiles, RE_JSX) && !["slides", "autre"].includes(ctx.projectType),
     system: `You are a Performance patroller in a local app builder. You audit ONLY React render performance in the changed files. STATIC analysis only — never claim a runtime measurement.
@@ -167,6 +176,7 @@ Report at most 4 prioritized bullets: "- problem — file:where — fix". If not
     id: "bundle",
     label: "Bundle",
     emoji: "📦",
+    agentId: "optimiseur",
     triggers: (ctx) =>
       !["slides", "autre"].includes(ctx.projectType) &&
       (any(ctx.changedFiles, /(^|\/)package\.json$/i) || importsBarePackage(ctx)),
@@ -198,12 +208,37 @@ export async function runPatroller(
     'Audit ONLY through your lens. If there is nothing notable, reply EXACTLY "RAS".',
   ].join("\n");
   try {
-    const report = (await deps.ask(p.system, user)).trim();
+    const report = await askPatrol(p, user, deps);
     const clean = report === "" || /^RAS\b/i.test(report);
     return { id: p.id, label: p.label, emoji: p.emoji, report, clean };
   } catch {
     return { id: p.id, label: p.label, emoji: p.emoji, report: "", clean: true };
   }
+}
+
+/** Routage Brain-Dispatch opt-in : actif seulement si BRAIN_DISPATCH=on. */
+function patrolDispatchEnabled(): boolean {
+  return process.env.BRAIN_DISPATCH === "on";
+}
+
+/** Extrait le rapport texte d'un AgentResult (contrat Mango JSON). "" si échec. */
+function reportFromResult(r: AgentResult): string {
+  if (r.status === "error" || r.status === "timeout") return "";
+  let rich = "";
+  for (const v of Object.values(r.data ?? {})) {
+    if (typeof v === "string" && v.trim().length > rich.length) rich = v.trim();
+  }
+  return (rich.length > (r.summary ?? "").length ? rich : (r.summary ?? "")).trim();
+}
+
+/** Le cerveau du patrouilleur : son agent dédié (si dispatch activé) sinon le défaut. */
+async function askPatrol(p: Patroller, user: string, deps: PatrolDeps): Promise<string> {
+  if (p.agentId && patrolDispatchEnabled()) {
+    // Code du PROPRE projet de l'utilisateur → trustExternal.
+    const r = await dispatch(p.agentId, p.system, user, { trustExternal: true });
+    return reportFromResult(r);
+  }
+  return (await deps.ask(p.system, user)).trim();
 }
 
 // ── Agrégation : un seul message status compact, RAS masqués (anti-spam) ──────

@@ -38,6 +38,12 @@ export interface AskLLMOptions {
   imageBase64?: string
   /** Type MIME de l'image — défaut 'image/jpeg'. */
   imageMimeType?: string
+  /** Endpoint OpenAI-compat custom (ex. Zhipu "https://open.bigmodel.cn/api/paas/v4").
+   *  Pris en compte par le provider 'openai'. */
+  baseUrl?: string
+  /** Nom de la variable d'env qui contient la clé API (ex. "ZHIPU_API_KEY").
+   *  Lu dans process.env ; pris en compte par le provider 'openai'. */
+  apiKeyEnv?: string
 }
 
 interface ProviderPreset {
@@ -226,6 +232,11 @@ export async function askLLM(system: string, user: string, opts: AskLLMOptions =
     const key = (process.env.LITELLM_API_KEY ?? 'sk-litellm-local').trim()
     return askOpenAI(system, user, model, maxTokens, timeoutMs, baseURL, key, imageBase64, imageMimeType)
   }
-  if (provider === 'openai') return askOpenAI(system, user, model, maxTokens, timeoutMs, undefined, undefined, imageBase64, imageMimeType)
+  if (provider === 'openai') {
+    // Brain-Dispatch #150 : un BrainConfig peut router 'openai' vers un endpoint
+    // OpenAI-compat custom (Zhipu, etc.) avec sa propre clé nommée par env.
+    const ovKey = opts.apiKeyEnv ? ((process.env[opts.apiKeyEnv] ?? '').trim() || undefined) : undefined
+    return askOpenAI(system, user, model, maxTokens, timeoutMs, opts.baseUrl, ovKey, imageBase64, imageMimeType)
+  }
   return askClaude(system, user, model)
 }

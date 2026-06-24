@@ -75,6 +75,7 @@ import { registerPromptEvolutionRoutes } from "./prompt-evolution.js";
 import { registerRadarRoutes } from "./radar.js";
 import { registerBuildReviewRoutes } from "./build-review-routes.js";
 import { registerBrainRoutes } from "./brain-routes.js";
+import { registerBrainDispatchRoutes } from "./brain-dispatch-routes.js";
 import { registerTasteRoutes } from "./taste-routes.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
@@ -862,6 +863,7 @@ registerBackendServerRoutes(app);
 registerProjectIORoutes(app, () => agentBusy);
 registerFeedbackRoutes(app);
 registerBrainRoutes(app);
+registerBrainDispatchRoutes(app);
 registerTasteRoutes(app);
 
 app.post("/api/stop", async (_req, res) => {

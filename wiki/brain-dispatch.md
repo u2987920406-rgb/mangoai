@@ -1,7 +1,7 @@
 ---
 type: entite
 tags: [multi-agents, cerveaux, orchestration, atelier]
-statut: plan-approuvé-à-coder
+statut: en-cours-9-étapes-codées
 sources: [statut #150, historique 2026-06-24, docs/plan-106-brain-dispatch.md]
 maj: 2026-06-24
 ---
@@ -25,6 +25,16 @@ Pousser la vision multi-cerveaux de [[phase-e-multicerveaux]] à sa forme la plu
 - **Câblage** : `orchestrator.ts` (conseil d'experts #44) + `patrol.ts` (l'armée #73) branchés sur les cerveaux par agent.
 - **Architecture 6 couches**, gravée dans `docs/plan-106-brain-dispatch.md` (nom de fichier conservé tel quel — il reflète l'ancienne numérotation atelier #136/#106, qu'on ne casse pas).
 - **Renumérotation** : l'atelier l'avait pris **#136**, déjà occupé par [[bureau-os]] côté maison → **#150** au merge atelier→maison du 2026-06-24.
+
+## État d'implémentation (2026-06-24)
+
+**🔨 EN COURS — les 9 étapes du plan codées, socle testé, routes validées live.**
+
+- **Socle (couches 2-3-4)** : `brain-registry.ts` (registre + validation + fallback `DEFAULT_REGISTRY`, chemin testable `BRAIN_REGISTRY_FILE`), `agent-contract.ts` (contrat `<<<MANGO>>>` + `parseAgentResponse` 4 niveaux + `sanitizeExternal` + `withAgentTimeout` + `PipelineSession` immuable + `estimatePipelineCost`), `brain-dispatch.ts` (`dispatch`/`dispatchParallel` + rate limiter par provider + retry expo ; **ne throw jamais**).
+- **Câblage (couches 1-5-6)** : `llm-engine.ts` (`baseUrl`/`apiKeyEnv`), `orchestrator.ts` (5 lenses → `agentId`), `patrol.ts` (5 patrouilleurs → `agentId`). Routage **opt-in `BRAIN_DISPATCH=on`** (défaut OFF → comportement actuel exact, réversible, zéro régression).
+- **Routes (7) + UI (8)** : `brain-dispatch-routes.ts` (`GET/PUT /api/brain-registry`, `POST /api/brain-dispatch/estimate`) ; panneau « Cerveaux par agent » dans `Knowledge.jsx` (`BrainRegistryPanel`).
+- **Vérif** : `tsc` 0 · build UI vert · `test-brain-dispatch` 33/33 · orchestrator/patrol non régressés · routes prouvées live (estimate codeur+orchestrateur/500k = $15, warning).
+- **Reste** : validation live du routage RÉEL (`BRAIN_DISPATCH=on`, vrais appels par cerveau) + Sharingan du panneau ; git en attente du feu vert de Raf.
 
 ## Liens
 
