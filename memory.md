@@ -1,5 +1,26 @@
 # Memory — MangoOS
 
+## 🔖 POINT DE REPRISE (2026-06-24, soir — PC éteint après cette session)
+
+**Pour reprendre :** lire `statut.md` (entrée du haut « Dernière mise à jour ») + `historique.md` (1ʳᵉ entrée du Journal) + la mémoire auto `~/.claude/projects/D--IA-MangoOS/memory/MEMORY.md`. Tout y est détaillé.
+
+**Ce qui a été fait aujourd'hui (2026-06-24) — gros progrès sur le moteur agentique de l'Élève (GLM) :**
+1. **Révision « apprendre, pas secourir »** (commit `3b97afa`) : plus de marge (`maxCorrections`), auto-relance de GLM sur blocage, escalade Claude OFF par défaut, contrat durci.
+2. **2 gardes anti-blocage** (commit `dbdcb97`) : anti-exploration-stérile + anti-shell-lecture.
+3. **Outil `add_dependency`** (commit `ffdae73`) : install curé (allowlist) → l'agent gère ses libs, persiste dans package.json.
+4. **Formation TOEIC `formation-toic` FINIE** (commit `c12f1d5`, doc) en orchestrant GLM toute la nuit (Claude = chef + yeux Sharingan/Playwright, GLM = mains) : layout corrigé (cause-racine = reset CSS non-layered cassant Tailwind v4), tout le flux restylé Mango Pastel, NaN/états vides réglés, code mort retiré ; **7 écrans cohérents + parcours complet validé en images**. **5 axiomes** écrits dans `workspace/.axioms.md` (GLM apprend).
+
+**⟶ PROCHAIN CHANTIER (décidé par Raf) : donner le SHARINGAN / la VISION à GLM** — il code à l'aveugle (cause-racine de ses incohérences UI). Détail : `~/.claude/projects/D--IA-MangoOS/memory/project_sharingan_vision_eleve.md`. 🧠 Opus, effort L.
+
+**État des serveurs (seront tués à l'arrêt du PC → à relancer) :**
+- Backend Express port 3000 (`cd server && npm start`) — ⚠ AVANT, vérifier l'anti-orphelin port 3000 (cf. `CLAUDE.md`).
+- Aperçus Vite de `formation-toic` (plusieurs ports 5174-5178 + 5191 que j'avais lancé) — tous éphémères.
+- L'app `formation-toic` (workspace/, gitignorée) est finie et build vert ; pour la revoir : la rouvrir dans le cockpit ou `cd workspace/formation-toic && npx vite`.
+
+**En attente du retour de Raf :** son avis de GOÛT sur le rendu visuel de la formation (le seul juge qui compte).
+
+---
+
 ## État actuel (2026-06-14 — Jalon D + vague d'idées 06-14 + session « suite » : scrape_url, phase Finition/qa, fixes aperçu/agentBusy/reviewer)
 - **MVP + roadmap concurrence (5/5) + refonte UI + boucle d'apprentissage Hermes (5/5) + compression de contexte + raisonnement analytique + robustesse des magasins + mode vision en boucle fermée + Phase Ultime A/B/C/D** : tout est FAIT, testé de bout en bout — détail dans `statut.md` et `changelog.md`
 - **Phase Ultime COMPLÈTE (A→D, 2026-06-13)** : MangoOS est désormais model-agnostic — l'Élève local **Gemma 4 12B** (Ollama, sélecteur « 🎓 Élève local » ; Qwen retiré le 2026-06-17) traite la routine à coût zéro, Claude reste l'escalade + scribe d'axiomes. Voir les règles Jalon D plus bas + le dashboard de compagnonnage (panneau 📊) et l'Audit Scan (`npx tsx src/audit-scan.ts [--ablate]`)
