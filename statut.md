@@ -209,7 +209,7 @@
 | 8 | Inspiration web contextuelle | ✅ FAIT | — | — |
 | 9 | Tests auto Vitest/Playwright | ✅ FAIT | — | — |
 | 10 | Déploiement Vercel + Netlify | ✅ FAIT | — | — |
-| 11 | Déléguer édition visuelle à Qwen-VL | 💤 | 🧠 Opus 4.8 | XL |
+| 11 | **Déléguer édition visuelle à Qwen-VL** — *cœur ABSORBÉ par #151 (Sharingan/vision à l'Élève)* : l'œil VL (`qwen3.5:cloud`, lignée Qwen-VL, $0) existe, GLM édite guidé par `vois_ecran` et s'auto-corrige (zéro Claude), le juge de goût #66 réutilise le même œil. **Reste 2 niches** (hors #151) : (a) **édition VL-localisée** (le VL repère l'élément dans l'image et déclenche l'édit ciblé, pas une critique texte → S/M) ; (b) **Qwen-VL local** pour souveraineté pleine + **OCR scanné #36** (S). | 🔁 ~80% absorbé par #151 — restent 2 niches | 🧠 Opus 4.8 | S |
 
 ### Idées en attente / actives
 
