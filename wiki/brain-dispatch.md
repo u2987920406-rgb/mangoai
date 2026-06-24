@@ -34,7 +34,8 @@ Pousser la vision multi-cerveaux de [[phase-e-multicerveaux]] à sa forme la plu
 - **Câblage (couches 1-5-6)** : `llm-engine.ts` (`baseUrl`/`apiKeyEnv`), `orchestrator.ts` (5 lenses → `agentId`), `patrol.ts` (5 patrouilleurs → `agentId`). Routage **opt-in `BRAIN_DISPATCH=on`** (défaut OFF → comportement actuel exact, réversible, zéro régression).
 - **Routes (7) + UI (8)** : `brain-dispatch-routes.ts` (`GET/PUT /api/brain-registry`, `POST /api/brain-dispatch/estimate`) ; panneau « Cerveaux par agent » dans `Knowledge.jsx` (`BrainRegistryPanel`).
 - **Vérif** : `tsc` 0 · build UI vert · `test-brain-dispatch` 33/33 · orchestrator/patrol non régressés · routes prouvées live (estimate codeur+orchestrateur/500k = $15, warning).
-- **Reste** : validation live du routage RÉEL (`BRAIN_DISPATCH=on`, vrais appels par cerveau) + Sharingan du panneau ; git en attente du feu vert de Raf.
+- **Sharingan (2026-06-24)** : panneau « Cerveaux par agent » snappé via Playwright (Home → App Builder → projet → rail Mémoire). Rendu conforme (cartes par agent, badges cloud/local, selects provider + champs model/baseUrl/apiKeyEnv/timeoutMs + checkbox localOnly, badge #150). Interaction validée : changer un provider bascule le badge cloud↔local en réactif et active le bouton « Sauvegarder » (violet accent) ; zéro erreur console ; aucun PUT involontaire (registre disque intact).
+- **Reste** : validation live du routage RÉEL (`BRAIN_DISPATCH=on`, vrais appels par cerveau) ; git en attente du feu vert de Raf.
 
 ## Liens
 
