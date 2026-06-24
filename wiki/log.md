@@ -8,6 +8,9 @@ maj: 2026-06-24
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-25] fix | Mode Discuter — l'Élève LIT vraiment le projet (fin de la boucle « je cherche… »)
+Bug (capture Raf) : en Discuter, GLM promettait de scanner le projet, bouclait sur Oui/Non, puis « je n'ai pas accès aux fichiers ». Cause : le tour discuss appelait `chatEleve` SANS outils + `CONFIRM_PROTOCOL` poussait aux Oui/Non. Fix : (1) Discuter passe par `askEleveAgentic` + `buildEleveTools` (lecture seule, borné) quand le cerveau gère le function-calling → GLM lit réellement ; (2) `DISCUSS_RULES` durci (lire directement, jamais demander la permission de chercher, demander à coller si introuvable). tsc 0 · relay/eleve-tools/eleve-runtime verts. LIVE sur `formation-toic` : `list_files→search_code→read_file×2`, trouve `src/data/bank/part1.js`, répond précis, zéro boucle. Touche [[eleve-local]]. Fichiers `index.ts` + `scenario.ts`. Zéro git (en attente Raf).
+
 ## [2026-06-24] ingest | #149 Boucle fermée du goût — ✅ livrée, prouvée live
 Mise à jour de [[moteur-gout]] (bullet boucle fermée) + ligne [[statut]] + journal [[historique]]. Ferme le cycle « mesurer → réinjecter » au stade GÉNÉRATION : `taste-loop.ts` `favoredIds(maille)` dérive des runs décidés les ids favoris (direction/composition) classés par fréquence de choix puis score ; `generateTasteSkins` `opts.favorIds` amorce les samplers, plafonné à ⌊k/2⌋ (exploration préservée) ; câblé route `/generate` + nuit, gaté `TASTE_CLOSED_LOOP`. `test-taste-loop` 8 · render 28 · nocturnal 17 · tsc 0. PROUVÉ LIVE : run décidé `hero:plein-ecran-overlay` → `favoredIds('hero')`=`["plein-ecran-overlay"]` réinjecté. Zéro git (en attente Raf).
 

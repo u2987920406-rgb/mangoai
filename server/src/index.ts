@@ -27,7 +27,8 @@ import { saveUpload } from "./uploads.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
-import { runRelay, chatEleve, ELEVE_PROVIDER } from "./eleve.js";
+import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js";
+import { buildEleveTools } from "./eleve-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { assembleSystemPrompt } from "./scenario.js";
 import { uxuiProfile } from "./models/uxui.js";
@@ -456,7 +457,25 @@ app.post("/api/chat", async (req, res) => {
         .map((e) => `${e.role === "user" ? "Humain" : "MangoOS"} : ${e.text}`)
         .join("\n");
       const userMsg = recent ? `${recent}\n\nHumain : ${prompt}` : prompt;
-      const answer = (await chatEleve(system, userMsg, binding.model, binding.provider)).trim() || "(réponse vide de l'Élève)";
+      // Discuter AGENTIQUE EN LECTURE : quand le cerveau gère les outils (GLM cloud
+      // function-calling), l'Élève peut VRAIMENT lire le projet (list/read/search,
+      // borné, lecture seule) pour fonder ses conseils — fini le « je lance la
+      // recherche ? » à vide en boucle. Sinon (modèle sans outils) → chat pur, et le
+      // prompt discuss lui interdit de faire semblant de chercher (il demande à coller).
+      let answer: string;
+      if (ELEVE_PROVIDER === "openai") {
+        try {
+          const r = await askEleveAgentic(system, userMsg, buildEleveTools(dir), {
+            model: binding.model,
+            onTool: (name, args) => send({ type: "tool", name, detail: args }),
+          });
+          answer = r.text.trim() || "(réponse vide de l'Élève)";
+        } catch {
+          answer = (await chatEleve(system, userMsg, binding.model, binding.provider)).trim() || "(réponse vide de l'Élève)";
+        }
+      } else {
+        answer = (await chatEleve(system, userMsg, binding.model, binding.provider)).trim() || "(réponse vide de l'Élève)";
+      }
       record("agent", answer);
       send({ type: "text", text: answer });
       lastResult.current = { costUsd: 0, numTurns: 1 };
