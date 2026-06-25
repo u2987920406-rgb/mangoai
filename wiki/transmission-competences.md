@@ -26,14 +26,27 @@ Même patron que [[sharingan-vision-eleve]] (`vois_ecran`).
 
 - **`vois_ecran`** (#151) — voir son propre rendu et s'auto-corriger (cerveau vision `qwen3.5:cloud`). → [[sharingan-vision-eleve]]
 - **`chercher_image`** (#153, 2026-06-25) — trouver de VRAIES photos pertinentes (Pexels, `searchPexelsImages`) au lieu de placeholders aléatoires (picsum/loremflickr). **Déclencheur** : l'app TOEIC `formation-toic` avait des images picsum hors-sujet ; Claude les a corrigées à la main PUIS en a fait l'outil. **Prouvé live** : GLM en Construire fait `chercher_image→edit_file→check_build→finish` seul, remplace un picsum par une photo Pexels, $0, zéro Claude. Clause contrat : « jamais de placeholder aléatoire pour une image qui doit montrer un contenu réel ».
+- **`chercher_web` / `lire_page`** (#154, 2026-06-25) — SE DOCUMENTER avant d'affirmer (doc d'API, vraie donnée, URL, fait), au lieu de bâtir sur une mémoire figée. `eleve-web-tools.ts` : `chercher_web` scrape une chaîne keyless **DuckDuckGo HTML → Mojeek** (UA réaliste + détection captcha → moteur suivant ; Tavily si `TAVILY_API_KEY`), `lire_page` réutilise `scrapeExternal` derrière **`isCloneableUrl` (anti-SSRF)** + **`sanitizeExternal`** (web = DONNÉE, jamais instruction). Clause **⚠ DOCUMENTATION**. **Prouvé live** : GLM enchaîne seul `chercher_web → lire_page ×2 (il VÉRIFIE que l'URL charge) → edit_file → finish`, écrit l'URL officielle réelle de Recharts, $0. **Limite** : scraper keyless best-effort (captcha sous rafale) → `TAVILY_API_KEY` pour l'intensif ; dégradation gracieuse (GLM vérifie via `lire_page`).
 - *(socle déjà là, #146 : read/list/search, write/edit, run_command, add_dependency curé, delegate, check_build, finish.)*
 
 ## Roadmap de transmission (proactif)
 
-- **Recherche / fetch web** — l'Élève ne peut pas chercher sur le web (research, vérif de faits, doc d'API). Claude a WebSearch/WebFetch ; Mango n'a rien. Gros levier.
-- **L'œil-coach #152 en self-critique de GLM** — GLM s'auto-critique multi-lentilles pendant le build (au lieu d'une passe externe).
-- **Bruit du juge VL** (#152 v1.1) — moyenner / passes par lentille.
-- Au fil de l'eau : tout ce que Claude refait à la main → en faire un outil.
+Principe : les meilleures transmissions **associent une FONCTION (outil) à une DISPOSITION (manière de penser fiable)** — l'outil rend le bon réflexe *facile*, la clause de contrat dit *quand* l'employer. Déjà fait : `vois_ecran` ↔ « regarde, ne code pas à l'aveugle » ; `chercher_image` ↔ « du réel, pas du placeholder » ; `chercher_web`/`lire_page` ↔ « se documenter au lieu d'inventer ».
+
+**Fonctions à transmettre (par levier décroissant)** :
+1. ✅ **Recherche / fetch web** (`chercher_web`, `lire_page`) ↔ *« se documenter au lieu d'inventer »* — **TRANSMIS #154** (chaîne keyless DDG→Mojeek + anti-SSRF + sanitize ; prouvé live).
+2. **Tester le PARCOURS utilisateur** (`teste_parcours` : jouer l'app via Playwright, cliquer/remplir/vérifier) ↔ *« vérifie que ça MARCHE, pas juste que ça compile »*. Aurait attrapé le bug des images TOEIC (build vert mais 📷). Très haut levier. **= le chantier en cours (#155).**
+3. **Réutiliser les artefacts** (`chercher_artefact` sur le Blackboard cross-projet) ↔ *« réutiliser > regénérer »*. Cohérence + vitesse ; le « kit de composants à ton goût » en découle.
+4. **Lire un document en entrée** (`lire_pdf`/`lire_doc`, réutilise la primitive #147) ↔ *« pars de la VRAIE source du user »* (spec, référence, énoncé).
+
+**Dispositions à inculquer (via clauses de contrat + meta-outils + garde-fous)** :
+- **Honnêteté sur l'incertitude** — dire « je ne suis pas sûr → je vérifie » au lieu d'affirmer (antidote au réflexe picsum « plausible mais faux »).
+- **Cas limites / échecs / sécurité** — auto-revue adversariale (input vide ? donnée non fiable ? que casse ça ?).
+- **Planifier avant d'agir** — décomposer, choisir une approche, puis coder (pas foncer).
+- **Mesurer plutôt qu'opiner** — préférer un check objectif (build, WCAG #152, tests) à une impression.
+- **L'œil-coach #152 en self-critique de GLM** — le multi-lentilles tourné vers soi pendant le build.
+
+C'est, dans l'ordre, **mes propres réflexes de fiabilité** : on ne transmet pas des outils, on transmet une **manière de penser fiable**.
 
 ## Liens
 

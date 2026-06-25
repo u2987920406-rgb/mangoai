@@ -28,14 +28,15 @@ fs.writeFileSync(path.join(dir, "src", "App.jsx"), "export default function App(
 const reg = buildEleveActionTools(dir);
 
 async function run() {
-  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2)");
-  check("10 outils enregistrés", reg.names().length === 10);
+  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + web #154)");
+  check("12 outils enregistrés", reg.names().length === 12);
   check(
     "write_file/edit_file/run_command/add_dependency/chercher_image/finish présents",
     ["write_file", "edit_file", "run_command", "add_dependency", "chercher_image", "finish"].every((n) => reg.has(n)),
   );
+  check("outils web #154 présents (chercher_web/lire_page)", ["chercher_web", "lire_page"].every((n) => reg.has(n)));
   check("outils lecture Phase 1 conservés", ["read_file", "list_files", "search_code", "check_build"].every((n) => reg.has(n)));
-  check("toOpenAITools → 10 functions valides", toOpenAITools(reg).length === 10 && toOpenAITools(reg).every((t) => t.type === "function"));
+  check("toOpenAITools → 12 functions valides", toOpenAITools(reg).length === 12 && toOpenAITools(reg).every((t) => t.type === "function"));
   // chercher_image : scène vide → erreur pédagogique (branche déterministe, sans réseau)
   const imgEmpty = await reg.invoke("chercher_image", { scene: "  " });
   check("chercher_image scène vide → isError", imgEmpty.isError === true);
@@ -75,7 +76,7 @@ async function run() {
   {
     const gated = buildEleveActionTools(dir, { allowRun: false });
     check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
-    check("9 outils (run_command retiré)", gated.names().length === 9);
+    check("11 outils (run_command retiré, web conservé)", gated.names().length === 11);
     check("add_dependency conservé même pour cerveau faible (curé, sûr)", gated.has("add_dependency"));
     check("write/edit/read/check_build/finish conservés", ["write_file", "edit_file", "read_file", "check_build", "finish"].every((n) => gated.has(n)));
     const full = buildEleveActionTools(dir, { allowRun: true });

@@ -17,6 +17,7 @@ import { z } from "zod";
 import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
+import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
@@ -228,6 +229,14 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   for (const t of actionTools) {
     if (t.name === "run_command" && !allowRun) continue; // gaté pour cerveau faible
     reg.register(t);
+  }
+
+  // Outils WEB (#154) — « se documenter au lieu d'inventer ». Toujours actifs (la
+  // sécurité tient aux garde-fous internes : anti-SSRF isCloneableUrl + sanitizeExternal),
+  // coupure d'urgence ELEVE_WEB=off. Donne à l'Élève le réflexe de Claude : chercher
+  // une vraie source avant d'affirmer une URL/un usage d'API/un fait.
+  if (process.env.ELEVE_WEB !== "off") {
+    for (const t of buildEleveWebTools(projectDir)) reg.register(t);
   }
 
   // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
