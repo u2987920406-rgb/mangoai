@@ -38,8 +38,15 @@ Pousser la vision multi-cerveaux de [[phase-e-multicerveaux]] à sa forme la plu
 - **Validation LIVE du routage réel (2026-06-24)** : `BRAIN_DISPATCH=on` prouvé avec de **vrais appels `gemma4:12b` en local** (gratuit), **10/10 assertions**. (1) `dispatch('codeur')` → appel Ollama réel (26,8 s), `status=ok`, contrat Mango parsé par le parseur 4 niveaux sur sortie de vrai modèle. (2) `orchestrator.diagnose` route bien via `dispatch(architecte→ollama)` quand le flag est ON, et **retombe sur `deps.ask`** quand il est OFF (gate opt-in prouvée des deux côtés). (3) `patrol.runPatroller` route via `dispatch(optimiseur→ollama)`. (4) Garde de souveraineté : agent `localOnly` + cerveau cloud → `status=error` sans aucune sortie réseau. Méthode : registre temporaire (`BRAIN_REGISTRY_FILE`) repointant `architecte`/`auditeur` sur Ollama pour éprouver le routage gated sans dépenser de tokens cloud.
 - **Reste** : rien pour le socle — #150 est clos. Suites possibles (hors #150) : pipeline multi-agents de bout en bout (`dispatchParallel` en production), cerveaux cloud réels (Zhipu/DeepSeek) en charge. Git en attente du feu vert de Raf.
 
+## L'Élève EST l'agent `codeur` — un seul annuaire (#162, 2026-06-25)
+
+Le registre comptait **11 agents** depuis [[gardien-cloture]] #161 (ajout du `juge`). Mais MangoOS traînait **deux annuaires de cerveaux séparés** : (1) l'**Élève** (les « mains » qui codent en Construire/Discuter), routé par le `.env` (`ELEVE_MODEL=glm-5.2:cloud`, provider openai → Ollama Cloud) via `globalFallback()` dans `brain-runtime.ts` ; (2) ce registre, dont l'agent `codeur` = `gemma4:12b` **sans lien** avec l'Élève réel. Constat de Raf : « le codeur, c'est GLM 5.2, pas Gemma » + « expose l'Élève dans l'[[atelier-cerveaux]] ».
+
+**Fusion (#162)** : l'agent **`codeur` devient la source de vérité unique de l'Élève**. `globalFallback()` lit désormais `getBrain("codeur")` (lecture **à chaud** → un édit dans l'Atelier prend effet sans redémarrage ; `.env` = repli profond), et `DEFAULT_REGISTRY.codeur` + le JSON disque = `{provider:"openai", model:"glm-5.2:cloud"}`. Les **secrets** (endpoint `ELEVE_API_URL` + clé `ELEVE_API_KEY`) restent dans `.env` ; le registre ne porte que provider+modèle ([[limites]] L27). Conséquence : éditer la carte `codeur` (badge « Élève · les mains ») dans l'[[atelier-cerveaux]] **pilote l'Élève réel**. Note coût : `codeur` étant maintenant `openai`, `estimatePipelineCost` le tarife (`openai/* = 2 $/Mtok`) au lieu de $0 — plus honnête (cf. [[audit-general]] L7).
+
 ## Liens
 
+- [[atelier-cerveaux]] — l'UI #162 qui pilote ce registre (un modèle par agent) ; `codeur` y EST l'Élève.
 - [[phase-e-multicerveaux]] — l'idée fondatrice (#135) dont Brain-Dispatch est la réalisation aboutie.
 - [[brains]] — registre `.brains` de fiches cerveau mesurées (Phase E) ; Brain-Dispatch généralise ce registre à 10 agents nommés.
 - [[examen-cerveau]] — #148, le scan qui mesure un cerveau inconnu → alimente le placement dans le registre.

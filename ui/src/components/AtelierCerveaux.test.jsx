@@ -61,6 +61,16 @@ describe("AtelierCerveaux", () => {
     expect(container.querySelector('[data-agent="codeur"]')).toBeTruthy();
   });
 
+  it("marque l'agent `codeur` comme l'Élève (les mains)", async () => {
+    const { container } = render(<AtelierCerveaux onBack={() => {}} />);
+    const codeur = await waitFor(() => {
+      const el = container.querySelector('[data-agent="codeur"]');
+      expect(el).toBeTruthy();
+      return el;
+    });
+    expect(within(codeur).getByText(/Élève · les mains/)).toBeInTheDocument();
+  });
+
   it("déclenche la garde : modèle sans `vision` sur l'agent vision → bandeau", async () => {
     const { container } = render(<AtelierCerveaux onBack={() => {}} />);
     // la garde dépend du fetch async des capabilities → on attend le bandeau

@@ -7,10 +7,16 @@
 
 import { resolveBrainForIntention, type Intention, type BrainCard } from "./brains.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
+import { getBrain } from "./brain-registry.js";
 import type { LLMProvider } from "./llm-engine.js";
 
+// Repli profond (.env) — utilisé seulement si l'agent `codeur` du registre ne donne
+// rien d'exploitable. Depuis #162, l'Élève (les « mains ») EST l'agent `codeur` du
+// registre `brain-registry.json` → éditable depuis l'Atelier des cerveaux. Les
+// SECRETS (endpoint ELEVE_API_URL + clé ELEVE_API_KEY) restent dans .env (lus par le
+// chemin openai de llm-engine) ; le registre ne porte que provider + modèle.
 const ELEVE_MODEL = process.env.ELEVE_MODEL ?? "gemma4:12b";
-function globalProvider(): LLMProvider {
+function envProvider(): LLMProvider {
   return (process.env.ELEVE_PROVIDER ?? "").trim().toLowerCase() === "openai" ? "openai" : "ollama";
 }
 
@@ -29,9 +35,14 @@ export interface RuntimeFallback {
   profile: ModelProfile;
 }
 
-/** Le repli global (.env) — exactement le cerveau Élève par défaut. */
+/** Le cerveau Élève « par défaut » (sans routage par intention) = l'agent `codeur`
+ * du registre (#162) → pilotable depuis l'Atelier des cerveaux, lu À CHAUD (un édit
+ * prend effet sans redémarrage). Repli profond sur .env si le registre ne donne rien. */
 export function globalFallback(): RuntimeFallback {
-  return { model: ELEVE_MODEL, provider: globalProvider(), profile: resolveProfile(ELEVE_MODEL) };
+  const c = getBrain("codeur");
+  const model = (c.model ?? "").trim() || ELEVE_MODEL;
+  const provider = c.provider ?? envProvider();
+  return { model, provider, profile: resolveProfile(model) };
 }
 
 /** Profil RUNTIME d'un cerveau mesuré : la prose de famille (system, fichiers

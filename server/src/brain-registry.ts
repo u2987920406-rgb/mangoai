@@ -31,7 +31,10 @@ export type AgentId =
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   orchestrateur: { provider: "claude", model: "opus", timeoutMs: 30_000 },
   architecte:    { provider: "claude", model: "opus", timeoutMs: 45_000 },
-  codeur:        { provider: "ollama", model: "gemma4:12b", timeoutMs: 120_000 },
+  // #162 — `codeur` EST l'Élève (les « mains » qui codent en Construire/Discuter) :
+  // GLM-5.2 via Ollama Cloud (provider openai). Source de vérité du cerveau Élève
+  // (lu par globalFallback) ; l'endpoint + la clé restent dans .env (ELEVE_API_URL/KEY).
+  codeur:        { provider: "openai", model: "glm-5.2:cloud", timeoutMs: 120_000 },
   vision:        { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 60_000 },
   designer_ux:   { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
   extracteur:    { provider: "claude", model: "haiku", timeoutMs: 30_000 },

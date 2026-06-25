@@ -103,6 +103,24 @@ async function run() {
     check("profil non-agentique → ni run ni delegate", !pn.allowRun && !pn.allowDelegate);
   }
 
+  console.log("\n[6] #162 — globalFallback (cerveau Élève) = l'agent `codeur` du registre");
+  {
+    // L'Élève par défaut EST l'agent `codeur` → pilotable depuis l'Atelier.
+    const REG = path.join(TMP, "brain-registry.json");
+    const prev = process.env.BRAIN_REGISTRY_FILE;
+    try {
+      fs.writeFileSync(REG, JSON.stringify({ codeur: { provider: "ollama", model: "mon-codeur:1b", timeoutMs: 42 } }));
+      process.env.BRAIN_REGISTRY_FILE = REG;
+      const g = globalFallback();
+      check("model repris de codeur", g.model === "mon-codeur:1b");
+      check("provider repris de codeur", g.provider === "ollama");
+      check("profil dérivé du modèle codeur", g.profile.system === resolveProfile("mon-codeur:1b").system);
+    } finally {
+      if (prev === undefined) delete process.env.BRAIN_REGISTRY_FILE;
+      else process.env.BRAIN_REGISTRY_FILE = prev;
+    }
+  }
+
   try { fs.rmSync(TMP, { recursive: true, force: true }); } catch { /* best-effort */ }
   console.log(`\n${fail === 0 ? "✅" : "❌"} brain-runtime : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);

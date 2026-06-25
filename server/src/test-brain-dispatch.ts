@@ -39,7 +39,7 @@ async function run() {
     const def = loadBrainRegistry();
     check("11 agents présents", AGENT_IDS.length === 11 && Object.keys(def).length === 11);
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
-    check("défaut codeur = ollama", def.codeur.provider === "ollama");
+    check("défaut codeur = l'Élève GLM (openai/glm-5.2:cloud)", def.codeur.provider === "openai" && def.codeur.model === "glm-5.2:cloud");
 
     // Merge champ par champ : on n'override que le modèle du codeur.
     saveBrainRegistry({ ...def, codeur: { provider: "ollama", model: "qwen2.5-coder:7b", timeoutMs: 99_000 } });
@@ -112,8 +112,11 @@ async function run() {
 
   console.log("\n[7] estimatePipelineCost");
   {
-    const local = estimatePipelineCost(["codeur", "optimiseur"], 100_000);
-    check("agents ollama → coût 0", local.usd === 0 && !local.warning);
+    const local = estimatePipelineCost(["optimiseur", "vision"], 100_000);
+    check("agents ollama (optimiseur+vision) → coût 0", local.usd === 0 && !local.warning);
+    // #162 — codeur = l'Élève GLM (openai) : désormais TARIFÉ (openai/* = 2 $/Mtok), plus $0.
+    const eleve = estimatePipelineCost(["codeur"], 1_000_000);
+    check("codeur GLM cloud → coût > 0 (openai tarifé)", eleve.usd > 0);
     const cloud = estimatePipelineCost(["orchestrateur", "architecte"], 1_000_000);
     check("2× claude/opus sur 1M tokens → coût élevé + warning", cloud.usd > 2 && cloud.warning);
   }

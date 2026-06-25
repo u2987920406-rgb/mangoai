@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   ArrowLeft, Cpu, Wrench, Plus, ScanLine, Trash2, AlertTriangle, Check,
-  Download, RefreshCw, X, Eye, Sparkles, HardDrive, Loader2,
+  Download, RefreshCw, X, Eye, Sparkles, HardDrive, Loader2, Hand,
 } from "lucide-react";
 
 // #162 — « L'Atelier des cerveaux ». L'UI qui donne à Raf le pouvoir que Claude
@@ -225,6 +225,14 @@ export default function AtelierCerveaux({ onBack }) {
                     {expectedCaps[id]?.includes("vision") && (
                       <span className="inline-flex items-center gap-1 rounded-full border border-accent/30 bg-accent/10 px-1.5 py-0.5 text-[10px] text-accent">
                         <Eye size={9} /> exige vision
+                      </span>
+                    )}
+                    {id === "codeur" && (
+                      <span
+                        className="inline-flex items-center gap-1 rounded-full border border-ok/40 bg-ok/10 px-1.5 py-0.5 text-[10px] text-ok"
+                        title="L'Élève : le modèle qui CODE en mode Construire/Discuter. L'endpoint et la clé restent dans .env."
+                      >
+                        <Hand size={9} /> Élève · les mains
                       </span>
                     )}
                     {local && modelCaps?.length > 0 && (
