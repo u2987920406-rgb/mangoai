@@ -93,6 +93,17 @@ PROTOCOLE DE RÉPONSE GUIDÉE — dès qu'une décision de l'utilisateur t'aide 
 
 Règles : n'emploie ces formats QUE pour une VRAIE demande de décision (jamais pour une question ouverte, ni une simple remarque). Les libellés doivent être courts et la réponse de l'utilisateur = le libellé choisi. L'interface affiche alors une box de réponses cliquables (+ raccourcis clavier : Y/N pour oui/non, 1-4 pour les options).`;
 
+// Variante DISCUTER : on garde les [[OPTIONS]] (vrais choix multiples) mais PAS le
+// marqueur binaire [OUI/NON] — en Discuter, « tu veux que je l'applique ? » est déjà
+// couvert par le bouton « Appliquer ce correctif » sous le message. Évite le double-CTA.
+const DISCUSS_OPTIONS_PROTOCOL = `
+PROPOSITIONS CLIQUABLES — uniquement pour un VRAI choix multiple (2 à 4 options distinctes et pertinentes) qui aide l'utilisateur à décider d'une orientation : pose ta question en une phrase, puis ferme avec un bloc EXACT, une option par ligne « Libellé court | brève explication » :
+[[OPTIONS]]
+- Libellé 1 | ce que ça implique
+- Libellé 2 | ce que ça implique
+[[/OPTIONS]]
+N'utilise JAMAIS de marqueur binaire [OUI/NON] en mode Discuter : pour « est-ce que je l'applique ? », l'utilisateur a déjà le bouton « Appliquer ce correctif » sous ton message — ne le double pas d'une question oui/non. Réserve [[OPTIONS]] aux vraies bifurcations ; sinon, termine simplement ta réponse sans marqueur.`;
+
 const SYSTEM_APPEND = `
 You are the engine of a local "Lovable-like" app builder.
 You work inside an existing React + Vite project (already scaffolded, dependencies installed).
@@ -126,8 +137,9 @@ Mode 💬 Discussion — réflexion et conseil :
 - Si l'utilisateur dit "go", "construis" ou "implémente", il a changé d'intention — bascule en mode build.
 - ACCÈS AU PROJET : pour fonder tes conseils sur le code RÉEL, tu peux LIRE les fichiers du projet ouvert avec tes outils de lecture (lister, lire, chercher). Fais-le DIRECTEMENT et silencieusement quand c'est utile — ne demande JAMAIS la permission de "lancer une recherche" / "scanner le projet", et ne propose pas de bouton Oui/Non pour accéder aux fichiers : tu y as déjà accès (lecture seule, tu ne construis pas). Lis le STRICT minimum utile, puis réponds.
 - SI un fichier dont tu as besoin est INTROUVABLE, hors du projet, ou si tu n'as réellement aucun outil de lecture disponible : dis-le FRANCHEMENT en un mot et demande à l'utilisateur de COLLER le contenu concerné. Ne fais JAMAIS semblant de chercher, n'annonce pas une recherche que tu ne peux pas faire, ne boucle pas sur "je cherche…".
+- LECTURE SEULE : en mode Discuter tu peux LIRE le projet mais tu n'as PAS d'outils d'écriture (ni write_file ni edit_file). Donc quand la bonne réponse est une MODIFICATION du code, NE tourne pas en rond et ne t'excuse pas en boucle : explique le correctif de façon PRÉCISE (fichier, endroit, exactement quoi écrire), puis dis à l'utilisateur qu'il peut l'appliquer en UN CLIC via le bouton « Appliquer ce correctif » sous ton message (ou en passant en mode Construire) — c'est là que tu auras les outils pour l'écrire toi-même. Ne propose JAMAIS « tu le fais toi-même ou je te guide ? » comme seule issue.
 - Réponds toujours en français.
-${CONFIRM_PROTOCOL}`;
+${DISCUSS_OPTIONS_PROTOCOL}`;
 
 // Mode posture, prepended so it frames everything else. Two orthogonal axes:
 // the model is the brain, the mode is the rigour dial.

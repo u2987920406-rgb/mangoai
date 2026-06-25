@@ -78,6 +78,7 @@ import { registerBuildReviewRoutes } from "./build-review-routes.js";
 import { registerBrainRoutes } from "./brain-routes.js";
 import { registerBrainDispatchRoutes } from "./brain-dispatch-routes.js";
 import { registerTasteRoutes } from "./taste-routes.js";
+import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
 import { lanIPv4s } from "./net.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
@@ -890,6 +891,7 @@ registerFeedbackRoutes(app);
 registerBrainRoutes(app);
 registerBrainDispatchRoutes(app);
 registerTasteRoutes(app);
+registerDesignCoachRoutes(app);
 
 app.post("/api/stop", async (_req, res) => {
   const stopped = await interruptAgent();

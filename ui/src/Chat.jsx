@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowUp, Bookmark, BrainCircuit, ChevronDown, FileCode, FolderOpen, Mic, MicOff, Paperclip, Scan, Sparkles, Square, X } from "lucide-react";
+import { ArrowUp, Bookmark, BrainCircuit, ChevronDown, Eye, FileCode, FolderOpen, Mic, MicOff, Paperclip, Scan, Sparkles, Square, X } from "lucide-react";
 import ToolGroup from "./components/ToolGroup.jsx";
 import NocturnalReviewForm from "./components/NocturnalReviewForm.jsx";
 import DiffSlider from "./components/DiffSlider.jsx";
@@ -116,6 +116,9 @@ export default function Chat({
   const [contextFile, setContextFile] = useState(null);   // string | null
   const [filePicker, setFilePicker] = useState(false);    // popover ouvert ?
   const [awaitingPlanConfirm, setAwaitingPlanConfirm] = useState(false);
+  // Après un tour Discuter, l'Élève (lecture seule) a pu diagnostiquer un correctif :
+  // on propose de l'APPLIQUER en un clic via le mode Construire (qui a l'écriture).
+  const [awaitingApply, setAwaitingApply] = useState(false);
   const [fileList, setFileList] = useState([]);            // fichiers du projet
   const [fileSearch, setFileSearch] = useState("");
   const pickerRef = useRef(null);
@@ -129,6 +132,7 @@ export default function Chat({
   // Clic sur un bouton d'action → active l'action et applique SON modèle + mode.
   const pickAction = (a) => {
     setActiveAction(a.id);
+    setAwaitingApply(false);
     onChatMode({ model: actionModels[a.id], mode: a.mode });
   };
   // Choix du modèle d'une action (menu déroulant) → mémorise et, si l'action est
@@ -406,6 +410,10 @@ export default function Chat({
     const isPlanner = activeAction === "planifier";
     const wasPlanPhase = isPlanner && !awaitingPlanConfirm;
     if (awaitingPlanConfirm) setAwaitingPlanConfirm(false);
+    // Tour Discuter (lecture seule) lancé par l'utilisateur → on pourra proposer
+    // « Appliquer ». Tout autre envoi (build, auto-prompt) efface la proposition.
+    const wasDiscuter = activeAction === "discuter" && !opts?.modeOverride && typeof textArg !== "string";
+    if (awaitingApply) setAwaitingApply(false);
     // Cible d'édition visuelle (#6) : seulement pour un envoi utilisateur (pas un
     // auto-prompt), capturée puis consommée pour ce message.
     const useEdit = typeof textArg !== "string" ? editTarget : null;
@@ -487,6 +495,7 @@ export default function Chat({
     } finally {
       setBusy(false);
       if (wasPlanPhase) setAwaitingPlanConfirm(true);
+      if (wasDiscuter) setAwaitingApply(true);
       onAgentDone();
       // Surface the background agents' status lines (review + patrol #73 +
       // Mango QA verdict) once they've had time to finish, without keeping the
@@ -532,10 +541,61 @@ export default function Chat({
         if (!ev.ok) push({ role: "error", text: `L'agent s'est arrêté : ${ev.error}` });
         break;
       case "error":
-        push({ role: "error", text: ev.message });
+        push({ role: "error", text: ev.message ?? ev.error });
+        break;
+      // Œil-Coach (#152) — events de la boucle critique → corrige → re-regarde.
+      case "start":
+        if (ev.threshold) push({ role: "status", text: `👁 Coach design — seuil ${ev.threshold}, jusqu'à ${ev.maxRounds} tour(s)` });
+        break;
+      case "critique":
+        push({ role: "critique", round: ev.round, critique: ev.critique });
+        break;
+      case "fixes":
+        push({ role: "status", text: `🛠 ${ev.fixes.length} correctif(s) prioritaire(s)` });
+        break;
+      case "done":
+        push({ role: "coach-done", before: ev.before, after: ev.after, rounds: ev.rounds, reason: ev.reason });
         break;
       default:
         break;
+    }
+  }
+
+  // Œil-Coach (#152) — lance la boucle critique→corrige→re-regarde sur le projet ouvert.
+  async function coachSend() {
+    if (!projectName.trim() || busy) return;
+    setBusy(true);
+    push({ role: "user", text: "👁 Coach design — critique → corrige → re-regarde" });
+    try {
+      const res = await fetch(`/api/design-coach/${encodeURIComponent(projectName)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const e = await res.json().catch(() => ({}));
+        push({ role: "error", text: e.error ?? `Erreur HTTP ${res.status}` });
+        return;
+      }
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop();
+        for (const part of parts) {
+          const line = part.trim();
+          if (!line.startsWith("data: ")) continue;
+          handleEvent(JSON.parse(line.slice(6)));
+        }
+      }
+    } catch (err) {
+      push({ role: "error", text: String(err) });
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -707,6 +767,29 @@ export default function Chat({
             </button>
           </div>
         )}
+        {awaitingApply && !busy && (
+          <div className="flex justify-center py-3">
+            <button
+              onClick={() => {
+                setAwaitingApply(false);
+                setActiveAction("construire");
+                onChatMode({ model: actionModels.construire, mode: "elite" });
+                // On embarque le diagnostic (dernier message de l'agent) pour que le
+                // chemin Construire soit auto-suffisant, même sans l'historique du chat.
+                const diagnosis = [...messages].reverse().find((mm) => mm.role === "agent")?.text ?? "";
+                send(
+                  `Applique RÉELLEMENT dans le code le correctif diagnostiqué ci-dessous (write_file / edit_file), puis vérifie le build (check_build). Ne te contente pas de le re-décrire — fais la modification, puis finish.\n\n--- Correctif à appliquer ---\n${diagnosis}`,
+                  { modeOverride: "elite" },
+                );
+              }}
+              className="flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent shadow-sm transition-colors hover:bg-accent/20"
+              title="Bascule en mode Construire et fait appliquer le correctif diagnostiqué"
+            >
+              <Sparkles size={14} />
+              🛠 Appliquer ce correctif (Construire)
+            </button>
+          </div>
+        )}
         {busy && (
           <div className="shimmer-text self-start px-1 py-0.5 text-[13px] font-medium">
             MangoOS travaille…
@@ -834,6 +917,14 @@ export default function Chat({
                 title="Snap : capturer une zone de l'aperçu"
               >
                 <Scan size={16} />
+              </button>
+              <button
+                onClick={coachSend}
+                disabled={busy || !projectName.trim()}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-faint transition-colors hover:text-accent-soft disabled:opacity-30"
+                title="Coach design — l'œil critique le rendu et fait corriger jusqu'au seuil de qualité"
+              >
+                <Eye size={16} />
               </button>
               <div className="relative" ref={pickerRef}>
                 <button
@@ -1136,6 +1227,37 @@ const Message = memo(function Message({ m, showThinking = true, onFeedback }) {
           {m.text}
         </div>
       );
+    case "critique": {
+      const c = m.critique || {};
+      const lenses = c.lenses || [];
+      const tone = (s) => (s >= 85 ? "text-sys-green" : s >= 70 ? "text-accent-soft" : "text-sys-red");
+      return (
+        <div className="animate-fade-up self-stretch rounded-xl border border-edge bg-panel/70 px-3.5 py-3 backdrop-blur-sm">
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-[12.5px] font-semibold text-ink">👁 {m.round === 0 ? "Critique initiale" : `Après le tour ${m.round}`}</span>
+            <span className={`ml-auto text-lg font-bold ${tone(c.overall)}`}>{c.overall}<span className="text-xs text-faint">/100</span></span>
+          </div>
+          <div className="flex flex-col gap-1">
+            {lenses.map((l, i) => (
+              <div key={i} className="flex items-baseline gap-2 text-[11.5px]">
+                <span className={`w-7 shrink-0 text-right font-semibold ${tone(l.score)}`}>{l.score}</span>
+                <span className="w-32 shrink-0 truncate text-dim">{l.name}</span>
+                <span className="truncate text-faint" title={`${l.issue}${l.fix ? " → " + l.fix : ""}`}>{l.issue}{l.fix ? ` → ${l.fix}` : ""}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+    case "coach-done": {
+      const delta = (m.after ?? 0) - (m.before ?? 0);
+      return (
+        <div className="animate-fade-up self-stretch rounded-xl border border-accent/40 bg-accent/[0.07] px-3.5 py-2.5 text-sm">
+          <span className="font-semibold text-ink">Coach design terminé</span>{" "}
+          <span className="text-dim">— {m.before} → <span className="font-bold text-sys-green">{m.after}</span>/100{delta > 0 ? ` (+${delta})` : ""} en {m.rounds} tour{m.rounds > 1 ? "s" : ""} · {m.reason}</span>
+        </div>
+      );
+    }
     case "status":
     default:
       return (
