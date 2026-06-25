@@ -56,8 +56,10 @@ Mango doit savoir extraire **dans les deux cas** :
 | **1 — Naviguer + extraire texte** | `site-crawler.ts` + `extraire_site` minimal (synthèse texte multi-pages). Le socle « aller sur le site, lire les pages » | ⚖️ Sonnet 4.6 | M |
 | **2 — Couche design (Sharingan)** | Palette/typo/ambiance via `taste-engine` sur les pages clés | ⚖️ Sonnet 4.6 | S |
 | **3 — Voir & raisonner** ✅ *(livré, prouvé live)* | `dispatch('vision')` sur la capture du seed → concept/public/mécaniques/mood/ton + **fusion en dossier structuré** (`site-vision.ts` `seeSite` + `parseSiteVision` ; `site-dossier.ts` `buildDossier`/`formatDossier` ; gate `ELEVE_SITE_VISION`). LIVE rust-lang.org : VL déduit concept/mécaniques/mood réels, $0. Limites L13(maj)/L14. | 🧠 Opus 4.8 | M |
-| **4 — Réinjection + persistance** | Retour DATA à GLM + dossier persisté Blackboard (`site.dossier`, réutilisable) | 🧠 Opus 4.8 | M |
-| **5 — Images contextuelles** | Pexels piloté par le dossier (souverain, défaut) + génération via API activable (gaté) | ⚖️ Sonnet 4.6 | S |
+| **4 — Réinjection + persistance** ✅ *(livré, prouvé live)* | Retour DATA à GLM + dossier persisté Blackboard (`site.dossier`, scope `artifact:site`, embedding palette, dédup URL) → **réutilisable via `chercher_artefact` #156**. `site-artifacts.ts` + dep `persist` dans extraire_site. LIVE : dossier survit à une réouverture SQLite + remonte à ~71 % dans chercher_artefact, $0. **Avance L3** (1er artefact non-palette). | 🧠 Opus 4.8 | M |
+| **5 — Images contextuelles** ✅ *(livré, prouvé live)* | Pexels piloté par le dossier (souverain, défaut) + génération via API activable (gaté). `site-images.ts` (imageQueriesFromDossier/suggestSiteImages/formatSiteImages) + dep `images` dans extraire_site, gate `ELEVE_SITE_IMAGES`/`ELEVE_SITE_IMAGE_GEN`. LIVE rust-lang.org : 3 vraies photos Pexels (« developers coding » pertinent), $0. Limites L15/L16. | ⚖️ Sonnet 4.6 | S |
+
+> **✅ CHANTIER COMPLET (2026-06-25)** — les 5 phases livrées et prouvées live. `extraire_site` : naviguer → design → voir/raisonner → dossier+persistance → images.
 
 ## Garde-fous (NON négociables)
 - **Anti-prompt-injection = risque n°1** : un site est du contenu **hostile par défaut** → TOUT contenu extrait encadré `sanitizeExternal` (donnée, jamais instruction).

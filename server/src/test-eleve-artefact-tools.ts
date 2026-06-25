@@ -6,6 +6,7 @@
 
 import { buildEleveArtefactTools, type ArtefactDeps } from "./eleve-artefact-tools.js";
 import type { ArtifactHit } from "./kernel-artifacts.js";
+import type { SiteDossierHit } from "./site-artifacts.js";
 
 let pass = 0;
 let fail = 0;
@@ -125,6 +126,54 @@ async function run() {
     const r4 = tool({ search: () => [] });
     await r4.t.handler({ couleurs: ["#000000"], n: -3 });
     check("n négatif ramené à 1 (min)", r4.calls.search[0].k === 1);
+  }
+
+  console.log("\n[10] #159 Phase 4 — les sites extraits remontent aussi");
+  {
+    const siteHit = (url: string, concept: string, palette: string[], score?: number): SiteDossierHit => ({
+      key: url,
+      artifact: {
+        type: "site.dossier",
+        url,
+        project: url.replace(/^https?:\/\//, "").replace(/^www\./, ""),
+        concept,
+        publicCible: "",
+        mecaniques: ["panier"],
+        palette,
+        typographies: [],
+        ambiance: "",
+        mood: "",
+        tonEditorial: "",
+        infosCles: [],
+        at: 1,
+      },
+      score,
+    });
+    // Avec couleurs : palette + section sites
+    const calls: { searchSites: number; listSites: number } = { searchSites: 0, listSites: 0 };
+    const full: ArtefactDeps = {
+      search: () => [hit("mango-cafe", "design.reference", ["#1f2937", "#f59e0b"], 0.9)],
+      list: () => [],
+      searchSites: () => {
+        calls.searchSites++;
+        return [siteHit("https://shop.com", "Boutique indé", ["#f59e0b"], 0.8)];
+      },
+      listSites: () => {
+        calls.listSites++;
+        return [siteHit("https://ref.com", "Site de référence", ["#111827"])];
+      },
+    };
+    const [t] = buildEleveArtefactTools("/tmp/proj", full);
+
+    const r1 = await t.handler({ couleurs: ["#f59e0b"] });
+    check("avec couleurs : searchSites appelé", calls.searchSites === 1);
+    check("section sites présente", /Sites déjà EXTRAITS/i.test(r1.text));
+    check("concept du site affiché", r1.text.includes("Boutique indé"));
+    check("palette + mécaniques du site affichées", r1.text.includes("#f59e0b") && r1.text.includes("panier"));
+
+    const r2 = await t.handler({});
+    check("sans couleur : listSites appelé", calls.listSites === 1);
+    check("site récent listé", r2.text.includes("Site de référence"));
   }
 
   console.log("\n[9] Échec des deps → isError gracieux (ne lève jamais)");

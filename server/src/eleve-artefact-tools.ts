@@ -16,6 +16,7 @@
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { searchArtifacts, listArtifacts, type ArtifactHit } from "./kernel-artifacts.js";
+import { searchSiteDossiers, listSiteDossiers, type SiteDossierHit } from "./site-artifacts.js";
 
 /** Borne dure du nombre de résultats renvoyés à l'Élève. */
 const MAX_RESULTS = 8;
@@ -28,11 +29,17 @@ export interface ArtefactDeps {
   search: (colors: string[], k: number) => ArtifactHit[];
   /** tous les artefacts, plus récents en tête. */
   list: () => ArtifactHit[];
+  /** k dossiers de site les plus proches (#159 Phase 4) — optionnel. */
+  searchSites?: (colors: string[], k: number) => SiteDossierHit[];
+  /** dossiers de site récents (#159 Phase 4) — optionnel. */
+  listSites?: () => SiteDossierHit[];
 }
 
 const realDeps: ArtefactDeps = {
   search: (colors, k) => searchArtifacts(colors, k),
   list: () => listArtifacts(),
+  searchSites: (colors, k) => searchSiteDossiers(colors, k),
+  listSites: () => listSiteDossiers(),
 };
 
 /** Une ligne lisible par l'Élève : provenance + rôle + proximité + couleurs à copier. */
@@ -42,6 +49,25 @@ function formatHit(h: ArtifactHit): string {
   const pct = typeof h.score === "number" ? ` ~${Math.round(h.score * 100)}% proche,` : "";
   const cols = a.colors.slice(0, 8).join(" ");
   return `- ${a.project} (${role},${pct} ${a.colors.length} couleurs) : ${cols}`;
+}
+
+/** Une ligne lisible pour un dossier de site déjà extrait (#159 Phase 4). */
+function formatSiteHit(h: SiteDossierHit): string {
+  const a = h.artifact;
+  const pct = typeof h.score === "number" ? ` ~${Math.round(h.score * 100)}% proche,` : "";
+  const concept = a.concept ? ` — ${a.concept}` : "";
+  const cols = a.palette.slice(0, 6).join(" ");
+  const meca = a.mecaniques.length ? ` · mécaniques : ${a.mecaniques.slice(0, 4).join(", ")}` : "";
+  return `- ${a.project} (site,${pct})${concept}${cols ? `\n  palette : ${cols}` : ""}${meca}`;
+}
+
+/** Section « sites déjà extraits » (vide si rien). Cherche par couleurs, ou liste les récents. */
+function siteSection(deps: ArtefactDeps, colors: string[], k: number): string {
+  const hits = colors.length > 0 ? deps.searchSites?.(colors, k) ?? [] : deps.listSites?.().slice(0, k) ?? [];
+  if (hits.length === 0) return "";
+  return (
+    "\n\nSites déjà EXTRAITS (Sharingan) — réutilise concept/mécaniques/palette :\n" + hits.map(formatSiteHit).join("\n")
+  );
 }
 
 /**
@@ -54,7 +80,7 @@ export function buildEleveArtefactTools(_projectDir: string, deps: ArtefactDeps 
   const chercherArtefact: KernelTool = {
     name: "chercher_artefact",
     description:
-      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts design DÉJÀ créés à réutiliser — aujourd'hui des PALETTES de couleurs (captées ou produites sur d'autres projets). Donne des couleurs hex pour retrouver les palettes les plus proches, ou n'en donne aucune pour lister les plus récentes. RÉUTILISER une palette existante > en réinventer une (cohérence de ton univers visuel + vitesse).",
+      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts DÉJÀ créés à réutiliser : des PALETTES de couleurs (captées ou produites sur d'autres projets) ET des DOSSIERS DE SITES déjà extraits avec extraire_site (concept, mécaniques, palette, mood). Donne des couleurs hex pour retrouver les plus proches, ou n'en donne aucune pour lister les plus récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
     inputSchema: {
       couleurs: z
         .array(z.string())
@@ -78,28 +104,40 @@ export function buildEleveArtefactTools(_projectDir: string, deps: ArtefactDeps 
       }
 
       try {
+        const sites = siteSection(deps, colors, k);
+
         if (colors.length > 0) {
           const hits = deps.search(colors, k);
           if (hits.length === 0) {
             return {
-              text: "Aucune palette proche dans la mémoire cross-projet (bibliothèque vide ou rien de ressemblant). Tu peux créer une palette neuve — pense à rester cohérent avec le reste du projet.",
+              text:
+                "Aucune palette proche dans la mémoire cross-projet (bibliothèque vide ou rien de ressemblant). Tu peux créer une palette neuve — pense à rester cohérent avec le reste du projet." +
+                sites,
             };
           }
           return {
             text:
               "Palettes proches DÉJÀ créées (réutilise ces couleurs pour la cohérence de ton univers visuel) :\n" +
-              hits.map(formatHit).join("\n"),
+              hits.map(formatHit).join("\n") +
+              sites,
           };
         }
 
         const all = deps.list().slice(0, k);
         if (all.length === 0) {
-          return { text: "La mémoire d'artefacts (Blackboard) est vide pour l'instant — rien à réutiliser, crée librement." };
+          return {
+            text:
+              (sites
+                ? "Aucune palette en mémoire, mais des sites ont été extraits :"
+                : "La mémoire d'artefacts (Blackboard) est vide pour l'instant — rien à réutiliser, crée librement.") +
+              sites,
+          };
         }
         return {
           text:
             "Artefacts design récents en mémoire cross-projet (réutilise plutôt que réinventer) :\n" +
-            all.map(formatHit).join("\n"),
+            all.map(formatHit).join("\n") +
+            sites,
         };
       } catch (e) {
         return {

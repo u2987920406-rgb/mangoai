@@ -52,7 +52,13 @@ const emptyVision = () => ({
 
 /** Outil avec deps injectées + mouchards. */
 function tool(over: Partial<SiteDeps> = {}) {
-  const calls = { crawl: [] as string[], search: [] as string[], design: [] as string[], see: [] as string[] };
+  const calls = {
+    crawl: [] as string[],
+    search: [] as string[],
+    design: [] as string[],
+    see: [] as string[],
+    persist: [] as Array<{ url: string; concept: string }>,
+  };
   const deps: SiteDeps = {
     isAllowed: over.isAllowed ?? (() => true),
     crawl: async (url, opts) => {
@@ -71,6 +77,10 @@ function tool(over: Partial<SiteDeps> = {}) {
       calls.see.push(url);
       return over.see ? over.see(url, opts) : emptyVision();
     },
+    persist: over.persist ?? ((d) => calls.persist.push({ url: d.url, concept: d.concept })),
+    images:
+      over.images ??
+      (async () => ({ queries: [], photos: [], pexelsConfigured: false, genEnabled: false, genPrompts: [], generated: [] })),
   };
   const [t] = buildEleveSiteTools("/tmp/proj", deps);
   return { t, calls };
@@ -213,6 +223,101 @@ async function run() {
     check("pas d'erreur malgré vision KO", r.isError !== true);
     check("mention vision indisponible", /Vision indisponible/i.test(r.text));
     check("fallback infos = titre de page", r.text.includes("Accueil du Jeu"));
+  }
+
+  console.log("\n[5f] Persistance (#159 Phase 4) : le dossier est déposé au Blackboard");
+  {
+    const { t, calls } = tool({
+      crawl: async (u) => report([{ url: u, text: "Un site de jeu" }]),
+      see: async () => ({
+        ok: true,
+        concept: "Boutique de jeux indés",
+        publicCible: "joueurs",
+        mecaniques: ["panier", "wishlist"],
+        ambiance: "ludique",
+        ton: "fun",
+        infos: [],
+        raw: "",
+      }),
+    });
+    const r = await t.handler({ url: "https://shop.com" });
+    check("persist appelé 1×", calls.persist.length === 1);
+    check("dossier persisté = bon url + concept", calls.persist[0]?.url === "https://shop.com" && calls.persist[0]?.concept === "Boutique de jeux indés");
+    check("extraction réussie quand même", r.isError !== true);
+  }
+
+  console.log("\n[5g] Persistance qui lève → n'empêche pas l'extraction (gracieux)");
+  {
+    const { t } = tool({
+      persist: () => {
+        throw new Error("blackboard HS");
+      },
+      crawl: async (u) => report([{ url: u, text: "contenu" }]),
+    });
+    let threw = false;
+    let r;
+    try {
+      r = await t.handler({ url: "https://x.com" });
+    } catch {
+      threw = true;
+    }
+    check("handler ne lève pas malgré persist KO", !threw);
+    check("dossier rendu quand même", r?.isError !== true && /Dossier d'extraction/.test(r!.text));
+  }
+
+  console.log("\n[5h] Images contextuelles (#159 Phase 5) : vraies photos jointes au dossier");
+  {
+    const { t } = tool({
+      see: async () => ({
+        ok: true,
+        concept: "Café de quartier",
+        publicCible: "habitants",
+        mecaniques: ["commande en ligne"],
+        ambiance: "chaleureux",
+        ton: "convivial",
+        infos: [],
+        raw: "",
+      }),
+      images: async (d) => ({
+        queries: ["café quartier chaleureux"],
+        photos: [{ query: "café quartier chaleureux", url: "https://images.pexels.com/x.jpg", alt: "cozy coffee shop" }],
+        pexelsConfigured: true,
+        genEnabled: false,
+        genPrompts: [],
+        generated: [],
+      }),
+    });
+    const r = await t.handler({ url: "https://cafe.com" });
+    check("bloc images présent", /Images contextuelles/.test(r.text));
+    check("URL photo réelle jointe", r.text.includes("https://images.pexels.com/x.jpg"));
+    check("requête dérivée affichée", r.text.includes("café quartier chaleureux"));
+  }
+
+  console.log("\n[5i] ELEVE_SITE_IMAGES=off → pas d'appel images, pas de bloc");
+  {
+    process.env.ELEVE_SITE_IMAGES = "off";
+    let imagesCalled = false;
+    const { t } = tool({
+      images: async (d) => {
+        imagesCalled = true;
+        return { queries: ["x"], photos: [], pexelsConfigured: false, genEnabled: false, genPrompts: [], generated: [] };
+      },
+    });
+    const r = await t.handler({ url: "https://cafe.com" });
+    delete process.env.ELEVE_SITE_IMAGES;
+    check("images NON appelé quand off", imagesCalled === false);
+    check("pas de bloc images", !/Images contextuelles/.test(r.text));
+  }
+
+  console.log("\n[5j] images qui lève → dossier sort quand même (gracieux)");
+  {
+    const { t } = tool({
+      images: async () => {
+        throw new Error("pexels HS");
+      },
+    });
+    const r = await t.handler({ url: "https://cafe.com" });
+    check("pas d'erreur malgré images KO", r.isError !== true && /Dossier d'extraction/.test(r.text));
   }
 
   console.log("\n[6] Budget d'extractions");
