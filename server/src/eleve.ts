@@ -557,6 +557,7 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 - chercher_web / lire_page : te documenter sur le web (doc d'API, vraie donnée, vérifier un fait, trouver une URL)
 - teste_parcours : JOUER un vrai parcours utilisateur (clics, saisies, vérifs) sur l'aperçu live
 - chercher_artefact : retrouver dans la mémoire cross-projet (Blackboard) des palettes design DÉJÀ créées à réutiliser
+- lire_document : lire un document fourni par l'utilisateur (PDF, Word .docx, Excel .xlsx, PowerPoint .pptx, texte…) pour partir de la VRAIE source
 - check_build : vérifier objectivement l'état du build
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
@@ -589,6 +590,12 @@ base) — cherche seulement en cas de doute réel.
 JOUER le parcours et vérifier qu'il MARCHE pour l'utilisateur (le bon écran apparaît, les images chargent, zéro
 erreur console). check_build dit que ça compile ; teste_parcours dit que ça marche. Si une étape est ✗, lis le
 message, CORRIGE (edit_file), puis re-teste. C'est ce qui aurait attrapé un écran « vert au build mais cassé ».
+
+⚠ PARS DE LA VRAIE SOURCE : si l'utilisateur fournit un document (cahier des charges, énoncé, spec, PDF de
+référence, données) — souvent déposé dans .assets/ — NE construis PAS depuis une vague paraphrase : appelle
+lire_document('.assets/le-fichier.pdf') pour LIRE son contenu réel, puis implémente à partir de CE contenu
+(titres, libellés, données, contraintes exacts). C'est ainsi qu'on évite de livrer « à côté » du besoin. Pour un
+PDF long, lis page par page (paramètre 'page'). Ne devine pas ce qu'un document contient quand tu peux l'ouvrir.
 
 ⚠ RÉUTILISER > RÉINVENTER : avant de définir un univers visuel (palette, couleurs de marque) pour un écran
 ou un projet, appelle chercher_artefact(['#xxxxxx', …]) avec les couleurs que tu envisages — la mémoire

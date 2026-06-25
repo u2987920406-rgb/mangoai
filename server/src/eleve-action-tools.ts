@@ -20,6 +20,7 @@ import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
 import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
+import { buildEleveDocumentTools } from "./eleve-document-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
@@ -254,6 +255,14 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // au lieu de réinventer. Pur, déterministe, zéro réseau ; coupure ELEVE_ARTEFACT=off.
   if (process.env.ELEVE_ARTEFACT !== "off") {
     for (const t of buildEleveArtefactTools(projectDir)) reg.register(t);
+  }
+
+  // Outil DOCUMENT (#157) — « pars de la VRAIE source du user ». Lit un document
+  // déposé par l'utilisateur (PDF via la primitive #147, ou texte .md/.csv/.json…)
+  // pour construire à partir du vrai besoin au lieu d'inventer. Projet-scopé
+  // (resolveInside), coupure ELEVE_DOCUMENT=off.
+  if (process.env.ELEVE_DOCUMENT !== "off") {
+    for (const t of buildEleveDocumentTools(projectDir)) reg.register(t);
   }
 
   // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
