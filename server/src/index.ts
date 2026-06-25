@@ -77,6 +77,7 @@ import { registerRadarRoutes } from "./radar.js";
 import { registerBuildReviewRoutes } from "./build-review-routes.js";
 import { registerBrainRoutes } from "./brain-routes.js";
 import { registerBrainDispatchRoutes } from "./brain-dispatch-routes.js";
+import { registerOllamaRoutes } from "./ollama-routes.js";
 import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
@@ -891,6 +892,7 @@ registerProjectIORoutes(app, () => agentBusy);
 registerFeedbackRoutes(app);
 registerBrainRoutes(app);
 registerBrainDispatchRoutes(app);
+registerOllamaRoutes(app);
 registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 

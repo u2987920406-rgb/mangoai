@@ -1,12 +1,13 @@
 import { lazy, Suspense, useState } from "react";
 import {
   ArrowLeft, Activity, BarChart2, BarChart3, Brain, Clock, CreditCard,
-  Hash, Moon, Rss, Satellite, Scissors, Settings,
+  Hash, Moon, Rss, Satellite, Scissors, Settings, Wrench,
 } from "lucide-react";
 import { NEUTRAL } from "../neutral.js";
 
 // Composants système existants — réutilisés tels quels (code-split)
 const Brains           = lazy(() => import("./Brains.jsx"));
+const AtelierCerveaux  = lazy(() => import("./AtelierCerveaux.jsx"));
 const Billing          = lazy(() => import("./Billing.jsx"));
 const CronManager      = lazy(() => import("./CronManager.jsx"));
 const NocturnalReview  = lazy(() => import("./NocturnalReview.jsx"));
@@ -23,7 +24,10 @@ function buildGroups() {
   return [
     {
       title: "Intelligence",
-      items: [{ id: "brains", label: "Cerveaux", icon: Brain }],
+      items: [
+        { id: "atelier", label: "Atelier des cerveaux", icon: Wrench },
+        { id: "brains", label: "Cerveaux", icon: Brain },
+      ],
     },
     {
       title: "Compte",
@@ -86,6 +90,7 @@ export default function Reglages({ onBack, onOpenProject }) {
 
   function renderSection() {
     switch (section) {
+      case "atelier":   return <AtelierCerveaux onBack={onBack} />;
       case "brains":    return <Brains onBack={onBack} />;
       case "billing":   return <Billing onBack={onBack} />;
       case "cron":      return <CronManager onBack={onBack} />;

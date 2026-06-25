@@ -8,7 +8,7 @@
 
 import type { Express, Request, Response } from "express";
 import {
-  loadBrainRegistry, saveBrainRegistry, AGENT_IDS, DEFAULT_REGISTRY,
+  loadBrainRegistry, saveBrainRegistry, AGENT_IDS, DEFAULT_REGISTRY, EXPECTED_CAPS,
   type AgentId, type BrainConfig,
 } from "./brain-registry.js";
 import { estimatePipelineCost } from "./agent-contract.js";
@@ -20,7 +20,10 @@ function isAgentId(v: unknown): v is AgentId {
 export function registerBrainDispatchRoutes(app: Express): void {
   // Le registre complet + les défauts (pour le bouton « Réinitialiser »).
   app.get("/api/brain-registry", (_req: Request, res: Response) => {
-    res.json({ registry: loadBrainRegistry(), defaults: DEFAULT_REGISTRY, agents: AGENT_IDS });
+    res.json({
+      registry: loadBrainRegistry(), defaults: DEFAULT_REGISTRY, agents: AGENT_IDS,
+      expectedCaps: EXPECTED_CAPS, // #162 — capabilities exigées par agent (garde UI non-bloquante)
+    });
   });
 
   // Sauvegarde un registre. saveBrainRegistry valide/normalise champ par champ

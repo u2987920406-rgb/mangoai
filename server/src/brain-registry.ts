@@ -46,6 +46,15 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]
 
+// #162 — Garde de capacités : capabilities Ollama (/api/show) qu'un agent EXIGE.
+// L'agent `vision` doit voir → capability `vision` obligatoire (le piège GLM-4.6V :
+// packagé sans mmproj, pas de `vision`, HTTP 500 sur image). Les autres agents n'ont
+// pas d'exigence dure ici (informatif). PUR ; la comparaison caps↔attendues se fait
+// côté UI, NON-BLOQUANTE (avertit, n'impose pas — fidèle #111).
+export const EXPECTED_CAPS: Partial<Record<AgentId, string[]>> = {
+  vision: ["vision"],
+}
+
 const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
   ["claude", "ollama", "openai", "deepseek", "mistral", "groq", "litellm"],
 )

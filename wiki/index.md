@@ -25,6 +25,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[phase-e-multicerveaux]] | Multi-cerveaux par intention : le bon cerveau par tâche, mesuré + souverain (cloud↔local) — #135/#146 Phase E | ✅ écrite |
 | [[brains]] | Registre `.brains` : fiches cerveau mesurées + routage intention→cerveau + « MangoOS avertit » — Phase E | ✅ écrite |
 | [[brain-dispatch]] | Système multi-agents à cerveaux interchangeables : 10 agents nommés + registre éditable + contrat universel — #150 ✅ fait, validé live | ✅ écrite |
+| [[atelier-cerveaux]] | UI Réglages : un modèle par agent + parcourir/télécharger les modèles Ollama locaux + garde de capacités (l'œil exige `vision`) + scanner #148 — #162, prouvé live | ✅ écrite |
 | [[sharingan-vision-eleve]] | L'œil de GLM : outil `vois_ecran` (rendu→image→VL cloud→critique) pour qu'il VOIE ses écrans et s'auto-corrige — #151 ✅ fait, prouvé live | ✅ écrite |
 | [[sharingan-extraction]] | `extraire_site` : naviguer + voir + comprendre + reformuler un site en dossier structuré, le persister (artefact réutilisable) et l'illustrer (Pexels) — #159 COMPLET 5/5, prouvé live | ✅ écrite |
 | [[planifier-avant-agir]] | `planifier` : l'Élève pose un PLAN d'étapes avant de coder, rappelé quand il dérive (plan-ancre) — #160, prouvé live | ✅ écrite |
