@@ -39,9 +39,20 @@ const emptyDesign = (url: string) => ({
   layout: { titre: "", sections: [] as string[], nav: [] as string[], cta: [] as string[] },
 });
 
+const emptyVision = () => ({
+  ok: false as const,
+  concept: "",
+  publicCible: "",
+  mecaniques: [] as string[],
+  ambiance: "",
+  ton: "",
+  infos: [] as string[],
+  raw: "",
+});
+
 /** Outil avec deps injectées + mouchards. */
 function tool(over: Partial<SiteDeps> = {}) {
-  const calls = { crawl: [] as string[], search: [] as string[], design: [] as string[] };
+  const calls = { crawl: [] as string[], search: [] as string[], design: [] as string[], see: [] as string[] };
   const deps: SiteDeps = {
     isAllowed: over.isAllowed ?? (() => true),
     crawl: async (url, opts) => {
@@ -55,6 +66,10 @@ function tool(over: Partial<SiteDeps> = {}) {
     design: async (url) => {
       calls.design.push(url);
       return over.design ? over.design(url) : emptyDesign(url);
+    },
+    see: async (url, opts) => {
+      calls.see.push(url);
+      return over.see ? over.see(url, opts) : emptyVision();
     },
   };
   const [t] = buildEleveSiteTools("/tmp/proj", deps);
@@ -153,6 +168,51 @@ async function run() {
     const r = await t.handler({ url: "https://jeu.com" });
     check("pas d'erreur malgré design KO", r.isError !== true);
     check("le texte des pages est bien là", r.text.includes("contenu du site"));
+  }
+
+  console.log("\n[5d] Couche vision (#159 Phase 3) : concept/mécaniques/mood dans le dossier");
+  {
+    const { t, calls } = tool({
+      crawl: async (u) => report([{ url: u, text: "Un jeu d'aventure" }]),
+      see: async (url, opts) => {
+        return {
+          ok: true,
+          concept: "Jeu d'aventure exploratoire en monde ouvert",
+          publicCible: "joueurs de 12 ans et plus",
+          mecaniques: ["carte ouverte", "énigmes", "inventaire"],
+          ambiance: "héroïque et mystérieux",
+          ton: "épique et accueillant",
+          infos: ["sortie 2026", "multi-plateforme"],
+          raw: `objectif=${opts.objectif ?? ""}`,
+        };
+      },
+    });
+    const r = await t.handler({ url: "https://jeu.com", objectif: "mécaniques d'un Zelda-like" });
+    check("see appelé sur le seed", calls.see.length === 1 && calls.see[0] === "https://jeu.com");
+    check("dossier structuré (titre)", /Dossier d'extraction/.test(r.text));
+    check("concept présent", r.text.includes("Jeu d'aventure exploratoire"));
+    check("mécaniques déduites présentes", r.text.includes("énigmes") && r.text.includes("inventaire"));
+    check("mood présent", r.text.includes("héroïque et mystérieux"));
+    check("ton éditorial présent", r.text.includes("épique"));
+    check("infos clés présentes", r.text.includes("sortie 2026"));
+    check("extraits bruts joints", r.text.includes("Extraits bruts") && r.text.includes("Un jeu d'aventure"));
+  }
+
+  console.log("\n[5e] Vision en échec → dossier sort quand même (gracieux, fallback)");
+  {
+    const { t } = tool({
+      see: async () => {
+        throw new Error("VL KO");
+      },
+      crawl: async (u) =>
+        report([{ url: u, text: "contenu" }]).pages.length
+          ? { seed: u, pages: [{ url: u, title: "Accueil du Jeu", text: "contenu", links: [], depth: 0, external: false }], skipped: [], truncated: false }
+          : report([]),
+    });
+    const r = await t.handler({ url: "https://jeu.com" });
+    check("pas d'erreur malgré vision KO", r.isError !== true);
+    check("mention vision indisponible", /Vision indisponible/i.test(r.text));
+    check("fallback infos = titre de page", r.text.includes("Accueil du Jeu"));
   }
 
   console.log("\n[6] Budget d'extractions");

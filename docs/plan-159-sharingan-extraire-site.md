@@ -55,7 +55,7 @@ Mango doit savoir extraire **dans les deux cas** :
 |---|---|---|---|
 | **1 — Naviguer + extraire texte** | `site-crawler.ts` + `extraire_site` minimal (synthèse texte multi-pages). Le socle « aller sur le site, lire les pages » | ⚖️ Sonnet 4.6 | M |
 | **2 — Couche design (Sharingan)** | Palette/typo/ambiance via `taste-engine` sur les pages clés | ⚖️ Sonnet 4.6 | S |
-| **3 — Voir & raisonner** | `dispatch('vision')` sur captures → concept/mécaniques/mood + **fusion en dossier structuré** | 🧠 Opus 4.8 | M |
+| **3 — Voir & raisonner** ✅ *(livré, prouvé live)* | `dispatch('vision')` sur la capture du seed → concept/public/mécaniques/mood/ton + **fusion en dossier structuré** (`site-vision.ts` `seeSite` + `parseSiteVision` ; `site-dossier.ts` `buildDossier`/`formatDossier` ; gate `ELEVE_SITE_VISION`). LIVE rust-lang.org : VL déduit concept/mécaniques/mood réels, $0. Limites L13(maj)/L14. | 🧠 Opus 4.8 | M |
 | **4 — Réinjection + persistance** | Retour DATA à GLM + dossier persisté Blackboard (`site.dossier`, réutilisable) | 🧠 Opus 4.8 | M |
 | **5 — Images contextuelles** | Pexels piloté par le dossier (souverain, défaut) + génération via API activable (gaté) | ⚖️ Sonnet 4.6 | S |
 
