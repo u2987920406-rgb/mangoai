@@ -80,6 +80,7 @@ import { registerBrainDispatchRoutes } from "./brain-dispatch-routes.js";
 import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
+import { prewarmVision } from "./vision-prewarm.js";
 import { lanIPv4s } from "./net.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
@@ -1079,6 +1080,10 @@ const httpServer = app.listen(PORT, HOST, () => {
   if (HOST === "0.0.0.0") {
     for (const ip of lanIPv4s()) console.log(`MangoOS LAN     → http://${ip}:${PORT}  (validation goût : /taste/review)`);
   }
+  // Pré-chauffe l'œil local (lève L22) : charge le VL `vision` (qwen3-vl:8b) en VRAM
+  // en arrière-plan pour que le 1er regard (vois_ecran/Œil-Coach/Gardien) soit immédiat.
+  // Fire-and-forget, ne lève jamais, saute si cloud ou VISION_PREWARM=off.
+  void prewarmVision();
   // Curation de goût nocturne (#149 v2) — scheduler opt-in (config.enabled défaut false).
   startTasteNocturnalScheduler();
   restoreAgents().catch((e) => console.warn("[agent-factory] restoreAgents:", e));
