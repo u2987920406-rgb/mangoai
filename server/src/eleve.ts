@@ -30,6 +30,7 @@ import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
+import { clearPlan, buildRelanceNudge } from "./eleve-plan.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
 import { getTracer } from "./kernel-trace.js";
@@ -547,7 +548,8 @@ const AGENTIC_FALLBACK_SYSTEM =
 
 // Contrat d'OUTILS du moteur agentique — REMPLACE le contrat <mangoos> sur ce
 // chemin (ne JAMAIS mélanger balises et outils, sinon le cerveau hésite).
-const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (function-calling) :
+export const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (function-calling) :
+- planifier : poser un PLAN d'étapes ordonnées AVANT de coder une tâche non triviale
 - read_file / list_files / search_code : explorer le projet existant
 - write_file : créer ou réécrire un fichier complet
 - edit_file : remplacer un extrait précis et unique d'un fichier
@@ -562,6 +564,13 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 - check_build : vérifier objectivement l'état du build
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
+
+⚠ PLANIFIE D'ABORD (capital) : pour une tâche à PLUSIEURS étapes (nouvelle page, fonctionnalité, flux,
+refonte), ton TOUT PREMIER appel d'outil est planifier(titre, etapes) — AVANT d'explorer ou d'écrire quoi
+que ce soit. Découpe la tâche en 2 à 8 étapes ORDONNÉES (ça te donne un fil conducteur, t'évite d'oublier des
+morceaux et de tourner en rond). PUIS explore le minimum utile et EXÉCUTE étape par étape (check_build aux
+jalons), sans sauter d'étape, jusqu'à finish. Si la tâche se révèle différente de ton plan, re-planifie. Pour
+un changement vraiment trivial (1 fichier, 1 correctif), inutile de planifier — agis directement.
 
 ⚠ ENVIRONNEMENT : tu tournes sous Windows. N'utilise JAMAIS run_command pour LIRE/lister un fichier
 (cat, ls, type, Get-Content, pwd… échouent ou varient selon l'OS). Pour lire/lister/chercher, utilise
@@ -616,8 +625,8 @@ palette proche existe, RÉUTILISE ses couleurs plutôt que d'en réinventer une 
 visuel cohérent d'un projet à l'autre (et c'est plus rapide). Sans argument, l'outil liste les palettes
 récentes pour t'inspirer. Réutilise SAUF demande explicite d'un style neuf.
 
-Méthode : explore avec read_file/list_files/search_code → écris (write_file/edit_file) → APRÈS chaque
-écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand
+Méthode : planifie (tâche multi-étapes : planifier d'abord) → explore le minimum avec read_file/list_files/
+search_code → écris (write_file/edit_file) → APRÈS chaque écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand
 tout est vert et la tâche faite, appelle finish(summary). Si un outil échoue, NE le répète pas en boucle :
 change d'approche (read_file au lieu du shell, ou fais directement ton edit). Pour une grande tâche à
 PARTIES INDÉPENDANTES, tu peux déléguer chaque partie via delegate, puis intégrer. Implémente RÉELLEMENT
@@ -939,6 +948,9 @@ export async function runRelay(
     let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
     let relances = 0;
     let nudge = "";
+    // #160 — repartir sans plan périmé d'une tâche précédente. Si l'Élève appelle
+    // planifier() pendant la boucle, son plan sera rappelé dans le nudge ci-dessous.
+    clearPlan(projectDir);
     for (;;) {
       agErr = "";
       try {
@@ -967,10 +979,9 @@ export async function runRelay(
         relances++;
         const why = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
         push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève — il termine lui-même (souveraineté, coût 0)`);
-        nudge =
-          `⚠ Tu t'es arrêté sans appeler finish (${why}). Tu as DÉJÀ exploré le projet — n'explore PLUS, ne relis rien. ` +
-          `AGIS maintenant : fais directement les edit_file/write_file qui manquent pour terminer la tâche, ` +
-          `vérifie avec check_build, puis appelle finish. (relance ${relances}/${selfRelanceMax})`;
+        // #160 — le nudge rappelle d'abord SON plan (s'il en a posé un) : le plan
+        // devient l'ancre qui le fait converger, en plus du « arrête de lire, AGIS ».
+        nudge = buildRelanceNudge(projectDir, why, relances, selfRelanceMax);
         continue;
       }
       break; // relances épuisées, toujours bloqué sur build vert

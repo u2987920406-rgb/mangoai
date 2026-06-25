@@ -28,19 +28,20 @@ fs.writeFileSync(path.join(dir, "src", "App.jsx"), "export default function App(
 const reg = buildEleveActionTools(dir);
 
 async function run() {
-  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + web #154 + parcours #155 + artefact #156 + document #157 + site #159)");
-  check("16 outils enregistrés", reg.names().length === 16);
+  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + planifier #160 + web #154 + parcours #155 + artefact #156 + document #157 + site #159)");
+  check("17 outils enregistrés", reg.names().length === 17);
   check(
     "write_file/edit_file/run_command/add_dependency/chercher_image/finish présents",
     ["write_file", "edit_file", "run_command", "add_dependency", "chercher_image", "finish"].every((n) => reg.has(n)),
   );
+  check("outil planifier #160 présent (planifier)", reg.has("planifier"));
   check("outils web #154 présents (chercher_web/lire_page)", ["chercher_web", "lire_page"].every((n) => reg.has(n)));
   check("outil parcours #155 présent (teste_parcours)", reg.has("teste_parcours"));
   check("outil artefact #156 présent (chercher_artefact)", reg.has("chercher_artefact"));
   check("outil document #157 présent (lire_document)", reg.has("lire_document"));
   check("outil site #159 présent (extraire_site)", reg.has("extraire_site"));
   check("outils lecture Phase 1 conservés", ["read_file", "list_files", "search_code", "check_build"].every((n) => reg.has(n)));
-  check("toOpenAITools → 16 functions valides", toOpenAITools(reg).length === 16 && toOpenAITools(reg).every((t) => t.type === "function"));
+  check("toOpenAITools → 17 functions valides", toOpenAITools(reg).length === 17 && toOpenAITools(reg).every((t) => t.type === "function"));
   // chercher_image : scène vide → erreur pédagogique (branche déterministe, sans réseau)
   const imgEmpty = await reg.invoke("chercher_image", { scene: "  " });
   check("chercher_image scène vide → isError", imgEmpty.isError === true);
@@ -80,7 +81,8 @@ async function run() {
   {
     const gated = buildEleveActionTools(dir, { allowRun: false });
     check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
-    check("15 outils (run_command retiré, web + parcours + artefact + document + site conservés)", gated.names().length === 15);
+    check("16 outils (run_command retiré, planifier + web + parcours + artefact + document + site conservés)", gated.names().length === 16);
+    check("planifier conservé même pour cerveau faible (planifier aide surtout les faibles)", gated.has("planifier"));
     check("chercher_artefact conservé même pour cerveau faible (pur, sûr)", gated.has("chercher_artefact"));
     check("lire_document conservé même pour cerveau faible (lecture, sûr)", gated.has("lire_document"));
     check("extraire_site conservé même pour cerveau faible (lecture web, sûr)", gated.has("extraire_site"));

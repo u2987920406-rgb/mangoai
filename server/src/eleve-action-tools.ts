@@ -17,6 +17,7 @@ import { z } from "zod";
 import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
+import { buildElevePlanifierTools } from "./eleve-planifier-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
 import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
@@ -233,6 +234,14 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   for (const t of actionTools) {
     if (t.name === "run_command" && !allowRun) continue; // gaté pour cerveau faible
     reg.register(t);
+  }
+
+  // Outil PLANIFIER (#160) — « planifier avant d'agir ». Donne à l'Élève le réflexe
+  // de poser un PLAN d'étapes AVANT de coder (fil conducteur ; rappelé s'il dérive).
+  // En tête des outils additionnels car c'est le tout premier réflexe. Coupure
+  // ELEVE_PLANIFIER=off.
+  if (process.env.ELEVE_PLANIFIER !== "off") {
+    for (const t of buildElevePlanifierTools(projectDir)) reg.register(t);
   }
 
   // Outils WEB (#154) — « se documenter au lieu d'inventer ». Toujours actifs (la
