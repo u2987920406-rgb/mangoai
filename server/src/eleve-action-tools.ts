@@ -18,6 +18,7 @@ import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-m
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
+import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
@@ -237,6 +238,14 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // une vraie source avant d'affirmer une URL/un usage d'API/un fait.
   if (process.env.ELEVE_WEB !== "off") {
     for (const t of buildEleveWebTools(projectDir)) reg.register(t);
+  }
+
+  // Outil PARCOURS (#155) — « vérifie que ça MARCHE, pas juste que ça compile ».
+  // Joue un vrai flux utilisateur (clics/saisies) sur l'aperçu live et vérifie le
+  // résultat (texte visible, image chargée, zéro erreur console). Aurait attrapé le
+  // bug des images TOEIC (build vert mais écran cassé). Coupure ELEVE_PARCOURS=off.
+  if (process.env.ELEVE_PARCOURS !== "off") {
+    for (const t of buildEleveParcoursTools(projectDir)) reg.register(t);
   }
 
   // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
