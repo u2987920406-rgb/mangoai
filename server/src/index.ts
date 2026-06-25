@@ -76,6 +76,7 @@ import { registerNocturnalRoutes } from "./nocturnal.js";
 import { registerPromptEvolutionRoutes } from "./prompt-evolution.js";
 import { registerRadarRoutes } from "./radar.js";
 import { registerBuildReviewRoutes } from "./build-review-routes.js";
+import { loadReview } from "./build-review.js";
 import { registerBrainRoutes } from "./brain-routes.js";
 import { registerBrainDispatchRoutes } from "./brain-dispatch-routes.js";
 import { registerOllamaRoutes } from "./ollama-routes.js";
@@ -122,8 +123,18 @@ app.use(express.json({ limit: "25mb" }));
 let agentBusy = false;
 
 app.get("/api/projects", (_req, res) => {
+  const projects = listProjects();
+  // #93 — la note de revue utilisateur (1-5) par projet, pour afficher les étoiles
+  // dans « Mes projets » (vision directe : revu ? + combien d'étoiles). Léger : lit
+  // le .build-review.json de chaque projet ; absent → le projet n'est pas dans la map.
+  const reviews: Record<string, { score: number }> = {};
+  for (const name of projects) {
+    const r = loadReview(name);
+    if (r && typeof r.score === "number" && r.score > 0) reviews[name] = { score: r.score };
+  }
   res.json({
-    projects: listProjects(),
+    projects,
+    reviews,
     templates: listTemplates(),
     preview: previewStatus(),
     githubEnabled: githubConfigured(),

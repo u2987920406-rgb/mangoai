@@ -2,7 +2,7 @@ import { Suspense, lazy, useState, useEffect } from "react";
 import {
   BookOpen, Bot, Boxes, FileText, FlaskConical, FolderOpen, HelpCircle,
   Image as ImageIcon, Layers, Lightbulb, Music2, Network, Palette,
-  Plus, Search, Sliders, Sparkles, Trash2, Wand2,
+  Plus, Search, Sliders, Sparkles, Star, Trash2, Wand2,
 } from "lucide-react";
 import Window from "./Window.jsx";
 import ConfirmDelete from "./ConfirmDelete.jsx";
@@ -110,6 +110,7 @@ export function NewProjectForm({ onCreate, onCancel }) {
 // ─── Fenêtre Mango App Builder ────────────────────────────────────────────────
 function ProjectsWindow({ win, onClose }) {
   const [projects, setProjects] = useState([]);
+  const [reviews, setReviews] = useState({}); // nom → { score } : revue utilisateur #93
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -120,7 +121,7 @@ function ProjectsWindow({ win, onClose }) {
   useEffect(() => {
     fetch("/api/projects")
       .then((r) => r.json())
-      .then((d) => { setProjects(d.projects ?? []); setLoading(false); })
+      .then((d) => { setProjects(d.projects ?? []); setReviews(d.reviews ?? {}); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -184,6 +185,17 @@ function ProjectsWindow({ win, onClose }) {
                 <FolderOpen size={13} className="shrink-0 text-dim group-hover:text-accent-soft transition-colors" />
                 <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-ink">{p}</span>
               </button>
+              {/* #93 — étoiles de revue : projet noté = revu + sa note d'un coup d'œil */}
+              {reviews[p]?.score > 0 && (
+                <div
+                  className="shrink-0 flex items-center gap-px pr-1.5 group-hover:hidden"
+                  title={`Tu as noté ce projet ${reviews[p].score}/5 — déjà revu`}
+                >
+                  {Array.from({ length: reviews[p].score }).map((_, i) => (
+                    <Star key={i} size={10} className="fill-warn text-warn" strokeWidth={0} />
+                  ))}
+                </div>
+              )}
               <ConfirmDelete
                 onConfirm={async () => {
                   const ok = await onDelete?.(p);
