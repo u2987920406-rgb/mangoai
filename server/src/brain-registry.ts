@@ -25,7 +25,7 @@ export interface BrainConfig {
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "extracteur" | "testeur" | "auditeur"
-  | "optimiseur" | "chercheur"
+  | "optimiseur" | "chercheur" | "juge"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -39,6 +39,9 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   auditeur:      { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
   optimiseur:    { provider: "ollama", model: "gemma4:12b", timeoutMs: 60_000 },
   chercheur:     { provider: "claude", model: "sonnet", timeoutMs: 90_000 },
+  // #161 — juge de clôture (intention↔livré) : souverain ($0) et DISTINCT de
+  // l'exécutant GLM (provider openai), pour éviter l'auto-jugement biaisé.
+  juge:          { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 45_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]

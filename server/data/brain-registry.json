@@ -48,5 +48,10 @@
     "provider": "claude",
     "model": "sonnet",
     "timeoutMs": 90000
+  },
+  "juge": {
+    "provider": "ollama",
+    "model": "qwen3.5:cloud",
+    "timeoutMs": 45000
   }
 }

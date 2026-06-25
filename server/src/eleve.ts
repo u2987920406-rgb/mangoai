@@ -31,6 +31,7 @@ import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { clearPlan, buildRelanceNudge } from "./eleve-plan.js";
+import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
 import { getTracer } from "./kernel-trace.js";
@@ -948,6 +949,10 @@ export async function runRelay(
     let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
     let relances = 0;
     let nudge = "";
+    // #161 — Gardien de clôture : compteur de corrections SÉPARÉ de selfRelanceMax
+    // (les tours du Gardien ne consomment pas le budget anti-blocage). Gaté + non-bloquant.
+    let gateRelances = 0;
+    const gateRelanceMax = Number(process.env.ELEVE_GATE_RELANCE_MAX ?? 2);
     // #160 — repartir sans plan périmé d'une tâche précédente. Si l'Élève appelle
     // planifier() pendant la boucle, son plan sera rappelé dans le nudge ci-dessous.
     clearPlan(projectDir);
@@ -969,6 +974,34 @@ export async function runRelay(
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) break;
+      // Build vert + finish explicite → AVANT de déclarer succès, le GARDIEN de
+      // clôture (#161) vérifie intention + goût + QA. Gaté ELEVE_CLOSURE_GATE=on
+      // (défaut OFF → zéro régression). Convergent/non-bloquant : convertit (relance
+      // bornée) puis cède (incomplete). Ne casse jamais la boucle (try/catch).
+      if (process.env.ELEVE_CLOSURE_GATE === "on" && result?.finished) {
+        try {
+          const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task));
+          push(
+            `🛡 Gardien — intention ${verdict.intent.couverture}/100` +
+              (verdict.design ? `, goût ${verdict.design.overall}/100` : "") +
+              (verdict.ok ? " ✓" : " ✗"),
+          );
+          const decision = evaluateGate(projectDir, verdict, gateRelances, gateRelanceMax);
+          if (decision.action === "corrige") {
+            gateRelances++;
+            nudge = decision.nudge;
+            push(`↻ Gardien : renvoie l'Élève corriger (${gateRelances}/${gateRelanceMax}, coût 0)`);
+            continue;
+          }
+          if (decision.action === "laisse-passer") {
+            push(`⚠ Gardien : seuil non atteint après ${gateRelances} correction(s) — livré mais marqué INCOMPLET (à toi de trancher)`);
+            return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
+          }
+          // action "ok" → on tombe dans le succès normal ci-dessous.
+        } catch (e) {
+          push(`⚠ Gardien indisponible (${(e as Error).message.split("\n")[0]}) — on laisse passer`);
+        }
+      }
       // Build vert + finish explicite → résolu par l'Élève, coût 0.
       if (result?.finished) {
         push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);

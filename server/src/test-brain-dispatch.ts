@@ -37,7 +37,7 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("10 agents présents", AGENT_IDS.length === 10 && Object.keys(def).length === 10);
+    check("11 agents présents", AGENT_IDS.length === 11 && Object.keys(def).length === 11);
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
     check("défaut codeur = ollama", def.codeur.provider === "ollama");
 
