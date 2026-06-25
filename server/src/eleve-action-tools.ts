@@ -19,6 +19,7 @@ import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
+import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
@@ -246,6 +247,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // bug des images TOEIC (build vert mais écran cassé). Coupure ELEVE_PARCOURS=off.
   if (process.env.ELEVE_PARCOURS !== "off") {
     for (const t of buildEleveParcoursTools(projectDir)) reg.register(t);
+  }
+
+  // Outil ARTEFACT (#156) — « réutiliser > regénérer ». Interroge la mémoire
+  // cross-projet du Blackboard (palettes design déjà créées/captées) pour réutiliser
+  // au lieu de réinventer. Pur, déterministe, zéro réseau ; coupure ELEVE_ARTEFACT=off.
+  if (process.env.ELEVE_ARTEFACT !== "off") {
+    for (const t of buildEleveArtefactTools(projectDir)) reg.register(t);
   }
 
   // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
