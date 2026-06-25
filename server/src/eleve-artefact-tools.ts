@@ -17,6 +17,7 @@ import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { searchArtifacts, listArtifacts, type ArtifactHit } from "./kernel-artifacts.js";
 import { searchSiteDossiers, listSiteDossiers, type SiteDossierHit } from "./site-artifacts.js";
+import { recordArtefactUsage } from "./eleve-artefact-usage.js";
 
 /** Borne dure du nombre de résultats renvoyés à l'Élève. */
 const MAX_RESULTS = 8;
@@ -33,6 +34,9 @@ export interface ArtefactDeps {
   searchSites?: (colors: string[], k: number) => SiteDossierHit[];
   /** dossiers de site récents (#159 Phase 4) — optionnel. */
   listSites?: () => SiteDossierHit[];
+  /** (L29) provenances d'artefacts servies ce tour → mesure de réutilisation.
+   * Défaut : le store éphémère par projet. Injectable pour les tests. */
+  record?: (sources: string[]) => void;
 }
 
 const realDeps: ArtefactDeps = {
@@ -61,9 +65,13 @@ function formatSiteHit(h: SiteDossierHit): string {
   return `- ${a.project} (site,${pct})${concept}${cols ? `\n  palette : ${cols}` : ""}${meca}`;
 }
 
-/** Section « sites déjà extraits » (vide si rien). Cherche par couleurs, ou liste les récents. */
-function siteSection(deps: ArtefactDeps, colors: string[], k: number): string {
-  const hits = colors.length > 0 ? deps.searchSites?.(colors, k) ?? [] : deps.listSites?.().slice(0, k) ?? [];
+/** Dossiers de site pertinents : par couleurs si fournies, sinon les récents. */
+function fetchSiteHits(deps: ArtefactDeps, colors: string[], k: number): SiteDossierHit[] {
+  return colors.length > 0 ? deps.searchSites?.(colors, k) ?? [] : deps.listSites?.().slice(0, k) ?? [];
+}
+
+/** Section « sites déjà extraits » (vide si rien). */
+function formatSiteSection(hits: SiteDossierHit[]): string {
   if (hits.length === 0) return "";
   return (
     "\n\nSites déjà EXTRAITS (Sharingan) — réutilise concept/mécaniques/palette :\n" + hits.map(formatSiteHit).join("\n")
@@ -76,7 +84,10 @@ function siteSection(deps: ArtefactDeps, colors: string[], k: number): string {
  * - aucune couleur → liste les artefacts récents (parcourir la bibliothèque).
  * Ne lève jamais : tout échec revient au modèle en isError pédagogique.
  */
-export function buildEleveArtefactTools(_projectDir: string, deps: ArtefactDeps = realDeps): KernelTool[] {
+export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps = realDeps): KernelTool[] {
+  // (L29) Provenances servies ce tour → store éphémère par projet (consommé par le
+  // finally du tour pour la mesure de réutilisation). Injectable pour les tests.
+  const record = deps.record ?? ((sources: string[]) => recordArtefactUsage(projectDir, sources));
   const chercherArtefact: KernelTool = {
     name: "chercher_artefact",
     description:
@@ -104,11 +115,18 @@ export function buildEleveArtefactTools(_projectDir: string, deps: ArtefactDeps 
       }
 
       try {
-        const sites = siteSection(deps, colors, k);
+        const siteHits = fetchSiteHits(deps, colors, k);
+        const sites = formatSiteSection(siteHits);
+
+        // Palettes pertinentes : proches si couleurs fournies, sinon les récentes.
+        const paletteHits = colors.length > 0 ? deps.search(colors, k) : deps.list().slice(0, k);
+
+        // (L29) Provenances servies (palettes + sites) → réutilisation mesurable,
+        // même quand le rendu n'expose pas de hex littéral (Tailwind).
+        record([...paletteHits.map((h) => h.artifact.project), ...siteHits.map((h) => h.artifact.project)]);
 
         if (colors.length > 0) {
-          const hits = deps.search(colors, k);
-          if (hits.length === 0) {
+          if (paletteHits.length === 0) {
             return {
               text:
                 "Aucune palette proche dans la mémoire cross-projet (bibliothèque vide ou rien de ressemblant). Tu peux créer une palette neuve — pense à rester cohérent avec le reste du projet." +
@@ -118,13 +136,12 @@ export function buildEleveArtefactTools(_projectDir: string, deps: ArtefactDeps 
           return {
             text:
               "Palettes proches DÉJÀ créées (réutilise ces couleurs pour la cohérence de ton univers visuel) :\n" +
-              hits.map(formatHit).join("\n") +
+              paletteHits.map(formatHit).join("\n") +
               sites,
           };
         }
 
-        const all = deps.list().slice(0, k);
-        if (all.length === 0) {
+        if (paletteHits.length === 0) {
           return {
             text:
               (sites
@@ -136,7 +153,7 @@ export function buildEleveArtefactTools(_projectDir: string, deps: ArtefactDeps 
         return {
           text:
             "Artefacts design récents en mémoire cross-projet (réutilise plutôt que réinventer) :\n" +
-            all.map(formatHit).join("\n") +
+            paletteHits.map(formatHit).join("\n") +
             sites,
         };
       } catch (e) {

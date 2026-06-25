@@ -24,9 +24,14 @@ function hit(project: string, type: "design.reference" | "design.produced", colo
   return { key: `${type}:${project}:x`, artifact: { type, project, colors, at: 1 }, score };
 }
 
-/** Construit l'outil avec des deps injectées + un mouchard sur les appels. */
+/** Construit l'outil avec des deps injectées + un mouchard sur les appels. Le
+ * `record` est mocké (évite d'écrire dans le store réel pendant les tests). */
 function tool(deps: Partial<ArtefactDeps>) {
-  const calls: { search: Array<{ colors: string[]; k: number }>; list: number } = { search: [], list: 0 };
+  const calls: { search: Array<{ colors: string[]; k: number }>; list: number; recorded: string[][] } = {
+    search: [],
+    list: 0,
+    recorded: [],
+  };
   const full: ArtefactDeps = {
     search: (colors, k) => {
       calls.search.push({ colors, k });
@@ -36,6 +41,9 @@ function tool(deps: Partial<ArtefactDeps>) {
       calls.list++;
       return deps.list ? deps.list() : [];
     },
+    searchSites: deps.searchSites,
+    listSites: deps.listSites,
+    record: deps.record ?? ((sources) => calls.recorded.push(sources)),
   };
   const [t] = buildEleveArtefactTools("/tmp/proj", full);
   return { t, calls };
@@ -174,6 +182,38 @@ async function run() {
     const r2 = await t.handler({});
     check("sans couleur : listSites appelé", calls.listSites === 1);
     check("site récent listé", r2.text.includes("Site de référence"));
+  }
+
+  console.log("\n[11] L29 — instrumentation : provenances servies → record");
+  {
+    // Palettes ET sites retournés → record reçoit les deux provenances.
+    const calls: { recorded: string[][] } = { recorded: [] };
+    const full: ArtefactDeps = {
+      search: () => [hit("mango-carnet", "design.reference", ["#f5a623"], 0.8)],
+      list: () => [],
+      searchSites: () => [
+        {
+          key: "https://rust-lang.org",
+          artifact: {
+            type: "site.dossier", url: "https://rust-lang.org", project: "rust-lang.org",
+            concept: "portail", publicCible: "", mecaniques: [], palette: ["#f5a623"],
+            typographies: [], ambiance: "", mood: "", tonEditorial: "", infosCles: [], at: 1,
+          },
+          score: 0.7,
+        } as SiteDossierHit,
+      ],
+      record: (sources) => calls.recorded.push(sources),
+    };
+    const [t] = buildEleveArtefactTools("/tmp/proj", full);
+    await t.handler({ couleurs: ["#f5a623"] });
+    check("record appelé une fois", calls.recorded.length === 1);
+    check("provenance palette captée", calls.recorded[0].includes("mango-carnet"));
+    check("provenance site captée", calls.recorded[0].includes("rust-lang.org"));
+
+    // Aucun hit (palette vide, pas de sites) → record reçoit une liste vide (rien réutilisé).
+    const empty = tool({ search: () => [] });
+    await empty.t.handler({ couleurs: ["#000000"] });
+    check("0 hit → record([]) (pas de fausse réutilisation)", empty.calls.recorded.length === 1 && empty.calls.recorded[0].length === 0);
   }
 
   console.log("\n[9] Échec des deps → isError gracieux (ne lève jamais)");

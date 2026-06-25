@@ -16,7 +16,7 @@ import { getBlackboard, type Blackboard } from './kernel-blackboard.js'
 /** Événement Bus émis quand un tour a réutilisé ≥ 1 artefact de bibliothèque. */
 export const REUSE_EVENT = 'artifact.reuse'
 
-export type ReuseKind = 'component' | 'skill' | 'procedure' | 'palette'
+export type ReuseKind = 'component' | 'skill' | 'procedure' | 'palette' | 'artifact'
 export interface ReuseHit {
   kind: ReuseKind
   name: string
@@ -27,6 +27,24 @@ const PATTERNS: Array<{ kind: ReuseKind; re: RegExp }> = [
   { kind: 'skill', re: /[\\/]\.skills[\\/]([^\\/]+)/ },
   { kind: 'procedure', re: /[\\/]\.procedures[\\/]([^\\/]+)/ },
 ]
+
+/** Réutilisation via la MÉMOIRE d'artefacts (#156 `chercher_artefact`, L29). Chaque
+ * PROVENANCE distincte servie par l'outil ce tour (≠ projet courant) = un artefact
+ * réutilisé. Signal COMPLÉMENTAIRE au recouvrement de palette : il ne dépend pas de
+ * hex littéraux dans le rendu, donc capte la réutilisation d'identité que l'Élève
+ * applique via des classes utilitaires (Tailwind). Couvre palettes ET dossiers de
+ * site (#159 P4) puisque les deux remontent dans `chercher_artefact`. Pur, déduplique. */
+export function detectArtefactReuse(sources: string[], currentProject?: string): ReuseHit[] {
+  const seen = new Set<string>()
+  const hits: ReuseHit[] = []
+  for (const s of sources ?? []) {
+    const name = (s ?? '').trim()
+    if (!name || name === currentProject || seen.has(name)) continue
+    seen.add(name)
+    hits.push({ kind: 'artifact', name })
+  }
+  return hits
+}
 
 /** Détecte les artefacts réutilisés à partir des CHEMINS lus par l'agent ce tour.
  * Pur. Déduplique (lire deux fois le même artefact = une réutilisation). */
@@ -293,7 +311,7 @@ function addTo(b: RawBucket, m: TurnMetrics): void {
   if (m.success) b.success++
 }
 
-const IMPACT_KINDS: ReuseKind[] = ['component', 'skill', 'procedure', 'palette']
+const IMPACT_KINDS: ReuseKind[] = ['component', 'skill', 'procedure', 'palette', 'artifact']
 
 /** Taille par défaut de la fenêtre glissante du rendement RÉCENT (#128). Le
  * cumulé lisse toute l'histoire ; le fenêtré ne regarde que les N derniers tours

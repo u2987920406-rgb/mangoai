@@ -6,6 +6,7 @@ import { Blackboard } from './kernel-blackboard.js'
 import { ARTIFACT_SCOPE, type DesignArtifact } from './kernel-artifacts.js'
 import {
   detectArtifactReads,
+  detectArtefactReuse,
   paletteOverlap,
   detectPaletteReuseAmong,
   detectPaletteReuse,
@@ -53,6 +54,20 @@ function check(name: string, cond: boolean): void {
   check('dédup même artefact lu 2×', dedup.length === 1 && dedup[0].name === 'Modal')
 
   check('aucune lecture → []', detectArtifactReads([]).length === 0)
+}
+
+// ── detectArtefactReuse (#156 chercher_artefact, L29) ────────────────────────
+{
+  // Chaque provenance distincte servie ≠ projet courant = un artefact réutilisé.
+  const hits = detectArtefactReuse(['mango-carnet', 'rust-lang.org', 'mango-carnet'], 'mango-courses')
+  check('artefact reuse : dédup par provenance', hits.length === 2)
+  check('artefact reuse : genre artifact', hits.every((h) => h.kind === 'artifact'))
+  check('artefact reuse : palette + site captés', hits.some((h) => h.name === 'mango-carnet') && hits.some((h) => h.name === 'rust-lang.org'))
+
+  // Exclut le projet courant (ne pas se compter soi-même) et les vides.
+  const self = detectArtefactReuse(['moi', '', '  ', 'autre'], 'moi')
+  check('artefact reuse : exclut projet courant + vides', self.length === 1 && self[0].name === 'autre')
+  check('artefact reuse : rien servi → []', detectArtefactReuse([], 'p').length === 0)
 }
 
 // ── Réutilisation de PALETTE (recouvrement de couleurs) ──────────────────────
@@ -193,7 +208,7 @@ function check(name: string, cond: boolean): void {
   check('famille : palette ne fait pas économiser', (byKind.palette.delta.costSavingPct ?? 0) < 0)
   // Familles jamais réutilisées : 0 tour « avec », delta null.
   check('famille : skill jamais réutilisé', byKind.skill.with.turns === 0 && byKind.skill.delta.costSavingPct === null)
-  check('famille : les 4 familles présentes', s.byKind.length === 4)
+  check('famille : les 5 familles présentes (+ artifact)', s.byKind.length === 5 && byKind.artifact !== undefined)
   // La vue globale reste cohérente : 2 tours avec réutilisation, 1 sans.
   check('famille : vue globale intacte', s.reuse.turns === 2 && s.noReuse.turns === 1)
 }

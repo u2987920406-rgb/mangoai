@@ -3,7 +3,7 @@ type: entite
 tags: [architecture, curation, reutilisation, boucle]
 statut: actif
 sources: [statut, historique]
-maj: 2026-06-20
+maj: 2026-06-26
 ---
 
 # Boucle de curation & réutilisation
@@ -20,6 +20,7 @@ Faire en sorte que chaque projet généré rende les suivants meilleurs/moins ch
 - **#119/#120** Composants, blueprints et skills réinjectés **par pertinence** (cœur de tri partagé `searchRanked`, divulgation progressive).
 - **#121→#124** Mesure de la réutilisation effective : un `Read` sur `.components/.skills/.procedures` = réutilisation ; corrélation réutilisation ↔ coût/qualité ; impact **segmenté par famille** (quelle dimension rapporte).
 - **#122** Réutilisation des **palettes** mesurée par recouvrement de couleurs réelles (`paletteOverlap`).
+- **#156 / L29 (2026-06-26)** — Réutilisation via la **mémoire d'artefacts** (`chercher_artefact`) mesurée : nouveau genre **`artifact`** + `detectArtefactReuse`. Le recouvrement de hex (#122) est **aveugle** quand l'Élève applique l'identité via classes Tailwind (constat du run 2026-06-25 : réutilisation visible mais `reuseRatePct=0`). Désormais `chercher_artefact` enregistre les **provenances servies** (palettes + dossiers de site #159 P4) dans un store éphémère par projet (`eleve-artefact-usage.ts`) que le `finally` du tour consomme → signal **complémentaire** au recouvrement. Prouvé live : `reuseRatePct 0→100 %`, `byKind.artifact=1`. Couvre automatiquement les futurs types d'artefacts (L3). Résidu : mesure « la mémoire a SERVI », pas une preuve pixel d'application.
 - **#125→#130** La boucle se referme : curation nocturne **pondérée par le rendement** (#125), **preuve d'efficacité** par différence-de-différences avec verdict honnête `insufficient` tant que les données manquent (#126), **auto-réglage des knobs** exploit/explore par le verdict (#127), rendement **fenêtré** causal (#128), réglage **continu** interpolé (#129), **amortissement EMA** anti-oscillation (#130).
 
 Honnêteté assumée partout : garde-fous `sampleSufficient` / `insufficient`, signaux directionnels annoncés comme tels.

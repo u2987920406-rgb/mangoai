@@ -38,7 +38,8 @@ import { installMangoQaBridge } from "./kernel-mangoqa-bridge.js";
 import { Blackboard, setBlackboard } from "./kernel-blackboard.js";
 import { installTraceCollector, registerTraceRoutes } from "./trace-dashboard.js";
 import { installArtifactStore, registerArtifactRoutes } from "./kernel-artifacts.js";
-import { installReuseCollector, installReuseImpactCollector, registerReuseRoutes, detectArtifactReads, detectPaletteReuse, publishReuse } from "./kernel-reuse-metrics.js";
+import { installReuseCollector, installReuseImpactCollector, registerReuseRoutes, detectArtifactReads, detectPaletteReuse, detectArtefactReuse, publishReuse } from "./kernel-reuse-metrics.js";
+import { takeArtefactUsage } from "./eleve-artefact-usage.js";
 import { registerCurationEffectRoutes } from "./kernel-curation-effect.js";
 import { startChatTurn, finishChatTurn } from "./kernel-chat-bridge.js";
 import type { Span } from "./kernel-trace.js";
@@ -695,11 +696,14 @@ app.post("/api/chat", async (req, res) => {
     // Kernel : publie les réutilisations effectives d'artefacts de ce tour, en UN
     // seul événement (un tour = un recordReuse, le taux reste juste) : lectures de
     // bibliothèque (Read sur .components/.skills/.procedures, #121) + réutilisation
-    // de palette (recouvrement de couleurs avec une palette en mémoire, #122).
+    // de palette (recouvrement de couleurs avec une palette en mémoire, #122) +
+    // usage de la mémoire d'artefacts (chercher_artefact a servi du matériel, #156/
+    // L29 — capte la réutilisation d'identité invisible au recouvrement de hex).
     // Avant finishChatTurn pour que le tour soit compté au dénominateur du taux.
     publishReuse(projectName, [
       ...detectArtifactReads(turnToolReads),
       ...detectPaletteReuse(turnProducedColors, { exclude: projectName }),
+      ...detectArtefactReuse(takeArtefactUsage(projectDir(projectName)), projectName),
     ]);
     // Kernel : clôt le span et publie l'issue du tour sur l'Event Bus. C'est le
     // signal réel que lisent le Disjoncteur (échecs/coût/emballement) et MangoQA.

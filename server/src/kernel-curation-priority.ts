@@ -18,7 +18,7 @@
 import type { ReuseKind } from './kernel-reuse-metrics.js'
 import { getReuseImpactCollector, type ReuseImpactSnapshot } from './kernel-reuse-metrics.js'
 
-const IMPACT_KINDS: ReuseKind[] = ['component', 'skill', 'procedure', 'palette']
+const IMPACT_KINDS: ReuseKind[] = ['component', 'skill', 'procedure', 'palette', 'artifact']
 
 // Poids du score mesuré : le succès prime (un artefact pas cher mais qui fait
 // échouer ne vaut rien), le coût ensuite, la vitesse en appoint.
@@ -127,6 +127,7 @@ const LABEL: Record<ReuseKind, string> = {
   skill: 'skills',
   procedure: 'procédures',
   palette: 'palettes',
+  artifact: 'mémoire d\'artefacts',
 }
 
 // Comment récolter concrètement chaque famille (l'agent sait déjà SAUVEGARDER :
@@ -137,6 +138,8 @@ const HARVEST: Record<ReuseKind, string> = {
   skill: 'consigne un skill réutilisable (savoir-faire how-to) dans workspace/.skills/',
   procedure: 'capture une procédure réutilisable (démarche étape par étape) dans workspace/.procedures/',
   palette: 'soigne une palette cohérente et distinctive (elle est automatiquement mémorisée pour réemploi)',
+  artifact:
+    'réutilise la mémoire cross-projet via chercher_artefact AVANT de réinventer (palettes, dossiers de site déjà extraits)',
 }
 
 function yieldLabel(f: RankedFamily): string {
