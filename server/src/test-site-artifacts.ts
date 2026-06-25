@@ -8,10 +8,12 @@ import {
   recordSiteDossier,
   listSiteDossiers,
   searchSiteDossiers,
+  searchSiteDossiersByText,
   dossierKey,
   SITE_ARTIFACT_SCOPE,
   type SiteDossierArtifact,
 } from "./site-artifacts.js";
+import type { Embed } from "./kernel-reuse.js";
 import type { SiteDossier } from "./site-dossier.js";
 
 let pass = 0;
@@ -53,7 +55,7 @@ function dossier(over: Partial<SiteDossier> = {}): SiteDossier {
 let clock = 1000;
 const tick = () => ++clock;
 
-function run() {
+async function run() {
   console.log("\n[1] dossierKey — normalisation (PUR)");
   {
     check("protocole + www + slash retirés", dossierKey("https://www.Jeu.com/") === "jeu.com");
@@ -127,6 +129,45 @@ function run() {
     check("pas trouvé par couleur (pas d'embedding)", searchSiteDossiers(["#f59e0b"], 5, bb).length === 0);
   }
 
+  console.log("\n[7] searchSiteDossiersByText — par CONCEPT (L3 Phase B, embedding texte + repli mots-clés)");
+  {
+    const bb = new Blackboard();
+    recordSiteDossier(dossier({ url: "https://jeu.com", concept: "Jeu d'aventure exploratoire", mecaniques: ["carte ouverte", "énigmes"] }), bb, tick);
+    recordSiteDossier(
+      dossier({ url: "https://shop.com", concept: "Boutique de café en ligne", mecaniques: ["panier", "paiement"], design: { ...dossier().design, palette: ["#6f4e37"] } }),
+      bb,
+      tick,
+    );
+    // Embedder de test : [aventure?, café/boutique?] selon le contenu.
+    const fakeEmbed: Embed = async (t) => {
+      const s = t.toLowerCase();
+      return [/(aventure|jeu|énigme|carte)/.test(s) ? 1 : 0, /(café|boutique|panier|paiement)/.test(s) ? 1 : 0];
+    };
+    const hitsJeu = await searchSiteDossiersByText("un jeu d'aventure", { bb, embed: fakeEmbed, k: 1 });
+    check("concept : top-1 sémantique = le jeu", hitsJeu[0]?.artifact.url === "https://jeu.com");
+    const hitsShop = await searchSiteDossiersByText("une boutique de café", { bb, embed: fakeEmbed, k: 1 });
+    check("concept : top-1 sémantique = la boutique", hitsShop[0]?.artifact.url === "https://shop.com");
+
+    // Repli mots-clés sans embedding (déterministe).
+    const fb = await searchSiteDossiersByText("énigmes carte ouverte", { bb, embed: async () => [], k: 1 });
+    check("concept : repli mots-clés → le jeu", fb[0]?.artifact.url === "https://jeu.com");
+  }
+
+  console.log("\n[8] Le trou L3 fermé : un dossier CONCEPT SANS PALETTE est trouvable par TEXTE");
+  {
+    const bb = new Blackboard();
+    recordSiteDossier(
+      dossier({ url: "https://manifeste.com", concept: "manifeste minimaliste typographique", mecaniques: [], design: { palette: [], typographies: ["Times"], ambiance: "", layout: { titre: "", sections: [], nav: [], cta: [] } } }),
+      bb,
+      tick,
+    );
+    check("invisible par couleur (rappel #6)", searchSiteDossiers(["#f59e0b"], 5, bb).length === 0);
+    const byText = await searchSiteDossiersByText("manifeste minimaliste", { bb, embed: async () => [], k: 1 });
+    check("DÉSORMAIS trouvable par concept (repli mots-clés)", byText[0]?.artifact.url === "https://manifeste.com");
+    // Bibliothèque vide → [].
+    check("bibliothèque vide → []", (await searchSiteDossiersByText("x", { bb: new Blackboard(), embed: async () => [] })).length === 0);
+  }
+
   const _t: SiteDossierArtifact["type"] = "site.dossier"; // garde le type exporté utilisé
   void _t;
 
@@ -134,4 +175,7 @@ function run() {
   if (fail > 0) process.exit(1);
 }
 
-run();
+run().catch((e) => {
+  console.error(e);
+  process.exit(1);
+});

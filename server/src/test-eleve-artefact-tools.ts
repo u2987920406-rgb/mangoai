@@ -43,6 +43,7 @@ function tool(deps: Partial<ArtefactDeps>) {
     },
     searchSites: deps.searchSites,
     listSites: deps.listSites,
+    searchSitesText: deps.searchSitesText,
     searchComponents: deps.searchComponents,
     record: deps.record ?? ((sources) => calls.recorded.push(sources)),
   };
@@ -256,6 +257,26 @@ async function run() {
     const r = await t.handler({ recherche: "grille de cartes", couleurs: ["#1f2937"] });
     check("les DEUX volets présents", r.text.includes("CardGrid") && r.text.includes("mango-cafe"));
     check("provenances des deux enregistrées", calls.recorded.some((s) => s.includes("CardGrid") && s.includes("mango-cafe")));
+  }
+
+  console.log("\n[15] L3 Phase B — recherche par SENS atteint aussi les DOSSIERS DE SITE (par concept)");
+  {
+    const siteByText = (url: string, concept: string, project: string): SiteDossierHit => ({
+      key: url,
+      artifact: {
+        type: "site.dossier", url, project, concept, publicCible: "", mecaniques: ["énigmes"],
+        palette: [], typographies: [], ambiance: "", mood: "", tonEditorial: "", infosCles: [], at: 1,
+      },
+      score: 0.83,
+    });
+    const { t, calls } = tool({
+      searchComponents: async () => [], // aucun composant
+      searchSitesText: async () => [siteByText("https://jeu.com", "Jeu d'aventure exploratoire", "jeu.com")],
+    });
+    const r = await t.handler({ recherche: "un jeu d'aventure" });
+    check("dossier de site trouvé par concept", r.text.includes("Jeu d'aventure exploratoire") && /Sites déjà EXTRAITS/i.test(r.text));
+    check("provenance du site enregistrée (mesure L29)", calls.recorded.some((s) => s.includes("jeu.com")));
+    check("pas d'erreur", r.isError !== true);
   }
 
   console.log("\n[9] Échec des deps → isError gracieux (ne lève jamais)");

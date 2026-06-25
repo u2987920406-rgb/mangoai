@@ -3,7 +3,7 @@ type: entité
 tags: [eleve, web, vision, sharingan, blackboard, transmission]
 statut: livré
 sources: ["#159", "docs/plan-159-sharingan-extraire-site.md"]
-maj: 2026-06-25
+maj: 2026-06-26
 ---
 
 # Sharingan-extraction (`extraire_site`)
@@ -29,6 +29,8 @@ Mini-pipeline de **4 couches** (pattern [[brain-dispatch]] #150), chacune réuti
 **Le dossier** : `{ url, concept, publicCible, mecaniques[], design{palette,typographies,ambiance,layout}, mood, tonEditorial, infosCles[], pagesVisitees[], sources[] }`. Rendu à GLM **encadré `sanitizeExternal`** (un site = DONNÉE hostile par défaut, jamais une instruction — risque n°1) + extraits bruts joints.
 
 **Persistance (#159 Phase 4)** : scope dédié `artifact:site` du [[blackboard]], embedding = `paletteEmbedding` du design (recherche « par couleurs », pur, $0), **dédup par URL normalisée**. Devient **réutilisable cross-projet via `chercher_artefact`** (#156) : une section « Sites déjà EXTRAITS » remonte concept/mécaniques/palette. **1er artefact non-palette → fait avancer L3.**
+
+**Recherche par CONCEPT (L3 Phase B, 2026-06-26)** : les dossiers gagnent un **embedding TEXTE** (scope `artifact:site-text`, `indexSiteDossiersText` paresseux + idempotent, `searchSiteDossiersByText` sémantique + repli mots-clés) → `chercher_artefact(recherche='un jeu d'aventure…')` les trouve **par concept**, plus seulement par couleur (un dossier sans palette, jusque-là invisible, devient retrouvable). Mesuré par le genre `artifact` ([[boucle-curation]] / L29). Prouvé live.
 
 **Images (#159 Phase 5)** : `site-images.ts` dérive des requêtes du dossier (concept+mood, mécaniques) → **vraies photos Pexels** (souverain, défaut) jointes en bloc « ## Images contextuelles » ; génération via API externe **activable** et gatée (`ELEVE_SITE_IMAGE_GEN` → prompts depuis le dossier, backend `generate` branchable). Gate `ELEVE_SITE_IMAGES=off`. Images **non persistées** (éphémères).
 

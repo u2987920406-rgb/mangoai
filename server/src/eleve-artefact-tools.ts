@@ -16,7 +16,7 @@
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { searchArtifacts, listArtifacts, type ArtifactHit } from "./kernel-artifacts.js";
-import { searchSiteDossiers, listSiteDossiers, type SiteDossierHit } from "./site-artifacts.js";
+import { searchSiteDossiers, listSiteDossiers, searchSiteDossiersByText, type SiteDossierHit } from "./site-artifacts.js";
 import { recordArtefactUsage } from "./eleve-artefact-usage.js";
 import { searchComponentsRanked } from "./kernel-reuse.js";
 import { COMPONENTS_DIR_NAME, type ComponentMeta } from "./components.js";
@@ -37,6 +37,9 @@ export interface ArtefactDeps {
   searchSites?: (colors: string[], k: number) => SiteDossierHit[];
   /** dossiers de site récents (#159 Phase 4) — optionnel. */
   listSites?: () => SiteDossierHit[];
+  /** (L3 Phase B) k dossiers de site les plus pertinents à une requête TEXTE
+   * (par CONCEPT — embedding texte + repli mots-clés), pas que par couleur. */
+  searchSitesText?: (query: string, k: number) => Promise<SiteDossierHit[]>;
   /** (L3) k composants réutilisables les plus pertinents à une requête TEXTE
    * (embedding + repli mots-clés). Défaut : la bibliothèque cross-projet réelle. */
   searchComponents?: (query: string, k: number) => Promise<ComponentMeta[]>;
@@ -50,6 +53,7 @@ const realDeps: ArtefactDeps = {
   list: () => listArtifacts(),
   searchSites: (colors, k) => searchSiteDossiers(colors, k),
   listSites: () => listSiteDossiers(),
+  searchSitesText: (query, k) => searchSiteDossiersByText(query, { k }),
   searchComponents: (query, k) => searchComponentsRanked(query, WORKSPACE_DIR, { k }),
 };
 
@@ -116,7 +120,7 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
   const chercherArtefact: KernelTool = {
     name: "chercher_artefact",
     description:
-      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts DÉJÀ créés à réutiliser : (1) COMPOSANTS réutilisables (donne `recherche` en texte — ex. 'barre de recherche', 'grille de cartes', 'modale' — recherche par SENS), (2) PALETTES de couleurs (donne `couleurs` hex), (3) DOSSIERS DE SITES déjà extraits avec extraire_site (par couleurs). Sans argument → liste les artefacts récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
+      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts DÉJÀ créés à réutiliser : (1) COMPOSANTS réutilisables et (2) DOSSIERS DE SITES déjà extraits — par SENS : donne `recherche` en texte (ex. 'barre de recherche', 'grille de cartes', 'site de jeu d'aventure') ; (3) PALETTES (et sites) par COULEUR : donne `couleurs` hex. Sans argument → liste les artefacts récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
     inputSchema: {
       recherche: z
         .string()
@@ -155,6 +159,14 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
           const comps = (await deps.searchComponents?.(query, k)) ?? [];
           sources.push(...comps.map((c) => c.name));
           blocks.push(formatComponentSection(comps));
+
+          // 1bis) DOSSIERS DE SITE par CONCEPT (L3 Phase B) — embedding texte sur
+          // concept/mécaniques/mood, plus seulement la couleur de leur palette.
+          const sitesByText = (await deps.searchSitesText?.(query, k)) ?? [];
+          if (sitesByText.length > 0) {
+            sources.push(...sitesByText.map((h) => h.artifact.project));
+            blocks.push(formatSiteSection(sitesByText).trim());
+          }
         }
 
         // 2) PALETTES + SITES par COULEUR (existant). Sauté si recherche TEXTE seule

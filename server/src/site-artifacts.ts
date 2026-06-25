@@ -14,10 +14,26 @@
 
 import { getBlackboard, type Blackboard, type BlackboardRef } from "./kernel-blackboard.js";
 import { paletteEmbedding } from "./kernel-artifacts.js";
+import { keywordRank, type Embed } from "./kernel-reuse.js";
+import { embedOllama } from "./ollama.js";
 import type { SiteDossier } from "./site-dossier.js";
 
 /** Scope dédié aux dossiers de site (distinct des palettes design `artifact:design`). */
 export const SITE_ARTIFACT_SCOPE = "artifact:site";
+
+/** Scope dédié à l'index TEXTE des dossiers (#159 P4 / L3 Phase B) : retrouvables
+ * « par CONCEPT » (embedding texte), pas seulement par couleur. Distinct du scope
+ * palette ci-dessus car l'embedding y est de dimension différente (texte vs histogramme). */
+export const SITE_TEXT_SCOPE = "artifact:site-text";
+
+/** Embedder texte par défaut : Ollama, [] si indisponible → repli mots-clés. */
+const defaultEmbed: Embed = async (t) => {
+  try {
+    return await embedOllama(t);
+  } catch {
+    return [];
+  }
+};
 
 /** Forme persistée d'un dossier de site (sous-ensemble plat, sérialisable). */
 export interface SiteDossierArtifact {
@@ -112,4 +128,53 @@ export function searchSiteDossiers(colors: string[], k = 5, bb: Blackboard = get
   return bb
     .search(SITE_ARTIFACT_SCOPE, emb, k)
     .map((hit) => ({ key: hit.key, artifact: hit.value as SiteDossierArtifact, score: hit.score }));
+}
+
+// ── Recherche par CONCEPT (embedding TEXTE, #159 P4 / L3 Phase B) ─────────────
+/** Représentation TEXTE d'un dossier pour l'embedding/les mots-clés (concept,
+ * public, mécaniques, mood, ton, infos, typo). PUR. */
+export function dossierText(a: SiteDossierArtifact): string {
+  return [a.concept, a.publicCible, a.mecaniques.join(" "), a.mood, a.tonEditorial, a.infosCles.join(" "), a.typographies.join(" ")]
+    .map((s) => (s ?? "").trim())
+    .filter(Boolean)
+    .join(". ");
+}
+
+/** Indexe (TEXTE) les dossiers dans le scope dédié. Idempotent par timestamp `at`
+ * (re-extraire un site → ré-embed). Best-effort : un dossier sans embedding reste
+ * trouvable par le repli mots-clés. */
+export async function indexSiteDossiersText(bb: Blackboard = getBlackboard(), embed: Embed = defaultEmbed): Promise<void> {
+  for (const { key, artifact } of listSiteDossiers(bb)) {
+    const existing = bb.get<SiteDossierArtifact>(SITE_TEXT_SCOPE, key);
+    if (existing && existing.at === artifact.at) continue;
+    const emb = await embed(dossierText(artifact));
+    bb.put(SITE_TEXT_SCOPE, key, artifact, emb.length ? emb : undefined);
+  }
+}
+
+/** Les k dossiers les plus pertinents à une requête TEXTE (recherche sémantique
+ * Blackboard si l'embedding marche, repli mots-clés déterministe sinon). Ferme le
+ * trou L3 « les dossiers ne sont trouvables que par couleur ». Ne lève jamais. */
+export async function searchSiteDossiersByText(
+  query: string,
+  opts: { bb?: Blackboard; embed?: Embed; k?: number } = {},
+): Promise<SiteDossierHit[]> {
+  const bb = opts.bb ?? getBlackboard();
+  const embed = opts.embed ?? defaultEmbed;
+  const k = opts.k ?? 5;
+  const all = listSiteDossiers(bb);
+  if (all.length === 0) return [];
+  try {
+    await indexSiteDossiersText(bb, embed);
+    const qEmb = await embed(query);
+    if (qEmb.length > 0) {
+      const ranked = bb
+        .search(SITE_TEXT_SCOPE, qEmb, k)
+        .map((hit) => ({ key: hit.key, artifact: hit.value as SiteDossierArtifact, score: hit.score }));
+      if (ranked.length > 0) return ranked.slice(0, k);
+    }
+  } catch {
+    /* repli mots-clés ci-dessous */
+  }
+  return keywordRank(all, (h) => dossierText(h.artifact), query, k);
 }
