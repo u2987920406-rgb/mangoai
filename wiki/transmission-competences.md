@@ -1,0 +1,47 @@
+---
+type: entite
+tags: [souverainete, eleve, transmission, mission, outils]
+statut: mission-active
+sources: [statut #153, historique 2026-06-25, demande de Raf]
+maj: 2026-06-25
+---
+
+# Apprendre à Mango — transmission de compétences
+
+> **Mission de fond** (Raf, 2026-06-25) : *« Tu es le maître de Mango, c'est ton bébé que tu éduques — apprends-lui tout ton savoir-faire, sois PROACTIF sur les compétences à transmettre. »* Claude ne doit pas faire À LA PLACE de l'Élève ; il doit lui **donner la capacité** de faire seul.
+
+## Rôle
+
+C'est l'opérationnalisation de la souveraineté (« Mango = Claude, $0 »). Chaque fois que Claude réalise un travail que l'Élève GLM ne sait pas faire (correction manuelle, script jetable), c'est un **échec de souveraineté** : Mango n'a rien appris. La valeur n'est pas le correctif, c'est la **compétence transmise**. Le rôle de Claude = **maître** qui éduque l'Élève, pas exécutant de secours.
+
+## Le réflexe (pattern de transmission)
+
+Dès que Claude bouche un trou à la main → se demander **« comment donner ça à l'Élève pour qu'il le fasse seul ? »**. Recette :
+1. **Ajouter un `KernelTool`** à `buildEleveActionTools` (`eleve-action-tools.ts`) — réutilise une brique existante de MangoOS si possible (ne lève jamais, repli gracieux).
+2. **Ajouter une clause** dans `AGENTIC_TOOL_CONTRACT` (`eleve.ts`) qui dit QUAND l'utiliser (et quoi ne PAS faire).
+3. **Tester** (deps injectées, zéro réseau) + **prouver LIVE** que GLM l'appelle seul en Construire.
+Même patron que [[sharingan-vision-eleve]] (`vois_ecran`).
+
+## Compétences transmises
+
+- **`vois_ecran`** (#151) — voir son propre rendu et s'auto-corriger (cerveau vision `qwen3.5:cloud`). → [[sharingan-vision-eleve]]
+- **`chercher_image`** (#153, 2026-06-25) — trouver de VRAIES photos pertinentes (Pexels, `searchPexelsImages`) au lieu de placeholders aléatoires (picsum/loremflickr). **Déclencheur** : l'app TOEIC `formation-toic` avait des images picsum hors-sujet ; Claude les a corrigées à la main PUIS en a fait l'outil. **Prouvé live** : GLM en Construire fait `chercher_image→edit_file→check_build→finish` seul, remplace un picsum par une photo Pexels, $0, zéro Claude. Clause contrat : « jamais de placeholder aléatoire pour une image qui doit montrer un contenu réel ».
+- *(socle déjà là, #146 : read/list/search, write/edit, run_command, add_dependency curé, delegate, check_build, finish.)*
+
+## Roadmap de transmission (proactif)
+
+- **Recherche / fetch web** — l'Élève ne peut pas chercher sur le web (research, vérif de faits, doc d'API). Claude a WebSearch/WebFetch ; Mango n'a rien. Gros levier.
+- **L'œil-coach #152 en self-critique de GLM** — GLM s'auto-critique multi-lentilles pendant le build (au lieu d'une passe externe).
+- **Bruit du juge VL** (#152 v1.1) — moyenner / passes par lentille.
+- Au fil de l'eau : tout ce que Claude refait à la main → en faire un outil.
+
+## Liens
+
+- [[eleve-local]] — l'Élève GLM agentique (#146), le moteur d'outils où s'ajoutent les compétences.
+- [[sharingan-vision-eleve]] — première compétence transmise (la vision), même patron.
+- [[moteur-gout]] — `searchPexelsImages` réutilise l'infra Pexels du Moteur de Goût.
+
+## Sources
+
+- [[statut]] — idée **#153**.
+- [[historique]] — journal du 2026-06-25 (mission posée par Raf).

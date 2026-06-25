@@ -27,6 +27,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[brain-dispatch]] | Système multi-agents à cerveaux interchangeables : 10 agents nommés + registre éditable + contrat universel — #150 ✅ fait, validé live | ✅ écrite |
 | [[sharingan-vision-eleve]] | L'œil de GLM : outil `vois_ecran` (rendu→image→VL cloud→critique) pour qu'il VOIE ses écrans et s'auto-corrige — #151 ✅ fait, prouvé live | ✅ écrite |
 | [[oeil-coach]] | Critique design MULTI-LENTILLES + boucle « critique → GLM corrige → re-regarde » jusqu'à un seuil — #152 ✅ fait, prouvé live (limite juge VL bruité notée) | ✅ écrite |
+| [[transmission-competences]] | Mission : Claude APPREND son savoir-faire à Mango — tout trou bouché à la main → outil de l'Élève. Transmis : vois_ecran #151, chercher_image #153 | ✅ écrite |
 | [[moteur-gout]] | Capter le goût UI/UX de Raf par préférence multi-variantes (K skins GLM → 1 tap → axiome de goût) — #149, v1.5 livrée | ✅ écrite |
 | [[audit-souverainete]] | Recensement des défauts-Claude en 3 niveaux + interrupteurs de repli local (`<FEATURE>_PROVIDER`) — Phase E | ✅ écrite |
 | [[coque-souple]] | Assemblage du prompt par blocs/scénario, modes MVP/Élite/Finition — jalon A | ✅ écrite |

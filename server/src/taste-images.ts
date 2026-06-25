@@ -51,3 +51,29 @@ export async function imageForDirection(query: string, seed: number, deps?: Pexe
   const pexels = await fetchPexelsImage(query, { index: seed, deps });
   return pexels ?? loremflickrUrl(query, seed);
 }
+
+export interface PexelsResult { url: string; alt: string; photographer: string }
+
+/**
+ * Cherche plusieurs vraies photos Pexels pour une scène, EN UN SEUL appel. Renvoie au plus
+ * `count` résultats (url + description + auteur). Tableau vide si pas de clé / aucun résultat.
+ * Ne lève jamais. C'est la brique de l'outil `chercher_image` donné à l'Élève (souveraineté :
+ * Mango trouve ses propres images au lieu de placeholders aléatoires).
+ */
+export async function searchPexelsImages(query: string, count = 3, deps?: PexelsDeps): Promise<PexelsResult[]> {
+  const key = deps?.apiKey ?? process.env["PEXELS_API_KEY"];
+  if (!key) return [];
+  const f = deps?.fetchImpl ?? fetch;
+  const url = `${PEXELS_ENDPOINT}?query=${encodeURIComponent(query)}&per_page=15&orientation=landscape`;
+  try {
+    const res = await f(url, { headers: { Authorization: key } });
+    if (!res.ok) return [];
+    const data = (await res.json()) as { photos?: { alt?: string; photographer?: string; src?: { large2x?: string; large?: string; original?: string } }[] };
+    return (data.photos ?? [])
+      .slice(0, Math.max(1, count))
+      .map((p) => ({ url: p.src?.large2x ?? p.src?.large ?? p.src?.original ?? "", alt: p.alt ?? "", photographer: p.photographer ?? "" }))
+      .filter((r) => r.url);
+  } catch {
+    return [];
+  }
+}

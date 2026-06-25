@@ -553,6 +553,7 @@ const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (f
 - edit_file : remplacer un extrait précis et unique d'un fichier
 - run_command : lancer une commande (ex. \`npx tsc --noEmit\`) — INTERDIT : npm install, git, rm
 - add_dependency : installer une lib npm AUTORISÉE et l'ajouter à package.json (ex. add_dependency('lucide-react'))
+- chercher_image : trouver de VRAIES photos pertinentes (Pexels) pour une scène donnée
 - check_build : vérifier objectivement l'état du build
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
@@ -566,6 +567,12 @@ pas par du shell. Réserve run_command aux builds/vérifs (npx tsc --noEmit, npx
 add_dependency('nom-du-paquet) — n'importe JAMAIS une lib sans l'avoir installée (sinon l'import est non
 résolu et le build casse). Si add_dependency la refuse (hors liste), écris le code SANS elle (ex. SVG inline).
 N'utilise jamais run_command pour npm install.
+
+⚠ IMAGES : quand une image doit REPRÉSENTER quelque chose de précis (une scène, un produit, un lieu),
+appelle \`chercher_image('description anglaise de la scène')\` → tu obtiens de VRAIES URLs Pexels pertinentes
+à mettre directement dans le code. Ne colle JAMAIS d'URL de placeholder ALÉATOIRE (picsum.photos,
+loremflickr, via.placeholder, unsplash.it…) pour une image censée montrer un contenu réel : elle ne
+correspondra jamais. Le placeholder n'est acceptable que pour un cadre purement décoratif/abstrait.
 
 Méthode : explore avec read_file/list_files/search_code → écris (write_file/edit_file) → APRÈS chaque
 écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand

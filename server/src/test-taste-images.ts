@@ -1,5 +1,5 @@
 // Tests de la source d'images (taste-images.ts) — fetch FAUX, déterministe.
-import { fetchPexelsImage, imageForDirection, loremflickrUrl, pexelsConfigured } from "./taste-images.js";
+import { fetchPexelsImage, imageForDirection, loremflickrUrl, pexelsConfigured, searchPexelsImages } from "./taste-images.js";
 
 let pass = 0, fail = 0;
 function check(label: string, cond: boolean) {
@@ -33,6 +33,21 @@ check("Pexels : réseau KO → null (fail-open)", (await fetchPexelsImage("café
 
 check("imageForDirection : Pexels si dispo", (await imageForDirection("coffee dark", 0, { apiKey: "k", fetchImpl: fakeOk })) === "https://img/a-2x.jpg");
 check("imageForDirection : repli loremflickr sans clé", (await imageForDirection("coffee dark", 7)).includes("loremflickr.com"));
+
+// ── searchPexelsImages (#153 — brique de l'outil chercher_image de l'Élève) ──
+const fakeAlt = ((async () => ({ ok: true, json: async () => ({ photos: [
+  { alt: "a waiter pouring water", photographer: "Jane", src: { large2x: "https://img/x-2x.jpg" } },
+  { alt: "restaurant table", photographer: "Joe", src: { large: "https://img/y.jpg" } },
+] }) })) as unknown) as typeof fetch;
+{
+  const r = await searchPexelsImages("waiter pouring water", 3, { apiKey: "k", fetchImpl: fakeAlt });
+  check("searchPexelsImages : renvoie les résultats (url+alt+auteur)", r.length === 2 && r[0].url === "https://img/x-2x.jpg" && r[0].alt === "a waiter pouring water" && r[0].photographer === "Jane");
+}
+check("searchPexelsImages : plafonne à count", (await searchPexelsImages("x", 1, { apiKey: "k", fetchImpl: fakeAlt })).length === 1);
+check("searchPexelsImages : sans clé → []", (await searchPexelsImages("x", 3)).length === 0);
+check("searchPexelsImages : 0 résultat → []", (await searchPexelsImages("zzz", 3, { apiKey: "k", fetchImpl: fakeEmpty })).length === 0);
+check("searchPexelsImages : 401 → [] (pas de throw)", (await searchPexelsImages("x", 3, { apiKey: "k", fetchImpl: fake401 })).length === 0);
+check("searchPexelsImages : réseau KO → [] (fail-open)", (await searchPexelsImages("x", 3, { apiKey: "k", fetchImpl: fakeThrow })).length === 0);
 
 console.log(`\n${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

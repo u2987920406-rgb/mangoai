@@ -18,6 +18,7 @@ import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-m
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
+import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
 const RUN_TIMEOUT_MS = Number(process.env.ELEVE_RUN_TIMEOUT_MS ?? 120_000);
@@ -185,6 +186,34 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
         const r = await npmAdd(projectDir, pkg, ADD_DEP_TIMEOUT_MS);
         if (!r.ok) return { text: `Échec de l'installation de ${pkg} : ${r.output}`, isError: true };
         return { text: `✓ ${pkg} installé et ajouté à package.json. Tu peux maintenant l'importer.` };
+      },
+    },
+    {
+      // chercher_image (#153) — souveraineté : l'Élève trouve de VRAIES photos pertinentes
+      // (Pexels) au lieu de coller des placeholders aléatoires (picsum/loremflickr) qui ne
+      // collent jamais à la scène. Donne 1-3 URLs prêtes à mettre dans le code.
+      name: "chercher_image",
+      description:
+        "Trouve de VRAIES photos pertinentes pour une scène, via Pexels (gratuit). Donne une description en ANGLAIS de ce que doit montrer l'image (ex. 'waiter pouring water into a glass', 'woman typing on a laptop at her desk'). Renvoie 1 à 3 URLs d'images réelles à utiliser directement dans le code (src d'une <img> ou background). NE colle JAMAIS de placeholder aléatoire (picsum.photos, loremflickr, via.placeholder) quand une image doit représenter quelque chose de précis : utilise CET outil.",
+      inputSchema: {
+        scene: z.string().describe("Description ANGLAISE de la scène à illustrer, en mots-clés (ex. 'two people shaking hands in an office')"),
+        n: z.number().int().min(1).max(3).optional().describe("Nombre d'images voulu (1 à 3, défaut 1)"),
+      },
+      handler: async (args): Promise<KernelToolResult> => {
+        const scene = String(args.scene ?? "").trim();
+        if (!scene) return { text: "Donne une description de la scène (en anglais, mots-clés).", isError: true };
+        const n = Math.min(3, Math.max(1, Number(args.n ?? 1)));
+        if (!pexelsConfigured()) {
+          // Pas de clé Pexels : repli honnête (loremflickr thématique) plutôt qu'aléatoire pur.
+          const url = loremflickrUrl(scene, scene.length, 800, 600);
+          return { text: `Pexels non configuré (PEXELS_API_KEY absente). Repli thématique :\n${url}` };
+        }
+        const results = await searchPexelsImages(scene, n);
+        if (results.length === 0) {
+          return { text: `Aucune photo trouvée pour « ${scene} ». Reformule en mots-clés plus simples (ex. moins de mots, sujet concret).`, isError: true };
+        }
+        const lines = results.map((r, i) => `${i + 1}. ${r.url}${r.alt ? `  (${r.alt})` : ""}`);
+        return { text: `Photos réelles pour « ${scene} » (Pexels — utilise une de ces URLs telle quelle) :\n${lines.join("\n")}` };
       },
     },
     {
