@@ -12,6 +12,7 @@ import {
   blueprintHintSection,
   indexComponents,
   relevantComponentsSection,
+  searchComponentsRanked,
   relevantSkillsSection,
   COMPONENT_SCOPE,
   SKILL_SCOPE,
@@ -93,7 +94,25 @@ function check(name: string, cond: boolean): void {
   await indexComponents(ws, bb3, counting)
   check('indexComponents : idempotent (pas de ré-embed)', embedCalls === after1)
 
+  // searchComponentsRanked (#156/L3) : renvoie les METAS triées, utilisable par
+  // l'outil chercher_artefact de l'Élève (pas une section de prompt).
+  const bbS = new Blackboard()
+  const ranked = await searchComponentsRanked('je veux une table triable', ws, { bb: bbS, embed: fakeEmbed, k: 2 })
+  check('searchComponentsRanked : renvoie des metas (pas du texte)', Array.isArray(ranked) && ranked[0]?.name === 'DataTable')
+  check('searchComponentsRanked : top-1 sémantique = DataTable', ranked[0].name === 'DataTable')
+  // Repli mots-clés (embedder []).
+  const rankedFb = await searchComponentsRanked('une fenêtre modale', ws, { bb: new Blackboard(), embed: async () => [], k: 1 })
+  check('searchComponentsRanked : repli mots-clés → Modal', rankedFb[0]?.name === 'Modal')
+
   fs.rmSync(ws, { recursive: true, force: true })
+}
+
+// ── searchComponentsRanked : bibliothèque vide → [] ──────────────────────────
+{
+  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'mangoos-reuse-src-empty-'))
+  const ranked = await searchComponentsRanked('quoi que ce soit', empty, { embed: async () => [] })
+  check('searchComponentsRanked : vide → []', Array.isArray(ranked) && ranked.length === 0)
+  fs.rmSync(empty, { recursive: true, force: true })
 }
 
 // ── Skills : même mécanisme (tri sémantique + repli mots-clés) ───────────────

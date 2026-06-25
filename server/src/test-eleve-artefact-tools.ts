@@ -43,10 +43,16 @@ function tool(deps: Partial<ArtefactDeps>) {
     },
     searchSites: deps.searchSites,
     listSites: deps.listSites,
+    searchComponents: deps.searchComponents,
     record: deps.record ?? ((sources) => calls.recorded.push(sources)),
   };
   const [t] = buildEleveArtefactTools("/tmp/proj", full);
   return { t, calls };
+}
+
+/** Fabrique une ComponentMeta de test. */
+function comp(name: string, description: string, tags: string[] = [], props: string[] = []): import("./components.js").ComponentMeta {
+  return { name, description, tags, props, usedIn: [], createdAt: "2026-01-01", updatedAt: "2026-01-01" };
 }
 
 async function run() {
@@ -214,6 +220,42 @@ async function run() {
     const empty = tool({ search: () => [] });
     await empty.t.handler({ couleurs: ["#000000"] });
     check("0 hit → record([]) (pas de fausse réutilisation)", empty.calls.recorded.length === 1 && empty.calls.recorded[0].length === 0);
+  }
+
+  console.log("\n[12] L3 — recherche par SENS atteint les composants réutilisables");
+  {
+    const got: Array<{ query: string; k: number }> = [];
+    const { t, calls } = tool({
+      searchComponents: async (query, k) => {
+        got.push({ query, k });
+        return [comp("SearchBar", "barre de recherche filtrable", ["search", "input"], ["onSearch", "placeholder"])];
+      },
+    });
+    const r = await t.handler({ recherche: "barre de recherche" });
+    check("searchComponents appelé avec la requête", got.length === 1 && got[0].query === "barre de recherche");
+    check("composant trouvé affiché (nom + chemin)", r.text.includes("SearchBar") && /\.components\/SearchBar\/component\.tsx/.test(r.text));
+    check("description + props listées", r.text.includes("barre de recherche filtrable") && r.text.includes("onSearch"));
+    check("provenance composant enregistrée (mesure L29)", calls.recorded.some((s) => s.includes("SearchBar")));
+    check("recherche SEULE → PAS de volet palette/listing", !/palette|Artefacts design récents/i.test(r.text));
+    check("pas d'erreur", r.isError !== true);
+  }
+
+  console.log("\n[13] L3 — recherche par sens sans résultat (pas une erreur)");
+  {
+    const { t } = tool({ searchComponents: async () => [] });
+    const r = await t.handler({ recherche: "composant exotique introuvable" });
+    check("0 composant → message clair, sans erreur", r.isError !== true && /Aucun composant réutilisable/i.test(r.text));
+  }
+
+  console.log("\n[14] L3 — recherche TEXTE + couleurs = composants ET palettes");
+  {
+    const { t, calls } = tool({
+      search: () => [hit("mango-cafe", "design.reference", ["#1f2937"], 0.9)],
+      searchComponents: async () => [comp("CardGrid", "grille de cartes responsive")],
+    });
+    const r = await t.handler({ recherche: "grille de cartes", couleurs: ["#1f2937"] });
+    check("les DEUX volets présents", r.text.includes("CardGrid") && r.text.includes("mango-cafe"));
+    check("provenances des deux enregistrées", calls.recorded.some((s) => s.includes("CardGrid") && s.includes("mango-cafe")));
   }
 
   console.log("\n[9] Échec des deps → isError gracieux (ne lève jamais)");

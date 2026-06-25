@@ -67,6 +67,29 @@ export async function indexComponents(workspaceDir: string, bb: Blackboard, embe
   }
 }
 
+/** Les k composants les plus PERTINENTS à une requête (recherche sémantique
+ * Blackboard si l'embedding marche, repli mots-clés déterministe sinon). Renvoie
+ * les METAS (pas une section de prompt) → utilisable par l'outil `chercher_artefact`
+ * de l'Élève (#156/L3). [] si la bibliothèque est vide. Ne lève jamais. */
+export async function searchComponentsRanked(
+  prompt: string,
+  workspaceDir: string,
+  opts: { bb?: Blackboard; embed?: Embed; k?: number } = {},
+): Promise<ComponentMeta[]> {
+  const all = listComponents(workspaceDir)
+  if (all.length === 0) return []
+  const bb = opts.bb ?? getBlackboard()
+  const embed = opts.embed ?? defaultEmbed
+  const k = opts.k ?? 6
+  try {
+    await indexComponents(workspaceDir, bb, embed)
+    return await searchRanked(COMPONENT_SCOPE, all, componentText, prompt, bb, embed, k)
+  } catch {
+    // Tout échec (embedding, Blackboard) → repli mots-clés pur, jamais d'exception.
+    return keywordRank(all, componentText, prompt, k)
+  }
+}
+
 // ── Cœur de tri PARTAGÉ (composants, skills) ─────────────────────────────────
 /** La même mécanique pour toutes les bibliothèques texte : recherche sémantique
  * dans le Blackboard si la requête s'embed (cosinus #115), sinon repli mots-clés

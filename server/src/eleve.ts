@@ -559,7 +559,7 @@ export const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-m
 - chercher_image : trouver de VRAIES photos pertinentes (Pexels) pour une scène donnée
 - chercher_web / lire_page : te documenter sur le web (doc d'API, vraie donnée, vérifier un fait, trouver une URL)
 - teste_parcours : JOUER un vrai parcours utilisateur (clics, saisies, vérifs) sur l'aperçu live
-- chercher_artefact : retrouver dans la mémoire cross-projet (Blackboard) des palettes design DÉJÀ créées à réutiliser
+- chercher_artefact : retrouver dans la mémoire cross-projet des artefacts DÉJÀ créés à réutiliser — un COMPOSANT réutilisable (recherche='barre de recherche', 'grille de cartes'…), une PALETTE (couleurs=['#…']) ou un SITE déjà extrait
 - lire_document : lire un document fourni par l'utilisateur (PDF, Word .docx, Excel .xlsx, PowerPoint .pptx, texte…) pour partir de la VRAIE source
 - extraire_site : explorer un site web EN PROFONDEUR (plusieurs pages) et en extraire l'info — comprendre un site/produit/référence
 - check_build : vérifier objectivement l'état du build
@@ -619,12 +619,14 @@ lire_document('.assets/le-fichier.pdf') pour LIRE son contenu réel, puis implé
 (titres, libellés, données, contraintes exacts). C'est ainsi qu'on évite de livrer « à côté » du besoin. Pour un
 PDF long, lis page par page (paramètre 'page'). Ne devine pas ce qu'un document contient quand tu peux l'ouvrir.
 
-⚠ RÉUTILISER > RÉINVENTER : avant de définir un univers visuel (palette, couleurs de marque) pour un écran
-ou un projet, appelle chercher_artefact(['#xxxxxx', …]) avec les couleurs que tu envisages — la mémoire
-cross-projet du Blackboard te renvoie les palettes DÉJÀ créées les plus proches (sur d'autres projets). Si une
-palette proche existe, RÉUTILISE ses couleurs plutôt que d'en réinventer une : c'est ce qui donne un univers
-visuel cohérent d'un projet à l'autre (et c'est plus rapide). Sans argument, l'outil liste les palettes
-récentes pour t'inspirer. Réutilise SAUF demande explicite d'un style neuf.
+⚠ RÉUTILISER > RÉINVENTER : avant de CODER un élément d'interface courant (barre de recherche, grille de
+cartes, modale, tableau, pagination, formulaire…), appelle chercher_artefact(recherche='ce que tu vas coder')
+— la mémoire cross-projet te renvoie les COMPOSANTS réutilisables les plus proches (recherche par sens) : si
+l'un colle, LIS son code et adapte-le plutôt que de le réécrire. De même, avant de définir un univers visuel
+(palette, couleurs de marque), appelle chercher_artefact(couleurs=['#xxxxxx', …]) avec les couleurs envisagées
+→ il renvoie les palettes DÉJÀ créées les plus proches : RÉUTILISE-les pour un univers cohérent d'un projet à
+l'autre (et plus vite). Sans argument, l'outil liste les artefacts récents pour t'inspirer. Réutilise SAUF
+demande explicite d'un style/composant neuf.
 
 Méthode : planifie (tâche multi-étapes : planifier d'abord) → explore le minimum avec read_file/list_files/
 search_code → écris (write_file/edit_file) → APRÈS chaque écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand

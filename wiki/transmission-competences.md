@@ -3,7 +3,7 @@ type: entite
 tags: [souverainete, eleve, transmission, mission, outils]
 statut: mission-active
 sources: [statut #153, historique 2026-06-25, demande de Raf]
-maj: 2026-06-25
+maj: 2026-06-26
 ---
 
 # Apprendre à Mango — transmission de compétences
@@ -39,7 +39,7 @@ Principe : les meilleures transmissions **associent une FONCTION (outil) à une 
 **Fonctions à transmettre (par levier décroissant)** :
 1. ✅ **Recherche / fetch web** (`chercher_web`, `lire_page`) ↔ *« se documenter au lieu d'inventer »* — **TRANSMIS #154** (chaîne keyless DDG→Mojeek + anti-SSRF + sanitize ; prouvé live).
 2. ✅ **Tester le PARCOURS utilisateur** (`teste_parcours` : jouer l'app via Playwright, cliquer/remplir/vérifier) ↔ *« vérifie que ça MARCHE, pas juste que ça compile »* — **TRANSMIS #155** (page persistante + vérifs déterministes + détection image cassée/erreur console ; prouvé live positif ET négatif).
-3. ✅ **Réutiliser les artefacts** (`chercher_artefact` sur le Blackboard cross-projet) ↔ *« réutiliser > regénérer »* — **TRANSMIS #156** (recherche cosinus sur les palettes persistées, pur/déterministe ; prouvé live : GLM réutilise seul une palette `mango-galerie` proche d'une cible café). **Suite naturelle** : enrichir le Blackboard d'autres artefacts (composants, layouts) → l'outil les couvrira sans changement, et le « kit de composants à ton goût » en découlera.
+3. ✅ **Réutiliser les artefacts** (`chercher_artefact` sur le Blackboard cross-projet) ↔ *« réutiliser > regénérer »* — **TRANSMIS #156** (recherche cosinus sur les palettes persistées, pur/déterministe ; prouvé live : GLM réutilise seul une palette `mango-galerie` proche d'une cible café). **Étendu 2026-06-26** : (a) **L29** — la réutilisation via l'outil est désormais **MESURÉE** (genre `artifact`, cf. [[boucle-curation]]) ; (b) **L3 Phase A** — l'outil gagne une **recherche par SENS (texte, param `recherche`)** qui atteint la **bibliothèque de COMPOSANTS cross-projet** (`searchComponentsRanked`, embedding texte + repli mots-clés), pas que les palettes par couleur → le « kit de composants à ton goût » se concrétise (prouvé live : « barre de recherche »→`SearchBar`). **Reste** : layouts comme type distinct, embedding texte pour sites/palettes, skills dans l'outil.
 4. ✅ **Lire un document en entrée** (`lire_document`, réutilise la primitive #147) ↔ *« pars de la VRAIE source du user »* (spec, référence, énoncé) — **TRANSMIS #157** (PDF + textes) **puis #158** (Word `.docx` via mammoth, Excel `.xlsx` + PowerPoint `.pptx` via officeparser ; SheetJS écarté pour vulnérabilités). Prouvé live bout-en-bout sur PDF *et* `.xlsx` (GLM recopie titre/couleur/valeurs exacts dans le code). **Suite** : PDF scanné (image) via `renderPdfPage` #147 + `vois_ecran` #151 ; `.doc/.xls` hérités si besoin.
 5. **Planifier avant d'agir** (méta-outil / clause) ↔ *« décompose et choisis une approche, puis code »* — disposition, pas un outil ; à inculquer par clause de contrat. **= prochain candidat.**
 

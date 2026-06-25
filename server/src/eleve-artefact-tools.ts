@@ -18,6 +18,9 @@ import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { searchArtifacts, listArtifacts, type ArtifactHit } from "./kernel-artifacts.js";
 import { searchSiteDossiers, listSiteDossiers, type SiteDossierHit } from "./site-artifacts.js";
 import { recordArtefactUsage } from "./eleve-artefact-usage.js";
+import { searchComponentsRanked } from "./kernel-reuse.js";
+import { COMPONENTS_DIR_NAME, type ComponentMeta } from "./components.js";
+import { WORKSPACE_DIR } from "./projects.js";
 
 /** Borne dure du nombre de résultats renvoyés à l'Élève. */
 const MAX_RESULTS = 8;
@@ -34,6 +37,9 @@ export interface ArtefactDeps {
   searchSites?: (colors: string[], k: number) => SiteDossierHit[];
   /** dossiers de site récents (#159 Phase 4) — optionnel. */
   listSites?: () => SiteDossierHit[];
+  /** (L3) k composants réutilisables les plus pertinents à une requête TEXTE
+   * (embedding + repli mots-clés). Défaut : la bibliothèque cross-projet réelle. */
+  searchComponents?: (query: string, k: number) => Promise<ComponentMeta[]>;
   /** (L29) provenances d'artefacts servies ce tour → mesure de réutilisation.
    * Défaut : le store éphémère par projet. Injectable pour les tests. */
   record?: (sources: string[]) => void;
@@ -44,6 +50,7 @@ const realDeps: ArtefactDeps = {
   list: () => listArtifacts(),
   searchSites: (colors, k) => searchSiteDossiers(colors, k),
   listSites: () => listSiteDossiers(),
+  searchComponents: (query, k) => searchComponentsRanked(query, WORKSPACE_DIR, { k }),
 };
 
 /** Une ligne lisible par l'Élève : provenance + rôle + proximité + couleurs à copier. */
@@ -78,6 +85,24 @@ function formatSiteSection(hits: SiteDossierHit[]): string {
   );
 }
 
+/** Une ligne lisible pour un composant réutilisable (#36/L3) : nom + rôle + props + chemin. */
+function formatComponentHit(c: ComponentMeta): string {
+  const tags = c.tags?.length ? ` [${c.tags.join(", ")}]` : "";
+  const props = c.props?.length ? ` — props: ${c.props.join(", ")}` : "";
+  return `- **${c.name}**: ${c.description}${tags}${props}\n  → lis workspace/${COMPONENTS_DIR_NAME}/${c.name}/component.tsx pour le réutiliser`;
+}
+
+/** Volet « composants réutilisables » pour une recherche par SENS (#156/L3). */
+function formatComponentSection(comps: ComponentMeta[]): string {
+  if (comps.length === 0) {
+    return "Aucun composant réutilisable proche de ta recherche dans la bibliothèque cross-projet — code-le proprement (et il pourra être mémorisé pour la prochaine fois).";
+  }
+  return (
+    "Composants réutilisables PERTINENTS (lis le code et adapte-le plutôt que réécrire) :\n" +
+    comps.map(formatComponentHit).join("\n")
+  );
+}
+
 /**
  * Outil `chercher_artefact` : interroge la mémoire d'artefacts du Blackboard.
  * - `couleurs` fournies → palettes proches à RÉUTILISER (recherche cosinus).
@@ -91,8 +116,14 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
   const chercherArtefact: KernelTool = {
     name: "chercher_artefact",
     description:
-      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts DÉJÀ créés à réutiliser : des PALETTES de couleurs (captées ou produites sur d'autres projets) ET des DOSSIERS DE SITES déjà extraits avec extraire_site (concept, mécaniques, palette, mood). Donne des couleurs hex pour retrouver les plus proches, ou n'en donne aucune pour lister les plus récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
+      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts DÉJÀ créés à réutiliser : (1) COMPOSANTS réutilisables (donne `recherche` en texte — ex. 'barre de recherche', 'grille de cartes', 'modale' — recherche par SENS), (2) PALETTES de couleurs (donne `couleurs` hex), (3) DOSSIERS DE SITES déjà extraits avec extraire_site (par couleurs). Sans argument → liste les artefacts récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
     inputSchema: {
+      recherche: z
+        .string()
+        .optional()
+        .describe(
+          "Décris en TEXTE le composant/élément réutilisable cherché (ex. 'barre de recherche', 'grille de cartes responsive', 'modale de confirmation'). Recherche par sens dans la bibliothèque de composants cross-projet.",
+        ),
       couleurs: z
         .array(z.string())
         .optional()
@@ -101,13 +132,14 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
         ),
       n: z.number().int().min(1).max(MAX_RESULTS).optional().describe("Nombre de résultats (défaut 5, max 8)."),
     },
-    handler: (args): KernelToolResult => {
+    handler: async (args): Promise<KernelToolResult> => {
       const k = Math.min(MAX_RESULTS, Math.max(1, Math.floor(Number(args.n) || 5)));
       const raw = Array.isArray(args.couleurs) ? args.couleurs : [];
       const colors = raw.filter((c): c is string => typeof c === "string" && HEX_RE.test(c.trim()));
+      const query = typeof args.recherche === "string" ? args.recherche.trim() : "";
 
-      // Des couleurs ont été données mais aucune n'est un hex valide → guider l'Élève.
-      if (raw.length > 0 && colors.length === 0) {
+      // Couleurs données mais aucune valide ET pas de recherche texte → guider l'Élève.
+      if (raw.length > 0 && colors.length === 0 && !query) {
         return {
           text: "Donne les couleurs au format hexadécimal (#rrggbb), ex. #1f2937 #f59e0b — la recherche de palette se fait sur les valeurs hex.",
           isError: true,
@@ -115,47 +147,52 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
       }
 
       try {
-        const siteHits = fetchSiteHits(deps, colors, k);
-        const sites = formatSiteSection(siteHits);
+        const sources: string[] = [];
+        const blocks: string[] = [];
 
-        // Palettes pertinentes : proches si couleurs fournies, sinon les récentes.
-        const paletteHits = colors.length > 0 ? deps.search(colors, k) : deps.list().slice(0, k);
+        // 1) COMPOSANTS par SENS (#36/L3) — embedding texte + repli mots-clés.
+        if (query) {
+          const comps = (await deps.searchComponents?.(query, k)) ?? [];
+          sources.push(...comps.map((c) => c.name));
+          blocks.push(formatComponentSection(comps));
+        }
 
-        // (L29) Provenances servies (palettes + sites) → réutilisation mesurable,
-        // même quand le rendu n'expose pas de hex littéral (Tailwind).
-        record([...paletteHits.map((h) => h.artifact.project), ...siteHits.map((h) => h.artifact.project)]);
+        // 2) PALETTES + SITES par COULEUR (existant). Sauté si recherche TEXTE seule
+        //    (ne pas dumper des palettes au hasard quand on cherche un composant).
+        if (colors.length > 0 || !query) {
+          const siteHits = fetchSiteHits(deps, colors, k);
+          const sites = formatSiteSection(siteHits);
+          const paletteHits = colors.length > 0 ? deps.search(colors, k) : deps.list().slice(0, k);
+          sources.push(...paletteHits.map((h) => h.artifact.project), ...siteHits.map((h) => h.artifact.project));
 
-        if (colors.length > 0) {
-          if (paletteHits.length === 0) {
-            return {
-              text:
-                "Aucune palette proche dans la mémoire cross-projet (bibliothèque vide ou rien de ressemblant). Tu peux créer une palette neuve — pense à rester cohérent avec le reste du projet." +
-                sites,
-            };
+          if (colors.length > 0) {
+            blocks.push(
+              paletteHits.length === 0
+                ? "Aucune palette proche dans la mémoire cross-projet (bibliothèque vide ou rien de ressemblant). Tu peux créer une palette neuve — pense à rester cohérent avec le reste du projet." +
+                    sites
+                : "Palettes proches DÉJÀ créées (réutilise ces couleurs pour la cohérence de ton univers visuel) :\n" +
+                    paletteHits.map(formatHit).join("\n") +
+                    sites,
+            );
+          } else {
+            blocks.push(
+              paletteHits.length === 0
+                ? (sites
+                    ? "Aucune palette en mémoire, mais des sites ont été extraits :"
+                    : "La mémoire d'artefacts (Blackboard) est vide pour l'instant — rien à réutiliser, crée librement.") +
+                    sites
+                : "Artefacts design récents en mémoire cross-projet (réutilise plutôt que réinventer) :\n" +
+                    paletteHits.map(formatHit).join("\n") +
+                    sites,
+            );
           }
-          return {
-            text:
-              "Palettes proches DÉJÀ créées (réutilise ces couleurs pour la cohérence de ton univers visuel) :\n" +
-              paletteHits.map(formatHit).join("\n") +
-              sites,
-          };
         }
 
-        if (paletteHits.length === 0) {
-          return {
-            text:
-              (sites
-                ? "Aucune palette en mémoire, mais des sites ont été extraits :"
-                : "La mémoire d'artefacts (Blackboard) est vide pour l'instant — rien à réutiliser, crée librement.") +
-              sites,
-          };
-        }
-        return {
-          text:
-            "Artefacts design récents en mémoire cross-projet (réutilise plutôt que réinventer) :\n" +
-            paletteHits.map(formatHit).join("\n") +
-            sites,
-        };
+        // (L29) Provenances servies (composants + palettes + sites) → réutilisation
+        // mesurable, même quand le rendu n'expose pas de hex littéral (Tailwind).
+        record(sources);
+
+        return { text: blocks.join("\n\n") };
       } catch (e) {
         return {
           text: `Recherche d'artefact impossible : ${e instanceof Error ? e.message : String(e)}`,
