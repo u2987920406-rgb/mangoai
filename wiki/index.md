@@ -54,4 +54,4 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 
 ## Sources brutes (immuables)
 
-[[statut]] · [[historique]] · [[fondation]] · [[memory]] · [[plan]] · [[changelog]] · [[idee]]
+[[statut]] · [[historique]] · [[fondation]] · [[memory]] · [[plan]] · [[changelog]] · [[idee]] · [[limites]] (registre des limites honnêtes → pistes de résolution)

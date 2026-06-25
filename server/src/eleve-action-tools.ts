@@ -21,6 +21,7 @@ import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
 import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { buildEleveDocumentTools } from "./eleve-document-tools.js";
+import { buildEleveSiteTools } from "./eleve-site-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
@@ -263,6 +264,14 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // (resolveInside), coupure ELEVE_DOCUMENT=off.
   if (process.env.ELEVE_DOCUMENT !== "off") {
     for (const t of buildEleveDocumentTools(projectDir)) reg.register(t);
+  }
+
+  // Outil SITE (#159) — « extraire l'essence d'un site ». Explore un site externe
+  // en profondeur (plusieurs pages) et en extrait l'info ; mode A (url) ou mode B
+  // (recherche → trouve la source seul). Réutilise getBrowser/scrapeExternal/anti-SSRF
+  // + searchWeb #154 + sanitizeExternal. Coupure ELEVE_SITE=off.
+  if (process.env.ELEVE_SITE !== "off") {
+    for (const t of buildEleveSiteTools(projectDir)) reg.register(t);
   }
 
   // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
