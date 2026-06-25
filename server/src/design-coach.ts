@@ -35,6 +35,7 @@ export interface Lens { name: string; score: number; issue: string; fix: string 
 export interface DesignCritique {
   overall: number; // 0-100
   lenses: Lens[];
+  scored: boolean; // (L28) le score est-il FIABLE (GLOBAL: ou moyenne de lentilles) ? sinon repli neutre, à NE PAS juger
   measure?: DesignMeasure; // verdict objectif (contraste WCAG, hors-palette)
   raw?: string; // sortie brute du cerveau (diagnostic)
 }
@@ -62,6 +63,13 @@ export function critiqueSystem(ctx: JudgeContext, measureText: string): string {
 
 const CRITIQUE_USER = "Voici une capture du RENDU actuel de l'interface. Critique-la lentille par lentille selon le format imposé.";
 
+// (L28) Rappel injecté à la SECONDE tentative quand la 1ʳᵉ réponse du VL n'avait pas
+// de score exploitable (prose hors format). Insiste sur la ligne finale obligatoire.
+const STRICT_FORMAT_REMINDER =
+  "⚠ REPRISE — ta réponse précédente n'était PAS au format et n'a pas pu être lue. " +
+  "Réponds UNIQUEMENT avec les lignes imposées, RIEN d'autre, et termine OBLIGATOIREMENT " +
+  "par une dernière ligne exactement de la forme `GLOBAL: <0-100>` (ex. `GLOBAL: 72`).";
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Parsing (pur, robuste — calqué sur parseJudgeScore)
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,14 +94,18 @@ export function parseCritique(text: string): DesignCritique {
   }
   const globalM = text.match(/GLOBAL\s*:?\s*(\d{1,3})/i);
   let overall: number;
+  let scored = true; // (L28) un score n'est FIABLE que s'il vient d'un GLOBAL: ou de lentilles.
   if (globalM) overall = clampScore(parseInt(globalM[1], 10));
   else if (lenses.length) overall = clampScore(lenses.reduce((s, l) => s + l.score, 0) / lenses.length);
   else {
-    // Repli ultime : premier entier 0-100 plausible, sinon 50.
+    // Repli ultime : premier entier 0-100 plausible, sinon 50 — mais NON FIABLE.
+    // C'est exactement le piège L28 : du VL hors-format ne doit PAS faire un faux 50
+    // qui plombe le Gardien. On garde une valeur d'affichage mais scored=false.
     const any = text.match(/\b(\d{1,3})\b/);
     overall = any ? clampScore(parseInt(any[1], 10)) : 50;
+    scored = false;
   }
-  return { overall, lenses, raw: text };
+  return { overall, lenses, scored, raw: text };
 }
 
 /** Les correctifs à donner à l'agent : lentilles les plus basses d'abord, sous le seuil. */
@@ -164,12 +176,21 @@ export async function critiqueScreen(projectDir: string, ctx: JudgeContext, deps
   const { url } = await deps.startPreview(projectDir);
   const buf = await deps.capture(url);
   const measure = measureDesign(deps.readCss(projectDir));
-  const res = await deps.dispatch("vision", critiqueSystem(ctx, measureSummary(measure)), CRITIQUE_USER, {
-    imageBase64: buf.toString("base64"),
-    trustExternal: true,
-    freeform: true,
-  });
-  const critique = parseCritique(res.summary ?? "");
+  const imageBase64 = buf.toString("base64");
+  const system = critiqueSystem(ctx, measureSummary(measure));
+
+  const res = await deps.dispatch("vision", system, CRITIQUE_USER, { imageBase64, trustExternal: true, freeform: true });
+  let critique = parseCritique(res.summary ?? "");
+
+  // (L28) UNE reprise si le VL n'a pas rendu de score exploitable, AVANT de renoncer
+  // au volet goût. On ne fabrique JAMAIS un 50 : si la reprise échoue aussi, le verdict
+  // reste scored=false et l'appelant (Gardien) saute proprement le goût.
+  if (!critique.scored) {
+    const res2 = await deps.dispatch("vision", `${system}\n\n${STRICT_FORMAT_REMINDER}`, CRITIQUE_USER, { imageBase64, trustExternal: true, freeform: true });
+    const c2 = parseCritique(res2.summary ?? "");
+    if (c2.scored) critique = c2;
+  }
+
   critique.measure = measure;
   return critique;
 }
@@ -189,7 +210,7 @@ export interface CoachResult {
   after: DesignCritique;
   rounds: number;
   history: DesignCritique[];
-  reason: "seuil-atteint" | "plafond-tours" | "aucun-correctif" | "pas-de-progrès";
+  reason: "seuil-atteint" | "plafond-tours" | "aucun-correctif" | "pas-de-progrès" | "non-jugeable";
 }
 
 /**
@@ -214,6 +235,14 @@ export async function runDesignCoach(
   let current = before;
   let round = 0;
   let reason: CoachResult["reason"] = "seuil-atteint";
+
+  // (L28) Pas de score fiable au départ → on ne PILOTE pas une boucle d'édition sur un
+  // faux 50 (gaspillage de relances). On rend la main proprement.
+  if (!before.scored) {
+    onProgress({ type: "status", text: "👁 Rendu non jugeable (pas de score fiable) — coach sauté." });
+    await deps.stopPreview(projectDir);
+    return { before, after: before, rounds: 0, history, reason: "non-jugeable" };
+  }
 
   try {
     while (current.overall < threshold && round < maxRounds) {

@@ -31,9 +31,10 @@ const trace = (names: Array<[string, string]>) => names.map(([name, args]) => ({
 const result = (text: string, t: Array<{ name: string; args: string }> = []) => ({ text, toolTrace: t });
 
 const goodIntent: IntentVerdict = { couverture: 90, manques: [], note: "" };
-const critique = (overall: number, fails = 0): DesignCritique => ({
+const critique = (overall: number, fails = 0, scored = true): DesignCritique => ({
   overall,
   lenses: [{ name: "harmonie", score: overall, issue: "couleurs ternes", fix: "augmente le contraste" }],
+  scored,
   measure: { contrastFails: Array.from({ length: fails }, () => ({ fg: "#888", bg: "#999", ratio: 1.2, required: 4.5, level: "AA" as const })), offPalette: [], paletteSize: 3 },
   raw: "",
 });
@@ -136,17 +137,41 @@ async function run() {
 
   console.log("\n[8] evaluateGate — décision pure");
   {
-    const koVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, design: critique(50), raisons: ["INTENTION 40", "GOÛT 50"] };
-    const okVerdict: GateVerdict = { ok: true, intent: goodIntent, raisons: [] };
+    const koVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, intentOk: false, design: critique(50), tasteScored: true, tasteOk: false, wcagOk: true, raisons: ["INTENTION 40", "GOÛT 50"] };
+    const okVerdict: GateVerdict = { ok: true, intent: goodIntent, intentOk: true, tasteScored: false, tasteOk: true, wcagOk: true, raisons: [] };
     check("ok → action ok", evaluateGate("/p", okVerdict, 0, 2).action === "ok");
     const d1 = evaluateGate("/p", koVerdict, 0, 2);
     check("KO + budget → corrige + nudge", d1.action === "corrige" && "nudge" in d1 && /Gardien/.test((d1 as { nudge: string }).nudge));
     check("KO + budget épuisé → laisse-passer", evaluateGate("/p", koVerdict, 2, 2).action === "laisse-passer");
   }
 
+  console.log("\n[8b] evaluateGate — anti-thrash goût (L28)");
+  {
+    // SEUL le goût bloque (intention OK, WCAG OK), goût scoré 71.
+    const goutVerdict: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, design: critique(71), tasteScored: true, tasteOk: false, wcagOk: true, raisons: ["GOÛT 71"] };
+    check("goût 71, 1er tour (prevGout null) → corrige", evaluateGate("/p", goutVerdict, 0, 3, null).action === "corrige");
+    check("goût n'a pas progressé (71 ≤ 71) → laisse-passer (pas de thrash)", evaluateGate("/p", goutVerdict, 1, 3, 71).action === "laisse-passer");
+    check("goût a régressé (71 ≤ 73) → laisse-passer", evaluateGate("/p", goutVerdict, 1, 3, 73).action === "laisse-passer");
+    check("goût a progressé (71 > 65) → corrige encore", evaluateGate("/p", goutVerdict, 1, 3, 65).action === "corrige");
+    // L'anti-thrash ne s'applique PAS si l'intention bloque aussi (signal fiable).
+    const mixteVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, intentOk: false, design: critique(71), tasteScored: true, tasteOk: false, wcagOk: true, raisons: ["INTENTION 40", "GOÛT 71"] };
+    check("intention KO aussi → corrige malgré goût stagnant", evaluateGate("/p", mixteVerdict, 1, 3, 71).action === "corrige");
+  }
+
+  console.log("\n[8c] runClosureGate — goût NON-SCORÉ → sauté, QA conservée (L28)");
+  {
+    // VL hors-format (scored:false) avec overall=50 fabriqué : ne doit PAS plomber le goût.
+    const v = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", { intentMin: 70, tasteMin: 80, wcagMaxFails: 0 }, deps({ critique: async () => critique(50, 0, false) }));
+    check("goût non-scoré → ok:true (sauté, pas de faux 50)", v.ok === true && v.tasteScored === false && v.tasteOk === true);
+    check("aucune raison GOÛT", !v.raisons.some((r) => /GOÛT/.test(r)));
+    // Mais la QA WCAG objective s'applique TOUJOURS, même sans score VL fiable.
+    const v2 = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", { intentMin: 70, tasteMin: 80, wcagMaxFails: 0 }, deps({ critique: async () => critique(50, 2, false) }));
+    check("WCAG s'applique même goût non-scoré → ok:false + raison QA", v2.ok === false && v2.raisons.some((r) => /QA/.test(r)));
+  }
+
   console.log("\n[9] buildGateNudge — préfixe le plan (#160) s'il existe");
   {
-    const v: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["la nav"], note: "" }, raisons: ["INTENTION 40 — il manque :\n  - la nav"] };
+    const v: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["la nav"], note: "" }, intentOk: false, tasteScored: false, tasteOk: true, wcagOk: true, raisons: ["INTENTION 40 — il manque :\n  - la nav"] };
     clearPlan("/p");
     const sansPlan = buildGateNudge("/p", v, 1, 2);
     check("sans plan : pas de rappel mais le nudge Gardien", !/Rappel de TON plan/.test(sansPlan) && /Gardien/.test(sansPlan) && /la nav/.test(sansPlan));

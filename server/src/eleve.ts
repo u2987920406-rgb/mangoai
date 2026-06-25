@@ -953,6 +953,9 @@ export async function runRelay(
     // (les tours du Gardien ne consomment pas le budget anti-blocage). Gaté + non-bloquant.
     let gateRelances = 0;
     const gateRelanceMax = Number(process.env.ELEVE_GATE_RELANCE_MAX ?? 2);
+    // (L28) Anti-thrash : mémoire du goût du tour Gardien précédent pour ne pas relancer
+    // en boucle sur un score VL qui ne progresse pas.
+    let prevGateGout: number | null = null;
     // #160 — repartir sans plan périmé d'une tâche précédente. Si l'Élève appelle
     // planifier() pendant la boucle, son plan sera rappelé dans le nudge ci-dessous.
     clearPlan(projectDir);
@@ -981,12 +984,15 @@ export async function runRelay(
       if (process.env.ELEVE_CLOSURE_GATE === "on" && result?.finished) {
         try {
           const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task));
-          push(
-            `🛡 Gardien — intention ${verdict.intent.couverture}/100` +
-              (verdict.design ? `, goût ${verdict.design.overall}/100` : "") +
-              (verdict.ok ? " ✓" : " ✗"),
-          );
-          const decision = evaluateGate(projectDir, verdict, gateRelances, gateRelanceMax);
+          const goutLabel = verdict.design
+            ? verdict.tasteScored
+              ? `, goût ${verdict.design.overall}/100`
+              : ", goût non jugeable (sauté)"
+            : "";
+          push(`🛡 Gardien — intention ${verdict.intent.couverture}/100${goutLabel}${verdict.ok ? " ✓" : " ✗"}`);
+          const decision = evaluateGate(projectDir, verdict, gateRelances, gateRelanceMax, prevGateGout);
+          // mémorise le goût FIABLE de ce tour pour l'anti-thrash du tour suivant.
+          if (verdict.tasteScored && verdict.design) prevGateGout = verdict.design.overall;
           if (decision.action === "corrige") {
             gateRelances++;
             nudge = decision.nudge;

@@ -21,7 +21,11 @@ import { getPlan, formatPlanReminder } from "./eleve-plan.js";
 export interface GateVerdict {
   ok: boolean;
   intent: IntentVerdict;
+  intentOk: boolean;
   design?: DesignCritique; // absent si le rendu n'est pas jugeable (tâche non-UI)
+  tasteScored: boolean; // (L28) le goût a-t-il un score FIABLE ? sinon le volet goût est sauté
+  tasteOk: boolean; // goût ≥ seuil OU non-scoré (sauté → ne pénalise pas)
+  wcagOk: boolean; // mesures objectives #111 (indépendantes du VL)
   raisons: string[]; // ce qu'il faut corriger (vide si ok)
 }
 
@@ -91,15 +95,21 @@ export async function runClosureGate(
 
   // 2+3. GOÛT + QA en UN regard (critiqueScreen → overall + measure WCAG). Si l'aperçu
   // échoue (tâche non-UI, pas de rendu) → on saute proprement : seule l'intention compte.
+  // (L28) Le GOÛT (score VL) et la QA (mesures objectives #111) sont SÉPARÉS : si le VL
+  // n'a pas rendu de score fiable (scored=false), on saute le goût mais on GARDE la QA
+  // WCAG, qui ne dépend pas du parsing du VL. Plus jamais de faux 50 qui plombe.
   let design: DesignCritique | undefined;
-  let designOk = true;
+  let tasteScored = false;
+  let tasteOk = true;
+  let wcagOk = true;
   try {
     design = await deps.critique(projectDir, workspaceDir, projectType);
+    tasteScored = design.scored !== false; // tolère d'anciennes critiques sans le champ
     const wcagFails = design.measure?.contrastFails.length ?? 0;
-    designOk = design.overall >= th.tasteMin && wcagFails <= th.wcagMaxFails;
+    tasteOk = !tasteScored || design.overall >= th.tasteMin;
+    wcagOk = wcagFails <= th.wcagMaxFails;
   } catch {
-    design = undefined;
-    designOk = true; // pas de rendu jugeable → ne pénalise pas
+    design = undefined; // pas de rendu jugeable → ne pénalise pas
   } finally {
     try {
       await deps.stopPreview(projectDir);
@@ -113,8 +123,9 @@ export async function runClosureGate(
     const m = intent.manques.length ? intent.manques.map((x) => `  - ${x}`).join("\n") : "  - la demande n'est pas couverte";
     raisons.push(`INTENTION ${intent.couverture}/100 (seuil ${th.intentMin}) — il manque :\n${m}`);
   }
-  if (design && !designOk) {
-    if (design.overall < th.tasteMin) {
+  if (design) {
+    // Goût : seulement si le score est FIABLE (L28). Un goût non-scoré ne produit AUCUNE raison.
+    if (tasteScored && design.overall < th.tasteMin) {
       const fixes = prioritizedFixes(design, th.tasteMin);
       raisons.push(`GOÛT ${design.overall}/100 (seuil ${th.tasteMin}) — corrige :\n${fixes.map((f) => `  ${f}`).join("\n")}`);
     }
@@ -124,7 +135,7 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && designOk, intent, design, raisons };
+  return { ok: intentOk && tasteOk && wcagOk, intent, intentOk, design, tasteScored, tasteOk, wcagOk, raisons };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */
@@ -141,9 +152,29 @@ export function buildGateNudge(projectDir: string, verdict: GateVerdict, relance
 
 export type GateAction = { action: "ok" } | { action: "corrige"; nudge: string } | { action: "laisse-passer" };
 
-/** Décision pure du Gardien selon le verdict + le budget de corrections. PUR, testable. */
-export function evaluateGate(projectDir: string, verdict: GateVerdict, gateRelances: number, max: number): GateAction {
+/**
+ * Décision pure du Gardien selon le verdict + le budget de corrections. PUR, testable.
+ *
+ * (L28) Anti-thrash : si le SEUL levier qui bloque est le GOÛT (intention OK, WCAG OK) et
+ * que ce goût n'a PAS progressé depuis la correction précédente (`prevGout`), on cesse de
+ * renvoyer corriger en boucle — le juge VL est bruité, insister ne fait que gaspiller des
+ * tours. On cède (laisse-passer → INCOMPLET). Sur intention/WCAG (signaux fiables), on
+ * relance normalement dans la limite du budget.
+ */
+export function evaluateGate(
+  projectDir: string,
+  verdict: GateVerdict,
+  gateRelances: number,
+  max: number,
+  prevGout: number | null = null,
+): GateAction {
   if (verdict.ok) return { action: "ok" };
-  if (gateRelances < max) return { action: "corrige", nudge: buildGateNudge(projectDir, verdict, gateRelances + 1, max) };
-  return { action: "laisse-passer" };
+  if (gateRelances >= max) return { action: "laisse-passer" };
+
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.tasteScored && !verdict.tasteOk;
+  const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
+  if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
+    return { action: "laisse-passer" };
+  }
+  return { action: "corrige", nudge: buildGateNudge(projectDir, verdict, gateRelances + 1, max) };
 }

@@ -35,9 +35,15 @@ function critiqueText(overall: number, lenses: Array<[string, number, string, st
 {
   const c = parseCritique("blabla sans format mais score 77 quelque part");
   check("parseCritique : repli premier entier plausible", c.overall === 77 && c.lenses.length === 0);
+  check("parseCritique : repli entier brut = NON fiable (scored:false)", c.scored === false);
 }
 check("parseCritique : vide → défaut 50", parseCritique("").overall === 50);
 check("parseCritique : clamp >100", parseCritique("GLOBAL: 250").overall === 100);
+
+// ── scored : GLOBAL/lentilles = fiable ; prose hors-format = non fiable (L28) ──
+check("parseCritique : GLOBAL → scored true", parseCritique("GLOBAL: 72").scored === true);
+check("parseCritique : lentilles sans GLOBAL → scored true", parseCritique("LENTILLE: x | 40 | a → b").scored === true);
+check("parseCritique : prose sans chiffre → scored false + overall 50", parseCritique("le rendu est correct").scored === false && parseCritique("le rendu est correct").overall === 50);
 
 // ── prioritizedFixes ──
 {
@@ -76,6 +82,29 @@ function makeDeps(critiqueQueue: string[]): { deps: CoachDeps; applied: string[]
   const c = await critiqueScreen("/proj", CTX, deps);
   check("critiqueScreen : renvoie la critique parsée", c.overall === 68 && c.lenses.length === 1);
   check("critiqueScreen : attache la mesure objective (contraste #999/#fff)", !!c.measure && c.measure.contrastFails.length >= 1);
+}
+
+// ── critiqueScreen : reprise VL si 1ʳᵉ réponse hors-format (L28) ──
+{
+  const { deps } = makeDeps([
+    "le rendu est correct, rien de structuré", // 1ʳᵉ : non-scoré
+    critiqueText(74, [["hiérarchie", 74, "ok", "ok"]]), // reprise : scoré
+  ]);
+  const c = await critiqueScreen("/proj", CTX, deps);
+  check("critiqueScreen : reprise récupère un score fiable (74)", c.overall === 74 && c.scored === true);
+}
+{
+  // Les DEUX réponses hors-format → reste non-scoré (pas de faux 50 imposé).
+  const { deps } = makeDeps(["blabla", "toujours du blabla"]);
+  const c = await critiqueScreen("/proj", CTX, deps);
+  check("critiqueScreen : 2 reprises ratées → scored false", c.scored === false);
+}
+
+// ── runDesignCoach : rendu non jugeable → coach sauté (L28) ──
+{
+  const { deps, applied } = makeDeps(["aucun score lisible ici", "encore du blabla"]);
+  const r = await runDesignCoach("/proj", { threshold: 85, maxRounds: 3 }, CTX, () => {}, deps);
+  check("coach : non-jugeable → 0 tour, aucune édition", r.rounds === 0 && applied.length === 0 && r.reason === "non-jugeable");
 }
 
 // ── runDesignCoach : progresse jusqu'au seuil ──

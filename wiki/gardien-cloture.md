@@ -3,7 +3,7 @@ type: entité
 tags: [eleve, gate, qa, gout, intention, boucle-agentique]
 statut: livré
 sources: ["#161"]
-maj: 2026-06-25
+maj: 2026-06-26
 ---
 
 # Gardien-clôture (gate goût/QA/intention)
@@ -28,11 +28,21 @@ Le seul filet IMPOSÉ dans la boucle agentique (`runRelay`→`buildAgentic`) ét
 
 **Branchement** : `eleve.ts`, moteur agentique, avant le succès ; gaté **`ELEVE_CLOSURE_GATE=on`** (défaut OFF), compteur `gateRelances` **séparé** du budget anti-blocage, seuils par env (`ELEVE_GATE_INTENT_MIN`/`TASTE_MIN`/`WCAG_MAX_FAILS`/`RELANCE_MAX`). Aperçu KO (tâche non-UI) → volet goût/QA sauté, intention seule.
 
+## Fiabilisation (piste #2, 2026-06-26 — L28 ✅)
+
+Le [[run-validation|run grandeur nature]] du 2026-06-25 a révélé un **faux-négatif systématique sur le goût** : le Gardien cédait INCOMPLET sur 3/3 apps vertes et réussies parce que `parseCritique` **défaussait sur 50** quand le VL `qwen3-vl` rendait une critique hors-format (sans `GLOBAL: <n>`). 50 < seuil 70 → faux échec **déterministe** (pire que le bruit L19), 2 relances qui ne réparaient qu'un défaut de *parsing*. Corrigé en 3 volets (**AXIOME-GATE-01** : *un gate doit SAUTER un volet dont la mesure a échoué, jamais défausser sur un score qui échoue*) :
+
+1. **Flag `scored`** (`DesignCritique`) — un score n'est *fiable* que s'il vient d'un `GLOBAL:` ou de lentilles. Repli (prose) → `scored:false`. `runClosureGate` **saute alors le volet goût** (comme un aperçu KO) mais **garde la QA WCAG** (`measureDesign`, objective, indépendante du VL). Plus jamais de faux 50 jugé.
+2. **Reprise VL** — `critiqueScreen` refait **1 appel** avec un rappel de format strict (`GLOBAL: <0-100>` obligatoire) si la 1ʳᵉ réponse n'est pas scorée ; échec → reste `scored:false` (jamais de note fabriquée).
+3. **Anti-thrash** — `evaluateGate(prevGout)` cède (laisse-passer) si le goût est le **seul** levier qui bloque ET qu'il **n'a pas progressé** depuis la correction précédente ; `eleve.ts` mémorise `prevGateGout`. `runDesignCoach` rend la main (`non-jugeable`) si le 1er regard n'est pas scoré.
+
+`GateVerdict` expose désormais `intentOk`/`tasteScored`/`tasteOk`/`wcagOk`. Tests : design-coach **29** · eleve-gate **27** · design-metrics 28, `tsc` vert, aucun fichier UI touché.
+
 ## État
 
-**Livré et prouvé live** (#161). LIVE (`runRelay`, vrai GLM + juge qwen + critiqueScreen, $0, seuil goût forcé 99) : GLM finit → `🛡 intention 100/100, goût 76/100 ✗` → GLM **applique les correctifs du Gardien sur 2 fichiers** → re-critique 71 ✗ → laisse passer + `incomplete`. Tests : judge 12 · gate 19 · brain-dispatch 35 (11 agents).
+**Livré et prouvé live** (#161). LIVE (`runRelay`, vrai GLM + juge qwen + critiqueScreen, $0, seuil goût forcé 99) : GLM finit → `🛡 intention 100/100, goût 76/100 ✗` → GLM **applique les correctifs du Gardien sur 2 fichiers** → re-critique 71 ✗ → laisse passer + `incomplete`. Tests : judge 12 · gate **27** · brain-dispatch 35 (11 agents). **Fiabilisé 2026-06-26 (L28 ✅, piste #2)** — voir la section ci-dessus.
 
-**Limites** : L19 (juge LLM faillible — bruit du VL, cf. [[oeil-coach]] ; atténué par non-bloquant) · L20 (goût/QA exige un rendu → sauté pour le backend) · L21 (juge sur résumé+fichiers, pas un vrai `git diff`).
+**Limites** : L19 (juge LLM faillible — bruit du VL, cf. [[oeil-coach]] ; atténué par non-bloquant + l'anti-thrash de la piste #2) · L20 (goût/QA exige un rendu → sauté pour le backend) · L21 (juge sur résumé+fichiers, pas un vrai `git diff`) · **L28 ✅ Résolu** (faux 50 du volet goût).
 
 ## Liens
 [[oeil-coach]] · [[moteur-gout]] · [[planifier-avant-agir]] · [[transmission-competences]] · [[brains]] · [[mangoqa]] · [[statut]] · [[historique]] · [[limites]]
