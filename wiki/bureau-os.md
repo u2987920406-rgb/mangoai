@@ -82,6 +82,9 @@ La finition du chat avait **cassé la création d'app** (Home 100% conversationn
 ### Correctif UX création de projet (2026-06-27)
 Le formulaire « Nouveau projet » de l'App Builder était une **description auto-envoyée comme prompt** → créer **lançait un build** par surprise (Raf « je me suis fait avoir »). Découplé : `NewProjectForm` est désormais un **champ NOM seul** + bouton **« Créer & ouvrir l'atelier »** → `onOpen(name, {})` **sans prompt** → atelier composer **VIDE**, où l'on choisit délibérément Construire / Discuter / Planifier. Le démarrage « depuis une idée » (`openProject({prompt})`) reste réservé à l'**Accueil** et à **Ideation**. Garde `ready` sur le nom tapé (le slug retombe sur « mon-projet » via le fallback `slugify`). NewProjectForm.test 5/5, suite UI 57/57, build vert. **Nommer ≠ construire** : créer un projet est un acte neutre, la construction est un choix explicite dans l'atelier.
 
+### Sélecteur de projet dans le Workspace (2026-06-27)
+Le nom du projet actif dans l'en-tête (`Header.jsx`) est désormais un **`ProjectSwitcher`** : menu déroulant avec **recherche collante** + **liste scrollable** de tous les projets → bascule en 1 clic via `openProject(name)` **sans repasser par l'accueil** (demande de Raf). Actif épinglé/coché, ouverture rafraîchit la liste (`refreshProjects`). C'est le pendant « navigation rapide » du dock/Launcher : on circule entre projets sans quitter l'atelier. ProjectSwitcher.test 7/7.
+
 ## Liens
 
 - [[flux]] — l'architecture de navigation et son contrat de cohérence (audit + refonte en cours)

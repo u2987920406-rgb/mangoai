@@ -403,6 +403,9 @@ export default function App() {
               onHome={goHome}
               onBack={() => (workspaceOrigin ? setScreen(workspaceOrigin) : goHome())}
               backLabel={workspaceOrigin === "nocturnal" ? "Review nocturne" : "Accueil"}
+              projects={projects}
+              onSwitchProject={(name) => { if (name !== projectName) openProject(name); }}
+              onRefreshProjects={refreshProjects}
               model={model}
               onModel={setModel}
               mode={mode}

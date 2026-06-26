@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Brain, Building2, Cloud, Gauge, Gem, Globe, GraduationCap, Layers, LayoutGrid, Loader2, Puzzle, Rocket, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
+import { ArrowLeft, Brain, Building2, Check, ChevronDown, Cloud, FolderOpen, Gauge, Gem, Globe, GraduationCap, Layers, LayoutGrid, Loader2, Puzzle, Rocket, Search, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
 import Dropdown, { DropdownItem } from "./Dropdown.jsx";
 import { NEUTRAL, t } from "../neutral.js";
 
@@ -44,6 +44,9 @@ export default function Header({
   context,
   canDelete = false,
   onDeleteProject = null,
+  projects = [],
+  onSwitchProject = null,
+  onRefreshProjects = null,
 }) {
   const current = MODELS.find((m) => m.id === model) ?? MODELS[1];
   const currentMode = MODES.find((m) => m.id === mode) ?? MODES[1];
@@ -76,9 +79,18 @@ export default function Header({
       </button>
 
       <span className="text-edge">/</span>
-      <span className="truncate font-mono text-[13px] text-dim" title="Projet actif">
-        {projectName}
-      </span>
+      {onSwitchProject ? (
+        <ProjectSwitcher
+          projectName={projectName}
+          projects={projects}
+          onSwitch={onSwitchProject}
+          onRefresh={onRefreshProjects}
+        />
+      ) : (
+        <span className="truncate font-mono text-[13px] text-dim" title="Projet actif">
+          {projectName}
+        </span>
+      )}
 
       <div className="ml-auto flex items-center gap-2">
         {deployedUrl && (
@@ -185,6 +197,93 @@ export default function Header({
         )}
       </div>
     </header>
+  );
+}
+
+// Sélecteur de projet dans l'en-tête du workspace : on bascule vers un autre
+// projet en un clic, SANS repasser par l'accueil (demande de Raf). Le nom du
+// projet actif devient un menu déroulant — recherche collante en haut + liste
+// scrollable des projets (nice-scroll) en dessous. Ferme au clic extérieur/Échap.
+export function ProjectSwitcher({ projectName, projects, onSwitch, onRefresh = null }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState("");
+  const ref = useRef(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    const onKey = (e) => e.key === "Escape" && setOpen(false);
+    document.addEventListener("mousedown", onOutside);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onOutside);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  // À chaque ouverture : recherche vide (liste complète) + rafraîchit la liste
+  // (un projet créé ailleurs apparaît tout de suite, sans repasser par l'accueil).
+  useEffect(() => { if (open) { setQ(""); onRefresh?.(); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const query = q.trim().toLowerCase();
+  const filtered = (query ? projects.filter((p) => p.toLowerCase().includes(query)) : projects)
+    // Projet actif en tête pour le repère visuel.
+    .slice()
+    .sort((a, b) => (a === projectName ? -1 : b === projectName ? 1 : 0));
+
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        title="Changer de projet — sans repasser par l'accueil"
+        className="flex max-w-[40vw] items-center gap-1 rounded-lg px-1.5 py-1 font-mono text-[13px] text-dim hover:bg-edge-soft hover:text-ink transition-colors"
+      >
+        <span className="truncate">{projectName}</span>
+        <ChevronDown size={13} className={`shrink-0 text-faint transition-transform ${open ? "rotate-180" : ""}`} />
+      </button>
+      {open && (
+        <div className="animate-pop absolute left-0 top-full z-50 mt-1.5 w-72 overflow-hidden rounded-xl border border-edge bg-raised shadow-2xl shadow-black/50">
+          <div className="border-b border-edge bg-raised p-1.5">
+            <div className="relative">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-faint" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Filtrer les projets…"
+                autoFocus
+                className="h-8 w-full rounded-lg border border-edge bg-bg pl-8 pr-2.5 text-[12px] text-ink placeholder:text-faint focus:border-accent focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="max-h-72 overflow-y-auto nice-scroll p-1.5">
+            {filtered.length === 0 ? (
+              <p className="px-2 py-4 text-center text-xs text-faint">
+                {projects.length === 0 ? "Aucun projet pour l'instant" : `Aucun projet pour « ${q.trim()} »`}
+              </p>
+            ) : (
+              filtered.map((p) => {
+                const active = p === projectName;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => { setOpen(false); if (!active) onSwitch(p); }}
+                    className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left font-mono text-[12px] transition-colors ${
+                      active ? "bg-accent/15 text-ink" : "text-ink hover:bg-edge-soft"
+                    }`}
+                  >
+                    <FolderOpen size={14} className={`shrink-0 ${active ? "text-accent-soft" : "text-dim"}`} />
+                    <span className="min-w-0 flex-1 truncate">{p}</span>
+                    {active && <Check size={14} className="shrink-0 text-accent-soft" />}
+                  </button>
+                );
+              })
+            )}
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 
