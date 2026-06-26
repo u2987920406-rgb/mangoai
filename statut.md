@@ -252,6 +252,22 @@
 
 ## 📊 Tableau consolidé — toutes les idées et chantiers
 
+### 🧭 Cap stratégique — souveraineté PROGRESSIVE & acquise (décidé 2026-06-26)
+
+> **Décision de Raf (2026-06-26)** : on a peu de recul sur le comportement de MangoOS sur **plusieurs jours** dans l'architecture actuelle. La souveraineté doit être **progressive et acquise**, pas décrétée — *« lâcher un bébé trop tôt dans la nature ne serait pas judicieux »*. Donc : **on consigne TOUS les plans ci-dessous, puis on OBSERVE avant de migrer plus loin.** Priorité immédiate = **observer + mesurer**, pas implémenter. Chaque plan reste prêt, décidé, traçable.
+>
+> **Acquis aujourd'hui (2026-06-26, rien ne se perd)** : L3 ✅ (mémoire d'artefacts complète) · L17 ✅ (plan-ancre en cours de boucle) · L30 ✅ (Mango répare les images de son ouvrier) · **#164 Le Stratège Phase 0 ✅** (diagnostic déterministe observe-only) · 8 apps générées hors-ADN (preuve de la chaîne) · **vérif souveraineté** : QA *dans la boucle* (Gardien #161) = souverain (qwen + local + déterministe) ; **MangoQA externe = encore Claude** (`claude-agent-sdk`, défaut Sonnet — vérifié).
+
+| # | Plan OUVERT (décidé aujourd'hui, à arbitrer) | Priorité | Décision : maintenant / après observation | Statut | Modèle optimal | Effort |
+|---|---|---|---|---|---|---|
+| **OBS** | **Période d'OBSERVATION** — faire tourner MangoOS (+ MangoQA quand lancé) plusieurs jours, mesurer **stabilité + évolution** (traces/coût/réutilisation/escalades), AVANT d'élargir la souveraineté | ⭐⭐⭐ immédiate | **MAINTENANT** (c'est l'action prioritaire) | 🔲 à lancer | — | S (passif) |
+| **#164** | **« Le Stratège » Phases 1-4** — raisonnement de déblocage : routeur déterministe (P1) → **boucle d'apprentissage procédures #75 (P2, la condition C)** → cerveau Stratège **local gemma4:12b** sur cas ambigus (P3) → **échelle d'escalade cerveaux** local→cloud supérieur→Claude opt-in + métrique de souveraineté (P4). Plan complet : `docs/plan-164-le-stratege.md` | ⭐⭐⭐ (game-changer) | **après observation** (P1 seule = faisable plus tôt : petite, réversible, gros levier) | 🚧 Phase 0 ✅, 1-4 🔲 | 🧠 Opus 4.8 | L→XL |
+| **#165** | **Souveraineté MangoQA** — migrer le repo `D:/IA/MangoQA` hors `claude-agent-sdk` → client qui route vers **Ollama** (comme `llm-engine`/dispatch de MangoOS), `QA_MODEL` ouvert aux modèles locaux/cloud. C'est la **dernière grosse dépendance Claude** du QA profond (les 3 visages) | ⭐⭐ (souveraineté complète) | **après observation** (et après avoir vu MangoQA tourner stable sur Claude d'abord) | 🔲 à faire (repo séparé) | 🧠 Opus 4.8 | M→L |
+| **CFG** | **`brain-registry.json` → Ollama** — agents MangoOS basculés de Claude (opus/sonnet/haiku) vers Ollama (glm-5.2:cloud/gemma4:12b/qwen) = **MangoOS souverain de Claude**. Déjà appliqué en working tree (= le registre que le backend utilise) ; **commit en attente du OK de Raf** (modif d'origine nocturne, non-mienne) | ⭐⭐ | **maintenant** (simple sauvegarde de config, réversible à chaud via l'Atelier) | 🟡 working tree, commit en attente | — | XS |
+| **ESC** | **Échelle d'escalade des cerveaux** (frugal→fort, automatique) — *intégrée à #164 P3-P4* mais notée comme principe transverse : déterministe $0 → gemma4:12b local $0 → cloud supérieur (marginal €) → Claude opt-in ; **ne jamais redescendre tant que non résolu** ; tier configurable (Atelier #162) | ⭐⭐ | avec #164 P3-4 | 🔲 (dans #164) | ⚖️ Sonnet 4.6 | M |
+
+**Rappel honnête du périmètre** : tout ce qui précède est **décidé et documenté**, pas urgent. Le bon réflexe = **OBS d'abord**. Quand on aura vu Mango vivre quelques jours, on rouvrira ce bloc et on lancera dans l'ordre : (1) ce que l'observation révèle prioritaire, (2) #164 (en commençant par P1-P2, le cœur diagnostic+apprentissage), (3) #165 (souveraineté MangoQA). Détail de chaque plan : `docs/plan-164-le-stratege.md` · `limites.md` · `[[le-stratege]]`.
+
 ### Feuille de route principale (plan de bord)
 
 | # | Quoi | Statut | Modèle optimal | Effort |

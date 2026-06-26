@@ -16,7 +16,7 @@ Tous les blocages de la session du 2026-06-26 ont été réglés par un **réfle
 
 ## Les 3 conditions non négociables (sinon ça se retourne contre nous)
 - **(A) Déterministe d'abord** — diagnostic en code pur sur signaux observables ; cerveau seulement sur les cas ambigus, en **sortie contrainte**. Tue le bruit LLM (cf. L19).
-- **(B) Borné & souverain** — budget de déblocage, **cerveau local `gemma4:12b`** ($0 réel, pas de cloud payant ; l'Élève GLM/qwen tourne sur Ollama Cloud ≈ 20 €/mois), jamais de boucle. Banc d'essai du **tout-local quantizé** visé par Raf.
+- **(B) Borné, frugal d'abord — mais la RÉSOLUTION prime** (refinement Raf) — « borné » = pas de boucle infinie, **PAS** « coincé sur le moins cher ». **Échelle d'escalade** automatique : **déterministe $0 → `gemma4:12b` local $0 → cloud supérieur** (`glm-5.2:cloud`…, marginal €) **→ Claude opt-in**. On essaie le moins cher d'abord et on **monte d'un cran si ça ne résout pas** (mieux vaut 2 centimes de cloud qu'un blocage). Les barreaux cloud-Ollama s'insèrent **avant** Claude → **moins de dépendance à Claude**. Tier supérieur configurable (Atelier #162). Horizon : tout-local quantizé sur le hardware de Raf.
 - **(C) Ferme la boucle** — un remède qui marche → **procédure #75 réutilisée**. C'est ce qui fait que Mango *acquiert* du raisonnement (≠ empiler des réflexes). **Sans (C), on s'arrête.**
 
 ## Architecture
