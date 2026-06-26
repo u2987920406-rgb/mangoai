@@ -32,6 +32,7 @@ import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
+import { diagnose, formatDiagnosis } from "./stratege-signals.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
@@ -967,6 +968,31 @@ export async function runRelay(
     // (L28) Anti-thrash : mémoire du goût du tour Gardien précédent pour ne pas relancer
     // en boucle sur un score VL qui ne progresse pas.
     let prevGateGout: number | null = null;
+    // #164 « Le Stratège » Phase 0 — OBSERVE-ONLY : à un blocage, Mango NOMME la cause
+    // (diagnostic déterministe, $0 réel) et la log. Il N'AGIT PAS encore (le routage =
+    // Phase 1). Gaté `ELEVE_STRATEGE` (défaut OFF → zéro changement). Ne touche à
+    // AUCUN remède : c'est de la pure observabilité pour valider le classifieur en réel.
+    const observeStratege = (deadImages = 0): void => {
+      if (!process.env.ELEVE_STRATEGE || process.env.ELEVE_STRATEGE === "off") return;
+      try {
+        const line = formatDiagnosis(
+          diagnose({
+            buildOk: insp.ok,
+            finished: !!result?.finished,
+            stuck: !!result?.stuck,
+            iterations: result?.iterations ?? 0,
+            maxIterations: Number(process.env.ELEVE_AGENTIC_MAX_ITER ?? 24),
+            buildDetail: insp.detail,
+            toolNames: (result?.toolTrace ?? []).map((t) => t.name),
+            task,
+            deadImages,
+          }),
+        );
+        if (line) push(`  ${line}`);
+      } catch {
+        /* l'observation ne casse jamais la boucle */
+      }
+    };
     // #160 — repartir sans plan périmé d'une tâche précédente. Si l'Élève appelle
     // planifier() pendant la boucle, son plan sera rappelé dans le nudge ci-dessous.
     clearPlan(projectDir);
@@ -987,7 +1013,10 @@ export async function runRelay(
       }
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
-      if (!insp.ok || agErr) break;
+      if (!insp.ok || agErr) {
+        observeStratege(); // #164 Phase 0 — nomme la cause du build cassé (observe-only)
+        break;
+      }
 
       // (L30) MANAGER-QC des images : Mango ne fait pas confiance aveuglément à la
       // transcription de son ouvrier. Sur build-vert, il VÉRIFIE chaque image du
@@ -1049,6 +1078,7 @@ export async function runRelay(
       }
       // Build vert MAIS arrêt sans `finish` (blocage/plafond) : l'Élève se RELANCE.
       if (relances < selfRelanceMax) {
+        observeStratege(); // #164 Phase 0 — nomme le blocage (wandering / plateau)
         relances++;
         const why = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
         push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève — il termine lui-même (souveraineté, coût 0)`);
