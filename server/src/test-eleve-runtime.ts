@@ -339,6 +339,32 @@ async function run() {
     check("finit quand même par sortir (stuck) une fois la marge épuisée", r.stuck === true);
   }
 
+  console.log("\n[10] Stop coopératif : shouldAbort coupe la boucle proprement");
+  {
+    // shouldAbort=true AVANT la 1ʳᵉ itération → on sort tout de suite, sans appeler
+    // le modèle ni exécuter d'outil (aucun état corrompu), avec aborted:true.
+    const writes: Array<Record<string, unknown>> = [];
+    const reg = stubRegistry(writes);
+    let posted = 0;
+    const post: PostFn = async () => { posted++; return { toolCalls: [call("write_file", { path: "a.js", content: "x" })] }; };
+    const r0 = await buildAgentic("sys", "x", reg, { post, maxIterations: 10, shouldAbort: () => true });
+    check("aborted === true", r0.aborted === true);
+    check("ni finish ni stuck", r0.finished === false && r0.stuck === false);
+    check("modèle jamais appelé (sortie avant post)", posted === 0);
+    check("aucune écriture (rien d'exécuté)", writes.length === 0);
+
+    // Abort APRÈS 2 itérations : la boucle tourne, puis on coupe → aborted, le
+    // travail des 2 premiers tours est bien passé (writes >= 1).
+    const writes2: Array<Record<string, unknown>> = [];
+    const reg2 = stubRegistry(writes2);
+    let n = 0;
+    const post2: PostFn = async () => { return { toolCalls: [call("write_file", { path: `f${n}.js`, content: "x" })] }; };
+    const r1 = await buildAgentic("sys", "x", reg2, { post: post2, maxIterations: 10, shouldAbort: () => (++n > 2) });
+    check("aborted après quelques itérations", r1.aborted === true);
+    check("le travail déjà fait a bien eu lieu avant l'arrêt", writes2.length >= 1);
+    check("ne consomme pas tout le plafond d'itérations", r1.iterations < 10);
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

@@ -36,6 +36,7 @@ import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
+import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
 import { getTracer } from "./kernel-trace.js";
@@ -107,6 +108,9 @@ export interface RelayResult {
   // Moteur agentique : build vert MAIS le moteur s'est arrêté sans conclure
   // (plafond/blocage) → la tâche n'est peut-être pas terminée (honnêteté #146).
   incomplete?: boolean;
+  // L'utilisateur a cliqué « Stop » : arrêt VOLONTAIRE, ni échec ni escalade.
+  // Le travail déjà écrit est committé par le tour → on peut reprendre ensuite.
+  aborted?: boolean;
 }
 
 export interface RelayOptions {
@@ -155,6 +159,9 @@ export interface RelayDeps {
   // Absent en prod → elevePost (vrai endpoint OpenAI-compat). Fourni → active le
   // moteur même hors provider openai (tests déterministes sans réseau).
   agenticPost?: PostFn;
+  // Interruption coopérative (clic « Stop ») lue en tête de boucle agentique.
+  // Absent → isInterrupted (drapeau module armé par /api/stop). Surchargeable en test.
+  shouldAbort?: () => boolean;
 }
 
 export interface EscalationContext {
@@ -660,7 +667,7 @@ export async function askEleveAgentic(
   system: string,
   user: string,
   registry: ToolRegistry,
-  opts: { model?: string; onTool?: (name: string, args: string) => void } = {},
+  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean } = {},
 ): Promise<AgenticResult> {
   // La boucle à outils n'est branchée que sur l'endpoint OpenAI-compat. En Ollama
   // local pur, repli texte (le function-calling local sera traité en Phase 2).
@@ -681,6 +688,10 @@ export async function askEleveAgentic(
     postEleveCompletions(messages, withTools ? tools : null, opts.model);
 
   for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+    // Stop coopératif (clic « Stop ») : on sort proprement entre deux itérations.
+    if ((opts.shouldAbort ?? isInterrupted)()) {
+      return { text: "⏹ Arrêté à ta demande.", toolTrace };
+    }
     const { content, toolCalls } = await callModel(true);
     messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
 
@@ -951,6 +962,10 @@ export async function runRelay(
         const p = getPlan(projectDir);
         return p ? formatPlanReminder(p) : "";
       },
+      // Stop coopératif : la boucle (et les sous-agents) sortent proprement dès que
+      // l'utilisateur clique « Stop » (/api/stop → requestInterrupt). Closure
+      // surchargeable pour les tests (deps.shouldAbort).
+      shouldAbort: deps.shouldAbort ?? isInterrupted,
     };
 
     // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage
@@ -1051,6 +1066,17 @@ export async function runRelay(
       } catch (e) {
         agErr = `moteur agentique : ${(e as Error).message}`;
         push(`⚠ ${agErr} — on laisse le juge trancher puis on escalade au besoin`);
+      }
+      // Stop coopératif : l'utilisateur a cliqué « Stop ». Arrêt VOLONTAIRE — on NE
+      // PAS escalader vers Claude (ce n'est pas un échec), on NE relance PAS le
+      // Stratège. Le travail déjà écrit sera committé par le tour (index.ts) → on
+      // peut reprendre ensuite en renvoyant un message. On rend la main tout de suite.
+      if (result?.aborted) {
+        push("⏹ Arrêté à ta demande — ce qui est déjà fait est conservé. Relance-moi pour continuer.");
+        return {
+          resolvedBy: "eleve", attempts: 1, success: false, inspection: insp,
+          axiom: false, costUsd: 0, log, incomplete: true, aborted: true,
+        };
       }
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).

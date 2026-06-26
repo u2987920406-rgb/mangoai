@@ -79,6 +79,10 @@ export interface AgenticOptions {
    * gardes anti-sur-exploration : quand l'Élève dérive en re-lisant, on lui remet
    * son plan sous les yeux EN COURS de boucle (pas seulement à l'auto-relance). */
   planReminder?: () => string;
+  /** Interruption coopérative (clic « Stop »). Lue en TÊTE de chaque itération :
+   * `true` → la boucle sort proprement avec `aborted:true` (rien n'est tué en
+   * plein milieu d'une écriture). Closure → le runtime reste découplé d'interrupt.ts. */
+  shouldAbort?: () => boolean;
 }
 
 export interface AgenticBuildResult {
@@ -92,6 +96,9 @@ export interface AgenticBuildResult {
   iterations: number;
   /** `true` si la boucle a été coupée pour cause de blocage (répétition). */
   stuck: boolean;
+  /** `true` si l'utilisateur a demandé l'arrêt (Stop) — sortie volontaire, PAS un
+   * échec : l'appelant ne doit ni escalader vers Claude ni traiter ça comme un bug. */
+  aborted?: boolean;
 }
 
 /** Somme des longueurs de contenu (proxy du poids contexte). */
@@ -162,6 +169,14 @@ export async function buildAgentic(
   };
 
   for (let iter = 0; iter < maxIter; iter++) {
+    // Interruption coopérative (clic « Stop ») : on sort sur la frontière
+    // d'itération, AVANT de relancer le modèle ou d'exécuter un outil → aucun
+    // état corrompu, et on rend la main tout de suite. `aborted` signale à
+    // l'appelant que c'est volontaire (ne pas escalader vers Claude).
+    if (opts.shouldAbort?.()) {
+      opts.onLog?.("⏹ Arrêt demandé — l'Élève s'arrête proprement.");
+      return { text: "", toolTrace, finished: false, iterations: iter, stuck: false, aborted: true };
+    }
     compact(messages, ctxMax);
     const { content, toolCalls } = await opts.post(messages, tools);
     messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
@@ -344,6 +359,8 @@ export interface AgenticRunCtx {
   /** (#160/L17) Rappel compact du plan de l'Élève (closure) — réinjecté dans les
    * gardes anti-sur-exploration de buildAgentic. Hérité tel quel par les sous-agents. */
   planReminder?: () => string;
+  /** Interruption coopérative (Stop) — hérité tel quel par les sous-agents délégués. */
+  shouldAbort?: () => boolean;
 }
 
 /** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
@@ -360,6 +377,7 @@ export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<
       onTool: ctx.onTool,
       onLog: ctx.onLog,
       planReminder: ctx.planReminder,
+      shouldAbort: ctx.shouldAbort,
     });
 
   if (!ctx.tracer) return runOnce();

@@ -23,6 +23,7 @@ import { githubConfigured, pushToGitHub } from "./github.js";
 import { spawnBackgroundReview } from "./review.js";
 import { spawnPatrol } from "./patrol.js";
 import { interruptCompaction, maybeCompactSession } from "./compaction.js";
+import { clearInterrupt, requestInterrupt } from "./interrupt.js";
 import { saveUpload } from "./uploads.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
@@ -278,6 +279,9 @@ app.post("/api/chat", async (req, res) => {
   // freeze the whole UI — including preview switching, which 409s while a turn
   // "runs". Between here and the try there is only synchronous header setup.
   agentBusy = true;
+  // Nouveau tour → on repart d'un drapeau d'interruption propre (un Stop d'un tour
+  // précédent ne doit pas arrêter celui-ci). Le clic « Stop » l'armera via /api/stop.
+  clearInterrupt();
 
   res.setHeader("Content-Type", "text/event-stream");
   res.setHeader("Cache-Control", "no-cache");
@@ -913,12 +917,19 @@ registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 
 app.post("/api/stop", async (_req, res) => {
+  // Deux cerveaux, deux mécaniques d'arrêt :
+  // - Claude (SDK) → interruptAgent() interrompt la query() en cours.
+  // - Élève (GLM via runRelay/buildAgentic) → requestInterrupt() arme le drapeau
+  //   coopératif que la boucle agentique lit en tête d'itération et sort proprement.
+  // Avant, seul Claude s'arrêtait ; l'Élève (modèle par défaut) tournait jusqu'au
+  // bout. On déclenche désormais les DEUX.
+  requestInterrupt();
   const stopped = await interruptAgent();
   // Guaranteed escape hatch: free the slot even if a wedged turn's finally never
   // runs, so a hang can't keep the UI (and preview switching, which 409s while
   // "busy") frozen. Idempotent with the chat handler's own finally.
   agentBusy = false;
-  res.json({ stopped });
+  res.json({ stopped: stopped || true });
 });
 
 // #138 OS d'apps — Colonne de données partagée (la spine). CRUD REST sur le

@@ -102,6 +102,7 @@ export default function Chat({
   const [busy, setBusy] = useState(false);
   const [attachments, setAttachments] = useState([]); // File[] — images/PDF joints
   const sessionRef = useRef(null); // Agent SDK session_id, kept across turns
+  const abortRef = useRef(null); // AbortController du tour en cours (clic « Stop »)
   const listRef = useRef(null);
   const inputRef = useRef(null);
   const fileRef = useRef(null);
@@ -451,9 +452,16 @@ export default function Chat({
         ? `${prompt}\n\n---\n**MODE PLANIFICATION** : Ne génère pas de code maintenant. Présente uniquement le plan d'implémentation : architecture des composants, pages/routes, étapes de build, choix techniques clés. J'enverrai une confirmation avant que tu commences à coder.`
         : prompt;
 
+      // AbortController : le clic « Stop » avorte ce fetch → la lecture du flux SSE
+      // s'arrête NET et la main revient à l'utilisateur tout de suite, sans attendre
+      // la fin de la requête. Le POST /api/stop (bouton) arrête en parallèle le
+      // travail côté serveur (Claude ET Élève).
+      const controller = new AbortController();
+      abortRef.current = controller;
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           prompt: apiPrompt,
           projectName,
@@ -491,8 +499,15 @@ export default function Chat({
         }
       }
     } catch (err) {
-      push({ role: "error", text: String(err) });
+      // Arrêt volontaire (clic « Stop » → controller.abort()) : ce n'est pas une
+      // erreur, on ne pollue pas le fil. Le serveur a reçu /api/stop en parallèle.
+      if (err?.name === "AbortError") {
+        push({ role: "status", text: "⏹ Arrêté — ce qui était fait est conservé, relance-moi pour continuer." });
+      } else {
+        push({ role: "error", text: String(err) });
+      }
     } finally {
+      abortRef.current = null;
       setBusy(false);
       if (wasPlanPhase) setAwaitingPlanConfirm(true);
       if (wasDiscuter) setAwaitingApply(true);
@@ -1014,9 +1029,14 @@ export default function Chat({
               </button>
               {busy ? (
                 <button
-                  onClick={() => fetch("/api/stop", { method: "POST" }).catch(() => {})}
+                  onClick={() => {
+                    // 1) avorte le flux côté client → la main revient tout de suite ;
+                    // 2) prévient le serveur d'arrêter le travail (Claude + Élève).
+                    abortRef.current?.abort();
+                    fetch("/api/stop", { method: "POST" }).catch(() => {});
+                  }}
                   className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-err/90 text-white hover:bg-err transition-colors"
-                  title="Arrêter l'agent"
+                  title="Arrêter l'agent (le travail déjà fait est conservé)"
                 >
                   <Square size={14} fill="currentColor" />
                 </button>
