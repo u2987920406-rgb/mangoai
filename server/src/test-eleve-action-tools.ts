@@ -111,6 +111,11 @@ async function run() {
   {
     check("lucide-react autorisé", isAllowedDependency("lucide-react"));
     check("clsx / zod / date-fns autorisés", ["clsx", "zod", "date-fns"].every(isAllowedDependency));
+    // F5 : libs de rendu/carte/3D désormais autorisées (stacks riches sans template cassé)
+    check(
+      "leaflet / @xyflow/react / pixi.js / three / @react-three/fiber / gsap autorisés",
+      ["leaflet", "@xyflow/react", "pixi.js", "three", "@react-three/fiber", "gsap"].every(isAllowedDependency),
+    );
     check("lib hors liste refusée", !isAllowedDependency("left-pad"));
     check("nom de paquet malveillant refusé (injection)", !isAllowedDependency("lucide-react; rm -rf /"));
     // Refus SANS installation (pas de réseau en test) : on n'appelle add_dependency que sur une lib HORS liste.

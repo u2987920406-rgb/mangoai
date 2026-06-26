@@ -50,7 +50,15 @@ export const SAFE_DEPENDENCIES = new Set<string>([
   // routage / data
   "react-router-dom", "axios", "swr", "@tanstack/react-query",
   // animation / ids / utils
-  "framer-motion", "nanoid", "uuid", "lodash-es",
+  "framer-motion", "nanoid", "uuid", "lodash-es", "gsap",
+  // cartes interactives
+  "leaflet", "react-leaflet",
+  // diagrammes / canvas de nœuds (kanban, mindmap, flow)
+  "@xyflow/react", "reactflow",
+  // rendu 2D / 3D (visualiseurs, jeux, scènes)
+  "pixi.js", "three", "@react-three/fiber", "@react-three/drei",
+  // dataviz bas niveau
+  "d3", "cytoscape",
 ]);
 
 /** Nom de paquet acceptable ET dans l'allowlist (double garde : pas d'injection shell). */

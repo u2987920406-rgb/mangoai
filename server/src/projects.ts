@@ -56,10 +56,56 @@ export async function createProject(name: string, template?: string): Promise<st
   }
   fs.cpSync(TEMPLATE_DIR, dir, { recursive: true });
   if (template) {
-    fs.cpSync(path.join(TEMPLATES_DIR, template), dir, { recursive: true, force: true });
+    const tplDir = path.join(TEMPLATES_DIR, template);
+    // Overlay every template file EXCEPT package.json. A wholesale copy of the
+    // template's package.json used to clobber the base one — dropping base deps
+    // like @tailwindcss/vite/tailwindcss while the inherited vite.config still
+    // imports them → vite crashed at boot (the F4 family of broken templates).
+    fs.cpSync(tplDir, dir, {
+      recursive: true,
+      force: true,
+      filter: (src) => path.basename(src) !== "package.json",
+    });
+    // ...then deep-merge the template's package.json ONTO the base one, so the
+    // base toolchain (tailwind v4 vite plugin, react…) always survives while the
+    // template's deps/scripts are added (template versions win on conflicts).
+    const tplPkgPath = path.join(tplDir, "package.json");
+    if (fs.existsSync(tplPkgPath)) {
+      const basePkgPath = path.join(dir, "package.json");
+      const basePkg = JSON.parse(fs.readFileSync(basePkgPath, "utf8")) as PackageJson;
+      const tplPkg = JSON.parse(fs.readFileSync(tplPkgPath, "utf8")) as PackageJson;
+      fs.writeFileSync(basePkgPath, JSON.stringify(mergePackageJson(basePkg, tplPkg), null, 2) + "\n");
+    }
   }
   await run("npm", ["install"], dir);
   return dir;
+}
+
+type PackageJson = {
+  name?: string;
+  scripts?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  [k: string]: unknown;
+};
+
+/**
+ * Deep-merges a template's package.json onto the base one. Base name/version are
+ * kept; scripts/dependencies/devDependencies are merged with the template winning
+ * on key conflicts; any other top-level template field overrides. Crucially the
+ * base deps (@tailwindcss/vite, tailwindcss, react…) are never dropped — this is
+ * the root-cause fix for templates that ship their own package.json (F4).
+ */
+export function mergePackageJson(base: PackageJson, tpl: PackageJson): PackageJson {
+  return {
+    ...base,
+    ...tpl,
+    name: base.name ?? tpl.name,
+    version: (base.version as string) ?? (tpl.version as string),
+    scripts: { ...base.scripts, ...tpl.scripts },
+    dependencies: { ...base.dependencies, ...tpl.dependencies },
+    devDependencies: { ...base.devDependencies, ...tpl.devDependencies },
+  };
 }
 
 function run(cmd: string, args: string[], cwd: string): Promise<void> {

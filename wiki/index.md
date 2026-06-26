@@ -52,6 +52,12 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[agents-specialises]] | Constellation UX/UI · Layout · PDF — spécialistes Gemma locaux, `ModelProfile`, relay paramétrable — #145 | ✅ écrite |
 | [[audit-general]] | Super audit rétrospectif + empirique : évolution, validé vs manquant, 3 écarts honnêtes (souveraineté minoritaire · coût cloud non tracé · promesses de périphérie) — 2026-06 | ✅ écrite |
 
+## Veille externe
+
+| Page | En une ligne | Statut |
+|---|---|---|
+| [[veille-sakana-fugu]] | Sakana Fugu : orchestration multi-agents commerciale (TRINITY/Conductor, ICLR 2026) — la thèse MangoOS poussée à l'échelle, mais propriétaire/opaque ↔ comparatif + 3 idées à reprendre | ✅ écrite |
+
 ## Pistes de pages futures
 
 - Une page par **app construite via MangoOS** (ex. MangoCartes #97) si tu veux suivre tes propres projets.
