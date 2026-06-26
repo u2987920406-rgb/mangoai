@@ -31,6 +31,7 @@ import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
+import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
@@ -588,6 +589,8 @@ appelle \`chercher_image('description anglaise de la scène')\` → tu obtiens d
 à mettre directement dans le code. Ne colle JAMAIS d'URL de placeholder ALÉATOIRE (picsum.photos,
 loremflickr, via.placeholder, unsplash.it…) pour une image censée montrer un contenu réel : elle ne
 correspondra jamais. Le placeholder n'est acceptable que pour un cadre purement décoratif/abstrait.
+COPIE l'URL EXACTE que chercher_image te renvoie (caractère pour caractère) — ne reconstruis JAMAIS une
+URL d'image de mémoire : un slug ou des paramètres inventés donnent un 404, même avec le bon identifiant.
 
 ⚠ DOCUMENTATION : tu construis depuis une mémoire FIGÉE — tu peux te tromper sur l'usage exact d'une lib,
 une donnée réelle, une URL, un fait. Quand tu n'es PAS sûr, NE devine PAS : appelle chercher_web('requête
@@ -985,6 +988,29 @@ export async function runRelay(
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) break;
+
+      // (L30) MANAGER-QC des images : Mango ne fait pas confiance aveuglément à la
+      // transcription de son ouvrier. Sur build-vert, il VÉRIFIE chaque image du
+      // livrable et RÉPARE les URLs Pexels mal recopiées (bon id, slug inventé → 404)
+      // en re-dérivant l'URL canonique via l'API. Déterministe, best-effort, gaté
+      // (défaut ON, coupure ELEVE_IMAGE_CHECK=off). Les mortes non réparables (id
+      // absent / photo supprimée) → on renvoie l'ouvrier corriger (borné).
+      if (process.env.ELEVE_IMAGE_CHECK !== "off") {
+        try {
+          const imgReport = await checkAndRepairImages(projectDir);
+          const line = formatImageCheck(imgReport);
+          if (line) push(`  ${line}`);
+          if (imgReport.unrepairable.length > 0 && relances < selfRelanceMax) {
+            relances++;
+            push(`↻ Images cassées non réparables — renvoi de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+            nudge = buildImageRepairNudge(imgReport);
+            continue;
+          }
+        } catch {
+          /* le contrôle qualité des images ne casse jamais la livraison */
+        }
+      }
+
       // Build vert + finish explicite → AVANT de déclarer succès, le GARDIEN de
       // clôture (#161) vérifie intention + goût + QA. Gaté ELEVE_CLOSURE_GATE=on
       // (défaut OFF → zéro régression). Convergent/non-bloquant : convertit (relance
