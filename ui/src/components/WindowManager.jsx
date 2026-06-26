@@ -1,6 +1,6 @@
 import { Suspense, lazy, useState, useEffect } from "react";
 import {
-  BookOpen, Bot, Boxes, FileText, FlaskConical, FolderOpen, HelpCircle,
+  BookOpen, Bot, Boxes, FileText, FlaskConical, FolderOpen, FolderPlus, HelpCircle,
   Image as ImageIcon, Layers, Lightbulb, Music2, Network, Palette,
   Plus, Search, Sliders, Sparkles, Star, Trash2, Wand2,
 } from "lucide-react";
@@ -59,34 +59,43 @@ function ComingSoon({ icon: Icon, title, subtitle, envKey }) {
 // ─── Formulaire de création de projet ────────────────────────────────────────
 // Exporté (nommé) pour être testé isolément : c'est le point d'entrée « créer une
 // app », le flux dont la casse (#136) a fait naître l'Auditeur de Flux #137.
+//
+// IMPORTANT (correctif UX, demande de Raf) : ce champ ne sert QU'À NOMMER le
+// projet — il NE déclenche AUCUNE construction. Créer ouvre l'atelier (workspace)
+// avec le composer VIDE ; c'est là que Raf décide DÉLIBÉRÉMENT de Construire /
+// Discuter / Planifier. Avant, la description servait de prompt auto-envoyé → on
+// lançait un build sans le vouloir (« je me suis fait avoir »). Le démarrage
+// « depuis une idée » (description → build) reste possible depuis l'Accueil et
+// Ideation, qui sont des entrées explicitement faites pour ça.
 export function NewProjectForm({ onCreate, onCancel }) {
-  const [desc, setDesc] = useState("");
   const [name, setName] = useState("");
-  const [nameEdited, setNameEdited] = useState(false);
-  const slug = nameEdited ? slugify(name) : slugify(desc);
-  const ready = desc.trim().length > 0;
+  // `ready` se base sur le NOM tapé, pas sur le slug : slugify("") retombe sur
+  // « mon-projet » (fallback), donc le slug n'est jamais vide — il ne peut pas
+  // servir de garde. On ne crée que si Raf a réellement saisi un nom.
+  const ready = name.trim().length > 0;
+  const slug = slugify(name);
 
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-accent/30 bg-accent/[0.05] p-3">
-      <textarea
-        value={desc}
-        onChange={(e) => { setDesc(e.target.value); }}
-        onKeyDown={(e) => {
-          if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && ready) onCreate(slug, desc.trim());
-        }}
-        placeholder="Décris l'app que tu veux créer — une phrase suffit pour démarrer…"
-        rows={3}
-        className="w-full resize-none rounded-lg border border-edge bg-bg px-3 py-2 text-[13px] text-ink placeholder:text-faint/60 focus:border-accent focus:outline-none leading-relaxed"
-        autoFocus
-      />
       <div className="flex items-center gap-2">
         <span className="shrink-0 text-[11px] text-faint">Nom :</span>
         <input
-          value={slug}
-          onChange={(e) => { setNameEdited(true); setName(e.target.value); }}
-          className="h-7 min-w-0 flex-1 rounded-lg border border-edge bg-bg px-2.5 font-mono text-[12px] text-ink focus:border-accent focus:outline-none"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => { if (e.key === "Enter" && ready) onCreate(slug); }}
+          placeholder="nom-du-projet — ex. mango-boutique"
+          className="h-8 min-w-0 flex-1 rounded-lg border border-edge bg-bg px-2.5 font-mono text-[12px] text-ink placeholder:text-faint/60 focus:border-accent focus:outline-none"
+          autoFocus
         />
       </div>
+      {ready && slug !== name.trim() && (
+        <p className="px-1 text-[10px] text-faint">
+          Créé sous : <span className="font-mono text-dim">{slug}</span>
+        </p>
+      )}
+      <p className="px-1 text-[11px] leading-relaxed text-faint">
+        On crée le projet et on ouvre son atelier — tu y <span className="text-dim">décris</span>, <span className="text-dim">discutes</span> ou <span className="text-dim">planifies</span> ensuite. Aucune construction n'est lancée maintenant.
+      </p>
       <div className="flex items-center justify-end gap-2">
         <button
           onClick={onCancel}
@@ -95,12 +104,12 @@ export function NewProjectForm({ onCreate, onCancel }) {
           Annuler
         </button>
         <button
-          onClick={() => ready && onCreate(slug, desc.trim())}
+          onClick={() => ready && onCreate(slug)}
           disabled={!ready}
           className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-[12px] font-semibold text-white shadow-md shadow-accent/30 hover:opacity-90 disabled:opacity-40 transition-all"
         >
-          <Sparkles size={13} />
-          Créer & construire
+          <FolderPlus size={13} />
+          Créer &amp; ouvrir l'atelier
         </button>
       </div>
     </div>
@@ -129,9 +138,11 @@ function ProjectsWindow({ win, onClose }) {
     ? projects.filter((p) => p.toLowerCase().includes(search.toLowerCase()))
     : projects;
 
-  // Création → ouvre le workspace avec le prompt initial (le build + la preview suivent)
-  function handleCreate(name, prompt) {
-    onOpen?.(name, { prompt });
+  // Création → ouvre l'ATELIER du projet, composer VIDE, AUCUNE construction auto
+  // (correctif UX : le champ ne sert qu'à nommer ; Raf choisit ensuite Construire /
+  // Discuter / Planifier dans le workspace). On ne passe donc PAS de `prompt`.
+  function handleCreate(name) {
+    onOpen?.(name, {});
     onClose(win.id);
   }
 

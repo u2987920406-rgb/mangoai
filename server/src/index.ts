@@ -84,6 +84,7 @@ import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
 import { prewarmVision } from "./vision-prewarm.js";
+import { sweepOrphanPreviews } from "./preview-sweep.js";
 import { lanIPv4s } from "./net.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
@@ -1096,6 +1097,19 @@ const httpServer = app.listen(PORT, HOST, () => {
   // URL LAN (#149 v2) : à ouvrir sur le téléphone (même Wi-Fi) pour /taste/review.
   if (HOST === "0.0.0.0") {
     for (const ip of lanIPv4s()) console.log(`MangoOS LAN     → http://${ip}:${PORT}  (validation goût : /taste/review)`);
+  }
+  // Anti-orphelin des APERÇUS : au boot le pool d'aperçus est vide, donc tout
+  // serveur Vite qui squatte encore la plage 5174+ est un orphelin d'une session
+  // backend morte (tuée sans le taskkill gracieux → enfants survivants). On les
+  // balaie pour que les previews repartent propres. Best-effort, ne lève jamais.
+  // Opt-out PREVIEW_SWEEP=off. Pendant idéal du check anti-orphelin du port 3000.
+  try {
+    const sweep = sweepOrphanPreviews();
+    if (sweep.killed.length > 0) {
+      console.log(`[preview-sweep] ${sweep.killed.length} aperçu(s) Vite orphelin(s) balayé(s) au boot : ${sweep.killed.join(", ")}`);
+    }
+  } catch (e) {
+    console.warn("[preview-sweep] balayage ignoré :", e instanceof Error ? e.message : e);
   }
   // Pré-chauffe l'œil local (lève L22) : charge le VL `vision` (qwen3-vl:8b) en VRAM
   // en arrière-plan pour que le 1er regard (vois_ecran/Œil-Coach/Gardien) soit immédiat.
