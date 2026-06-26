@@ -34,6 +34,7 @@ import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./ele
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
+import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
@@ -978,6 +979,29 @@ export async function runRelay(
     const strategeLogs = strategeMode === "observe" || strategeMode === "on";
     const strategeActs = strategeMode === "on";
     const strategeState: StrategeState = newStrategeState();
+    // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
+    // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
+    const strategeLearns = strategeActs && process.env.ELEVE_STRATEGE_LEARN === "on";
+    const projectLabel = path.basename(projectDir);
+    // Remède appliqué EN ATTENTE d'apprentissage : on ne distille QUE s'il mène au succès.
+    // Object-ref (pas un `let`) : assigné dans une closure → TS ne le narrow pas à null.
+    const pendingLearn: { current: { d: Diagnosis; label: string } | null } = { current: null };
+    // Applique un remède : mémorise pour l'apprentissage + (Phase 2) préfixe la procédure
+    // déjà apprise pour ce blocage si elle existe ("déjà vu ?"). Renvoie le nudge enrichi.
+    const applyRemedyNudge = async (d: Diagnosis, label: string, baseNudge: string): Promise<string> => {
+      pendingLearn.current = { d, label };
+      if (!strategeLearns) return baseNudge;
+      try {
+        const recalled = await recallProcedure(WORKSPACE_DIR, d);
+        if (recalled) {
+          push(`  📚 Stratège se souvient : « ${recalled.name} » (déjà débloqué)`);
+          return `${learnedHint(recalled)}\n\n${baseNudge}`;
+        }
+      } catch {
+        /* le rappel est best-effort, ne casse jamais la boucle */
+      }
+      return baseNudge;
+    };
     // Diagnostique le blocage courant (et le log si activé). Retourne le diagnostic pour
     // que les points d'intégration puissent router (Phase 1). Ne casse jamais la boucle.
     const strategeDiagnose = (deadImages = 0): Diagnosis | null => {
@@ -1044,7 +1068,7 @@ export async function runRelay(
             if (res.ok) {
               relances++;
               push(`↻ Stratège : « ${r.pkg} » installé — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
-              nudge = r.nudge;
+              nudge = await applyRemedyNudge(d, `installe ${r.pkg}`, r.nudge);
               continue;
             }
             push(`  ⚠ Stratège : install « ${r.pkg} » a échoué (${res.refused ? "hors allowlist" : "npm KO"}) — escalade`);
@@ -1053,7 +1077,7 @@ export async function runRelay(
             commitRemedy(d, strategeState);
             relances++;
             push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
-            nudge = r.nudge;
+            nudge = await applyRemedyNudge(d, r.label, r.nudge);
             continue;
           }
           // r.kind === "escalate" → on tombe dans le break ci-dessous (escalade normale).
@@ -1116,6 +1140,18 @@ export async function runRelay(
       }
       // Build vert + finish explicite → résolu par l'Élève, coût 0.
       if (result?.finished) {
+        // #164 Phase 2 — si un remède du Stratège a précédé CE succès, distille-le en
+        // procédure #75 (situation→remède) → le prochain blocage du même type sera rappelé.
+        if (strategeLearns && pendingLearn.current) {
+          const pl = pendingLearn.current;
+          try {
+            const res = await distillProcedure(WORKSPACE_DIR, pl.d, pl.label, projectLabel, new Date().toISOString());
+            if (res.saved) push(`  📚 Stratège APPREND : procédure « débloquer ${pl.d.blocker} » distillée (réutilisable)`);
+          } catch {
+            /* l'apprentissage ne casse jamais une livraison */
+          }
+          pendingLearn.current = null;
+        }
         push(`✓ build vert — résolu par l'ÉLÈVE (moteur agentique), coût 0`);
         return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log };
       }
@@ -1130,7 +1166,7 @@ export async function runRelay(
           if (r.kind === "nudge") {
             commitRemedy(d, strategeState);
             push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
-            nudge = r.nudge;
+            nudge = await applyRemedyNudge(d, r.label, r.nudge);
             continue;
           }
         }
