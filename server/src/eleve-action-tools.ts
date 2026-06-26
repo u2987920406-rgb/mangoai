@@ -88,6 +88,26 @@ function npmAdd(projectDir: string, pkg: string, timeoutMs: number): Promise<{ o
   });
 }
 
+/**
+ * Installe une dépendance autorisée — réutilisable hors du handler add_dependency
+ * (le Stratège #164 l'appelle pour le remède missing-dependency). Valide l'allowlist
+ * (double garde anti-injection), ne lève jamais. `{ok:false, refused:true}` si hors liste.
+ */
+export async function installDependency(
+  projectDir: string,
+  pkg: string,
+): Promise<{ ok: boolean; refused?: boolean; output: string }> {
+  const name = pkg.trim();
+  if (!isAllowedDependency(name)) {
+    return { ok: false, refused: true, output: `"${name}" hors allowlist` };
+  }
+  try {
+    return await npmAdd(projectDir, name, ADD_DEP_TIMEOUT_MS);
+  } catch (e) {
+    return { ok: false, output: (e as Error).message };
+  }
+}
+
 // Garde anti-shell-lecture (#146 révision 2026-06-24) : run_command sert AUX BUILDS,
 // jamais à LIRE/lister un fichier. GLM contournait l'anti-sur-exploration en lisant
 // via `powershell Get-Content … | Select-Object` (qui réussit → échappe à toutes les

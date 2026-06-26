@@ -29,10 +29,11 @@ import { resolveProfile, type ModelProfile } from "./models/profile.js";
 import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
-import { buildEleveActionTools } from "./eleve-action-tools.js";
+import { buildEleveActionTools, installDependency } from "./eleve-action-tools.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
-import { diagnose, formatDiagnosis } from "./stratege-signals.js";
+import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
+import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
@@ -968,29 +969,45 @@ export async function runRelay(
     // (L28) Anti-thrash : mémoire du goût du tour Gardien précédent pour ne pas relancer
     // en boucle sur un score VL qui ne progresse pas.
     let prevGateGout: number | null = null;
-    // #164 « Le Stratège » Phase 0 — OBSERVE-ONLY : à un blocage, Mango NOMME la cause
-    // (diagnostic déterministe, $0 réel) et la log. Il N'AGIT PAS encore (le routage =
-    // Phase 1). Gaté `ELEVE_STRATEGE` (défaut OFF → zéro changement). Ne touche à
-    // AUCUN remède : c'est de la pure observabilité pour valider le classifieur en réel.
-    const observeStratege = (deadImages = 0): void => {
-      if (!process.env.ELEVE_STRATEGE || process.env.ELEVE_STRATEGE === "off") return;
+    // #164 « Le Stratège » — diagnostic déterministe ($0 réel) du blocage + (Phase 1)
+    // ROUTAGE vers un remède CHOISI. Modes (`ELEVE_STRATEGE`) : `off` (défaut, rien) ·
+    // `observe` (Phase 0 : log la cause, n'agit pas) · `on` (Phase 1 : log + AGIT —
+    // installe la dépendance manquante, ou injecte un nudge ciblé). Borné par strategeState
+    // (budget de déblocage + pas deux fois le même remède → aucune boucle).
+    const strategeMode = (process.env.ELEVE_STRATEGE ?? "off").toLowerCase();
+    const strategeLogs = strategeMode === "observe" || strategeMode === "on";
+    const strategeActs = strategeMode === "on";
+    const strategeState: StrategeState = newStrategeState();
+    // Diagnostique le blocage courant (et le log si activé). Retourne le diagnostic pour
+    // que les points d'intégration puissent router (Phase 1). Ne casse jamais la boucle.
+    const strategeDiagnose = (deadImages = 0): Diagnosis | null => {
+      if (!strategeLogs) return null;
       try {
-        const line = formatDiagnosis(
-          diagnose({
-            buildOk: insp.ok,
-            finished: !!result?.finished,
-            stuck: !!result?.stuck,
-            iterations: result?.iterations ?? 0,
-            maxIterations: Number(process.env.ELEVE_AGENTIC_MAX_ITER ?? 24),
-            buildDetail: insp.detail,
-            toolNames: (result?.toolTrace ?? []).map((t) => t.name),
-            task,
-            deadImages,
-          }),
-        );
+        const d = diagnose({
+          buildOk: insp.ok,
+          finished: !!result?.finished,
+          stuck: !!result?.stuck,
+          iterations: result?.iterations ?? 0,
+          maxIterations: Number(process.env.ELEVE_AGENTIC_MAX_ITER ?? 24),
+          buildDetail: insp.detail,
+          toolNames: (result?.toolTrace ?? []).map((t) => t.name),
+          task,
+          deadImages,
+        });
+        const line = formatDiagnosis(d);
         if (line) push(`  ${line}`);
+        return d;
       } catch {
-        /* l'observation ne casse jamais la boucle */
+        return null; /* l'observation ne casse jamais la boucle */
+      }
+    };
+    // Plan-ancre courant (pour le remède wandering — ré-ancrage L17).
+    const currentPlanReminder = (): string => {
+      try {
+        const p = getPlan(projectDir);
+        return p ? formatPlanReminder(p) : "";
+      } catch {
+        return "";
       }
     };
     // #160 — repartir sans plan périmé d'une tâche précédente. Si l'Élève appelle
@@ -1014,7 +1031,33 @@ export async function runRelay(
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) {
-        observeStratege(); // #164 Phase 0 — nomme la cause du build cassé (observe-only)
+        const d = strategeDiagnose(); // #164 — nomme la cause du build cassé
+        // #164 Phase 1 — sur build CASSÉ (pas une erreur moteur), le Stratège tente un remède
+        // CHOISI avant d'abandonner : missing-dependency → installe la lib + relance ;
+        // knowledge-gap → renvoie se documenter. Borné (strategeState + budget de relance).
+        if (strategeActs && d && !agErr && relances < selfRelanceMax) {
+          const r = route(d, strategeState, { planReminder: currentPlanReminder() });
+          if (r.kind === "install-dependency") {
+            push(`  ${formatRemedy(d, r)}`);
+            commitRemedy(d, strategeState);
+            const res = await installDependency(projectDir, r.pkg);
+            if (res.ok) {
+              relances++;
+              push(`↻ Stratège : « ${r.pkg} » installé — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+              nudge = r.nudge;
+              continue;
+            }
+            push(`  ⚠ Stratège : install « ${r.pkg} » a échoué (${res.refused ? "hors allowlist" : "npm KO"}) — escalade`);
+          } else if (r.kind === "nudge") {
+            push(`  ${formatRemedy(d, r)}`);
+            commitRemedy(d, strategeState);
+            relances++;
+            push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+            nudge = r.nudge;
+            continue;
+          }
+          // r.kind === "escalate" → on tombe dans le break ci-dessous (escalade normale).
+        }
         break;
       }
 
@@ -1078,12 +1121,22 @@ export async function runRelay(
       }
       // Build vert MAIS arrêt sans `finish` (blocage/plafond) : l'Élève se RELANCE.
       if (relances < selfRelanceMax) {
-        observeStratege(); // #164 Phase 0 — nomme le blocage (wandering / plateau)
+        const d = strategeDiagnose(); // #164 — nomme le blocage (wandering / plateau)
         relances++;
+        // #164 Phase 1 — remède CHOISI : wandering → ré-ancre le plan (L17) ; plateau →
+        // décompose via delegate. Escalade Stratège (ou mode off) → nudge générique (#160).
+        if (strategeActs && d) {
+          const r = route(d, strategeState, { planReminder: currentPlanReminder() });
+          if (r.kind === "nudge") {
+            commitRemedy(d, strategeState);
+            push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+            nudge = r.nudge;
+            continue;
+          }
+        }
+        // Défaut (Stratège off, ou escalade) : nudge générique plan-ancre (comportement #160).
         const why = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
         push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève — il termine lui-même (souveraineté, coût 0)`);
-        // #160 — le nudge rappelle d'abord SON plan (s'il en a posé un) : le plan
-        // devient l'ancre qui le fait converger, en plus du « arrête de lire, AGIS ».
         nudge = buildRelanceNudge(projectDir, why, relances, selfRelanceMax);
         continue;
       }
