@@ -45,6 +45,10 @@ function tool(deps: Partial<ArtefactDeps>) {
     listSites: deps.listSites,
     searchSitesText: deps.searchSitesText,
     searchComponents: deps.searchComponents,
+    searchLayouts: deps.searchLayouts,
+    searchSkills: deps.searchSkills,
+    searchProcedures: deps.searchProcedures,
+    searchPalettesText: deps.searchPalettesText,
     record: deps.record ?? ((sources) => calls.recorded.push(sources)),
   };
   const [t] = buildEleveArtefactTools("/tmp/proj", full);
@@ -277,6 +281,58 @@ async function run() {
     check("dossier de site trouvé par concept", r.text.includes("Jeu d'aventure exploratoire") && /Sites déjà EXTRAITS/i.test(r.text));
     check("provenance du site enregistrée (mesure L29)", calls.recorded.some((s) => s.includes("jeu.com")));
     check("pas d'erreur", r.isError !== true);
+  }
+
+  console.log("\n[16] L3 — recherche par SENS atteint LAYOUTS, SKILLS et PROCÉDURES");
+  {
+    const layout = (name: string, desc: string, structure: string[]): import("./layouts.js").LayoutMeta => ({
+      name, description: desc, tags: ["landing"], structure, usedIn: [], createdAt: "2026-01-01", updatedAt: "2026-01-01",
+    });
+    const skill = (name: string, description: string): import("./skills.js").SkillMeta => ({
+      name, description, file: `/ws/.skills/${name}/SKILL.md`,
+    });
+    const proc = (slug: string, name: string, problem: string): import("./procedures.js").ProcedureMeta => ({
+      slug, name, problem, tags: ["pagination"], usedIn: [], createdAt: "2026-01-01", updatedAt: "2026-01-01",
+    });
+    const { t, calls } = tool({
+      searchComponents: async () => [],
+      searchLayouts: async () => [layout("LandingHero", "landing produit héro + features + CTA", ["hero", "features", "cta"])],
+      searchSkills: async () => [skill("modal-focus-trap", "piéger le focus dans une modale accessible")],
+      searchProcedures: async () => [proc("paginer-liste", "Pagination d'une longue liste", "afficher une liste paginée")],
+    });
+    const r = await t.handler({ recherche: "une landing avec héro et pagination" });
+    check("layout trouvé (nom + sections + chemin)", r.text.includes("LandingHero") && /sections: hero › features › cta/.test(r.text) && /\.layouts\/LandingHero\/layout\.tsx/.test(r.text));
+    check("skill trouvé (nom + fichier)", r.text.includes("modal-focus-trap") && r.text.includes("SKILL.md"));
+    check("procédure trouvée (nom + chemin)", r.text.includes("Pagination d'une longue liste") && /\.procedures\/paginer-liste\/PROCEDURE\.md/.test(r.text));
+    check("provenances layout+skill+proc enregistrées (L29)", calls.recorded.some((s) => s.includes("LandingHero") && s.includes("modal-focus-trap") && s.includes("paginer-liste")));
+    check("pas d'erreur", r.isError !== true);
+  }
+
+  console.log("\n[17] L3 — layouts/skills/procédures vides → AUCUN bruit (pas de bloc)");
+  {
+    const { t } = tool({
+      searchComponents: async () => [comp("X", "un composant")],
+      searchLayouts: async () => [],
+      searchSkills: async () => [],
+      searchProcedures: async () => [],
+    });
+    const r = await t.handler({ recherche: "quelque chose" });
+    check("aucun bloc layout/skill/procédure quand vides", !/Layouts de page|skills\) PERTINENTS|Démarches de résolution/i.test(r.text));
+    check("le composant trouvé est bien là", r.text.includes("X"));
+  }
+
+  console.log("\n[18] L3 — palettes par SENS (texte, sans hex)");
+  {
+    const { t, calls } = tool({
+      searchComponents: async () => [],
+      searchPalettesText: (query, k) => {
+        check("searchPalettesText reçoit la requête + k", query === "ambiance chaleureuse café" && k === 5);
+        return [hit("mango-cafe", "design.produced", ["#b4541e", "#f5deb3"], undefined)];
+      },
+    });
+    const r = await t.handler({ recherche: "ambiance chaleureuse café" });
+    check("palette trouvée par sens affichée", /Palettes retrouvées par SENS/i.test(r.text) && r.text.includes("mango-cafe") && r.text.includes("#b4541e"));
+    check("provenance palette-texte enregistrée (L29)", calls.recorded.some((s) => s.includes("mango-cafe")));
   }
 
   console.log("\n[9] Échec des deps → isError gracieux (ne lève jamais)");

@@ -7,6 +7,7 @@ import os from 'node:os'
 import path from 'node:path'
 import { Blackboard } from './kernel-blackboard.js'
 import { saveComponent } from './components.js'
+import { saveLayout } from './layouts.js'
 import {
   keywordRank,
   blueprintHintSection,
@@ -14,8 +15,13 @@ import {
   relevantComponentsSection,
   searchComponentsRanked,
   relevantSkillsSection,
+  searchSkillsRanked,
+  searchLayoutsRanked,
+  indexLayouts,
+  relevantLayoutsSection,
   COMPONENT_SCOPE,
   SKILL_SCOPE,
+  LAYOUT_SCOPE,
   type Embed,
 } from './kernel-reuse.js'
 import type { SkillMeta } from './skills.js'
@@ -146,6 +152,67 @@ function check(name: string, cond: boolean): void {
 
   // Aucun skill → "".
   check('skills : aucun → ""', (await relevantSkillsSection('x', { skills: [], embed: noEmbed })) === '')
+}
+
+// ── searchSkillsRanked : metas triées + repli mots-clés (L3) ─────────────────
+{
+  const skills: SkillMeta[] = [
+    { name: 'paginate-table', description: 'pagination de table de données', file: '/s/paginate/SKILL.md' },
+    { name: 'auth-flow', description: 'flux d’authentification login signup', file: '/s/auth/SKILL.md' },
+  ]
+  const fakeEmbed: Embed = async (t) =>
+    [t.toLowerCase().includes('pagination') || t.toLowerCase().includes('table') ? 1 : 0, t.toLowerCase().includes('auth') || t.toLowerCase().includes('login') ? 1 : 0]
+  const ranked = await searchSkillsRanked('paginer une table', { skills, bb: new Blackboard(), embed: fakeEmbed, k: 1 })
+  check('searchSkillsRanked : top-1 = paginate-table', ranked[0]?.name === 'paginate-table')
+  const fb = await searchSkillsRanked('login', { skills, bb: new Blackboard(), embed: async () => [], k: 1 })
+  check('searchSkillsRanked : repli mots-clés → auth-flow', fb[0]?.name === 'auth-flow')
+  check('searchSkillsRanked : aucun skill → []', (await searchSkillsRanked('x', { skills: [], embed: async () => [] })).length === 0)
+}
+
+// ── Layouts : type DISTINCT (L3) — index + recherche par sens + repli ────────
+{
+  const ws = fs.mkdtempSync(path.join(os.tmpdir(), 'mangoos-layouts-'))
+  const mk = (name: string, description: string, structure: string[], tags: string[]) =>
+    saveLayout(ws, {
+      meta: { name, description, tags, structure, usedIn: [], createdAt: 'x', updatedAt: '1' },
+      code: '// ' + name,
+    })
+  mk('LandingHero', 'landing produit héro + features + CTA', ['hero', 'features', 'cta'], ['landing'])
+  mk('DashboardShell', 'tableau de bord sidebar + topbar + grille', ['sidebar', 'topbar', 'grid'], ['dashboard'])
+  mk('MagazineGrid', 'mise en page éditoriale magazine multi-colonnes', ['masthead', 'columns'], ['editorial'])
+
+  const fakeEmbed: Embed = async (t) => {
+    const s = t.toLowerCase()
+    return [s.includes('landing') || s.includes('héro') || s.includes('hero') ? 1 : 0, s.includes('dashboard') || s.includes('bord') ? 1 : 0, s.includes('magazine') || s.includes('éditorial') ? 1 : 0]
+  }
+
+  const bb = new Blackboard()
+  const ranked = await searchLayoutsRanked('je veux une landing avec un héro', ws, { bb, embed: fakeEmbed, k: 1 })
+  check('searchLayoutsRanked : top-1 sémantique = LandingHero', ranked[0]?.name === 'LandingHero')
+  check('searchLayoutsRanked : structure conservée', JSON.stringify(ranked[0]?.structure) === JSON.stringify(['hero', 'features', 'cta']))
+  check('layouts : indexés dans le Blackboard (scope dédié)', bb.keys(LAYOUT_SCOPE).length === 3)
+
+  const dash = await searchLayoutsRanked('un tableau de bord', ws, { bb, embed: fakeEmbed, k: 1 })
+  check('searchLayoutsRanked : top-1 = DashboardShell', dash[0]?.name === 'DashboardShell')
+
+  const fb = await searchLayoutsRanked('une mise en page magazine éditoriale', ws, { bb: new Blackboard(), embed: async () => [], k: 1 })
+  check('searchLayoutsRanked : repli mots-clés → MagazineGrid', fb[0]?.name === 'MagazineGrid')
+
+  // Section de prompt (sous le seuil → tout listé, avec sections).
+  const section = await relevantLayoutsSection('peu importe', ws, { embed: fakeEmbed, k: 8 })
+  check('relevantLayoutsSection : liste + sections affichées', section.includes('LandingHero') && section.includes('hero › features › cta'))
+
+  // Idempotence.
+  let calls = 0
+  const counting: Embed = async (t) => { calls++; return [t.length % 3, 0, 0] }
+  const bbI = new Blackboard()
+  await indexLayouts(ws, bbI, counting)
+  const after = calls
+  await indexLayouts(ws, bbI, counting)
+  check('indexLayouts : idempotent (même updatedAt → pas de ré-embed)', calls === after)
+
+  check('searchLayoutsRanked : bibliothèque vide → []', (await searchLayoutsRanked('x', fs.mkdtempSync(path.join(os.tmpdir(), 'mangoos-lay-empty-')), { embed: async () => [] })).length === 0)
+  fs.rmSync(ws, { recursive: true, force: true })
 }
 
 // ── Aucun composant → "" ─────────────────────────────────────────────────────

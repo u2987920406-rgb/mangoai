@@ -15,11 +15,20 @@
 
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
-import { searchArtifacts, listArtifacts, type ArtifactHit } from "./kernel-artifacts.js";
+import {
+  searchArtifacts,
+  listArtifacts,
+  searchPalettesByText,
+  type ArtifactHit,
+} from "./kernel-artifacts.js";
 import { searchSiteDossiers, listSiteDossiers, searchSiteDossiersByText, type SiteDossierHit } from "./site-artifacts.js";
 import { recordArtefactUsage } from "./eleve-artefact-usage.js";
-import { searchComponentsRanked } from "./kernel-reuse.js";
+import { searchComponentsRanked, searchLayoutsRanked, searchSkillsRanked } from "./kernel-reuse.js";
+import { relevantProcedures } from "./procedures.js";
 import { COMPONENTS_DIR_NAME, type ComponentMeta } from "./components.js";
+import { LAYOUTS_DIR_NAME, type LayoutMeta } from "./layouts.js";
+import { type SkillMeta } from "./skills.js";
+import { PROCEDURES_DIR_NAME, type ProcedureMeta } from "./procedures.js";
 import { WORKSPACE_DIR } from "./projects.js";
 
 /** Borne dure du nombre de résultats renvoyés à l'Élève. */
@@ -43,6 +52,16 @@ export interface ArtefactDeps {
   /** (L3) k composants réutilisables les plus pertinents à une requête TEXTE
    * (embedding + repli mots-clés). Défaut : la bibliothèque cross-projet réelle. */
   searchComponents?: (query: string, k: number) => Promise<ComponentMeta[]>;
+  /** (L3) k LAYOUTS (agencements de page entiers, type distinct) pertinents à une
+   * requête TEXTE. Défaut : la bibliothèque .layouts cross-projet réelle. */
+  searchLayouts?: (query: string, k: number) => Promise<LayoutMeta[]>;
+  /** (L3) k SKILLS (savoir-faire how-to) pertinents à une requête TEXTE. */
+  searchSkills?: (query: string, k: number) => Promise<SkillMeta[]>;
+  /** (L3) k PROCÉDURES (démarches de résolution #75) pertinentes à une requête. */
+  searchProcedures?: (query: string, k: number) => Promise<ProcedureMeta[]>;
+  /** (L3) k PALETTES retrouvées par TEXTE (sens : « ambiance chaleureuse »), pas
+   * par hex. Complète `search` (par couleur). Pur/déterministe. */
+  searchPalettesText?: (query: string, k: number) => ArtifactHit[];
   /** (L29) provenances d'artefacts servies ce tour → mesure de réutilisation.
    * Défaut : le store éphémère par projet. Injectable pour les tests. */
   record?: (sources: string[]) => void;
@@ -55,6 +74,10 @@ const realDeps: ArtefactDeps = {
   listSites: () => listSiteDossiers(),
   searchSitesText: (query, k) => searchSiteDossiersByText(query, { k }),
   searchComponents: (query, k) => searchComponentsRanked(query, WORKSPACE_DIR, { k }),
+  searchLayouts: (query, k) => searchLayoutsRanked(query, WORKSPACE_DIR, { k }),
+  searchSkills: (query, k) => searchSkillsRanked(query, { k }),
+  searchProcedures: (query, k) => relevantProcedures(WORKSPACE_DIR, query, k),
+  searchPalettesText: (query, k) => searchPalettesByText(query, k),
 };
 
 /** Une ligne lisible par l'Élève : provenance + rôle + proximité + couleurs à copier. */
@@ -107,6 +130,45 @@ function formatComponentSection(comps: ComponentMeta[]): string {
   );
 }
 
+/** Une ligne lisible pour un LAYOUT (agencement de page entier, type distinct L3). */
+function formatLayoutHit(l: LayoutMeta): string {
+  const tags = l.tags?.length ? ` [${l.tags.join(", ")}]` : "";
+  const struct = l.structure?.length ? ` — sections: ${l.structure.join(" › ")}` : "";
+  return `- **${l.name}**: ${l.description}${tags}${struct}\n  → lis workspace/${LAYOUTS_DIR_NAME}/${l.name}/layout.tsx et adapte la STRUCTURE`;
+}
+
+/** Volet « layouts de page » (vide → "", on ne pollue pas quand il n'y a rien). */
+function formatLayoutSection(layouts: LayoutMeta[]): string {
+  if (layouts.length === 0) return "";
+  return (
+    "Layouts de page réutilisables PERTINENTS (squelettes — garde la composition, change l'identité) :\n" +
+    layouts.map(formatLayoutHit).join("\n")
+  );
+}
+
+/** Volet « skills » (savoir-faire how-to) pertinents (vide → ""). */
+function formatSkillSection(skills: SkillMeta[]): string {
+  if (skills.length === 0) return "";
+  return (
+    "Savoir-faire (skills) PERTINENTS — lis le SKILL.md et suis-le si l'un colle :\n" +
+    skills.map((s) => `- **${s.name}**: ${s.description}\n  → ${s.file}`).join("\n")
+  );
+}
+
+/** Volet « procédures » (démarches de résolution #75) pertinentes (vide → ""). */
+function formatProcedureSection(procs: ProcedureMeta[]): string {
+  if (procs.length === 0) return "";
+  return (
+    "Démarches de résolution PERTINENTES (procédures #75 — suis le raisonnement, adapte) :\n" +
+    procs
+      .map(
+        (p) =>
+          `- **${p.name}** — ${p.problem}${p.tags?.length ? ` [${p.tags.join(", ")}]` : ""}\n  → lis workspace/${PROCEDURES_DIR_NAME}/${p.slug}/PROCEDURE.md`,
+      )
+      .join("\n")
+  );
+}
+
 /**
  * Outil `chercher_artefact` : interroge la mémoire d'artefacts du Blackboard.
  * - `couleurs` fournies → palettes proches à RÉUTILISER (recherche cosinus).
@@ -120,13 +182,13 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
   const chercherArtefact: KernelTool = {
     name: "chercher_artefact",
     description:
-      "Cherche dans la MÉMOIRE cross-projet (Blackboard) des artefacts DÉJÀ créés à réutiliser : (1) COMPOSANTS réutilisables et (2) DOSSIERS DE SITES déjà extraits — par SENS : donne `recherche` en texte (ex. 'barre de recherche', 'grille de cartes', 'site de jeu d'aventure') ; (3) PALETTES (et sites) par COULEUR : donne `couleurs` hex. Sans argument → liste les artefacts récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
+      "Cherche dans la MÉMOIRE cross-projet (Blackboard) tout ce qui a DÉJÀ été créé à réutiliser. Par SENS (param `recherche` en texte, ex. 'barre de recherche', 'landing produit héro+features', 'comment paginer', 'site de jeu d'aventure') → te rend les COMPOSANTS, LAYOUTS de page entiers, SKILLS (savoir-faire), PROCÉDURES (démarches), DOSSIERS DE SITES extraits et PALETTES pertinents. Par COULEUR (param `couleurs` hex) → palettes et sites proches. Sans argument → artefacts récents. RÉUTILISER l'existant > réinventer (cohérence + vitesse).",
     inputSchema: {
       recherche: z
         .string()
         .optional()
         .describe(
-          "Décris en TEXTE le composant/élément réutilisable cherché (ex. 'barre de recherche', 'grille de cartes responsive', 'modale de confirmation'). Recherche par sens dans la bibliothèque de composants cross-projet.",
+          "Décris en TEXTE ce que tu cherches à réutiliser : un composant ('barre de recherche'), un LAYOUT de page ('landing héro + features + CTA'), un SKILL ('comment gérer un focus-trap'), une PROCÉDURE ('comment paginer'), un site déjà extrait ou une ambiance de palette ('tons chaleureux café'). Recherche par sens dans toute la mémoire cross-projet.",
         ),
       couleurs: z
         .array(z.string())
@@ -154,18 +216,53 @@ export function buildEleveArtefactTools(projectDir: string, deps: ArtefactDeps =
         const sources: string[] = [];
         const blocks: string[] = [];
 
-        // 1) COMPOSANTS par SENS (#36/L3) — embedding texte + repli mots-clés.
+        // 1) RECHERCHE PAR SENS (#36/L3) — la mémoire RÉUTILISABLE complète, par
+        //    texte : composants + layouts + skills + procédures + dossiers de site +
+        //    palettes (par sens). Embedding texte + repli mots-clés déterministe.
         if (query) {
-          const comps = (await deps.searchComponents?.(query, k)) ?? [];
+          const [comps, layouts, skills, procs, sitesByText] = await Promise.all([
+            deps.searchComponents?.(query, k) ?? Promise.resolve([]),
+            deps.searchLayouts?.(query, k) ?? Promise.resolve([]),
+            deps.searchSkills?.(query, k) ?? Promise.resolve([]),
+            deps.searchProcedures?.(query, k) ?? Promise.resolve([]),
+            deps.searchSitesText?.(query, k) ?? Promise.resolve([]),
+          ]);
+
           sources.push(...comps.map((c) => c.name));
           blocks.push(formatComponentSection(comps));
 
-          // 1bis) DOSSIERS DE SITE par CONCEPT (L3 Phase B) — embedding texte sur
-          // concept/mécaniques/mood, plus seulement la couleur de leur palette.
-          const sitesByText = (await deps.searchSitesText?.(query, k)) ?? [];
+          // Layouts (type DISTINCT L3), skills, procédures — n'ajoutent un bloc que
+          // s'ils trouvent quelque chose (pas de bruit quand la bibliothèque est vide).
+          const layoutBlock = formatLayoutSection(layouts);
+          if (layoutBlock) {
+            sources.push(...layouts.map((l) => l.name));
+            blocks.push(layoutBlock);
+          }
+          const skillBlock = formatSkillSection(skills);
+          if (skillBlock) {
+            sources.push(...skills.map((s) => s.name));
+            blocks.push(skillBlock);
+          }
+          const procBlock = formatProcedureSection(procs);
+          if (procBlock) {
+            sources.push(...procs.map((p) => p.slug));
+            blocks.push(procBlock);
+          }
+
+          // DOSSIERS DE SITE par CONCEPT (L3 Phase B).
           if (sitesByText.length > 0) {
             sources.push(...sitesByText.map((h) => h.artifact.project));
             blocks.push(formatSiteSection(sitesByText).trim());
+          }
+
+          // PALETTES par SENS (L3) — « ambiance chaleureuse » → palettes, sans hex.
+          const palByText = deps.searchPalettesText?.(query, k) ?? [];
+          if (palByText.length > 0) {
+            sources.push(...palByText.map((h) => h.artifact.project));
+            blocks.push(
+              "Palettes retrouvées par SENS (réutilise ces couleurs si l'ambiance colle) :\n" +
+                palByText.map(formatHit).join("\n"),
+            );
           }
         }
 

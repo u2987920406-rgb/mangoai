@@ -189,6 +189,86 @@ export function relevantArtifactsSection(
   )
 }
 
+// ── Recherche de palette par TEXTE (L3, priorité faible) ─────────────────────
+// Une palette est intrinsèquement une chose COULEUR (l'embedding histogramme la
+// sert très bien). Mais l'Élève raisonne parfois en MOTS (« ambiance chaleureuse
+// café », « tons sombres et électriques ») sans hex sous la main. On dérive donc
+// de chaque palette un TEXTE déterministe (projet + adjectifs de couleur) pour la
+// rendre retrouvable par sens — repli mots-clés pur, indépendant d'Ollama.
+
+/** Adjectifs déterministes d'une couleur (chaleur, clarté, saturation, famille). */
+function colorWords(hex: string): string[] {
+  const rgb = parseHex(hex)
+  if (!rgb) return []
+  const { r, g, b } = rgb
+  const max = Math.max(r, g, b)
+  const min = Math.min(r, g, b)
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255
+  const sat = max === 0 ? 0 : (max - min) / max
+  const words: string[] = []
+  // Clarté
+  if (lum < 0.25) words.push('sombre', 'foncé', 'dark')
+  else if (lum > 0.8) words.push('clair', 'lumineux', 'light')
+  else words.push('moyen')
+  // Saturation
+  const neutral = sat < 0.15
+  if (neutral) words.push('neutre', 'gris', 'muted')
+  else if (sat > 0.6) words.push('vif', 'saturé', 'vivid', 'électrique')
+  // Chaleur + famille dominante — UNIQUEMENT si la couleur a une vraie teinte
+  // (un noir/blanc/gris R≈G≈B n'est ni chaud ni froid : ne pas polluer).
+  if (!neutral) {
+    if (r >= g && r >= b) words.push('chaud', 'rouge', 'warm')
+    if (g >= r && g >= b) words.push('vert', 'naturel')
+    if (b >= r && b >= g) words.push('froid', 'bleu', 'cool')
+    if (r > 180 && g > 120 && b < 100) words.push('ambre', 'orangé', 'doré')
+    if (r > 150 && b > 150 && g < 120) words.push('violet', 'pourpre')
+  }
+  return words
+}
+
+/** Texte représentatif d'une palette pour le matching mots-clés (déterministe). */
+export function paletteText(a: DesignArtifact): string {
+  const adj = new Set<string>()
+  for (const c of a.colors) for (const w of colorWords(c)) adj.add(w)
+  const role = a.type === 'design.reference' ? 'cible inspiration' : 'palette produite rendu'
+  return `${a.project}. ${role}. ${[...adj].join(' ')}`
+}
+
+/** Repli mots-clés déterministe (chevauchement de tokens requête ↔ texte palette). */
+function tokenize(s: string): string[] {
+  return (s.toLowerCase().match(/[a-zàâäéèêëîïôöùûüç0-9]+/g) ?? []).filter((t) => t.length >= 3)
+}
+
+/** Deux tokens « se correspondent » s'ils sont égaux OU partagent un préfixe d'au
+ * moins 4 lettres (chaud↔chaude, froid↔froide, sombre↔sombres) — tolérance aux
+ * variantes morphologiques pour du texte libre, sans dépendre d'Ollama. */
+function tokenMatch(a: string, b: string): boolean {
+  if (a === b) return true
+  const n = Math.min(a.length, b.length)
+  return n >= 4 && a.slice(0, n) === b.slice(0, n)
+}
+
+/** Les k palettes les plus PERTINENTES à une requête TEXTE (par sens, pas par hex).
+ * Pur, déterministe, zéro réseau (repli mots-clés sur le texte dérivé). [] si vide
+ * ou requête sans token. Ne lève jamais. Complète searchArtifacts (par couleur). */
+export function searchPalettesByText(query: string, k = 5, bb: Blackboard = getBlackboard()): ArtifactHit[] {
+  const q = [...new Set(tokenize(query))]
+  if (q.length === 0) return []
+  const all = listArtifacts(bb)
+  if (all.length === 0) return []
+  const scored = all.map((h, i) => {
+    const toks = [...new Set(tokenize(paletteText(h.artifact)))]
+    let overlap = 0
+    for (const t of toks) if (q.some((qt) => tokenMatch(qt, t))) overlap++
+    return { h, overlap, i }
+  })
+  return scored
+    .filter((s) => s.overlap > 0)
+    .sort((a, b) => b.overlap - a.overlap || a.i - b.i)
+    .slice(0, k)
+    .map((s) => ({ ...s.h, score: undefined }))
+}
+
 // ── Routes ───────────────────────────────────────────────────────────────────
 export function registerArtifactRoutes(app: Express): void {
   app.get('/api/artifacts', (_req: Request, res: Response) => {

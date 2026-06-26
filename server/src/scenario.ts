@@ -24,6 +24,7 @@ import { MIROIR_RULES, miroirPromptSection } from "./miroir.js";
 import { CLARIFICATION_RULES } from "./clarification.js";
 import { hasBackend } from "./backend-generator.js";
 import { COMPONENTS_RULES, componentsPromptSection } from "./components.js";
+import { LAYOUTS_RULES } from "./layouts.js";
 import { REFERENCES_RULES, referencesPromptSection } from "./references.js";
 import { MULTI_PROJECT_RULES, multiProjectPromptSection } from "./multi-project.js";
 import { superAgentPromptSection } from "./super-agent-builder.js";
@@ -409,7 +410,8 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // so the agent both proposes existing components and saves new ones.
   // Idée #119 — rules + liste : la liste PERTINENTE (tri sémantique) quand
   // agent.ts la fournit, sinon le dump complet (non-régression / tests).
-  components: (ctx) => COMPONENTS_RULES + (ctx.componentsSection ?? componentsPromptSection(WORKSPACE_DIR)),
+  components: (ctx) =>
+    COMPONENTS_RULES + LAYOUTS_RULES + (ctx.componentsSection ?? componentsPromptSection(WORKSPACE_DIR)),
   // Idée #50 — Banque de références perso: mood library of inspirations
   // (screenshots / URLs / palettes) reused at the founding cadrage of each new
   // project. Rules always present; list injected only when references exist.

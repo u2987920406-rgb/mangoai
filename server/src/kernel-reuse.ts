@@ -13,12 +13,14 @@
 // MOTS-CLÉS déterministe → marche toujours, sans Ollama. L'embedder est injectable
 // (tests déterministes). La recherche passe par le Blackboard #115 (cosinus).
 import { listComponents, COMPONENTS_DIR_NAME, type ComponentMeta } from './components.js'
+import { listLayouts, LAYOUTS_DIR_NAME, type LayoutMeta } from './layouts.js'
 import { listSkills, type SkillMeta } from './skills.js'
 import { getBlackboard, type Blackboard } from './kernel-blackboard.js'
 import { embedOllama } from './ollama.js'
 import { inferProjectType } from './blueprints.js'
 
 export const COMPONENT_SCOPE = 'artifact:component'
+export const LAYOUT_SCOPE = 'artifact:layout'
 export const SKILL_SCOPE = 'artifact:skill'
 
 export type Embed = (text: string) => Promise<number[]>
@@ -90,7 +92,75 @@ export async function searchComponentsRanked(
   }
 }
 
-// ── Cœur de tri PARTAGÉ (composants, skills) ─────────────────────────────────
+// ── Layouts : type DISTINCT (L3), même mécanique de tri ──────────────────────
+function layoutText(l: LayoutMeta): string {
+  return `${l.name}. ${l.description}. ${(l.tags ?? []).join(' ')} ${(l.structure ?? []).join(' ')}`
+}
+
+/** Indexe (ou met à jour) les layouts dans le Blackboard avec leur embedding texte.
+ * Idempotent : un layout inchangé (même updatedAt) n'est pas ré-embeddé. */
+export async function indexLayouts(workspaceDir: string, bb: Blackboard, embed: Embed): Promise<void> {
+  for (const l of listLayouts(workspaceDir)) {
+    const existing = bb.get<LayoutMeta>(LAYOUT_SCOPE, l.name)
+    if (existing && existing.updatedAt === l.updatedAt) continue
+    const emb = await embed(layoutText(l))
+    bb.put(LAYOUT_SCOPE, l.name, l, emb.length ? emb : undefined)
+  }
+}
+
+/** Les k LAYOUTS (agencements de page entiers) les plus PERTINENTS à une requête
+ * texte (sémantique Blackboard, repli mots-clés). Renvoie les METAS → utilisable
+ * par `chercher_artefact` (#156/L3). [] si la bibliothèque est vide. Ne lève jamais. */
+export async function searchLayoutsRanked(
+  prompt: string,
+  workspaceDir: string,
+  opts: { bb?: Blackboard; embed?: Embed; k?: number } = {},
+): Promise<LayoutMeta[]> {
+  const all = listLayouts(workspaceDir)
+  if (all.length === 0) return []
+  const bb = opts.bb ?? getBlackboard()
+  const embed = opts.embed ?? defaultEmbed
+  const k = opts.k ?? 6
+  try {
+    await indexLayouts(workspaceDir, bb, embed)
+    return await searchRanked(LAYOUT_SCOPE, all, layoutText, prompt, bb, embed, k)
+  } catch {
+    return keywordRank(all, layoutText, prompt, k)
+  }
+}
+
+function formatLayouts(list: LayoutMeta[]): string {
+  const lines = list.map((l) => {
+    const tagStr = l.tags?.length ? ` [${l.tags.join(', ')}]` : ''
+    const structStr = l.structure?.length ? ` — sections: ${l.structure.join(' › ')}` : ''
+    return `- **${l.name}**: ${l.description}${tagStr}${structStr}`
+  })
+  return (
+    `\n\nLayouts de page réutilisables PERTINENTS (squelettes ; lis workspace/${LAYOUTS_DIR_NAME}/<Name>/layout.tsx ` +
+    `et adapte la STRUCTURE) :\n` +
+    lines.join('\n')
+  )
+}
+
+/** Section de prompt : les k layouts les plus PERTINENTS à la tâche. "" si aucun.
+ * Async (embedding best-effort) ; ne lève jamais. */
+export async function relevantLayoutsSection(
+  prompt: string,
+  workspaceDir: string,
+  opts: { bb?: Blackboard; embed?: Embed; k?: number } = {},
+): Promise<string> {
+  const all = listLayouts(workspaceDir)
+  if (all.length === 0) return ''
+  const bb = opts.bb ?? getBlackboard()
+  const embed = opts.embed ?? defaultEmbed
+  const k = opts.k ?? 6
+  if (all.length <= k) return formatLayouts(all)
+  await indexLayouts(workspaceDir, bb, embed)
+  const ranked = await searchRanked(LAYOUT_SCOPE, all, layoutText, prompt, bb, embed, k)
+  return formatLayouts(ranked)
+}
+
+// ── Cœur de tri PARTAGÉ (composants, layouts, skills) ─────────────────────────
 /** La même mécanique pour toutes les bibliothèques texte : recherche sémantique
  * dans le Blackboard si la requête s'embed (cosinus #115), sinon repli mots-clés
  * déterministe. Top-k. C'est le « même mécanisme » qui unifie composants & skills
@@ -172,6 +242,27 @@ function formatSkills(list: SkillMeta[]): string {
     `et suis-le si l'un correspond) :\n` +
     lines
   )
+}
+
+/** Les k SKILLS (savoir-faire how-to) les plus PERTINENTS à une requête texte
+ * (sémantique Blackboard, repli mots-clés). Renvoie les METAS → utilisable par
+ * `chercher_artefact` (#156/L3). [] si la bibliothèque est vide. Ne lève jamais.
+ * `skills` injectable pour les tests (défaut = listSkills()). */
+export async function searchSkillsRanked(
+  prompt: string,
+  opts: { skills?: SkillMeta[]; bb?: Blackboard; embed?: Embed; k?: number } = {},
+): Promise<SkillMeta[]> {
+  const all = opts.skills ?? listSkills()
+  if (all.length === 0) return []
+  const bb = opts.bb ?? getBlackboard()
+  const embed = opts.embed ?? defaultEmbed
+  const k = opts.k ?? 6
+  try {
+    await indexSkills(all, bb, embed)
+    return await searchRanked(SKILL_SCOPE, all, skillText, prompt, bb, embed, k)
+  } catch {
+    return keywordRank(all, skillText, prompt, k)
+  }
 }
 
 /** Section de prompt : les k skills les plus PERTINENTS à la tâche (recherche

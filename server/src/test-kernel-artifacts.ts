@@ -16,6 +16,8 @@ import {
   uninstallArtifactStore,
   listArtifacts,
   searchArtifacts,
+  searchPalettesByText,
+  paletteText,
   relevantArtifactsSection,
   ARTIFACT_SCOPE,
   type DesignArtifact,
@@ -129,6 +131,28 @@ function producedEnv(project: string, palette: string[]) {
   const bb2 = new Blackboard()
   recordDesignArtifact(refEnv('courant', ['#ff0000']), bb2, () => 1)
   check('réinjection : exclut le projet courant → ""', relevantArtifactsSection('courant', ['#ff0000'], { threshold: 0.5, bb: bb2 }) === '')
+}
+
+// ── Recherche de palette par TEXTE (L3, par sens — pas par hex) ───────────────
+{
+  // paletteText : adjectifs déterministes.
+  const warm: DesignArtifact = { type: 'design.produced', project: 'mango-cafe', colors: ['#b4541e', '#f5deb3'], at: 1 }
+  check('paletteText : projet + chaleur', /mango-cafe/.test(paletteText(warm)) && /chaud|ambre|warm/i.test(paletteText(warm)))
+  const dark: DesignArtifact = { type: 'design.reference', project: 'neo-terminal', colors: ['#0a0a0a', '#00ff41'], at: 1 }
+  check('paletteText : sombre + vif', /sombre|dark/i.test(paletteText(dark)) && /vif|électrique|vivid|vert/i.test(paletteText(dark)))
+
+  // searchPalettesByText : recherche par sens.
+  const bb = new Blackboard()
+  recordDesignArtifact(producedEnv('mango-cafe', ['#b4541e', '#f5deb3']), bb, () => 1) // chaleureux ambré
+  recordDesignArtifact(refEnv('neo-terminal', ['#0a0a0a', '#00ff41']), bb, () => 2)    // sombre électrique
+  recordDesignArtifact(producedEnv('ocean-calm', ['#1e3a8a', '#bae6fd']), bb, () => 3) // froid bleu
+
+  check('texte « chaleureuse » → mango-cafe', searchPalettesByText('ambiance chaleureuse chaude', 3, bb)[0]?.artifact.project === 'mango-cafe')
+  check('texte « sombre vert » → neo-terminal', searchPalettesByText('tons sombres et verts', 3, bb)[0]?.artifact.project === 'neo-terminal')
+  check('texte « froide bleue » → ocean-calm', searchPalettesByText('ambiance froide bleue', 3, bb)[0]?.artifact.project === 'ocean-calm')
+  check('requête vide → []', searchPalettesByText('', 3, bb).length === 0)
+  check('aucune correspondance → []', searchPalettesByText('xyzqwk', 3, bb).length === 0)
+  check('Blackboard vide → []', searchPalettesByText('chaud', 3, new Blackboard()).length === 0)
 }
 
 // ── Persistance SQLite réelle (survie au redémarrage) ────────────────────────
