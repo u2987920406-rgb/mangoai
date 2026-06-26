@@ -1049,7 +1049,7 @@ export async function runRelay(
           const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task));
           const goutLabel = verdict.design
             ? verdict.tasteScored
-              ? `, goût ${verdict.design.overall}/100`
+              ? `, goût ${verdict.design.overall}/100${verdict.tasteObserve ? " (observé)" : ""}`
               : ", goût non jugeable (sauté)"
             : "";
           push(`🛡 Gardien — intention ${verdict.intent.couverture}/100${goutLabel}${verdict.ok ? " ✓" : " ✗"}`);

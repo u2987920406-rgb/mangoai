@@ -25,6 +25,7 @@ export interface GateVerdict {
   design?: DesignCritique; // absent si le rendu n'est pas jugeable (tâche non-UI)
   tasteScored: boolean; // (L28) le goût a-t-il un score FIABLE ? sinon le volet goût est sauté
   tasteOk: boolean; // goût ≥ seuil OU non-scoré (sauté → ne pénalise pas)
+  tasteObserve: boolean; // (L34) mode observe : le goût est SCORÉ et affiché mais ne bloque PAS
   wcagOk: boolean; // mesures objectives #111 (indépendantes du VL)
   raisons: string[]; // ce qu'il faut corriger (vide si ok)
 }
@@ -98,6 +99,10 @@ export async function runClosureGate(
   // (L28) Le GOÛT (score VL) et la QA (mesures objectives #111) sont SÉPARÉS : si le VL
   // n'a pas rendu de score fiable (scored=false), on saute le goût mais on GARDE la QA
   // WCAG, qui ne dépend pas du parsing du VL. Plus jamais de faux 50 qui plombe.
+  // (L34) Mode OBSERVE (défaut ON) : on FIABILISE le score du goût (parsing tolérant +
+  // multi-passes) et on l'AFFICHE, mais il ne BLOQUE pas encore (on calibre d'abord sur le
+  // goût réel de Raf avant de durcir). Passer ELEVE_GATE_TASTE_OBSERVE=off pour l'activer en frein.
+  const tasteObserve = process.env.ELEVE_GATE_TASTE_OBSERVE !== "off";
   let design: DesignCritique | undefined;
   let tasteScored = false;
   let tasteOk = true;
@@ -106,7 +111,8 @@ export async function runClosureGate(
     design = await deps.critique(projectDir, workspaceDir, projectType);
     tasteScored = design.scored !== false; // tolère d'anciennes critiques sans le champ
     const wcagFails = design.measure?.contrastFails.length ?? 0;
-    tasteOk = !tasteScored || design.overall >= th.tasteMin;
+    // En observe, le goût ne pèse jamais sur le verdict (tasteOk=true) — il est seulement mesuré.
+    tasteOk = tasteObserve || !tasteScored || design.overall >= th.tasteMin;
     wcagOk = wcagFails <= th.wcagMaxFails;
   } catch {
     design = undefined; // pas de rendu jugeable → ne pénalise pas
@@ -124,8 +130,9 @@ export async function runClosureGate(
     raisons.push(`INTENTION ${intent.couverture}/100 (seuil ${th.intentMin}) — il manque :\n${m}`);
   }
   if (design) {
-    // Goût : seulement si le score est FIABLE (L28). Un goût non-scoré ne produit AUCUNE raison.
-    if (tasteScored && design.overall < th.tasteMin) {
+    // Goût : seulement si FIABLE (L28) ET hors mode observe (L34). Un goût observé/non-scoré
+    // ne produit AUCUNE raison → ne renvoie jamais l'Élève corriger pour du goût pas encore calibré.
+    if (!tasteObserve && tasteScored && design.overall < th.tasteMin) {
       const fixes = prioritizedFixes(design, th.tasteMin);
       raisons.push(`GOÛT ${design.overall}/100 (seuil ${th.tasteMin}) — corrige :\n${fixes.map((f) => `  ${f}`).join("\n")}`);
     }
@@ -135,7 +142,7 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && tasteOk && wcagOk, intent, intentOk, design, tasteScored, tasteOk, wcagOk, raisons };
+  return { ok: intentOk && tasteOk && wcagOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, raisons };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */

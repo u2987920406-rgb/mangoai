@@ -1,10 +1,15 @@
 // Tests de l'œil-coach (design-coach.ts) — aperçu/capture/cerveau/édition INJECTÉS.
 
 import {
-  parseCritique, prioritizedFixes, critiqueScreen, runDesignCoach,
+  parseCritique, averageCritiques, prioritizedFixes, critiqueScreen, runDesignCoach,
   type CoachDeps, type DesignCritique,
 } from "./design-coach.js";
 import type { JudgeContext } from "./taste-judge.js";
+
+// (L34) Les tests de boucle (critiqueScreen/runDesignCoach) consomment une FILE de critiques
+// déterministe (1 par regard) → on force 1 passe ici. Le multi-passes est couvert par
+// averageCritiques (unitaire) + le test multi-passes dédié plus bas.
+process.env.GATE_TASTE_PASSES = "1";
 
 let pass = 0, fail = 0;
 function check(label: string, cond: boolean) {
@@ -44,6 +49,32 @@ check("parseCritique : clamp >100", parseCritique("GLOBAL: 250").overall === 100
 check("parseCritique : GLOBAL → scored true", parseCritique("GLOBAL: 72").scored === true);
 check("parseCritique : lentilles sans GLOBAL → scored true", parseCritique("LENTILLE: x | 40 | a → b").scored === true);
 check("parseCritique : prose sans chiffre → scored false + overall 50", parseCritique("le rendu est correct").scored === false && parseCritique("le rendu est correct").overall === 50);
+
+// ── (L34) parsing TOLÉRANT au style naturel du VL (qwen3-vl ne suit pas les pipes) ──
+{
+  // « Note globale : 78/100 » sans format pipe.
+  const c = parseCritique("Le rendu est soigné.\nNote globale : 78/100");
+  check("parseCritique : 'Note globale : 78/100' → scored 78", c.scored === true && c.overall === 78);
+}
+{
+  // Lentilles nommées en style libre (sans pipes), avec /100 et tirets.
+  const txt = "Hiérarchie : 65/100 — titres trop plats\nHarmonie chromatique: 80 - palette cohérente\nCohérence (72) : ok";
+  const c = parseCritique(txt);
+  check("parseCritique : ≥2 lentilles en style libre → scored true", c.scored === true && c.lenses.length >= 3);
+  check("parseCritique : moyenne des lentilles libres", c.overall === Math.round((65 + 80 + 72) / 3));
+  check("parseCritique : nombres >100 ignorés (pas d'année)", parseCritique("Cohérence en 2024 : super").scored === false);
+}
+check("parseCritique : 'Overall: 90' → scored 90", parseCritique("Overall: 90").scored === true && parseCritique("Overall: 90").overall === 90);
+
+// ── (L34) averageCritiques : moyenne anti-bruit ──
+{
+  const a = parseCritique("LENTILLE: hiérarchie | 60 | a → b\nGLOBAL: 70");
+  const b = parseCritique("LENTILLE: hiérarchie | 80 | c → d\nGLOBAL: 80");
+  const m = averageCritiques([a, b]);
+  check("averageCritiques : overall moyenné (70,80 → 75)", m.overall === 75);
+  check("averageCritiques : lentille moyennée par nom (60,80 → 70)", m.lenses.find((l) => l.name === "hiérarchie")?.score === 70);
+  check("averageCritiques : reste scored", m.scored === true);
+}
 
 // ── prioritizedFixes ──
 {
@@ -98,6 +129,15 @@ function makeDeps(critiqueQueue: string[]): { deps: CoachDeps; applied: string[]
   const { deps } = makeDeps(["blabla", "toujours du blabla"]);
   const c = await critiqueScreen("/proj", CTX, deps);
   check("critiqueScreen : 2 reprises ratées → scored false", c.scored === false);
+}
+
+// ── (L34) critiqueScreen MULTI-PASSES : moyenne 2 regards pour tuer le bruit ──
+{
+  process.env.GATE_TASTE_PASSES = "2";
+  const { deps } = makeDeps([critiqueText(70, [["hiérarchie", 70, "a", "b"]]), critiqueText(80, [["hiérarchie", 80, "c", "d"]])]);
+  const c = await critiqueScreen("/proj", CTX, deps);
+  check("critiqueScreen : 2 passes (70,80) → moyenne 75", c.overall === 75 && c.scored === true);
+  process.env.GATE_TASTE_PASSES = "1";
 }
 
 // ── runDesignCoach : rendu non jugeable → coach sauté (L28) ──
