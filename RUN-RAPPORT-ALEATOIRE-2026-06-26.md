@@ -65,6 +65,19 @@
 
 ---
 
+## ✅ VALIDATION POST-FIX (F4/F5/F7 corrigés et reprouvés end-to-end)
+
+Après correction (`mergePackageJson` pour F4 · bump vanilla-extract pour F7 · allowlist étendue pour F5), **backend frais** puis 2 nouvelles apps sur les stacks jadis cassées :
+
+| App | Stack (jadis cassée) | Résultat | Preuve |
+|---|---|---|---|
+| **questline** (arbre de quêtes RPG, fantasy sombre) | **template `reactflow`** (F4) | ✅ finish 19 it, Gardien 90/100 ✓ | template **boote** (plus de « Preview exited ») ; `package.json` = **@xyflow/react + @tailwindcss/vite ensemble** (fusion live OK) ; **vrai graphe ReactFlow** rendu (nœuds+edges+MiniMap+Controls), 12 vraies images, 0 cassée, 0 erreur · :5211 |
+| **diveatlas** (atlas plongée, océan profond) | base + **leaflet** via `add_dependency` (F5) | ✅ finish 17 it, Gardien 0→**100/100 ✓** (autocorrigé) | `add_dependency("leaflet")` **passe** (était bloqué) ; **vraie carte Leaflet monde** (tuiles OSM sombres) + marqueurs aux sites + liste synchro + vraies photos, 30 images, 0 cassée, 0 erreur · :5212 |
+
+→ **F4 + F5 confirmés de bout en bout dans le backend live.** (F7 radix déjà prouvé au boot.) Les stacks riches (ReactFlow, Leaflet — et par extension Pixi/Three) sont désormais utilisables par l'Élève.
+
+---
+
 ## ⚠ Failles de PROCESS transversales (trouvailles majeures)
 
 ### F4 — 4 templates spécialisés cassés au boot (`@tailwindcss/vite` manquant)
