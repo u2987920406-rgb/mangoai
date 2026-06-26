@@ -544,7 +544,9 @@ app.post("/api/chat", async (req, res) => {
       const verdict =
         r.resolvedBy === "eleve"
           ? (r.incomplete
-              ? `⚠ Build vert, mais l'agent ${agentLabel} s'est arrêté sans terminer la tâche (plafond/blocage) — la modification n'est peut-être pas complète. Relance-moi pour que je continue.`
+              ? (r.aborted
+                  ? `⏹ Arrêté à ta demande — ce qui était déjà fait est conservé. Relance-moi pour reprendre là où on en était.`
+                  : `⚠ Build vert. L'agent ${agentLabel} a continué seul jusqu'au bout de son budget d'auto-relances sans appeler « terminé » — l'app compile, il reste peut-être un détail. Relance-moi ou précise ce qui manque.`)
               : `✅ Résolu par l'agent ${agentLabel} (${agentTier}) en ${r.attempts} tentative(s) — coût Claude $0.00.`)
           : r.resolvedBy === "maitre"
             ? `👑 L'agent a buté → escaladé au Maître (Claude), corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`

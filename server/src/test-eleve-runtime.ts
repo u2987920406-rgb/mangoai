@@ -346,7 +346,7 @@ async function run() {
     const writes: Array<Record<string, unknown>> = [];
     const reg = stubRegistry(writes);
     let posted = 0;
-    const post: PostFn = async () => { posted++; return { toolCalls: [call("write_file", { path: "a.js", content: "x" })] }; };
+    const post: PostFn = async () => { posted++; return { content: "", toolCalls: [call("write_file", { path: "a.js", content: "x" })] }; };
     const r0 = await buildAgentic("sys", "x", reg, { post, maxIterations: 10, shouldAbort: () => true });
     check("aborted === true", r0.aborted === true);
     check("ni finish ni stuck", r0.finished === false && r0.stuck === false);
@@ -358,7 +358,7 @@ async function run() {
     const writes2: Array<Record<string, unknown>> = [];
     const reg2 = stubRegistry(writes2);
     let n = 0;
-    const post2: PostFn = async () => { return { toolCalls: [call("write_file", { path: `f${n}.js`, content: "x" })] }; };
+    const post2: PostFn = async () => { return { content: "", toolCalls: [call("write_file", { path: `f${n}.js`, content: "x" })] }; };
     const r1 = await buildAgentic("sys", "x", reg2, { post: post2, maxIterations: 10, shouldAbort: () => (++n > 2) });
     check("aborted après quelques itérations", r1.aborted === true);
     check("le travail déjà fait a bien eu lieu avant l'arrêt", writes2.length >= 1);

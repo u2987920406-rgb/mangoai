@@ -972,7 +972,12 @@ export async function runRelay(
     // build-vert, AU LIEU de courir vers Claude, on AUTO-RELANCE l'Élève (GLM, classe
     // Fable 5) avec un coup de pouce « arrête de lire, AGIS et termine » — il finit
     // LUI-MÊME, à coût 0. L'escalade Claude devient un dernier recours OPT-IN.
-    const selfRelanceMax = Number(process.env.ELEVE_SELF_RELANCE_MAX ?? 2);
+    // Budget d'AUTO-RELANCE quand l'Élève finit en build-vert sans appeler `finish`
+    // (cas bénin : l'app compile/marche, GLM a juste « oublié » de conclure — L17/L35).
+    // Décision de Raf (2026-06-27) : « continuer seul jusqu'au bout » plutôt que de
+    // lui redemander à chaque fois. Relevé 2 → 6 ; le garde-fou anti-emballement est
+    // désormais le bouton **Stop** (qui marche enfin) entre les mains de l'utilisateur.
+    const selfRelanceMax = Number(process.env.ELEVE_SELF_RELANCE_MAX ?? 6);
     let agErr = "";
     let result: AgenticBuildResult | null = null;
     let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
@@ -1198,7 +1203,7 @@ export async function runRelay(
         }
         // Défaut (Stratège off, ou escalade) : nudge générique plan-ancre (comportement #160).
         const why = result?.stuck ? "blocage (sur-exploration)" : "plafond d'itérations";
-        push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève — il termine lui-même (souveraineté, coût 0)`);
+        push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève — il continue seul jusqu'au bout (coût 0 ; clique Stop pour couper)`);
         nudge = buildRelanceNudge(projectDir, why, relances, selfRelanceMax);
         continue;
       }
@@ -1218,8 +1223,8 @@ export async function runRelay(
         });
       }
       push(
-        `⚠ build vert MAIS l'Élève n'a pas appelé finish après ${relances} auto-relance(s) (${blockReason}) — ` +
-          `la modification n'est peut-être PAS terminée. Relance-le ou précise la demande.`,
+        `⚠ build vert mais pas de finish après ${relances} auto-relances (${blockReason}) — j'ai vraiment essayé seul. ` +
+          `L'app compile ; il reste sans doute un détail. Relance-moi ou précise ce qui manque.`,
       );
       return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
     }
