@@ -74,6 +74,11 @@ export interface AgenticOptions {
   tracer?: KernelTracer;
   onTool?: (name: string, args: string) => void;
   onLog?: (line: string) => void;
+  /** (#160/L17) Rappel COMPACT du plan de l'Élève (ou "" s'il n'en a pas posé).
+   * Closure → le runtime reste découplé d'eleve-plan. Réinjecté DANS les nudges des
+   * gardes anti-sur-exploration : quand l'Élève dérive en re-lisant, on lui remet
+   * son plan sous les yeux EN COURS de boucle (pas seulement à l'auto-relance). */
+  planReminder?: () => string;
 }
 
 export interface AgenticBuildResult {
@@ -141,6 +146,20 @@ export async function buildAgentic(
   let corrections = 0; // nb de relances correctives injectées
   let errorStreak = 0; // échecs d'outils CONSÉCUTIFS (anti-tâtonnement)
   let readsSinceWrite = 0; // lectures réussies depuis la dernière écriture (anti-exploration-stérile)
+  let hasWritten = false; // (L17) au moins une écriture/édition/délégation réussie ce run
+
+  // (L17) Enrichit le nudge d'une garde anti-sur-exploration : on PRÉFIXE le rappel
+  // du plan (l'ancre — l'Élève qui dérive se voit remettre ses étapes EN COURS de
+  // boucle), et si des fichiers ont DÉJÀ été écrits, on pousse explicitement à clore
+  // (le motif observé : l'app est complète mais l'Élève re-lit au lieu d'appeler finish).
+  const guardNudge = (base: string): string => {
+    const plan = opts.planReminder?.() ?? "";
+    const finishCue = hasWritten
+      ? "\n\n✅ Tu as DÉJÀ écrit des fichiers ce tour. Si toutes les étapes de ton plan sont faites et que le build " +
+        "passe, appelle finish MAINTENANT — ne re-lis pas, ne re-planifie pas."
+      : "";
+    return (plan ? plan + "\n\n" : "") + base + finishCue;
+  };
 
   for (let iter = 0; iter < maxIter; iter++) {
     compact(messages, ctxMax);
@@ -178,9 +197,10 @@ export async function buildAgentic(
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
-          content:
+          content: guardNudge(
             "⚠ Tu as DÉJÀ lu ceci plus haut — ne le relis pas. AGIS maintenant : edit_file/write_file pour " +
-            "la modification demandée, ou finish si la tâche est faite.",
+              "la modification demandée, ou finish si la tâche est faite.",
+          ),
         });
         if (corrections >= maxCorrections) {
           opts.onLog?.("⚠ Élève bloqué (relectures répétées) — sortie contrôlée.");
@@ -197,10 +217,11 @@ export async function buildAgentic(
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
-          content:
+          content: guardNudge(
             `⚠ Tu as exploré ${readsSinceWrite} fois d'affilée SANS écrire une seule ligne. Explorer ne ` +
-            "termine pas la tâche. ÉCRIS MAINTENANT : write_file/edit_file pour la modification demandée " +
-            "(ou delegate une partie, ou finish si c'est déjà fait). N'appelle plus read_file/list_files/search_code.",
+              "termine pas la tâche. ÉCRIS MAINTENANT : write_file/edit_file pour la modification demandée " +
+              "(ou delegate une partie, ou finish si c'est déjà fait). N'appelle plus read_file/list_files/search_code.",
+          ),
         });
         if (corrections >= maxCorrections) {
           opts.onLog?.("⚠ Élève bloqué (exploration sans action) — sortie contrôlée.");
@@ -251,7 +272,10 @@ export async function buildAgentic(
         readKeys.add(key); // #3 — mémorise la lecture réussie
         readsSinceWrite++; // … et compte vers le budget d'exploration
       }
-      if (writeTools.has(name) && !isErr) readsSinceWrite = 0; // une action remet le budget à zéro
+      if (writeTools.has(name) && !isErr) {
+        readsSinceWrite = 0; // une action remet le budget à zéro
+        hasWritten = true; // (L17) on a produit du concret → le cue « appelle finish » s'active
+      }
       messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, maxToolResult) });
     }
 
@@ -317,6 +341,9 @@ export interface AgenticRunCtx {
   maxIterations?: number;
   onTool?: (name: string, args: string) => void;
   onLog?: (line: string) => void;
+  /** (#160/L17) Rappel compact du plan de l'Élève (closure) — réinjecté dans les
+   * gardes anti-sur-exploration de buildAgentic. Hérité tel quel par les sous-agents. */
+  planReminder?: () => string;
 }
 
 /** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
@@ -332,6 +359,7 @@ export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<
       maxIterations: ctx.maxIterations,
       onTool: ctx.onTool,
       onLog: ctx.onLog,
+      planReminder: ctx.planReminder,
     });
 
   if (!ctx.tracer) return runOnce();

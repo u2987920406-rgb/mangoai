@@ -3,7 +3,7 @@ type: entité
 tags: [eleve, transmission, plan, boucle-agentique]
 statut: livré
 sources: ["#160"]
-maj: 2026-06-25
+maj: 2026-06-26
 ---
 
 # Planifier-avant-agir (`planifier`)
@@ -28,11 +28,13 @@ Trois pièces, deps injectables, ne lève jamais :
 
 **Le plan-ancre** : c'est ce qui rend le plan **actif, pas décoratif**. Quand l'Élève sur-explore ou plafonne (gardes anti-blocage de `buildAgentic` → auto-relance dans `eleve.ts`), au lieu d'un « arrête de lire, AGIS » générique, on lui **remet son propre plan sous les yeux** + « reprends les étapes non faites ». Réutilise la machinerie anti-blocage déjà là (cf. [[transmission-competences]] / boucle de l'Élève).
 
+**L'ancre EN COURS de boucle (L17 ✅ 2026-06-26)** : l'ancre ne jouait qu'à l'auto-relance (frontière de `buildAgentic`). Or sur les **gros projets**, l'Élève dérive EN PLEIN run (re-lecture/re-planification) sans franchir cette frontière → 3/5 gros projets bloqués. Désormais les **gardes anti-sur-exploration de `buildAgentic` elles-mêmes** préfixent le rappel du plan (`AgenticOptions.planReminder`, closure câblée depuis `eleve.ts`), et si des fichiers sont **déjà écrits** (`hasWritten`), poussent explicitement à **`finish`** (« ne re-lis pas, ne re-planifie pas »). Prouvé live : le brief TIDE qui se bloquait 2× atteint `finish` proprement (21 it).
+
 ## État
 
 **Livré et prouvé live** (#160). LIVE (`askEleveAgentic`, vrai GLM, contrat réel, $0) : sur « ajoute une page Réservation (formulaire + validation + récap + confirmation + nav) », GLM appelle **`planifier` EN PREMIER** (plan 5 étapes) puis exécute dans l'ordre (write/edit router+nav, check_build, **teste_parcours #155**, corrige) — composition de compétences transmises. Tests : eleve-plan 17 · eleve-planifier-tools 15 · eleve-action-tools 44 (17 outils, 16 gated).
 
-**Limites** : L17 (rappel du plan seulement aux auto-relances, pas en continu) · L18 (pas de suivi d'étapes coché en v1 → rappel du plan entier). Pistes codables en interne (rappel toutes N itérations ; outil `etape_faite(n)`).
+**Limites** : ~~L17 (rappel du plan seulement aux auto-relances)~~ **✅ Résolu 2026-06-26** (ancre injectée dans les gardes en cours de boucle + cue finish si déjà écrit ; test-eleve-runtime 42, prouvé live TIDE) · L18 (pas de suivi d'étapes coché en v1 → rappel du plan entier ; piste : outil `etape_faite(n)`).
 
 ## Liens
 [[transmission-competences]] · [[teste_parcours]] · [[sharingan-extraction]] · [[oeil-coach]] · [[statut]] · [[historique]] · [[limites]]

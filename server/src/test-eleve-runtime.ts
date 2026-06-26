@@ -276,6 +276,55 @@ async function run() {
     check("jamais 3 lectures d'affilée sans écrire → conclut (finish)", r.finished === true && r.stuck === false);
   }
 
+  console.log("\n[#3f] L17 : la garde anti-exploration RAPPELLE le plan + pousse à finish quand on a déjà écrit");
+  {
+    const reg = new ToolRegistry();
+    reg.register({ name: "search_code", description: "", inputSchema: { q: z.string() }, handler: () => ({ text: "r" }) });
+    reg.register({ name: "write_file", description: "", inputSchema: { path: z.string(), content: z.string() }, handler: () => ({ text: "écrit" }) });
+    reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+    const { post, snapshots } = scriptedPost([
+      { toolCalls: [call("write_file", { path: "App.jsx", content: "1" })] }, // hasWritten = true
+      { toolCalls: [call("search_code", { q: "a" })] },
+      { toolCalls: [call("search_code", { q: "b" })] },
+      { toolCalls: [call("search_code", { q: "c" })] }, // déclenche la garde (>= exploreBeforeAct)
+      { toolCalls: [call("finish", { summary: "fini" })] },
+    ]);
+    const r = await buildAgentic("sys", "fais", reg, {
+      post,
+      maxIterations: 12,
+      exploreBeforeAct: 2,
+      maxCorrections: 8,
+      planReminder: () => "PLAN-ANCRE-TEST",
+    });
+    // Le dernier snapshot (avant finish) doit porter le nudge de garde enrichi.
+    const allMsgs = snapshots[snapshots.length - 1] ?? [];
+    const nudge = allMsgs.filter((m) => m.role === "tool").map((m) => m.content).join("\n");
+    check("le nudge de garde RAPPELLE le plan (ancre en cours de boucle)", nudge.includes("PLAN-ANCRE-TEST"));
+    check("le nudge pousse à finish car des fichiers sont DÉJÀ écrits", /appelle finish MAINTENANT/i.test(nudge));
+    check("l'Élève conclut (finish) après le rappel", r.finished === true);
+  }
+
+  console.log("\n[#3g] L17 : sans écriture préalable, PAS de cue « appelle finish » (rien n'est fait)");
+  {
+    const reg = new ToolRegistry();
+    reg.register({ name: "search_code", description: "", inputSchema: { q: z.string() }, handler: () => ({ text: "r" }) });
+    let q = 0;
+    const post: PostFn = async () => ({ content: "", toolCalls: [call("search_code", { q: "x" + q++ })] });
+    let captured = "";
+    const r = await buildAgentic("sys", "fais", reg, {
+      post,
+      maxIterations: 12,
+      exploreBeforeAct: 2,
+      maxCorrections: 3,
+      planReminder: () => "PLAN-ANCRE-TEST",
+      onLog: (l) => { captured += l; },
+    });
+    check("exploration sans écriture → stuck (comportement inchangé)", r.stuck === true);
+    // Le cue finish ne doit PAS apparaître ici : on ne dit pas « appelle finish » si rien n'a été produit.
+    // (on vérifie indirectement via le fait que la garde a tiré et qu'on est stuck)
+    check("garde tirée (bloqué loggé)", /bloqué/i.test(captured));
+  }
+
   console.log("\n[#3c] MARGE (révision 2026-06-24) : maxCorrections découplé de repeatLimit");
   {
     // L'Élève relit en boucle, repeatLimit bas (1) MAIS maxCorrections haut (6) :

@@ -30,7 +30,7 @@ import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
-import { clearPlan, buildRelanceNudge } from "./eleve-plan.js";
+import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
@@ -939,6 +939,12 @@ export async function runRelay(
       tracer: getTracer(),
       onTool: (n: string, a: string) => push(`  🔧 ${n} ${a.slice(0, 100)}`),
       onLog: push,
+      // (#160/L17) L'ancre EN COURS de boucle : si l'Élève a posé un plan, les gardes
+      // anti-sur-exploration le lui rappellent (en plus du nudge d'auto-relance).
+      planReminder: () => {
+        const p = getPlan(projectDir);
+        return p ? formatPlanReminder(p) : "";
+      },
     };
 
     // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage
