@@ -268,6 +268,20 @@
 
 **Rappel honnête du périmètre** : tout ce qui précède est **décidé et documenté**, pas urgent. Le bon réflexe = **OBS d'abord**. Quand on aura vu Mango vivre quelques jours, on rouvrira ce bloc et on lancera dans l'ordre : (1) ce que l'observation révèle prioritaire, (2) #164 (en commençant par P1-P2, le cœur diagnostic+apprentissage), (3) #165 (souveraineté MangoQA). Détail de chaque plan : `docs/plan-164-le-stratege.md` · `limites.md` · `[[le-stratege]]`.
 
+#### 🔭 Protocole d'observation (instruments ALLUMÉS le 2026-06-26)
+**Action de Raf** : utiliser Mango **normalement** quelques jours (générer des apps, etc.). Les instruments enregistrent tout seuls :
+- **`ELEVE_STRATEGE=on`** (`.env`, observe-only) → chaque blocage est **nommé + loggé** sans agir. *Prend effet au prochain lancement backend.*
+- **`ELEVE_IMAGE_CHECK`** défaut ON (L30) → QC images actif pendant l'observation.
+
+**À REVIEWER à la reprise (ce qui décide les priorités)** :
+1. **Classes de blocage** → grep `"🧠 Stratège"` dans les `.chat-history.json` des projets de `workspace/` → fréquence par classe ⇒ **dit par quoi commencer la Phase 1**.
+2. **Taux d'escalade Claude** (la métrique de souveraineté) → `GET /api/traces` : combien de tours `resolvedBy=maitre` / coût Claude ≠ 0 ? (attendu ≈ 0 maintenant que les agents sont Ollama).
+3. **Réutilisation** → `GET /api/reuse` (reuseRatePct, topReused) : la mémoire d'artefacts paie-t-elle sur plusieurs projets ?
+4. **Stabilité** → erreurs, serveurs orphelins :3000, builds rouges, coût Ollama Cloud ressenti.
+5. **Honnêteté #L30/L17** : des images réparées ? des blocages de sur-exploration résiduels malgré L17 ?
+
+→ Ce review **remplit** le « quoi prioriser » et tranche **maintenant vs encore attendre**. Reprise prévue : **#164 Phase 1 → Phase 2**.
+
 ### Feuille de route principale (plan de bord)
 
 | # | Quoi | Statut | Modèle optimal | Effort |
