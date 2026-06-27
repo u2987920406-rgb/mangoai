@@ -28,6 +28,7 @@ import { saveUpload } from "./uploads.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
+import { sovereigntyReport, formatSovereignty } from "./sovereignty-metrics.js";
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
@@ -940,6 +941,18 @@ app.post("/api/stop", async (_req, res) => {
 // sans savoir que l'agent travaillait → 409 « Agent is already working » en rouge.
 app.get("/api/agent-status", (_req, res) => {
   res.json({ busy: agentBusy });
+});
+
+// #164 Phase 4 — Métrique de souveraineté : taux d'escalade Claude (resolvedBy
+// "maitre") par projet + tendance, calculé sur `.metrics.jsonl` (rien à réinventer).
+// L'objectif chiffré de Raf : ce taux doit BAISSER projet après projet.
+app.get("/api/sovereignty", (_req, res) => {
+  try {
+    const rep = sovereigntyReport(readMetrics());
+    res.json({ ...rep, line: formatSovereignty(rep) });
+  } catch (err) {
+    res.status(500).json({ error: (err as Error).message });
+  }
 });
 
 // #138 OS d'apps — Colonne de données partagée (la spine). CRUD REST sur le

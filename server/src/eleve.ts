@@ -36,6 +36,10 @@ import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
+import {
+  executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
+  type ExecRung,
+} from "./stratege-escalate.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
@@ -1011,6 +1015,14 @@ export async function runRelay(
     const strategeBrainObserves = strategeLogs && (strategeBrainMode === "observe" || strategeBrainMode === "on");
     const strategeBrainActs = strategeActs && strategeBrainMode === "on";
     const strategeEscalateCloud = process.env.STRATEGE_BRAIN_ESCALATE === "on";
+    // #164 Phase 4 — ÉCHELLE D'ESCALADE DE L'EXÉCUTANT (gaté `ELEVE_BRAIN_ESCALATE`, défaut
+    // off). Sur `brain-inadequate` (un blocage récidive après que SON remède a déjà été
+    // tenté → le cerveau de l'Élève ne suffit pas pour CE projet), on MONTE le cerveau d'un
+    // cran (barreau supérieur configurable) au lieu d'abandonner vers Claude. Borné par la
+    // longueur de l'échelle (aucune boucle), jamais de descente. Claude reste un filet SÉPARÉ.
+    const brainEscalateOn = process.env.ELEVE_BRAIN_ESCALATE === "on";
+    const execLadder: ExecRung[] = executorLadder({ model: callModel, provider: callProvider });
+    let execTier = 0; // barreau courant de l'exécutant (0 = cerveau de départ)
     const projectLabel = path.basename(projectDir);
     // Remède appliqué EN ATTENTE d'apprentissage : on ne distille QUE s'il mène au succès.
     // Object-ref (pas un `let`) : assigné dans une closure → TS ne le narrow pas à null.
@@ -1083,6 +1095,21 @@ export async function runRelay(
         return d; // la reclassification ne casse jamais la boucle
       }
     };
+    // #164 Phase 4 — tente une MONTÉE de cerveau de l'exécutant si le blocage est
+    // `brain-inadequate` (récidive après remède déjà tenté). Si un barreau supérieur
+    // existe : swap `runCtx.post` vers ce cerveau, arme le nudge, et signale au caller de
+    // RELANCER (true). Sinon false → l'escalade normale (Claude opt-in) reprend la main.
+    // Borné : `nextExecutorRung` renvoie null au sommet de l'échelle → aucune boucle.
+    const tryBrainEscalation = (d: Diagnosis): boolean => {
+      if (!brainEscalateOn || !isBrainInadequate(d, strategeState)) return false;
+      const next = nextExecutorRung(execLadder, execTier);
+      if (!next) return false; // sommet atteint → on rend la main (Claude opt-in)
+      execTier = next.tier;
+      runCtx.post = elevePost(next.model, next.provider);
+      push(`  ${formatExecutorEscalation(d, next)}`);
+      nudge = brainEscalationNudge(d, next);
+      return true;
+    };
     // Plan-ancre courant (pour le remède wandering — ré-ancrage L17).
     const currentPlanReminder = (): string => {
       try {
@@ -1149,7 +1176,15 @@ export async function runRelay(
             nudge = await applyRemedyNudge(d, r.label, r.nudge);
             continue;
           }
-          // r.kind === "escalate" → on tombe dans le break ci-dessous (escalade normale).
+          // r.kind === "escalate" → on tente une MONTÉE de cerveau (P4) avant le break.
+        }
+        // #164 Phase 4 — dernier recours souverain AVANT Claude : si le cerveau est
+        // inadéquat (le blocage récidive malgré son remède déjà tenté) et qu'un barreau
+        // supérieur existe, monte le cerveau de l'Élève et relance (borné par l'échelle).
+        if (d && !agErr && relances < selfRelanceMax && tryBrainEscalation(d)) {
+          relances++;
+          push(`↻ Stratège : cerveau monté (barreau ${execTier}) — relance de l'Élève (${relances}/${selfRelanceMax})`);
+          continue;
         }
         break;
       }
