@@ -28,8 +28,9 @@ fs.writeFileSync(path.join(dir, "src", "App.jsx"), "export default function App(
 const reg = buildEleveActionTools(dir);
 
 async function run() {
-  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + planifier #160 + web #154 + parcours #155 + artefact #156 + document #157 + site #159)");
-  check("18 outils enregistrés", reg.names().length === 18);
+  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + planifier #160 + web #154 + parcours #155 + artefact #156 + document #157 + archive + site #159)");
+  check("19 outils enregistrés", reg.names().length === 19);
+  check("outil archive présent (lire_archive)", reg.has("lire_archive"));
   check(
     "write_file/edit_file/run_command/add_dependency/chercher_image/finish présents",
     ["write_file", "edit_file", "run_command", "add_dependency", "chercher_image", "finish"].every((n) => reg.has(n)),
@@ -42,7 +43,7 @@ async function run() {
   check("outil document #157 présent (lire_document)", reg.has("lire_document"));
   check("outil site #159 présent (extraire_site)", reg.has("extraire_site"));
   check("outils lecture Phase 1 conservés", ["read_file", "list_files", "search_code", "check_build"].every((n) => reg.has(n)));
-  check("toOpenAITools → 18 functions valides", toOpenAITools(reg).length === 18 && toOpenAITools(reg).every((t) => t.type === "function"));
+  check("toOpenAITools → 19 functions valides", toOpenAITools(reg).length === 19 && toOpenAITools(reg).every((t) => t.type === "function"));
   // chercher_image : scène vide → erreur pédagogique (branche déterministe, sans réseau)
   const imgEmpty = await reg.invoke("chercher_image", { scene: "  " });
   check("chercher_image scène vide → isError", imgEmpty.isError === true);
@@ -82,7 +83,8 @@ async function run() {
   {
     const gated = buildEleveActionTools(dir, { allowRun: false });
     check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
-    check("17 outils (run_command retiré, planifier + web + http + parcours + artefact + document + site conservés)", gated.names().length === 17);
+    check("18 outils (run_command retiré, planifier + web + http + parcours + artefact + document + archive + site conservés)", gated.names().length === 18);
+    check("lire_archive conservé même pour cerveau faible (lecture, sûr)", gated.has("lire_archive"));
     check("planifier conservé même pour cerveau faible (planifier aide surtout les faibles)", gated.has("planifier"));
     check("chercher_artefact conservé même pour cerveau faible (pur, sûr)", gated.has("chercher_artefact"));
     check("lire_document conservé même pour cerveau faible (lecture, sûr)", gated.has("lire_document"));
@@ -129,6 +131,7 @@ async function run() {
     const discuss = buildEleveDiscussTools(dir);
     check("lecture locale conservée (read/list/search/check_build)", ["read_file", "list_files", "search_code", "check_build"].every((n) => discuss.has(n)));
     check("web lecture présent (chercher_web/lire_page/extraire_site/requete_web)", ["chercher_web", "lire_page", "extraire_site", "requete_web"].every((n) => discuss.has(n)));
+    check("lecture de sources présente (lire_document/lire_archive)", ["lire_document", "lire_archive"].every((n) => discuss.has(n)));
     check("AUCUNE écriture/exécution (write_file/edit_file/run_command absents)", ["write_file", "edit_file", "run_command"].every((n) => !discuss.has(n)));
     check("pas de finish (Discuter ne construit pas)", !discuss.has(FINISH_TOOL));
     // requete_web est en GET-only ici → son schéma n'expose pas 'corps' (preuve du getOnly)

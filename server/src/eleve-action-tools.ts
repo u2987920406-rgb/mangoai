@@ -23,6 +23,7 @@ import { buildEleveHttpTools } from "./eleve-http-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
 import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { buildEleveDocumentTools } from "./eleve-document-tools.js";
+import { buildEleveArchiveTools } from "./eleve-archive-tools.js";
 import { buildEleveSiteTools } from "./eleve-site-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
@@ -311,6 +312,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
     for (const t of buildEleveDocumentTools(projectDir)) reg.register(t);
   }
 
+  // Outil ARCHIVE (2026-06-27) — « lis DANS une archive ». Liste/lit un .zip ou .rar
+  // fourni par l'utilisateur (lecture seule, n'extrait rien sur disque). Frère de
+  // lire_document #157. zip via fflate, rar via node-unrar-js (WASM). Coupure ELEVE_ARCHIVE=off.
+  if (process.env.ELEVE_ARCHIVE !== "off") {
+    for (const t of buildEleveArchiveTools(projectDir)) reg.register(t);
+  }
+
   // Outil SITE (#159) — « extraire l'essence d'un site ». Explore un site externe
   // en profondeur (plusieurs pages) et en extrait l'info ; mode A (url) ou mode B
   // (recherche → trouve la source seul). Réutilise getBrowser/scrapeExternal/anti-SSRF
@@ -349,6 +357,13 @@ export function buildEleveDiscussTools(projectDir: string): ToolRegistry {
   }
   if (process.env.ELEVE_HTTP !== "off") {
     for (const t of buildEleveHttpTools(projectDir, undefined, { getOnly: true })) reg.register(t);
+  }
+  // Lecture de documents/archives : SOURCES read-only → cohérentes avec « lecture seule ».
+  if (process.env.ELEVE_DOCUMENT !== "off") {
+    for (const t of buildEleveDocumentTools(projectDir)) reg.register(t);
+  }
+  if (process.env.ELEVE_ARCHIVE !== "off") {
+    for (const t of buildEleveArchiveTools(projectDir)) reg.register(t);
   }
   return reg;
 }
