@@ -8,13 +8,41 @@ export const WORKSPACE_DIR = path.join(ROOT, "workspace");
 const TEMPLATE_DIR = path.join(ROOT, "server", "template");
 const TEMPLATES_DIR = path.join(ROOT, "server", "templates");
 
+// « Dernière activité » d'un projet, pour trier du plus récent au moins récent
+// (demande de Raf). On prend le mtime le plus récent entre `.chat-history.json`
+// (réécrit à CHAQUE tour de chat → vrai signal d'activité) et le dossier lui-même
+// (couvre un projet tout neuf sans encore d'historique). Best-effort : un stat qui
+// échoue compte 0. Pur (lecture fs), bon marché (quelques dizaines de projets).
+function projectActivityMs(name: string): number {
+  const dir = path.join(WORKSPACE_DIR, name);
+  let best = 0;
+  for (const f of [".chat-history.json", ""]) {
+    try {
+      best = Math.max(best, fs.statSync(f ? path.join(dir, f) : dir).mtimeMs);
+    } catch {
+      /* fichier/dossier absent → ignoré */
+    }
+  }
+  return best;
+}
+
+/** Tri PUR (testable) : du plus récemment actif au moins récent ; à activité
+ * égale, le nom départage (ordre stable et déterministe). */
+export function orderByRecency(items: { name: string; ts: number }[]): string[] {
+  return [...items]
+    .sort((a, b) => b.ts - a.ts || a.name.localeCompare(b.name))
+    .map((x) => x.name);
+}
+
+/** Projets du workspace, triés du PLUS RÉCEMMENT actif au moins récent. */
 export function listProjects(): string[] {
   if (!fs.existsSync(WORKSPACE_DIR)) return [];
-  return fs
+  const items = fs
     .readdirSync(WORKSPACE_DIR, { withFileTypes: true })
     // hidden dirs (.skills, ...) are workspace internals, not projects
     .filter((e) => e.isDirectory() && !e.name.startsWith("."))
-    .map((e) => e.name);
+    .map((e) => ({ name: e.name, ts: projectActivityMs(e.name) }));
+  return orderByRecency(items);
 }
 
 export function projectDir(name: string): string {

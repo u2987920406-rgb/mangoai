@@ -8,6 +8,9 @@ maj: 2026-06-26
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-27] ingest | Liste des projets triée par récence (plus récent d'abord)
+Demande de Raf : dans le workspace, sélectionner les projets du plus récent au moins récent, pas par ordre alphabétique. Fix : `listProjects()` (`projects.ts`) trie par dernière activité — `projectActivityMs` = mtime max entre `.chat-history.json` (réécrit à chaque tour) et le dossier (projet neuf), descendant, nom départage à égalité. Logique extraite en helper pur `orderByRecency` (testable). Sélecteur de projet (Workspace) ET App Builder consomment `/api/projects` → les deux passent en récence. tsc 0 · test-projects 14 (+4). Actif au prochain redémarrage backend. Touche [[bureau-os]]. Aucun git (en attente Raf).
+
 ## [2026-06-27] ingest | Indicateur de réflexion visible + 409 « Agent busy » rendu doux (texte conservé)
 Bug Raf (captures) : l'agent occupé (souvent par sa session automatique parallèle sur le même backend) sans indicateur → en envoyant, message ROUGE « Agent is already working » + texte perdu. « Si j'avais vu le bouton réflexion, j'aurais attendu. » Fix : `GET /api/agent-status` (`{busy}`) + `Chat.jsx` sonde toutes les 3 s hors de notre tour → `externalBusy` ; indicateur refondu (`BrainCircuit` animé + bandeau) dès `working = busy || externalBusy` (libellés distincts) ; placeholder + bouton d'envoi reflètent l'occupation ; le 409 devient un statut ambré (plus de rouge) qui RESTAURE le texte tapé. server tsc 0 · UI 68/68 · build vert. L'endpoint n'est servi qu'après redémarrage backend (poll échoue en silence d'ici là). Touche [[bureau-os]]. Aucun git (en attente Raf).
 

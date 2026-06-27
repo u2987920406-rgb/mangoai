@@ -1,6 +1,6 @@
 // Test de mergePackageJson (fix F4) — la fusion préserve les deps de base
 // (@tailwindcss/vite, tailwindcss…) quand un template apporte son propre package.json.
-import { mergePackageJson } from "./projects.js";
+import { mergePackageJson, orderByRecency } from "./projects.js";
 
 let pass = 0;
 let fail = 0;
@@ -47,6 +47,36 @@ console.log("\n[2] mergePackageJson : le template gagne sur conflit de version")
   const merged = mergePackageJson(base, tpl);
   check("version react du template prime sur conflit", merged.dependencies?.["react"] === "^18.3.0");
   check("react-dom de base intact", merged.dependencies?.["react-dom"] === "^19.2.0");
+}
+
+console.log("\n[3] orderByRecency : du plus récent au moins récent (nom départage)");
+{
+  const items = [
+    { name: "vieux-projet", ts: 1000 },
+    { name: "tout-frais", ts: 9000 },
+    { name: "moyen", ts: 5000 },
+  ];
+  check("ordre = plus récent → moins récent", orderByRecency(items).join(",") === "tout-frais,moyen,vieux-projet");
+
+  // À activité égale (ex. mtime identiques, ou tous à 0), le nom départage.
+  const tied = [
+    { name: "zeta", ts: 0 },
+    { name: "alpha", ts: 0 },
+    { name: "mango", ts: 0 },
+  ];
+  check("à activité égale → ordre alphabétique stable", orderByRecency(tied).join(",") === "alpha,mango,zeta");
+
+  // Un projet tout neuf (ts élevé) passe DEVANT un ancien très actif jadis.
+  const mix = [
+    { name: "ancien", ts: 100 },
+    { name: "neuf", ts: 999999 },
+  ];
+  check("le projet neuf passe en tête", orderByRecency(mix)[0] === "neuf");
+
+  // Ne mute pas l'entrée d'origine.
+  const src = [{ name: "b", ts: 1 }, { name: "a", ts: 2 }];
+  orderByRecency(src);
+  check("n'altère pas le tableau source", src[0].name === "b");
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} projects : ${pass} pass, ${fail} fail`);
