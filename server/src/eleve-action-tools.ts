@@ -19,6 +19,7 @@ import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildElevePlanifierTools } from "./eleve-planifier-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
+import { buildEleveHttpTools } from "./eleve-http-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
 import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { buildEleveDocumentTools } from "./eleve-document-tools.js";
@@ -278,6 +279,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // une vraie source avant d'affirmer une URL/un usage d'API/un fait.
   if (process.env.ELEVE_WEB !== "off") {
     for (const t of buildEleveWebTools(projectDir)) reg.register(t);
+  }
+
+  // Outil HTTP (#166) — la « main Internet » générique : appeler une API (GET/POST).
+  // Complète chercher_web/lire_page (qui LISENT) par TAPER une API. Mêmes garde-fous
+  // (anti-SSRF isCloneableUrl + sanitizeExternal + bornes) ; coupure ELEVE_HTTP=off.
+  if (process.env.ELEVE_HTTP !== "off") {
+    for (const t of buildEleveHttpTools(projectDir)) reg.register(t);
   }
 
   // Outil PARCOURS (#155) — « vérifie que ça MARCHE, pas juste que ça compile ».
