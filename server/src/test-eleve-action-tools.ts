@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildEleveActionTools, FINISH_TOOL, isShellReadCommand, isAllowedDependency } from "./eleve-action-tools.js";
+import { buildEleveActionTools, buildEleveDiscussTools, FINISH_TOOL, isShellReadCommand, isAllowedDependency } from "./eleve-action-tools.js";
 import { toOpenAITools } from "./kernel-mcp.js";
 
 let pass = 0;
@@ -122,6 +122,18 @@ async function run() {
     // Refus SANS installation (pas de réseau en test) : on n'appelle add_dependency que sur une lib HORS liste.
     const bad = await reg.invoke("add_dependency", { package: "some-random-unlisted-lib" });
     check("add_dependency refuse une lib hors liste (isError, sans installer)", bad.isError === true && /autoris/.test(bad.text));
+  }
+
+  console.log("\n[9] buildEleveDiscussTools — mode Discuter : LECTURE locale + LECTURE web, JAMAIS d'écriture");
+  {
+    const discuss = buildEleveDiscussTools(dir);
+    check("lecture locale conservée (read/list/search/check_build)", ["read_file", "list_files", "search_code", "check_build"].every((n) => discuss.has(n)));
+    check("web lecture présent (chercher_web/lire_page/extraire_site/requete_web)", ["chercher_web", "lire_page", "extraire_site", "requete_web"].every((n) => discuss.has(n)));
+    check("AUCUNE écriture/exécution (write_file/edit_file/run_command absents)", ["write_file", "edit_file", "run_command"].every((n) => !discuss.has(n)));
+    check("pas de finish (Discuter ne construit pas)", !discuss.has(FINISH_TOOL));
+    // requete_web est en GET-only ici → son schéma n'expose pas 'corps' (preuve du getOnly)
+    const rw = discuss.list().find((t) => t.name === "requete_web");
+    check("requete_web en GET-only (schéma sans 'corps')", !!rw && !("corps" in rw.inputSchema));
   }
 
   fs.rmSync(dir, { recursive: true, force: true });

@@ -328,5 +328,30 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   return reg;
 }
 
+/**
+ * Registre du mode DISCUTER (2026-06-27) — LECTURE locale + LECTURE WEB, JAMAIS d'écriture.
+ *
+ * Avant ce câblage, Discuter n'avait que `buildEleveTools` (read/list/search/check_build
+ * locaux) → l'Élève disait honnêtement « je n'ai pas accès à internet » face à une URL.
+ * On lui donne donc les outils web EN LECTURE, cohérents avec la règle « lecture seule »
+ * (ils récupèrent/lisent, n'écrivent rien) : `chercher_web`/`lire_page` (#154),
+ * `extraire_site` (#159), et `requete_web` en GET seul (#166, `getOnly` → pas de POST).
+ * AUCUN write_file/edit_file/run_command (réservés à Construire). Mêmes gates que Construire
+ * (ELEVE_WEB/ELEVE_SITE/ELEVE_HTTP) → une coupure d'urgence vaut pour les deux modes.
+ */
+export function buildEleveDiscussTools(projectDir: string): ToolRegistry {
+  const reg = buildEleveTools(projectDir);
+  if (process.env.ELEVE_WEB !== "off") {
+    for (const t of buildEleveWebTools(projectDir)) reg.register(t);
+  }
+  if (process.env.ELEVE_SITE !== "off") {
+    for (const t of buildEleveSiteTools(projectDir)) reg.register(t);
+  }
+  if (process.env.ELEVE_HTTP !== "off") {
+    for (const t of buildEleveHttpTools(projectDir, undefined, { getOnly: true })) reg.register(t);
+  }
+  return reg;
+}
+
 /** Vrai si l'outil nommé est la sentinelle de fin (utilisé par le runtime). */
 export const FINISH_TOOL = "finish";

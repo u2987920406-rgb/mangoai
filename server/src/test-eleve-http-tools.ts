@@ -73,5 +73,18 @@ console.log("\n[6] sanitizeHeaders — borné, sûr");
   check("non-objet → {}", Object.keys(sanitizeHeaders("nope")).length === 0);
 }
 
+console.log("\n[7] getOnly (mode Discuter) — GET marche, POST refusé, schéma sans corps");
+{
+  const getTool = (deps: HttpDeps) => buildEleveHttpTools("x", deps, { getOnly: true })[0];
+  const { deps, calls } = fakeHttp({ body: "{\"ok\":1}" });
+  const r = await getTool(deps).handler({ url: "https://api.exemple.com/data" });
+  check("GET autorisé en getOnly", !r.isError && calls.length === 1 && calls[0].init.method === "GET");
+  const r2 = await getTool(deps).handler({ url: "https://api.exemple.com/x", methode: "POST" as "GET", corps: "{\"a\":1}" });
+  check("POST refusé en getOnly", !!r2.isError && /GET/.test(r2.text));
+  check("aucun POST émis", !calls.some((c) => c.init.method === "POST"));
+  check("schéma getOnly : pas de champ 'corps'", !("corps" in getTool(deps).inputSchema));
+  check("schéma normal : champ 'corps' présent", "corps" in tool(deps).inputSchema);
+}
+
 console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-http-tools : ${pass} ok, ${fail} ko`);
 if (fail > 0) process.exit(1);

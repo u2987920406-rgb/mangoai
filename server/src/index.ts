@@ -30,7 +30,7 @@ import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
 import { sovereigntyReport, formatSovereignty } from "./sovereignty-metrics.js";
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js";
-import { buildEleveTools } from "./eleve-tools.js";
+import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { assembleSystemPrompt } from "./scenario.js";
 import { uxuiProfile } from "./models/uxui.js";
@@ -487,7 +487,7 @@ app.post("/api/chat", async (req, res) => {
       let answer: string;
       if (ELEVE_PROVIDER === "openai") {
         try {
-          const r = await askEleveAgentic(system, userMsg, buildEleveTools(dir), {
+          const r = await askEleveAgentic(system, userMsg, buildEleveDiscussTools(dir), {
             model: binding.model,
             onTool: (name, args) => send({ type: "tool", name, detail: args }),
           });
