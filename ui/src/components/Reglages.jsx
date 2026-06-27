@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState } from "react";
 import {
   ArrowLeft, Activity, BarChart2, BarChart3, Brain, Clock, CreditCard,
-  Hash, Moon, Rss, Satellite, Scissors, Settings, Wrench,
+  Hash, Moon, Rss, Satellite, Scissors, Settings, Wrench, Wand2,
 } from "lucide-react";
 import { NEUTRAL } from "../neutral.js";
 
@@ -18,6 +18,7 @@ const AutoAblation     = lazy(() => import("./AutoAblation.jsx"));
 const Radar            = lazy(() => import("./Radar.jsx"));
 const Veille           = lazy(() => import("./Veille.jsx"));
 const Tokenizer        = lazy(() => import("./Tokenizer.jsx"));
+const AtelierMango     = lazy(() => import("./AtelierMango.jsx"));
 
 // Catégories de la sous-navigation (groupées). NEUTRAL masque les diagnostics Kernel.
 function buildGroups() {
@@ -27,6 +28,7 @@ function buildGroups() {
       items: [
         { id: "atelier", label: "Atelier des cerveaux", icon: Wrench },
         { id: "brains", label: "Cerveaux", icon: Brain },
+        { id: "self", label: "Atelier de Mango", icon: Wand2 },
       ],
     },
     {
@@ -92,6 +94,7 @@ export default function Reglages({ onBack, onOpenProject }) {
     switch (section) {
       case "atelier":   return <AtelierCerveaux onBack={onBack} />;
       case "brains":    return <Brains onBack={onBack} />;
+      case "self":      return <AtelierMango onBack={onBack} />;
       case "billing":   return <Billing onBack={onBack} />;
       case "cron":      return <CronManager onBack={onBack} />;
       case "nocturnal": return <NocturnalReview onBack={onBack} onOpenProject={onOpenProject} />;

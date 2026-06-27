@@ -111,6 +111,45 @@ export async function selfDiff(
   return { patch: patch.stdout, stat: stat.stdout };
 }
 
+/** Un chemin (cible) reste-t-il sous `root` ? (anti-évasion de chemin). PUR. */
+export function isInsidePath(root: string, target: string): boolean {
+  const r = path.resolve(root);
+  const t = path.resolve(target);
+  return t === r || t.startsWith(r + path.sep);
+}
+
+/**
+ * FUSION : écrit dans le repo VIVANT les fichiers choisis depuis la copie isolée (ajoute le
+ * newline final manquant). N'exécute AUCUN git (c'est « save » : à committer ensuite). Garde
+ * anti-évasion : chaque fichier doit rester dans le repo ET dans la copie. Ne lève jamais.
+ */
+export function mergeSelfFiles(repoRoot: string, worktree: string, files: string[]): { merged: string[]; refused: string[] } {
+  const merged: string[] = [];
+  const refused: string[] = [];
+  for (const rel of files) {
+    const src = path.join(worktree, rel);
+    const dst = path.join(repoRoot, rel);
+    if (!isInsidePath(repoRoot, dst) || !isInsidePath(worktree, src)) { refused.push(rel); continue; }
+    try {
+      if (!fs.existsSync(src)) { refused.push(rel); continue; }
+      let content = fs.readFileSync(src, "utf8");
+      if (content.length > 0 && !content.endsWith("\n")) content += "\n";
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.writeFileSync(dst, content);
+      merged.push(rel);
+    } catch { refused.push(rel); }
+  }
+  return { merged, refused };
+}
+
+/** Liste des fichiers modifiés dans la copie (relatifs à la racine). Ne lève jamais. */
+export async function selfChangedFiles(wt: SelfWorktree, opts: { git?: GitRunner } = {}): Promise<string[]> {
+  const git = opts.git ?? realGit;
+  await git(["add", "-A"], wt.worktree);
+  const r = await git(["diff", "--cached", "--name-only"], wt.worktree);
+  return r.stdout.split("\n").map((s) => s.trim()).filter(Boolean);
+}
+
 /**
  * Rend la copie isolée : retire le worktree (et, en option, supprime la branche). Le repo vivant
  * reste intact. Par défaut on GARDE la branche (pour que Raf relise/fusionne lui-même). Ne lève jamais.

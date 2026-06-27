@@ -2,7 +2,8 @@
 // Aucune commande git réelle, aucun dépôt touché.
 import {
   sanitizeSelfSlug, selfWorktreeBase, createSelfWorktree, selfDiff, removeSelfWorktree,
-  formatSelfWorktree, buildSelfRegistry, runSelfExperiment, runTestSandboxed, SELF_ALLOWED_TOOLS,
+  formatSelfWorktree, buildSelfRegistry, runSelfExperiment, runTestSandboxed,
+  mergeSelfFiles, isInsidePath, SELF_ALLOWED_TOOLS,
   type GitRunner, type SelfAgentRun,
 } from "./mango-self.js";
 import path from "node:path";
@@ -187,6 +188,34 @@ console.log("\n[12] runTestSandboxed — bloque un test piégé (rm/spawn), lais
   check("le fichier hors-bac-à-sable est INTACT (rm bloqué)", fs.existsSync(guard));
 
   try { fs.rmSync(sbxRoot, { recursive: true, force: true }); } catch { /* nettoyage */ }
+}
+
+console.log("\n[13] mergeSelfFiles — copie au repo vivant, newline, anti-évasion");
+{
+  const root = path.join(os.tmpdir(), "mango-merge-test");
+  const repo = path.join(root, "repo");
+  const wt = path.join(root, "wt");
+  fs.mkdirSync(path.join(repo, "server", "src"), { recursive: true });
+  fs.mkdirSync(path.join(wt, "server", "src"), { recursive: true });
+  // fichier modifié dans la copie, SANS newline final (imperfection GLM)
+  fs.writeFileSync(path.join(wt, "server", "src", "x.ts"), "export const x = 1;");
+
+  const r = mergeSelfFiles(repo, wt, ["server/src/x.ts"]);
+  check("fichier fusionné", r.merged.includes("server/src/x.ts"));
+  const written = fs.readFileSync(path.join(repo, "server", "src", "x.ts"), "utf8");
+  check("contenu copié dans le repo vivant", written.startsWith("export const x = 1;"));
+  check("newline final ajouté", written.endsWith("\n"));
+
+  // anti-évasion : un chemin qui sort du repo est REFUSÉ (rien écrit dehors)
+  const evil = mergeSelfFiles(repo, wt, ["../../../HACKED.txt"]);
+  check("chemin d'évasion refusé", evil.refused.includes("../../../HACKED.txt") && evil.merged.length === 0);
+  check("rien écrit hors du repo", !fs.existsSync(path.join(root, "HACKED.txt")));
+
+  // garde isInsidePath
+  check("isInsidePath : dedans → true", isInsidePath(repo, path.join(repo, "a/b")));
+  check("isInsidePath : dehors → false", !isInsidePath(repo, path.join(root, "autre")));
+
+  try { fs.rmSync(root, { recursive: true, force: true }); } catch { /* nettoyage */ }
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} mango-self : ${pass} ok, ${fail} ko`);

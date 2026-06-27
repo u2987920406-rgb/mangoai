@@ -53,6 +53,9 @@ Pas de Docker sur la machine → le bon outil = le **modèle de permissions de N
 
 **Bilan** : sur un chantier borné, Mango **lit, écrit, type-checke et teste son propre code, seul**, sur copie isolée ; Raf relit/fusionne. 3 fonctions déjà écrites par Mango pour MangoOS.
 
+## Industrialisation — l'« Atelier de Mango » (UI)
+Un panneau **Réglages › Intelligence › Atelier de Mango** (`AtelierMango.jsx`) pour lancer un chantier depuis l'UI (ce qui était orchestré en CLI). Backend `self-routes.ts` : `POST /api/self/run` (SSE — copie isolée → l'Élève travaille `check_types`+`run_tests` → stream live → diff) · `POST /api/self/merge` (`mergeSelfFiles` : écrit les fichiers au repo vivant + newline, AUCUN git = à committer ensuite ; garde anti-évasion `isInsidePath`) · `POST /api/self/discard`. UI : champ tâche → **Lancer** → log live + **diff coloré** + badges type-check/tests → **Fusionner / Jeter**. `test-mango-self 55` (mergeSelfFiles + gardes). **Honnêteté** : le bouton n'augmente pas l'intelligence de Mango — il rend l'accès ergonomique à une capacité supervisée déjà prouvée ; s'active au prochain redémarrage backend.
+
 ## Liens
 [[le-stratege]] (métrique de souveraineté P4) · [[capacites-mango]] (conscience des limites) · [[souverainete-progressive]] · [[eleve-local]] · [[brain-dispatch]] · [[limites]] · [[statut]] · [[historique]]
 
