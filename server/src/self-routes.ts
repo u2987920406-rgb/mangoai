@@ -64,7 +64,7 @@ export function registerSelfRoutes(app: Express): void {
   });
 
   // ── Fusionner le diff dans le repo vivant (écrit les fichiers, PAS de git) ───
-  app.post("/api/self/merge", (req: Request, res: Response) => {
+  app.post("/api/self/merge", async (req: Request, res: Response) => {
     const body = (req.body ?? {}) as { worktree?: string; branch?: string; files?: string[] };
     const worktree = String(body.worktree ?? "");
     const files = Array.isArray(body.files) ? body.files.map(String) : [];
@@ -72,10 +72,12 @@ export function registerSelfRoutes(app: Express): void {
     // Garde : la copie doit être sous la base mango-self (pas un dossier arbitraire).
     if (!isInsidePath(selfWorktreeBase(REPO_ROOT), worktree)) { res.status(403).json({ error: "worktree hors zone" }); return; }
     const { merged, refused } = mergeSelfFiles(REPO_ROOT, worktree, files);
-    // Nettoie la copie isolée (worktree + branche jetable) après fusion.
+    // Nettoie la copie isolée (worktree + branche jetable) APRÈS fusion. On ATTEND le résultat
+    // (plus de fire-and-forget) et on le remonte : sinon un échec silencieux laisse des worktrees
+    // orphelins s'accumuler dans .mango-self. `removeSelfWorktree` a un fallback prune robuste.
     const wt: SelfWorktree = { worktree, branch: String(body.branch ?? ""), repoRoot: REPO_ROOT };
-    void removeSelfWorktree(wt, { deleteBranch: !!body.branch });
-    res.json({ ok: true, merged, refused });
+    const cleanup = await removeSelfWorktree(wt, { deleteBranch: !!body.branch });
+    res.json({ ok: true, merged, refused, cleanup });
   });
 
   // ── Jeter la copie sans fusionner ───────────────────────────────────────────

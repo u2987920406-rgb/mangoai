@@ -153,16 +153,32 @@ export async function selfChangedFiles(wt: SelfWorktree, opts: { git?: GitRunner
 /**
  * Rend la copie isolée : retire le worktree (et, en option, supprime la branche). Le repo vivant
  * reste intact. Par défaut on GARDE la branche (pour que Raf relise/fusionne lui-même). Ne lève jamais.
+ *
+ * ROBUSTE : si `git worktree remove` échoue (état à moitié laissé par un nettoyage antérieur,
+ * `.git` manquant, dossier verrouillé sous Windows, métadonnées « prunable »…), on bascule sur un
+ * FALLBACK — suppression physique du dossier PUIS `git worktree prune` — pour ne JAMAIS laisser
+ * d'orphelin s'accumuler dans `.mango-self`. `pruned` indique si ce chemin de secours a servi.
  */
 export async function removeSelfWorktree(
   wt: SelfWorktree,
-  opts: { git?: GitRunner; deleteBranch?: boolean } = {},
-): Promise<{ ok: boolean; reason: string }> {
+  opts: { git?: GitRunner; deleteBranch?: boolean; rmDir?: (dir: string) => void } = {},
+): Promise<{ ok: boolean; reason: string; pruned: boolean }> {
   const git = opts.git ?? realGit;
+  const rmDir = opts.rmDir ?? ((dir: string) => {
+    try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* best-effort */ }
+  });
+  let pruned = false;
   const r = await git(["worktree", "remove", "--force", wt.worktree], wt.repoRoot);
-  if (r.code !== 0) return { ok: false, reason: (r.stderr || r.stdout).trim().slice(0, 200) };
+  if (r.code !== 0) {
+    // git n'a pas su retirer proprement → on force : dossier physique d'abord, puis purge des
+    // métadonnées git (sinon `git worktree list` garde une entrée fantôme « prunable »).
+    rmDir(wt.worktree);
+    const pr = await git(["worktree", "prune"], wt.repoRoot);
+    pruned = true;
+    if (pr.code !== 0) return { ok: false, reason: (r.stderr || r.stdout || pr.stderr).trim().slice(0, 200), pruned };
+  }
   if (opts.deleteBranch) await git(["branch", "-D", wt.branch], wt.repoRoot);
-  return { ok: true, reason: "" };
+  return { ok: true, reason: "", pruned };
 }
 
 /** Ligne lisible (observabilité). */

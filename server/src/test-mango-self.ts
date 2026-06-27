@@ -96,6 +96,23 @@ console.log("\n[6] removeSelfWorktree — rend la copie, GARDE la branche par d�
   const { git: git2, calls: calls2 } = fakeGit();
   await removeSelfWorktree(wt, { git: git2, deleteBranch: true });
   check("branche supprimée si demandé explicitement", calls2.some((c) => c[0] === "branch" && c.includes("-D")));
+
+  // Fallback robuste : si `git worktree remove` ÉCHOUE, on supprime le dossier physique
+  // puis on `git worktree prune` → jamais d'orphelin (rmDir injecté = pas de vrai fs).
+  const { git: git3, calls: calls3 } = fakeGit((a) =>
+    a[0] === "worktree" && a[1] === "remove" ? { code: 1, stderr: "validation failed" } : {});
+  const removed: string[] = [];
+  const r3 = await removeSelfWorktree(wt, { git: git3, deleteBranch: true, rmDir: (d) => removed.push(d) });
+  check("fallback : remove échoue → ok quand même (pas d'orphelin)", r3.ok);
+  check("fallback : dossier physique supprimé (rmDir appelé sur le worktree)", removed.includes("X:/wt/x"));
+  check("fallback : git worktree prune appelé", calls3.some((c) => c[0] === "worktree" && c[1] === "prune"));
+  check("fallback : pruned = true signalé", r3.pruned === true);
+  check("fallback : branche quand même supprimée", calls3.some((c) => c[0] === "branch" && c.includes("-D")));
+
+  // Si prune échoue AUSSI → ok:false honnête (on ne ment pas sur le nettoyage).
+  const { git: git4 } = fakeGit((a) => a[0] === "worktree" ? { code: 1, stderr: "boom" } : {});
+  const r4 = await removeSelfWorktree(wt, { git: git4, rmDir: () => {} });
+  check("fallback : prune échoue aussi → ok:false honnête", r4.ok === false && r4.pruned === true);
 }
 
 console.log("\n[7] formatSelfWorktree — observabilité");
