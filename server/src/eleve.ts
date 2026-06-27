@@ -36,6 +36,7 @@ import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
+import { consultSpecialist, buildDelegateNudge } from "./specialist-delegate.js";
 import {
   executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
   type ExecRung,
@@ -1004,6 +1005,9 @@ export async function runRelay(
     const strategeMode = (process.env.ELEVE_STRATEGE ?? "off").toLowerCase();
     const strategeLogs = strategeMode === "observe" || strategeMode === "on";
     const strategeActs = strategeMode === "on";
+    // slice 2 (L48b) — DÉLÉGATION RÉELLE : sur plateau-iterations, le Stratège invoque le
+    // spécialiste forgé pertinent (au lieu du seul nudge « décompose »). Gaté, défaut off.
+    const delegateOn = strategeActs && (process.env.ELEVE_DELEGATE ?? "off").toLowerCase() === "on";
     const strategeState: StrategeState = newStrategeState();
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
@@ -1173,8 +1177,21 @@ export async function runRelay(
             push(`  ${formatRemedy(d, r)}`);
             commitRemedy(d, strategeState);
             relances++;
+            // slice 2 — sur plateau-iterations, on DÉLÈGUE vraiment : on cherche le spécialiste
+            // forgé pertinent (match tâche↔agent) et on l'invoque pour une analyse experte, qui
+            // remplace le nudge « décompose ». Aucun match → repli sur le nudge (inchangé).
+            let remedyNudge = r.nudge;
+            if (delegateOn && d.blocker === "plateau-iterations") {
+              const consult = await consultSpecialist({ task, blockage: d.detail ?? "plafond d'itérations atteint" });
+              if (consult) {
+                push(`  🤝 Stratège délègue à « ${consult.agent.name} » (cible ${consult.agent.lacune || "—"}, score ${consult.score})`);
+                remedyNudge = buildDelegateNudge(consult.agent.name, consult.advice);
+              } else {
+                push(`  ℹ Stratège : aucun spécialiste forgé pertinent → décomposition`);
+              }
+            }
             push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
-            nudge = await applyRemedyNudge(d, r.label, r.nudge);
+            nudge = await applyRemedyNudge(d, r.label, remedyNudge);
             continue;
           }
           // r.kind === "escalate" → on tente une MONTÉE de cerveau (P4) avant le break.
