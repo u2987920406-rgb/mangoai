@@ -6,6 +6,10 @@ interface CostBreakdown { model: string; inputCost: number; outputCostEstimate: 
 
 const CHARS_PER_TOKEN = 3.5
 
+// Fenêtre de contexte de référence pour le pourcentage (200k = Sonnet/Opus).
+// Overridable via env pour s'aligner sur un modèle spécifique si besoin.
+const DEFAULT_CONTEXT_WINDOW = 200_000
+
 function countTokens(text: string): number {
   return Math.ceil(text.length / CHARS_PER_TOKEN)
 }
@@ -18,7 +22,7 @@ export function estimateTokens(text: string): TokenResult {
 
   let match: RegExpExecArray | null
   while ((match = tokenRegex.exec(text)) !== null) {
-    const [full, code, number, punct, other] = match
+    const [full, code, number, punct] = match
     const seg = full
 
     if (code) {
@@ -37,7 +41,9 @@ export function estimateTokens(text: string): TokenResult {
 }
 
 export function estimateCosts(tokenCount: number): CostBreakdown[] {
-  // Tarifs en USD / 1M tokens
+  // Tarifs en USD / 1K tokens (valeurs Anthropic publiques, juin 2026).
+  // inputCostPer1k = prix d'entrée ; outputCostPer1k = prix de sortie.
+  // L'estimation de sortie suppose un volume output ≈ input (conservatoire).
   const models = [
     { model: 'Haiku 4.5', inputCostPer1k: 0.0008, outputCostPer1k: 0.004 },
     { model: 'Sonnet 4.6', inputCostPer1k: 0.003, outputCostPer1k: 0.015 },
@@ -62,7 +68,8 @@ export function registerTokenizerRoutes(app: Express): void {
 
     const { count, segments } = estimateTokens(text)
     const costs = estimateCosts(count)
-    const contextPercent = (count / 200000) * 100
+    const contextWindow = Number(process.env.CONTEXT_WINDOW) || DEFAULT_CONTEXT_WINDOW
+    const contextPercent = (count / contextWindow) * 100
 
     res.json({ count, segments, costs, contextPercent })
   })

@@ -11,8 +11,13 @@ export function atomicWriteFileSync(file: string, data: string): void {
     fs.renameSync(tmp, file);
   } catch {
     // Windows refuses the replace when the target is briefly held open
-    // (editor, antivirus scan) — fall back to a direct write.
-    fs.writeFileSync(file, data);
-    fs.rmSync(tmp, { force: true });
+    // (editor, antivirus scan) — fall back to a direct write. The temp file
+    // is cleaned up in a finally so it never leaks even if the fallback write
+    // itself throws (previously the rmSync was unreachable in that case).
+    try {
+      fs.writeFileSync(file, data);
+    } finally {
+      fs.rmSync(tmp, { force: true });
+    }
   }
 }

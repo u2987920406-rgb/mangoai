@@ -3,15 +3,21 @@
 
 import os from "node:os";
 
-/** Adresses IPv4 non-internes de la machine (192.168.x, 10.x…), ordre des interfaces. */
+/** Adresses IPv4 non-internes de la machine (192.168.x, 10.x…), ordre des interfaces.
+ *  Dédupliquées : une même IP peut apparaître sur plusieurs interfaces (ex. pont
+ *  virtuel qui reflète l'IP hôte) — sans dédup on logguerait deux fois la même URL. */
 export function lanIPv4s(): string[] {
+  const seen = new Set<string>();
   const out: string[] = [];
   const ifaces = os.networkInterfaces();
   for (const name of Object.keys(ifaces)) {
     for (const ni of ifaces[name] ?? []) {
       // Node ≥18 : ni.family peut être "IPv4" (string) ou 4 (number).
       const isV4 = ni.family === "IPv4" || (ni.family as unknown as number) === 4;
-      if (isV4 && !ni.internal) out.push(ni.address);
+      if (isV4 && !ni.internal && !seen.has(ni.address)) {
+        seen.add(ni.address);
+        out.push(ni.address);
+      }
     }
   }
   return out;
