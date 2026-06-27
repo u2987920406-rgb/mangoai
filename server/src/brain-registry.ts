@@ -25,7 +25,7 @@ export interface BrainConfig {
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "extracteur" | "testeur" | "auditeur"
-  | "optimiseur" | "chercheur" | "juge"
+  | "optimiseur" | "chercheur" | "juge" | "stratege"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -45,6 +45,12 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // #161 — juge de clôture (intention↔livré) : souverain ($0) et DISTINCT de
   // l'exécutant GLM (provider openai), pour éviter l'auto-jugement biaisé.
   juge:          { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 45_000 },
+  // #164 Phase 3 — Le Stratège (cas AMBIGUS). Leçon TRINITY (veille Sakana) : un
+  // petit cerveau LOCAL suffit à *classer* un blocage (il ne résout rien lui-même,
+  // il choisit une classe du catalogue). Barreau 1 de l'échelle d'escalade :
+  // gemma4:12b LOCAL ($0 réel). Le barreau 2 (cloud supérieur) est un AUTRE agent,
+  // configurable par env (STRATEGE_ESCALATE_AGENT) — voir stratege-brain.ts.
+  stratege:      { provider: "ollama", model: "gemma4:12b", timeoutMs: 90_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]

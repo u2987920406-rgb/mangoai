@@ -35,6 +35,7 @@ import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from ".
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
+import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
 import { runClosureGate, evaluateGate } from "./eleve-gate.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
@@ -1002,6 +1003,14 @@ export async function runRelay(
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
     const strategeLearns = strategeActs && process.env.ELEVE_STRATEGE_LEARN === "on";
+    // #164 Phase 3 — CERVEAU pour les cas AMBIGUS (gaté `ELEVE_STRATEGE_BRAIN`, défaut off).
+    // `observe` : consulte le cerveau et LOG la reclassification, mais ne route pas dessus ;
+    // `on` : consulte + ROUTE sur la classe raffinée (nécessite strategeActs). Escalade cloud
+    // (barreau 2) opt-in séparé `STRATEGE_BRAIN_ESCALATE=on` (souverain par défaut : local seul).
+    const strategeBrainMode = (process.env.ELEVE_STRATEGE_BRAIN ?? "off").toLowerCase();
+    const strategeBrainObserves = strategeLogs && (strategeBrainMode === "observe" || strategeBrainMode === "on");
+    const strategeBrainActs = strategeActs && strategeBrainMode === "on";
+    const strategeEscalateCloud = process.env.STRATEGE_BRAIN_ESCALATE === "on";
     const projectLabel = path.basename(projectDir);
     // Remède appliqué EN ATTENTE d'apprentissage : on ne distille QUE s'il mène au succès.
     // Object-ref (pas un `let`) : assigné dans une closure → TS ne le narrow pas à null.
@@ -1045,6 +1054,35 @@ export async function runRelay(
         return null; /* l'observation ne casse jamais la boucle */
       }
     };
+    // #164 Phase 3 — diagnostic + (si AMBIGU et cerveau activé) reclassification via
+    // l'échelle d'escalade bornée (barreau 1 gemma4:12b LOCAL $0 → barreau 2 cloud opt-in).
+    // Renvoie le diagnostic RAFFINÉ si le cerveau a tranché (et le mode `on`), sinon le
+    // diagnostic déterministe d'origine. Ne casse jamais la boucle.
+    const strategeDiagnoseRefined = async (deadImages = 0): Promise<Diagnosis | null> => {
+      const d = strategeDiagnose(deadImages);
+      if (!d || d.blocker !== "ambiguous" || !strategeBrainObserves) return d;
+      try {
+        const refined = await reclassifyAmbiguous(
+          {
+            buildOk: insp.ok,
+            finished: !!result?.finished,
+            stuck: !!result?.stuck,
+            iterations: result?.iterations ?? 0,
+            maxIterations: Number(process.env.ELEVE_AGENTIC_MAX_ITER ?? 24),
+            buildDetail: insp.detail,
+            toolNames: (result?.toolTrace ?? []).map((t) => t.name),
+            task,
+            deadImages,
+          },
+          { escalateCloud: strategeEscalateCloud },
+        );
+        push(`  ${formatReclassify(d.blocker, refined)}`);
+        // En mode `observe`, on log mais on ne route PAS sur la classe raffinée.
+        return strategeBrainActs && refined ? refined : d;
+      } catch {
+        return d; // la reclassification ne casse jamais la boucle
+      }
+    };
     // Plan-ancre courant (pour le remède wandering — ré-ancrage L17).
     const currentPlanReminder = (): string => {
       try {
@@ -1086,7 +1124,7 @@ export async function runRelay(
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) {
-        const d = strategeDiagnose(); // #164 — nomme la cause du build cassé
+        const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
         // #164 Phase 1 — sur build CASSÉ (pas une erreur moteur), le Stratège tente un remède
         // CHOISI avant d'abandonner : missing-dependency → installe la lib + relance ;
         // knowledge-gap → renvoie se documenter. Borné (strategeState + budget de relance).
@@ -1188,7 +1226,7 @@ export async function runRelay(
       }
       // Build vert MAIS arrêt sans `finish` (blocage/plafond) : l'Élève se RELANCE.
       if (relances < selfRelanceMax) {
-        const d = strategeDiagnose(); // #164 — nomme le blocage (wandering / plateau)
+        const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
         relances++;
         // #164 Phase 1 — remède CHOISI : wandering → ré-ancre le plan (L17) ; plateau →
         // décompose via delegate. Escalade Stratège (ou mode off) → nudge générique (#160).

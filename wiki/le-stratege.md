@@ -3,7 +3,7 @@ type: entite
 tags: [stratege, raisonnement, deblocage, manager, souverainete, eleve]
 statut: en-cours
 sources: ["#164"]
-maj: 2026-06-26
+maj: 2026-06-27
 ---
 
 # Le Stratège (#164) — le raisonnement de déblocage de Mango
@@ -25,13 +25,16 @@ Point d'intégration : dans `eleve.ts`, là où le remède était une **séquenc
 ### Catalogue de blocages (dérivé du réel)
 `missing-dependency` · `knowledge-gap` · `wrong-tool` · `flaky-resource` · `wandering` · `plateau-iterations` · `ambiguous` (+ `none`). Chaque classe est née d'un blocage réellement rencontré.
 
-## État — Phase 0/4 livrée (observe-only)
-`stratege-signals.ts` : `BlockerSymptoms` (signaux déjà captés par eleve.ts) + `diagnose()` **PUR déterministe** (extrait même le module manquant) + `formatDiagnosis` (« 🧠 Stratège pense à voix haute »). Branché **OBSERVE-ONLY** dans la boucle (gaté `ELEVE_STRATEGE`, défaut OFF → **n'agit pas**). **test-stratege-signals 23** : le classifieur nomme correctement tous nos blocages réels (react-router manquant, recharts knowledge-gap, tide/dressing wandering, terroir image morte, plateau, mauvais outil). `tsc` 0.
+## État — Phases 0·1·2·3/4 livrées
+- **P0 ✅ (observe-only)** — `stratege-signals.ts` : `BlockerSymptoms` (signaux déjà captés) + `diagnose()` **PUR déterministe** (extrait même le module manquant) + `formatDiagnosis`. Gaté `ELEVE_STRATEGE` (défaut OFF). **test-stratege-signals 23**.
+- **P1 ✅ (routeur déterministe)** — `stratege.ts` `route(diagnosis, state)` (PUR, borné par `StrategeState` : budget + pas deux fois le même remède) → remède CHOISI : missing-dependency → **installe la lib + relance** · knowledge-gap → nudge web · wandering → ré-ancre le plan · plateau → décompose (delegate). Câblé aux 2 points de blocage d'`eleve.ts`. **Prouvé live** (vrai npm) : `import gsap` casse → install gsap → build vert. **test-stratege 19**.
+- **P2 ✅ (apprentissage — condition C)** — `stratege-learn.ts` : un remède RÉUSSI → **procédure #75** (slug stable par classe = idempotent, embed) + **rappelée** sémantiquement au prochain blocage du même type. Gaté `ELEVE_STRATEGE_LEARN`. **Prouvé live** (embed réel) : `gsap` distillé → rappelé pour `three`, ignoré pour une autre classe. **Le compounding tourne.** **test-stratege-learn 11**.
+- **P3 ✅ (cerveau cas ambigus + échelle d'escalade)** — `stratege-brain.ts` : sur `blocker === "ambiguous"`, `reclassifyAmbiguous()` consulte un cerveau en **SORTIE CONTRAINTE** (choisit UNE classe d'un catalogue FERMÉ ; hors-catalogue/« inconnu » → reste ambigu, repli sûr). **Échelle d'escalade BORNÉE** : barreau 1 agent **`stratege` = `gemma4:12b` LOCAL $0** (registre) → si non tranché ET `STRATEGE_BRAIN_ESCALATE=on` → barreau 2 cloud supérieur configurable (`STRATEGE_ESCALATE_AGENT`), **2 appels max, aucune boucle**. Parseur pur, dispatch injectable, ne lève jamais. Câblé via `strategeDiagnoseRefined()`, gaté **`ELEVE_STRATEGE_BRAIN`** (off/observe/on). **Leçon TRINITY** (voir [[veille-sakana-fugu]]) : un petit cerveau local suffit à *classer* (il ne résout rien). **Prouvé live** (`gemma4:12b` local, $0) : ambigu « ReferenceError, prop inexistante dans cette version de la lib de charts » → reclassé **`knowledge-gap`** (raisonnement juste) → remède `chercher_web`. **test-stratege-brain 31** · brain-dispatch 37 (12 agents). Limite [[limites|L38]] (cold-load ~45 s, atténué timeout 90 s).
 
-**Reste** : Phase 1 (routeur déterministe top-3 → remède CHOISI) · **Phase 2 (boucle d'apprentissage procédures #75 — la condition C)** · Phase 3 (cerveau Stratège local gemma4:12b, cas ambigus) · Phase 4 (swap de cerveau + métrique de souveraineté = taux d'escalade Claude qui BAISSE projet après projet).
+**Reste** : **Phase 4** — échelle d'escalade de l'EXÉCUTANT lui-même (gemma local → cloud supérieur → Claude opt-in via [[brain-dispatch]] #150) + **métrique de souveraineté** = taux d'escalade Claude qui BAISSE projet après projet.
 
 ## Liens
-[[eleve-local]] · [[brain-dispatch]] · [[planifier-avant-agir]] (L17) · [[transmission-competences]] · [[gardien-cloture]] · [[boucle-curation]] · [[limites]] · [[statut]] · [[historique]]
+[[eleve-local]] · [[brain-dispatch]] · [[planifier-avant-agir]] (L17) · [[transmission-competences]] · [[gardien-cloture]] · [[veille-sakana-fugu]] (leçon TRINITY) · [[boucle-curation]] · [[limites]] · [[statut]] · [[historique]]
 
 ## Sources
 `#164` (plan `docs/plan-164-le-stratege.md` ; statut.md + historique.md) · module `stratege-signals.ts` / branchement `eleve.ts`.

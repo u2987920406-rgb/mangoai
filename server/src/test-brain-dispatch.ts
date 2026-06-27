@@ -37,7 +37,8 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("11 agents présents", AGENT_IDS.length === 11 && Object.keys(def).length === 11);
+    check("12 agents présents (dont stratege #164 P3)", AGENT_IDS.length === 12 && Object.keys(def).length === 12);
+    check("défaut stratege = gemma4:12b LOCAL ($0, barreau 1)", def.stratege.provider === "ollama" && def.stratege.model === "gemma4:12b");
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
     check("défaut codeur = l'Élève GLM (openai/glm-5.2:cloud)", def.codeur.provider === "openai" && def.codeur.model === "glm-5.2:cloud");
 
