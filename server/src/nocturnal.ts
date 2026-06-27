@@ -400,9 +400,50 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
 // ── Review matinale → axiomes (vague 2, RLHF amplifié #41) ───────────────────
 
 export interface NocturnalReviewInput {
-  answers?: Record<string, boolean>; // ex. { design:true, fonctionnel:false, ... }
+  // QCM gradué (2026-06-27) : niveau par dimension. ex. { typographie:"rate", code:"bien" }.
+  // Rétro-compat : les anciennes reviews passaient des booléens (oui/non).
+  answers?: Record<string, string | boolean>;
+  comment?: string; // commentaire libre (remplace liked/disliked ; ceux-ci restent lus en repli)
   liked?: string;
   disliked?: string;
+}
+
+// Niveaux de l'échelle QCM → libellé lisible (et tri positif/négatif).
+const REVIEW_LEVEL_LABEL: Record<string, string> = {
+  adore: "adoré", bien: "bien", moyen: "moyen", rate: "raté",
+  true: "oui", false: "non", // rétro-compat booléen
+};
+function levelIsPositive(v: string | boolean | undefined): boolean {
+  return v === "adore" || v === "bien" || v === true;
+}
+
+export interface ReviewSummary {
+  adored: string[];
+  liked: string[];
+  meh: string[];
+  rated: string[];
+  answersText: string;
+}
+
+/** Regroupe les verdicts du QCM par niveau (PUR, testable). Gère l'ancien format booléen. */
+export function summarizeReviewAnswers(answers: Record<string, string | boolean> = {}): ReviewSummary {
+  const entries = Object.entries(answers);
+  return {
+    adored: entries.filter(([, v]) => v === "adore").map(([k]) => k),
+    liked: entries.filter(([, v]) => v === "bien" || v === true).map(([k]) => k),
+    meh: entries.filter(([, v]) => v === "moyen").map(([k]) => k),
+    rated: entries.filter(([, v]) => v === "rate" || v === false).map(([k]) => k),
+    answersText: entries.length
+      ? entries.map(([k, v]) => `${k}: ${REVIEW_LEVEL_LABEL[String(v)] ?? String(v)}`).join(", ")
+      : "(aucune)",
+  };
+}
+
+/** Candidat dataset LoRA (#55a) : visuel (interface/couleurs/typo) ET UX (ergonomie) appréciés. PUR. */
+export function reviewLoraCandidate(answers: Record<string, string | boolean> = {}): boolean {
+  const visualLoved = levelIsPositive(answers.interface) || levelIsPositive(answers.couleurs)
+    || levelIsPositive(answers.typographie) || levelIsPositive(answers.charte_graphique);
+  return visualLoved && levelIsPositive(answers.ergonomie);
 }
 
 /** Distille la review structurée d'un projet nocturne en axiome(s) tagué(s)
@@ -410,22 +451,27 @@ export interface NocturnalReviewInput {
 export async function reviewToAxioms(entry: NocturnalEntry, input: NocturnalReviewInput): Promise<void> {
   try {
     const today = new Date().toISOString().slice(0, 10);
-    const answersText = input.answers
-      ? Object.entries(input.answers).map(([k, v]) => `${k}: ${v ? "oui" : "non"}`).join(", ")
-      : "(aucune)";
+    const { adored, liked: liked2, meh, rated, answersText } = summarizeReviewAnswers(input.answers ?? {});
+    const dimCount = Object.keys(input.answers ?? {}).length;
+    // Commentaire libre : nouveau champ `comment`, repli sur l'ancien liked/disliked.
+    const comment = (input.comment ?? "").trim();
     const liked = (input.liked ?? "").trim();
     const disliked = (input.disliked ?? "").trim();
+    const freeText = comment || [liked && `aimé : ${liked}`, disliked && `pas aimé : ${disliked}`].filter(Boolean).join(" · ");
     // Rien d'exploitable → pas d'axiome.
-    if (!liked && !disliked && !input.answers) return;
+    if (!freeText && dimCount === 0) return;
 
     const system =
-      "Tu distilles la review d'un projet généré en UN OU DEUX axiomes universels de goût/UX (règles abstraites réutilisables), pas une description. Réponds UNIQUEMENT par le(s) bloc(s) axiome demandé(s), rien d'autre.";
+      "Tu distilles la review d'un projet généré en UN À TROIS axiomes universels de goût/UX (règles abstraites réutilisables par dimension : code, typographie, couleurs, icônes, interface, animations…), pas une description. Réponds UNIQUEMENT par le(s) bloc(s) axiome demandé(s), rien d'autre.";
     const user = `L'utilisateur a passé en revue un projet web généré la nuit (« ${entry.task.slice(0, 200)} »).
-Cases cochées : ${answersText}.
-Ce qu'il a AIMÉ : « ${liked || "—"} ».
-Ce qu'il n'a PAS aimé : « ${disliked || "—"} ».
+Verdict par dimension (QCM) : ${answersText}.
+- ADORÉ : ${adored.join(", ") || "—"}
+- bien : ${liked2.join(", ") || "—"}
+- moyen : ${meh.join(", ") || "—"}
+- RATÉ : ${rated.join(", ") || "—"}
+Commentaire libre : « ${freeText || "—"} ».
 
-Extrais 1 à 2 axiomes de goût/UX que cela t'apprend sur ses préférences, applicables à ses futurs projets. Format EXACT pour chaque axiome (rien d'autre) :
+Concentre-toi sur les dimensions ADORÉES (à reproduire) et RATÉES/moyennes (à éviter). Extrais 1 à 3 axiomes de goût/UX que cela t'apprend sur ses préférences, applicables à ses futurs projets. Format EXACT pour chaque axiome (rien d'autre) :
 AXIOME-UX-XX [candidat] [validé-utilisateur] [review-nocturne]
 - Contexte: (quand appliquer)
 - Piège: (ce qu'il n'aime pas)
@@ -448,7 +494,9 @@ AXIOME-UX-XX [candidat] [validé-utilisateur] [review-nocturne]
     // candidat LoRA dans .train.jsonl. On capture le code source MAINTENANT
     // (le dossier existe encore) pour que l'entrée soit autoportante — la paire
     // tâche→solution survit à toute suppression ultérieure du projet.
-    const loraCrit = input.answers?.charte_graphique === true && input.answers?.ergonomie === true;
+    // #55a — candidat LoRA si le VISUEL (interface/couleurs/typo) ET l'UX (ergonomie) sont
+    // appréciés (adoré/bien). Tolère l'ancien format (charte_graphique booléen).
+    const loraCrit = reviewLoraCandidate(input.answers ?? {});
     if (loraCrit) {
       const trainLog = path.join(WORKSPACE_DIR, ".train.jsonl");
       const dir = path.join(WORKSPACE_DIR, entry.name);

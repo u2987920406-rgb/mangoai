@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { ArrowLeft, Moon, Sparkles, Trash2, ExternalLink, Loader2, Star, ClipboardCheck, Check } from "lucide-react";
-import { REVIEW_QUESTIONS } from "./NocturnalReviewForm.jsx";
+import { ReviewQuestions, setAnswer } from "./NocturnalReviewForm.jsx";
 
-// Questionnaire structuré de la review matinale (vague 2) → axiomes.
-// REVIEW_QUESTIONS = source unique partagée avec le formulaire du Chat.
+// Questionnaire structuré (QCM gradué) de la review matinale → axiomes.
+// ReviewQuestions = rendu UNIQUE partagé avec le formulaire du Chat.
 
 // Idée #58/#59 vague 1 — galerie de review des projets générés la nuit, avec le
 // score du juge (#59). Voir / garder / supprimer + déclenchement manuel d'un lot.
@@ -26,7 +26,7 @@ export default function NocturnalReview({ onBack, onOpenProject }) {
   const [hideLow, setHideLow] = useState(false);
   const [config, setConfig] = useState(null); // { enabled, count, hour }
   const [reviewingId, setReviewingId] = useState(null);
-  const [reviewForm, setReviewForm] = useState({ answers: {}, liked: "", disliked: "" });
+  const [reviewForm, setReviewForm] = useState({ answers: {}, comment: "" });
   const timer = useRef(null);
 
   useEffect(() => {
@@ -48,7 +48,7 @@ export default function NocturnalReview({ onBack, onOpenProject }) {
 
   function openReview(id) {
     setReviewingId(id);
-    setReviewForm({ answers: {}, liked: "", disliked: "" });
+    setReviewForm({ answers: {}, comment: "" });
   }
 
   async function submitReview(id) {
@@ -239,31 +239,17 @@ export default function NocturnalReview({ onBack, onOpenProject }) {
               {/* Questionnaire de review → axiomes (vague 2) */}
               {reviewingId === e.id && !e.reviewed && (
                 <div className="mt-2 flex flex-col gap-2 rounded-lg border border-accent/20 bg-accent/[0.04] p-3">
-                  <div className="flex flex-col gap-1">
-                    {REVIEW_QUESTIONS.map((q) => (
-                      <label key={q.key} className="flex items-center gap-2 text-xs text-dim cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(reviewForm.answers[q.key])}
-                          onChange={(ev) =>
-                            setReviewForm((f) => ({ ...f, answers: { ...f.answers, [q.key]: ev.target.checked } }))
-                          }
-                        />
-                        {q.label}
-                      </label>
-                    ))}
-                  </div>
-                  <input
-                    value={reviewForm.liked}
-                    onChange={(ev) => setReviewForm((f) => ({ ...f, liked: ev.target.value }))}
-                    placeholder="Ce que tu as aimé (optionnel)"
-                    className="rounded-md border border-edge bg-bg px-2 py-1 text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none"
+                  <p className="text-xs font-semibold text-accent-soft">❤️ adoré · 👍 bien · 😐 moyen · 👎 raté</p>
+                  <ReviewQuestions
+                    answers={reviewForm.answers}
+                    onChange={(key, value) => setReviewForm((f) => ({ ...f, answers: setAnswer(f.answers, key, value) }))}
                   />
-                  <input
-                    value={reviewForm.disliked}
-                    onChange={(ev) => setReviewForm((f) => ({ ...f, disliked: ev.target.value }))}
-                    placeholder="Ce que tu n'as pas aimé (optionnel)"
-                    className="rounded-md border border-edge bg-bg px-2 py-1 text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none"
+                  <textarea
+                    value={reviewForm.comment}
+                    onChange={(ev) => setReviewForm((f) => ({ ...f, comment: ev.target.value }))}
+                    placeholder="Un commentaire (optionnel) — détails sur ce que tu as aimé / pas aimé…"
+                    rows={2}
+                    className="resize-none rounded-md border border-edge bg-bg px-2 py-1 text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none"
                   />
                   <button
                     onClick={() => submitReview(e.id)}
