@@ -934,6 +934,14 @@ app.post("/api/stop", async (_req, res) => {
   res.json({ stopped: stopped || true });
 });
 
+// État de l'agent (léger) — l'UI le sonde pour afficher un indicateur « réflexion »
+// VISIBLE même quand l'agent est occupé par un AUTRE acteur (session automatique de
+// Raf sur le même backend, run nocturne…) : avant, l'utilisateur envoyait une requête
+// sans savoir que l'agent travaillait → 409 « Agent is already working » en rouge.
+app.get("/api/agent-status", (_req, res) => {
+  res.json({ busy: agentBusy });
+});
+
 // #138 OS d'apps — Colonne de données partagée (la spine). CRUD REST sur le
 // Blackboard, scope `shared:<collection>`. CORS est ouvert (app.use(cors())
 // ci-dessus) → une app générée sur un autre port (5174…) lit/écrit ici

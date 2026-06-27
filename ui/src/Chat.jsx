@@ -1,6 +1,6 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowUp, Bookmark, BrainCircuit, ChevronDown, Eye, FileCode, FolderOpen, Mic, MicOff, Paperclip, Scan, Sparkles, Square, X } from "lucide-react";
+import { ArrowUp, Bookmark, BrainCircuit, ChevronDown, Eye, FileCode, FolderOpen, Mic, MicOff, Paperclip, RotateCcw, Scan, Sparkles, Square, X } from "lucide-react";
 import ToolGroup from "./components/ToolGroup.jsx";
 import NocturnalReviewForm from "./components/NocturnalReviewForm.jsx";
 import DiffSlider from "./components/DiffSlider.jsx";
@@ -100,6 +100,11 @@ export default function Chat({
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
+  // L'agent est-il occupé AILLEURS (autre acteur : session automatique, run nocturne) ?
+  // Sondé périodiquement → l'indicateur de réflexion s'affiche même hors de notre tour,
+  // pour qu'on sache d'attendre AVANT d'envoyer (fini le 409 rouge par surprise).
+  const [externalBusy, setExternalBusy] = useState(false);
+  const working = busy || externalBusy; // occupé, peu importe la source
   const [attachments, setAttachments] = useState([]); // File[] — images/PDF joints
   const sessionRef = useRef(null); // Agent SDK session_id, kept across turns
   const abortRef = useRef(null); // AbortController du tour en cours (clic « Stop »)
@@ -292,6 +297,23 @@ export default function Chat({
   // re-rende pas à chaque frappe dans la chatbox. Sans ça, une prop onFeedback
   // recréée à chaque render casserait la mémoïsation et tout l'historique
   // (ReactMarkdown) re-rendrait à chaque touche → lag sur les longues sessions.
+  // « Relancer » sous un message utilisateur : recopie SON texte dans la barre de
+  // saisie (pour le modifier puis le renvoyer SOI-MÊME — pas d'envoi automatique).
+  // Stable (useCallback) pour ne pas casser la mémoïsation de <Message>.
+  const handleReuse = useCallback((text) => {
+    setInput(text);
+    // Le textarea se met à jour au prochain render → on (re)focus, redimensionne et
+    // place le curseur en fin de texte une fois la valeur appliquée.
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (!el) return;
+      el.focus();
+      el.style.height = "auto";
+      el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+      el.setSelectionRange(el.value.length, el.value.length);
+    });
+  }, []);
+
   const handleFeedback = useCallback((rating, text) => {
     fetch("/api/feedback", {
       method: "POST",
@@ -346,6 +368,25 @@ export default function Chat({
   // Keep the refs in sync so the post-turn poll sees current values.
   useEffect(() => { projectNameRef.current = projectName; }, [projectName]);
   useEffect(() => { busyRef.current = busy; }, [busy]);
+
+  // Sonde légère de l'état serveur (toutes les 3 s) : tant qu'on ne fait pas NOTRE
+  // propre tour (busy), on demande si l'agent est occupé ailleurs (session auto de
+  // Raf, run nocturne) → `externalBusy`. Ainsi l'indicateur de réflexion s'affiche
+  // AVANT qu'on envoie une requête vouée au 409. Pendant notre tour, c'est `busy`
+  // qui fait foi (pas besoin de sonder). Best-effort : un échec réseau ne casse rien.
+  useEffect(() => {
+    if (busy) { setExternalBusy(false); return; }
+    let alive = true;
+    const tick = () => {
+      fetch("/api/agent-status")
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => { if (alive) setExternalBusy(Boolean(d?.busy)); })
+        .catch(() => {});
+    };
+    tick();
+    const id = setInterval(tick, 3000);
+    return () => { alive = false; clearInterval(id); };
+  }, [busy]);
 
   // After a turn, background agents (review 🧠, patrol 🛡️ — idea #73) append
   // status lines to the persisted history AFTER the SSE stream has closed, so
@@ -478,7 +519,17 @@ export default function Chat({
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        push({ role: "error", text: err.error ?? `Erreur HTTP ${res.status}` });
+        // 409 = l'agent est DÉJÀ au travail (notre tour, ou un autre acteur : session
+        // automatique, run nocturne…). Ce n'est pas une erreur : message DOUX (pas de
+        // rouge), on RESTAURE le texte tapé (ne pas le perdre) et on reflète l'état
+        // « occupé » → l'indicateur de réflexion s'affiche, l'utilisateur sait d'attendre.
+        if (res.status === 409) {
+          setExternalBusy(true);
+          if (typeof textArg !== "string") setInput(typed);
+          push({ role: "status", text: "⏳ L'agent travaille encore — ta demande n'a pas été envoyée. Attends la fin de la réflexion (indicateur ci-dessus) puis renvoie." });
+        } else {
+          push({ role: "error", text: err.error ?? `Erreur HTTP ${res.status}` });
+        }
         return;
       }
 
@@ -714,6 +765,7 @@ export default function Chat({
               m={g.message}
               showThinking={showThinking}
               onFeedback={handleFeedback}
+              onReuse={handleReuse}
             />
           ),
         )}
@@ -805,9 +857,12 @@ export default function Chat({
             </button>
           </div>
         )}
-        {busy && (
-          <div className="shimmer-text self-start px-1 py-0.5 text-[13px] font-medium">
-            MangoOS travaille…
+        {working && (
+          <div className="animate-fade-up flex items-center gap-2 self-start rounded-xl border border-accent/25 bg-accent/[0.08] px-3 py-1.5">
+            <BrainCircuit size={15} className="animate-pulse text-accent-soft" />
+            <span className="shimmer-text text-[13px] font-semibold">
+              {busy ? "MangoOS réfléchit…" : "L'agent travaille (occupé) — patiente avant d'envoyer"}
+            </span>
           </div>
         )}
       </div>
@@ -1010,7 +1065,7 @@ export default function Chat({
                     send();
                   }
                 }}
-                placeholder="Décris ton app ou demande une modification…"
+                placeholder={working ? "⏳ L'agent travaille — patiente la fin de la réflexion…" : "Décris ton app ou demande une modification…"}
                 rows={1}
                 className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed placeholder:text-faint focus:outline-none"
               />
@@ -1039,6 +1094,17 @@ export default function Chat({
                   title="Arrêter l'agent (le travail déjà fait est conservé)"
                 >
                   <Square size={14} fill="currentColor" />
+                </button>
+              ) : externalBusy ? (
+                // Agent occupé AILLEURS (pas notre tour) : on signale clairement
+                // l'attente plutôt qu'un envoi voué au 409. Cliquable quand même
+                // (le 409 est désormais doux + le texte est conservé).
+                <button
+                  onClick={send}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent-soft transition-colors"
+                  title="L'agent travaille (occupé) — patiente la fin avant d'envoyer"
+                >
+                  <BrainCircuit size={16} className="animate-pulse" />
                 </button>
               ) : (
                 <button
@@ -1154,7 +1220,7 @@ function EscalationCard({ projectName }) {
 // callback onFeedback stable (useCallback côté Chat) et à des objets `m`
 // référentiellement stables, taper dans la chatbox ne re-rend plus l'historique
 // — c'est ce qui rendait l'édition et le micro laggy sur les longues sessions.
-const Message = memo(function Message({ m, showThinking = true, onFeedback }) {
+export const Message = memo(function Message({ m, showThinking = true, onFeedback, onReuse }) {
   const [voted, setVoted] = useState(null); // "like" | "dislike" | null
 
   function handleVote(rating) {
@@ -1166,8 +1232,20 @@ const Message = memo(function Message({ m, showThinking = true, onFeedback }) {
   switch (m.role) {
     case "user":
       return (
-        <div className="animate-fade-up max-w-[85%] self-end rounded-2xl rounded-br-md bg-bubble px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words">
-          {m.text}
+        <div className="animate-fade-up group flex max-w-[85%] flex-col items-end gap-1 self-end">
+          <div className="rounded-2xl rounded-br-md bg-bubble px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words">
+            {m.text}
+          </div>
+          {onReuse && m.text?.trim() && (
+            <button
+              onClick={() => onReuse(m.text)}
+              className="flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] text-faint transition-colors hover:bg-edge-soft hover:text-ink"
+              title="Recopier ce message dans la barre de saisie pour le modifier et le renvoyer (sans envoi automatique)"
+            >
+              <RotateCcw size={11} />
+              Relancer
+            </button>
+          )}
         </div>
       );
     case "agent":
