@@ -672,7 +672,7 @@ export async function askEleveAgentic(
   system: string,
   user: string,
   registry: ToolRegistry,
-  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean } = {},
+  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean; maxIterations?: number } = {},
 ): Promise<AgenticResult> {
   // La boucle à outils n'est branchée que sur l'endpoint OpenAI-compat. En Ollama
   // local pur, repli texte (le function-calling local sera traité en Phase 2).
@@ -692,7 +692,8 @@ export async function askEleveAgentic(
   const callModel = (withTools: boolean) =>
     postEleveCompletions(messages, withTools ? tools : null, opts.model);
 
-  for (let iter = 0; iter < MAX_TOOL_ITERATIONS; iter++) {
+  const maxIter = Math.max(1, opts.maxIterations ?? MAX_TOOL_ITERATIONS);
+  for (let iter = 0; iter < maxIter; iter++) {
     // Stop coopératif (clic « Stop ») : on sort proprement entre deux itérations.
     if ((opts.shouldAbort ?? isInterrupted)()) {
       return { text: "⏹ Arrêté à ta demande.", toolTrace };

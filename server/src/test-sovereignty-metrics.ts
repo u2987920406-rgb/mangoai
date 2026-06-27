@@ -2,7 +2,7 @@
 // PUR : calcul sur des TurnMetrics fabriqués, aucune I/O.
 import {
   sovereigntyByProject, sovereigntyByType, sovereigntyTrend, sovereigntyReport, formatSovereignty,
-  topClaudeProjects,
+  topClaudeProjects, sovereigntyClaudeShare,
 } from "./sovereignty-metrics.js";
 import type { TurnMetrics } from "./metrics.js";
 
@@ -129,6 +129,28 @@ console.log("\n[6] topClaudeProjects — les n plus dépendants de Claude (ordre
   check("n=-1 → tableau vide", topNeg.length === 0);
   const topAll = topClaudeProjects(rep, 10);
   check("n > nombre de projets → tous les projets (3)", topAll.length === 3);
+}
+
+console.log("\n[7] sovereigntyClaudeShare — part d'escalade Claude (maitre / totalTurns)");
+{
+  // Petit jeu : 2 eleve + 1 maitre + 1 none = 4 tours, 1 escalade Claude.
+  const rep = sovereigntyReport([
+    tm("a", "eleve"), tm("a", "eleve"), tm("a", "maitre"), tm("b", "none"),
+  ]);
+  check("part correcte = 1/4 = 0.25", sovereigntyClaudeShare(rep) === 0.25);
+
+  // Aucun tour mesuré → 0 (pas de division par zéro).
+  const empty = sovereigntyReport([]);
+  check("totalTurns=0 → 0 (pas de division par zéro)", sovereigntyClaudeShare(empty) === 0);
+
+  // Cohérence avec report.claudeRate sur un jeu plus riche.
+  const rows: TurnMetrics[] = [
+    tm("x", "maitre", "2026-06-25T10:00:00Z"),
+    tm("x", "maitre", "2026-06-25T11:00:00Z"),
+    tm("y", "eleve", "2026-06-26T10:00:00Z"),
+  ];
+  const rich = sovereigntyReport(rows);
+  check("cohérent avec claudeRate (2/3)", sovereigntyClaudeShare(rich) === rich.claudeRate && rich.claudeRate === 2 / 3);
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} sovereignty-metrics : ${pass} ok, ${fail} ko`);

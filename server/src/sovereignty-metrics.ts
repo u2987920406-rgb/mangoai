@@ -145,6 +145,16 @@ export function topClaudeProjects(report: SovereigntyReport, n: number): Soverei
     .slice(0, n);
 }
 
+/**
+ * Part de tours escaladés vers Claude (le Maître) parmi tous les tours mesurés.
+ * Identique à `report.claudeRate` mais exposée comme fonction PURE isolée pour
+ * les consommateurs qui n'ont besoin que de ce seul chiffre. Renvoie 0 si
+ * `totalTurns` vaut 0 (aucun tour Élève mesuré). PUR : ne lève jamais.
+ */
+export function sovereigntyClaudeShare(report: SovereigntyReport): number {
+  return report.totalTurns > 0 ? report.maitre / report.totalTurns : 0;
+}
+
 const pct = (r: number) => `${Math.round(r * 100)}%`;
 
 /** Ligne lisible pour le log / l'observabilité. */

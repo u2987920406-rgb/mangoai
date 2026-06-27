@@ -2,11 +2,12 @@
 // Aucune commande git réelle, aucun dépôt touché.
 import {
   sanitizeSelfSlug, selfWorktreeBase, createSelfWorktree, selfDiff, removeSelfWorktree,
-  formatSelfWorktree, buildSelfRegistry, runSelfExperiment, SELF_ALLOWED_TOOLS,
+  formatSelfWorktree, buildSelfRegistry, runSelfExperiment, runTestSandboxed, SELF_ALLOWED_TOOLS,
   type GitRunner, type SelfAgentRun,
 } from "./mango-self.js";
 import path from "node:path";
 import os from "node:os";
+import fs from "node:fs";
 
 // Base RÉELLE (le git est faké, mais createSelfWorktree fait un vrai mkdir de la base).
 const TMP = path.join(os.tmpdir(), "mango-self-test");
@@ -151,6 +152,41 @@ console.log("\n[10] barreau 3 — check_types ajouté seulement avec {checks:tru
   check("check_types est à ZÉRO argument (aucune injection)", Object.keys(ct.inputSchema).length === 0);
   check("toujours pas de run_command (jamais d'exécution arbitraire)", !avec.has("run_command"));
   check("toujours pas de réseau", !avec.has("chercher_web") && !avec.has("extraire_site"));
+}
+
+console.log("\n[11] barreau 4 — run_tests ajouté seulement avec {sandboxTests:true}");
+{
+  const sans = buildSelfRegistry("X:/wt/x");
+  check("sans sandboxTests → PAS de run_tests", !sans.has("run_tests"));
+  const avec = buildSelfRegistry("X:/wt/x", { sandboxTests: true });
+  check("avec sandboxTests → run_tests présent", avec.has("run_tests"));
+  const both = buildSelfRegistry("X:/wt/x", { checks: true, sandboxTests: true });
+  check("checks+sandboxTests → check_types ET run_tests", both.has("check_types") && both.has("run_tests"));
+  check("toujours pas de run_command (jamais d'exécution arbitraire non bornée)", !both.has("run_command"));
+}
+
+// Preuve unitaire que le BAC À SABLE bloque réellement un test malveillant (vrai esbuild + node --permission).
+console.log("\n[12] runTestSandboxed — bloque un test piégé (rm/spawn), laisse passer un test sain");
+{
+  const sbxRoot = path.join(os.tmpdir(), "mango-self-sbxtest");
+  const dir = path.join(sbxRoot, "server", "src");
+  fs.mkdirSync(dir, { recursive: true });
+  const guard = path.join(sbxRoot, "DO_NOT_DELETE.txt");
+  fs.writeFileSync(guard, "garde-fou");
+
+  // test SAIN
+  fs.writeFileSync(path.join(dir, "test-ok.ts"), `console.log("OK sandbox"); process.exit(0);\n`);
+  const good = await runTestSandboxed(sbxRoot, "server/src/test-ok.ts");
+  check("test sain → ok:true", good.ok && /OK sandbox/.test(good.output));
+
+  // test PIÉGÉ : tente d'effacer un fichier HORS du bac à sable
+  fs.writeFileSync(path.join(dir, "test-evil.ts"),
+    `import fs from "node:fs";\nfs.rmSync(${JSON.stringify(guard)}, { force: true });\nconsole.log("rm a réussi");\n`);
+  const evil = await runTestSandboxed(sbxRoot, "server/src/test-evil.ts");
+  check("test piégé → ok:false (bloqué)", !evil.ok);
+  check("le fichier hors-bac-à-sable est INTACT (rm bloqué)", fs.existsSync(guard));
+
+  try { fs.rmSync(sbxRoot, { recursive: true, force: true }); } catch { /* nettoyage */ }
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} mango-self : ${pass} ok, ${fail} ko`);

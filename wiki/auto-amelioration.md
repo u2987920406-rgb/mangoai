@@ -37,14 +37,21 @@ Mango vérifie que son code compile, seul, avant de finir. **Décision de sûret
 
 **Prouvé live** (vrai GLM, chantier « ajoute `topClaudeProjects` + test ») : trace `… write_file → check_types → finish` — **GLM appelle `check_types` lui-même**, tsc vert ; vérif indépendante Claude : test 28/28 ; repo vivant intact. `test-mango-self 41`.
 
-## L'échelle de sûreté
+## Barreau 4 ✅ — exécuter les tests dans un VRAI bac à sable
+Pas de Docker sur la machine → le bon outil = le **modèle de permissions de Node** (`--permission`, Node 25 : bloque l'écriture FS hors zone, le `child_process`, les addons natifs). Node ne résout pas `.js`→`.ts` au runtime → chaîne : **esbuild bundle** le test (CONFIANCE : transforme, n'exécute pas) → **`node --permission`** exécute le bundle (FS confiné au temp). `runTestSandboxed(worktree, testRel)` + outil **`run_tests({file})`** + `buildSelfRegistry(wt,{sandboxTests})` + `SELF_SYSTEM_TESTS` + `runSelfExperiment({allowTests})`.
+
+**Prouvé — sécurité** (test unitaire réel) : test sain → ok ; test piégé (`fs.rmSync` hors zone + `execSync`) → **bloqué ERR_ACCESS_DENIED**, garde-fou intact. **Prouvé live — boucle complète** (vrai GLM, « ajoute `sovereigntyClaudeShare` + test ») : trace `write_file → check_types → run_tests → finish` — **GLM écrit, type-checke ET exécute son test en bac à sable, seul** ; vérif indépendante Claude tsc 0 + test 31/31 ; repo vivant intact. `test-mango-self 48`. **Résidu honnête** ([[limites|L42]]) : le modèle de permissions de Node ne gate pas le réseau (mais rien de secret n'est lisible hors temp → exfiltration nulle ; un gate réseau = un conteneur). Détail : 1ᵉʳ run, GLM a épuisé son plafond d'itérations (12) avant de vérifier et l'a dit franchement → fix override `maxIterations` (28 pour l'auto-amélioration).
+
+## 🏁 L'échelle de sûreté — COMPLÈTE (4/4)
 | Barreau | Ouvert | Garde-fou |
 |---|---|---|
 | 1 ✅ | lecture du code + copie isolée | notification |
 | 2 ✅ | écriture **en diff relu** (worktree), sans run/réseau | revue de Raf avant fusion |
 | 3 ✅ | **auto-vérification** `check_types` (= `tsc --noEmit`, zéro arg, pas de RCE) | type-check seul ; **pas** d'exécution de code |
-| 4 | exécuter les TESTS | **vrai bac à sable** (sandbox/conteneur) requis |
+| 4 ✅ | exécuter les TESTS (`run_tests`) | **bac à sable** Node `--permission` (FS confiné, pas de spawn/natif) |
 | destructif/sortant | delete, push, hors-repo, réseau | **permission obligatoire** |
+
+**Bilan** : sur un chantier borné, Mango **lit, écrit, type-checke et teste son propre code, seul**, sur copie isolée ; Raf relit/fusionne. 3 fonctions déjà écrites par Mango pour MangoOS.
 
 ## Liens
 [[le-stratege]] (métrique de souveraineté P4) · [[capacites-mango]] (conscience des limites) · [[souverainete-progressive]] · [[eleve-local]] · [[brain-dispatch]] · [[limites]] · [[statut]] · [[historique]]

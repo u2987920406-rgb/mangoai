@@ -14,6 +14,8 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import os from "node:os";
+import { z } from "zod";
 import { ToolRegistry, type KernelTool } from "./kernel-mcp.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { askEleveAgentic } from "./eleve.js";
@@ -184,13 +186,91 @@ export function buildCheckTypesTool(worktree: string): KernelTool {
   };
 }
 
+// ── Barreau 4 : exécuter les TESTS dans un VRAI bac à sable ───────────────────
+//
+// Le seul cran qui ouvre l'exécution de code écrit par l'Élève. Garde-fou réel (prouvé) :
+//   1. esbuild BUNDLE le test (étape de CONFIANCE : esbuild TRANSFORME, n'exécute pas le
+//      code du test) → un .mjs autonome dans un dossier temp jetable.
+//   2. `node --permission` exécute ce bundle avec : FS en LECTURE/ÉCRITURE confiné au temp,
+//      `child_process` REFUSÉ, addons natifs REFUSÉS. Un test piégé (`fs.rmSync('D:/…')`,
+//      `execSync(...)`) échoue en `ERR_ACCESS_DENIED` — prouvé live.
+// Résidu HONNÊTE : le modèle de permissions de Node ne filtre PAS le réseau. Mais le test
+// ne peut RIEN lire hors du temp (ni `.env`, ni secrets, absents du worktree de toute façon)
+// → rien de sensible à exfiltrer ; au pire un POST de données qu'il génère lui-même. Faible.
+
+const SANDBOX_BUNDLE_TIMEOUT_MS = 60_000;
+const SANDBOX_RUN_TIMEOUT_MS = 60_000;
+
+/** Spawn capturé (code+sortie), borné par timeout, ne lève jamais. */
+function spawnCaptured(
+  command: string, args: string[] | null, cwd: string, shell: boolean, timeoutMs: number,
+): Promise<{ code: number; out: string }> {
+  return new Promise((resolve) => {
+    const p = args ? spawn(command, args, { cwd, shell, windowsHide: true }) : spawn(command, { cwd, shell, windowsHide: true });
+    let out = "";
+    const timer = setTimeout(() => { try { p.kill(); } catch { /* mort */ } resolve({ code: 124, out: out + "\n[timeout]" }); }, timeoutMs);
+    p.stdout?.on("data", (d) => (out += d.toString()));
+    p.stderr?.on("data", (d) => (out += d.toString()));
+    p.on("error", (e) => { clearTimeout(timer); resolve({ code: 1, out: out + String(e) }); });
+    p.on("close", (code) => { clearTimeout(timer); resolve({ code: code ?? 0, out }); });
+  });
+}
+
+/**
+ * Exécute un fichier de test du worktree DANS UN BAC À SABLE. PROUVÉ : bloque l'écriture FS
+ * hors temp + le `child_process`. `nowMs` injectable (unicité du dossier temp). Ne lève jamais.
+ */
+export async function runTestSandboxed(
+  worktree: string, testRel: string, opts: { nowMs?: number } = {},
+): Promise<{ ok: boolean; output: string }> {
+  const stamp = opts.nowMs ?? Date.now();
+  const tmp = path.join(os.tmpdir(), "mango-sbx", `${sanitizeSelfSlug(testRel)}-${stamp}`);
+  const bundle = path.join(tmp, "bundle.mjs");
+  const testAbs = path.join(worktree, testRel);
+  try { fs.mkdirSync(tmp, { recursive: true }); } catch (e) { return { ok: false, output: `temp KO : ${(e as Error).message}` }; }
+  try {
+    // 1. Bundle (CONFIANCE) — cwd=worktree pour résoudre node_modules (jonction) + imports relatifs.
+    const esb = await spawnCaptured(
+      `npx esbuild "${testAbs}" --bundle --platform=node --format=esm --outfile="${bundle}"`,
+      null, worktree, true, SANDBOX_BUNDLE_TIMEOUT_MS,
+    );
+    if (esb.code !== 0 || !fs.existsSync(bundle)) return { ok: false, output: "bundling esbuild KO :\n" + esb.out.slice(0, 1500) };
+    // 2. Exécution SOUS BAC À SABLE — FS confiné à tmp, pas de child_process/natif.
+    const runRes = await spawnCaptured(
+      "node", ["--permission", `--allow-fs-read=${tmp}`, `--allow-fs-write=${tmp}`, bundle],
+      tmp, false, SANDBOX_RUN_TIMEOUT_MS,
+    );
+    return { ok: runRes.code === 0, output: runRes.out };
+  } finally {
+    try { fs.rmSync(tmp, { recursive: true, force: true }); } catch { /* best-effort */ }
+  }
+}
+
+/** Outil `run_tests` (barreau 4) : exécute un fichier de test dans le bac à sable. */
+export function buildRunTestsTool(worktree: string): KernelTool {
+  return {
+    name: "run_tests",
+    description:
+      "Exécute un fichier de test DANS UN BAC À SABLE (système de fichiers confiné, pas de réseau vers tes secrets, pas de spawn). " +
+      "Donne le chemin du test relatif à la racine (ex. server/src/test-x.ts). Appelle-le pour vérifier que TES tests PASSENT avant `finish`.",
+    inputSchema: { file: z.string().describe("Chemin du fichier de test, relatif à la racine (ex. server/src/test-x.ts)") },
+    handler: async (args) => {
+      const file = String(args.file ?? "");
+      if (!file) return { text: "❌ run_tests : précise le chemin du fichier de test.", isError: true };
+      const r = await runTestSandboxed(worktree, file);
+      return { text: r.ok ? `✅ tests OK (bac à sable) :\n${r.output.slice(-1500)}` : `❌ tests KO (bac à sable) :\n${r.output.slice(-2500)}` };
+    },
+  };
+}
+
 /** Registre confiné au worktree, réduit aux seuls outils sûrs (pas de run/réseau).
- *  `opts.checks` ajoute `check_types` (barreau 3 : auto-vérification, type-check seul). */
-export function buildSelfRegistry(worktree: string, opts: { checks?: boolean } = {}): ToolRegistry {
+ *  `opts.checks` ajoute `check_types` (B3) ; `opts.sandboxTests` ajoute `run_tests` (B4). */
+export function buildSelfRegistry(worktree: string, opts: { checks?: boolean; sandboxTests?: boolean } = {}): ToolRegistry {
   const full = buildEleveActionTools(worktree, { allowRun: false });
   const reg = new ToolRegistry();
   for (const t of full.list()) if (SELF_ALLOWED_TOOLS.has(t.name)) reg.register(t);
   if (opts.checks) reg.register(buildCheckTypesTool(worktree));
+  if (opts.sandboxTests) reg.register(buildRunTestsTool(worktree));
   return reg;
 }
 
@@ -228,6 +308,11 @@ export const SELF_SYSTEM_CHECKS =
   "\n- AUTO-VÉRIFICATION : tu as l'outil `check_types`. Appelle-le pour vérifier que ton code compile " +
   "AVANT d'appeler `finish`. S'il remonte des erreurs de types, CORRIGE-les puis re-vérifie, jusqu'à ce que ce soit vert.";
 
+/** Clause ajoutée au system quand l'exécution de tests en bac à sable (barreau 4) est active. */
+export const SELF_SYSTEM_TESTS =
+  "\n- TESTS : tu as l'outil `run_tests` (exécution en bac à sable). Après avoir écrit/modifié un test, " +
+  "appelle-le sur ton fichier de test pour vérifier qu'il PASSE. Corrige jusqu'au vert avant `finish`.";
+
 /** Comment lancer l'agent dans le worktree (injectable pour les tests). */
 export type SelfAgentRun = (
   worktree: string, system: string, task: string, onLog: (s: string) => void,
@@ -253,7 +338,7 @@ export interface SelfExperimentResult {
 export async function runSelfExperiment(
   repoRoot: string,
   task: string,
-  opts: { slug?: string; git?: GitRunner; env?: NodeJS.ProcessEnv; runAgent?: SelfAgentRun; system?: string; allowChecks?: boolean; onLog?: (s: string) => void } = {},
+  opts: { slug?: string; git?: GitRunner; env?: NodeJS.ProcessEnv; runAgent?: SelfAgentRun; system?: string; allowChecks?: boolean; allowTests?: boolean; onLog?: (s: string) => void } = {},
 ): Promise<SelfExperimentResult> {
   const onLog = opts.onLog ?? (() => {});
   const empty = { patch: "", stat: "" };
@@ -261,17 +346,22 @@ export async function runSelfExperiment(
   const { wt, reason } = await createSelfWorktree(repoRoot, slug, { git: opts.git, env: opts.env });
   if (!wt) return { ok: false, reason, branch: "", worktree: "", summary: "", trace: [], diff: empty, wt: null };
   onLog(formatSelfWorktree(wt));
-  // Barreau 3 — auto-vérification : on jointe node_modules pour que `tsc` tourne dans la
-  // copie, et le system rappelle d'appeler check_types. Le défaut compose le registre
-  // (avec/sans checks) ; un runAgent injecté (tests) court-circuite tout ça.
-  const system = (opts.system ?? SELF_SYSTEM) + (opts.allowChecks ? SELF_SYSTEM_CHECKS : "");
+  // Barreaux 3/4 — auto-vérification : on jointe node_modules pour que `tsc` (B3) et le
+  // bundling esbuild (B4) tournent dans la copie ; le system rappelle d'appeler les outils.
+  // Le défaut compose le registre ; un runAgent injecté (tests) court-circuite tout ça.
+  const system = (opts.system ?? SELF_SYSTEM) + (opts.allowChecks ? SELF_SYSTEM_CHECKS : "") + (opts.allowTests ? SELF_SYSTEM_TESTS : "");
+  // Un run d'auto-amélioration enchaîne écrire → check_types → corriger → run_tests →
+  // corriger : on donne plus de marge d'itérations que le chat (défaut 12) quand on
+  // ouvre les outils de vérification, sinon l'Élève épuise son budget avant de vérifier.
+  const maxIterations = opts.allowChecks || opts.allowTests ? 28 : undefined;
   const defaultAgent: SelfAgentRun = (worktree, sys, t, log) =>
-    askEleveAgentic(sys, t, buildSelfRegistry(worktree, { checks: opts.allowChecks }), {
+    askEleveAgentic(sys, t, buildSelfRegistry(worktree, { checks: opts.allowChecks, sandboxTests: opts.allowTests }), {
       onTool: (n, a) => log(`  🔧 ${n} ${a.slice(0, 110)}`),
+      maxIterations,
     });
   const runAgent = opts.runAgent ?? defaultAgent;
   let linked = false;
-  if (opts.allowChecks && !opts.runAgent) linked = linkNodeModules(wt.worktree, repoRoot);
+  if ((opts.allowChecks || opts.allowTests) && !opts.runAgent) linked = linkNodeModules(wt.worktree, repoRoot);
   let summary = "";
   let trace: { name: string; args: string }[] = [];
   try {
