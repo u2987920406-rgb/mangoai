@@ -423,7 +423,7 @@ function ThinkingIndicator({ label = "MangoOS" }) {
 }
 
 /* ── Barre de saisie (mode chat) ─────────────────────────────────────────── */
-function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, onMode, template, onTemplate, inputRef, attachments = [], onAddFiles = () => {}, onRemoveAttachment = () => {} }) {
+function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, onMode, template, onTemplate, inputRef, attachments = [], onAddFiles = () => {}, onRemoveAttachment = () => {}, attachNote = "", onClearNote = () => {} }) {
   const fileRef = useRef(null);
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -448,6 +448,14 @@ function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, 
               </button>
             </span>
           ))}
+        </div>
+      )}
+      {attachNote && (
+        <div className="mx-4 mt-2 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+          <span className="flex-1">{attachNote}</span>
+          <button onClick={onClearNote} title="OK" className="shrink-0 text-warn/60 hover:text-warn transition-colors">
+            <X size={12} />
+          </button>
         </div>
       )}
       <textarea
@@ -524,27 +532,77 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
     catch { return []; }
   });
   const [currentId, setCurrentId] = useState(null);
-  const [attachments, setAttachments] = useState([]); // [{ name, content, size }]
+  const [attachments, setAttachments] = useState([]); // [{ name, path }] — uploadées au brouillon disque
+  const [attachNote, setAttachNote] = useState(""); // hint (pièce refusée)
+  const [graduateOpen, setGraduateOpen] = useState(false); // proposition/formulaire « ouvrir dans l'atelier »
+  const [graduateName, setGraduateName] = useState("");
+  const [gradBusy, setGradBusy] = useState(false);
   const inputRef = useRef(null);
   const bottomRef = useRef(null);
   const welcomeFileRef = useRef(null);
   const hasChat = messages.length > 0;
   const modelLabel = MODELS.find((m) => m.id === model)?.label ?? "MangoOS";
 
-  // Lecture côté client du CONTENU des fichiers joints (texte/code/.md…). Garde-fous :
-  // 5 fichiers max, ≤ 300 ko chacun (le contenu part dans le prompt → on borne).
+  // Un id de conversation existe AVANT le 1er upload (le brouillon disque en a besoin).
+  function ensureConvId() {
+    let id = currentId;
+    if (!id) { id = `c${Date.now()}`; setCurrentId(id); }
+    return id;
+  }
+
+  // Pièces jointes : UPLOADÉES dans le brouillon disque de la conversation (.home/<convId>/.assets)
+  // → l'Élève agentique peut les LIRE/extraire (lire_archive, lire_document, Read). Plus d'inlining
+  // texte : la home « peut tout faire dès le départ ». Formats/limites = ceux du backend (uploads.ts).
   async function addFiles(fileList) {
-    const picked = [...(fileList ?? [])].slice(0, 5);
+    const picked = [...(fileList ?? [])].slice(0, 6);
+    if (picked.length === 0) return;
+    const id = ensureConvId();
     const loaded = [];
+    const rejected = [];
     for (const f of picked) {
-      if (f.size > 300_000) continue;
-      const content = await readFileText(f);
-      if (content) loaded.push({ name: f.name, content, size: f.size });
+      const name = f.name || "fichier";
+      try {
+        const r = await fetch(
+          `/api/home/upload/${encodeURIComponent(id)}?filename=${encodeURIComponent(name)}`,
+          { method: "POST", body: f },
+        );
+        const d = await r.json().catch(() => ({}));
+        if (!r.ok) { rejected.push(`${name} — ${d.error ?? `HTTP ${r.status}`}`); continue; }
+        loaded.push({ name, path: d.path });
+      } catch (e) {
+        rejected.push(`${name} — ${e?.message ?? "échec"}`);
+      }
     }
-    if (loaded.length) setAttachments((prev) => [...prev, ...loaded].slice(0, 5));
+    if (loaded.length) { setAttachments((prev) => [...prev, ...loaded].slice(0, 6)); setAttachNote(""); }
+    if (rejected.length) {
+      setAttachNote(`Pièce(s) refusée(s) : ${rejected.join(" · ")}. (acceptés : images, PDF, Word/Excel/PowerPoint, texte, .zip/.rar — 50 Mo max)`);
+    }
   }
   function removeAttachment(i) {
     setAttachments((prev) => prev.filter((_, j) => j !== i));
+  }
+
+  // GRADUATION : promeut le brouillon (fichiers + contexte) en vrai projet workspace, puis ouvre
+  // l'atelier dessus. Déclenchée par le bouton OU l'acceptation d'une proposition de Mango.
+  async function graduate() {
+    const id = currentId;
+    if (!id || gradBusy) return;
+    setGradBusy(true);
+    try {
+      const r = await fetch("/api/home/graduate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ convId: id, name: graduateName.trim() || "Projet Mango", messages }),
+      });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || !d.name) throw new Error(d.error ?? `HTTP ${r.status}`);
+      setGraduateOpen(false);
+      onOpen(d.name); // ouvre le workspace sur le projet fraîchement créé
+    } catch (e) {
+      setAttachNote(`Passage à l'atelier impossible : ${e?.message ?? "erreur"}.`);
+    } finally {
+      setGradBusy(false);
+    }
   }
 
   useEffect(() => {
@@ -573,12 +631,14 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
   }
 
   function deleteConversation(id) {
+    // Nettoie aussi le brouillon disque (fichiers joints) de cette conversation.
+    fetch(`/api/home/scratch/${encodeURIComponent(id)}`, { method: "DELETE" }).catch(() => {});
     setConversations((prev) => {
       const next = prev.filter((c) => c.id !== id);
       try { localStorage.setItem("mangoos.conversations", JSON.stringify(next)); } catch { /* quota */ }
       return next;
     });
-    if (id === currentId) { setMessages([]); setCurrentId(null); setInput(""); }
+    if (id === currentId) { setMessages([]); setCurrentId(null); setInput(""); setGraduateOpen(false); }
   }
 
   // Un tour : envoie l'historique à GLM et ajoute sa réponse. Partagé par l'envoi
@@ -590,7 +650,7 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       const res = await fetch("/api/home-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, model }),
+        body: JSON.stringify({ messages: history, model, convId: id }),
       });
       if (!res.ok) {
         const why = res.status === 413 ? "pièce(s) jointe(s) trop volumineuse(s)" : `erreur serveur (HTTP ${res.status})`;
@@ -600,6 +660,8 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       const withAnswer = [...history, { role: "assistant", content: data.text ?? "Erreur de réponse." }];
       setMessages(withAnswer);
       upsertConversation(id, withAnswer);
+      // Mango a détecté une intention de CONSTRUIRE → propose de passer à l'atelier (Raf valide).
+      if (data.suggestGraduate) setGraduateOpen(true);
     } catch (e) {
       const reason = e?.message ?? "serveur injoignable";
       const withErr = [...history, { role: "assistant", content: `⚠️ Échec — ${reason}. Réessaie, ou réduis/retire les pièces jointes.` }];
@@ -613,16 +675,18 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
   async function sendMessage() {
     const val = input.trim();
     if ((!val && attachments.length === 0) || thinking) return;
-    // Le contenu des fichiers joints est embarqué dans le message (balises FILE),
-    // pour que GLM le lise — masqué à l'affichage par UserBubble.
-    const fileBlocks = attachments.map((a) => buildFileBlock(a.name, a.content)).join("");
-    const content = fileBlocks + (val || "Analyse le(s) fichier(s) joint(s) et dis-moi ce que tu en comprends.");
+    const id = ensureConvId();
+    // Les fichiers sont déjà uploadés dans le brouillon : on passe leurs CHEMINS, l'Élève
+    // agentique les ouvre lui-même (lire_archive / lire_document / Read).
+    const fileLine = attachments.length
+      ? `[Fichiers joints : ${attachments.map((a) => a.path).join(", ")}]\n\n`
+      : "";
+    const content = fileLine + (val || "Analyse le(s) fichier(s) joint(s) et dis-moi ce que tu en comprends.");
     const withUser = [...messages, { role: "user", content }];
     setMessages(withUser);
     setInput("");
     setAttachments([]);
-    let id = currentId;
-    if (!id) { id = `c${Date.now()}`; setCurrentId(id); }
+    setAttachNote("");
     upsertConversation(id, withUser);
     runTurn(withUser, id);
   }
@@ -718,6 +782,16 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
                     </button>
                   </span>
                 ))}
+              </div>
+            )}
+
+            {/* Hint honnête : un binaire/archive a été refusé ici → diriger vers un projet */}
+            {attachNote && (
+              <div className="mx-4 mt-2 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
+                <span className="flex-1">{attachNote}</span>
+                <button onClick={() => setAttachNote("")} title="OK" className="shrink-0 text-warn/60 hover:text-warn transition-colors">
+                  <X size={12} />
+                </button>
               </div>
             )}
 
@@ -843,6 +917,42 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       {/* Barre fixe en bas */}
       <div className="shrink-0 border-t border-edge/30 bg-bg/95 px-4 py-4 backdrop-blur-xl">
         <div className="mx-auto max-w-3xl">
+          {/* Graduation : passer cette discussion (+ fichiers + contexte) dans l'atelier. Toujours
+              dispo via le bouton ; le panneau s'ouvre aussi quand Mango propose (suggestGraduate). */}
+          {hasChat && (graduateOpen ? (
+            <div className="mb-2 rounded-xl border border-accent/30 bg-accent/[0.07] p-3">
+              <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-accent-soft">
+                <FolderOpen size={15} className="shrink-0" />
+                <span className="font-medium">On passe à l'atelier ?</span>
+                <span className="text-xs text-dim">J'emporte nos fichiers et le contexte de la discussion.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  value={graduateName}
+                  onChange={(e) => setGraduateName(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") graduate(); }}
+                  placeholder="nom du projet"
+                  className="flex-1 rounded-lg border border-edge/70 bg-panel/60 px-3 py-1.5 text-sm text-ink placeholder:text-faint/50 focus:outline-none focus:border-accent/50"
+                  autoFocus
+                />
+                <button onClick={graduate} disabled={gradBusy} title="Créer le projet et ouvrir l'atelier"
+                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:opacity-60">
+                  {gradBusy ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
+                  {gradBusy ? "Création…" : "Ouvrir l'atelier"}
+                </button>
+                <button onClick={() => setGraduateOpen(false)} className="rounded-lg px-2 py-1.5 text-xs text-dim hover:text-ink transition-colors">
+                  Plus tard
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mb-2 flex justify-end">
+              <button onClick={() => setGraduateOpen(true)} title="Passer cette discussion dans l'atelier (construire/planifier)"
+                className="flex items-center gap-1.5 rounded-lg border border-edge/60 bg-panel/50 px-2.5 py-1 text-xs text-dim hover:text-accent-soft hover:border-accent/40 transition-colors">
+                <FolderOpen size={13} /> Ouvrir dans l'atelier
+              </button>
+            </div>
+          ))}
           <BottomBar
             input={input}
             setInput={setInput}
@@ -858,6 +968,8 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
             attachments={attachments}
             onAddFiles={addFiles}
             onRemoveAttachment={removeAttachment}
+            attachNote={attachNote}
+            onClearNote={() => setAttachNote("")}
           />
         </div>
       </div>

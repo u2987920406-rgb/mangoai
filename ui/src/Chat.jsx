@@ -180,7 +180,9 @@ export default function Chat({
     return () => document.removeEventListener("mousedown", onOutside);
   }, [filePicker]);
 
-  const ACCEPTED = /\.(png|jpe?g|webp|gif|pdf)$/i;
+  // Aligné sur ce que Mango sait lire + le backend (server/src/uploads.ts) :
+  // images · PDF/Office/texte (lire_document) · archives .zip/.rar (lire_archive).
+  const ACCEPTED = /\.(png|jpe?g|webp|gif|pdf|docx|xlsx|pptx|txt|md|csv|json|zip|rar)$/i;
   const addFiles = (files) => {
     const valid = [...files].filter((f) => f && ACCEPTED.test(f.name || ".png"));
     if (valid.length === 0) return;
@@ -469,7 +471,8 @@ export default function Chat({
 
     try {
       // Upload attachments first; their paths are prepended to the prompt so
-      // the agent Reads them (Read handles PNG/JPEG/PDF natively).
+      // the agent opens them: Read for PNG/JPEG/PDF, lire_document for Office/text,
+      // lire_archive for .zip/.rar.
       let prompt = typed || "Analyse les fichiers joints et dis-moi ce que tu en comprends.";
       if (contextFile) {
         prompt = `[Contexte fichier : ${contextFile}]\n\n${prompt}`;
@@ -971,7 +974,7 @@ export default function Chat({
                 ref={fileRef}
                 type="file"
                 multiple
-                accept=".png,.jpg,.jpeg,.webp,.gif,.pdf"
+                accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.docx,.xlsx,.pptx,.txt,.md,.csv,.json,.zip,.rar"
                 className="hidden"
                 onChange={(e) => {
                   addFiles(e.target.files);

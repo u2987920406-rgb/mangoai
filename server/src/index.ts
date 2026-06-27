@@ -25,6 +25,7 @@ import { spawnPatrol } from "./patrol.js";
 import { interruptCompaction, maybeCompactSession } from "./compaction.js";
 import { clearInterrupt, requestInterrupt } from "./interrupt.js";
 import { saveUpload } from "./uploads.js";
+import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildIntent } from "./home-scratch.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
@@ -193,9 +194,10 @@ app.put("/api/projects/:name/plan", (req, res) => {
 
 // ── Chat d'accueil — conversation directe avec MangoOS (sans projectName) ──
 app.post("/api/home-chat", async (req, res) => {
-  const { messages, model } = req.body as {
+  const { messages, model, convId } = req.body as {
     messages?: Array<{ role: string; content: string }>;
     model?: string;
+    convId?: string; // brouillon de la conversation d'accueil (disque + outils)
   };
   if (!messages?.length) {
     res.status(400).json({ error: "messages required" });
@@ -212,28 +214,47 @@ app.post("/api/home-chat", async (req, res) => {
     .slice(0, -1)
     .map((m) => `${m.role === "user" ? "Humain" : "MangoOS"} : ${m.content}`)
     .join("\n");
-  const system = [
-    "Tu es MangoOS, l'assistant IA personnel de Raf. Tu es chaleureux, direct et concis.",
-    "Réponds en français sauf si on te parle en anglais.",
-    // Garde-fou anti-dérive : MangoOS est une application AUTONOME. Aucun modèle
-    // (Claude inclus) ne doit se prendre pour « Claude Code » ni renvoyer Raf vers
-    // un terminal/des réglages externes — tout se passe DANS MangoOS.
-    "Tu es une application autonome qui tourne sur la machine de Raf — tu n'es NI Claude Code, NI un terminal, NI un outil externe. Ne mentionne jamais « Claude Code », ne renvoie jamais vers un terminal, une commande slash, ou des réglages d'un autre logiciel : tout (permissions, actions, génération) se fait à l'intérieur de MangoOS.",
-    "ACCÈS AUX FICHIERS : dans cette conversation tu n'as AUCUN accès direct au disque — tu ne peux pas lire un chemin (ex. D:\\...) ni « demander une permission » d'accès fichier (ça n'existe pas ici, ne lance JAMAIS de fausse demande d'autorisation). Pour qu'on te montre un fichier, demande simplement à Raf de l'ATTACHER avec le bouton trombone 📎 (ou d'en coller le contenu) : le contenu t'arrivera alors directement dans le message, entre des balises [[FILE:nom]]…[[/FILE]]. Ne prétends jamais avoir lu un fichier que tu n'as pas reçu de cette façon.",
-    history ? `\n— Historique —\n${history}` : "",
-  ].filter(Boolean).join("\n");
+
+  // Mango propose-t-il de passer à l'atelier ? (intention de CONSTRUIRE détectée)
+  const suggestGraduate = detectsBuildIntent(last?.content ?? "");
 
   try {
+    // ── ÉLÈVE (GLM) → home AGENTIQUE : la page d'accueil « peut tout faire dès le départ ».
+    // Le brouillon `convId` donne un disque (.assets) ; l'Élève reçoit les outils de LECTURE
+    // (read/list/search + web + lire_document + lire_archive + requete_web GET) — PAS d'écriture
+    // ni de build (c'est Raf qui valide la graduation vers l'atelier). Repli chatEleve sans outils.
+    if (model === "eleve" && ELEVE_PROVIDER === "openai" && convId) {
+      const scratch = ensureHomeScratch(convId);
+      const sys = [
+        "Tu es MangoOS, l'assistant IA personnel de Raf — chaleureux, direct, concis. Réponds en français sauf si on te parle en anglais.",
+        "Tu es une application AUTONOME sur la machine de Raf — NI Claude Code, NI un terminal, NI un outil externe. Ne renvoie jamais vers un terminal/des réglages d'un autre logiciel : tout se fait DANS MangoOS.",
+        "TU AS DES OUTILS, sers-t'en SANS demander la permission : LIS les fichiers joints et le brouillon (read_file/list_files/search_code), OUVRE une archive (.zip/.rar → lire_archive), lis un PDF/Word/Excel (lire_document), lis le WEB (lire_page/chercher_web/extraire_site) et interroge une API en GET (requete_web). Les pièces jointes de Raf sont dans .assets/. Ne dis JAMAIS « je n'ai pas accès au disque/à internet » ni « colle le contenu » : ouvre-les toi-même.",
+        "Tu es ici en posture DISCUTER (lire, analyser, conseiller) — tu n'écris pas de fichiers et ne construis pas d'app ICI. Quand Raf veut CONSTRUIRE ou PLANIFIER, propose-lui de passer dans l'ATELIER (workspace) : « on ouvre l'atelier ? j'y emporte nos fichiers et le contexte » — c'est LUI qui valide.",
+        history ? `\n— Historique —\n${history}` : "",
+      ].filter(Boolean).join("\n");
+      const r = await askEleveAgentic(sys, last.content, buildEleveDiscussTools(scratch), {
+        model: process.env.ELEVE_MODEL,
+      });
+      res.json({ text: (r.text ?? "").trim() || "(réponse vide de l'Élève)", suggestGraduate });
+      return;
+    }
+
+    // ── Repli : conversation TEXTE (Claude, ou Élève sans brouillon/endpoint cloud) ──
+    const system = [
+      "Tu es MangoOS, l'assistant IA personnel de Raf. Tu es chaleureux, direct et concis.",
+      "Réponds en français sauf si on te parle en anglais.",
+      "Tu es une application autonome qui tourne sur la machine de Raf — tu n'es NI Claude Code, NI un terminal, NI un outil externe. Ne mentionne jamais « Claude Code », ne renvoie jamais vers un terminal, une commande slash, ou des réglages d'un autre logiciel : tout (permissions, actions, génération) se fait à l'intérieur de MangoOS.",
+      "ACCÈS AUX FICHIERS : dans cette conversation tu n'as pas d'outils de lecture disque — pour qu'on te montre un fichier, demande à Raf de l'ATTACHER avec le bouton trombone 📎 ; son contenu t'arrivera dans le message entre des balises [[FILE:nom]]…[[/FILE]]. Ne prétends jamais avoir lu un fichier que tu n'as pas reçu ainsi.",
+      history ? `\n— Historique —\n${history}` : "",
+    ].filter(Boolean).join("\n");
     let text: string;
     if (model === "eleve") {
-      // Élève sélectionné → réponse EN INTERNE par GLM-5.2 (chatEleve), pas Claude.
-      // C'est ce que Raf attend quand il choisit « Élève · GLM-5.2 » sur l'accueil.
       text = await chatEleve(system, last.content);
     } else {
       const { askLLM } = await import("./llm-engine.js");
       text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
     }
-    res.json({ text });
+    res.json({ text, suggestGraduate });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
@@ -762,6 +783,48 @@ app.post(
     }
   },
 );
+
+// Accueil : upload d'une pièce jointe dans le BROUILLON d'une conversation (disque caché
+// .home/<convId>/.assets) → l'Élève agentique peut ensuite la LIRE (lire_archive/lire_document/Read).
+app.post(
+  "/api/home/upload/:convId",
+  express.raw({ type: () => true, limit: "51mb" }),
+  (req, res) => {
+    try {
+      const dir = ensureHomeScratch(req.params.convId);
+      const relPath = saveUpload(dir, String(req.query.filename ?? ""), req.body as Buffer);
+      res.json({ path: relPath });
+    } catch (err) {
+      res.status(400).json({ error: err instanceof Error ? err.message : String(err) });
+    }
+  },
+);
+
+// Accueil → atelier : GRADUATION d'un brouillon en vrai projet workspace (scaffold + copie
+// des pièces jointes + historique amorcé). C'est Raf qui décide (bouton ou proposition acceptée).
+app.post("/api/home/graduate", async (req, res) => {
+  const { convId, name, messages } = req.body as {
+    convId?: string;
+    name?: string;
+    messages?: Array<{ role: string; content: string }>;
+  };
+  if (!convId || !name?.trim()) {
+    res.status(400).json({ error: "convId et name requis" });
+    return;
+  }
+  try {
+    const out = await graduateHomeScratch(convId, name, Array.isArray(messages) ? messages : []);
+    res.json({ ok: true, name: out.name });
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  }
+});
+
+// Accueil : suppression du brouillon (quand Raf supprime la conversation côté UI).
+app.delete("/api/home/scratch/:convId", (req, res) => {
+  cleanHomeScratch(req.params.convId);
+  res.json({ ok: true });
+});
 
 // Snap button: captures a user-drawn zone of the live preview and returns it
 // as a base64 PNG that the UI attaches to the next message.
