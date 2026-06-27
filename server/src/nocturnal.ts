@@ -446,6 +446,13 @@ export function reviewLoraCandidate(answers: Record<string, string | boolean> = 
   return visualLoved && levelIsPositive(answers.ergonomie);
 }
 
+// Garde-fou CAPITAL (Raf, 2026-06-27) : une note de review est PROPRE AU CONTEXTE du projet.
+// Aimer la palette « Paris » ne veut PAS dire « réutilise cette palette partout » (Paris ≠ Tokyo).
+// On généralise la MÉTHODE, jamais les VALEURS liées au sujet. Injecté dans les 2 distillateurs
+// (review nocturne ici + Revue du build dans build-review.ts).
+export const REVIEW_AXIOM_GUARDRAIL =
+  "RÈGLE CAPITALE — généralise la MÉTHODE, jamais les VALEURS liées au sujet. Quand l'utilisateur apprécie un choix ANCRÉ DANS LE CONTEXTE du projet (une palette/typo qui évoque Paris, des visuels d'une marque précise, l'ambiance d'un lieu), NE le fige PAS en règle universelle réutilisable ailleurs : ces valeurs appartiennent à CE sujet (Paris ≠ Tokyo). Distille plutôt le PRINCIPE transférable (ex. « dériver la palette/typo/ambiance de l'IDENTITÉ RÉELLE du sujet »). N'écris JAMAIS un axiome qui imposerait les couleurs/typo/visuels d'un sujet à un autre. Un axiome valable s'applique à N'IMPORTE QUEL futur projet, quel que soit son thème — sinon ne l'écris pas.";
+
 /** Distille la review structurée d'un projet nocturne en axiome(s) tagué(s)
  * [review-nocturne] et l'append à .axioms.md. Best-effort, ne lève jamais. */
 export async function reviewToAxioms(entry: NocturnalEntry, input: NocturnalReviewInput): Promise<void> {
@@ -462,7 +469,9 @@ export async function reviewToAxioms(entry: NocturnalEntry, input: NocturnalRevi
     if (!freeText && dimCount === 0) return;
 
     const system =
-      "Tu distilles la review d'un projet généré en UN À TROIS axiomes universels de goût/UX (règles abstraites réutilisables par dimension : code, typographie, couleurs, icônes, interface, animations…), pas une description. Réponds UNIQUEMENT par le(s) bloc(s) axiome demandé(s), rien d'autre.";
+      "Tu distilles la review d'un projet généré en UN À TROIS axiomes universels de goût/UX (règles abstraites réutilisables par dimension : code, typographie, couleurs, icônes, interface, animations…), pas une description. " +
+      REVIEW_AXIOM_GUARDRAIL +
+      " Réponds UNIQUEMENT par le(s) bloc(s) axiome demandé(s), rien d'autre.";
     const user = `L'utilisateur a passé en revue un projet web généré la nuit (« ${entry.task.slice(0, 200)} »).
 Verdict par dimension (QCM) : ${answersText}.
 - ADORÉ : ${adored.join(", ") || "—"}
@@ -471,7 +480,7 @@ Verdict par dimension (QCM) : ${answersText}.
 - RATÉ : ${rated.join(", ") || "—"}
 Commentaire libre : « ${freeText || "—"} ».
 
-Concentre-toi sur les dimensions ADORÉES (à reproduire) et RATÉES/moyennes (à éviter). Extrais 1 à 3 axiomes de goût/UX que cela t'apprend sur ses préférences, applicables à ses futurs projets. Format EXACT pour chaque axiome (rien d'autre) :
+Concentre-toi sur les dimensions ADORÉES (à reproduire) et RATÉES/moyennes (à éviter). ⚠️ Mais ce qu'il a aimé ici est souvent PROPRE AU CONTEXTE de ce sujet (« ${entry.task.slice(0, 80)} ») : extrais le PRINCIPE transférable, pas les valeurs liées au sujet. Extrais 1 à 3 axiomes de goût/UX applicables à N'IMPORTE QUEL futur projet. Format EXACT pour chaque axiome (rien d'autre) :
 AXIOME-UX-XX [candidat] [validé-utilisateur] [review-nocturne]
 - Contexte: (quand appliquer)
 - Piège: (ce qu'il n'aime pas)

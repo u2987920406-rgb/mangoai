@@ -6,7 +6,7 @@ import { projectDir, WORKSPACE_DIR } from "./projects.js";
 import { resolveProvider } from "./llm-engine.js";
 import { getBrain } from "./kernel.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
-import { summarizeReviewAnswers } from "./nocturnal.js";
+import { summarizeReviewAnswers, REVIEW_AXIOM_GUARDRAIL } from "./nocturnal.js";
 
 const HISTORY_FILE = ".chat-history.json";
 const REVIEW_FILE  = ".build-review.json";
@@ -82,7 +82,9 @@ ${steps}
 
 ---
 
-Extrais ${hasQcm ? "1 à 3 axiomes (un par dimension ADORÉE ou RATÉE marquante)" : score === 3 ? "1 axiome positif ET 1 axiome négatif" : "1 à 2 axiomes"} universels réutilisables sur la FAÇON DE RAISONNER (pas sur le code produit). Un axiome doit être applicable à d'autres projets futurs.
+${REVIEW_AXIOM_GUARDRAIL}
+
+Extrais ${hasQcm ? "1 à 3 axiomes (un par dimension ADORÉE ou RATÉE marquante)" : score === 3 ? "1 axiome positif ET 1 axiome négatif" : "1 à 2 axiomes"} universels réutilisables sur la FAÇON DE RAISONNER (pas sur le code produit) — JAMAIS les valeurs (palette/typo/visuels) propres au sujet « ${projectName} ». Un axiome doit être applicable à N'IMPORTE QUEL projet futur, quel que soit son thème.
 
 Pour chaque axiome, utilise EXACTEMENT ce format (rien d'autre) :
 

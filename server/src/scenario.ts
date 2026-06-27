@@ -57,6 +57,10 @@ export type PromptContext = {
   // design-system, identité, références) sont désactivés et remplacés par un bloc
   // dédié qui recentre l'agent sur les fichiers du projet client uniquement.
   clientMode?: boolean;
+  // Curseur de style (2026-06-27) — dose 0→100 le GOÛT personnel vs l'identité libre du sujet.
+  // 100 = plein style Mango (défaut). 0 = zéro style (le sujet/neutre domine). Entre = mélange
+  // (bloc styleBlend). `clientMode` (fichiers d'un client externe) reste prioritaire sur le curseur.
+  styleStrength?: number;
   // Idée #99 — Perfect Plan : contrat de démarrage (5 réponses + références)
   // sauvegardé avant le premier message, pré-lu par agent.ts. "" si absent.
   perfectPlanSection?: string;
@@ -121,6 +125,17 @@ Rules:
 - For large requests made of several INDEPENDENT parts (multiple sections, pages or components that don't touch the same files), delegate each part to a "builder" subagent and launch them in parallel (multiple Agent calls in one message), then integrate and verify the result yourself. For small or interdependent changes, work directly — delegation has overhead.
 ${MEMORY_RULES}
 ${CONFIRM_PROTOCOL}`;
+
+// « Contexte d'abord » (2026-06-27, directive de Raf) — la BASE de toute app : avant de
+// coder un sujet RÉEL, chercher son IDENTITÉ sur Internet, puis développer autour. Comble
+// le manque des blocs cadrage/moodboard (eux visent le VISUEL) côté CONTENU/FAITS. Réservé
+// aux modes de build (elite/mvp/nocturne) — absent de Discuter (conseil) et des éditions pures.
+const CONTEXT_FIRST_RULES = `
+CONTEXTE D'ABORD (base de toute app) — quand tu DÉMARRES une app autour d'un SUJET RÉEL (marque, objet, lieu/site historique, événement, œuvre), CHERCHE d'abord son IDENTITÉ sur Internet AVANT de coder, puis développe AUTOUR de ce contexte cerné :
+- Marque → son identité (site officiel, histoire, charte, gamme/produits, ton de voix).
+- Objet → son identité (origine, créateur, dates, design, matériaux, usages).
+- Lieu / site historique → son histoire (ex. Wikipédia : dates clés, faits marquants, contexte).
+Sers-toi de tes outils SANS demander : \`chercher_web\` / \`extraire_site\` (identité + faits), un moodboard/Sharingan sur 2-3 leaders du domaine (direction visuelle), \`chercher_image\` (vraies photos). ANCRE le CONTENU (textes, sections, faits, vocabulaire réel) ET la direction visuelle dans ce que tu as RÉELLEMENT trouvé — n'invente pas les faits, réutilise/cite la source (fidélité). Cela vaut que le projet soit à ton goût OU en style neutre : l'identité du sujet prime. Si le sujet est abstrait (outil perso, dashboard de données interne), saute cette phase. Pour une simple MODIFICATION d'une app déjà cadrée, inutile de re-chercher.`;
 
 // Backlog item "raisonnement analytique" — appended only when the chosen model
 // supports native extended thinking (opus/sonnet); haiku stays lightweight.
@@ -330,6 +345,22 @@ Mode Client actif — ce projet appartient à un CLIENT EXTERNE :
 - En cas de doute entre le goût de l'utilisateur et les fichiers du client : les fichiers du client gagnent TOUJOURS.`;
 
 // ── Named blocks: each returns its text for the given context ("" = absent) ──
+// Curseur de style — dosage du goût personnel (0→100). Bornes sûres, défaut 100.
+function styleStrengthOf(ctx: PromptContext): number {
+  const s = ctx.styleStrength;
+  if (typeof s !== "number" || Number.isNaN(s)) return 100;
+  return Math.max(0, Math.min(100, Math.round(s)));
+}
+/** Goût personnel coupé ? (mode client OU curseur à 0 → le sujet/neutre domine). */
+function tasteOff(ctx: PromptContext): boolean {
+  return Boolean(ctx.clientMode) || styleStrengthOf(ctx) <= 0;
+}
+/** Clause de mélange, affichée seulement entre 1 et 99 % (hors mode client). */
+function styleBlendRules(x: number): string {
+  return `
+DOSAGE DE STYLE — l'utilisateur a réglé le curseur sur ~${x}% SON style / ~${100 - x}% libre. Le goût personnel ci-dessous (axiomes, design system, palette/typo habituelles) est une RÉFÉRENCE pondérée à ~${x}%, PAS un carcan : marie-le à ~${100 - x}% d'identité PROPRE au sujet (cf. « contexte d'abord ») et d'exploration. Plus le curseur penche vers le libre, plus tu t'écartes de ta palette/typo habituelles pour épouser le contexte du sujet (un sujet « Tokyo » ne doit pas ressembler à un sujet « Paris »). Vers ${x}≈50 : équilibre franc entre ta patte et l'identité du sujet. Vers ${x} bas (~25) : le SUJET domine nettement, ta patte n'est qu'une touche (rythme, soin, micro-interactions). Garde TOUJOURS la qualité et le soin, quel que soit le dosage.`;
+}
+
 const BLOCKS: Record<string, (ctx: PromptContext) => string> = {
   tutorial: (ctx) => (ctx.tutorial ? tutorialRules(ctx.tutorial) : ""),
   // Idée #61 vague 2 — notes personnelles pertinentes (recherche sémantique
@@ -341,6 +372,8 @@ const BLOCKS: Record<string, (ctx: PromptContext) => string> = {
   constellations: (ctx) => ctx.constellationsSection ?? "",
   mode: (ctx) => MODE_RULES[ctx.mode],
   base: () => SYSTEM_APPEND,
+  // « Contexte d'abord » (Raf) — recherche d'identité du sujet réel avant de coder.
+  contexteFirst: () => CONTEXT_FIRST_RULES,
   // Idée #119 — catalogue + rappel du type pertinent détecté pour la demande
   // (pré-calculé par agent.ts ; "" si « autre » ou non fourni → catalogue seul).
   blueprints: (ctx) => BLUEPRINTS_RULES + (ctx.blueprintHintSection ?? ""),
@@ -380,14 +413,19 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   visionMvp: () => VISION_RULES_MVP,
   // Bloc mode client — injecté en tête quand clientMode=true, remplace les blocs de goût.
   clientContext: (ctx) => (ctx.clientMode ? CLIENT_CONTEXT_RULES : ""),
+  // Curseur de style — clause de mélange entre 1 et 99 % (hors mode client). À 100 % ou 0 % : "".
+  styleBlend: (ctx) => {
+    const x = styleStrengthOf(ctx);
+    return (!ctx.clientMode && x > 0 && x < 100) ? styleBlendRules(x) : "";
+  },
   // Future retrieval seam: today returns the capped registry unchanged.
-  axioms: (ctx) => (ctx.clientMode ? "" : selectAxioms(WORKSPACE_DIR)),
+  axioms: (ctx) => (tasteOff(ctx) ? "" : selectAxioms(WORKSPACE_DIR)),
   memory: (ctx) => memoryPromptSection(ctx.projectDir, WORKSPACE_DIR),
   // Idée #42 — personal identity layers (.language / .thinking-style / .vision):
   // who the user is deeply, across all projects. Injected right after the user
   // profile/memory so the agent reads intent through the user's own language,
   // thinking style and long-term vision. "" when all three layers are empty.
-  identity: (ctx) => (ctx.clientMode ? "" : identityPromptSection(WORKSPACE_DIR)),
+  identity: (ctx) => (tasteOff(ctx) ? "" : identityPromptSection(WORKSPACE_DIR)),
   // Idée #120 — skills pertinents (tri sémantique) quand agent.ts les fournit,
   // sinon le dump complet (non-régression / tests).
   skills: (ctx) => ctx.skillsSection ?? skillsPromptSection(),
@@ -398,12 +436,12 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // Chantier A — cross-project design system: visual identity that survives
   // project switches (palette, typo, components). Always injected so new
   // projects inherit the user's established visual style without prompting.
-  designSystem: (ctx) => (ctx.clientMode ? "" : DESIGN_SYSTEM_RULES + designSystemPromptSection(WORKSPACE_DIR)),
+  designSystem: (ctx) => (tasteOff(ctx) ? "" : DESIGN_SYSTEM_RULES + designSystemPromptSection(WORKSPACE_DIR)),
   // Idée #49 — "Cadrage qui apprend de toi": recurring preferences learned
   // from past projects (tone, typography, layout, palette, UX habits) injected
   // as OVERRIDABLE defaults at the founding cadrage of each new project.
   // Zero weight ("") until .preferences.md exists — never pollutes new setups.
-  preferences: (ctx) => (ctx.clientMode ? "" : preferencesPromptSection(WORKSPACE_DIR)),
+  preferences: (ctx) => (tasteOff(ctx) ? "" : preferencesPromptSection(WORKSPACE_DIR)),
   // Chantier #38 — living architecture map: per-project technical structure
   // (components, pages, API, data, stack, decisions). Injected only when the
   // file exists (non-empty), so it never pollutes brand-new projects.
@@ -426,7 +464,7 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // Idée #50 — Banque de références perso: mood library of inspirations
   // (screenshots / URLs / palettes) reused at the founding cadrage of each new
   // project. Rules always present; list injected only when references exist.
-  references: (ctx) => (ctx.clientMode ? "" : REFERENCES_RULES + referencesPromptSection(WORKSPACE_DIR)),
+  references: (ctx) => (tasteOff(ctx) ? "" : REFERENCES_RULES + referencesPromptSection(WORKSPACE_DIR)),
   // Idée #26 Phase 2 — raw source files from OTHER workspace projects: before
   // recoding a component/hook/util, the agent checks what already exists in the
   // user's other projects and adapts it instead of starting from scratch.
@@ -482,8 +520,8 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
 const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout", string[]> = {
-  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
-  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "base", "blueprints", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
+  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
   // feature design) and leads with the finition protocol to frame the phase.
   finition: ["tutorial", "mode", "clientContext", "base", "finition", "blueprints", "supabase", "backend", "analytic", "tests", "visionElite", "axioms", "designSystem", "components", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
@@ -492,7 +530,7 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // humaines (cadrage qui sollicite, clarification, Miroir) et le scoping
   // architecte questionneur (PLAN_RULES → remplacé par moodboardNocturne), ainsi
   // que tutorial (pas de tuto la nuit) et tests (build rapide ciblé design).
-  nocturne: ["mode", "base", "blueprints", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  nocturne: ["mode", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Esthétique (#68) — polish graphique haute fidélité : projet fonctionnel,
   // on l'embellit. Mène avec le protocole graphicPolish, garde tout l'arsenal
   // qualité (analytic + visionElite + design-system) SANS nouveau scope/plan

@@ -179,6 +179,21 @@ const discuss = assembleSystemPrompt({ mode: "discuss", model: "eleve", projectD
 check("clause FIDÉLITÉ présente en mode Discuter", discuss.includes("FIDÉLITÉ DES SOURCES"));
 check("clause FIDÉLITÉ absente en build Élite", !elite.includes("FIDÉLITÉ DES SOURCES"));
 
+// « Contexte d'abord » : présent dans les modes de BUILD (elite/mvp), absent en Discuter.
+check("clause CONTEXTE D'ABORD présente en Élite", elite.includes("CONTEXTE D'ABORD"));
+check("clause CONTEXTE D'ABORD présente en MVP", mvp.includes("CONTEXTE D'ABORD"));
+check("clause CONTEXTE D'ABORD absente en Discuter (conseil, pas build)", !discuss.includes("CONTEXTE D'ABORD"));
+
+// Curseur de style — clause de DOSAGE entre 1 et 99 %, absente à 0/100/mode client.
+const blend50 = assembleSystemPrompt({ mode: "elite", model: "eleve", projectDir: dir, styleStrength: 50 });
+const blend100 = assembleSystemPrompt({ mode: "elite", model: "eleve", projectDir: dir, styleStrength: 100 });
+const blend0 = assembleSystemPrompt({ mode: "elite", model: "eleve", projectDir: dir, styleStrength: 0 });
+const blendClient = assembleSystemPrompt({ mode: "elite", model: "eleve", projectDir: dir, styleStrength: 50, clientMode: true });
+check("curseur 50% → clause DOSAGE DE STYLE (avec ~50%)", blend50.includes("DOSAGE DE STYLE") && blend50.includes("~50%"));
+check("curseur 100% (défaut) → pas de clause de dosage", !blend100.includes("DOSAGE DE STYLE"));
+check("curseur 0% → pas de clause de dosage (le sujet domine)", !blend0.includes("DOSAGE DE STYLE"));
+check("mode client prioritaire sur le curseur → pas de dosage", !blendClient.includes("DOSAGE DE STYLE"));
+
 line("═");
 if (failures === 0) {
   console.log("✅ Gating prouvé : tests/analytic/plan Élite-only, moodboard MVP en MVP only, vision adaptée au mode.");

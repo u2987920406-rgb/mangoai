@@ -128,6 +128,8 @@ export async function* runAgent(
   // Mode Client — désactive les blocs de goût personnel (axiomes, préférences,
   // design-system, identité, références) et les remplace par clientContext.
   clientMode?: boolean,
+  // Curseur de style 0→100 (% du goût personnel ; 100 = défaut plein style).
+  styleStrength?: number,
 ): AsyncGenerator<AgentEvent> {
   const effectiveModel = model ?? DEFAULT_MODEL;
   const effectiveMode = mode ?? DEFAULT_MODE;
@@ -229,7 +231,7 @@ export async function* runAgent(
           // Coque Souple: the append is assembled from named blocks following
           // the scenario (= effort mode). Behavior-constant vs the old inline
           // concatenation (verified byte-for-byte).
-          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, proceduresSection: proceduresBlock, clientMode, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
+          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
         },
         ...(sessionId ? { resume: sessionId } : {}),
       },

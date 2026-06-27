@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Briefcase, BrainCircuit, ClipboardCheck, Download, Eye, EyeOff,
-  GitFork, Hammer, History, Loader2, Server, ShieldCheck, Sparkles, Squircle, Trash2,
+  GitFork, Hammer, History, Loader2, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2,
 } from "lucide-react";
 import Knowledge from "./Knowledge.jsx";
 import BuildReview from "./BuildReview.jsx";
@@ -40,6 +40,62 @@ function RailBtn({ icon: Icon, label, active = false, onClick, badge }) {
 
 function Sep() {
   return <div className="my-1.5 w-7 self-center border-t border-[#FF9500]/20" />;
+}
+
+// ─── Curseur de dosage de style (0→100 % du goût Mango) ─────────────────────────
+function StylePanel({ value = 100, onChange, clientMode = false }) {
+  const PRESETS = [0, 25, 50, 75, 100];
+  const label =
+    value >= 100 ? "Plein style Mango" :
+    value <= 0 ? "Style libre (le sujet domine)" :
+    value >= 75 ? "Surtout mon style" :
+    value <= 25 ? "Surtout le sujet" : "Équilibre";
+  return (
+    <div className="flex flex-col gap-4 p-3">
+      <p className="text-[12px] leading-relaxed text-dim">
+        Dose la part de TON style (palette, typo, design system, axiomes) vs l'identité PROPRE du
+        sujet. 100 % = plein style Mango · 0 % = le sujet/neutre mène. Réglage mémorisé par projet,
+        appliqué au prochain message.
+      </p>
+
+      <div className="flex items-baseline justify-between">
+        <span className="text-2xl font-bold text-ink">{clientMode ? "—" : `${value}%`}</span>
+        <span className="text-[12px] font-semibold text-accent-soft">{clientMode ? "Mode Client actif" : label}</span>
+      </div>
+
+      <input
+        type="range"
+        min={0}
+        max={100}
+        step={5}
+        value={value}
+        disabled={clientMode}
+        onChange={(e) => onChange?.(Number(e.target.value))}
+        className="w-full accent-accent disabled:opacity-40"
+      />
+      <div className="flex justify-between">
+        {PRESETS.map((p) => (
+          <button
+            key={p}
+            disabled={clientMode}
+            onClick={() => onChange?.(p)}
+            className={`rounded-md px-2 py-1 text-[11px] transition-colors disabled:opacity-40 ${
+              value === p ? "bg-accent/20 text-accent-soft font-semibold" : "text-faint hover:text-dim"
+            }`}
+          >
+            {p}%
+          </button>
+        ))}
+      </div>
+
+      {clientMode && (
+        <p className="rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-[11px] text-warn">
+          Le « Mode Client » est prioritaire : il ignore tout goût personnel et s'ancre sur les
+          fichiers du client. Désactive-le pour utiliser le curseur.
+        </p>
+      )}
+    </div>
+  );
 }
 
 function formatDate(iso) {
@@ -234,6 +290,8 @@ export default function WorkspaceTools({
   onToggleThinking,
   clientMode = false,
   onClientMode,
+  styleStrength = 100,
+  onStyleStrength,
   perfectPlanContract = null,
   onDeletePerfectPlan,
   onOpenMirror,
@@ -252,6 +310,9 @@ export default function WorkspaceTools({
       <div className="flex w-14 flex-col items-center gap-0.5 bg-panel/60 px-1.5 py-2">
         <RailBtn icon={BrainCircuit} label="Mémoire" active={active === "memoire"} onClick={() => toggle("memoire")} />
         <RailBtn icon={ClipboardCheck} label="Revue du build" active={active === "revue"} onClick={() => toggle("revue")} />
+        {onStyleStrength && (
+          <RailBtn icon={SlidersHorizontal} label="Dosage de style" active={active === "style" || (!clientMode && styleStrength !== 100)} onClick={() => toggle("style")} />
+        )}
         {versions.length > 0 && (
           <RailBtn icon={History} label="Versions" badge={versions.length} active={active === "versions"} onClick={() => toggle("versions")} />
         )}
@@ -304,6 +365,11 @@ export default function WorkspaceTools({
               {/* key=projet → remonte un panneau FRAIS à chaque changement de projet
                   (pas de review périmée, pas de réponse async d'un autre projet) */}
               <BuildReview key={projectName} projectName={projectName} />
+            </PanelShell>
+          )}
+          {active === "style" && (
+            <PanelShell title="Dosage de style" onClose={close}>
+              <StylePanel value={styleStrength} onChange={onStyleStrength} clientMode={clientMode} />
             </PanelShell>
           )}
           {active === "versions" && (

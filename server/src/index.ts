@@ -264,7 +264,7 @@ app.post("/api/home-chat", async (req, res) => {
 // Body: { prompt: string, projectName: string, sessionId?: string }
 // Streams AgentEvent objects as SSE. Creates the project on first message.
 app.post("/api/chat", async (req, res) => {
-  const { prompt, projectName, sessionId, model, mode, template, editTarget, tutorialId, clientMode, incrementId, intention } = req.body as {
+  const { prompt, projectName, sessionId, model, mode, template, editTarget, tutorialId, clientMode, styleStrength, incrementId, intention } = req.body as {
     prompt?: string;
     projectName?: string;
     sessionId?: string;
@@ -274,11 +274,16 @@ app.post("/api/chat", async (req, res) => {
     editTarget?: EditTarget; // #6 : cible d'une édition visuelle (clic→source)
     tutorialId?: number; // #56 Chantier C : tour joué DANS le tutoriel (posture pédagogue)
     clientMode?: boolean; // Mode Client : désactive le goût personnel, ancre sur les fichiers du client
+    styleStrength?: number; // Curseur de style 0→100 (% du goût personnel ; 100 = défaut plein style)
     incrementId?: string; // #139 Gros Projet : id de l'incrément Kanban construit ce tour (réconcilié après commit)
     intention?: string; // Phase E2 — bouton actif (construire|planifier|discuter) pour le routage multi-cerveaux
   };
   // Posture tutoriel injectée dans le system prompt quand on construit dans un tuto.
   const tutorial = typeof tutorialId === "number" && tutorialId >= 1 ? { id: tutorialId } : null;
+  // Curseur de style : 0→100 % du goût personnel (défaut 100). Borné et arrondi.
+  const styleStrengthN = typeof styleStrength === "number" && !Number.isNaN(styleStrength)
+    ? Math.max(0, Math.min(100, Math.round(styleStrength)))
+    : 100;
   // Third brain option (Phase Ultime jalon D): "eleve" routes the turn to the
   // local student (Gemma via Ollama) through the relay loop instead of Claude.
   // Claude stays the escalation tier. Any other value = a normal Claude turn.
@@ -453,7 +458,7 @@ app.post("/api/chat", async (req, res) => {
     // event is held back until we know it isn't that case.
     const streamAgentTurn = async (session?: string): Promise<"ok" | "session-not-found"> => {
       let pendingFailure: unknown = null;
-      for await (const event of runAgent(agentPrompt, dir, session, chosenModel, chosenMode, tutorial, Boolean(clientMode))) {
+      for await (const event of runAgent(agentPrompt, dir, session, chosenModel, chosenMode, tutorial, Boolean(clientMode), styleStrengthN)) {
         if (session && event.type === "error" && /No conversation found/i.test(event.message)) {
           return "session-not-found";
         }
@@ -550,7 +555,7 @@ app.post("/api/chat", async (req, res) => {
       // mémoire…) — mêmes blocs que Claude. Le moteur agentique (profil fort + GLM)
       // s'en sert pour piloter la coquille entière, pas un prompt nu. Sur le chemin
       // contrat (Gemma) runRelay l'ignore → zéro impact.
-      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir });
+      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN });
       const r = await runRelay(agentPrompt, dir, {
         ...(specialistProfile
           ? { profile: specialistProfile, eleveModel: specialistModel }

@@ -98,6 +98,7 @@ export default function App() {
   const [initialTask, setInitialTask] = useState(null);
   const [nocturnalEntry, setNocturnalEntry] = useState(null);
   const [clientMode, setClientMode] = useState(false);
+  const [styleStrength, setStyleStrength] = useState(100); // curseur 0→100 % du goût Mango
   const [onboardingNeeded, setOnboardingNeeded] = useState(false);
   const [perfectPlanContract, setPerfectPlanContract] = useState(null);
   const { windows, openWindow, closeWindow, focusWindow, moveWindow, resizeWindow } = useWindowManager();
@@ -222,12 +223,19 @@ export default function App() {
     setContext(null);
     setPerfectPlanContract(null);
     setClientMode(localStorage.getItem(`mangoos.clientMode.${name}`) === "true");
+    const savedStyle = Number(localStorage.getItem(`mangoos.styleStrength.${name}`));
+    setStyleStrength(Number.isFinite(savedStyle) && savedStyle >= 0 && savedStyle <= 100 ? savedStyle : 100);
     setScreen(SCREENS.WORKSPACE);
   }
 
   function handleClientMode(val) {
     setClientMode(val);
     localStorage.setItem(`mangoos.clientMode.${projectName}`, String(val));
+  }
+
+  function handleStyleStrength(val) {
+    setStyleStrength(val);
+    localStorage.setItem(`mangoos.styleStrength.${projectName}`, String(val));
   }
 
   function goHome() {
@@ -370,6 +378,8 @@ export default function App() {
     },
     clientMode,
     onClientMode: handleClientMode,
+    styleStrength,
+    onStyleStrength: handleStyleStrength,
     perfectPlanContract,
     onDeletePerfectPlan: async () => {
       await fetch(`/api/perfect-plan/${encodeURIComponent(projectName)}`, { method: "DELETE" }).catch(() => {});
@@ -469,6 +479,7 @@ export default function App() {
                 onToast={pushToast}
                 tutorialId={tutorialActive ? tutorialId : null}
                 clientMode={clientMode}
+                styleStrength={styleStrength}
                 buildRequest={buildRequest}
                 onBuildConsumed={() => setBuildRequest(null)}
               />

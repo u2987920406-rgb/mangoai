@@ -91,6 +91,7 @@ export default function Chat({
   showThinking = true,
   tutorialId = null,
   clientMode = false,
+  styleStrength = 100,
   seedHistory = null,
   nocturnalEntry = null,
   onReviewed = () => {},
@@ -517,6 +518,7 @@ export default function Chat({
           editTarget: useEdit ?? undefined,
           tutorialId: tutorialId ?? undefined,
           clientMode: clientMode || undefined,
+          styleStrength: styleStrength !== 100 ? styleStrength : undefined,
           incrementId: turnIncrementId ?? undefined,
         }),
       });
