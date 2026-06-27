@@ -35,8 +35,16 @@ Point d'intégration : dans `eleve.ts`, là où le remède était une **séquenc
 
 **#164 est COMPLET.** Le manager de Mango : diagnostique (P0) → route un remède (P1) → apprend (P2) → tranche l'ambigu avec un cerveau frugal (P3) → monte le cerveau de son exécutant et **mesure sa dépendance à Claude** (P4). Objectif de fond mesurable : le **taux d'escalade Claude doit baisser projet après projet**.
 
+## Pistes issues de la veille Sakana ([[trinity]] / [[conductor]])
+Le Stratège est complet ; ces pistes sont les **prochaines marches d'expressivité**, validées par la recherche externe (détail + correspondance dans `docs/plan-164` § « Pistes issues de la veille Sakana »). Aucune n'est urgente (cap [[souverainete-progressive]] : observer d'abord).
+- **CMA-ES sur `diagnose()`** ([[trinity]], condition A) : optimiser les **seuils/poids** du diagnostic par **évolution sans gradient** (sep-CMA-ES) sur l'historique des runs — souverain, déterministe-compatible, **avant** tout RL.
+- **Rôle « Penseur » distinct** ([[conductor]]) : un cerveau qui pose le plan **avant** que l'Élève code, séparé de [[planifier-avant-agir]] (aujourd'hui dilué). Complète la triade Thinker/Worker/Verifier (Exécutant + Vérificateur existent déjà).
+- **Contexte visible par agent** ([[conductor]]) : borner le **contexte injecté** au worker dans `eleve.ts` (qui·quoi·contexte) → moins de bruit/tokens/dérive (anti-L17).
+- **Triade réassignable** ([[trinity]]) : rendre Penseur/Exécutant/Vérificateur **interchangeables sous la main du Stratège**, pas figés en modules.
+- **Récursion → persistance** ([[conductor]]) : « se relire, repérer l'échec, corriger » au test-time — Mango le **persiste** déjà en procédure #75 (avantage souverain à pousser).
+
 ## Liens
-[[eleve-local]] · [[brain-dispatch]] · [[planifier-avant-agir]] (L17) · [[transmission-competences]] · [[gardien-cloture]] · [[veille-sakana-fugu]] (leçon TRINITY) · [[boucle-curation]] · [[limites]] · [[statut]] · [[historique]]
+[[eleve-local]] · [[brain-dispatch]] · [[planifier-avant-agir]] (L17) · [[transmission-competences]] · [[gardien-cloture]] · [[veille-sakana-fugu]] · [[trinity]] (leçon frugalité) · [[conductor]] (horizon RL) · [[boucle-curation]] · [[limites]] · [[statut]] · [[historique]]
 
 ## Sources
 `#164` (plan `docs/plan-164-le-stratege.md` ; statut.md + historique.md) · module `stratege-signals.ts` / branchement `eleve.ts`.

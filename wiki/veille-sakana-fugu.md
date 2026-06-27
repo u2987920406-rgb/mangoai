@@ -14,9 +14,9 @@ maj: 2026-06-26
 Référence externe qui **valide la direction architecturale de MangoOS** : un acteur de recherche industrialise exactement le pari multi-cerveaux ([[brain-dispatch]] #150, [[gardien-cloture]] #161, [[atelier-cerveaux]] #162, [[le-stratege]] #164). Sert de boussole pour les prochains lots, sans rien implémenter à chaud (cohérent avec le cap [[souverainete-progressive]] : observer avant d'élargir).
 
 ## Détails clés (le système)
-- **Fondements** : 2 papiers ICLR 2026.
-  - **TRINITY** — coordinateur LLM évolué qui assigne des rôles : **Penseur · Exécutant · Vérificateur**.
-  - **Conductor** — **apprentissage par renforcement** pour découvrir des stratégies de coordination exprimées **en langage naturel**.
+- **Fondements** : 2 papiers ICLR 2026 (chacun sa page-entité).
+  - **[[trinity|TRINITY]]** — coordinateur LLM évolué qui assigne des rôles : **Penseur · Exécutant · Vérificateur**.
+  - **[[conductor|Conductor]]** — **apprentissage par renforcement** pour découvrir des stratégies de coordination exprimées **en langage naturel**.
 - **Architecture** : sélection dynamique des agents selon la tâche · facturation au **modèle le plus haut utilisé** (pas de cumul) · désactivation possible de fournisseurs (conformité).
 - **Variantes** : *Fugu* (équilibre perf/latence) · *Fugu Ultra* (qualité max).
 - **Perf annoncée** : SWE-Bench Pro 73.7 · GPQA-D 95.5 · Humanity's Last Exam 50.0 ; parité revendiquée avec « Fable 5 » / « Mythos Preview ».
@@ -77,7 +77,7 @@ Même problème — coordonner un pool de LLM hétérogènes **sans fusion de po
 Transparence du routage (`brain-registry.json` auditable) · souveraineté & coût ($0 local vs 30 $/M) · le **goût** comme objet de première classe (Moteur de Goût + Œil-Coach), absent chez Fugu.
 
 ## Liens
-[[brain-dispatch]] · [[le-stratege]] · [[gardien-cloture]] · [[atelier-cerveaux]] · [[examen-cerveau]] · [[planifier-avant-agir]] · [[moteur-gout]] · [[oeil-coach]] · [[phase-e-multicerveaux]] · [[souverainete-progressive]] · [[kernel]] · [[statut]]
+[[trinity]] · [[conductor]] · [[brain-dispatch]] · [[le-stratege]] · [[gardien-cloture]] · [[atelier-cerveaux]] · [[examen-cerveau]] · [[planifier-avant-agir]] · [[moteur-gout]] · [[oeil-coach]] · [[phase-e-multicerveaux]] · [[souverainete-progressive]] · [[kernel]] · [[statut]]
 
 ## Sources
 [https://sakana.ai/fugu/](https://sakana.ai/fugu/) (examiné 2026-06-26 via WebFetch) · TRINITY [arXiv 2512.04695](https://arxiv.org/abs/2512.04695) (abstract lu) · Conductor [sakana.ai/learning-to-orchestrate](https://sakana.ai/learning-to-orchestrate/) (blog lu) · [MarkTechPost — annonce Fugu](https://www.marktechpost.com/2026/06/22/sakana-ai-launches-sakana-fugu-an-orchestration-model-that-routes-tasks-across-a-swappable-pool-of-frontier-llms/).

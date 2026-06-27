@@ -130,4 +130,23 @@ Chaque classe est **née d'un blocage réel** (les nôtres) → pas de cas imagi
 
 ---
 
-*Plan rédigé 2026-06-26. Zéro git tant que Raf n'a pas validé le périmètre.*
+## 9. Pistes issues de la veille Sakana (TRINITY & Conductor) — prochaines marches
+
+> Ajouté 2026-06-27. #164 est **COMPLET (Phases 0-4)** ; cette section recense les pistes d'**expressivité** que la recherche externe valide, à reprendre **après la période d'observation** (cap souveraineté progressive). Pages-entités : `wiki/trinity.md`, `wiki/conductor.md`, `wiki/veille-sakana-fugu.md`. Aucune n'est urgente.
+
+Les deux papiers ICLR 2026 derrière Sakana Fugu attaquent le **même** problème que le Stratège (coordonner un pool de LLM hétérogènes sans fusion de poids) par **deux optimisations opposées** : **TRINITY** (évolution sep-CMA-ES, coordinateur ~0,6 B, frugal/déterministe-friendly) et **Conductor** (RL, coordinateur 7 B, workflow en langage naturel, récursion test-time).
+
+| # | Piste | Source | Condition | Modèle optimal | Effort |
+|---|---|---|---|---|---|
+| S1 | **CMA-ES sur `diagnose()`** : optimiser les **seuils/poids** du classifieur déterministe par **sep-CMA-ES** (sans gradient) sur l'historique `.metrics.jsonl` + traces de blocage — souverain, déterministe-compatible, **avant** tout RL | TRINITY | (A) déterministe d'abord | 🧠 Opus 4.8 | M |
+| S2 | **Rôle « Penseur » distinct** : un cerveau qui pose le PLAN **avant** que l'Élève code, séparé de `planifier` #160 (aujourd'hui dilué dans l'Exécutant). Complète la triade Thinker/Worker/Verifier (Worker = Élève, Verifier = Gardien #161 + juge existent déjà) | Conductor (+ triade TRINITY) | (B) borné | 🧠 Opus 4.8 | M |
+| S3 | **« Contexte visible par agent »** : borner explicitement le contexte injecté au worker dans `eleve.ts` (le triplet qui·quoi·contexte de Conductor) → moins de bruit, moins de tokens, moins de dérive — **pendant direct de l'anti-L17** (sur-exploration) | Conductor | (B) borné | ⚖️ Sonnet 4.6 | S |
+| S4 | **Triade réassignable** : rendre Penseur/Exécutant/Vérificateur **interchangeables sous la main du Stratège** (assignation de rôle tour par tour) plutôt que des modules figés | TRINITY | architecture | 🧠 Opus 4.8 | L |
+| S5 | **Récursion → persistance** : « se relire, repérer l'échec, déployer un correctif » au test-time (Conductor le **recalcule**) — Mango le **persiste** déjà en procédure #75 (Phase 2). Piste = pousser cet avantage souverain (moins de recomputation, capitalisation) | Conductor | (C) ferme la boucle | ⚖️ Sonnet 4.6 | M |
+| S6 | **RL = horizon, pas point de départ** : le RL end-to-end de Conductor reste l'expressivité visée *plus tard* ; on commence par l'évolution déterministe (S1) — plus frugale, déterministe-compatible, souveraine | Conductor vs TRINITY | méthode | 🧠 Opus 4.8 | XL |
+
+**Ligne directrice** : TRINITY donne le **cœur souverain** (frugal, évolution, déterministe-friendly) → S1/S4 ; Conductor donne l'**horizon d'expressivité** (planner/verifier explicites, contexte borné, récursion) → S2/S3/S5/S6. Valeur ajoutée Mango = **persistance** (#75) + **souveraineté** (tout local). On reprend ce bloc à la sortie de la période d'observation (OBS).
+
+---
+
+*Plan rédigé 2026-06-26 (§9 ajouté 2026-06-27). Zéro git tant que Raf n'a pas validé le périmètre.*

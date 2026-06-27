@@ -1,12 +1,15 @@
 ---
 type: meta
 tags: [wiki, log]
-maj: 2026-06-26
+maj: 2026-06-27
 ---
 
 # Journal du wiki
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
+
+## [2026-06-27] maintenance | Veille Sakana — 2 pages-entités (TRINITY, Conductor) + propagation des pistes dans #164
+Deux opérations demandées par Raf pour finir l'ingest Sakana. (1) **Pages-entités créées** : `wiki/trinity.md` (coordinateur ~0,6 B + tête 10K, réassigne Thinker/Worker/Verifier tour par tour, optimisé par ÉVOLUTION sep-CMA-ES sans gradient, pas de fusion de poids, 86,2% LiveCodeBench — valide la frugalité du cerveau Stratège local) et `wiki/conductor.md` (coordinateur 7 B entraîné par RL, écrit un workflow en langage naturel qui·quoi·contexte, récursion test-time, 83,9% LiveCodeBench — horizon d'expressivité). Reliées depuis [[veille-sakana-fugu]] (Détails + Liens), [[le-stratege]] (Liens), et listées dans [[index]] (section Veille). (2) **Propagation dans #164** : nouvelle section « Pistes issues de la veille Sakana » dans `le-stratege.md` ET `docs/plan-164` §9 (tableau S1-S6 : CMA-ES sur diagnose() · rôle Penseur distinct · contexte visible par agent (anti-L17) · triade réassignable · récursion→persistance #75 · RL=horizon). #164 reste COMPLET ; ces pistes = prochaines marches d'expressivité, à reprendre après OBS (cap [[souverainete-progressive]]). Aucun code touché, aucun git.
 
 ## [2026-06-27] ingest | #166 La main Internet — requete_web (GET/POST, anti-SSRF) pour l'Élève
 Arc « donner ses mains à Mango » (Internet après Fichiers B1-B4). Constat : Mango a déjà le web (chercher_web/lire_page/extraire_site) ; manquait TAPER une API. Décision Raf : GET+POST bordé+anti-SSRF. `eleve-http-tools.ts` requete_web({url, methode?, entetes?, corps?}) : isCloneableUrl (anti-SSRF refuse localhost/privé/169.254), GET/POST seulement, réponse bornée (8000 car/15s/5Mo), sanitizeExternal + sanitizeHeaders (Host interdit), pas d'écriture disque (L43), ne lève jamais ; gaté ELEVE_HTTP (défaut ON). Prouvé live vrai Internet : GET github/zen + httpbin, POST httpbin (corps transmis, enveloppé UNTRUSTED), localhost:3000 REFUSÉ. test-eleve-http-tools 19 · test-eleve-action-tools 46 (18 outils) · tsc 0 · UI build vert. Cloisonnement : outil dans génération-d'apps, PAS dans buildSelfRegistry (auto-amélioration reste sans réseau). [[transmission-competences]] + [[auto-amelioration]]. Aucun git sur master.
