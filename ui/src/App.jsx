@@ -422,7 +422,12 @@ export default function App() {
               canDelete={projects.includes(projectName) && projectName !== "__mirror__"}
               onDeleteProject={async () => {
                 const ok = await handleDeleteProject(projectName);
-                if (ok) goHome();
+                if (!ok) return;
+                // Rester dans le workspace : basculer vers le projet restant le plus récent
+                // (la liste /api/projects est triée par récence). Accueil seulement si plus aucun.
+                const remaining = projects.filter((p) => p !== projectName && p !== "__mirror__");
+                if (remaining.length > 0) openProject(remaining[0]);
+                else goHome();
               }}
             />
             {projectName === "__mirror__" && (
