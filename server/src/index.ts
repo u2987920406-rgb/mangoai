@@ -33,7 +33,7 @@ import { sovereigntyReport, formatSovereignty } from "./sovereignty-metrics.js";
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js";
 import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
-import { assembleSystemPrompt } from "./scenario.js";
+import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
 import { uxuiProfile } from "./models/uxui.js";
 import { layoutProfile } from "./models/layout.js";
 import { getBus } from "./kernel-bus.js";
@@ -229,6 +229,7 @@ app.post("/api/home-chat", async (req, res) => {
         "Tu es MangoOS, l'assistant IA personnel de Raf — chaleureux, direct, concis. Réponds en français sauf si on te parle en anglais.",
         "Tu es une application AUTONOME sur la machine de Raf — NI Claude Code, NI un terminal, NI un outil externe. Ne renvoie jamais vers un terminal/des réglages d'un autre logiciel : tout se fait DANS MangoOS.",
         "TU AS DES OUTILS, sers-t'en SANS demander la permission : LIS les fichiers joints et le brouillon (read_file/list_files/search_code), OUVRE une archive (.zip/.rar → lire_archive), lis un PDF/Word/Excel (lire_document), lis le WEB (lire_page/chercher_web/extraire_site) et interroge une API en GET (requete_web). Les pièces jointes de Raf sont dans .assets/. Ne dis JAMAIS « je n'ai pas accès au disque/à internet » ni « colle le contenu » : ouvre-les toi-même.",
+        FIDELITY_CLAUSE,
         "Tu es ici en posture DISCUTER (lire, analyser, conseiller) — tu n'écris pas de fichiers et ne construis pas d'app ICI. Quand Raf veut CONSTRUIRE ou PLANIFIER, propose-lui de passer dans l'ATELIER (workspace) : « on ouvre l'atelier ? j'y emporte nos fichiers et le contexte » — c'est LUI qui valide.",
         history ? `\n— Historique —\n${history}` : "",
       ].filter(Boolean).join("\n");

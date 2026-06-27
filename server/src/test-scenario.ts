@@ -174,6 +174,11 @@ check("skills : relevance absente sans fourniture (comportement historique)", !e
 // Figma retiré (#25) : son bloc ne doit plus apparaître dans aucun mode.
 check("Figma absent des deux modes (intégration retirée)", !elite.includes("figma.com") && !mvp.includes("figma.com"));
 
+// Clause de fidélité des sources : présente en Discuter (résumés fidèles), pas en build pur.
+const discuss = assembleSystemPrompt({ mode: "discuss", model: "eleve", projectDir: dir });
+check("clause FIDÉLITÉ présente en mode Discuter", discuss.includes("FIDÉLITÉ DES SOURCES"));
+check("clause FIDÉLITÉ absente en build Élite", !elite.includes("FIDÉLITÉ DES SOURCES"));
+
 line("═");
 if (failures === 0) {
   console.log("✅ Gating prouvé : tests/analytic/plan Élite-only, moodboard MVP en MVP only, vision adaptée au mode.");
