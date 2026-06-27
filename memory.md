@@ -1,5 +1,16 @@
 # Memory — MangoOS
 
+## ⭐ PRINCIPE DE BASE : Contexte d'abord (Raf, 2026-06-27)
+
+**La base de TOUTE app : avant de coder, chercher sur Internet l'IDENTITÉ / le CONTEXTE réel du sujet, puis développer AUTOUR de ce contexte cerné.**
+- **Marque** → identité de la marque (site officiel, charte, histoire, produits).
+- **Objet** → identité de l'objet (origine, design, matériaux, dates).
+- **Lieu / site historique** → l'histoire (ex. **Wikipédia**).
+
+Cerner d'abord, développer ensuite — vaut pour le **style Mango** comme pour le **sans-style**. Outils dans l'ordre : `planifier` (#160) → `sharingan_url`/moodboard (#46/#8) sur 2-3 leaders → `chercher_web`/`extraire_site` (#154/#159) → `chercher_image` (#153, vraies photos Pexels) → synthèse en `.perfect-plan.md` (#99). À **ancrer dans le prompt de génération**, pas seulement noté. Voir le plan `docs/plan-20-projets-2026-06-27.md`. (Complète : vraies images obligatoires, tracer la stack par app.)
+
+---
+
 ## 🔖 POINT DE REPRISE (2026-06-24, soir — PC éteint après cette session)
 
 **Pour reprendre :** lire `statut.md` (entrée du haut « Dernière mise à jour ») + `historique.md` (1ʳᵉ entrée du Journal) + la mémoire auto `~/.claude/projects/D--IA-MangoOS/memory/MEMORY.md`. Tout y est détaillé.
