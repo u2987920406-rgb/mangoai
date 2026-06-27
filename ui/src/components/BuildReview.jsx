@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { BrainCircuit, Star } from "lucide-react";
+import { ReviewQuestions, setAnswer } from "./NocturnalReviewForm.jsx";
 
 function StarPicker({ value, onChange, disabled }) {
   const [hovered, setHovered] = useState(0);
@@ -31,6 +32,7 @@ export default function BuildReview({ projectName }) {
   const [review, setReview]     = useState(null);
   const [score, setScore]       = useState(0);
   const [comment, setComment]   = useState("");
+  const [answers, setAnswers]   = useState({}); // QCM gradué par dimension
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult]     = useState(null); // axiomes extraits
   const [error, setError]       = useState(null);
@@ -43,6 +45,7 @@ export default function BuildReview({ projectName }) {
           setReview(d.review);
           setScore(d.review.score ?? 0);
           setComment(d.review.comment ?? "");
+          setAnswers(d.review.answers ?? {});
           if (d.review.axiomsExtracted) setResult(d.review.axiomsExtracted);
         }
       });
@@ -61,7 +64,7 @@ export default function BuildReview({ projectName }) {
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ score, comment }),
+          body: JSON.stringify({ score, comment, answers }),
         },
       );
       const d = await r.json();
@@ -98,6 +101,17 @@ export default function BuildReview({ projectName }) {
         {score > 0 && (
           <p className="text-[13px] font-semibold text-ink">{LABELS[score]}</p>
         )}
+      </div>
+
+      {/* QCM par dimension (même grille que la review nocturne) */}
+      <div className="flex flex-col gap-2">
+        <p className="text-[11px] font-semibold uppercase tracking-widest text-faint">
+          Détail par dimension · ❤️ adoré · 👍 bien · 😐 moyen · 👎 raté
+        </p>
+        <ReviewQuestions
+          answers={answers}
+          onChange={(key, value) => setAnswers((a) => setAnswer(a, key, value))}
+        />
       </div>
 
       {/* Commentaire */}
