@@ -2,7 +2,8 @@
 // Aucune commande git réelle, aucun dépôt touché.
 import {
   sanitizeSelfSlug, selfWorktreeBase, createSelfWorktree, selfDiff, removeSelfWorktree,
-  formatSelfWorktree, type GitRunner,
+  formatSelfWorktree, buildSelfRegistry, runSelfExperiment, SELF_ALLOWED_TOOLS,
+  type GitRunner, type SelfAgentRun,
 } from "./mango-self.js";
 import path from "node:path";
 import os from "node:os";
@@ -99,6 +100,45 @@ console.log("\n[7] formatSelfWorktree — observabilité");
 {
   const line = formatSelfWorktree({ worktree: "X:/wt/x", branch: "mango/self-x", repoRoot: REPO });
   check("cite la branche + « repo vivant intact »", /mango\/self-x/.test(line) && /intact/.test(line));
+}
+
+console.log("\n[8] buildSelfRegistry — registre SÛR (lecture+écriture, pas de run/réseau)");
+{
+  const reg = buildSelfRegistry("X:/wt/x");
+  const names = new Set(reg.list().map((t) => t.name));
+  check("contient read_file + write_file + edit_file + finish", names.has("read_file") && names.has("write_file") && names.has("edit_file") && names.has("finish"));
+  check("PAS de run_command (zéro exécution)", !names.has("run_command"));
+  check("PAS de chercher_web / extraire_site (zéro réseau)", !names.has("chercher_web") && !names.has("extraire_site"));
+  check("uniquement des outils de l'allowlist", reg.list().every((t) => SELF_ALLOWED_TOOLS.has(t.name)));
+}
+
+console.log("\n[9] runSelfExperiment — copie isolée → agent dedans → diff, sans push/merge");
+{
+  const { git, calls } = fakeGit((a) => {
+    if (a[0] === "diff" && a.includes("--stat")) return { stdout: " server/src/sovereignty-metrics.ts | 12 +++++\n" };
+    if (a[0] === "diff") return { stdout: "diff --git ...\n+export function sovereigntyByType() {}\n" };
+    return {};
+  });
+  let agentSawWorktree = "";
+  const fakeAgent: SelfAgentRun = async (worktree, _sys, _task, onLog) => {
+    agentSawWorktree = worktree;
+    onLog("agent au travail");
+    return { text: "Ajouté sovereigntyByType + son test.", toolTrace: [{ name: "write_file", args: "{}" }] };
+  };
+  const r = await runSelfExperiment(REPO, "Ajoute sovereigntyByType", {
+    git, runAgent: fakeAgent, env: { MANGO_SELF_WORKTREE_BASE: TMP },
+  });
+  check("ok", r.ok);
+  check("branche dédiée mango/self-*", r.branch.startsWith("mango/self-"));
+  check("l'agent a bien tourné DANS le worktree", agentSawWorktree === r.worktree && r.worktree.startsWith(path.join(TMP)));
+  check("résumé de l'Élève remonté", /sovereigntyByType/.test(r.summary));
+  check("diff relisable produit", /sovereigntyByType/.test(r.diff.patch) && /metrics\.ts \| 12/.test(r.diff.stat));
+  check("AUCUN push/merge sur tout le run", !calls.some((c) => c[0] === "push" || c[0] === "merge"));
+
+  // agent qui échoue → ok:false, ne lève pas
+  const boom: SelfAgentRun = async () => { throw new Error("GLM KO"); };
+  const r2 = await runSelfExperiment(REPO, "tâche", { git, runAgent: boom, env: { MANGO_SELF_WORKTREE_BASE: TMP } });
+  check("échec agent → ok:false + raison, ne lève pas", !r2.ok && /GLM KO/.test(r2.reason));
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} mango-self : ${pass} ok, ${fail} ko`);

@@ -74,6 +74,27 @@ export function sovereigntyByProject(metrics: TurnMetrics[]): SovereigntyByProje
   return out;
 }
 
+/** Agrégat par TYPE de projet, trié du PLUS RÉCENT (dernier `ts`) au plus ancien. */
+export function sovereigntyByType(metrics: TurnMetrics[]): SovereigntyByProject[] {
+  const by = new Map<string, SovereigntyByProject>();
+  for (const m of eleveTurns(metrics)) {
+    const key = m.projectType || "(inconnu)";
+    let agg = by.get(key);
+    if (!agg) {
+      agg = { project: key, turns: 0, eleve: 0, maitre: 0, none: 0, claudeRate: 0, lastTs: "" };
+      by.set(key, agg);
+    }
+    agg.turns++;
+    agg[m.resolvedBy]++;
+    if (m.ts > agg.lastTs) agg.lastTs = m.ts;
+  }
+  const out = [...by.values()];
+  for (const a of out) a.claudeRate = rate(a.maitre, a.turns);
+  // tri antéchronologique (ISO ts comparable lexicographiquement)
+  out.sort((a, b) => (a.lastTs < b.lastTs ? 1 : a.lastTs > b.lastTs ? -1 : 0));
+  return out;
+}
+
 /**
  * Tendance : compare le taux Claude des `window` projets les + récents à celui des
  * `window` précédents. `improving` = on escalade MOINS vers Claude récemment (souverain).

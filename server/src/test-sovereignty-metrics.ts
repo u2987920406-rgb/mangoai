@@ -1,7 +1,7 @@
 // Tests de la métrique de souveraineté (sovereignty-metrics.ts) — Phase 4.
 // PUR : calcul sur des TurnMetrics fabriqués, aucune I/O.
 import {
-  sovereigntyByProject, sovereigntyTrend, sovereigntyReport, formatSovereignty,
+  sovereigntyByProject, sovereigntyByType, sovereigntyTrend, sovereigntyReport, formatSovereignty,
 } from "./sovereignty-metrics.js";
 import type { TurnMetrics } from "./metrics.js";
 
@@ -76,6 +76,31 @@ console.log("\n[4] formatSovereignty — lisible");
   const line = formatSovereignty(sovereigntyReport(rows, 2));
   check("ligne contient le taux Élève (%)", /Élève/.test(line) && /%/.test(line));
   check("ligne signale la BAISSE d'escalade Claude (✅)", /EN BAISSE/.test(line) && line.includes("✅"));
+}
+
+console.log("\n[5] sovereigntyByType — agrégat par projectType");
+{
+  // 2 types : "web" (3 tours dont 1 escalade Claude) et "cli" (2 tours, 100% Élève).
+  // Un tour sans projectType → regroupé sous "(inconnu)".
+  const rows: TurnMetrics[] = [
+    { ...tm("p1", "eleve", "2026-06-25T10:00:00Z"), projectType: "web" },
+    { ...tm("p2", "maitre", "2026-06-25T11:00:00Z"), projectType: "web" },
+    { ...tm("p3", "eleve", "2026-06-26T09:00:00Z"), projectType: "web" },
+    { ...tm("p4", "eleve", "2026-06-26T10:00:00Z"), projectType: "cli" },
+    { ...tm("p5", "eleve", "2026-06-26T11:00:00Z"), projectType: "cli" },
+    { ...tm("p6", "maitre", "2026-06-27T08:00:00Z") }, // pas de projectType → "(inconnu)"
+  ];
+  const by = sovereigntyByType(rows);
+  check("3 types regroupés (web, cli, inconnu)", by.length === 3);
+  check("ordre récent→ancien (inconnu avant cli avant web)",
+    by[0].project === "(inconnu)" && by[1].project === "cli" && by[2].project === "web");
+  const web = by.find((p) => p.project === "web")!;
+  check("web : 3 tours (2 eleve + 1 maitre)", web.turns === 3 && web.eleve === 2 && web.maitre === 1);
+  check("web : claudeRate = 1/3", web.claudeRate === 1 / 3);
+  const cli = by.find((p) => p.project === "cli")!;
+  check("cli : 2 tours, 100% Élève → claudeRate 0", cli.turns === 2 && cli.maitre === 0 && cli.claudeRate === 0);
+  const inconnu = by.find((p) => p.project === "(inconnu)")!;
+  check("inconnu : 1 tour (1 maitre) → claudeRate 1", inconnu.turns === 1 && inconnu.maitre === 1 && inconnu.claudeRate === 1);
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} sovereignty-metrics : ${pass} ok, ${fail} ko`);

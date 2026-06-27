@@ -27,14 +27,17 @@ Gaté `MANGO_SELF`. `createSelfWorktree(repoRoot, slug)` → git worktree + bran
 
 **Prouvé live** (vrai git, **zéro jeton GLM**, **zéro changement sur le code vivant**) : copie isolée du repo → contient `server/src/eleve.ts` → edit → `git diff` relisable → **repo vivant intact** → worktree+branche retirés = **réversible**. `test-mango-self 25` · tsc 0 · UI build vert.
 
-**Reste — l'expérience (barreau 2)** : faire tourner l'**Élève GLM DANS le worktree** sur un chantier borné (read + write confinés, `run_command` **allowlist** tsc/build, jamais destructif/sortant) → diff → Raf relit → fusionne. Voir [[limites|L41]].
+## Barreau 2 ✅ livré & PROUVÉ LIVE — l'Élève améliore son propre code
+`runSelfExperiment(repoRoot, task)` (`mango-self.ts`) : `createSelfWorktree` → l'Élève agentique travaille DANS le worktree → `selfDiff` → rend le patch ; ne fusionne/pousse JAMAIS, worktree conservé pour relecture. **Sûreté** : `buildSelfRegistry(worktree)` réduit les outils à l'allowlist `read_file`/`list_files`/`search_code`/`write_file`/`edit_file`/`finish` — **`allowRun:false` (zéro `run_command`)** + **pas d'outils réseau** (`chercher_web`/`extraire_site` filtrés → exfiltration `.env` impossible) ; écritures confinées (`resolveInside`). `SELF_SYSTEM` cadre le travail. Agent injectable (tests).
+
+**Prouvé live** (vrai GLM, chantier borné « ajoute `sovereigntyByType()` à `sovereignty-metrics.ts` + son test ») : GLM lit les 2 fichiers → écrit la fonction (réutilise `eleveTurns`/`rate`, fallback `(inconnu)`, tri récent→ancien) + une section de test pertinente. **Vérifié dans le worktree** (jonction `node_modules`) : **`tsc` vert + test 22/22**. **Repo vivant INTACT** (0 trace dans le fichier vivant ; diff dans `D:\IA\.mango-self\` / branche `mango/self-*`). `test-mango-self 36`. **Réponse mesurée** : sur un chantier borné bien spécifié, Mango améliore son propre code seul, ça compile + passe les tests — premier point concret de la « ligne de partage ».
 
 ## L'échelle de sûreté (rappel)
 | Barreau | Ouvert | Garde-fou |
 |---|---|---|
 | 1 ✅ | lecture du code + copie isolée | notification |
-| 2 | écriture **en diff relu** (worktree) | revue de Raf avant fusion |
-| 3 | `run_command` **allowlist** (tsc/build) | allowlist (patron `add_dependency`) |
+| 2 ✅ | écriture **en diff relu** (worktree), sans run/réseau | revue de Raf avant fusion |
+| 3 | `run_command` **allowlist** (tsc/build) dans le worktree | allowlist (patron `add_dependency`) |
 | destructif/sortant | delete, push, hors-repo, réseau | **permission obligatoire** |
 
 ## Liens

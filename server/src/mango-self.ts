@@ -14,6 +14,9 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
+import { ToolRegistry } from "./kernel-mcp.js";
+import { buildEleveActionTools } from "./eleve-action-tools.js";
+import { askEleveAgentic } from "./eleve.js";
 
 /** Exécuteur git injectable (tests). Renvoie code/stdout/stderr, ne lève jamais. */
 export type GitRunner = (args: string[], cwd: string) => Promise<{ code: number; stdout: string; stderr: string }>;
@@ -124,4 +127,90 @@ export async function removeSelfWorktree(
 /** Ligne lisible (observabilité). */
 export function formatSelfWorktree(wt: SelfWorktree): string {
   return `🪞 Copie isolée : branche « ${wt.branch} » → ${wt.worktree} (repo vivant intact)`;
+}
+
+// ── Barreau 2 : faire travailler l'Élève DANS la copie isolée ─────────────────
+//
+// L'Élève GLM reçoit un registre d'outils MINIMAL, enraciné sur le worktree :
+// read/list/search + write/edit + finish. Volontairement PAS de `run_command`
+// (allowRun:false), PAS de réseau (web/site/parcours filtrés) → zéro exécution
+// de commande, zéro exfiltration possible. La vérification (tsc/tests) se fait
+// EN DEHORS, par un humain/Claude, sur le diff produit. Tout dans le worktree :
+// le repo vivant et le process en cours ne sont jamais touchés.
+
+/** Outils autorisés pour un run d'auto-amélioration (barreau 2, lecture+écriture seules). */
+export const SELF_ALLOWED_TOOLS: ReadonlySet<string> = new Set([
+  "read_file", "list_files", "search_code", "write_file", "edit_file", "finish",
+]);
+
+/** Registre confiné au worktree, réduit aux seuls outils sûrs (pas de run/réseau). */
+export function buildSelfRegistry(worktree: string): ToolRegistry {
+  const full = buildEleveActionTools(worktree, { allowRun: false });
+  const reg = new ToolRegistry();
+  for (const t of full.list()) if (SELF_ALLOWED_TOOLS.has(t.name)) reg.register(t);
+  return reg;
+}
+
+/** System prompt cadrant le travail sur le code de MangoOS lui-même. */
+export const SELF_SYSTEM = [
+  "Tu travailles sur le CODE SOURCE de MangoOS LUI-MÊME (le générateur d'apps), dans une COPIE ISOLÉE (git worktree).",
+  "Tu as des outils de LECTURE (read_file, list_files, search_code) et d'ÉCRITURE (write_file, edit_file) confinés à cette copie.",
+  "Contraintes STRICTES :",
+  "- Ne modifie QUE les fichiers nommés dans la tâche. Ne touche à rien d'autre.",
+  "- SUIS les conventions du code existant (lis d'abord le fichier voisin pour t'aligner sur le style, les imports, le ton des commentaires en français).",
+  "- Tu n'as ni terminal ni réseau : tu ne peux pas lancer de commande ni chercher sur le web. Raisonne à partir du code que tu lis.",
+  "- Code TypeScript correct (types explicites, pas de `any` gratuit). Le code doit compiler (`tsc`) et les tests passer — un humain vérifiera.",
+  "- Quand tu as fini, appelle `finish` avec un résumé bref de ce que tu as changé.",
+].join("\n");
+
+/** Comment lancer l'agent dans le worktree (injectable pour les tests). */
+export type SelfAgentRun = (
+  worktree: string, system: string, task: string, onLog: (s: string) => void,
+) => Promise<{ text: string; toolTrace: { name: string; args: string }[] }>;
+
+const defaultSelfAgent: SelfAgentRun = (worktree, system, task, onLog) =>
+  askEleveAgentic(system, task, buildSelfRegistry(worktree), {
+    onTool: (n, a) => onLog(`  🔧 ${n} ${a.slice(0, 110)}`),
+  });
+
+export interface SelfExperimentResult {
+  ok: boolean;
+  reason: string;
+  branch: string;
+  worktree: string;
+  summary: string; // le résumé de l'Élève
+  trace: { name: string; args: string }[]; // outils appelés
+  diff: { patch: string; stat: string };
+  wt: SelfWorktree | null;
+}
+
+/**
+ * Lance un chantier BORNÉ d'auto-amélioration : copie isolée → l'Élève travaille DEDANS
+ * (lecture+écriture, sans run ni réseau) → on rend le DIFF relisable. Ne fusionne ni ne
+ * pousse JAMAIS (à Raf de relire/fusionner). Le worktree est CONSERVÉ par défaut (pour
+ * inspection/vérif). Ne lève jamais : toute erreur → `ok:false` + raison.
+ */
+export async function runSelfExperiment(
+  repoRoot: string,
+  task: string,
+  opts: { slug?: string; git?: GitRunner; env?: NodeJS.ProcessEnv; runAgent?: SelfAgentRun; system?: string; onLog?: (s: string) => void } = {},
+): Promise<SelfExperimentResult> {
+  const onLog = opts.onLog ?? (() => {});
+  const empty = { patch: "", stat: "" };
+  const slug = opts.slug ?? sanitizeSelfSlug(task.slice(0, 40));
+  const { wt, reason } = await createSelfWorktree(repoRoot, slug, { git: opts.git, env: opts.env });
+  if (!wt) return { ok: false, reason, branch: "", worktree: "", summary: "", trace: [], diff: empty, wt: null };
+  onLog(formatSelfWorktree(wt));
+  const runAgent = opts.runAgent ?? defaultSelfAgent;
+  let summary = "";
+  let trace: { name: string; args: string }[] = [];
+  try {
+    const r = await runAgent(wt.worktree, opts.system ?? SELF_SYSTEM, task, onLog);
+    summary = r.text;
+    trace = r.toolTrace;
+  } catch (e) {
+    return { ok: false, reason: `agent : ${(e as Error).message}`, branch: wt.branch, worktree: wt.worktree, summary: "", trace: [], diff: empty, wt };
+  }
+  const diff = await selfDiff(wt, { git: opts.git });
+  return { ok: true, reason: "", branch: wt.branch, worktree: wt.worktree, summary, trace, diff, wt };
 }
