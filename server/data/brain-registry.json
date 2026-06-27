@@ -53,5 +53,10 @@
     "provider": "ollama",
     "model": "qwen3.5:cloud",
     "timeoutMs": 45000
+  },
+  "stratege": {
+    "provider": "ollama",
+    "model": "glm-5.2:cloud",
+    "timeoutMs": 90000
   }
 }
