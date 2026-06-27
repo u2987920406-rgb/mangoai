@@ -86,6 +86,7 @@ import { registerOllamaRoutes } from "./ollama-routes.js";
 import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { registerSelfRoutes } from "./self-routes.js";
+import { registerSpecialistRoutes } from "./specialist-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
 import { prewarmVision } from "./vision-prewarm.js";
 import { sweepOrphanPreviews } from "./preview-sweep.js";
@@ -989,6 +990,7 @@ registerOllamaRoutes(app);
 registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 registerSelfRoutes(app); // Atelier de Mango — auto-amélioration (barreaux 1-4)
+registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
 
 app.post("/api/stop", async (_req, res) => {
   // Deux cerveaux, deux mécaniques d'arrêt :

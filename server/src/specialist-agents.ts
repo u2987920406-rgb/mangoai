@@ -183,6 +183,32 @@ export function getSpecialist(id: string): SpecialistAgent | undefined {
   return loadSpecialists().find((s) => s.id === id)
 }
 
+/** Réassigne le cerveau d'un agent (provider/modèle/timeout). Renvoie l'agent màj ou null
+ *  si l'id est inconnu ou le provider invalide. Utilisé par l'Atelier (slice 2a). */
+export function updateSpecialistBrain(
+  id: string,
+  patch: { provider?: string; model?: string; timeoutMs?: number },
+): SpecialistAgent | null {
+  const list = loadSpecialists()
+  const i = list.findIndex((s) => s.id === id)
+  if (i < 0) return null
+  const cur = list[i]!
+  const provider = patch.provider && VALID_PROVIDERS.has(patch.provider)
+    ? (patch.provider as LLMProvider)
+    : cur.provider
+  const next: SpecialistAgent = {
+    ...cur,
+    provider,
+    model: typeof patch.model === "string" && patch.model.trim() ? patch.model.trim() : cur.model,
+    timeoutMs: typeof patch.timeoutMs === "number" && Number.isFinite(patch.timeoutMs) && patch.timeoutMs > 0
+      ? patch.timeoutMs
+      : cur.timeoutMs,
+  }
+  list[i] = next
+  saveSpecialists(list)
+  return next
+}
+
 export function removeSpecialist(id: string): boolean {
   const list = loadSpecialists()
   const next = list.filter((s) => s.id !== id)

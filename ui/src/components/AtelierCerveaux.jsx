@@ -3,6 +3,7 @@ import {
   ArrowLeft, Cpu, Wrench, Plus, ScanLine, Trash2, AlertTriangle, Check,
   Download, RefreshCw, X, Eye, Sparkles, HardDrive, Loader2, Hand,
 } from "lucide-react";
+import SpecialistAgents from "./SpecialistAgents.jsx";
 
 // #162 — « L'Atelier des cerveaux ». L'UI qui donne à Raf le pouvoir que Claude
 // avait à la main : voir chaque agent, choisir son modèle, parcourir/télécharger
@@ -298,6 +299,9 @@ export default function AtelierCerveaux({ onBack }) {
             })}
           </div>
         )}
+
+        {/* Slice 2a — les agents que Mango se forge via GLM pour combler ses lacunes */}
+        <SpecialistAgents models={models} flash={flash} requestConfirm={setConfirmCfg} />
       </div>
 
       {/* Footer collant quand modifié */}
