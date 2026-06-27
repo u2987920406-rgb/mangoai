@@ -18,6 +18,7 @@ import { CADRAGE_RULES, PLAN_RULES, MOODBOARD_RULES, MOODBOARD_RULES_MVP } from 
 import { WORKSPACE_DIR } from "./projects.js";
 import { DESIGN_SYSTEM_RULES, designSystemPromptSection } from "./design-system.js";
 import { identityPromptSection } from "./identity.js";
+import { CAPABILITIES_CLAUSE } from "./capabilities.js";
 import { ARCHITECTURE_RULES, architecturePromptSection } from "./architecture.js";
 import { LEXIQUE_RULES, lexiquePromptSection } from "./lexique.js";
 import { MIROIR_RULES, miroirPromptSection } from "./miroir.js";
@@ -132,6 +133,7 @@ Deep analysis (you run with native extended thinking — use it):
 // Mode Discussion (#discuss) — conversation naturelle, zéro build automatique.
 const DISCUSS_RULES = `
 Mode 💬 Discussion — réflexion et conseil :
+${CAPABILITIES_CLAUSE}
 - Tu es ici pour PENSER et CONSEILLER, pas pour générer du code. Ne produis pas de code sauf si l'utilisateur demande explicitement un snippet précis.
 - Engage naturellement : pose des questions de clarification, propose des approches, partage les compromis, aide à structurer l'idée.
 - Sois concis et direct — c'est une conversation, pas une livraison. Une réponse claire vaut mieux qu'un mur de texte.
