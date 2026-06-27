@@ -37,7 +37,10 @@ export default function BuildReview({ projectName }) {
   const [result, setResult]     = useState(null); // axiomes extraits
   const [error, setError]       = useState(null);
 
+  // Remet TOUT à zéro (sinon la review du projet précédent reste affichée au switch),
+  // puis applique la review du projet courant si elle existe.
   const load = useCallback(() => {
+    setReview(null); setScore(0); setComment(""); setAnswers({}); setResult(null); setError(null);
     fetch(`/api/projects/${encodeURIComponent(projectName)}/build-review`)
       .then((r) => r.ok ? r.json() : null)
       .then((d) => {
@@ -48,7 +51,8 @@ export default function BuildReview({ projectName }) {
           setAnswers(d.review.answers ?? {});
           if (d.review.axiomsExtracted) setResult(d.review.axiomsExtracted);
         }
-      });
+      })
+      .catch(() => {});
   }, [projectName]);
 
   useEffect(() => { load(); }, [load]);

@@ -301,7 +301,9 @@ export default function WorkspaceTools({
           )}
           {active === "revue" && (
             <PanelShell title="Revue du build" onClose={close}>
-              <BuildReview projectName={projectName} />
+              {/* key=projet → remonte un panneau FRAIS à chaque changement de projet
+                  (pas de review périmée, pas de réponse async d'un autre projet) */}
+              <BuildReview key={projectName} projectName={projectName} />
             </PanelShell>
           )}
           {active === "versions" && (
