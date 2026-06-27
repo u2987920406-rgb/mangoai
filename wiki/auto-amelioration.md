@@ -32,12 +32,18 @@ Gaté `MANGO_SELF`. `createSelfWorktree(repoRoot, slug)` → git worktree + bran
 
 **Prouvé live** (vrai GLM, chantier borné « ajoute `sovereigntyByType()` à `sovereignty-metrics.ts` + son test ») : GLM lit les 2 fichiers → écrit la fonction (réutilise `eleveTurns`/`rate`, fallback `(inconnu)`, tri récent→ancien) + une section de test pertinente. **Vérifié dans le worktree** (jonction `node_modules`) : **`tsc` vert + test 22/22**. **Repo vivant INTACT** (0 trace dans le fichier vivant ; diff dans `D:\IA\.mango-self\` / branche `mango/self-*`). `test-mango-self 36`. **Réponse mesurée** : sur un chantier borné bien spécifié, Mango améliore son propre code seul, ça compile + passe les tests — premier point concret de la « ligne de partage ».
 
-## L'échelle de sûreté (rappel)
+## Barreau 3 ✅ — l'auto-vérification SANS RCE (`check_types`)
+Mango vérifie que son code compile, seul, avant de finir. **Décision de sûreté clé** : PAS de `run_command` générique — autoriser `npx tsx src/test-X.ts` exécuterait du **code arbitraire que l'Élève vient d'écrire** (RCE). À la place, un outil **`check_types` à ZÉRO argument** = `tsc --noEmit` uniquement (type-check, n'exécute aucun code, aucune injection). `buildSelfRegistry(wt, {checks})` l'ajoute ; `linkNodeModules`/`unlinkNodeModules` jointe `node_modules` le temps du run ; `SELF_SYSTEM_CHECKS` rappelle de l'appeler. **L'exécution des tests reste EXTERNE** (Claude/Raf) jusqu'à un vrai bac à sable (barreau 4).
+
+**Prouvé live** (vrai GLM, chantier « ajoute `topClaudeProjects` + test ») : trace `… write_file → check_types → finish` — **GLM appelle `check_types` lui-même**, tsc vert ; vérif indépendante Claude : test 28/28 ; repo vivant intact. `test-mango-self 41`.
+
+## L'échelle de sûreté
 | Barreau | Ouvert | Garde-fou |
 |---|---|---|
 | 1 ✅ | lecture du code + copie isolée | notification |
 | 2 ✅ | écriture **en diff relu** (worktree), sans run/réseau | revue de Raf avant fusion |
-| 3 | `run_command` **allowlist** (tsc/build) dans le worktree | allowlist (patron `add_dependency`) |
+| 3 ✅ | **auto-vérification** `check_types` (= `tsc --noEmit`, zéro arg, pas de RCE) | type-check seul ; **pas** d'exécution de code |
+| 4 | exécuter les TESTS | **vrai bac à sable** (sandbox/conteneur) requis |
 | destructif/sortant | delete, push, hors-repo, réseau | **permission obligatoire** |
 
 ## Liens

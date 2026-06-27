@@ -141,5 +141,17 @@ console.log("\n[9] runSelfExperiment — copie isolée → agent dedans → diff
   check("échec agent → ok:false + raison, ne lève pas", !r2.ok && /GLM KO/.test(r2.reason));
 }
 
+console.log("\n[10] barreau 3 — check_types ajouté seulement avec {checks:true}, et SÛR");
+{
+  const sans = buildSelfRegistry("X:/wt/x");
+  check("sans checks → PAS de check_types", !sans.has("check_types"));
+  const avec = buildSelfRegistry("X:/wt/x", { checks: true });
+  check("avec checks → check_types présent", avec.has("check_types"));
+  const ct = avec.get("check_types")!;
+  check("check_types est à ZÉRO argument (aucune injection)", Object.keys(ct.inputSchema).length === 0);
+  check("toujours pas de run_command (jamais d'exécution arbitraire)", !avec.has("run_command"));
+  check("toujours pas de réseau", !avec.has("chercher_web") && !avec.has("extraire_site"));
+}
+
 console.log(`\n${fail === 0 ? "✅" : "❌"} mango-self : ${pass} ok, ${fail} ko`);
 if (fail > 0) process.exit(1);

@@ -134,6 +134,17 @@ export function sovereigntyReport(metrics: TurnMetrics[], window = 5): Sovereign
   };
 }
 
+/**
+ * Les `n` projets au plus fort `claudeRate` (ordre DÉCROISSANT). PUR : ne mute pas
+ * `report.byProject` (copie avant de trier). `n <= 0` → tableau vide.
+ */
+export function topClaudeProjects(report: SovereigntyReport, n: number): SovereigntyByProject[] {
+  if (n <= 0) return [];
+  return [...report.byProject]
+    .sort((a, b) => b.claudeRate - a.claudeRate)
+    .slice(0, n);
+}
+
 const pct = (r: number) => `${Math.round(r * 100)}%`;
 
 /** Ligne lisible pour le log / l'observabilité. */

@@ -14,7 +14,7 @@
 import { spawn } from "node:child_process";
 import path from "node:path";
 import fs from "node:fs";
-import { ToolRegistry } from "./kernel-mcp.js";
+import { ToolRegistry, type KernelTool } from "./kernel-mcp.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { askEleveAgentic } from "./eleve.js";
 
@@ -143,12 +143,72 @@ export const SELF_ALLOWED_TOOLS: ReadonlySet<string> = new Set([
   "read_file", "list_files", "search_code", "write_file", "edit_file", "finish",
 ]);
 
-/** Registre confiné au worktree, réduit aux seuls outils sûrs (pas de run/réseau). */
-export function buildSelfRegistry(worktree: string): ToolRegistry {
+// ── Barreau 3 : l'AUTO-VÉRIFICATION (type-check uniquement, sans RCE) ──────────
+//
+// On donne à l'Élève un moyen de vérifier que SON code compile, sans lui ouvrir un
+// `run_command` générique. Raison de sûreté CAPITALE : autoriser `npx tsx src/test-X.ts`
+// exécuterait du code ARBITRAIRE que l'Élève vient d'écrire (RCE → rm, exfiltration…).
+// `tsc --noEmit` ne fait que TYPE-CHECKER : il n'exécute aucun code du projet. C'est
+// l'« allowlist » réduite à sa forme la plus sûre — un outil à ZÉRO argument (aucune
+// surface d'injection). L'EXÉCUTION de tests reste externe (Claude/Raf) tant qu'il n'y a
+// pas de vrai bac à sable (barreau 4). tsc tourne DANS le worktree (jonction node_modules).
+
+const TSC_TIMEOUT_MS = 120_000;
+
+/** Lance `tsc --noEmit` dans le worktree (server/). Ne lève jamais. */
+export function runTscInWorktree(worktree: string): Promise<{ ok: boolean; output: string }> {
+  return new Promise((resolve) => {
+    const cwd = path.join(worktree, "server");
+    const p = spawn("npx tsc --noEmit", { cwd, shell: true, windowsHide: true });
+    let out = "";
+    const timer = setTimeout(() => { try { p.kill(); } catch { /* mort */ } resolve({ ok: false, output: out + "\n[timeout tsc]" }); }, TSC_TIMEOUT_MS);
+    p.stdout?.on("data", (d) => (out += d.toString()));
+    p.stderr?.on("data", (d) => (out += d.toString()));
+    p.on("error", (e) => { clearTimeout(timer); resolve({ ok: false, output: String(e) }); });
+    p.on("close", (code) => { clearTimeout(timer); resolve({ ok: code === 0, output: out }); });
+  });
+}
+
+/** Outil `check_types` (zéro argument) : type-check du serveur, n'exécute aucun code. */
+export function buildCheckTypesTool(worktree: string): KernelTool {
+  return {
+    name: "check_types",
+    description:
+      "Vérifie que TON code compile : lance `tsc --noEmit` sur le serveur (dans la copie isolée). " +
+      "Type-check SEULEMENT — n'exécute aucun code. Appelle-le AVANT `finish` ; s'il remonte des erreurs, corrige-les puis re-vérifie.",
+    inputSchema: {},
+    handler: async () => {
+      const r = await runTscInWorktree(worktree);
+      return { text: r.ok ? "✅ tsc --noEmit : aucun problème de types." : `❌ tsc --noEmit a trouvé des erreurs :\n${r.output.slice(0, 3000)}` };
+    },
+  };
+}
+
+/** Registre confiné au worktree, réduit aux seuls outils sûrs (pas de run/réseau).
+ *  `opts.checks` ajoute `check_types` (barreau 3 : auto-vérification, type-check seul). */
+export function buildSelfRegistry(worktree: string, opts: { checks?: boolean } = {}): ToolRegistry {
   const full = buildEleveActionTools(worktree, { allowRun: false });
   const reg = new ToolRegistry();
   for (const t of full.list()) if (SELF_ALLOWED_TOOLS.has(t.name)) reg.register(t);
+  if (opts.checks) reg.register(buildCheckTypesTool(worktree));
   return reg;
+}
+
+/** Jonction node_modules (server) du worktree → repo vivant, pour que `tsc` tourne.
+ *  Renvoie true si une jonction a été créée (à retirer ensuite). Ne lève jamais. */
+export function linkNodeModules(worktree: string, repoRoot: string): boolean {
+  const link = path.join(worktree, "server", "node_modules");
+  const target = path.join(path.resolve(repoRoot), "server", "node_modules");
+  try {
+    if (!fs.existsSync(link) && fs.existsSync(target)) { fs.symlinkSync(target, link, "junction"); return true; }
+  } catch { /* best-effort */ }
+  return false;
+}
+
+/** Retire la jonction node_modules (sans toucher au node_modules cible). Ne lève jamais. */
+export function unlinkNodeModules(worktree: string): void {
+  const link = path.join(worktree, "server", "node_modules");
+  try { if (fs.existsSync(link)) fs.rmSync(link, { recursive: false, force: true }); } catch { /* best-effort */ }
 }
 
 /** System prompt cadrant le travail sur le code de MangoOS lui-même. */
@@ -163,15 +223,15 @@ export const SELF_SYSTEM = [
   "- Quand tu as fini, appelle `finish` avec un résumé bref de ce que tu as changé.",
 ].join("\n");
 
+/** Clause ajoutée au system quand l'auto-vérification (barreau 3) est active. */
+export const SELF_SYSTEM_CHECKS =
+  "\n- AUTO-VÉRIFICATION : tu as l'outil `check_types`. Appelle-le pour vérifier que ton code compile " +
+  "AVANT d'appeler `finish`. S'il remonte des erreurs de types, CORRIGE-les puis re-vérifie, jusqu'à ce que ce soit vert.";
+
 /** Comment lancer l'agent dans le worktree (injectable pour les tests). */
 export type SelfAgentRun = (
   worktree: string, system: string, task: string, onLog: (s: string) => void,
 ) => Promise<{ text: string; toolTrace: { name: string; args: string }[] }>;
-
-const defaultSelfAgent: SelfAgentRun = (worktree, system, task, onLog) =>
-  askEleveAgentic(system, task, buildSelfRegistry(worktree), {
-    onTool: (n, a) => onLog(`  🔧 ${n} ${a.slice(0, 110)}`),
-  });
 
 export interface SelfExperimentResult {
   ok: boolean;
@@ -193,7 +253,7 @@ export interface SelfExperimentResult {
 export async function runSelfExperiment(
   repoRoot: string,
   task: string,
-  opts: { slug?: string; git?: GitRunner; env?: NodeJS.ProcessEnv; runAgent?: SelfAgentRun; system?: string; onLog?: (s: string) => void } = {},
+  opts: { slug?: string; git?: GitRunner; env?: NodeJS.ProcessEnv; runAgent?: SelfAgentRun; system?: string; allowChecks?: boolean; onLog?: (s: string) => void } = {},
 ): Promise<SelfExperimentResult> {
   const onLog = opts.onLog ?? (() => {});
   const empty = { patch: "", stat: "" };
@@ -201,16 +261,28 @@ export async function runSelfExperiment(
   const { wt, reason } = await createSelfWorktree(repoRoot, slug, { git: opts.git, env: opts.env });
   if (!wt) return { ok: false, reason, branch: "", worktree: "", summary: "", trace: [], diff: empty, wt: null };
   onLog(formatSelfWorktree(wt));
-  const runAgent = opts.runAgent ?? defaultSelfAgent;
+  // Barreau 3 — auto-vérification : on jointe node_modules pour que `tsc` tourne dans la
+  // copie, et le system rappelle d'appeler check_types. Le défaut compose le registre
+  // (avec/sans checks) ; un runAgent injecté (tests) court-circuite tout ça.
+  const system = (opts.system ?? SELF_SYSTEM) + (opts.allowChecks ? SELF_SYSTEM_CHECKS : "");
+  const defaultAgent: SelfAgentRun = (worktree, sys, t, log) =>
+    askEleveAgentic(sys, t, buildSelfRegistry(worktree, { checks: opts.allowChecks }), {
+      onTool: (n, a) => log(`  🔧 ${n} ${a.slice(0, 110)}`),
+    });
+  const runAgent = opts.runAgent ?? defaultAgent;
+  let linked = false;
+  if (opts.allowChecks && !opts.runAgent) linked = linkNodeModules(wt.worktree, repoRoot);
   let summary = "";
   let trace: { name: string; args: string }[] = [];
   try {
-    const r = await runAgent(wt.worktree, opts.system ?? SELF_SYSTEM, task, onLog);
+    const r = await runAgent(wt.worktree, system, task, onLog);
     summary = r.text;
     trace = r.toolTrace;
   } catch (e) {
+    if (linked) unlinkNodeModules(wt.worktree);
     return { ok: false, reason: `agent : ${(e as Error).message}`, branch: wt.branch, worktree: wt.worktree, summary: "", trace: [], diff: empty, wt };
   }
   const diff = await selfDiff(wt, { git: opts.git });
+  if (linked) unlinkNodeModules(wt.worktree);
   return { ok: true, reason: "", branch: wt.branch, worktree: wt.worktree, summary, trace, diff, wt };
 }

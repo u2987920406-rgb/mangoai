@@ -2,6 +2,7 @@
 // PUR : calcul sur des TurnMetrics fabriqués, aucune I/O.
 import {
   sovereigntyByProject, sovereigntyByType, sovereigntyTrend, sovereigntyReport, formatSovereignty,
+  topClaudeProjects,
 } from "./sovereignty-metrics.js";
 import type { TurnMetrics } from "./metrics.js";
 
@@ -101,6 +102,33 @@ console.log("\n[5] sovereigntyByType — agrégat par projectType");
   check("cli : 2 tours, 100% Élève → claudeRate 0", cli.turns === 2 && cli.maitre === 0 && cli.claudeRate === 0);
   const inconnu = by.find((p) => p.project === "(inconnu)")!;
   check("inconnu : 1 tour (1 maitre) → claudeRate 1", inconnu.turns === 1 && inconnu.maitre === 1 && inconnu.claudeRate === 1);
+}
+
+console.log("\n[6] topClaudeProjects — les n plus dépendants de Claude (ordre décroissant)");
+{
+  // 3 projets : claude 100%, claude 50%, claude 0%.
+  const rows: TurnMetrics[] = [
+    tm("full", "maitre", "2026-06-25T10:00:00Z"),
+    tm("half", "eleve", "2026-06-26T10:00:00Z"),
+    tm("half", "maitre", "2026-06-26T11:00:00Z"),
+    tm("zero", "eleve", "2026-06-27T10:00:00Z"),
+    tm("zero", "eleve", "2026-06-27T11:00:00Z"),
+  ];
+  const rep = sovereigntyReport(rows);
+  const top2 = topClaudeProjects(rep, 2);
+  check("2 projets retournés pour n=2", top2.length === 2);
+  check("ordre décroissant (full 1.0 avant half 0.5)",
+    top2[0].project === "full" && top2[0].claudeRate === 1 &&
+    top2[1].project === "half" && top2[1].claudeRate === 0.5);
+  // ne mute pas report.byProject (ordre original = récent→ancien : zero, half, full)
+  check("report.byProject non muté (ordre récent→ancien préservé)",
+    rep.byProject[0].project === "zero" && rep.byProject[2].project === "full");
+  const top0 = topClaudeProjects(rep, 0);
+  check("n=0 → tableau vide", top0.length === 0);
+  const topNeg = topClaudeProjects(rep, -1);
+  check("n=-1 → tableau vide", topNeg.length === 0);
+  const topAll = topClaudeProjects(rep, 10);
+  check("n > nombre de projets → tous les projets (3)", topAll.length === 3);
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} sovereignty-metrics : ${pass} ok, ${fail} ko`);
