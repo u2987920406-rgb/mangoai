@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, Brain, Building2, Check, ChevronDown, Cloud, FolderOpen, Gauge, Gem, Globe, GraduationCap, Layers, LayoutGrid, Loader2, Puzzle, Rocket, Search, Shield, Sparkles, Trash2, Triangle, Zap } from "lucide-react";
+import { ArrowDownAZ, ArrowLeft, Brain, Building2, Check, ChevronDown, Clock, Cloud, FolderOpen, Gauge, Gem, Globe, GraduationCap, Layers, LayoutGrid, Loader2, Puzzle, Rocket, Search, Shield, Sparkles, Star, Trash2, Triangle, Zap } from "lucide-react";
 import Dropdown, { DropdownItem } from "./Dropdown.jsx";
 import { NEUTRAL, t } from "../neutral.js";
 
@@ -45,6 +45,7 @@ export default function Header({
   canDelete = false,
   onDeleteProject = null,
   projects = [],
+  reviews = {},
   onSwitchProject = null,
   onRefreshProjects = null,
 }) {
@@ -83,6 +84,7 @@ export default function Header({
         <ProjectSwitcher
           projectName={projectName}
           projects={projects}
+          reviews={reviews}
           onSwitch={onSwitchProject}
           onRefresh={onRefreshProjects}
         />
@@ -204,9 +206,19 @@ export default function Header({
 // projet en un clic, SANS repasser par l'accueil (demande de Raf). Le nom du
 // projet actif devient un menu déroulant — recherche collante en haut + liste
 // scrollable des projets (nice-scroll) en dessous. Ferme au clic extérieur/Échap.
-export function ProjectSwitcher({ projectName, projects, onSwitch, onRefresh = null }) {
+export function ProjectSwitcher({ projectName, projects, reviews = {}, onSwitch, onRefresh = null }) {
   const [open, setOpen] = useState(false);
   const [q, setQ] = useState("");
+  // Tri choisi (filtre) : « date » = ordre de récence renvoyé par l'API (défaut) ;
+  // « name » = alphabétique côté client. Persisté → le choix de Raf colle d'une session
+  // à l'autre. (L'API renvoie déjà la récence ; on n'a donc qu'à trier par nom au besoin.)
+  const [sortMode, setSortMode] = useState(() => {
+    try { return localStorage.getItem("mangoos.projectSort") || "date"; } catch { return "date"; }
+  });
+  const chooseSort = (m) => {
+    setSortMode(m);
+    try { localStorage.setItem("mangoos.projectSort", m); } catch { /* stockage indispo */ }
+  };
   const ref = useRef(null);
 
   useEffect(() => {
@@ -226,10 +238,11 @@ export function ProjectSwitcher({ projectName, projects, onSwitch, onRefresh = n
   useEffect(() => { if (open) { setQ(""); onRefresh?.(); } }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const query = q.trim().toLowerCase();
-  const filtered = (query ? projects.filter((p) => p.toLowerCase().includes(query)) : projects)
-    // Projet actif en tête pour le repère visuel.
-    .slice()
-    .sort((a, b) => (a === projectName ? -1 : b === projectName ? 1 : 0));
+  const base = query ? projects.filter((p) => p.toLowerCase().includes(query)) : projects;
+  // « name » → alphabétique ; « date » → on garde l'ordre de l'API (récence).
+  const sorted = sortMode === "name" ? [...base].sort((a, b) => a.localeCompare(b)) : [...base];
+  // Projet actif en tête pour le repère visuel (préserve l'ordre choisi pour le reste).
+  const filtered = sorted.sort((a, b) => (a === projectName ? -1 : b === projectName ? 1 : 0));
 
   return (
     <div className="relative" ref={ref}>
@@ -255,6 +268,30 @@ export function ProjectSwitcher({ projectName, projects, onSwitch, onRefresh = n
                 className="h-8 w-full rounded-lg border border-edge bg-bg pl-8 pr-2.5 text-[12px] text-ink placeholder:text-faint focus:border-accent focus:outline-none"
               />
             </div>
+            {/* Filtres de tri : par date (récence) ou par nom (A→Z). */}
+            <div className="mt-1.5 flex items-center gap-1">
+              <span className="px-1 text-[10px] uppercase tracking-wide text-faint">Trier</span>
+              <button
+                type="button"
+                onClick={() => chooseSort("date")}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
+                  sortMode === "date" ? "bg-accent/15 text-accent-soft" : "text-dim hover:bg-edge-soft hover:text-ink"
+                }`}
+                title="Trier du projet le plus récemment actif au moins récent"
+              >
+                <Clock size={11} /> Récent
+              </button>
+              <button
+                type="button"
+                onClick={() => chooseSort("name")}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-[11px] transition-colors ${
+                  sortMode === "name" ? "bg-accent/15 text-accent-soft" : "text-dim hover:bg-edge-soft hover:text-ink"
+                }`}
+                title="Trier par nom (ordre alphabétique A→Z)"
+              >
+                <ArrowDownAZ size={12} /> Nom
+              </button>
+            </div>
           </div>
           <div className="max-h-72 overflow-y-auto nice-scroll p-1.5">
             {filtered.length === 0 ? (
@@ -275,6 +312,14 @@ export function ProjectSwitcher({ projectName, projects, onSwitch, onRefresh = n
                   >
                     <FolderOpen size={14} className={`shrink-0 ${active ? "text-accent-soft" : "text-dim"}`} />
                     <span className="min-w-0 flex-1 truncate">{p}</span>
+                    {/* #93 — étoiles de revue accolées au nom (note utilisateur) */}
+                    {reviews[p]?.score > 0 && (
+                      <span className="flex shrink-0 items-center gap-px" title={`Revu — ${reviews[p].score}/5`}>
+                        {Array.from({ length: reviews[p].score }).map((_, i) => (
+                          <Star key={i} size={10} className="fill-warn text-warn" strokeWidth={0} />
+                        ))}
+                      </span>
+                    )}
                     {active && <Check size={14} className="shrink-0 text-accent-soft" />}
                   </button>
                 );

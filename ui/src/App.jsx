@@ -57,6 +57,7 @@ export default function App() {
     () => localStorage.getItem("mangoos.project") ?? "mon-app",
   );
   const [projects, setProjects] = useState([]);
+  const [reviews, setReviews] = useState({}); // #93 — nom → { score } (étoiles de revue)
   const [templates, setTemplates] = useState([]);
   const [template, setTemplate] = useState("");
   const [model, setModel] = useState(() => localStorage.getItem("mangoos.model") ?? "sonnet");
@@ -146,6 +147,7 @@ export default function App() {
       .then((d) => {
         setProjects(d.projects ?? []);
         setTemplates(d.templates ?? []);
+        setReviews(d.reviews ?? {}); // #93 — note de revue par projet (étoiles), partagée avec le sélecteur
         setGithubEnabled(Boolean(d.githubEnabled));
       })
       .catch(() => {});
@@ -404,6 +406,7 @@ export default function App() {
               onBack={() => (workspaceOrigin ? setScreen(workspaceOrigin) : goHome())}
               backLabel={workspaceOrigin === "nocturnal" ? "Review nocturne" : "Accueil"}
               projects={projects}
+              reviews={reviews}
               onSwitchProject={(name) => { if (name !== projectName) openProject(name); }}
               onRefreshProjects={refreshProjects}
               model={model}

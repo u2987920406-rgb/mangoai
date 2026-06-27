@@ -8,6 +8,12 @@ maj: 2026-06-26
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-27] ingest | Étoiles de revue (#93) accolées aux noms dans le sélecteur de projet
+Demande de Raf : la note de revue de chaque projet à côté de son nom dans le menu du Workspace (déjà fait dans l'App Builder). Livré : `/api/projects` renvoyait déjà `reviews` (nom→{score}) ; `App.jsx` la stocke (état `reviews` via refreshProjects) et la passe Header → ProjectSwitcher ; chaque ligne accole N étoiles ambre (`Star fill-warn`) si score>0, title « Revu — N/5 ». ProjectSwitcher.test 11 (+1), suite UI 72/72, build vert. UI pure (HMR). Touche [[bureau-os]]. Aucun git (en attente Raf).
+
+## [2026-06-27] ingest | Filtres de tri dans le sélecteur de projet (Récent / Nom)
+Suite du tri par récence : Raf veut basculer entre tri par date et par nom, comme des filtres. Livré (`ProjectSwitcher`, Header.jsx) : deux pills sous la recherche — « Récent » (`Clock`, ordre API = récence, défaut) et « Nom » (`ArrowDownAZ`, alphabétique `localeCompare` côté client). Choix persisté (`localStorage` mangoos.projectSort). Actif épinglé en tête dans les deux modes. ProjectSwitcher.test 10 (+3 : défaut Récent garde l'ordre API, Nom → alphabétique, bascule rétablit la récence). Suite UI 71/71, build vert. UI pure (HMR). Touche [[bureau-os]]. Aucun git (en attente Raf).
+
 ## [2026-06-27] ingest | Liste des projets triée par récence (plus récent d'abord)
 Demande de Raf : dans le workspace, sélectionner les projets du plus récent au moins récent, pas par ordre alphabétique. Fix : `listProjects()` (`projects.ts`) trie par dernière activité — `projectActivityMs` = mtime max entre `.chat-history.json` (réécrit à chaque tour) et le dossier (projet neuf), descendant, nom départage à égalité. Logique extraite en helper pur `orderByRecency` (testable). Sélecteur de projet (Workspace) ET App Builder consomment `/api/projects` → les deux passent en récence. tsc 0 · test-projects 14 (+4). Actif au prochain redémarrage backend. Touche [[bureau-os]]. Aucun git (en attente Raf).
 
