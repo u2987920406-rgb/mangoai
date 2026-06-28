@@ -36,6 +36,7 @@ import {
   filterOutExploration, isExplorationTool, callKey, nudgeMessage, capNoticeMessage,
   duplicateExplorationMessage,
 } from "./eleve-antispiral.js";
+import { coerceTextToolCall } from "./tool-call-coerce.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
@@ -723,12 +724,25 @@ export async function askEleveAgentic(
       capNoticed = true;
     }
     const { content, toolCalls } = await callModel(true);
-    messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
+    // Fallback tool-calling : certains modèles locaux (ex. qwen2.5-coder) écrivent l'appel
+    // en TEXTE JSON dans `content` au lieu d'émettre un tool_calls structuré → on le convertit
+    // en appel exécutable (vers un outil CONNU seulement). On réécrit alors le message assistant
+    // pour qu'il porte le tool_calls (threading OpenAI valide pour le message `tool` suivant).
+    let effectiveCalls = toolCalls;
+    let assistantContent = content;
+    if (!effectiveCalls?.length) {
+      const coerced = coerceTextToolCall(content, registry.names());
+      if (coerced) {
+        effectiveCalls = [{ id: `call_coerced_${iter}`, function: { name: coerced.name, arguments: coerced.arguments } }];
+        assistantContent = "";
+      }
+    }
+    messages.push({ role: "assistant", content: assistantContent, ...(effectiveCalls?.length ? { tool_calls: effectiveCalls } : {}) });
 
     // Pas d'outil demandé → le modèle a fini de raisonner, on rend sa réponse.
-    if (!toolCalls?.length) return { text: content, toolTrace };
+    if (!effectiveCalls?.length) return { text: content, toolTrace };
 
-    for (const tc of toolCalls) {
+    for (const tc of effectiveCalls) {
       const name = tc.function.name;
       const rawArgs = tc.function.arguments || "{}";
       toolTrace.push({ name, args: rawArgs });
