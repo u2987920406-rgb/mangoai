@@ -31,6 +31,11 @@ import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency } from "./eleve-action-tools.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
+import {
+  type AntiSpiralCfg, newSpiralState, recordTool, explorationCapped, dueForNudge,
+  filterOutExploration, isExplorationTool, callKey, nudgeMessage, capNoticeMessage,
+  duplicateExplorationMessage,
+} from "./eleve-antispiral.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
@@ -673,7 +678,7 @@ export async function askEleveAgentic(
   system: string,
   user: string,
   registry: ToolRegistry,
-  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean; maxIterations?: number } = {},
+  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean; maxIterations?: number; antiSpiral?: AntiSpiralCfg } = {},
 ): Promise<AgenticResult> {
   // La boucle à outils n'est branchée que sur l'endpoint OpenAI-compat. En Ollama
   // local pur, repli texte (le function-calling local sera traité en Phase 2).
@@ -690,14 +695,32 @@ export async function askEleveAgentic(
   ];
   const toolTrace: AgenticResult["toolTrace"] = [];
 
-  const callModel = (withTools: boolean) =>
-    postEleveCompletions(messages, withTools ? tools : null, opts.model);
+  // Garde anti-spirale (opt-in) : empêche la boucle de mourir en pure exploration.
+  const spiral = opts.antiSpiral;
+  let spiralState = newSpiralState();
+  const seenExploration = new Set<string>();
+  let capNoticed = false;
+
+  const callModel = (withTools: boolean) => {
+    let active: OpenAITool[] | null = withTools ? tools : null;
+    if (active && spiral && explorationCapped(spiralState, spiral)) {
+      const filtered = filterOutExploration(active, spiral);
+      // Si après filtrage il ne reste aucun outil, on conclut (tools=null) plutôt que d'envoyer [].
+      active = filtered.length ? filtered : null;
+    }
+    return postEleveCompletions(messages, active, opts.model);
+  };
 
   const maxIter = Math.max(1, opts.maxIterations ?? MAX_TOOL_ITERATIONS);
   for (let iter = 0; iter < maxIter; iter++) {
     // Stop coopératif (clic « Stop ») : on sort proprement entre deux itérations.
     if ((opts.shouldAbort ?? isInterrupted)()) {
       return { text: "⏹ Arrêté à ta demande.", toolTrace };
+    }
+    // Cap atteint pour la première fois → on prévient le modèle que l'exploration est coupée.
+    if (spiral && explorationCapped(spiralState, spiral) && !capNoticed) {
+      messages.push({ role: "user", content: capNoticeMessage() });
+      capNoticed = true;
     }
     const { content, toolCalls } = await callModel(true);
     messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
@@ -711,14 +734,29 @@ export async function askEleveAgentic(
       toolTrace.push({ name, args: rawArgs });
       opts.onTool?.(name, rawArgs);
       let resultText: string;
-      try {
-        const args = JSON.parse(rawArgs) as Record<string, unknown>;
-        const r = await registry.invoke(name, args);
-        resultText = r.text;
-      } catch (e) {
-        resultText = `Erreur outil "${name}" : ${(e as Error).message}`;
+      const dupKey = spiral ? callKey(name, rawArgs) : "";
+      if (spiral && isExplorationTool(spiral, name) && seenExploration.has(dupKey)) {
+        // Anti-doublon : appel d'exploration STRICTEMENT identique déjà fait → on ne ré-exécute pas.
+        resultText = duplicateExplorationMessage(name);
+      } else {
+        try {
+          const args = JSON.parse(rawArgs) as Record<string, unknown>;
+          const r = await registry.invoke(name, args);
+          resultText = r.text;
+        } catch (e) {
+          resultText = `Erreur outil "${name}" : ${(e as Error).message}`;
+        }
+        if (spiral && isExplorationTool(spiral, name)) seenExploration.add(dupKey);
       }
       messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, MAX_TOOL_RESULT) });
+      if (spiral) spiralState = recordTool(spiralState, spiral, name);
+    }
+
+    // Fin d'itération : si trop d'explorations consécutives, on pousse à l'action.
+    if (spiral && dueForNudge(spiralState, spiral)) {
+      spiralState = { ...spiralState, nudges: spiralState.nudges + 1 };
+      messages.push({ role: "user", content: nudgeMessage(spiralState.nudges) });
+      spiralState = { ...spiralState, consecutive: 0 };
     }
   }
 

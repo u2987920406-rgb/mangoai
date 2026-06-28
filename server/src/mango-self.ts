@@ -19,6 +19,7 @@ import { z } from "zod";
 import { ToolRegistry, type KernelTool } from "./kernel-mcp.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { askEleveAgentic } from "./eleve.js";
+import { selfAntiSpiralCfg } from "./eleve-antispiral.js";
 
 /** Exécuteur git injectable (tests). Renvoie code/stdout/stderr, ne lève jamais. */
 export type GitRunner = (args: string[], cwd: string) => Promise<{ code: number; stdout: string; stderr: string }>;
@@ -249,7 +250,8 @@ export function buildCheckTypesTool(worktree: string): KernelTool {
 //   2. `node --permission` exécute ce bundle avec : FS en LECTURE/ÉCRITURE confiné au temp,
 //      `child_process` REFUSÉ, addons natifs REFUSÉS. Un test piégé (`fs.rmSync('D:/…')`,
 //      `execSync(...)`) échoue en `ERR_ACCESS_DENIED` — prouvé live.
-// Résidu HONNÊTE : le modèle de permissions de Node ne filtre PAS le réseau. Mais le test
+// Le modèle de permissions de Node ne filtre PAS le réseau nativement — on ajoute donc une
+// GARDE RÉSEAU (runner.cjs) qui neutralise fetch + bloque les modules réseau (L42). Mais le test
 // ne peut RIEN lire hors du temp (ni `.env`, ni secrets, absents du worktree de toute façon)
 // → rien de sensible à exfiltrer ; au pire un POST de données qu'il génère lui-même. Faible.
 
@@ -280,19 +282,32 @@ export async function runTestSandboxed(
 ): Promise<{ ok: boolean; output: string }> {
   const stamp = opts.nowMs ?? Date.now();
   const tmp = path.join(os.tmpdir(), "mango-sbx", `${sanitizeSelfSlug(testRel)}-${stamp}`);
-  const bundle = path.join(tmp, "bundle.mjs");
+  const bundle = path.join(tmp, "bundle.cjs");
   const testAbs = path.join(worktree, testRel);
   try { fs.mkdirSync(tmp, { recursive: true }); } catch (e) { return { ok: false, output: `temp KO : ${(e as Error).message}` }; }
   try {
     // 1. Bundle (CONFIANCE) — cwd=worktree pour résoudre node_modules (jonction) + imports relatifs.
     const esb = await spawnCaptured(
-      `npx esbuild "${testAbs}" --bundle --platform=node --format=esm --outfile="${bundle}"`,
+      `npx esbuild "${testAbs}" --bundle --platform=node --format=cjs --outfile="${bundle}"`,
       null, worktree, true, SANDBOX_BUNDLE_TIMEOUT_MS,
     );
     if (esb.code !== 0 || !fs.existsSync(bundle)) return { ok: false, output: "bundling esbuild KO :\n" + esb.out.slice(0, 1500) };
+
+  // 1b. GARDE RÉSEAU — le modèle --permission de Node ne filtre PAS le réseau (L42).
+  //     On crée un runner.cjs qui patche Module.prototype.require (bloque les modules
+  //     réseau) et neutralise globalThis.fetch, AVANT de charger le bundle.
+  const runnerPath = path.join(tmp, "runner.cjs");
+  const runnerCode =
+    'const M=require("module");' +
+    'const F=new Set(["net","tls","http","https","http2","dgram","dns","node:net","node:tls","node:http","node:https","node:http2","node:dgram","node:dns"]);' +
+    'const O=M.prototype.require;' +
+    'M.prototype.require=function(n){if(F.has(n))throw new Error("réseau interdit dans le bac à sable : require(\'"+n+"\') bloqué");return O.call(this,n)};' +
+    'globalThis.fetch=function(){throw new Error("réseau interdit dans le bac à sable : fetch() bloqué");};' +
+    'require(' + JSON.stringify(bundle) + ');';
+  fs.writeFileSync(runnerPath, runnerCode);
     // 2. Exécution SOUS BAC À SABLE — FS confiné à tmp, pas de child_process/natif.
     const runRes = await spawnCaptured(
-      "node", ["--permission", `--allow-fs-read=${tmp}`, `--allow-fs-write=${tmp}`, bundle],
+      "node", ["--permission", `--allow-fs-read=${tmp}`, `--allow-fs-write=${tmp}`, runnerPath],
       tmp, false, SANDBOX_RUN_TIMEOUT_MS,
     );
     return { ok: runRes.code === 0, output: runRes.out };
@@ -409,10 +424,15 @@ export async function runSelfExperiment(
   // corriger : on donne plus de marge d'itérations que le chat (défaut 12) quand on
   // ouvre les outils de vérification, sinon l'Élève épuise son budget avant de vérifier.
   const maxIterations = opts.allowChecks || opts.allowTests ? 28 : undefined;
+  // Garde anti-spirale (L35/run L42) : empêche l'Élève de mourir en pure exploration
+  // avant d'écrire. Opt-out SELF_ANTISPIRAL=off. Sans effet sur les autres flux (build,
+  // discuter, explore) qui n'appellent pas askEleveAgentic via ce chemin.
+  const antiSpiral = selfAntiSpiralCfg() ?? undefined;
   const defaultAgent: SelfAgentRun = (worktree, sys, t, log) =>
     askEleveAgentic(sys, t, buildSelfRegistry(worktree, { checks: opts.allowChecks, sandboxTests: opts.allowTests }), {
       onTool: (n, a) => log(`  🔧 ${n} ${a.slice(0, 110)}`),
       maxIterations,
+      antiSpiral,
     });
   const runAgent = opts.runAgent ?? defaultAgent;
   let linked = false;
