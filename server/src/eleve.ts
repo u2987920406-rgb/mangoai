@@ -37,6 +37,7 @@ import {
   duplicateExplorationMessage,
 } from "./eleve-antispiral.js";
 import { coerceTextToolCall } from "./tool-call-coerce.js";
+import { eleveRetryDelayMs, eleveMaxRetries } from "./eleve-retry.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
@@ -456,24 +457,37 @@ async function postEleveCompletions(
   provider: LLMProvider = "openai",
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
   const { url, key } = openAiEndpoint(provider);
-  const res = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      temperature: 0,
-      messages,
-      ...(tools ? { tools, tool_choice: "auto" } : {}),
-    }),
+  const payload = JSON.stringify({
+    model: model ?? ELEVE_MODEL,
+    stream: false,
+    temperature: 0,
+    messages,
+    ...(tools ? { tools, tool_choice: "auto" } : {}),
   });
-  if (!res.ok) throw new Error(`API Élève HTTP ${res.status}`);
-  const data = (await res.json()) as {
-    choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
-  };
-  const msg = data.choices?.[0]?.message;
-  if (!msg) throw new Error("réponse Élève vide");
-  return { content: msg.content ?? "", toolCalls: msg.tool_calls };
+  // Retry/backoff sur les codes TRANSITOIRES (429 rate-limit, 503 overload) — sinon un
+  // Élève cloud capable (Gemini free / GLM) abandonne au 1ᵉʳ 429 alors qu'il mène la boucle.
+  const maxRetries = eleveMaxRetries();
+  let lastStatus = 0;
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+      body: payload,
+    });
+    if (res.ok) {
+      const data = (await res.json()) as {
+        choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
+      };
+      const msg = data.choices?.[0]?.message;
+      if (!msg) throw new Error("réponse Élève vide");
+      return { content: msg.content ?? "", toolCalls: msg.tool_calls };
+    }
+    lastStatus = res.status;
+    const delay = eleveRetryDelayMs(res.status, attempt, res.headers.get("retry-after"), maxRetries);
+    await res.text().catch(() => undefined); // draine le corps avant de retenter/abandonner
+    if (delay === null) throw new Error(`API Élève HTTP ${lastStatus}`);
+    await new Promise((r) => setTimeout(r, delay));
+  }
 }
 
 /** Le transport injecté au runtime agentique (eleve-runtime.buildAgentic), lié à

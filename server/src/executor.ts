@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { atomicWriteFileSync } from "./safe-io.js";
+import { resolveEdit } from "./edit-match.js";
 import type { Action } from "./contract.js";
 
 export type ActionOutcome =
@@ -120,15 +121,14 @@ export async function executeContract(
         const abs = resolveInside(projectDir, action.path);
         if (!fs.existsSync(abs)) throw new Error("fichier introuvable");
         const before = fs.readFileSync(abs, "utf8");
-        const idx = before.indexOf(action.find);
-        if (idx === -1) throw new Error("extrait <find> introuvable");
-        // Un find ambigu (présent 2+ fois) = remplacement non déterministe → refus.
-        if (before.indexOf(action.find, idx + action.find.length) !== -1) {
-          throw new Error("extrait <find> ambigu (plusieurs occurrences)");
+        // Matching tolérant aux fins de ligne (CRLF↔LF) : un `find` en LF d'un modèle doit
+        // matcher un fichier CRLF (Windows/worktree). Gardes introuvable/ambigu conservées.
+        const res = resolveEdit(before, action.find, action.replace);
+        if (!res.ok) {
+          throw new Error(res.reason === "ambigu" ? "extrait <find> ambigu (plusieurs occurrences)" : "extrait <find> introuvable");
         }
-        const after = before.slice(0, idx) + action.replace + before.slice(idx + action.find.length);
-        atomicWriteFileSync(abs, after);
-        outcomes.push({ action, status: "done", detail: "remplacement appliqué" });
+        atomicWriteFileSync(abs, res.after);
+        outcomes.push({ action, status: "done", detail: res.aligned ? "remplacement appliqué (fins de ligne alignées)" : "remplacement appliqué" });
       } else {
         if (!allowRun) throw new Error("commandes <run> désactivées");
         if (FORBIDDEN_RUN.test(action.command)) {
