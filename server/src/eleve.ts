@@ -48,7 +48,8 @@ import {
   executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
   type ExecRung,
 } from "./stratege-escalate.js";
-import { runClosureGate, evaluateGate } from "./eleve-gate.js";
+import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gate.js";
+import { scanFilesForBalance, formatBalanceRaison } from "./layout-balance.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
@@ -1300,6 +1301,32 @@ export async function runRelay(
           }
         } catch {
           /* le contrôle qualité des images ne casse jamais la livraison */
+        }
+      }
+
+      // Garde d'ÉQUILIBRE de mise en page — TOUJOURS ACTIVE (déterministe, $0, AUCUN
+      // cloud, indépendante du Gardien). Sur build-vert, scanne les fichiers écrits : un
+      // conteneur à largeur max (max-w-* / max-width) SANS centrage (mx-auto / margin:auto)
+      // = contenu collé à gauche → renvoie l'Élève ajouter le centrage. C'est le filet
+      // PERMANENT contre le biais « collé à gauche » (cf. limites L54). Coupure ELEVE_GATE_BALANCE=off.
+      if (process.env.ELEVE_GATE_BALANCE !== "off" && result?.finished) {
+        try {
+          const balFiles = changedFilesFromTrace(result.toolTrace);
+          const findings = scanFilesForBalance(balFiles, (f) => {
+            try {
+              return fs.readFileSync(path.join(projectDir, f), "utf8");
+            } catch {
+              return null;
+            }
+          });
+          if (findings.length > 0 && relances < selfRelanceMax) {
+            relances++;
+            push(`↻ Équilibre : ${findings.length} bloc(s) à largeur max collé(s) à gauche — renvoi de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+            nudge = formatBalanceRaison(findings);
+            continue;
+          }
+        } catch {
+          /* la garde d'équilibre ne casse jamais la livraison */
         }
       }
 
