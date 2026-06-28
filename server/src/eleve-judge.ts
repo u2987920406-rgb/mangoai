@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { dispatch as realDispatch } from "./brain-dispatch.js";
 import { sanitizeExternal } from "./agent-contract.js";
+import { detectOutOfScope } from "./capabilities.js";
 
 export interface IntentVerdict {
   couverture: number; // 0-100 : à quel point le livré couvre la demande
@@ -88,8 +89,34 @@ export function parseIntentVerdict(prose: string): IntentVerdict {
 }
 
 /**
+ * GARDE DE CADRE (L40) — déterministe, sans LLM. Si la DEMANDE dérive vers une techno
+ * HORS périmètre (Unity, natif iOS/Android, Flutter…), le livré web NE PEUT PAS la couvrir,
+ * quoi qu'en dise le juge LLM (cas pétanque : 100/100 sur une app web alors qu'on voulait
+ * Unity/natif). On plafonne alors la couverture et on ajoute le manque de cadre. PUR.
+ *
+ * Atout clé : ça mord MÊME quand le juge cloud est indisponible (verdict neutre 100) —
+ * le mismatch de cadre est détecté sans aucun appel réseau. Opt-out `JUDGE_SCOPE_GUARD=off`.
+ */
+export const SCOPE_MISMATCH_CAP = 40;
+
+export function applyScopeGuard(
+  verdict: IntentVerdict,
+  task: string,
+  env: NodeJS.ProcessEnv = process.env,
+): IntentVerdict {
+  if (String(env.JUDGE_SCOPE_GUARD ?? "on").toLowerCase() === "off") return verdict;
+  const families = detectOutOfScope(task);
+  if (families.length === 0) return verdict;
+  const manque = `Cadre demandé hors périmètre (${families.join(", ")}) : MangoOS livre une app WEB (React/Three.js/PWA), pas du natif/moteur de jeu — le livré ne peut pas répondre au cadre demandé.`;
+  const couverture = Math.min(verdict.couverture, SCOPE_MISMATCH_CAP);
+  const manques = [manque, ...verdict.manques.filter((m) => m !== manque)].slice(0, 8);
+  return { couverture, manques, note: verdict.note };
+}
+
+/**
  * Juge l'adéquation demande↔livré. `files` = chemins relatifs écrits par l'agent
  * (dérivés de la trace). Ne lève jamais : échec → verdict neutre (couverture 100).
+ * La garde de cadre (L40) s'applique à TOUS les chemins de sortie, y compris le neutre.
  */
 export async function judgeIntention(
   task: string,
@@ -98,7 +125,10 @@ export async function judgeIntention(
   projectDir: string,
   deps: JudgeDeps = realDeps,
 ): Promise<IntentVerdict> {
-  const neutral = (why: string): IntentVerdict => ({ couverture: 100, manques: [], note: `(juge indisponible : ${why})` });
+  // La garde de cadre (L40) s'applique au verdict neutre AUSSI : un mismatch de cadre est
+  // détecté sans LLM, donc même juge indisponible on ne renvoie pas un faux « 100 couvert ».
+  const neutral = (why: string): IntentVerdict =>
+    applyScopeGuard({ couverture: 100, manques: [], note: `(juge indisponible : ${why})` }, task);
 
   // Extraits des fichiers écrits (bornés ; contenu = DONNÉE potentiellement hostile).
   let extraits = "";
@@ -127,5 +157,5 @@ export async function judgeIntention(
     return neutral(e instanceof Error ? e.message.split("\n")[0] : String(e));
   }
   if (r.status !== "ok" || !r.summary?.trim()) return neutral(r.summary || r.status);
-  return parseIntentVerdict(r.summary);
+  return applyScopeGuard(parseIntentVerdict(r.summary), task);
 }

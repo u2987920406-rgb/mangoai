@@ -38,11 +38,14 @@ Le [[run-validation|run grandeur nature]] du 2026-06-25 a révélé un **faux-n�
 
 `GateVerdict` expose désormais `intentOk`/`tasteScored`/`tasteOk`/`wcagOk`. Tests : design-coach **29** · eleve-gate **27** · design-metrics 28, `tsc` vert, aucun fichier UI touché.
 
+## Garde de CADRE (piste #2 du juge d'intention, 2026-06-28 — L40 ✅)
+Le juge d'intention notait **100/100 alors que le CADRE livré ne correspond pas** (cas réel `jeu-de-petanques` : user voulait Unity/3D/natif Android, livré = React/2D/web). La cause AMONT était déjà traitée (conscience des limites, cf. [[capacites-mango]]) ; restait à durcir le juge. **`applyScopeGuard(verdict, task)`** (eleve-judge.ts) — PUR : lance `detectOutOfScope(task)` ([[capacites-mango]]) ; si une famille hors périmètre est demandée (Unity, natif iOS/Android, Flutter, desktop natif), **plafonne `couverture` à `SCOPE_MISMATCH_CAP` (40)** (jamais à la hausse) + préfixe un manque « cadre hors périmètre », **quoi que dise le juge LLM**. Appliqué à TOUS les chemins de `judgeIntention`, **y compris le verdict NEUTRE** → **atout : détecte le mismatch SANS réseau, donc même juge cloud indisponible**. Opt-out `JUDGE_SCOPE_GUARD=off`. Reste convergent/non-bloquant. `test-eleve-judge 25/25` (+11).
+
 ## État
 
 **Livré et prouvé live** (#161). LIVE (`runRelay`, vrai GLM + juge qwen + critiqueScreen, $0, seuil goût forcé 99) : GLM finit → `🛡 intention 100/100, goût 76/100 ✗` → GLM **applique les correctifs du Gardien sur 2 fichiers** → re-critique 71 ✗ → laisse passer + `incomplete`. Tests : judge 12 · gate **27** · brain-dispatch 35 (11 agents). **Fiabilisé 2026-06-26 (L28 ✅, piste #2)** — voir la section ci-dessus.
 
-**Limites** : L19 (juge LLM faillible — bruit du VL, cf. [[oeil-coach]] ; atténué par non-bloquant + l'anti-thrash de la piste #2) · L20 (goût/QA exige un rendu → sauté pour le backend) · L21 (juge sur résumé+fichiers, pas un vrai `git diff`) · **L28 ✅ Résolu** (faux 50 du volet goût).
+**Limites** : L19 (juge LLM faillible — bruit du VL, cf. [[oeil-coach]] ; atténué par non-bloquant + l'anti-thrash de la piste #2) · L20 (goût/QA exige un rendu → sauté pour le backend) · L21 (juge sur résumé+fichiers, pas un vrai `git diff`) · **L28 ✅ Résolu** (faux 50 du volet goût) · **L40 ✅ Résolu** (mismatch de cadre détecté par `applyScopeGuard`, même sans cloud).
 
 ## Liens
 [[oeil-coach]] · [[moteur-gout]] · [[planifier-avant-agir]] · [[transmission-competences]] · [[brains]] · [[mangoqa]] · [[statut]] · [[historique]] · [[limites]]
