@@ -29,6 +29,7 @@ function deps(over: Partial<JudgeDeps> = {}): { d: JudgeDeps; seen: { users: str
         return ok("COUVERTURE: 90\nMANQUES:\n- rien");
       }),
     readFile: over.readFile ?? (() => null),
+    diff: over.diff ?? (() => null),
   };
   return { d, seen };
 }
@@ -74,6 +75,37 @@ async function run() {
     check("DEMANDE dans le prompt", /Ajoute une page Contact/.test(seen2.users[0]));
     check("extrait de fichier inclus", /src\/App\.jsx/.test(seen2.users[0]) && /export default function App/.test(seen2.users[0]));
     check("résumé agent = DONNÉE (sanitize)", /UNTRUSTED|<<<|DONNÉE/i.test(seen2.users[0]));
+  }
+
+  console.log("\n[4b] L21 — judgeIntention envoie le DIFF d'un fichier modifié (pas le contenu)");
+  {
+    const seen2 = { users: [] as string[] };
+    const dd: JudgeDeps = {
+      dispatch: async (_a, _s, user) => {
+        seen2.users.push(user);
+        return ok("COUVERTURE: 80\nMANQUES:\n- rien");
+      },
+      readFile: () => "CONTENU INTÉGRAL NE DOIT PAS APPARAÎTRE",
+      diff: (_dir, rel) => (rel === "src/App.jsx" ? "@@ -1 +1 @@\n-const a=1\n+const a=2" : null),
+    };
+    await judgeIntention("Change a en 2", "fait", ["src/App.jsx"], "/proj", dd);
+    check("le DIFF est inclus", /\+const a=2/.test(seen2.users[0]) && /src\/App\.jsx \(diff\)/.test(seen2.users[0]));
+    check("le contenu intégral n'est PAS utilisé (diff prioritaire)", !/CONTENU INTÉGRAL/.test(seen2.users[0]));
+  }
+
+  console.log("\n[4c] L21 — fichier NOUVEAU (pas de diff) → contenu, étiqueté « nouveau fichier »");
+  {
+    const seen2 = { users: [] as string[] };
+    const dd: JudgeDeps = {
+      dispatch: async (_a, _s, user) => {
+        seen2.users.push(user);
+        return ok("COUVERTURE: 90\nMANQUES:\n- rien");
+      },
+      readFile: (_dir, rel) => (rel === "src/New.jsx" ? "export const New = () => null" : null),
+      diff: () => null, // nouveau fichier : aucun diff vs HEAD
+    };
+    await judgeIntention("Ajoute New", "fait", ["src/New.jsx"], "/proj", dd);
+    check("contenu inclus + label nouveau fichier", /export const New/.test(seen2.users[0]) && /src\/New\.jsx \(nouveau fichier\)/.test(seen2.users[0]));
   }
 
   console.log("\n[5] judgeIntention — VL en erreur → verdict NEUTRE (jamais bloquer à tort)");

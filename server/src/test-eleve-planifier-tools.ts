@@ -18,13 +18,24 @@ function check(label: string, cond: boolean) {
 }
 
 function tool(over: Partial<PlanifierDeps> = {}) {
-  const calls: { plans: ElevePlan[] } = { plans: [] };
+  const calls: { plans: ElevePlan[]; marks: Array<{ dir: string; n: number }> } = { plans: [], marks: [] };
+  const store = new Map<string, ElevePlan>();
   const deps: PlanifierDeps = {
-    setPlan: over.setPlan ?? ((_dir, plan) => calls.plans.push(plan)),
+    setPlan: over.setPlan ?? ((dir, plan) => { calls.plans.push(plan); store.set(dir, plan); }),
+    markStepDone:
+      over.markStepDone ??
+      ((dir, n) => {
+        calls.marks.push({ dir, n });
+        const plan = store.get(dir);
+        if (!plan) return undefined;
+        const done = plan.done ?? (plan.done = []);
+        if (n >= 1 && n <= plan.etapes.length && !done.includes(n)) done.push(n);
+        return plan;
+      }),
     now: over.now ?? (() => 42),
   };
-  const [t] = buildElevePlanifierTools("/tmp/proj", deps);
-  return { t, calls };
+  const [t, etape] = buildElevePlanifierTools("/tmp/proj", deps);
+  return { t, etape, calls };
 }
 
 async function run() {
@@ -53,7 +64,8 @@ async function run() {
     check("titre conservé", calls.plans[0].titre === "Page Contact");
     check("détail conservé", calls.plans[0].etapes[0].detail === "nom/email/message");
     check("now() utilisé", calls.plans[0].at === 42);
-    check("texte affiche le plan + consigne", /📋 Plan — Page Contact/.test(r.text) && /étape par étape/.test(r.text));
+    check("done initialisé à []", Array.isArray(calls.plans[0].done) && calls.plans[0].done!.length === 0);
+    check("texte affiche le plan + cases à cocher", /📋 Plan — Page Contact/.test(r.text) && /☐ 1\. Composant formulaire/.test(r.text) && /Prochaine étape/.test(r.text));
   }
 
   console.log("\n[3] Garde-fous");
@@ -85,6 +97,44 @@ async function run() {
     }
     check("handler ne lève pas", !threw);
     check("isError + motif", r?.isError === true && /store HS/.test(r!.text));
+  }
+
+  console.log("\n[5] etape_faite — coche la progression (L18)");
+  {
+    const { t, etape } = tool();
+    check("nom = etape_faite", etape.name === "etape_faite");
+    check("schéma : n", "n" in etape.inputSchema);
+    // sans plan → erreur explicite
+    const sansPlan = await etape.handler({ n: 1 });
+    check("sans plan → isError", sansPlan.isError === true && /planifier/.test(sansPlan.text));
+    // pose un plan puis coche
+    await t.handler({ titre: "X", etapes: [{ titre: "a" }, { titre: "b" }, { titre: "c" }] });
+    const r1 = await etape.handler({ n: 1 });
+    check("coche 1 → ☑ 1 et prochaine = 2", /☑ 1\. a/.test(r1.text) && /Prochaine étape : 2/.test(r1.text));
+    const r2 = await etape.handler({ n: 2 });
+    check("coche 2 → prochaine = 3", /☑ 2\. b/.test(r2.text) && /Prochaine étape : 3/.test(r2.text));
+    await etape.handler({ n: 3 });
+    const rAll = await etape.handler({ n: 3 }); // idempotent
+    check("toutes cochées → invite finish", /appelle finish/.test(rAll.text));
+    // n invalide
+    const bad = await etape.handler({ n: 0 });
+    check("n < 1 → isError", bad.isError === true);
+  }
+
+  console.log("\n[6] etape_faite — ne lève jamais (markStepDone qui throw)");
+  {
+    const { etape } = tool({
+      markStepDone: () => {
+        throw new Error("store HS");
+      },
+    });
+    let threw = false;
+    try {
+      await etape.handler({ n: 1 });
+    } catch {
+      threw = true;
+    }
+    check("handler ne lève pas", !threw);
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-planifier-tools : ${pass} pass, ${fail} fail`);

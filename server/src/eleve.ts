@@ -589,6 +589,7 @@ const AGENTIC_FALLBACK_SYSTEM =
 // chemin (ne JAMAIS mélanger balises et outils, sinon le cerveau hésite).
 export const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-même (function-calling) :
 - planifier : poser un PLAN d'étapes ordonnées AVANT de coder une tâche non triviale
+- etape_faite : COCHER une étape du plan terminée (suis ta progression, vois ce qu'il reste)
 - read_file / list_files / search_code : explorer le projet existant
 - write_file : créer ou réécrire un fichier complet
 - edit_file : remplacer un extrait précis et unique d'un fichier
@@ -610,6 +611,8 @@ que ce soit. Découpe la tâche en 2 à 8 étapes ORDONNÉES (ça te donne un fi
 morceaux et de tourner en rond). PUIS explore le minimum utile et EXÉCUTE étape par étape (check_build aux
 jalons), sans sauter d'étape, jusqu'à finish. Si la tâche se révèle différente de ton plan, re-planifie. Pour
 un changement vraiment trivial (1 fichier, 1 correctif), inutile de planifier — agis directement.
+Après CHAQUE étape terminée (et vérifiée au build), appelle etape_faite(n) pour la cocher : tu gardes ta
+progression sous les yeux et tu ne « finish » que quand toutes les étapes sont cochées.
 
 ⚠ ENVIRONNEMENT : tu tournes sous Windows. N'utilise JAMAIS run_command pour LIRE/lister un fichier
 (cat, ls, type, Get-Content, pwd… échouent ou varient selon l'OS). Pour lire/lister/chercher, utilise

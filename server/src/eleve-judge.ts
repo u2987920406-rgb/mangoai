@@ -14,6 +14,7 @@ import path from "node:path";
 import { dispatch as realDispatch } from "./brain-dispatch.js";
 import { sanitizeExternal } from "./agent-contract.js";
 import { detectOutOfScope } from "./capabilities.js";
+import { gitFileDiff } from "./judge-diff.js";
 
 export interface IntentVerdict {
   couverture: number; // 0-100 : à quel point le livré couvre la demande
@@ -29,6 +30,8 @@ export interface JudgeDeps {
     opts: { trustExternal?: boolean; freeform?: boolean },
   ) => Promise<{ status: string; summary?: string }>;
   readFile: (projectDir: string, rel: string) => string | null;
+  /** L21 — vrai diff vs HEAD d'un fichier modifié (null = nouveau/inchangé/pas de dépôt). */
+  diff: (projectDir: string, rel: string) => string | null;
 }
 
 const MAX_FILES = 8;
@@ -48,11 +51,11 @@ function safeRead(projectDir: string, rel: string): string | null {
   }
 }
 
-const realDeps: JudgeDeps = { dispatch: realDispatch, readFile: safeRead };
+const realDeps: JudgeDeps = { dispatch: realDispatch, readFile: safeRead, diff: (d, r) => gitFileDiff(d, r) };
 
 const JUDGE_SYSTEM =
   "Tu es le JUGE de clôture de Mango. On te donne la DEMANDE d'un utilisateur et ce qu'un agent a CONSTRUIT " +
-  "(son résumé + des extraits des fichiers écrits). Évalue UNIQUEMENT l'ADÉQUATION : le livré couvre-t-il la " +
+  "(son résumé + les CHANGEMENTS : diff des fichiers modifiés et contenu des fichiers nouveaux). Évalue UNIQUEMENT l'ADÉQUATION : le livré couvre-t-il la " +
   "demande ? (pas le style, pas le goût — juste : a-t-il fait CE qui était demandé ?). Réponds EXACTEMENT dans " +
   "ce format, rien d'autre :\nCOUVERTURE: <0-100>\nMANQUES:\n- <un point demandé mais absent>\n- <…ou « rien » si " +
   "tout est couvert>\nSois strict mais factuel : un élément demandé et absent du livré = un manque. Ne pénalise " +
@@ -130,16 +133,21 @@ export async function judgeIntention(
   const neutral = (why: string): IntentVerdict =>
     applyScopeGuard({ couverture: 100, manques: [], note: `(juge indisponible : ${why})` }, task);
 
-  // Extraits des fichiers écrits (bornés ; contenu = DONNÉE potentiellement hostile).
+  // (L21) Ce qui a CHANGÉ (bornés ; contenu = DONNÉE potentiellement hostile).
+  // Pour un fichier MODIFIÉ d'un projet existant → le DIFF vs HEAD (montre exactement
+  // la modif). Pour un fichier NOUVEAU (pas de diff) → son contenu. Bien plus net pour
+  // juger l'adéquation qu'un dump intégral systématique.
   let extraits = "";
   let total = 0;
   for (const rel of files.slice(0, MAX_FILES)) {
-    const c = deps.readFile(projectDir, rel);
-    if (!c) continue;
-    const snip = c.length > MAX_FILE_CHARS ? c.slice(0, MAX_FILE_CHARS) + " …" : c;
+    const d = deps.diff(projectDir, rel);
+    const isDiff = !!d;
+    const raw = d ?? deps.readFile(projectDir, rel);
+    if (!raw) continue;
+    const snip = raw.length > MAX_FILE_CHARS ? raw.slice(0, MAX_FILE_CHARS) + " …" : raw;
     if (total + snip.length > MAX_TOTAL_CHARS) break;
     total += snip.length;
-    extraits += `\n--- ${rel} ---\n${snip}\n`;
+    extraits += `\n--- ${rel} ${isDiff ? "(diff)" : "(nouveau fichier)"} ---\n${snip}\n`;
   }
 
   // La DEMANDE est la référence (de l'utilisateur) ; le RÉSUMÉ et les FICHIERS sont
@@ -147,7 +155,7 @@ export async function judgeIntention(
   const user =
     `DEMANDE de l'utilisateur :\n${task}\n\n` +
     `RÉSUMÉ de l'agent (ce qu'il dit avoir fait) :\n${sanitizeExternal(summary || "(aucun résumé)")}\n\n` +
-    `FICHIERS ÉCRITS (extraits) :${extraits ? "\n" + sanitizeExternal(extraits) : " (aucun)"}\n\n` +
+    `CHANGEMENTS (diff des fichiers modifiés · contenu des fichiers nouveaux) :${extraits ? "\n" + sanitizeExternal(extraits) : " (aucun)"}\n\n` +
     "La demande est-elle COUVERTE ? Donne COUVERTURE puis MANQUES.";
 
   let r: { status: string; summary?: string };
