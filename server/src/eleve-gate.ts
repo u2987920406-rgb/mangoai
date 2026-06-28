@@ -13,10 +13,13 @@
 //
 // Tout est gracieux (ne lève jamais) et deps injectables (tests sans navigateur/cloud).
 
+import fs from "node:fs";
+import path from "node:path";
 import { critiqueScreen, prioritizedFixes, realCoachDeps, type DesignCritique } from "./design-coach.js";
 import { buildJudgeContext } from "./taste-judge.js";
 import { judgeIntention, type IntentVerdict } from "./eleve-judge.js";
 import { getPlan, formatPlanReminder } from "./eleve-plan.js";
+import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from "./layout-balance.js";
 
 export interface GateVerdict {
   ok: boolean;
@@ -27,6 +30,8 @@ export interface GateVerdict {
   tasteOk: boolean; // goût ≥ seuil OU non-scoré (sauté → ne pénalise pas)
   tasteObserve: boolean; // (L34) mode observe : le goût est SCORÉ et affiché mais ne bloque PAS
   wcagOk: boolean; // mesures objectives #111 (indépendantes du VL)
+  balanceOk: boolean; // ÉQUILIBRE de mise en page (déterministe) — max-w sans centrage = collé à gauche
+  balance: BalanceFinding[]; // détails des blocs à largeur max non centrés (vide si ok)
   raisons: string[]; // ce qu'il faut corriger (vide si ok)
 }
 
@@ -48,6 +53,19 @@ export interface GateDeps {
   judge: (task: string, summary: string, files: string[], projectDir: string) => Promise<IntentVerdict>;
   critique: (projectDir: string, workspaceDir: string, projectType: string) => Promise<DesignCritique>;
   stopPreview: (dir: string) => Promise<void>;
+  /** Garde déterministe d'équilibre : scanne les fichiers écrits (max-w sans centrage). */
+  scanBalance: (projectDir: string, files: string[]) => BalanceFinding[];
+}
+
+/** Lecteur réel : lit chaque fichier sous projectDir et délègue au détecteur pur. */
+function realScanBalance(projectDir: string, files: string[]): BalanceFinding[] {
+  return scanFilesForBalance(files, (f) => {
+    try {
+      return fs.readFileSync(path.join(projectDir, f), "utf8");
+    } catch {
+      return null;
+    }
+  });
 }
 
 const realGateDeps: GateDeps = {
@@ -55,6 +73,7 @@ const realGateDeps: GateDeps = {
   critique: (projectDir, workspaceDir, projectType) =>
     critiqueScreen(projectDir, buildJudgeContext(workspaceDir, projectType)),
   stopPreview: (dir) => realCoachDeps.stopPreview(dir),
+  scanBalance: realScanBalance,
 };
 
 /** Fichiers écrits par l'agent, dérivés de la trace d'outils. PUR. */
@@ -124,10 +143,27 @@ export async function runClosureGate(
     }
   }
 
+  // 4. ÉQUILIBRE (déterministe, indépendant du VL — comme la QA WCAG). Scanne les fichiers
+  // écrits : un conteneur à largeur max sans centrage = contenu collé à gauche. Opt-out
+  // ELEVE_GATE_BALANCE=off. Ne dépend pas d'un rendu → marche même sans aperçu/cloud.
+  let balance: BalanceFinding[] = [];
+  let balanceOk = true;
+  if (process.env.ELEVE_GATE_BALANCE !== "off") {
+    try {
+      balance = deps.scanBalance(projectDir, files);
+    } catch {
+      balance = [];
+    }
+    balanceOk = balance.length === 0;
+  }
+
   const raisons: string[] = [];
   if (!intentOk) {
     const m = intent.manques.length ? intent.manques.map((x) => `  - ${x}`).join("\n") : "  - la demande n'est pas couverte";
     raisons.push(`INTENTION ${intent.couverture}/100 (seuil ${th.intentMin}) — il manque :\n${m}`);
+  }
+  if (!balanceOk) {
+    raisons.push(formatBalanceRaison(balance));
   }
   if (design) {
     // Goût : seulement si FIABLE (L28) ET hors mode observe (L34). Un goût observé/non-scoré
@@ -142,7 +178,7 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && tasteOk && wcagOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, raisons };
+  return { ok: intentOk && tasteOk && wcagOk && balanceOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, raisons };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */
@@ -178,7 +214,7 @@ export function evaluateGate(
   if (verdict.ok) return { action: "ok" };
   if (gateRelances >= max) return { action: "laisse-passer" };
 
-  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.tasteScored && !verdict.tasteOk;
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && verdict.tasteScored && !verdict.tasteOk;
   const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
   if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
     return { action: "laisse-passer" };

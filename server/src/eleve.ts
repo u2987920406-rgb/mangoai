@@ -667,6 +667,14 @@ l'un colle, LIS son code et adapte-le plutôt que de le réécrire. De même, av
 l'autre (et plus vite). Sans argument, l'outil liste les artefacts récents pour t'inspirer. Réutilise SAUF
 demande explicite d'un style/composant neuf.
 
+⚠ ÉQUILIBRE DE MISE EN PAGE (capital) : un contenu à largeur limitée doit être CENTRÉ horizontalement.
+Chaque fois que tu poses une largeur max sur un conteneur (Tailwind \`max-w-…\` ; CSS \`max-width: …\`), AJOUTE
+le centrage qui va AVEC — \`mx-auto\` en Tailwind, \`margin-inline: auto\` (ou \`margin: 0 auto\`) en CSS. Sinon
+le bloc se colle au bord GAUCHE avec un grand vide à droite : c'est LE déséquilibre à éviter. Le wrapper de page
+type est \`<div className="mx-auto max-w-6xl px-6">\`, et ça vaut pour le HERO ET CHAQUE section (contenu, features,
+footer). N'aligne un bloc à gauche/droite QUE si l'asymétrie est VOULUE — et alors rends-la explicite (\`ml-auto\`/
+\`mr-auto\`), jamais par oubli du centrage.
+
 Méthode : planifie (tâche multi-étapes : planifier d'abord) → explore le minimum avec read_file/list_files/
 search_code → écris (write_file/edit_file) → APRÈS chaque écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand
 tout est vert et la tâche faite, appelle finish(summary). Si un outil échoue, NE le répète pas en boucle :

@@ -3,7 +3,7 @@ type: entité
 tags: [eleve, gate, qa, gout, intention, boucle-agentique]
 statut: livré
 sources: ["#161"]
-maj: 2026-06-26
+maj: 2026-06-28
 ---
 
 # Gardien-clôture (gate goût/QA/intention)
@@ -22,7 +22,8 @@ Le seul filet IMPOSÉ dans la boucle agentique (`runRelay`→`buildAgentic`) ét
 |---|---|---|
 | **Intention** | `eleve-judge.ts` `judgeIntention` | Compare la DEMANDE au livré (résumé du finish + extraits des fichiers écrits, confinés + `sanitizeExternal`) via le cerveau **`juge`** (qwen3.5:cloud, souverain $0, ≠ exécutant GLM). `IntentVerdict{couverture, manques[]}`. KO → verdict NEUTRE (100), ne bloque jamais à tort. |
 | **Goût + QA** | `eleve-gate.ts` → `critiqueScreen` #152 | UN regard : `critiqueScreen` renvoie le score de goût (multi-lentilles, ancré sur le **goût appris** via `buildJudgeContext` #149) ET les mesures **WCAG/charte** (`measureDesign` #111, déjà incluses). |
-| **Orchestration** | `eleve-gate.ts` `runClosureGate` | Agrège → `raisons[]` (manques + correctifs priorisés + écarts WCAG). `buildGateNudge` (préfixe le plan #160), `evaluateGate` (décision pure). |
+| **Structure** (2026-06-28) | `layout-balance.ts` `findUncentered` (PUR) | 4ᵉ volet **déterministe** (comme la QA WCAG, pas le VL bruité) : scanne les fichiers écrits et repère tout conteneur à largeur max (`max-w-*` / `max-width` fixe) **sans centrage** (`mx-auto`/`margin:auto`) = contenu collé à gauche. Ignore les petits `max-w`, l'asymétrie voulue (`ml`/`mr-auto`) et les blocs auto-positionnés. `balanceOk`+`balance[]` au verdict ; opt-out `ELEVE_GATE_BALANCE`. Répond au biais « collé à gauche » (cf. L54). |
+| **Orchestration** | `eleve-gate.ts` `runClosureGate` | Agrège → `raisons[]` (manques + correctifs priorisés + écarts WCAG + blocs non centrés). `buildGateNudge` (préfixe le plan #160), `evaluateGate` (décision pure ; la structure est un signal FIABLE → relance comme l'intention/WCAG, hors anti-thrash goût). |
 
 **⚠ Anti-récursion (capital)** : le Gardien appelle `critiqueScreen` (critique en **lecture**), JAMAIS `runDesignCoach` (qui rappellerait `runRelay`). La **correction est faite par la boucle `runRelay` existante** (nudge/relances). Le Gardien critique, le moteur corrige.
 
