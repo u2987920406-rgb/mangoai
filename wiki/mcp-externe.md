@@ -1,7 +1,7 @@
 ---
 type: entité
 tags: [mcp, outils, blender, gimp, inkscape, phase-3b]
-statut: chaînon livré (gaté OFF, testé serveur simulé) ; pilotage réel à prouver
+statut: PROUVÉ live sur 4 serveurs réels (Blender·GIMP·Playwright·Context7) ; 5 à clé déclarés
 sources: [statut, limites, "mcp-external.ts", kernel]
 maj: 2026-06-29
 ---
@@ -22,8 +22,13 @@ L'adaptateur `toMcpServer`/`toOpenAITools` ([[kernel]]) existait, mais seul `vis
 - **Sécurité** : gaté OFF par défaut · déclaratif (pas d'auto-découverte) · sorties neutralisées · transport réel `stdioTransport` (newline-delimited JSON).
 - **Tests** : `test-mcp-external` 19/19 (parsing, schéma→Zod, handshake, callTool, erreur/timeout, args préservés via ToolRegistry, serveur HS sauté).
 
+## Preuves live (2026-06-29) — 4 serveurs MCP réels
+- **Blender** (`blender-mcp` v1.5.6) → **22 outils** · **GIMP** (`gimp-mcp-server` maorcc patché, plugin GIMP 3.2 sur :9877) → **79 outils** · **Playwright** (officiel MS, QA navigateur) → **23 outils** · **Context7** (doc libs à jour) → **2 outils**.
+- **Option `shell`** ajoutée à `McpServerConfig`/`stdioTransport` : requise pour lancer les serveurs **npx/.cmd** sous Windows (Node bloque le spawn direct d'un `.cmd` depuis v18.20/20.12). Concaténation commande+args quand `shell:true` (évite DEP0190).
+- **5 MCP à clé déclarés prêts** (`enabled:false`, à activer en posant le token) : **Netlify** (déploiement → URL live, le gap d'usage), **GitHub**, **Supabase** (backend), **Firecrawl** (scrape robuste), **Stripe** (paiements).
+
 ## Limites
-- [[limites|L59]] — **non prouvé live** : aucun serveur Blender/GIMP/Inkscape MCP installé. Loader+client+pont testés avec serveur simulé ; pilotage réel à valider une fois un vrai serveur branché.
+- [[limites|L59]] ✅ **4 serveurs réels validés bout-en-bout** ; reste le PILOTAGE (tools/call) des serveurs liés à une app GUI (Blender/GIMP : addon/plugin actif) — le loader écarte proprement un serveur pas-encore-prêt.
 
 ## Liens
 [[kernel]] · [[domaines-unity]] · [[transmission-competences]] · [[statut]] · [[limites]]

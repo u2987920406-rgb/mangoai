@@ -74,10 +74,11 @@ async function run() {
   console.log("\n[1] loadMcpServers — parsing défensif");
   {
     const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), "mcp-")), "servers.json");
-    fs.writeFileSync(f, JSON.stringify({ servers: [{ id: "blender", command: "blender", args: ["--bg"], enabled: true }, { label: "sans id" }] }));
+    fs.writeFileSync(f, JSON.stringify({ servers: [{ id: "blender", command: "blender", args: ["--bg"], enabled: true, shell: true }, { label: "sans id" }] }));
     const list = loadMcpServers(f);
     check("1 serveur valide (l'entrée sans id/command rejetée)", list.length === 1);
     check("champs normalisés", list[0]!.id === "blender" && list[0]!.enabled === true && list[0]!.args.join() === "--bg");
+    check("champ shell parsé (npx/.cmd)", list[0]!.shell === true);
     check("fichier absent → []", loadMcpServers("/nope/x.json").length === 0);
   }
 

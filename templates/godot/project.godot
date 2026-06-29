@@ -1,0 +1,14 @@
+; Projet Godot 4 de départ (domaine Godot — MangoOS).
+; Marqueur de projet détecté par domains.ts.
+
+config_version=5
+
+[application]
+
+config/name="Mango Godot"
+run/main_scene="res://Main.tscn"
+config/features=PackedStringArray("4.4")
+
+[debug]
+
+gdscript/warnings/enable=true

@@ -18,7 +18,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { runCmd, inspectProject, type Inspection } from "./inspection.js";
 
-export type DomainId = "web" | "unity";
+export type DomainId = "web" | "unity" | "godot";
 
 export interface Domain {
   id: DomainId;
@@ -54,7 +54,20 @@ export const unityDomain: Domain = {
   enabled: () => process.env.ELEVE_UNITY === "on",
 };
 
-export const DOMAINS: Domain[] = [unityDomain, webDomain]; // ordre = priorité de détection
+// ── Domaine GODOT (gaté ELEVE_GODOT=on) ──────────────────────────────────────
+
+/** Marqueur Godot : tout projet Godot 4 contient un `project.godot` à la racine. */
+const GODOT_MARKER = "project.godot";
+
+export const godotDomain: Domain = {
+  id: "godot",
+  label: "Godot 4 (GDScript / build & vérif headless)",
+  marker: GODOT_MARKER,
+  detect: (dir) => fs.existsSync(path.join(dir, GODOT_MARKER)),
+  enabled: () => process.env.ELEVE_GODOT === "on",
+};
+
+export const DOMAINS: Domain[] = [unityDomain, godotDomain, webDomain]; // ordre = priorité de détection
 
 /**
  * Résout le domaine d'un projet. Priorité : forçage explicite (MANGOOS_DOMAIN) >
@@ -114,13 +127,57 @@ export async function inspectUnity(dir: string, opts: { timeoutMs?: number } = {
   return done("ok", out.slice(-400), true);
 }
 
+/** Chemin du binaire Godot (de préférence l'exe CONSOLE sous Windows : sortie/headless fiables). */
+export function godotBinary(): string | null {
+  const p = process.env.GODOT_PATH;
+  return p && p.trim() ? p.trim() : null;
+}
+
+/**
+ * Vérifie un projet Godot 4 en HEADLESS. Godot NE renvoie PAS de code ≠ 0 sur une erreur
+ * de script (observé : exit 0 même avec un Parse Error) → le signal objectif est la
+ * présence de MARQUEURS d'erreur dans la sortie (`SCRIPT ERROR`, `Parse Error`,
+ * `Failed to load script`…). On lance la scène principale quelques frames puis on quitte.
+ * Ne lève jamais.
+ */
+export async function inspectGodot(dir: string, opts: { timeoutMs?: number } = {}): Promise<Inspection> {
+  const timeoutMs = opts.timeoutMs ?? 180_000;
+  const t0 = Date.now();
+  const done = (signal: Inspection["signal"], detail: string, ok = false): Inspection => ({
+    ok,
+    signal,
+    detail: detail.trim(),
+    durationMs: Date.now() - t0,
+  });
+
+  const godot = godotBinary();
+  if (!godot) {
+    return done("no-build-script", "GODOT_PATH non défini — installe Godot 4 et exporte GODOT_PATH (exe console) pour vérifier ce domaine.");
+  }
+  if (!godotDomain.detect(dir)) {
+    return done("no-package", "Projet Godot introuvable (project.godot absent).");
+  }
+
+  // --import compile/scanne les ressources ; --quit-after exécute la scène principale
+  // quelques frames puis ferme (le script du template appelle aussi quit() en headless).
+  const cmd = `"${godot}" --headless --path "${dir}" --quit-after 5`;
+  const { code, out, timedOut } = await runCmd(cmd, dir, timeoutMs);
+  if (timedOut) return done("timeout", out.slice(-800));
+  // Détection des erreurs de script/chargement (le vrai signal, indépendant du code de sortie).
+  const ERROR_MARKERS = /SCRIPT ERROR|Parse Error|Failed to (?:load|parse|instantiate)|Cannot open file|Invalid call|Compile Error/i;
+  if (ERROR_MARKERS.test(out)) return done("build-failed", out.slice(-1500));
+  if (code !== 0) return done("build-failed", out.slice(-1500));
+  return done("ok", out.slice(-400), true);
+}
+
 /**
  * Inspection PLUGGABLE par domaine. Web → inspectProject (chemin actuel, INCHANGÉ).
- * Unity → build headless. Ne lève jamais. C'est le point d'entrée que l'orchestrateur /
- * check_build appelleront quand le multi-domaine sera branché (gaté).
+ * Unity → build headless. Godot → vérif headless. Ne lève jamais. C'est le point d'entrée
+ * que l'orchestrateur / check_build appelleront quand le multi-domaine sera branché (gaté).
  */
 export async function inspectByDomain(dir: string, opts: { timeoutMs?: number } = {}): Promise<Inspection & { domain: DomainId }> {
   const domain = resolveDomain(dir);
-  const insp = domain.id === "unity" ? await inspectUnity(dir, opts) : await inspectProject(dir, opts);
+  const insp =
+    domain.id === "unity" ? await inspectUnity(dir, opts) : domain.id === "godot" ? await inspectGodot(dir, opts) : await inspectProject(dir, opts);
   return { ...insp, domain: domain.id };
 }

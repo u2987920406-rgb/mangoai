@@ -18,6 +18,7 @@ import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-m
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveUnityTools } from "./eleve-unity-tools.js";
+import { buildEleveFluxTools } from "./eleve-flux-tools.js";
 
 // (Phase 3b) Cache des outils MCP externes pré-chargés (async) UNE fois par le moteur
 // agentique. buildEleveActionTools (synchrone) les enregistre depuis ce cache quand le
@@ -346,6 +347,12 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // build headless + tests Unity. L'édition des .cs/.unity passe par write_file/edit_file.
   if (process.env.ELEVE_UNITY === "on") {
     for (const t of buildEleveUnityTools(projectDir)) reg.register(t);
+  }
+
+  // Génération d'images IA souveraine via Flux local (L16, opt-in ELEVE_FLUX=on, défaut OFF) :
+  // genere_image appelle l'API ComfyUI locale ($0). chercher_image (Pexels) reste le défaut rapide.
+  if (process.env.ELEVE_FLUX === "on") {
+    for (const t of buildEleveFluxTools(projectDir)) reg.register(t);
   }
 
   // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :

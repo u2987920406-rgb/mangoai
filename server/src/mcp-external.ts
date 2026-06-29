@@ -28,11 +28,14 @@ import { sanitizeExternal } from "./agent-contract.js";
 export interface McpServerConfig {
   id: string; // identifiant court (préfixe des outils → évite les collisions)
   label: string;
-  command: string; // exécutable (ex. "python", "blender")
+  command: string; // exécutable (ex. "python", "blender", "npx")
   args: string[]; // arguments (ex. ["-m", "blender_mcp"])
   cwd?: string;
   env?: Record<string, string>;
   enabled: boolean; // doit être true ET le gate ELEVE_MCP_EXTERNAL=on
+  /** Lancer via un shell. NÉCESSAIRE pour npx/.cmd sous Windows (Node bloque le spawn
+   *  direct d'un .cmd/.bat depuis v18.20/20.12, CVE-2024-27980). Inutile pour un .exe. */
+  shell?: boolean;
 }
 
 /** Charge la config des serveurs MCP (data/mcp-servers.json). Défensif → [] si absent/cassé. */
@@ -51,6 +54,7 @@ export function loadMcpServers(configPath: string): McpServerConfig[] {
         cwd: typeof s.cwd === "string" ? s.cwd : undefined,
         env: s.env && typeof s.env === "object" ? (s.env as Record<string, string>) : undefined,
         enabled: s.enabled === true,
+        shell: s.shell === true,
       }));
   } catch {
     return [];
@@ -234,11 +238,17 @@ export function mcpToolToKernel(serverId: string, client: McpClient, descriptor:
 
 /** Transport JSON-RPC stdio : une ligne = un message JSON (transport stdio MCP). */
 export function stdioTransport(cfg: McpServerConfig): McpTransport {
-  const child: ChildProcess = spawn(cfg.command, cfg.args, {
+  // Avec shell:true on concatène commande+args en UNE chaîne (args=[]) pour éviter
+  // l'avertissement DEP0190 (args non échappés en mode shell). Sans shell, spawn classique.
+  const useShell = cfg.shell ?? false;
+  const spawnCmd = useShell ? [cfg.command, ...cfg.args].join(" ") : cfg.command;
+  const spawnArgs = useShell ? [] : cfg.args;
+  const child: ChildProcess = spawn(spawnCmd, spawnArgs, {
     cwd: cfg.cwd,
     env: cfg.env ? { ...process.env, ...cfg.env } : process.env,
     stdio: ["pipe", "pipe", "pipe"],
     windowsHide: true,
+    shell: useShell,
   });
   let buf = "";
   let msgCb: ((m: JsonRpcMessage) => void) | null = null;

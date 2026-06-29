@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { webDomain, unityDomain, resolveDomain, inspectUnity, inspectByDomain, unityBinary } from "./domains.js";
+import { webDomain, unityDomain, godotDomain, resolveDomain, inspectUnity, inspectGodot, inspectByDomain, unityBinary, godotBinary } from "./domains.js";
 
 let pass = 0;
 let fail = 0;
@@ -31,6 +31,11 @@ function unityProject(): string {
   const d = tmp();
   fs.mkdirSync(path.join(d, "ProjectSettings"), { recursive: true });
   fs.writeFileSync(path.join(d, "ProjectSettings", "ProjectVersion.txt"), "m_EditorVersion: 6000.0.23f1\n");
+  return d;
+}
+function godotProject(): string {
+  const d = tmp();
+  fs.writeFileSync(path.join(d, "project.godot"), 'config_version=5\n\n[application]\nconfig/name="X"\n');
   return d;
 }
 
@@ -113,6 +118,26 @@ async function run() {
       const r = await inspectByDomain(empty);
       check("dossier sans marqueur → domain=web", r.domain === "web");
       check("web vide → no-package", r.signal === "no-package");
+    });
+  }
+
+  console.log("\n[6] Domaine Godot — détection, gate, inspectGodot sans GODOT_PATH");
+  {
+    const g = godotProject();
+    check("godot détecté par project.godot", godotDomain.detect(g));
+    check("web non détecté comme godot", !godotDomain.detect(webProject()));
+    await withEnv({ ELEVE_GODOT: undefined, MANGOOS_DOMAIN: undefined, ELEVE_UNITY: undefined }, () => {
+      check("godot NON activé → web par défaut", resolveDomain(g).id === "web");
+    });
+    await withEnv({ ELEVE_GODOT: "on", MANGOOS_DOMAIN: undefined, ELEVE_UNITY: undefined }, async () => {
+      check("godot activé + détecté → godot", resolveDomain(g).id === "godot");
+      await withEnv({ GODOT_PATH: undefined }, async () => {
+        check("godotBinary null sans GODOT_PATH", godotBinary() === null);
+        const insp = await inspectGodot(g);
+        check("inspectGodot sans binaire → ok=false + message GODOT_PATH", insp.ok === false && /GODOT_PATH/.test(insp.detail));
+      });
+      const r = await inspectByDomain(g, { timeoutMs: 5000 });
+      check("inspectByDomain route vers godot", r.domain === "godot");
     });
   }
 

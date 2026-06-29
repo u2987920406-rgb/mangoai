@@ -1,7 +1,7 @@
 ---
 type: entité
 tags: [domaine, unity, csharp, capabilities, phase-3a]
-statut: socle livré (gaté OFF, testé) ; build live à prouver (Unity Editor requis)
+statut: PROUVÉ live — Unity build VERT + Godot build VERT (gaté OFF)
 sources: [statut, limites, "domains.ts", "eleve-unity-tools.ts", capacites-mango]
 maj: 2026-06-29
 ---
@@ -21,8 +21,17 @@ Avant, tout supposait Vite + navigateur + port 5174 (templates web, `check_build
 - **Capabilities** ([[capacites-mango]]) : Unity sort du hors-périmètre quand `ELEVE_UNITY=on` — `detectOutOfScope(text, allow)` + `scopeAllowList()` (réintègre `unity`, garde Unreal/Godot natif hors-scope) ; le scope-guard du juge ([[gardien-cloture]]) ne plafonne plus une tâche Unity.
 - **Tests** : `test-domains` 17/17 · `test-eleve-unity-tools` 15/15 · `test-capabilities` 22/22.
 
+## Godot (2ᵉ domaine, même patron)
+- **`godotDomain`** (marqueur `project.godot`, gate `ELEVE_GODOT=on`) + **`inspectGodot`** + `templates/godot/` (project.godot + Main.tscn + `Game.add_points` pur).
+- **Subtilité clé** : Godot renvoie **exit 0 même sur un script cassé** → on détecte les **marqueurs** `SCRIPT ERROR` / `Parse Error` / `Failed to load script` dans la sortie (pas le code de sortie). `GODOT_PATH` = exe **console** (sortie fiable).
+- **Build Godot PROUVÉ VERT** (2026-06-29, `ok:true`, script exécuté). Godot 4.7 installé via winget.
+
+## Preuves live (2026-06-29)
+- **Unity** : `inspectByDomain` → `inspectUnity` (batchmode `Builder.PerformBuild`) → **build standalone VERT** (`ok:true`). Verdict fidèle dans les deux sens (faux vert impossible : a d'abord rendu `ok:false` honnête sur une install Unity incomplète, puis `ok:true` après réparation).
+- **Godot** : build headless **VERT**.
+
 ## Limites
-- [[limites|L57]] — build/tests Unity **non prouvés live** : Unity Editor non installé, `UNITY_PATH` non défini. Socle (domaine+outils+template+gating) livré et testé, gaté OFF ; preuve live quand l'Editor sera installé.
+- [[limites|L57]] ✅ **RÉSOLU** — build Unity prouvé vert (install Unity réparée). Reste, comme béquille produit : générer un vrai JEU complet via l'Élève.
 
 ## Liens
 [[capacites-mango]] · [[gardien-cloture]] · [[mcp-externe]] (assets Blender→Unity) · [[grand-chantier]] · [[statut]] · [[limites]]

@@ -23,6 +23,73 @@
       "command": "python",
       "args": ["-m", "inkscape_mcp"],
       "enabled": false
+    },
+    {
+      "id": "playwright",
+      "label": "Playwright (QA navigateur RÉELLE : naviguer, cliquer, screenshot, console, réseau, responsive)",
+      "command": "npx",
+      "args": ["-y", "@playwright/mcp@latest"],
+      "enabled": true,
+      "shell": true,
+      "_note": "Officiel Microsoft. PROUVÉ live 2026-06-29 : 23 outils (browser_navigate/click/snapshot/take_screenshot/console_messages/network_requests…). Keyless. Pour tools/call : navigateurs Playwright requis (npx playwright install chromium)."
+    },
+    {
+      "id": "context7",
+      "label": "Context7 (doc À JOUR des libs : React/Tailwind/Recharts… → moins d'API inventées)",
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"],
+      "enabled": true,
+      "shell": true,
+      "_note": "Upstash. PROUVÉ live 2026-06-29 : 2 outils (resolve-library-id, query-docs). Keyless (clé CONTEXT7_API_KEY optionnelle pour relever les quotas)."
+    },
+    {
+      "id": "netlify",
+      "label": "Déploiement Netlify (publier le site généré → URL live) — LE gap d'usage",
+      "command": "npx",
+      "args": ["-y", "@netlify/mcp"],
+      "enabled": false,
+      "shell": true,
+      "_note": "Déclaré, à activer. Auth : se connecte via le compte Netlify (token NETLIFY_AUTH_TOKEN ou flux device). Passer enabled:true une fois le token posé dans l'env du serveur."
+    },
+    {
+      "id": "github",
+      "label": "GitHub (versionner le projet généré, créer le repo, pousser, PR/CI)",
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "enabled": false,
+      "shell": true,
+      "env": { "GITHUB_PERSONAL_ACCESS_TOKEN": "" },
+      "_note": "Déclaré, à activer. Renseigner GITHUB_PERSONAL_ACCESS_TOKEN (PAT) dans 'env' puis enabled:true."
+    },
+    {
+      "id": "supabase",
+      "label": "Supabase (vrai backend : auth + base de données + storage → full-stack)",
+      "command": "npx",
+      "args": ["-y", "@supabase/mcp-server-supabase@latest"],
+      "enabled": false,
+      "shell": true,
+      "env": { "SUPABASE_ACCESS_TOKEN": "" },
+      "_note": "Déclaré, à activer. Renseigner SUPABASE_ACCESS_TOKEN (jeton de compte Supabase) puis enabled:true. Se marie au template supabase existant."
+    },
+    {
+      "id": "firecrawl",
+      "label": "Firecrawl (extraction web ROBUSTE — scrape/crawl/structured)",
+      "command": "npx",
+      "args": ["-y", "firecrawl-mcp"],
+      "enabled": false,
+      "shell": true,
+      "env": { "FIRECRAWL_API_KEY": "" },
+      "_note": "Déclaré, à activer. Renseigner FIRECRAWL_API_KEY puis enabled:true. Complète/robustifie extraire_site (L2)."
+    },
+    {
+      "id": "stripe",
+      "label": "Stripe (paiements → vrai e-commerce)",
+      "command": "npx",
+      "args": ["-y", "@stripe/mcp", "--tools=all"],
+      "enabled": false,
+      "shell": true,
+      "env": { "STRIPE_SECRET_KEY": "" },
+      "_note": "Déclaré, à activer. Renseigner STRIPE_SECRET_KEY (clé test sk_test_…) puis enabled:true. Se marie au template ecommerce."
     }
   ]
 }

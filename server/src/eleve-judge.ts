@@ -108,8 +108,10 @@ export function applyScopeGuard(
   env: NodeJS.ProcessEnv = process.env,
 ): IntentVerdict {
   if (String(env.JUDGE_SCOPE_GUARD ?? "on").toLowerCase() === "off") return verdict;
-  // (Phase 3a) Unity n'est plus une dérive quand le domaine Unity est actif (ELEVE_UNITY=on).
-  const allow = String(env.ELEVE_UNITY ?? "").toLowerCase() === "on" ? ["unity"] : [];
+  // (Phase 3a) Unity/Godot ne sont plus une dérive quand leur domaine est actif.
+  const allow: string[] = [];
+  if (String(env.ELEVE_UNITY ?? "").toLowerCase() === "on") allow.push("unity");
+  if (String(env.ELEVE_GODOT ?? "").toLowerCase() === "on") allow.push("godot natif");
   const families = detectOutOfScope(task, allow);
   if (families.length === 0) return verdict;
   const manque = `Cadre demandé hors périmètre (${families.join(", ")}) : MangoOS livre une app WEB (React/Three.js/PWA), pas du natif/moteur de jeu — le livré ne peut pas répondre au cadre demandé.`;

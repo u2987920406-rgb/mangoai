@@ -67,7 +67,10 @@ export function detectOutOfScope(text: string, allow: string[] = []): string[] {
  * reste PUR. Les autres moteurs natifs restent hors périmètre.
  */
 export function scopeAllowList(): string[] {
-  return process.env.ELEVE_UNITY === "on" ? ["unity"] : [];
+  const allow: string[] = [];
+  if (process.env.ELEVE_UNITY === "on") allow.push("unity");
+  if (process.env.ELEVE_GODOT === "on") allow.push("godot natif");
+  return allow;
 }
 
 /** Clause injectée dans le prompt Discuter (et réutilisable ailleurs). */
