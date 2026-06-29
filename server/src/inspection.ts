@@ -125,23 +125,30 @@ export async function inspectProject(
     return done("no-deps", "node_modules absent");
   }
 
-  const { code, out, timedOut } = await runBuild(projectDir, timeoutMs);
-  if (timedOut) return done("timeout", out.slice(-800));
-  if (code !== 0) return done("build-failed", out.slice(-1500));
-
-  // Frontend OK. Un projet full-stack a un backend généré dans api/ — jusqu'ici
-  // jamais validé : le verdict s'arrêtait au frontend (bug du run 2026-06-20).
-  // On l'inspecte aussi ; "ok" exige désormais que les DEUX tiennent debout.
+  // VITESSE (#1C) — Front (vite build) et back (api/ `tsc --noEmit`) lancés en
+  // PARALLÈLE quand les deux existent : on attend le plus lent au lieu de la somme.
+  // Le verdict est INCHANGÉ (le front prime : un front cassé reste « build-failed »
+  // même si le back était vert ; "ok" exige toujours que les DEUX tiennent debout).
   const backend = backendDepsState(projectDir);
   if (backend === "no-deps") return done("backend-no-deps", "api/node_modules absent");
-  if (backend === "ready") {
-    const apiDir = path.join(projectDir, BACKEND_DIR_NAME);
-    const be = await runBackendCheck(apiDir, timeoutMs);
-    if (be.timedOut) return done("timeout", be.out.slice(-800));
-    if (be.code !== 0) return done("backend-failed", be.out.slice(-1500));
+
+  const apiDir = path.join(projectDir, BACKEND_DIR_NAME);
+  const [front, back] = await Promise.all([
+    runBuild(projectDir, timeoutMs),
+    backend === "ready" ? runBackendCheck(apiDir, timeoutMs) : Promise.resolve(null),
+  ]);
+  if (process.env.INSPECT_TIMING === "on") {
+    console.log(`[inspect] ${path.basename(projectDir)} : ${Date.now() - t0}ms (front${back ? "+back parallèle" : " seul"})`);
   }
 
-  return done("ok", out.slice(-400));
+  if (front.timedOut) return done("timeout", front.out.slice(-800));
+  if (front.code !== 0) return done("build-failed", front.out.slice(-1500));
+  if (back) {
+    if (back.timedOut) return done("timeout", back.out.slice(-800));
+    if (back.code !== 0) return done("backend-failed", back.out.slice(-1500));
+  }
+
+  return done("ok", front.out.slice(-400));
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
