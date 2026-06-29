@@ -18,8 +18,15 @@ const LIMITES_MD = `# Registre
 `
 fs.writeFileSync(LIM, LIMITES_MD)
 
-const { parseLacunes, parseForgedAgent, parseForgedAgents, pickFocusLacunes, forgeAgents } = await import("./agent-forge.js")
+const { parseLacunes, parseForgedAgent, parseForgedAgents, pickFocusLacunes, forgeAgents, assignBrain, forgeForGap } = await import("./agent-forge.js")
 const { loadSpecialists } = await import("./specialist-agents.js")
+
+// Mini-fabrique de spec pour tester assignBrain (champs minimaux).
+const mkSpec = (over: Partial<{ name: string; role: string; lacune: string; tags: string[] }>) => ({
+  id: "sa_x", name: over.name ?? "X", role: over.role ?? "rôle", lacune: over.lacune ?? "",
+  systemPrompt: "Tu es un expert.", tools: [], triggers: "", examples: [], tags: over.tags ?? [],
+  provider: "ollama" as const, model: "gemma4:12b", createdByAgent: "forgeron", createdAt: "",
+})
 
 let pass = 0, fail = 0
 function check(label: string, cond: boolean) {
@@ -71,9 +78,51 @@ console.log("\n[4] forgeAgents (transport injecté)")
   const r = await forgeAgents(3, { ask })
   check("forge 3 agents, 0 échec", r.created.length === 3 && r.failures === 0)
   check("persiste les 3", r.persisted.length === 3 && loadSpecialists().length === 3)
+  // L'auto-assignation a tranché : malgré "gemma4:12b" suggéré par le modèle, un agent
+  // de raisonnement repart sur glm-5.2:cloud (jamais gemma seul).
+  check("auto-assigne le cerveau (pas gemma)", r.created.every((a) => a.model !== "gemma4:12b"))
+  check("raisonnement → glm-5.2:cloud", r.created[0]!.provider === "openai" && r.created[0]!.model === "glm-5.2:cloud")
   reset()
   const r2 = await forgeAgents(2, { ask: async () => "pas du json" })
   check("modèle qui déraille → 0 créés, 2 échecs, ne lève pas", r2.created.length === 0 && r2.failures === 2)
+  reset()
+}
+
+console.log("\n[5] assignBrain (cerveau adapté à la compétence)")
+{
+  const v1 = assignBrain(mkSpec({ name: "Arbitre design convergent", lacune: "L1 — juge design" }))
+  check("design → œil vision qwen3.5:cloud", v1.provider === "ollama" && v1.model === "qwen3.5:cloud")
+  const v2 = assignBrain(mkSpec({ name: "Déchiffreur de PDF scannés", lacune: "L4 — PDF scanné" }))
+  check("pdf/scan → œil vision", v2.provider === "ollama" && v2.model === "qwen3.5:cloud")
+  const r1 = assignBrain(mkSpec({ name: "Anatomiste de classeurs", lacune: "L6 — xlsx" }))
+  check("classeur → glm-5.2:cloud", r1.provider === "openai" && r1.model === "glm-5.2:cloud")
+  const r2 = assignBrain(mkSpec({ name: "Iconographe bilingue", role: "requêtes d'images Pexels", lacune: "L15" }))
+  check("iconographe (texte) → glm, PAS vision", r2.model === "glm-5.2:cloud")
+  const r3 = assignBrain(mkSpec({ name: "Chambellan des clés", lacune: "L27 — endpoint" }))
+  check("config → glm-5.2:cloud", r3.model === "glm-5.2:cloud")
+  check("jamais gemma seul", [v1, v2, r1, r2, r3].every((b) => b.model !== "gemma4:12b"))
+}
+
+console.log("\n[6] forgeForGap (#168 — forge ciblée sur une lacune live)")
+{
+  reset()
+  const ask = async () => JSON.stringify({
+    name: "Combleur Websocket", role: "expert temps réel et synchronisation",
+    lacune: "websocket", systemPrompt: "Tu es un expert du temps réel qui applique une méthode rigoureuse et rend un format clair.",
+    tools: [{ name: "outil", desc: "fait un truc" }], triggers: "blocage websocket",
+    provider: "ollama", model: "gemma4:12b",
+  })
+  const gap = {
+    id: "gap_1", sig: "websocket", title: "websocket temps réel", blocker: "websocket",
+    detail: "chat collaboratif temps réel", task: "app de chat", status: "proposed" as const,
+    hits: 1, createdAt: "", updatedAt: "",
+  }
+  const r = await forgeForGap(gap, { ask })
+  check("forge l'agent ciblé sur la lacune", r.agent?.name === "Combleur Websocket")
+  check("cerveau auto-assigné (pas gemma) → glm", r.agent?.model === "glm-5.2:cloud")
+  check("persisté dans le registre", loadSpecialists().some((a) => a.name === "Combleur Websocket"))
+  const bad = await forgeForGap(gap, { ask: async () => "pas du json" })
+  check("forge ratée → agent null + error, ne lève pas", bad.agent === null && typeof bad.error === "string")
   reset()
 }
 

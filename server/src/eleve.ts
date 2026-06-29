@@ -44,6 +44,7 @@ import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
 import { consultSpecialist, buildDelegateNudge } from "./specialist-delegate.js";
+import { recordUncoveredGap } from "./self-evolution.js";
 import {
   executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
   type ExecRung,
@@ -1086,6 +1087,10 @@ export async function runRelay(
     // slice 2 (L48b) — DÉLÉGATION RÉELLE : sur plateau-iterations, le Stratège invoque le
     // spécialiste forgé pertinent (au lieu du seul nudge « décompose »). Gaté, défaut off.
     const delegateOn = strategeActs && (process.env.ELEVE_DELEGATE ?? "off").toLowerCase() === "on";
+    // #168 — Boucle d'AUTO-ÉVOLUTION (semi-auto). Quand un blocage n'est couvert par AUCUN
+    // agent forgé, on l'inscrit comme lacune ouverte (store machine) → Mango PROPOSE, Raf
+    // valide → le forgeron crée l'agent. Gaté, défaut off (zéro régression).
+    const selfEvolveOn = (process.env.SELF_EVOLVE ?? "off").toLowerCase() !== "off";
     const strategeState: StrategeState = newStrategeState();
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
@@ -1259,13 +1264,23 @@ export async function runRelay(
             // forgé pertinent (match tâche↔agent) et on l'invoque pour une analyse experte, qui
             // remplace le nudge « décompose ». Aucun match → repli sur le nudge (inchangé).
             let remedyNudge = r.nudge;
-            if (delegateOn && d.blocker === "plateau-iterations") {
-              const consult = await consultSpecialist({ task, blockage: d.detail ?? "plafond d'itérations atteint" });
+            if (d.blocker === "plateau-iterations") {
+              const consult = delegateOn
+                ? await consultSpecialist({ task, blockage: d.detail ?? "plafond d'itérations atteint" })
+                : null;
               if (consult) {
                 push(`  🤝 Stratège délègue à « ${consult.agent.name} » (cible ${consult.agent.lacune || "—"}, score ${consult.score})`);
                 remedyNudge = buildDelegateNudge(consult.agent.name, consult.advice);
               } else {
-                push(`  ℹ Stratège : aucun spécialiste forgé pertinent → décomposition`);
+                // #168 — aucun agent forgé ne couvre ce blocage → on l'inscrit comme lacune
+                // ouverte (semi-auto : Mango propose, Raf valide la forge dans l'Atelier).
+                if (selfEvolveOn) {
+                  const g = recordUncoveredGap({ blocker: d.blocker, detail: d.detail, task });
+                  if (g.recorded && g.isNew) {
+                    push(`  🧬 Auto-évolution : lacune « ${g.gap?.title ?? d.blocker} » notée — forge à valider dans l'Atelier`);
+                  }
+                }
+                if (delegateOn) push(`  ℹ Stratège : aucun spécialiste forgé pertinent → décomposition`);
               }
             }
             push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);

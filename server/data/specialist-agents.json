@@ -37,8 +37,8 @@
     "provider": "ollama",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:17:22.456Z",
-    "model": "gemma4:12b",
-    "timeoutMs": 120000
+    "model": "qwen3.5:cloud",
+    "timeoutMs": 60000
   },
   {
     "id": "sa_1782598662563_1_dechiffreur-de-pdf-scannes",
@@ -87,8 +87,8 @@
     "provider": "ollama",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:17:42.563Z",
-    "model": "gemma4:12b",
-    "timeoutMs": 120000
+    "model": "qwen3.5:cloud",
+    "timeoutMs": 60000
   },
   {
     "id": "sa_1782598679873_2_anatomiste-de-classeurs",
@@ -133,10 +133,10 @@
       "tabulaire",
       "extraction"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:17:59.873Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -178,10 +178,10 @@
       "pertinence",
       "link-heavy"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:18:26.265Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -226,10 +226,10 @@
       "crawl",
       "normalisation-url"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:18:44.689Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -266,10 +266,10 @@
       "requetes",
       "pertinence"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:19:02.994Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -310,10 +310,10 @@
       "état",
       "chantier"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:19:44.356Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -359,10 +359,10 @@
       "verdict",
       "changements"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:20:19.109Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -405,10 +405,10 @@
       "api",
       "configuration"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:20:38.369Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   },
   {
@@ -450,10 +450,10 @@
       "configuration",
       "ui"
     ],
-    "provider": "ollama",
+    "provider": "openai",
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:21:15.906Z",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 120000
   }
 ]

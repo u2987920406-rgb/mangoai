@@ -87,6 +87,7 @@ import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { registerSelfRoutes } from "./self-routes.js";
 import { registerSpecialistRoutes } from "./specialist-routes.js";
+import { registerSelfEvolutionRoutes } from "./self-evolution-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
 import { prewarmVision } from "./vision-prewarm.js";
 import { sweepOrphanPreviews } from "./preview-sweep.js";
@@ -991,6 +992,7 @@ registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 registerSelfRoutes(app); // Atelier de Mango — auto-amélioration (barreaux 1-4)
 registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
+registerSelfEvolutionRoutes(app); // #168 — Boucle d'auto-évolution (semi-auto) : lacunes → forge validée
 
 app.post("/api/stop", async (_req, res) => {
   // Deux cerveaux, deux mécaniques d'arrêt :

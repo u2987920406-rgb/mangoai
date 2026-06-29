@@ -2,21 +2,24 @@
 // d'agents spécialisés pour les combler. C'est le cœur de la demande de Raf : « c'est
 // MANGO qui crée ses agents via GLM ».
 //
-// Pipeline : readLacunesDigest() (limites.md ouvertes + capabilities.ts) → buildForgePrompt(n)
-// → dispatch('codeur', …) [l'Élève GLM, souverain $0] → parseForgedAgents() → validateSpec()
-// → upsertSpecialists() (persisté). Le tout INJECTABLE (dispatch) pour des tests sans réseau,
+// Pipeline : readLacunesDigest() (limites.md ouvertes + capabilities.ts) → buildForgeOnePrompt(n)
+// → cerveau `forgeron` [Opus, le meilleur raisonneur — décision Raf 2026-06-29] → parseForgedAgent()
+// → validateSpec() → assignBrain() [cerveau adapté par compétence, jamais gemma seul]
+// → upsertSpecialists() (persisté). Le tout INJECTABLE (ask) pour des tests sans réseau,
 // et NE LÈVE JAMAIS (toute erreur → liste vide + message).
 
 import fs from "node:fs"
 import path from "node:path"
-import { askLLM } from "./llm-engine.js"
+import { askLLM, type LLMProvider } from "./llm-engine.js"
 import { getBrain } from "./brain-registry.js"
 import { MANGOOS_CANNOT } from "./capabilities.js"
 import {
   validateSpec,
   upsertSpecialists,
+  loadSpecialists,
   type SpecialistAgent,
 } from "./specialist-agents.js"
+import type { OpenGap } from "./self-evolution.js"
 
 /** Chemin du registre des limites, surchargeable par env (testabilité). */
 function limitesFile(): string {
@@ -110,24 +113,48 @@ Rends UNIQUEMENT un objet JSON valide (aucun texte autour), avec EXACTEMENT ces 
   "model": "gemma4:12b"
 }
 
-Souveraineté : privilégie un cerveau LOCAL gratuit ("provider":"ollama","model":"gemma4:12b")
-quand c'est suffisant ; réserve "provider":"openai","model":"glm-5.2:cloud" au raisonnement lourd.
+Indique la compétence DOMINANTE dans le rôle et les tags (vision / raisonnement / code…).
+Le cerveau (provider/model) sera AUTO-ASSIGNÉ par Mango selon cette compétence (vision → l'œil,
+raisonnement/code → l'Élève GLM) — tes champs "provider"/"model" sont indicatifs, Mango tranche.
 Aucun texte hors de l'objet JSON.`
 }
 
 /** Transport injectable (tests) : rend le texte brut du modèle. */
 export type ForgeAsk = (system: string, user: string) => Promise<string>
 
-/** Appel réel : cerveau `codeur` (l'Élève GLM, $0), avec un plafond de tokens RELEVÉ
- *  (le défaut 1024 d'askLLM tronquait un prompt système d'agent). */
+/** Appel réel : cerveau `forgeron` (Opus via l'abonnement, décision Raf 2026-06-29 —
+ *  méta-prompting = l'acte le plus exigeant, et RARE → on y met le meilleur raisonneur).
+ *  Plafond de tokens RELEVÉ (le défaut 1024 d'askLLM tronquait un prompt système). */
 const realForgeAsk: ForgeAsk = (system, user) => {
-  const brain = getBrain("codeur")
+  const brain = getBrain("forgeron")
   return askLLM(system, user, {
     provider: brain.provider,
     model: brain.model,
     timeoutMs: brain.timeoutMs ?? 120_000,
     maxTokens: 2200,
   })
+}
+
+/**
+ * AUTO-ASSIGNATION DU CERVEAU (décision Raf 2026-06-29 : « un cerveau spécifique et
+ * approprié à chaque agent, pas gemma tout seul »). PURE et déterministe : on classe
+ * la compétence dominante de l'agent d'après ses mots (nom/rôle/lacune/tags) et on
+ * renvoie le cerveau adapté.
+ *  - VISION (juge un rendu, lit une image scannée…) → l'œil `qwen3.5:cloud`.
+ *  - sinon (raisonnement / code / config) → l'Élève `glm-5.2:cloud` (≈ Opus, $0-ish).
+ * On NE laisse PLUS le défaut `gemma4:12b` (trop faible, sous le niveau Haiku). Le
+ * forgeron peut suggérer un modèle, mais Mango tranche ici — réassignable dans l'Atelier.
+ */
+const VISION_HINTS: RegExp[] = [
+  /\bdesign\b/i, /\bpdf\b/i, /scan/i, /\bocr\b/i, /maquette/i, /screenshot/i,
+  /capture/i, /sharingan/i, /\bvisuel/i, /\bvision\b/i, /\brendu\b/i,
+]
+export function assignBrain(spec: SpecialistAgent): { provider: LLMProvider; model: string; timeoutMs: number } {
+  const hay = `${spec.name} ${spec.role} ${spec.lacune} ${(spec.tags ?? []).join(" ")}`.toLowerCase()
+  const isVision = VISION_HINTS.some((re) => re.test(hay))
+  return isVision
+    ? { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 60_000 }
+    : { provider: "openai", model: "glm-5.2:cloud", timeoutMs: 120_000 }
 }
 
 /**
@@ -225,9 +252,14 @@ export async function forgeAgents(
     }
     const spec = parseForgedAgent(raw, { seq: i })
     if (spec && !usedNames.includes(spec.name.toLowerCase())) {
+      // Cerveau adapté à la compétence (vision vs raisonnement), jamais gemma seul.
+      const brain = assignBrain(spec)
+      spec.provider = brain.provider
+      spec.model = brain.model
+      spec.timeoutMs = brain.timeoutMs
       created.push(spec)
       usedNames.push(spec.name.toLowerCase())
-      deps.onProgress?.(`✓ agent ${i + 1}/${count} : ${spec.name} (${focus?.id ?? "libre"})`)
+      deps.onProgress?.(`✓ agent ${i + 1}/${count} : ${spec.name} (${focus?.id ?? "libre"}) → ${brain.provider}/${brain.model}`)
     } else {
       failures++
       deps.onProgress?.(`✗ agent ${i + 1}/${count} : spec invalide ou doublon`)
@@ -235,4 +267,43 @@ export async function forgeAgents(
   }
   const persisted = created.length > 0 ? upsertSpecialists(created) : []
   return { created, persisted, lacunesCount: lacunes.length, failures }
+}
+
+/**
+ * #168 — Forge UN agent CIBLÉ sur une lacune ouverte rencontrée en live (boucle d'auto-
+ * évolution, semi-auto : appelée APRÈS validation de Raf). Réutilise le forgeron (Opus) +
+ * `assignBrain` ; le contexte de la tâche bloquée est injecté pour un agent vraiment adapté.
+ * Persiste l'agent (dédup par nom). NE LÈVE JAMAIS → `{ agent, error? }`.
+ */
+export async function forgeForGap(
+  gap: OpenGap,
+  deps: { ask?: ForgeAsk } = {},
+): Promise<{ agent: SpecialistAgent | null; error?: string }> {
+  const ask = deps.ask ?? realForgeAsk
+  const focus: Lacune = {
+    id: gap.blocker || "L?",
+    titre: gap.title || gap.blocker || "lacune",
+    bloque: gap.detail || gap.task || "",
+  }
+  const { text } = readLacunesDigest()
+  const context = gap.task
+    ? `${text}\n\nCONTEXTE DE LA LACUNE RENCONTRÉE EN LIVE (tâche bloquée) : ${gap.task}`
+    : text
+  const exclude = loadSpecialists().map((s) => s.name.toLowerCase())
+  const prompt = buildForgeOnePrompt(context, focus, exclude)
+  let raw = ""
+  try {
+    raw = await ask(FORGE_SYSTEM, prompt)
+  } catch (err) {
+    return { agent: null, error: (err as Error).message }
+  }
+  const spec = parseForgedAgent(raw)
+  if (!spec) return { agent: null, error: "spec invalide (forge)" }
+  if (exclude.includes(spec.name.toLowerCase())) return { agent: null, error: "doublon de nom" }
+  const brain = assignBrain(spec)
+  spec.provider = brain.provider
+  spec.model = brain.model
+  spec.timeoutMs = brain.timeoutMs
+  upsertSpecialists([spec])
+  return { agent: spec }
 }

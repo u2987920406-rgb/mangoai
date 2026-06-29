@@ -25,7 +25,7 @@ export interface BrainConfig {
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "extracteur" | "testeur" | "auditeur"
-  | "optimiseur" | "chercheur" | "juge" | "stratege"
+  | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -51,6 +51,12 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // gemma4:12b LOCAL ($0 réel). Le barreau 2 (cloud supérieur) est un AUTRE agent,
   // configurable par env (STRATEGE_ESCALATE_AGENT) — voir stratege-brain.ts.
   stratege:      { provider: "ollama", model: "gemma4:12b", timeoutMs: 90_000 },
+  // La Forge — le FORGERON qui CONÇOIT les agents (méta-prompting). Décision Raf
+  // (2026-06-29) : c'est l'acte le PLUS exigeant (lire une lacune abstraite → rédiger
+  // un prompt système d'expert + JSON valide) et il est RARE → on y met le meilleur
+  // raisonneur, Opus, via l'abonnement Claude ($0). Distinct du `codeur` (GLM) qui,
+  // lui, EXÉCUTE. Réassignable à chaud dans l'Atelier comme tout cerveau.
+  forgeron:      { provider: "claude", model: "opus", timeoutMs: 120_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]
