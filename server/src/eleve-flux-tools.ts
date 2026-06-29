@@ -13,7 +13,9 @@
 
 import { z } from "zod";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
+import { execFile } from "node:child_process";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 
 function comfyUrl(): string {
@@ -48,9 +50,17 @@ export function fluxModels(): FluxModels {
   };
 }
 
-/** Construit le graphe-workflow ComfyUI (format API). PUR — exactement le pipeline prouvé. */
-export function buildFluxWorkflow(prompt: string, width: number, height: number, seed: number, m: FluxModels): Record<string, unknown> {
-  return {
+/** Construit le graphe-workflow ComfyUI (format API). PUR — pipeline Flux prouvé, avec
+ *  un étage d'UPSCALE optionnel (Real-ESRGAN, nœuds intégrés ComfyUI) inséré avant la sauvegarde. */
+export function buildFluxWorkflow(
+  prompt: string,
+  width: number,
+  height: number,
+  seed: number,
+  m: FluxModels,
+  opts: { upscale?: boolean } = {},
+): Record<string, unknown> {
+  const g: Record<string, unknown> = {
     "1": { class_type: "UnetLoaderGGUF", inputs: { unet_name: m.unet } },
     "2": { class_type: "DualCLIPLoaderGGUF", inputs: { clip_name1: m.clip1, clip_name2: m.clip2, type: "flux" } },
     "3": { class_type: "VAELoader", inputs: { vae_name: m.vae } },
@@ -73,8 +83,16 @@ export function buildFluxWorkflow(prompt: string, width: number, height: number,
       },
     },
     "8": { class_type: "VAEDecode", inputs: { samples: ["7", 0], vae: ["3", 0] } },
-    "9": { class_type: "SaveImage", inputs: { images: ["8", 0], filename_prefix: "mango_flux" } },
   };
+  // Étage d'upscale optionnel (étape 5 de la vidéo) : Real-ESRGAN ×4 via les nœuds intégrés.
+  let imageSource: [string, number] = ["8", 0];
+  if (opts.upscale) {
+    g["10"] = { class_type: "UpscaleModelLoader", inputs: { model_name: process.env.FLUX_UPSCALE_MODEL || "RealESRGAN_x4plus.pth" } };
+    g["11"] = { class_type: "ImageUpscaleWithModel", inputs: { upscale_model: ["10", 0], image: ["8", 0] } };
+    imageSource = ["11", 0];
+  }
+  g["9"] = { class_type: "SaveImage", inputs: { images: imageSource, filename_prefix: "mango_flux" } };
+  return g;
 }
 
 export interface FluxDeps {
@@ -92,9 +110,13 @@ const realFluxDeps: FluxDeps = {
 export type FluxResult = { ok: true; bytes: Uint8Array; filename: string } | { ok: false; error: string };
 
 /** Orchestration ComfyUI : soumet, attend, récupère l'image. Ne lève jamais (renvoie {ok:false}). */
-export async function generateFlux(prompt: string, opts: { width: number; height: number; seed: number }, deps: FluxDeps = realFluxDeps): Promise<FluxResult> {
+export async function generateFlux(
+  prompt: string,
+  opts: { width: number; height: number; seed: number; upscale?: boolean },
+  deps: FluxDeps = realFluxDeps,
+): Promise<FluxResult> {
   const base = comfyUrl();
-  const graph = buildFluxWorkflow(prompt, opts.width, opts.height, opts.seed, fluxModels());
+  const graph = buildFluxWorkflow(prompt, opts.width, opts.height, opts.seed, fluxModels(), { upscale: opts.upscale });
   let promptId: string;
   try {
     const res = await deps.fetchImpl(`${base}/prompt`, {
@@ -175,6 +197,36 @@ function slugify(s: string): string {
 
 export interface FluxToolDeps extends FluxDeps {
   writeImage: (absPath: string, bytes: Uint8Array) => void;
+  /** Détourage : retire le fond → PNG RGBA transparent (étape « PNG transparent » de la vidéo). */
+  removeBg: (bytes: Uint8Array) => Promise<Uint8Array>;
+}
+
+/** Python qui porte rembg (par défaut celui de ComfyUI). Donné par l'env (machine-dépendant). */
+function fluxPython(): string | null {
+  return process.env.FLUX_PYTHON?.trim() || null;
+}
+
+// rembg en une ligne : lit le PNG, retire le fond, écrit le RGBA.
+const REMBG_SCRIPT = "import sys;from rembg import remove;open(sys.argv[2],'wb').write(remove(open(sys.argv[1],'rb').read()))";
+
+/** Détourage RÉEL via rembg (sous-process Python). Lève si FLUX_PYTHON absent / rembg KO. */
+async function realRemoveBg(bytes: Uint8Array): Promise<Uint8Array> {
+  const py = fluxPython();
+  if (!py) throw new Error("FLUX_PYTHON non défini (python avec rembg installé) — requis pour le détourage transparent.");
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mango-rembg-"));
+  const inP = path.join(dir, "in.png");
+  const outP = path.join(dir, "out.png");
+  fs.writeFileSync(inP, bytes);
+  await new Promise<void>((resolve, reject) => {
+    execFile(py, ["-s", "-c", REMBG_SCRIPT, inP, outP], { timeout: 180_000, windowsHide: true }, (err) => (err ? reject(err) : resolve()));
+  });
+  const out = fs.readFileSync(outP);
+  try {
+    fs.rmSync(dir, { recursive: true, force: true });
+  } catch {
+    /* nettoyage best-effort */
+  }
+  return new Uint8Array(out);
 }
 
 const realToolDeps: FluxToolDeps = {
@@ -183,18 +235,21 @@ const realToolDeps: FluxToolDeps = {
     fs.mkdirSync(path.dirname(absPath), { recursive: true });
     fs.writeFileSync(absPath, bytes);
   },
+  removeBg: realRemoveBg,
 };
 
 export function buildEleveFluxTools(projectDir: string, deps: FluxToolDeps = realToolDeps): KernelTool[] {
   const genereImage: KernelTool = {
     name: "genere_image",
     description:
-      "GÉNÈRE une image IA sur mesure (Flux, en local, gratuit) quand aucune vraie photo ne convient — logo, illustration, visuel unique, scène inventée. Donne un `prompt` DÉTAILLÉ en ANGLAIS (sujet, style, lumière, ambiance). L'image est enregistrée dans le projet et l'outil renvoie son chemin (ex. `/generated/xxx.png`) à mettre direct dans `<img src>`. Plus LENT que chercher_image — pour une VRAIE photo existante, préfère chercher_image (Pexels). À utiliser avec parcimonie.",
+      "GÉNÈRE une image IA sur mesure (Flux, en local, gratuit) quand aucune vraie photo ne convient — logo, illustration, visuel unique, ASSET DE JEU (sprite, PNJ, décor). Donne un `prompt` DÉTAILLÉ en ANGLAIS (sujet, style, lumière, ambiance). Options : `transparent:true` détoure le fond → PNG TRANSPARENT propre (idéal sprite/PNJ — décris alors le sujet « on a plain background »), `upscale:true` augmente la netteté (×4). L'image est enregistrée dans le projet ; l'outil renvoie son chemin (ex. `/generated/xxx.png`). Plus LENT que chercher_image — pour une VRAIE photo, préfère chercher_image (Pexels).",
     inputSchema: {
-      prompt: z.string().describe("Description ANGLAISE détaillée de l'image à générer (sujet + style + lumière + ambiance)"),
+      prompt: z.string().describe("Description ANGLAISE détaillée (sujet + style + lumière + ambiance). Pour un asset détouré, ajoute « on a plain white background »."),
       nom: z.string().optional().describe("Nom de fichier voulu (sans extension). Sinon dérivé du prompt."),
       largeur: z.number().int().min(256).max(1536).optional().describe("Largeur en px (défaut 1024, multiple de 64)"),
       hauteur: z.number().int().min(256).max(1536).optional().describe("Hauteur en px (défaut 1024, multiple de 64)"),
+      transparent: z.boolean().optional().describe("Détoure le fond → PNG RGBA transparent (sprite/PNJ/asset propre)."),
+      upscale: z.boolean().optional().describe("Augmente la netteté/résolution (Real-ESRGAN ×4) — pour des assets nets."),
     },
     handler: async (args): Promise<KernelToolResult> => {
       const prompt = String(args.prompt ?? "").trim();
@@ -202,20 +257,34 @@ export function buildEleveFluxTools(projectDir: string, deps: FluxToolDeps = rea
       const snap = (n: number) => Math.max(256, Math.min(1536, Math.round(n / 64) * 64));
       const width = snap(Number(args.largeur ?? 1024));
       const height = snap(Number(args.hauteur ?? 1024));
+      const upscale = args.upscale === true;
+      const transparent = args.transparent === true;
       const seed = (Math.abs(hashString(prompt)) % 1_000_000) + 1; // déterministe par prompt (reproductible, sans Math.random)
       try {
-        const r = await generateFlux(prompt, { width, height, seed }, deps);
+        const r = await generateFlux(prompt, { width, height, seed, upscale }, deps);
         if (!r.ok) {
           return { text: `Génération impossible : ${r.error}\n(Repli : utilise chercher_image pour une vraie photo Pexels.)`, isError: true };
+        }
+        let bytes = r.bytes;
+        if (transparent) {
+          try {
+            bytes = await deps.removeBg(bytes);
+          } catch (e) {
+            return {
+              text: `Image générée mais le détourage a échoué : ${e instanceof Error ? e.message : String(e)} (rembg/FLUX_PYTHON ?). Réessaie sans transparent, ou détoure dans GIMP.`,
+              isError: true,
+            };
+          }
         }
         const base = args.nom ? slugify(String(args.nom)) : slugify(prompt);
         const rel = path.join("public", "generated", `${base}.png`);
         const abs = resolveInside(projectDir, rel);
-        deps.writeImage(abs, r.bytes);
+        deps.writeImage(abs, bytes);
+        const tags = [transparent ? "transparent" : null, upscale ? "upscalé ×4" : null].filter(Boolean).join(", ");
         return {
           text:
-            `Image générée et enregistrée : ${rel}\n` +
-            `Utilise-la dans le code via le chemin PUBLIC : \`/generated/${base}.png\` ` +
+            `Image générée${tags ? ` (${tags})` : ""} et enregistrée : ${rel}\n` +
+            `Utilise-la via le chemin PUBLIC : \`/generated/${base}.png\` ` +
             `(ex. \`<img src="/generated/${base}.png" alt="${prompt.slice(0, 60)}" />\`).`,
         };
       } catch (e) {

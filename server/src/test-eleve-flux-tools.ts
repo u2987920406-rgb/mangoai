@@ -113,6 +113,7 @@ async function run() {
       const deps: FluxToolDeps = {
         ...fakeComfy(),
         writeImage: (p, b) => writes.push({ path: p, len: b.length }),
+        removeBg: async (b) => new Uint8Array([...b, 9, 9]), // marqueur : +2 octets → prouve l'application du détourage
         ...over,
       };
       const [t] = buildEleveFluxTools(path.resolve("proj-flux-test"), deps);
@@ -132,6 +133,25 @@ async function run() {
     const { t: t3 } = tool({ fetchImpl: (async () => { throw new Error("down"); }) as unknown as typeof fetch });
     const ko = await t3!.handler({ prompt: "x" });
     check("ComfyUI down → isError + repli chercher_image", ko.isError === true && /chercher_image/.test(ko.text));
+
+    // transparent → le détourage (removeBg) est appliqué avant l'écriture (+2 octets marqueurs).
+    const { t: t4, writes: w4 } = tool();
+    const okT = await t4!.handler({ prompt: "a sprite on a plain white background", nom: "npc", transparent: true });
+    check("transparent → removeBg appliqué (octets transformés) + mention", w4.length === 1 && w4[0]!.len === 7 + 2 && /transparent/.test(okT.text));
+
+    // détourage qui échoue → isError gracieux (pas d'écriture).
+    const { t: t5, writes: w5 } = tool({ removeBg: async () => { throw new Error("rembg KO"); } });
+    const koT = await t5!.handler({ prompt: "x", transparent: true });
+    check("détourage KO → isError, image non écrite", koT.isError === true && /détourage/.test(koT.text) && w5.length === 0);
+  }
+
+  console.log("\n[7] buildFluxWorkflow — étage upscale optionnel");
+  {
+    const noUp = buildFluxWorkflow("x", 768, 768, 1, fluxModels()) as Record<string, { class_type: string }>;
+    check("sans upscale → 9 nodes, pas d'ImageUpscaleWithModel", Object.keys(noUp).length === 9 && !noUp["11"]);
+    const up = buildFluxWorkflow("x", 768, 768, 1, fluxModels(), { upscale: true }) as Record<string, { class_type: string; inputs?: Record<string, unknown> }>;
+    check("avec upscale → UpscaleModelLoader + ImageUpscaleWithModel", up["10"]?.class_type === "UpscaleModelLoader" && up["11"]?.class_type === "ImageUpscaleWithModel");
+    check("SaveImage prend la sortie upscalée (node 11)", JSON.stringify(up["9"]?.inputs?.["images"]) === JSON.stringify(["11", 0]));
   }
 
   console.log("\n[6] hashString — déterministe");

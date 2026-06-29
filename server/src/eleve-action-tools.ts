@@ -19,6 +19,7 @@ import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveUnityTools } from "./eleve-unity-tools.js";
 import { buildEleveFluxTools } from "./eleve-flux-tools.js";
+import { buildEleveSliceTools } from "./eleve-slice-tools.js";
 
 // (Phase 3b) Cache des outils MCP externes pré-chargés (async) UNE fois par le moteur
 // agentique. buildEleveActionTools (synchrone) les enregistre depuis ce cache quand le
@@ -353,6 +354,7 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // genere_image appelle l'API ComfyUI locale ($0). chercher_image (Pexels) reste le défaut rapide.
   if (process.env.ELEVE_FLUX === "on") {
     for (const t of buildEleveFluxTools(projectDir)) reg.register(t);
+    for (const t of buildEleveSliceTools(projectDir)) reg.register(t);
   }
 
   // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :

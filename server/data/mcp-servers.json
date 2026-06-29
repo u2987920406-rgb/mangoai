@@ -114,10 +114,9 @@
       "label": "Figma (fidélité au design : maquette → code exact, tokens/espacements)",
       "command": "npx",
       "args": ["-y", "figma-developer-mcp", "--stdio"],
-      "enabled": false,
+      "enabled": true,
       "shell": true,
-      "env": { "FIGMA_API_KEY": "" },
-      "_note": "GRATUIT (compte Figma gratuit + Personal Access Token gratuit). Renseigner FIGMA_API_KEY (PAT, généré dans Figma > Settings) puis enabled:true. Serveur framelink figma-developer-mcp."
+      "_note": "GRATUIT. Token FIGMA_API_KEY (PAT lecture seule) dans server/.env (gitignoré, JAMAIS committé) → hérité par le serveur via process.env. Serveur framelink figma-developer-mcp. Token validé live 2026-06-30 (compte raf)."
     },
     {
       "id": "magic21",

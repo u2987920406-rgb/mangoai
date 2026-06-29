@@ -8,6 +8,9 @@ maj: 2026-06-28
 
 Append-only. Une ligne par opération (ingest / query / lint / maintenance). Préfixe constant `## [date] type | titre` → parseable (`grep "^## \[" log.md | tail -5`).
 
+## [2026-06-30] ingest | L'usine à assets de jeu : genere_image transparent+upscale (Lot A) + decoupe_assets (Lot B), prouvés live
+Raf partage un workflow vidéo (ChatGPT→Photopea→Tencent) de création d'assets de jeu animés ; on en réplique 9/11 étapes en local $0. **Lot A** (eleve-flux-tools.ts) : `genere_image` + `transparent` (détourage rembg+onnxruntime, sous-process FLUX_PYTHON → PNG RGBA) + `upscale` (Real-ESRGAN ×4, nœuds ComfyUI). **Lot B** (eleve-slice-tools.ts) : `decoupe_assets` = Slice Tool (composantes connexes alpha via PIL+OpenCV → un PNG/objet dans `<nom>_slices/`). Confiné projet, deps injectables, ne lève jamais, gate `ELEVE_FLUX=on`. Prouvé live (détourage net, pipeline sur mango-quest). Setup machine : pip rembg/onnxruntime + RealESRGAN_x4plus.pth + FLUX_PYTHON dans .env. **Animation image→vidéo (étape 10) = mur GPU** (Hunyuan/LTX 24Go+ VRAM, impossible 1080 Ti → L60) ; extraction frames RGBA (étape 11) = Blender déjà branché. tsc 0 · flux 25/25 · slice 13/13. [[moteur-gout]] · [[transmission-competences]].
+
 ## [2026-06-29] ingest | MCP « sites haut de gamme » : shadcn/ui + Lighthouse branchés (gratuits, keyless) ; Figma/Magic/Sanity déclarés
 Raf : sites très haut de gamme, tout gratuit. 2 serveurs MCP réels $0 prouvés live : **shadcn/ui** (@jpisnice/shadcn-ui-mcp-server, 10 outils → composants/blocs premium) + **Lighthouse** (@danielsogl/lighthouse-mcp, 12 outils → audit perf/SEO/a11y/sécurité, premium = score >95). Pré-installés npm -g, lancés via npx (`shell:true`). 3 MCP à clé GRATUITE déclarés prêts : Figma (figma-developer-mcp, PAT), 21st.dev Magic (clé), Sanity (token CMS). Libs premium (GSAP/Lenis/Framer/Three.js) = via Context7 (doc à jour). Total : 6 MCP actifs + 8 déclarés. tsc 0, JSON valide. L59 maj. [[mcp-externe]].
 
