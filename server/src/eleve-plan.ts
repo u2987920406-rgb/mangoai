@@ -60,6 +60,35 @@ export function nextStep(plan: ElevePlan): PlanEtape | undefined {
   return plan.etapes.find((e) => !done.includes(e.n));
 }
 
+/** Normalise un titre d'étape pour le matching (insensible casse/accents/espaces). PUR. */
+function normTitle(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "") // retire les diacritiques combinants
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/**
+ * (L56) Fusionne un nouveau plan avec l'existant en PRÉSERVANT la progression : une
+ * étape du nouveau plan dont le titre correspond à une étape DÉJÀ cochée de l'ancien
+ * reste cochée. Sans ça, re-`planifier` (relance « décompose » du Stratège) repartait
+ * avec `done: []` → l'Élève réécrivait les premiers modules → drift d'API entre
+ * générations. PUR : `existing` absent → le plan neuf est rendu tel quel.
+ */
+export function mergePlan(existing: ElevePlan | undefined, fresh: ElevePlan): ElevePlan {
+  if (!existing) return fresh;
+  const doneTitles = new Set(
+    (existing.done ?? [])
+      .map((n) => existing.etapes.find((e) => e.n === n))
+      .filter((e): e is PlanEtape => !!e)
+      .map((e) => normTitle(e.titre)),
+  );
+  const done = fresh.etapes.filter((e) => doneTitles.has(normTitle(e.titre))).map((e) => e.n);
+  return { ...fresh, done };
+}
+
 // ── Formateurs PURS ──────────────────────────────────────────────────────────
 
 /** Affichage du plan avec cases à cocher + étape en cours (L18). PUR. */

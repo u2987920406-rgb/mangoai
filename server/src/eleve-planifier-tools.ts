@@ -8,7 +8,7 @@
 
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
-import { setPlan, markStepDone, formatPlan, type ElevePlan, type PlanEtape } from "./eleve-plan.js";
+import { setPlan, getPlan, markStepDone, mergePlan, formatPlan, type ElevePlan, type PlanEtape } from "./eleve-plan.js";
 
 const MIN_ETAPES = 2; // un « plan » d'une seule étape n'est pas un plan
 const MAX_ETAPES = 12; // au-delà, c'est du sur-découpage
@@ -16,11 +16,12 @@ const MAX_ETAPES = 12; // au-delà, c'est du sur-découpage
 /** Dépendances injectables (tests sans store réel). */
 export interface PlanifierDeps {
   setPlan: (projectDir: string, plan: ElevePlan) => void;
+  getPlan: (projectDir: string) => ElevePlan | undefined;
   markStepDone: (projectDir: string, n: number) => ElevePlan | undefined;
   now: () => number;
 }
 
-const realDeps: PlanifierDeps = { setPlan, markStepDone, now: () => Date.now() };
+const realDeps: PlanifierDeps = { setPlan, getPlan, markStepDone, now: () => Date.now() };
 
 export function buildElevePlanifierTools(projectDir: string, deps: PlanifierDeps = realDeps): KernelTool[] {
   const planifier: KernelTool = {
@@ -67,9 +68,18 @@ export function buildElevePlanifierTools(projectDir: string, deps: PlanifierDeps
       }
 
       try {
-        const plan: ElevePlan = { titre, etapes, at: deps.now(), done: [] };
+        // (L56) Idempotent : si un plan est déjà en cours, on FUSIONNE en conservant
+        // les étapes déjà cochées (matching par titre) au lieu de repartir de zéro.
+        // Un re-planifier sur une relance ne fait donc plus réécrire les modules déjà
+        // faits (drift d'API évité) — l'Élève reprend à sa prochaine étape non cochée.
+        const fresh: ElevePlan = { titre, etapes, at: deps.now(), done: [] };
+        const plan = mergePlan(deps.getPlan(projectDir), fresh);
         deps.setPlan(projectDir, plan);
-        return { text: formatPlan(plan) };
+        const preserved = (plan.done?.length ?? 0) > 0;
+        const note = preserved
+          ? "\n\n(Plan mis à jour — ta progression est CONSERVÉE : reprends à la prochaine étape non cochée, ne réécris pas les étapes déjà ☑.)"
+          : "";
+        return { text: formatPlan(plan) + note };
       } catch (e) {
         return { text: `Plan non enregistré : ${e instanceof Error ? e.message : String(e)}`, isError: true };
       }

@@ -1125,17 +1125,22 @@ export async function runRelay(
     // déjà apprise pour ce blocage si elle existe ("déjà vu ?"). Renvoie le nudge enrichi.
     const applyRemedyNudge = async (d: Diagnosis, label: string, baseNudge: string): Promise<string> => {
       pendingLearn.current = { d, label };
-      if (!strategeLearns) return baseNudge;
+      // (L56) Ré-ancre le plan EXISTANT sur toute relance « remède » (decompose, etc.) :
+      // on rappelle la progression (☑/☐) + la prochaine étape non cochée pour que l'Élève
+      // REPRENNE son plan au lieu de le refaire et de réécrire les modules déjà bons.
+      const plan = getPlan(projectDir);
+      const anchored = plan ? `${formatPlanReminder(plan)}\n\n${baseNudge}` : baseNudge;
+      if (!strategeLearns) return anchored;
       try {
         const recalled = await recallProcedure(WORKSPACE_DIR, d);
         if (recalled) {
           push(`  📚 Stratège se souvient : « ${recalled.name} » (déjà débloqué)`);
-          return `${learnedHint(recalled)}\n\n${baseNudge}`;
+          return `${learnedHint(recalled)}\n\n${anchored}`;
         }
       } catch {
         /* le rappel est best-effort, ne casse jamais la boucle */
       }
-      return baseNudge;
+      return anchored;
     };
     // Diagnostique le blocage courant (et le log si activé). Retourne le diagnostic pour
     // que les points d'intégration puissent router (Phase 1). Ne casse jamais la boucle.

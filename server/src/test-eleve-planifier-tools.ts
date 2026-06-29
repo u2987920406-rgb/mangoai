@@ -22,6 +22,7 @@ function tool(over: Partial<PlanifierDeps> = {}) {
   const store = new Map<string, ElevePlan>();
   const deps: PlanifierDeps = {
     setPlan: over.setPlan ?? ((dir, plan) => { calls.plans.push(plan); store.set(dir, plan); }),
+    getPlan: over.getPlan ?? ((dir) => store.get(dir)),
     markStepDone:
       over.markStepDone ??
       ((dir, n) => {
@@ -135,6 +136,25 @@ async function run() {
       threw = true;
     }
     check("handler ne lève pas", !threw);
+  }
+
+  console.log("\n[7] re-planifier IDEMPOTENT — la progression est conservée (L56)");
+  {
+    const { t, etape, calls } = tool();
+    // Plan initial, on coche les 2 premières étapes.
+    await t.handler({ titre: "RPG", etapes: [{ titre: "constants" }, { titre: "entities" }, { titre: "combat" }] });
+    await etape.handler({ n: 1 });
+    await etape.handler({ n: 2 });
+    // Relance « décompose » : l'Élève re-planifie le MÊME plan.
+    const r = await t.handler({ titre: "RPG", etapes: [{ titre: "constants" }, { titre: "entities" }, { titre: "combat" }] });
+    const replanned = calls.plans[calls.plans.length - 1];
+    check("done conservé après re-planifier (1 & 2 toujours cochées)", replanned.done?.slice().sort().join() === "1,2");
+    check("le texte indique la progression conservée", /CONSERVÉE/.test(r.text) && /☑ 1\. constants/.test(r.text) && /☑ 2\. entities/.test(r.text));
+    check("prochaine étape = 3 (pas réécriture des modules faits)", /Prochaine étape : 3/.test(r.text));
+    // Matching insensible à la casse/accents + étapes nouvelles non cochées.
+    const r2 = await t.handler({ titre: "RPG", etapes: [{ titre: "Constants" }, { titre: "ENTITIES" }, { titre: "world" }, { titre: "combat" }] });
+    const merged = calls.plans[calls.plans.length - 1];
+    check("matching titre insensible casse → 1&2 cochées, world(3) neuf non coché", merged.done?.slice().sort().join() === "1,2");
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-planifier-tools : ${pass} pass, ${fail} fail`);

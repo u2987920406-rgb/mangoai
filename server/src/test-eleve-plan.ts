@@ -8,6 +8,7 @@ import {
   clearPlan,
   markStepDone,
   nextStep,
+  mergePlan,
   formatPlan,
   formatPlanReminder,
   buildRelanceNudge,
@@ -131,6 +132,34 @@ function run() {
     // sans plan : convergence générique (pas de numéro d'étape) mais bien présente
     const lateNoPlan = buildRelanceNudge("/x", "plafond", 3, 6, () => undefined);
     check("convergence sans plan = générique", /CONVERGENCE/.test(lateNoPlan) && /code qui manque/.test(lateNoPlan));
+  }
+
+  console.log("\n[8] L56 — mergePlan préserve la progression au re-planifier");
+  {
+    const existing: ElevePlan = { ...plan(), done: [1, 2] }; // 1 & 2 faites
+    // Re-planifier le MÊME plan → done conservé.
+    const same = mergePlan(existing, { ...plan(), done: [] });
+    check("même plan → done [1,2] conservé", same.done?.slice().sort().join() === "1,2");
+    check("nextStep = 3 (pas de réécriture des étapes faites)", nextStep(same)?.n === 3);
+
+    // Pas de plan existant → le plan neuf est rendu tel quel (done vide).
+    const fresh = mergePlan(undefined, { ...plan(), done: [] });
+    check("sans existant → done vide", (fresh.done ?? []).length === 0);
+
+    // Plan modifié : matching par titre (casse/accents), étapes neuves non cochées,
+    // renumérotation suivie.
+    const changed: ElevePlan = {
+      titre: "Page Contact",
+      etapes: [
+        { n: 1, titre: "VALIDATION des champs" }, // = étape 2 existante (cochée) ↕ casse
+        { n: 2, titre: "Aperçu" }, // neuve
+        { n: 3, titre: "Composant formulaire" }, // = étape 1 existante (cochée)
+      ],
+      at: 2,
+    };
+    const merged = mergePlan(existing, changed);
+    check("matching par titre malgré réordonnancement → done = [1,3]", merged.done?.slice().sort().join() === "1,3");
+    check("étape neuve (Aperçu) non cochée", !merged.done?.includes(2));
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-plan : ${pass} pass, ${fail} fail`);
