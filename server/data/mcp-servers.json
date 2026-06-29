@@ -90,6 +90,54 @@
       "shell": true,
       "env": { "STRIPE_SECRET_KEY": "" },
       "_note": "Déclaré, à activer. Renseigner STRIPE_SECRET_KEY (clé test sk_test_…) puis enabled:true. Se marie au template ecommerce."
+    },
+    {
+      "id": "shadcn",
+      "label": "shadcn/ui (composants & blocs PREMIUM prêts à l'emploi — qualité 'agence')",
+      "command": "npx",
+      "args": ["-y", "@jpisnice/shadcn-ui-mcp-server"],
+      "enabled": true,
+      "shell": true,
+      "_note": "Keyless, GRATUIT. PROUVÉ live 2026-06-29 : 10 outils (get_component/get_block/list_blocks/apply_theme/list_themes…). Optionnel : GITHUB_PERSONAL_ACCESS_TOKEN dans 'env' pour relever les quotas GitHub."
+    },
+    {
+      "id": "lighthouse",
+      "label": "Lighthouse (audit PERF/SEO/accessibilité/sécurité — premium = score >95)",
+      "command": "npx",
+      "args": ["-y", "@danielsogl/lighthouse-mcp"],
+      "enabled": true,
+      "shell": true,
+      "_note": "Keyless, GRATUIT (utilise Chrome local). PROUVÉ live 2026-06-29 : 12 outils (run_audit/get_performance_score/get_core_web_vitals/get_accessibility_score/get_seo_analysis/get_lcp_opportunities/find_unused_javascript/get_security_audit…)."
+    },
+    {
+      "id": "figma",
+      "label": "Figma (fidélité au design : maquette → code exact, tokens/espacements)",
+      "command": "npx",
+      "args": ["-y", "figma-developer-mcp", "--stdio"],
+      "enabled": false,
+      "shell": true,
+      "env": { "FIGMA_API_KEY": "" },
+      "_note": "GRATUIT (compte Figma gratuit + Personal Access Token gratuit). Renseigner FIGMA_API_KEY (PAT, généré dans Figma > Settings) puis enabled:true. Serveur framelink figma-developer-mcp."
+    },
+    {
+      "id": "magic21",
+      "label": "21st.dev Magic (génère des composants UI modernes/animés sur description)",
+      "command": "npx",
+      "args": ["-y", "@21st-dev/magic@latest"],
+      "enabled": false,
+      "shell": true,
+      "env": { "API_KEY": "" },
+      "_note": "Tier GRATUIT. Créer une clé sur 21st.dev/magic, la mettre dans API_KEY puis enabled:true. shadcn (ci-dessus) couvre déjà beaucoup en keyless."
+    },
+    {
+      "id": "sanity",
+      "label": "Sanity (CMS headless : contenu structuré réel & éditable → sites pro/magazine)",
+      "command": "npx",
+      "args": ["-y", "@sanity/mcp-server@latest"],
+      "enabled": false,
+      "shell": true,
+      "env": { "SANITY_API_TOKEN": "", "SANITY_PROJECT_ID": "" },
+      "_note": "Tier GRATUIT. Créer un projet Sanity (gratuit), renseigner SANITY_PROJECT_ID + SANITY_API_TOKEN puis enabled:true."
     }
   ]
 }
