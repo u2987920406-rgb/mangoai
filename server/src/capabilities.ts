@@ -42,17 +42,32 @@ export const OUT_OF_SCOPE_TECH: { family: string; keywords: string[] }[] = [
  * PUR. Renvoie les familles touchées (vide = dans le périmètre). Frontières de mot pour
  * éviter les faux positifs (« swiftly », « community »…). Ne lève jamais.
  */
-export function detectOutOfScope(text: string): string[] {
+export function detectOutOfScope(text: string, allow: string[] = []): string[] {
   const t = ` ${(text ?? "").toLowerCase()} `;
+  const allowed = new Set(allow.map((k) => k.toLowerCase()));
   const hits = new Set<string>();
   for (const { family, keywords } of OUT_OF_SCOPE_TECH) {
     for (const kw of keywords) {
+      // (Phase 3a) Un mot-clé désormais DANS le périmètre (ex. « unity » quand
+      // ELEVE_UNITY=on) ne déclenche plus le hors-périmètre — les autres mots-clés
+      // de la même famille (unreal, godot natif…) restent détectés.
+      if (allowed.has(kw)) continue;
       // frontière simple : le mot-clé entouré de non-alphanumérique (ou bornes de chaîne).
       const re = new RegExp(`(^|[^a-z0-9])${kw.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9]|$)`);
       if (re.test(t)) { hits.add(family); break; }
     }
   }
   return [...hits];
+}
+
+/**
+ * (Phase 3a) Mots-clés à RÉINTÉGRER dans le périmètre selon les gates actifs. Quand
+ * ELEVE_UNITY=on, Unity devient une compétence (domaine Unity) → on ne le signale plus
+ * comme une dérive hors périmètre. Non-PUR (lit l'env) : passé à detectOutOfScope qui
+ * reste PUR. Les autres moteurs natifs restent hors périmètre.
+ */
+export function scopeAllowList(): string[] {
+  return process.env.ELEVE_UNITY === "on" ? ["unity"] : [];
 }
 
 /** Clause injectée dans le prompt Discuter (et réutilisable ailleurs). */

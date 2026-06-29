@@ -1,0 +1,14 @@
+{
+  "name": "Mango.Tests",
+  "rootNamespace": "Mango.Tests",
+  "references": [
+    "Mango",
+    "UnityEngine.TestRunner",
+    "UnityEditor.TestRunner"
+  ],
+  "includePlatforms": ["Editor"],
+  "excludePlatforms": [],
+  "precompiledReferences": ["nunit.framework.dll"],
+  "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+  "autoReferenced": false
+}

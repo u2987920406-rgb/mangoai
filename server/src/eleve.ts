@@ -29,7 +29,8 @@ import { resolveProfile, type ModelProfile } from "./models/profile.js";
 import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
-import { buildEleveActionTools, installDependency } from "./eleve-action-tools.js";
+import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
+import { loadExternalMcpTools, defaultMcpConfigPath } from "./mcp-external.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import {
   type AntiSpiralCfg, newSpiralState, recordTool, explorationCapped, dueForNudge,
@@ -922,6 +923,21 @@ export const defaultRelayDeps: RelayDeps = {
   escalate: escalateToClaude,
 };
 
+// (Phase 3b) Chargement IDEMPOTENT des outils MCP externes. La connexion stdio aux
+// serveurs (Blender/GIMP/Inkscape) est async ; on la fait une seule fois puis on alimente
+// le cache synchrone de eleve-action-tools. No-op immédiat si ELEVE_MCP_EXTERNAL!=on.
+let externalMcpLoaded = false;
+async function ensureExternalMcpLoaded(): Promise<void> {
+  if (externalMcpLoaded || process.env.ELEVE_MCP_EXTERNAL !== "on") return;
+  externalMcpLoaded = true; // pose le drapeau d'abord → pas de double connexion en parallèle
+  try {
+    const loaded = await loadExternalMcpTools(defaultMcpConfigPath());
+    setExternalMcpTools(loaded.tools);
+  } catch {
+    /* serveurs MCP HS → on continue sans (zéro blocage du moteur) */
+  }
+}
+
 /** Le rouage de la bascule : l'Élève tente, MangoOS juge, le Maître escalade. */
 export async function runRelay(
   task: string,
@@ -1026,6 +1042,11 @@ export async function runRelay(
         label: b.card.label,
       };
     };
+    // (Phase 3b) Pré-charge UNE fois les outils MCP externes (Blender/GIMP/Inkscape) avant
+    // de bâtir le registre synchrone. Gaté ELEVE_MCP_EXTERNAL=on (sinon no-op immédiat) et
+    // déduit du transport réel uniquement hors test (deps.agenticPost = transport injecté).
+    if (!deps.agenticPost) await ensureExternalMcpLoaded();
+
     // Contexte commun à chaque (re)lancement du moteur. Seul le prompt `user`
     // change entre relances (on y ajoute un coup de pouce) — d'où l'extraction ici.
     const runCtx = {

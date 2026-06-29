@@ -1,5 +1,5 @@
 // Tests de la conscience des limites (capabilities.ts) — détecteur pur + clause.
-import { detectOutOfScope, CAPABILITIES_CLAUSE, MANGOOS_CANNOT, MANGOOS_BUILDS } from "./capabilities.js";
+import { detectOutOfScope, scopeAllowList, CAPABILITIES_CLAUSE, MANGOOS_CANNOT, MANGOOS_BUILDS } from "./capabilities.js";
 
 let pass = 0, fail = 0;
 function check(label: string, cond: boolean) {
@@ -34,6 +34,17 @@ console.log("\n[3] CAPABILITIES_CLAUSE — contenu de la clause");
   check("interdit de jouer un rôle / détailler un setup non exécuté", /rôle|setup/i.test(CAPABILITIES_CLAUSE));
   check("liste non vide de ce qu'on NE sait PAS faire", MANGOOS_CANNOT.length >= 3);
   check("liste non vide de ce qu'on SAIT faire", MANGOOS_BUILDS.length >= 2);
+}
+
+console.log("\n[4] detectOutOfScope — allow list (Phase 3a, gate Unity)");
+{
+  // Unity réintégré dans le périmètre quand le domaine Unity est actif.
+  check("Unity flaggé par défaut", detectOutOfScope("un jeu sur Unity").includes("moteur de jeu natif"));
+  check("Unity dans l'allow list → plus flaggé", detectOutOfScope("un jeu sur Unity", ["unity"]).length === 0);
+  check("mais Unreal de la même famille reste flaggé malgré allow unity", detectOutOfScope("un jeu sur Unreal", ["unity"]).includes("moteur de jeu natif"));
+  check("scopeAllowList vide sans ELEVE_UNITY", (delete process.env["ELEVE_UNITY"], scopeAllowList().length === 0));
+  check("scopeAllowList = [unity] avec ELEVE_UNITY=on", ((process.env["ELEVE_UNITY"] = "on"), scopeAllowList().join() === "unity"));
+  delete process.env["ELEVE_UNITY"];
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} capabilities : ${pass} ok, ${fail} ko`);

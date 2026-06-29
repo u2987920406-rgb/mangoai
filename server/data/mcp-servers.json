@@ -1,0 +1,26 @@
+{
+  "_doc": "Serveurs MCP externes déclarés (Phase 3b). GATÉ : rien ne se charge sans ELEVE_MCP_EXTERNAL=on, ET seuls les serveurs enabled:true sont lancés. Renseigner command/args selon l'installation locale, puis passer enabled:true.",
+  "servers": [
+    {
+      "id": "blender",
+      "label": "Blender (modélisation 3D, rendu, export glTF/FBX — assets pour le jeu Unity)",
+      "command": "blender",
+      "args": ["--background", "--python-expr", "import blender_mcp; blender_mcp.serve_stdio()"],
+      "enabled": false
+    },
+    {
+      "id": "gimp",
+      "label": "GIMP (retouche raster, génération de logos/textures, export PNG)",
+      "command": "python",
+      "args": ["-m", "gimp_mcp"],
+      "enabled": false
+    },
+    {
+      "id": "inkscape",
+      "label": "Inkscape (vectoriel : icônes SVG, export multi-format)",
+      "command": "python",
+      "args": ["-m", "inkscape_mcp"],
+      "enabled": false
+    }
+  ]
+}

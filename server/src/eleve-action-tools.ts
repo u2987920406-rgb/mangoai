@@ -17,6 +17,15 @@ import { z } from "zod";
 import { ToolRegistry, type KernelTool, type KernelToolResult } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
+import { buildEleveUnityTools } from "./eleve-unity-tools.js";
+
+// (Phase 3b) Cache des outils MCP externes pré-chargés (async) UNE fois par le moteur
+// agentique. buildEleveActionTools (synchrone) les enregistre depuis ce cache quand le
+// gate est actif → wiring minimal sans rendre tout le chemin async. Vide par défaut.
+let externalMcpTools: KernelTool[] = [];
+export function setExternalMcpTools(tools: KernelTool[]): void {
+  externalMcpTools = tools;
+}
 import { buildElevePlanifierTools } from "./eleve-planifier-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { buildEleveHttpTools } from "./eleve-http-tools.js";
@@ -331,6 +340,21 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // défaut OFF → zéro régression). Profite aussi aux sous-agents délégués.
   if (process.env.ELEVE_VISION === "on") {
     for (const t of buildEleveVisionTools(projectDir)) reg.register(t);
+  }
+
+  // Compétence Unity/C# (Phase 3a, opt-in ELEVE_UNITY=on, défaut OFF → zéro régression) :
+  // build headless + tests Unity. L'édition des .cs/.unity passe par write_file/edit_file.
+  if (process.env.ELEVE_UNITY === "on") {
+    for (const t of buildEleveUnityTools(projectDir)) reg.register(t);
+  }
+
+  // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :
+  // Blender/GIMP/Inkscape exposés dynamiquement. Le préfixe par serveur évite les collisions ;
+  // on saute un éventuel doublon de nom sans casser l'enregistrement des autres.
+  if (process.env.ELEVE_MCP_EXTERNAL === "on") {
+    for (const t of externalMcpTools) {
+      if (!reg.has(t.name)) reg.register(t);
+    }
   }
 
   return reg;

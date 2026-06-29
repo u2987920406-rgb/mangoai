@@ -35,7 +35,7 @@ function npmBin(): string {
   return process.platform === "win32" ? "npm.cmd" : "npm";
 }
 
-function runCmd(
+export function runCmd(
   command: string,
   cwd: string,
   timeoutMs: number,
