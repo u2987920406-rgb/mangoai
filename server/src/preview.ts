@@ -166,10 +166,78 @@ export async function stopPreview(projectDir?: string): Promise<void> {
 
 // ─── Lanceur Vite réel (par défaut) ──────────────────────────────────────────
 
+/** Le binaire `vite` est-il installé localement ? (node_modules/.bin/vite[.cmd]) */
+function viteInstalled(projectDir: string): boolean {
+  const bin = path.join(projectDir, "node_modules", ".bin", "vite");
+  return fs.existsSync(bin) || fs.existsSync(bin + ".cmd");
+}
+
+// Dédoublonnage + sérialisation des installs. Effacer les node_modules (pour la place)
+// puis ouvrir plusieurs projets d'un coup déclencherait plusieurs `npm install`
+// concurrents qui se corrompent l'un l'autre (TAR_ENTRY_ERROR → node_modules cassé).
+// On garantit : (1) un projet n'est jamais installé deux fois en parallèle (dédup par
+// clé), (2) un seul `npm install` tourne à la fois sur toute la machine (chaîne globale).
+const installInFlight = new Map<string, Promise<void>>();
+let installChain: Promise<void> = Promise.resolve();
+
+/** Lance réellement `npm install` dans un projet. Best-effort, ne rejette jamais. */
+function runNpmInstall(projectDir: string, timeoutMs: number): Promise<void> {
+  console.log(`[preview] node_modules absent → npm install dans ${path.basename(projectDir)} …`);
+  return new Promise((resolve) => {
+    const proc = spawn(process.platform === "win32" ? "npm.cmd" : "npm", ["install", "--no-audit", "--no-fund"], {
+      cwd: projectDir,
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: process.platform === "win32",
+    });
+    proc.stdout?.on("data", (d: Buffer) => process.stdout.write(`[preview:install] ${d}`));
+    proc.stderr?.on("data", (d: Buffer) => process.stderr.write(`[preview:install] ${d}`));
+    const timer = setTimeout(() => {
+      if (proc.pid) {
+        if (process.platform === "win32") spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
+        else proc.kill("SIGKILL");
+      }
+    }, timeoutMs);
+    const finish = () => { clearTimeout(timer); resolve(); };
+    proc.on("error", finish);
+    proc.on("exit", (code) => { console.log(`[preview] npm install terminé (code ${code})`); finish(); });
+  });
+}
+
+/**
+ * Installe les dépendances si elles manquent (node_modules/vite absent), à la 1ʳᵉ
+ * ouverture du projet — DÉDUPLIQUÉ par projet et SÉRIALISÉ globalement (jamais deux
+ * installs en même temps → plus de corruption TAR). Opt-out PREVIEW_AUTO_INSTALL=off.
+ */
+function ensurePreviewDeps(projectDir: string, timeoutMs = 180_000): Promise<void> {
+  if (process.env.PREVIEW_AUTO_INSTALL === "off") return Promise.resolve();
+  if (viteInstalled(projectDir)) return Promise.resolve();
+  if (!fs.existsSync(path.join(projectDir, "package.json"))) return Promise.resolve();
+
+  const key = keyOf(projectDir);
+  const inFlight = installInFlight.get(key);
+  if (inFlight) return inFlight; // même projet déjà en cours → on attend le même install
+
+  // On s'accroche à la chaîne globale : un seul npm install à la fois sur la machine.
+  const p = installChain
+    .catch(() => {}) // un échec précédent ne bloque jamais la file
+    .then(() => {
+      if (viteInstalled(projectDir)) return; // installé entre-temps par un autre appel
+      return runNpmInstall(projectDir, timeoutMs);
+    })
+    .finally(() => { installInFlight.delete(key); });
+  installInFlight.set(key, p);
+  installChain = p;
+  return p;
+}
+
 const defaultLaunch: Launcher = async (projectDir, configHash) => {
   if (!fs.existsSync(path.join(projectDir, "package.json"))) {
     throw new Error(`No package.json in ${projectDir}`);
   }
+
+  // Deps absentes (purge nocturne) → réinstalle avant de lancer Vite, sinon
+  // `npm run dev` échoue (« vite introuvable ») et l'aperçu reste blanc.
+  await ensurePreviewDeps(projectDir);
 
   // This is the fix for the "preview frozen on the wrong project" bug. The old
   // code pinned a fixed port with --strictPort; when an orphaned preview from a

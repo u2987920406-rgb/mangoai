@@ -20,6 +20,7 @@ import { buildJudgeContext } from "./taste-judge.js";
 import { judgeIntention, type IntentVerdict } from "./eleve-judge.js";
 import { getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from "./layout-balance.js";
+import { runProjectTests, type TestRun } from "./inspection.js";
 
 export interface GateVerdict {
   ok: boolean;
@@ -32,6 +33,9 @@ export interface GateVerdict {
   wcagOk: boolean; // mesures objectives #111 (indépendantes du VL)
   balanceOk: boolean; // ÉQUILIBRE de mise en page (déterministe) — max-w sans centrage = collé à gauche
   balance: BalanceFinding[]; // détails des blocs à largeur max non centrés (vide si ok)
+  testsRan: boolean; // (L55) la suite de tests a-t-elle vraiment tourné ? (script présent + gate on)
+  testsOk: boolean; // (L55) tests verts OU non lancés (sauté → ne pénalise pas)
+  tests?: TestRun; // détail de la suite de tests (absent si non lancée)
   raisons: string[]; // ce qu'il faut corriger (vide si ok)
 }
 
@@ -55,6 +59,8 @@ export interface GateDeps {
   stopPreview: (dir: string) => Promise<void>;
   /** Garde déterministe d'équilibre : scanne les fichiers écrits (max-w sans centrage). */
   scanBalance: (projectDir: string, files: string[]) => BalanceFinding[];
+  /** (L55) Lance la suite de tests du projet (gated ELEVE_GATE_TESTS). Ne lève jamais. */
+  runTests: (projectDir: string) => Promise<TestRun>;
 }
 
 /** Lecteur réel : lit chaque fichier sous projectDir et délègue au détecteur pur. */
@@ -74,6 +80,7 @@ const realGateDeps: GateDeps = {
     critiqueScreen(projectDir, buildJudgeContext(workspaceDir, projectType)),
   stopPreview: (dir) => realCoachDeps.stopPreview(dir),
   scanBalance: realScanBalance,
+  runTests: (dir) => runProjectTests(dir),
 };
 
 /** Fichiers écrits par l'agent, dérivés de la trace d'outils. PUR. */
@@ -157,6 +164,26 @@ export async function runClosureGate(
     balanceOk = balance.length === 0;
   }
 
+  // 5. TESTS (#L55) — un build VERT ne prouve pas que ça MARCHE. Si le projet a un
+  // vrai script `test`, on le lance : rouge → on renvoie l'Élève corriger (signal
+  // FIABLE, comme l'intention/WCAG, pas bruité comme le goût). Gate ELEVE_GATE_TESTS
+  // (défaut OFF → zéro régression). Sauté proprement si pas de test / pas de deps.
+  let testsRan = false;
+  let testsOk = true;
+  let tests: TestRun | undefined;
+  if (process.env.ELEVE_GATE_TESTS === "on") {
+    try {
+      tests = await deps.runTests(projectDir);
+      if (tests.signal === "tests-ok" || tests.signal === "tests-failed") {
+        testsRan = true;
+        testsOk = tests.ok;
+      }
+      // no-test-script / no-deps / timeout → ne pénalise pas (testsOk reste true).
+    } catch {
+      tests = undefined;
+    }
+  }
+
   const raisons: string[] = [];
   if (!intentOk) {
     const m = intent.manques.length ? intent.manques.map((x) => `  - ${x}`).join("\n") : "  - la demande n'est pas couverte";
@@ -164,6 +191,12 @@ export async function runClosureGate(
   }
   if (!balanceOk) {
     raisons.push(formatBalanceRaison(balance));
+  }
+  if (!testsOk && tests) {
+    raisons.push(
+      `TESTS rouges — la suite \`npm test\` échoue (build vert ≠ tests verts). ` +
+        `Corrige le code jusqu'à ce que les tests passent :\n${tests.detail.slice(-1000)}`,
+    );
   }
   if (design) {
     // Goût : seulement si FIABLE (L28) ET hors mode observe (L34). Un goût observé/non-scoré
@@ -178,7 +211,7 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && tasteOk && wcagOk && balanceOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, raisons };
+  return { ok: intentOk && tasteOk && wcagOk && balanceOk && testsOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, testsRan, testsOk, tests, raisons };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */
@@ -214,7 +247,7 @@ export function evaluateGate(
   if (verdict.ok) return { action: "ok" };
   if (gateRelances >= max) return { action: "laisse-passer" };
 
-  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && verdict.tasteScored && !verdict.tasteOk;
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && verdict.testsOk && verdict.tasteScored && !verdict.tasteOk;
   const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
   if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
     return { action: "laisse-passer" };

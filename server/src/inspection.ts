@@ -143,3 +143,62 @@ export async function inspectProject(
 
   return done("ok", out.slice(-400));
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// TESTS (#L55) — un build vert ne garantit PAS que le code MARCHE. Si le projet
+// a un VRAI script `test`, on le lance pour que le Gardien (#161) puisse renvoyer
+// l'Élève corriger quand les tests sont rouges. Lancé via le runner normal du
+// projet (comme `npm run build`) : le sandbox `node --permission` ne convient pas
+// ici (il bloquerait un runner type vitest/node qui spawn des process).
+
+export type TestSignal =
+  | "tests-ok" // tous les tests passent
+  | "tests-failed" // au moins un test échoue → renvoie corriger
+  | "no-test-script" // pas de script `test` réel (ou placeholder npm)
+  | "no-deps" // node_modules absent
+  | "timeout"; // suite de tests trop longue
+
+export interface TestRun {
+  ok: boolean; // true uniquement si signal === "tests-ok"
+  signal: TestSignal;
+  detail: string;
+  durationMs: number;
+}
+
+/** Lance la suite de tests du projet (`npm test`) si un script test réel existe. */
+export async function runProjectTests(
+  projectDir: string,
+  opts: { timeoutMs?: number } = {},
+): Promise<TestRun> {
+  const timeoutMs = opts.timeoutMs ?? 120_000;
+  const t0 = Date.now();
+  const done = (signal: TestSignal, detail: string): TestRun => ({
+    ok: signal === "tests-ok",
+    signal,
+    detail: detail.trim(),
+    durationMs: Date.now() - t0,
+  });
+
+  const pkgPath = path.join(projectDir, "package.json");
+  if (!fs.existsSync(pkgPath)) return done("no-test-script", "package.json absent");
+
+  let testScript = "";
+  try {
+    const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8")) as { scripts?: Record<string, string> };
+    testScript = typeof pkg.scripts?.test === "string" ? pkg.scripts.test : "";
+  } catch {
+    return done("no-test-script", "package.json illisible");
+  }
+  // Ignore le placeholder par défaut de `npm init` (« Error: no test specified »).
+  if (!testScript.trim() || /no test specified/i.test(testScript)) {
+    return done("no-test-script", "aucun script `test` réel");
+  }
+  if (!fs.existsSync(path.join(projectDir, "node_modules"))) {
+    return done("no-deps", "node_modules absent");
+  }
+
+  const { code, out, timedOut } = await runCmd(`${npmBin()} test`, projectDir, timeoutMs);
+  if (timedOut) return done("timeout", out.slice(-800));
+  if (code !== 0) return done("tests-failed", out.slice(-1500));
+  return done("tests-ok", out.slice(-400));
+}
