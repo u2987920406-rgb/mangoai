@@ -16,7 +16,7 @@
   },
   "vision": {
     "provider": "ollama",
-    "model": "qwen3-vl:8b",
+    "model": "qwen3.5:cloud",
     "timeoutMs": 90000
   },
   "designer_ux": {
@@ -31,8 +31,8 @@
   },
   "testeur": {
     "provider": "ollama",
-    "model": "gemma4:12b",
-    "timeoutMs": 45000
+    "model": "glm-5.2:cloud",
+    "timeoutMs": 60000
   },
   "auditeur": {
     "provider": "ollama",
@@ -56,7 +56,12 @@
   },
   "stratege": {
     "provider": "ollama",
-    "model": "glm-5.2:cloud",
+    "model": "qwen3.5:cloud",
     "timeoutMs": 90000
+  },
+  "forgeron": {
+    "provider": "claude",
+    "model": "opus",
+    "timeoutMs": 120000
   }
 }
