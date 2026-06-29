@@ -17,6 +17,7 @@ import os from "node:os";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
+import { freeGpuForFlux } from "./gpu-serialize.js";
 
 function comfyUrl(): string {
   return (process.env.FLUX_COMFY_URL || "http://127.0.0.1:8188").replace(/\/$/, "");
@@ -99,12 +100,17 @@ export interface FluxDeps {
   fetchImpl: typeof fetch;
   sleep: (ms: number) => Promise<void>;
   now: () => number;
+  /** Sérialisation GPU : libère la VRAM (décharge les modèles Ollama) avant de lancer
+   *  Flux, pour éviter deux charges GPU simultanées (pic de conso → coupures, L61).
+   *  Best-effort, ne lève jamais. Absent (ex. en test) → étape sautée. */
+  freeVram?: () => Promise<void>;
 }
 
 const realFluxDeps: FluxDeps = {
   fetchImpl: (...args) => fetch(...(args as Parameters<typeof fetch>)),
   sleep: (ms) => new Promise((r) => setTimeout(r, ms)),
   now: () => Date.now(),
+  freeVram: freeGpuForFlux,
 };
 
 export type FluxResult = { ok: true; bytes: Uint8Array; filename: string } | { ok: false; error: string };
@@ -117,6 +123,15 @@ export async function generateFlux(
 ): Promise<FluxResult> {
   const base = comfyUrl();
   const graph = buildFluxWorkflow(prompt, opts.width, opts.height, opts.seed, fluxModels(), { upscale: opts.upscale });
+  // Sérialisation GPU : libère la VRAM (décharge Ollama) AVANT de solliciter le GPU pour Flux,
+  // pour ne pas cumuler deux charges GPU simultanées (pic de conso → coupure alim, L61).
+  if (deps.freeVram) {
+    try {
+      await deps.freeVram();
+    } catch {
+      /* best-effort : une VRAM non libérée ne doit jamais bloquer la génération */
+    }
+  }
   let promptId: string;
   try {
     const res = await deps.fetchImpl(`${base}/prompt`, {
