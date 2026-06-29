@@ -34,12 +34,14 @@ Les briques existaient mais la boucle automatique n'était **pas fermée** (vér
 
 - **`self-evolution.ts`** (PUR, robuste, ne lève jamais) : `coversGap` (recouvrement de tokens blocage↔agent, seuil souple) · `recordUncoveredGap` (inscrit une lacune **non couverte**, dédup par signature + compteur `hits`) · store atomique (`loadGaps`/`saveGaps`, plafond 200) · `listOpenGaps`/`markGap`/`getGap`.
 - **`forgeForGap(gap)`** (`agent-forge.ts`) : forge **un agent ciblé** sur la lacune — contexte de la tâche bloquée injecté, forgeron Opus + `assignBrain` (cerveau adapté), persistance.
-- **Câblage `eleve.ts`** : au blocage `plateau-iterations`, si aucun agent ne couvre → `recordUncoveredGap`. Gate **`SELF_EVOLVE` défaut OFF** (zéro régression).
+- **Câblage `eleve.ts`** : **juste après le diagnostic**, si le blocage est un « mur de capacité » (`GAP_WORTHY_BLOCKERS` = plateau-iterations/wandering/knowledge-gap/wrong-tool, hors transitoires) et qu'aucun agent ne couvre → `recordUncoveredGap` (dédup une fois par type/build). Gate **`SELF_EVOLVE` défaut OFF** (zéro régression). *(Élargi le 2026-06-29 az après l'essai live : avant, n'écoutait que `plateau-iterations`.)*
 - **`self-evolution-routes.ts`** : `GET /api/gaps` · `POST /api/gaps/:id/forge` (validation→forge) · `POST /api/gaps/:id/dismiss`.
 
 ## État
 
-**Tranche 1 livrée et PROUVÉE LIVE** (forgeron Opus réel, registres temp, réels intacts) : blocage « synchro temps réel websocket » non couvert par les 10 agents → lacune `proposed` → validation → Opus forge « **Chef d'orchestre temps réel** » (cible rédigée seul : présence/frappe/état partagé ; cerveau auto-assigné `glm-5.2:cloud`) → lacune comblée. `tsc` 0 · **test-self-evolution 14/14** · test-agent-forge 25/25 · non-régr. eleve-runtime 49 / specialist 18+14 / brain-dispatch 38.
+**Tranche 1 livrée et PROUVÉE LIVE** (forgeron Opus réel, registres temp, réels intacts) : blocage « synchro temps réel websocket » non couvert par les 10 agents → lacune `proposed` → validation → Opus forge « **Chef d'orchestre temps réel** » (cible rédigée seul : présence/frappe/état partagé ; cerveau auto-assigné `glm-5.2:cloud`) → lacune comblée. `tsc` 0 · **test-self-evolution 15/15** · test-agent-forge 25/25 · non-régr. eleve-runtime 49 / specialist 18+14 / brain-dispatch 38.
+
+**Essai live sur de vrais projets (2026-06-29 az)** — a débusqué 2 bugs invisibles aux tests unitaires, corrigés : (1) **trigger trop étroit** (n'écoutait que `plateau-iterations`, le build a bloqué sur `wandering`) → hook **élargi** ; (2) **`coversGap` faux positif** (la TÂCHE faisait croire à une couverture) → couverture jugée sur le **blocage seul**. **Caveat de signal** : le cloud GLM gratuit a des `fetch failed` transitoires → faux `plateau-iterations` (à filtrer en tranche 2). C'est la propriété-clé : *la boucle s'améliore en étant utilisée et observée*.
 
 **Reste (tranches 2-3, après [[audit-souverainete|observation OBS]])** — voir [[limites]] **L56** : UI « Lacunes à combler » dans l'Atelier · **forge auto-armée sous Disjoncteur [[mangoqa]]** (plafond forges/run + garde-coût Opus) · **reprise auto** de la tâche · déclencheur élargi (tout blocage, pas que `plateau-iterations`).
 

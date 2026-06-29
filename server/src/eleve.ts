@@ -1091,6 +1091,12 @@ export async function runRelay(
     // agent forgé, on l'inscrit comme lacune ouverte (store machine) → Mango PROPOSE, Raf
     // valide → le forgeron crée l'agent. Gaté, défaut off (zéro régression).
     const selfEvolveOn = (process.env.SELF_EVOLVE ?? "off").toLowerCase() !== "off";
+    // Blocages = « mur de CAPACITÉ » (l'Élève est genuinement coincé) → dignes d'une lacune.
+    // On EXCLUT les transitoires/auto-résolus : flaky-resource (réseau), missing/install-
+    // dependency (l'install les règle), stratege-*/ambiguous (méta). Dédup : une lacune par
+    // type et par build (évite le spam ; le compteur `hits` du store agrège les builds).
+    const GAP_WORTHY_BLOCKERS = new Set(["plateau-iterations", "wandering", "knowledge-gap", "wrong-tool"]);
+    const seenGapBlockers = new Set<string>();
     const strategeState: StrategeState = newStrategeState();
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
@@ -1240,6 +1246,16 @@ export async function runRelay(
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) {
         const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
+        // #168 — AUTO-ÉVOLUTION (trigger LARGE) : tout blocage « mur de capacité » non couvert
+        // par un agent forgé → on l'inscrit comme lacune ouverte (une fois par type/build).
+        // `recordUncoveredGap` ignore en interne si un agent couvre déjà (semi-auto : Raf valide).
+        if (selfEvolveOn && d && GAP_WORTHY_BLOCKERS.has(d.blocker) && !seenGapBlockers.has(d.blocker)) {
+          seenGapBlockers.add(d.blocker);
+          const g = recordUncoveredGap({ blocker: d.blocker, detail: d.detail, task });
+          if (g.recorded && g.isNew) {
+            push(`  🧬 Auto-évolution : lacune « ${g.gap?.title ?? d.blocker} » notée — forge à valider dans l'Atelier`);
+          }
+        }
         // #164 Phase 1 — sur build CASSÉ (pas une erreur moteur), le Stratège tente un remède
         // CHOISI avant d'abandonner : missing-dependency → installe la lib + relance ;
         // knowledge-gap → renvoie se documenter. Borné (strategeState + budget de relance).
@@ -1271,16 +1287,9 @@ export async function runRelay(
               if (consult) {
                 push(`  🤝 Stratège délègue à « ${consult.agent.name} » (cible ${consult.agent.lacune || "—"}, score ${consult.score})`);
                 remedyNudge = buildDelegateNudge(consult.agent.name, consult.advice);
-              } else {
-                // #168 — aucun agent forgé ne couvre ce blocage → on l'inscrit comme lacune
-                // ouverte (semi-auto : Mango propose, Raf valide la forge dans l'Atelier).
-                if (selfEvolveOn) {
-                  const g = recordUncoveredGap({ blocker: d.blocker, detail: d.detail, task });
-                  if (g.recorded && g.isNew) {
-                    push(`  🧬 Auto-évolution : lacune « ${g.gap?.title ?? d.blocker} » notée — forge à valider dans l'Atelier`);
-                  }
-                }
-                if (delegateOn) push(`  ℹ Stratège : aucun spécialiste forgé pertinent → décomposition`);
+                // (la lacune éventuelle a déjà été inscrite par le hook large post-diagnostic #168)
+              } else if (delegateOn) {
+                push(`  ℹ Stratège : aucun spécialiste forgé pertinent → décomposition`);
               }
             }
             push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);

@@ -34,9 +34,12 @@ console.log("[1] gapSignature")
 console.log("\n[2] coversGap")
 {
   const xlsx = mkAgent({ lacune: "extraction xlsx classeur tableur", tags: ["xlsx", "classeur"] })
-  check("blocage couvert (≥2 tokens communs) → agent", coversGap("extraction", "classeur xlsx fusionnees", "lire un classeur", [xlsx])?.id === "sa_x")
-  check("blocage NON couvert → null", coversGap("websocket", "temps reel collaboratif", "chat live", [xlsx]) === null)
-  check("aucun agent → null", coversGap("extraction", "xlsx", "", []) === null)
+  check("blocage couvert (≥2 tokens communs) → agent", coversGap("extraction", "classeur xlsx fusionnees", [xlsx])?.id === "sa_x")
+  check("blocage NON couvert → null", coversGap("websocket", "temps reel collaboratif", [xlsx]) === null)
+  check("aucun agent → null", coversGap("extraction", "xlsx", []) === null)
+  // anti-faux-positif : la TÂCHE ne doit PAS servir au matching (« page accueil » ≠ couverture)
+  const seed = mkAgent({ lacune: "charger la page d'accueil une seule fois perf", role: "perf home" })
+  check("tâche partage des mots mais blocage non couvert → null", coversGap("plateau-iterations", "plafond iterations atteint tache trop large", [seed]) === null)
 }
 
 console.log("\n[3] recordUncoveredGap")

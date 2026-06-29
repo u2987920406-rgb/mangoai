@@ -68,17 +68,18 @@ function tokens(s: string): Set<string> {
 }
 
 /**
- * Un agent forgé COUVRE-t-il déjà ce blocage ? Recouvrement de tokens entre le texte du
- * blocage/tâche et (lacune + tags + rôle + déclencheurs) de chaque agent. Renvoie le
- * meilleur agent couvrant (seuil souple), ou null si la lacune est NOUVELLE. PUR.
+ * Un agent forgé COUVRE-t-il déjà ce blocage ? Recouvrement de tokens entre le BLOCAGE
+ * (blocker + detail UNIQUEMENT — pas la tâche : le texte de la tâche partage trop de mots
+ * banals avec des agents non pertinents → faux positifs, ex. « page d'accueil ») et
+ * (lacune + tags + rôle + déclencheurs) de chaque agent. Renvoie le meilleur agent
+ * couvrant (seuil souple), ou null si la lacune est NOUVELLE. PUR.
  */
 export function coversGap(
   blocker: string,
   detail: string,
-  task: string,
   agents: SpecialistAgent[],
 ): SpecialistAgent | null {
-  const need = tokens(`${blocker} ${detail} ${task}`)
+  const need = tokens(`${blocker} ${detail}`)
   if (need.size === 0) return null
   let best: SpecialistAgent | null = null
   let bestScore = 0
@@ -141,7 +142,7 @@ export function recordUncoveredGap(
     const detail = clip(input.detail, 300)
     const task = clip(input.task, 600)
     const agents = deps.agents ?? loadSpecialists()
-    if (coversGap(blocker, detail, task, agents)) {
+    if (coversGap(blocker, detail, agents)) {
       return { recorded: false, isNew: false, covered: true, gap: null }
     }
     const now = deps.now ?? Date.now()
