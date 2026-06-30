@@ -1,0 +1,37 @@
+{
+  "name": "RGPD",
+  "title": "Conformité RGPD (export + droit à l'oubli + consentement + rétention)",
+  "description": "Machinerie GDPR générique, ZÉRO dépendance : registre de SOURCES DE DONNÉES que l'app branche (collect/erase) → export complet (droit d'accès/portabilité) et effacement complet (droit à l'oubli) ; registre de CONSENTEMENT versionné (donner/retirer/lister) ; helpers de RÉTENTION (balayage de ce qui a dépassé son TTL). Endpoints à monter derrière l'authentification (brique 'auth'). Stores injectables → branchables sur la brique 'db'.",
+  "level": "app",
+  "base": "backend",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "optionalDependencies": {},
+  "devDependencies": {},
+  "env": [
+    {
+      "name": "PRIVACY_POLICY_VERSION",
+      "required": false,
+      "description": "Version courante de la politique de confidentialité, horodatée sur chaque consentement.",
+      "example": "1.0"
+    }
+  ],
+  "files": [
+    "src/consent.ts",
+    "src/registry.ts",
+    "src/retention.ts",
+    "src/privacy.ts"
+  ],
+  "mount": {
+    "import": "import { PrivacyRegistry } from './registry.js';\nimport { createMemoryConsentStore } from './consent.js';\nimport { createPrivacyRouter } from './privacy.js';\nimport { requireAuth } from './auth.js';",
+    "use": "const registry = new PrivacyRegistry();\nregistry.register({ name: 'profil', collect: (uid) => db.prepare('SELECT * FROM users WHERE id = ?').get(uid), erase: (uid) => db.prepare('DELETE FROM users WHERE id = ?').run(uid).changes });\n// Monter DERRIÈRE l'auth (req.user.id) :\napp.use('/api/privacy', requireAuth(process.env.AUTH_SECRET!), createPrivacyRouter({ registry, consents: createMemoryConsentStore() }));"
+  },
+  "provides": ["privacy"],
+  "requires": ["auth"],
+  "upgrades": {
+    "db": "Brancher les sources sur la brique 'db' (collect = SELECT, erase = DELETE) et persister consentements + retention dans des tables dédiées.",
+    "retention": "Planifier sweepExpired sur un cron (ex. quotidien) par catégorie de données avec son TTL propre."
+  },
+  "tests": "tests/rgpd.test.ts"
+}

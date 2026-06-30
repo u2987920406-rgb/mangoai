@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 slices 1-4 livrées (auth + db + paiement + securite) · #170 idée ouverte
+statut: #169 5 briques livrées (auth+db+paiement+securite+RGPD) · reste assemble_brique · #170 idée ouverte
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -24,7 +24,7 @@ L'argument de fond : un harnais mûr fait que l'IA « sort un produit propre du 
 | **Skills utilisateurs** (~35) | Skills + KernelTools de l'Élève (`planifier`, `chercher_web`, `extraire_site`…) | ✅ via [[transmission-competences]] |
 | **Skills internes** (protocoles inter-agents) | [[le-stratege]] · [[gardien-cloture]] · routage `route()` | ✅ |
 | **Scripts déterministes** (~80) | `runParcours`, `measureDesign`, `sharinganAnalyze`, parsing pur… | ✅ (« éviter de cramer des tokens » = logique identique) |
-| **Templates** (~100, dont **infra back** : BDD/paiement/RGPD/sécurité) | ~30 templates **front** (#81-#83) + backend généré ad hoc (#35) | 🟡 **trou → #169** |
+| **Templates** (~100, dont **infra back** : BDD/paiement/RGPD/sécurité) | ~30 templates **front** (#81-#83) + **5 briques back composables livrées** (#169 : auth·db·paiement·securite·RGPD) | 🟢 **#169 : 5 briques ✅** (reste l'assemblage Élève) |
 | **Gestion des secrets** (Bitwarden API) | `.env` + anti-SSRF `isCloneableUrl` + `sanitizeExternal` | 🟡 **trou → #170** |
 | **Boucle fonctionnelle** (se réveille seule) | Runs autonomes ([[boucle-nocturne]], `run-mango-nuit.ts`) | ✅ |
 | **Boucle architecturale** (réécrit ses propres skills) | [[auto-amelioration]] (`mango-self.ts` B1-B4) + [[auto-evolution]] (#168) | ✅ |
@@ -48,7 +48,8 @@ Passage de « l'IA *réécrit* l'infra à chaque app » (#35) à « l'IA *assemb
 > - **Slice 2** : brique `db` (SQLite via **`node:sqlite`** intégré Node 22+, **zéro dépendance native, $0**), migrations idempotentes+ordonnées, interface `Db` driver-agnostique, et **`createSqliteUserStore` qui implémente le contrat `UserStore` d'`auth`** → composition `createAuthRouter({ store })` **sans toucher à `auth.ts`**.
 > - **Slice 3** : brique `paiement` (Stripe Checkout + webhooks signés + idempotence), 1ʳᵉ brique de niveau **`app`**. **Vérification de signature de webhook réimplémentée en `node:crypto`** (HMAC, temps-constant, anti-rejeu = zéro dépendance pour le point critique), idempotence par `event.id` (store injectable→`db`), client Stripe **injectable** → **prouvable sans compte Stripe ni réseau**.
 > - **Slice 4** : brique `securite` (niveau **`core`**, transverse), **zéro dépendance** : en-têtes type helmet, CORS allowlist + préflight, rate-limit (horloge injectable), validation aux frontières **compatible Zod `safeParse`** + mini-schémas intégrés, `requireEnv` (échec rapide au boot, **couture vers #170**). Chaque garde remplaçable par son équivalent npm.
-> - **120 tests verts** (`backend-bricks` 37 dont **scan des 4 briques = 0 conflit/require, ordre core→app** · securite 24 · paiement 26 · db 13 · auth 20), `tsc` 0. Reste : brique RGPD + KernelTool `assemble_brique`. Limite **L66**.
+> - **Slice 5** : brique `RGPD` (niveau **`app`**) — machinerie GDPR générique : `PrivacyRegistry` (sources `collect`/`erase` → export + droit à l'oubli), consentement versionné (store injectable→`db`), rétention pure, router derrière l'auth. **1ʳᵉ brique à déclarer `requires: ["auth"]`** → exerce le lien de dépendance du plan.
+> - **🎯 LES 5 BRIQUES COMPLÈTES. 139 tests verts** (`backend-bricks` 36 dont **scan des 5 briques = 0 conflit/require, core avant app, RGPD→auth satisfait** · RGPD 20 · securite 24 · paiement 26 · db 13 · auth 20), `tsc` 0. Reste : seulement le KernelTool `assemble_brique`. Limite **L66**.
 
 ### #170 — Coffre-fort de secrets : l'Élève manipule le coffre, jamais les clés 🧠 Opus · M
 Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-fort ; aucune clé ne transite dans le prompt. »* MangoOS l'applique à moitié (`.env` gitignoré + réseau durci, mais protection **conventionnelle**, pas structurelle).
