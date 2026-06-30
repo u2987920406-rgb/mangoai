@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 slices 1-3 livrées (auth + db + paiement) · #170 idée ouverte
+statut: #169 slices 1-4 livrées (auth + db + paiement + securite) · #170 idée ouverte
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -47,7 +47,8 @@ Passage de « l'IA *réécrit* l'infra à chaque app » (#35) à « l'IA *assemb
 > - **Slice 1** : convention `server/templates/backend/_bricks/<brique>/` (`brick.json` machine-lisible + `RECIPE.md` + `src/` + `tests/`) ; brique `auth` (scrypt $0 pluggable→argon2, tokens HMAC horloge injectable, `UserStore` injectable, register/login/refresh + `requireAuth`) ; module pur serveur `backend-bricks.ts` (découverte/validation/`buildAssemblyPlan`).
 > - **Slice 2** : brique `db` (SQLite via **`node:sqlite`** intégré Node 22+, **zéro dépendance native, $0**), migrations idempotentes+ordonnées, interface `Db` driver-agnostique, et **`createSqliteUserStore` qui implémente le contrat `UserStore` d'`auth`** → composition `createAuthRouter({ store })` **sans toucher à `auth.ts`**.
 > - **Slice 3** : brique `paiement` (Stripe Checkout + webhooks signés + idempotence), 1ʳᵉ brique de niveau **`app`**. **Vérification de signature de webhook réimplémentée en `node:crypto`** (HMAC, temps-constant, anti-rejeu = zéro dépendance pour le point critique), idempotence par `event.id` (store injectable→`db`), client Stripe **injectable** → **prouvable sans compte Stripe ni réseau**.
-> - **95 tests verts** (`backend-bricks` 36 dont **scan des 3 briques = 0 conflit/0 require manquant, ordre core→app** · paiement 26 signature+idempotence+HTTP bout-en-bout · db 13 · auth 20), `tsc` 0. Reste : briques RGPD/securite + KernelTool `assemble_brique`. Limite **L66**.
+> - **Slice 4** : brique `securite` (niveau **`core`**, transverse), **zéro dépendance** : en-têtes type helmet, CORS allowlist + préflight, rate-limit (horloge injectable), validation aux frontières **compatible Zod `safeParse`** + mini-schémas intégrés, `requireEnv` (échec rapide au boot, **couture vers #170**). Chaque garde remplaçable par son équivalent npm.
+> - **120 tests verts** (`backend-bricks` 37 dont **scan des 4 briques = 0 conflit/require, ordre core→app** · securite 24 · paiement 26 · db 13 · auth 20), `tsc` 0. Reste : brique RGPD + KernelTool `assemble_brique`. Limite **L66**.
 
 ### #170 — Coffre-fort de secrets : l'Élève manipule le coffre, jamais les clés 🧠 Opus · M
 Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-fort ; aucune clé ne transite dans le prompt. »* MangoOS l'applique à moitié (`.env` gitignoré + réseau durci, mais protection **conventionnelle**, pas structurelle).
