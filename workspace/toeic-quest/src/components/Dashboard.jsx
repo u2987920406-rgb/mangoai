@@ -83,7 +83,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Continuer le parcours</div>
               <div className="font-bold text-lg leading-tight mt-0.5">{next ? next.title : "Tout est complété !"}</div>
               {next && <div className="text-sm text-muted-foreground mt-1">{LEVELS[next.level].name} · Semaine {next.week}</div>}
-              <div className="mt-auto pt-3 text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Reprendre →</div>
+              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Reprendre →</div>
             </CardContent>
           </Card>
         </Reveal>
@@ -94,7 +94,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Carte du parcours</div>
               <div className="font-bold text-lg mt-0.5">52 semaines, 3 niveaux</div>
               <div className="text-sm text-muted-foreground mt-1">Visualise toute ta progression.</div>
-              <div className="mt-auto pt-3 text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Ouvrir →</div>
+              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Ouvrir →</div>
             </CardContent>
           </Card>
         </Reveal>
@@ -105,7 +105,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Diagnostic</div>
               <div className="font-bold text-lg mt-0.5">Forces & faiblesses</div>
               <div className="text-sm text-muted-foreground mt-1">Ta maîtrise des 7 parties TOEIC.</div>
-              <div className="mt-auto pt-3 text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Analyser →</div>
+              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Analyser →</div>
             </CardContent>
           </Card>
         </Reveal>
@@ -125,7 +125,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
                 <p className="text-sm text-muted-foreground mb-3">{info.description}</p>
                 <div className="flex items-center justify-between">
                   <Badge variant="secondary">{info.count} questions</Badge>
-                  <span className="text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Jouer →</span>
+                  <span className="text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Jouer →</span>
                 </div>
               </CardContent>
             </Card>
@@ -168,7 +168,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
                   </div>
                   <div className="flex items-center gap-4 text-sm">
                     <span className="text-muted-foreground">{s.correct}/{s.total} ✓</span>
-                    <span className="font-bold text-accent">+{s.xpEarned} XP</span>
+                    <span className="font-bold text-accent-strong">+{s.xpEarned} XP</span>
                   </div>
                 </div>
               );

@@ -42,7 +42,7 @@ export function LevelSelect({ progress, onPickLevel, onBack }) {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">{done}/{mods.length} complétés</span>
-                        <span className="text-accent font-bold text-sm">Ouvrir →</span>
+                        <span className="text-accent-strong font-bold text-sm">Ouvrir →</span>
                       </div>
                     </>
                   ) : (

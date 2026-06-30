@@ -55,7 +55,7 @@ export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onSt
           <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/20">
             <Mascot mood="thinking" size={44} />
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-accent mb-1">Conseil de Mango</div>
+              <div className="text-xs font-bold uppercase tracking-wide text-accent-strong mb-1">Conseil de Mango</div>
               <p className="text-sm text-muted-foreground">{mod.tips}</p>
             </div>
           </div>
@@ -79,6 +79,9 @@ export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onSt
             <span className="text-sm text-muted-foreground">{mod.isExam ? "Examen chronométré" : "Mode examen (timer)"}</span>
             <button
               onClick={onToggleTimer}
+              role="switch"
+              aria-checked={useTimer}
+              aria-label="Activer le mode examen chronométré"
               className={cn("relative w-12 h-6 rounded-full transition-colors", useTimer ? "bg-accent" : "bg-muted")}
             >
               <span className={cn("absolute top-0.5 w-5 h-5 rounded-full bg-white shadow transition-transform", useTimer ? "translate-x-6" : "translate-x-0.5")} />

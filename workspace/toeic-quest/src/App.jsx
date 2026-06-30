@@ -1,17 +1,28 @@
-import { useState, useCallback } from "react";
+import { lazy, Suspense, useState, useCallback } from "react";
 import { useProgress } from "./hooks/useProgress.js";
 import { Dashboard } from "./components/Dashboard.jsx";
-import { SessionPlay } from "./components/SessionPlay.jsx";
-import { SessionResult } from "./components/SessionResult.jsx";
-import { LevelSelect } from "./components/LevelSelect.jsx";
-import { CurriculumMap } from "./components/CurriculumMap.jsx";
-import { ModuleScreen } from "./components/ModuleScreen.jsx";
-import { PlacementTest } from "./components/PlacementTest.jsx";
-import { Diagnostic } from "./components/Diagnostic.jsx";
 import { Mascot } from "./components/Mascot.jsx";
 import { XPBar, StreakBadge } from "./components/Gamification.jsx";
-import { buildSession, isModulePlayable } from "./data/bank/index.js";
+import { buildSession } from "./data/bank/index.js";
 import { getModule } from "./data/curriculum.js";
+
+// Écrans secondaires chargés à la demande (code-splitting) — l'accueil reste instantané.
+const named = (p, key) => lazy(() => p().then((m) => ({ default: m[key] })));
+const SessionPlay = named(() => import("./components/SessionPlay.jsx"), "SessionPlay");
+const SessionResult = named(() => import("./components/SessionResult.jsx"), "SessionResult");
+const LevelSelect = named(() => import("./components/LevelSelect.jsx"), "LevelSelect");
+const CurriculumMap = named(() => import("./components/CurriculumMap.jsx"), "CurriculumMap");
+const ModuleScreen = named(() => import("./components/ModuleScreen.jsx"), "ModuleScreen");
+const PlacementTest = named(() => import("./components/PlacementTest.jsx"), "PlacementTest");
+const Diagnostic = named(() => import("./components/Diagnostic.jsx"), "Diagnostic");
+
+function ScreenLoader() {
+  return (
+    <div className="flex items-center justify-center py-24 text-muted-foreground">
+      <Mascot mood="thinking" size={64} className="animate-float" />
+    </div>
+  );
+}
 
 // ─── TOEIC QUEST — App principale (routeur parcours) ─────────────────────────
 export default function App() {
@@ -66,10 +77,10 @@ export default function App() {
       {/* Top nav */}
       <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
         <div className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between gap-4">
-          <button onClick={goHome} className="flex items-center gap-2 shrink-0">
+          <button onClick={goHome} aria-label="Accueil TOEIC Quest" className="flex items-center gap-2 shrink-0">
             <Mascot mood="happy" size={36} />
             <span className="font-extrabold text-lg hidden sm:block">
-              TOEIC<span className="text-accent">QUEST</span>
+              TOEIC<span className="text-accent-strong">QUEST</span>
             </span>
           </button>
 
@@ -85,6 +96,7 @@ export default function App() {
 
       {/* Main content */}
       <main className="mx-auto max-w-5xl px-4">
+        <Suspense fallback={<ScreenLoader />}>
         {route.name === "dashboard" && (
           <Dashboard
             progress={progress}
@@ -143,6 +155,7 @@ export default function App() {
         {route.name === "result" && lastSession && (
           <SessionResult session={lastSession} onBackHome={goHome} onRetry={handleRetry} />
         )}
+        </Suspense>
       </main>
 
       {/* Footer */}

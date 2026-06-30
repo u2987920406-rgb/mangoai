@@ -77,7 +77,7 @@ export function SessionResult({ session, onBackHome, onRetry }) {
         </Card>
         <Card className="animate-fade-in-up delay-2">
           <CardContent className="pt-5 text-center">
-            <div className="text-3xl font-extrabold text-accent">{accuracy}%</div>
+            <div className="text-3xl font-extrabold text-accent-strong">{accuracy}%</div>
             <div className="text-xs text-muted-foreground mt-1">Précision</div>
           </CardContent>
         </Card>

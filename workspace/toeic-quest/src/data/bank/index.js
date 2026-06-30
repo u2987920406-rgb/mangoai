@@ -40,12 +40,24 @@ export function getByLevel(level) {
   return QUESTION_BANK.filter((q) => q.level === level);
 }
 
+// Un module « puise dans le niveau » (bilan ou examen) plutôt que d'avoir son
+// propre contenu : on prend les questions du niveau filtrées par ses parties.
+function levelPool(mod) {
+  let pool = getByLevel(mod.level);
+  if (Array.isArray(mod.parts) && mod.parts.length) {
+    const set = new Set(mod.parts);
+    pool = pool.filter((q) => set.has(q.part));
+  }
+  return pool;
+}
+const drawsFromLevel = (mod) => mod.skill === "mixed" || mod.isExam;
+
 // Combien de questions sont réellement disponibles pour un module ?
-// (pour les modules « mixed » = bilan/examen, on puise dans tout le niveau.)
+// (bilan/examen → on puise dans le niveau, filtré par parties.)
 export function availableForModule(moduleId) {
   const mod = getModule(moduleId);
   if (!mod) return 0;
-  if (mod.skill === "mixed") return getByLevel(mod.level).length;
+  if (drawsFromLevel(mod)) return levelPool(mod).length;
   return getByModule(moduleId).length;
 }
 
@@ -62,8 +74,8 @@ export function buildSession(moduleId, n = 10) {
   const mod = getModule(moduleId);
   if (!mod) return [];
 
-  if (mod.skill === "mixed") {
-    const pool = getByLevel(mod.level);
+  if (drawsFromLevel(mod)) {
+    const pool = levelPool(mod);
     // Répartit en visant la diversité des parties, puis complète au hasard.
     const byPart = {};
     for (const q of shuffle(pool)) {

@@ -52,6 +52,19 @@ const INTERMEDIAIRE_SPECS: Spec[] = [
   { id: "M20", part: "P3", skill: "listening", count: 10, theme: "longer man-woman conversations, 4-5 turns, with a small problem and a plan" },
   { id: "M22", part: "P7", skill: "reading", count: 8, theme: "company articles and reports with a main idea per paragraph" },
   { id: "M24", part: "P6", skill: "reading", count: 8, theme: "text completion with connectors and contextually correct words" },
+  { id: "M21", part: "P4", skill: "listening", count: 8, theme: "structured business presentations and briefings with signposting (first, however, finally)" },
+  { id: "M23", part: "P5", skill: "vocab", count: 10, theme: "passive voice and conditional sentences in a business context" },
+  { id: "M25", part: "P3", skill: "listening", count: 10, theme: "man-woman conversations with disagreement or compromise (negotiation, opinions)" },
+  { id: "M26", part: "P4", skill: "listening", count: 8, theme: "public announcements (station, store, event) with the key info after an intro" },
+  { id: "M27", part: "P5", skill: "vocab", count: 10, theme: "advanced logical connectors (nevertheless, therefore, whereas)" },
+  { id: "M28", part: "P7", skill: "reading", count: 8, theme: "longer single passages requiring simple inference" },
+  { id: "M29", part: "P2", skill: "listening", count: 10, theme: "tag questions and rhetorical questions expecting agreement or nuance" },
+  { id: "M30", part: "P3", skill: "listening", count: 10, theme: "three-speaker conversations (the question targets one specific speaker)" },
+  { id: "M31", part: "P6", skill: "reading", count: 8, theme: "text completion focused on tense and pronoun consistency across a paragraph" },
+  { id: "M32", part: "P7", skill: "reading", count: 8, theme: "professional email threads (sender, subject, request of each message)" },
+  { id: "M33", part: "P4", skill: "listening", count: 8, theme: "informative radio/podcast excerpts (theme, speaker, 2-3 key points)" },
+  { id: "M34", part: "P5", skill: "vocab", count: 10, theme: "business collocations (meet a deadline, place an order, reach an agreement)" },
+  { id: "M35", part: "P1", skill: "listening", count: 8, theme: "review photos: people working, transport, dining, shopping (intermediate detail)" },
 ];
 
 // Échantillons Avancé (dont le double passage P7D).
@@ -62,6 +75,12 @@ const AVANCE_SPECS: Spec[] = [
   { id: "M42", part: "P7", skill: "reading", count: 8, theme: "passages requiring inference about intent and tone" },
   { id: "M44", part: "P7D", skill: "reading", count: 8, theme: "two linked documents (email + reply, or notice + schedule) where some answers require combining both" },
   { id: "M45", part: "P5", skill: "vocab", count: 10, theme: "tricky grammar (subject-verb agreement at distance, gerund vs infinitive, irregular comparatives)" },
+  { id: "M38", part: "P2", skill: "listening", count: 8, theme: "idiomatic and colloquial responses (It's not my call, etc.)" },
+  { id: "M41", part: "P4", skill: "listening", count: 8, theme: "dense technical talks structured around figures and conclusions" },
+  { id: "M43", part: "P6", skill: "reading", count: 8, theme: "demanding text completion (register, cohesion, precise word choice)" },
+  { id: "M46", part: "P3", skill: "listening", count: 8, theme: "man-woman conversations with varied phrasing and implied meaning" },
+  { id: "M47", part: "P7D", skill: "reading", count: 8, theme: "two linked documents requiring cross-referencing to answer (advanced)" },
+  { id: "M48", part: "P5", skill: "vocab", count: 10, theme: "fine grammar and style (parallelism, logical articulation, precise lexis)" },
 ];
 
 const LEVEL_SPECS: Record<string, Spec[]> = { debutant: DEBUTANT_SPECS, intermediaire: INTERMEDIAIRE_SPECS, avance: AVANCE_SPECS };

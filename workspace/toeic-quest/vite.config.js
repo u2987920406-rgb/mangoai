@@ -8,4 +8,19 @@ export default defineConfig({
     // The builder UI embeds this app in an iframe from another origin (localhost:5173)
     cors: true,
   },
+  build: {
+    rollupOptions: {
+      output: {
+        // Code-splitting : isole le runtime React et la banque de questions
+        // (gros volume de texte) du code applicatif → caching + parallélisation.
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react")) return "react-vendor";
+            return "vendor";
+          }
+          if (id.includes("/data/bank/") || id.includes("/data/curriculum")) return "content";
+        },
+      },
+    },
+  },
 });

@@ -16,6 +16,7 @@
   --color-muted-foreground: hsl(var(--muted-foreground));
   --color-accent: hsl(var(--accent));
   --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-accent-strong: hsl(var(--accent-strong));
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
   --color-border: hsl(var(--border));
@@ -57,7 +58,10 @@
     --muted: 210 16% 95%;
     --muted-foreground: 210 8% 45%;
     --accent: 33 89% 60%;
-    --accent-foreground: 0 0% 100%;
+    /* Texte foncé sur l'orange vif = contraste AA (≈6.8:1) tout en gardant la vivacité */
+    --accent-foreground: 210 10% 18%;
+    /* Orange foncé pour le TEXTE accent sur fond clair (liens « Jouer → », badges) — AA sur blanc */
+    --accent-strong: 27 95% 36%;
     --destructive: 0 78% 56%;
     --destructive-foreground: 0 0% 100%;
     --border: 210 16% 90%;

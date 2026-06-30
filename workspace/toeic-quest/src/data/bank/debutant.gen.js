@@ -3107,26 +3107,6 @@ export const DEBUTANT_GEN = [
     "image": "https://images.pexels.com/photos/11344658/pexels-photo-11344658.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
   },
   {
-    "id": "P1-M15-G08",
-    "moduleId": "M15",
-    "level": "debutant",
-    "part": "P1",
-    "skill": "listening",
-    "difficulty": 2,
-    "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
-    "choices": [
-      "A man is folding shirts on a display table.",
-      "A man is trying on a jacket in a clothing store.",
-      "A man is scanning items at a checkout counter.",
-      "A man is hanging clothes on a rack."
-    ],
-    "answer": 1,
-    "explanation": "L'homme essaie une veste dans un magasin de vêtements, donc (B) est correcte. (A) est incorrecte car il ne plie pas de chemises. (C) est incorrecte car il ne scanne pas d'articles à la caisse. (D) est incorrecte car il ne suspend pas de vêtements sur un portant.",
-    "transcript": "(A) A man is folding shirts on a display table. (B) A man is trying on a jacket in a clothing store. (C) A man is scanning items at a checkout counter. (D) A man is hanging clothes on a rack.",
-    "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/6050418/pexels-photo-6050418.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
-  },
-  {
     "id": "P1-M15-G09",
     "moduleId": "M15",
     "level": "debutant",

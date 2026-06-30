@@ -137,7 +137,7 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
           <Badge
             variant="secondary"
             className={cn(
-              "bg-accent/15 text-accent border-accent/30 font-bold tabular-nums transition-transform",
+              "bg-accent/15 text-accent-strong border-accent/30 font-bold tabular-nums transition-transform",
               answered && isCorrect && "scale-110"
             )}
           >
@@ -224,7 +224,7 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
             <div className="space-y-3">
               {q.passages.map((p, i) => (
                 <div key={i} className="p-4 rounded-xl bg-muted/30 text-sm text-foreground leading-relaxed">
-                  {p.label && <div className="text-xs font-bold uppercase tracking-wide text-accent mb-1">{p.label}</div>}
+                  {p.label && <div className="text-xs font-bold uppercase tracking-wide text-accent-strong mb-1">{p.label}</div>}
                   <div className="whitespace-pre-line max-h-56 overflow-y-auto">{p.text}</div>
                 </div>
               ))}
