@@ -1,0 +1,4 @@
+Tilesets — Kenney (kenney.nl), licence CC0 1.0 (domaine public).
+- Tiny Town  : https://kenney.nl/assets/tiny-town   -> town.png
+- Tiny Dungeon : https://kenney.nl/assets/tiny-dungeon -> dungeon.png
+Grille 12 colonnes x 16 px par tuile. Aucune attribution requise (CC0).

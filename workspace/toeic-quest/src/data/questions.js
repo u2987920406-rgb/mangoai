@@ -1,0 +1,333 @@
+// ─── TOEIC QUEST — Banque de questions ───────────────────────────────────────
+// 30+ questions réparties sur 3 modes : Listening, Reading, Vocabulary/Grammar
+
+export const QUESTIONS = {
+  listening: [
+    {
+      id: "L1",
+      image: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Good morning everyone. I'd like to call this meeting to order. Today we need to discuss the quarterly sales report and decide on our marketing budget for the next year. As you can see from the slides, our revenue has increased by fifteen percent compared to last year.",
+      question: "What is the main purpose of the meeting?",
+      choices: ["To discuss the quarterly sales report and marketing budget", "To introduce a new employee", "To plan a company party", "To review the annual budget"],
+      answer: 0,
+      explanation: "The speaker says 'we need to discuss the quarterly sales report and decide on our marketing budget for the next year.' The purpose is clearly stated at the beginning.",
+    },
+    {
+      id: "L2",
+      image: "https://images.pexels.com/photos/12717154/pexels-photo-12717154.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Attention passengers. Flight 847 to Singapore has been delayed by two hours due to bad weather conditions. The new departure time is 3:45 PM. Please proceed to gate 22 for boarding. We apologize for any inconvenience.",
+      question: "Why was the flight delayed?",
+      choices: ["Mechanical problems", "Bad weather conditions", "Late passengers", "Security issues"],
+      answer: 1,
+      explanation: "The announcement states 'Flight 847 to Singapore has been delayed by two hours due to bad weather conditions.' The cause is bad weather.",
+    },
+    {
+      id: "L3",
+      image: "https://images.pexels.com/photos/7654178/pexels-photo-7654178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Hi, this is Jennifer from the HR department. I'm calling to remind you that your annual performance review is scheduled for next Tuesday at 10 AM in conference room B. Please bring your self-assessment form and any documents you'd like to discuss.",
+      question: "What does the listener need to bring to the meeting?",
+      choices: ["A resume and cover letter", "A self-assessment form and documents", "A laptop and projector", "Nothing is needed"],
+      answer: 1,
+      explanation: "Jennifer says 'Please bring your self-assessment form and any documents you'd like to discuss.' The required items are clearly stated.",
+    },
+    {
+      id: "L4",
+      image: "https://images.pexels.com/photos/5865152/pexels-photo-5865152.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Welcome to La Bella Restaurant. Tonight we have a special three-course menu featuring our chef's signature dishes. The appetizer is a fresh bruschetta, followed by grilled salmon with seasonal vegetables, and for dessert, our famous tiramisu. Would you like to see the wine list?",
+      question: "What is included in the special menu?",
+      choices: ["Two courses and a drink", "Three courses: bruschetta, salmon, and tiramisu", "Only a main dish", "A buffet with multiple options"],
+      answer: 1,
+      explanation: "The speaker describes 'a special three-course menu' with bruschetta, grilled salmon, and tiramisu as the three courses.",
+    },
+    {
+      id: "L5",
+      image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Thank you for calling Tech Solutions. Our office is currently closed. Our regular business hours are Monday through Friday, 9 AM to 6 PM. For urgent technical support, please press 1 to be connected to our emergency hotline. Otherwise, leave a message after the beep.",
+      question: "What should the caller do for urgent technical support?",
+      choices: ["Leave a message after the beep", "Call back during business hours", "Press 1 for the emergency hotline", "Send an email"],
+      answer: 2,
+      explanation: "The message says 'For urgent technical support, please press 1 to be connected to our emergency hotline.' Pressing 1 is the correct action.",
+    },
+    {
+      id: "L6",
+      image: "https://images.pexels.com/photos/8547344/pexels-photo-8547344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Good afternoon. I'd like to announce that our company has just signed a partnership agreement with Global Tech Industries. This collaboration will allow us to expand our services to the Asian market starting next January. We expect this to create at least fifty new jobs within the company.",
+      question: "How many new jobs are expected to be created?",
+      choices: ["Fifteen", "Fifty", "Five hundred", "Five"],
+      answer: 1,
+      explanation: "The speaker says 'We expect this to create at least fifty new jobs within the company.' The number is fifty.",
+    },
+    {
+      id: "L7",
+      image: "https://images.pexels.com/photos/7108454/pexels-photo-7108454.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "This is a reminder that the company picnic will be held this Saturday at Riverside Park from noon to 4 PM. All employees and their families are welcome. Please RSVP to the event coordinator by Thursday so we can finalize the catering order. Don't forget to bring sunscreen!",
+      question: "When should employees RSVP?",
+      choices: ["By Saturday", "By Thursday", "By Friday", "By Wednesday"],
+      answer: 1,
+      explanation: "The speaker says 'Please RSVP to the event coordinator by Thursday so we can finalize the catering order.' The deadline is Thursday.",
+    },
+    {
+      id: "L8",
+      image: "https://images.pexels.com/photos/37772239/pexels-photo-37772239.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Ladies and gentlemen, we are now approaching our destination. Please fasten your seatbelts and return your tray tables to their upright position. The local time is 7:30 AM and the temperature outside is 22 degrees Celsius. We hope you enjoyed your flight with us.",
+      question: "What is the local temperature?",
+      choices: ["27 degrees", "22 degrees Celsius", "7 degrees", "30 degrees"],
+      answer: 1,
+      explanation: "The announcement states 'the temperature outside is 22 degrees Celsius.' The temperature is 22 degrees.",
+    },
+    {
+      id: "L9",
+      image: "https://images.pexels.com/photos/5531037/pexels-photo-5531037.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "Excuse me, I'd like to make a reservation for four people this Friday at 7 PM. We're celebrating a birthday, so could you arrange a table near the window? Also, one of our guests is vegetarian — do you have a vegetarian menu available?",
+      question: "What special request does the customer make?",
+      choices: ["A table near the window and a vegetarian menu", "A birthday cake and candles", "A private room and a band", "A discount for a large group"],
+      answer: 0,
+      explanation: "The customer asks for 'a table near the window' and mentions 'one of our guests is vegetarian — do you have a vegetarian menu available?' Both requests are stated.",
+    },
+    {
+      id: "L10",
+      image: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      transcript: "I'm pleased to report that our new product line has exceeded all expectations. In the first month alone, we sold over ten thousand units, generating approximately two million dollars in revenue. Customer feedback has been overwhelmingly positive, with 95% of buyers rating the product four stars or above.",
+      question: "What percentage of buyers rated the product four stars or above?",
+      choices: ["85%", "90%", "95%", "99%"],
+      answer: 2,
+      explanation: "The speaker says '95% of buyers rating the product four stars or above.' The percentage is 95%.",
+    },
+  ],
+
+  reading: [
+    {
+      id: "R1",
+      image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "MEMORANDUM\n\nTo: All Staff\nFrom: Robert Chen, Operations Director\nDate: March 15\nSubject: New Office Hours\n\nStarting April 1st, our office will implement new operating hours. The office will open at 8:30 AM instead of 9:00 AM and close at 5:00 PM rather than 6:00 PM. This change is being made to improve work-life balance and reduce overtime costs. Employees who currently start at 9:00 AM will need to adjust their schedules accordingly. Flexible start times between 7:30 AM and 8:30 AM will be available upon request.",
+      question: "What is the main reason for the change in office hours?",
+      choices: ["To reduce overtime costs and improve work-life balance", "To accommodate more clients", "To compete with other companies", "To increase productivity"],
+      answer: 0,
+      explanation: "The memo states 'This change is being made to improve work-life balance and reduce overtime costs.' Both reasons are explicitly mentioned.",
+    },
+    {
+      id: "R2",
+      image: "https://images.pexels.com/photos/12717154/pexels-photo-12717154.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "FLIGHT INFORMATION\n\nPassengers traveling on international flights are advised to arrive at the airport at least three hours before departure. Check-in counters close 45 minutes before the scheduled departure time. Each passenger is allowed one carry-on bag weighing no more than 10 kg and one personal item. Excess baggage fees apply for checked bags exceeding 23 kg. Business class passengers enjoy an increased allowance of 32 kg per checked bag.",
+      question: "How much can a business class passenger's checked bag weigh?",
+      choices: ["10 kg", "23 kg", "32 kg", "45 kg"],
+      answer: 2,
+      explanation: "The text states 'Business class passengers enjoy an increased allowance of 32 kg per checked bag.' The allowance is 32 kg.",
+    },
+    {
+      id: "R3",
+      image: "https://images.pexels.com/photos/7654178/pexels-photo-7654178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "ANNUAL REPORT EXCERPT\n\nThis year marked a significant milestone for our company. Total revenue reached $45.2 million, representing a 12% increase over the previous year. Our international division saw the most growth, with sales in Asia rising by 28%. The company hired 120 new employees across all departments, bringing our total workforce to 850. Looking ahead, we plan to open three new regional offices in the coming fiscal year.",
+      question: "How many new employees were hired this year?",
+      choices: ["85", "120", "450", "850"],
+      answer: 1,
+      explanation: "The report states 'The company hired 120 new employees across all departments.' The number hired is 120.",
+    },
+    {
+      id: "R4",
+      image: "https://images.pexels.com/photos/5865152/pexels-photo-5865152.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "CUSTOMER SATISFACTION SURVEY RESULTS\n\nWe surveyed 500 customers about their dining experience. 78% rated the food quality as excellent, while 65% praised the friendly service. However, 42% felt that wait times were too long during peak hours. Only 15% found the prices too high. Based on these results, management plans to hire additional staff for evening shifts and introduce a reservation system to better manage customer flow.",
+      question: "What percentage of customers found the prices too high?",
+      choices: ["78%", "65%", "42%", "15%"],
+      answer: 3,
+      explanation: "The survey states 'Only 15% found the prices too high.' The percentage is 15%.",
+    },
+    {
+      id: "R5",
+      image: "https://images.pexels.com/photos/8547344/pexels-photo-8547344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "EMAIL\n\nDear Mr. Thompson,\n\nThank you for your interest in the Software Developer position at Innovatech. We were impressed by your portfolio and would like to invite you for an interview. The interview will take place on March 20th at 2 PM at our downtown office. Please prepare to discuss your experience with JavaScript frameworks and bring examples of your previous work. The interview will last approximately 90 minutes and will include a brief technical assessment.\n\nBest regards,\nSarah Martinez\nHR Manager",
+      question: "What should the candidate bring to the interview?",
+      choices: ["A resume and references", "Examples of previous work", "A laptop and presentation", "A completed application form"],
+      answer: 1,
+      explanation: "The email says 'bring examples of your previous work.' The candidate should bring examples of previous work.",
+    },
+    {
+      id: "R6",
+      image: "https://images.pexels.com/photos/7108454/pexels-photo-7108454.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "COMPANY POLICY UPDATE\n\nEffective June 1st, all employees will be required to complete a cybersecurity training course. The online course takes approximately two hours and covers topics including password security, phishing awareness, and data protection. Employees must complete the training by July 15th. Those who fail to do so will have their system access temporarily suspended until the course is finished. The training can be accessed through the company intranet portal.",
+      question: "What will happen to employees who don't complete the training by July 15th?",
+      choices: ["They will be fired", "Their system access will be temporarily suspended", "They will receive a salary reduction", "They will be reassigned"],
+      answer: 1,
+      explanation: "The policy states 'Those who fail to do so will have their system access temporarily suspended until the course is finished.' The consequence is temporary suspension of system access.",
+    },
+    {
+      id: "R7",
+      image: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "NOTICE TO ALL TENANTS\n\nPlease be informed that the building's elevator system will undergo maintenance from Monday, May 8th through Wednesday, May 10th. During this period, only one elevator will be in service. We recommend using the stairs for floors 1 through 3. Deliveries requiring the freight elevator should be rescheduled. We apologize for the inconvenience and appreciate your patience. If you have any questions, please contact the building management office at extension 105.",
+      question: "What is recommended for floors 1 through 3 during maintenance?",
+      choices: ["Use the stairs", "Wait for the elevator", "Use the freight elevator", "Work from home"],
+      answer: 0,
+      explanation: "The notice says 'We recommend using the stairs for floors 1 through 3.' Using the stairs is recommended.",
+    },
+    {
+      id: "R8",
+      image: "https://images.pexels.com/photos/5531037/pexels-photo-5531037.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "PROMOTION ANNOUNCEMENT\n\nGreen Valley Cafe is celebrating its fifth anniversary with a special promotion! From May 1st to May 15th, all customers will receive a 20% discount on their total bill. Additionally, the first 50 customers each day will receive a complimentary dessert. Our new spring menu features organic salads, artisan sandwiches, and freshly squeezed juices. Join us Monday through Friday from 7 AM to 8 PM. Reservations are recommended for groups of six or more.",
+      question: "What do the first 50 customers each day receive?",
+      choices: ["A 20% discount", "A complimentary dessert", "A free coffee", "A loyalty card"],
+      answer: 1,
+      explanation: "The announcement states 'the first 50 customers each day will receive a complimentary dessert.' The first 50 customers get a free dessert.",
+    },
+    {
+      id: "R9",
+      image: "https://images.pexels.com/photos/37772239/pexels-photo-37772239.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "TRAVEL EXPENSE POLICY\n\nEmployees traveling for business purposes may claim reimbursement for the following: economy-class airfare, hotel accommodations up to $150 per night, meals up to $50 per day, and ground transportation including taxis and rental cars. All receipts must be submitted within 30 days of return. First-class travel and personal entertainment expenses are not reimbursable. Expense reports must be approved by the department head before submission to Finance.",
+      question: "What is the maximum hotel reimbursement per night?",
+      choices: ["$50", "$100", "$150", "$200"],
+      answer: 2,
+      explanation: "The policy states 'hotel accommodations up to $150 per night.' The maximum is $150 per night.",
+    },
+    {
+      id: "R10",
+      image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+      passage: "CONFERENCE INVITATION\n\nYou are cordially invited to attend the 2024 International Business Conference, held at the Grand Convention Center from September 12-14. This three-day event features keynote speeches from industry leaders, interactive workshops, and networking opportunities with over 200 companies. Early bird registration is available until August 1st at a discounted rate of $299. After that, the standard fee of $399 applies. Group discounts are available for parties of five or more.",
+      question: "How much does early bird registration cost?",
+      choices: ["$200", "$299", "$399", "$500"],
+      answer: 1,
+      explanation: "The invitation states 'Early bird registration is available until August 1st at a discounted rate of $299.' The early bird rate is $299.",
+    },
+  ],
+
+  vocab: [
+    {
+      id: "V1",
+      type: "fillblank",
+      sentence: "The company has decided to _____ its operations to include three new countries in Southeast Asia.",
+      choices: ["expand", "expands", "expanding", "expanded"],
+      answer: 0,
+      explanation: "After 'decided to', we need the base form of the verb (infinitive without 'to'). 'Expand' is the correct base form. The pattern is 'decide to + base verb'.",
+    },
+    {
+      id: "V2",
+      type: "fillblank",
+      sentence: "All employees are required to attend the safety training session, _____ is scheduled for next Wednesday.",
+      choices: ["that", "which", "who", "whose"],
+      answer: 1,
+      explanation: "'Which' is used as a relative pronoun to refer to a thing (the training session) in a non-restrictive relative clause (set off by a comma). 'That' cannot be used after a comma.",
+    },
+    {
+      id: "V3",
+      type: "fillblank",
+      sentence: "The new manager is known for her _____ approach to problem-solving, always considering multiple perspectives.",
+      choices: ["narrow", "rigid", "flexible", "stubborn"],
+      answer: 2,
+      explanation: "'Flexible' means adaptable and willing to consider different approaches. The context 'always considering multiple perspectives' indicates a flexible approach. The other options have negative connotations.",
+    },
+    {
+      id: "V4",
+      type: "fillblank",
+      sentence: "Despite the economic downturn, our company managed to _____ a profit for the third consecutive quarter.",
+      choices: ["make", "making", "made", "makes"],
+      answer: 0,
+      explanation: "After 'managed to', we need the base form of the verb. 'Make' is the correct infinitive form. The pattern is 'manage to + base verb'.",
+    },
+    {
+      id: "V5",
+      type: "fillblank",
+      sentence: "The proposal was _____ by the board of directors after a lengthy discussion about its feasibility.",
+      choices: ["approve", "approving", "approved", "approves"],
+      answer: 2,
+      explanation: "The passive voice requires the past participle. 'Was approved' is the correct passive construction. The subject 'proposal' receives the action, so passive voice is needed.",
+    },
+    {
+      id: "V6",
+      type: "fillblank",
+      sentence: "Please ensure that all documents are submitted _____ the deadline to avoid processing delays.",
+      choices: ["before", "after", "during", "since"],
+      answer: 0,
+      explanation: "'Before' is the correct preposition here. Submitting documents 'before' the deadline prevents delays. 'After' would cause delays, contradicting the context.",
+    },
+    {
+      id: "V7",
+      type: "fillblank",
+      sentence: "The marketing team has been working _____ on the new advertising campaign for the product launch.",
+      choices: ["hard", "hardly", "harder", "hardness"],
+      answer: 0,
+      explanation: "'Hard' is both an adjective and an adverb. As an adverb meaning 'with great effort', 'hard' is correct. 'Hardly' means 'barely' or 'almost not', which would change the meaning completely.",
+    },
+    {
+      id: "V8",
+      type: "fillblank",
+      sentence: "The conference room can _____ up to fifty people, making it ideal for large presentations.",
+      choices: ["accommodate", "accommodation", "accommodating", "accommodated"],
+      answer: 0,
+      explanation: "After the modal 'can', we need the base form of the verb. 'Accommodate' is the correct base form. 'Accommodation' is a noun, not a verb.",
+    },
+    {
+      id: "V9",
+      type: "fillblank",
+      sentence: "Ms. Johnson will be responsible _____ managing the new project from its inception to completion.",
+      choices: ["for", "of", "to", "in"],
+      answer: 0,
+      explanation: "The correct preposition with 'responsible' is 'for'. The pattern is 'responsible for + gerund'. 'Responsible of' and 'responsible to' are incorrect in this context.",
+    },
+    {
+      id: "V10",
+      type: "fillblank",
+      sentence: "The annual report shows that sales have increased _____ 20% compared to last year's figures.",
+      choices: ["by", "at", "on", "with"],
+      answer: 0,
+      explanation: "'By' is used to express the amount or degree of change. 'Increased by 20%' indicates the magnitude of the increase. Other prepositions don't convey this meaning.",
+    },
+    {
+      id: "V11",
+      type: "fillblank",
+      sentence: "The IT department will _____ the new software update over the weekend to minimize disruption.",
+      choices: ["install", "installation", "installing", "installed"],
+      answer: 0,
+      explanation: "After the modal 'will', we need the base form of the verb. 'Install' is the correct base form. 'Installation' is a noun, not a verb.",
+    },
+    {
+      id: "V12",
+      type: "fillblank",
+      sentence: "Our company values employees who show _____ and are willing to take on new challenges.",
+      choices: ["initiative", "initiate", "initiation", "initial"],
+      answer: 0,
+      explanation: "'Initiative' is the noun meaning 'the ability to assess and initiate things independently'. The sentence needs a noun as the object of 'show'. The other options are different parts of speech.",
+    },
+  ],
+};
+
+// ─── Badges débloquables ─────────────────────────────────────────────────────
+export const BADGES = [
+  { id: "first_session", name: "Premier Pas", emoji: "🎯", description: "Compléter votre première session", condition: (s) => s.totalSessions >= 1 },
+  { id: "streak_3", name: "Régulier", emoji: "🔥", description: "Maintenir un streak de 3 jours", condition: (s) => s.streak >= 3 },
+  { id: "streak_7", name: "Semaine Parfaite", emoji: "⚡", description: "Maintenir un streak de 7 jours", condition: (s) => s.streak >= 7 },
+  { id: "level_5", name: "Apprenti TOEIC", emoji: "🎓", description: "Atteindre le niveau 5", condition: (s) => s.level >= 5 },
+  { id: "level_10", name: "Expert TOEIC", emoji: "🏆", description: "Atteindre le niveau 10", condition: (s) => s.level >= 10 },
+  { id: "score_600", name: "Score 600+", emoji: "📈", description: "Atteindre un score estimé de 600", condition: (s) => s.estimatedScore >= 600 },
+  { id: "score_800", name: "Score 800+", emoji: "🌟", description: "Atteindre un score estimé de 800", condition: (s) => s.estimatedScore >= 800 },
+  { id: "perfect_session", name: "Sans Faute", emoji: "💯", description: "Réussir une session sans aucune erreur", condition: (s) => s.perfectSessions >= 1 },
+  { id: "listening_master", name: "Maître Listening", emoji: "🎧", description: "Répondre correctement à 10 questions Listening", condition: (s) => (s.skillStats?.listening?.correct || 0) >= 10 },
+  { id: "reading_master", name: "Maître Reading", emoji: "📖", description: "Répondre correctement à 10 questions Reading", condition: (s) => (s.skillStats?.reading?.correct || 0) >= 10 },
+  { id: "vocab_master", name: "Maître Vocabulaire", emoji: "📚", description: "Répondre correctement à 10 questions Vocabulaire", condition: (s) => (s.skillStats?.vocab?.correct || 0) >= 10 },
+  { id: "xp_1000", name: "Mille XP", emoji: "✨", description: "Accumuler 1000 XP", condition: (s) => s.totalXP >= 1000 },
+];
+
+// ─── Niveaux ─────────────────────────────────────────────────────────────────
+export function xpForLevel(level) {
+  return Math.floor(100 * level * (1 + level * 0.15));
+}
+
+export function levelFromXP(totalXP) {
+  let level = 1;
+  let remaining = totalXP;
+  while (remaining >= xpForLevel(level)) {
+    remaining -= xpForLevel(level);
+    level++;
+  }
+  return { level, xpInLevel: remaining, xpForNext: xpForLevel(level) };
+}
+
+// ─── Images par mode ──────────────────────────────────────────────────────────
+export const MODE_IMAGES = {
+  listening: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  reading: "https://images.pexels.com/photos/7654178/pexels-photo-7654178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  vocab: "https://images.pexels.com/photos/8547344/pexels-photo-8547344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+};
+
+export const MODE_INFO = {
+  listening: { name: "Listening", emoji: "🎧", color: "listening", description: "Compréhension orale avec audio", count: 10 },
+  reading: { name: "Reading", emoji: "📖", color: "reading", description: "Compréhension écrite business", count: 10 },
+  vocab: { name: "Vocabulary & Grammar", emoji: "📚", color: "vocab", description: "Grammaire et vocabulaire", count: 12 },
+};

@@ -1,0 +1,178 @@
+@import "tailwindcss";
+
+/* ── Tokens shadcn/ui → Tailwind v4 ──────────────────────────────────────── */
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+  --color-mango: hsl(var(--mango));
+  --color-coral: hsl(var(--coral));
+  --color-steel: hsl(var(--steel));
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* ── FORGE : thème sombre industriel chic ────────────────────────────────── */
+@layer base {
+  :root {
+    /* Fond sombre industriel */
+    --background: 220 13% 8%;          /* #111316 — anthracite profond */
+    --foreground: 40 6% 88%;          /* #e1ded8 — texte chaud clair */
+    --card: 220 10% 11%;              /* #1a1d22 — cartes métal sombre */
+    --card-foreground: 40 6% 88%;
+    --popover: 220 10% 11%;
+    --popover-foreground: 40 6% 88%;
+    --primary: 32 90% 56%;            /* Mango #F2A33C — CTA principal */
+    --primary-foreground: 220 13% 8%;
+    --secondary: 220 8% 16%;          /* #262a30 — métal brossé */
+    --secondary-foreground: 40 6% 88%;
+    --muted: 220 8% 14%;
+    --muted-foreground: 220 5% 55%;   /* #8a8f98 — gris acier */
+    --accent: 14 80% 56%;             /* Coral #E8624A — survols chauds */
+    --accent-foreground: 220 13% 8%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 40 6% 96%;
+    --border: 220 8% 18%;             /* #2a2d33 — bordures discrètes */
+    --input: 220 8% 16%;
+    --ring: 32 90% 56%;
+    --radius: 0.75rem;
+
+    /* Accents Mango */
+    --mango: 32 90% 56%;              /* #F2A33C */
+    --coral: 14 80% 56%;              /* #E8624A */
+    --steel: 220 8% 55%;              /* acier */
+
+    --font-display: "Space Grotesk", "Inter", system-ui, sans-serif;
+    --font-body: "Inter", system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", "Courier New", monospace;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+    box-sizing: border-box;
+  }
+
+  html {
+    scroll-padding-top: 5rem;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
+    font-family: var(--font-body);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-display);
+    letter-spacing: -0.02em;
+  }
+}
+
+/* ── Animations & utilitaires FORGE ──────────────────────────────────────── */
+@layer utilities {
+  @keyframes forge-reveal {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes forge-fade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+
+  @keyframes forge-glow {
+    0%, 100% { box-shadow: 0 0 20px -8px hsl(var(--mango) / 0.4); }
+    50%      { box-shadow: 0 0 40px -4px hsl(var(--mango) / 0.6); }
+  }
+
+  @keyframes forge-pulse-rgb {
+    0%   { filter: hue-rotate(0deg); }
+    100% { filter: hue-rotate(360deg); }
+  }
+
+  @keyframes forge-press {
+    0%   { transform: translateY(0); }
+    50%  { transform: translateY(3px); }
+    100% { transform: translateY(0); }
+  }
+
+  .forge-reveal {
+    opacity: 0;
+    animation: forge-reveal 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .forge-fade {
+    animation: forge-fade 0.5s ease forwards;
+  }
+
+  .forge-glow {
+    animation: forge-glow 3s ease-in-out infinite;
+  }
+
+  .forge-rgb {
+    animation: forge-pulse-rgb 4s linear infinite;
+  }
+
+  .forge-text-gradient {
+    background: linear-gradient(135deg, hsl(var(--mango)), hsl(var(--coral)));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .forge-grid-bg {
+    background-image:
+      linear-gradient(hsl(var(--border) / 0.4) 1px, transparent 1px),
+      linear-gradient(90deg, hsl(var(--border) / 0.4) 1px, transparent 1px);
+    background-size: 48px 48px;
+  }
+
+  .forge-metal {
+    background: linear-gradient(145deg, hsl(220 10% 14%), hsl(220 10% 9%));
+    box-shadow:
+      inset 0 1px 0 hsl(0 0% 100% / 0.05),
+      0 4px 16px hsl(220 13% 4% / 0.6);
+  }
+
+  .forge-keycap {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+  }
+
+  .forge-keycap:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px hsl(var(--mango) / 0.3);
+  }
+
+  .forge-keycap-pressed {
+    transform: translateY(2px) !important;
+    box-shadow: inset 0 2px 4px hsl(0 0% 0% / 0.4) !important;
+  }
+
+  .forge-scroll-thin::-webkit-scrollbar { width: 6px; }
+  .forge-scroll-thin::-webkit-scrollbar-track { background: transparent; }
+  .forge-scroll-thin::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 3px;
+  }
+}

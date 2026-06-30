@@ -1,0 +1,73 @@
+// ── Zones de profondeur océanique ──────────────────────────────────────────
+export const ZONES = [
+  {
+    id: "epipelagique",
+    name: "Zone épipélagique",
+    subtitle: "La zone ensoleillée",
+    depthStart: 0,
+    depthEnd: 200,
+    temperature: "12 à 25 °C",
+    pressure: "1 à 20 atm",
+    luminosity: "Pleine lumière solaire",
+    description:
+      "La couche supérieure de l'océan, baignée de lumière. C'est ici que la photosynthèse est possible, abritant le plus grand nombre d'espèces marines. La chaleur du soleil réchauffe les eaux de surface et alimente toute la chaîne alimentaire océanique.",
+    image: "https://images.pexels.com/photos/8333028/pexels-photo-8333028.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    color: "#0a4a7a",
+  },
+  {
+    id: "mesopelagique",
+    name: "Zone mésopélagique",
+    subtitle: "La zone crépusculaire",
+    depthStart: 200,
+    depthEnd: 1000,
+    temperature: "5 à 12 °C",
+    pressure: "20 à 100 atm",
+    luminosity: "Lumière faible, crépuscule bleu",
+    description:
+      "La lumière du soleil s'éteint progressivement. De nombreuses espèces effectuent ici la plus grande migration quotidienne de la planète : elles remontent la nuit vers la surface pour se nourrir, puis redescendent le jour. La bioluminescence fait ses premières apparitions.",
+    image: "https://images.pexels.com/photos/4731922/pexels-photo-4731922.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    color: "#062a4a",
+  },
+  {
+    id: "bathyale",
+    name: "Zone bathyale",
+    subtitle: "La zone de minuit",
+    depthStart: 1000,
+    depthEnd: 4000,
+    temperature: "2 à 4 °C",
+    pressure: "100 à 400 atm",
+    luminosity: "Obscurité totale",
+    description:
+      "Aucune lumière solaire ne pénètre ici. L'obscurité est totale, brisée uniquement par les éclats bioluminescents des créatures. La pression écrasante et le froid glacial rendent cette zone hostile, mais la vie s'y adapte avec des formes étonnantes.",
+    image: "https://images.pexels.com/photos/5808768/pexels-photo-5808768.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    color: "#031528",
+  },
+  {
+    id: "abyssale",
+    name: "Zone abyssale",
+    subtitle: "L'abîme",
+    depthStart: 4000,
+    depthEnd: 6000,
+    temperature: "1 à 2 °C",
+    pressure: "400 à 600 atm",
+    luminosity: "Nuit perpétuelle",
+    description:
+      "Un monde de noir absolu, de froid constant et de pression colossale. Les plaines abyssales couvrent la majorité du fond des océans. Les créatures qui y vivent ont développé des adaptations extraordinaires : corps translucides, organes lumineux, métabolismes ultra-lents.",
+    image: "https://images.pexels.com/photos/5808756/pexels-photo-5808756.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    color: "#010812",
+  },
+  {
+    id: "hadale",
+    name: "Zone hadale",
+    subtitle: "Les tranchées",
+    depthStart: 6000,
+    depthEnd: 11000,
+    temperature: "1 à 4 °C",
+    pressure: "600 à 1100 atm",
+    luminosity: "Nuit éternelle, sources hydrothermales",
+    description:
+      "Le royaume le plus extrême de l'océan, dans les fosses et tranchées. La pression atteint plus de 1000 fois celle de la surface. Près des sources hydrothermales, des écosystèmes entiers vivent sans lumière, tirant leur énergie de la chimiosynthèse. C'est le dernier frontier de la Terre.",
+    image: "https://images.pexels.com/photos/4812195/pexels-photo-4812195.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    color: "#000206",
+  },
+];
