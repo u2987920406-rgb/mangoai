@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 ✅ COMPLET (5 briques + assemble_brique, prouvé live) · #170 idée ouverte
+statut: #169 ✅ COMPLET (5 briques + assemble_brique) · #170 🔨 slice 1 livrée (coffre + utilise_secret, prouvé live)
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -25,7 +25,7 @@ L'argument de fond : un harnais mûr fait que l'IA « sort un produit propre du 
 | **Skills internes** (protocoles inter-agents) | [[le-stratege]] · [[gardien-cloture]] · routage `route()` | ✅ |
 | **Scripts déterministes** (~80) | `runParcours`, `measureDesign`, `sharinganAnalyze`, parsing pur… | ✅ (« éviter de cramer des tokens » = logique identique) |
 | **Templates** (~100, dont **infra back** : BDD/paiement/RGPD/sécurité) | ~30 templates **front** (#81-#83) + **5 briques back composables livrées** (#169 : auth·db·paiement·securite·RGPD) | 🟢 **#169 : 5 briques ✅** (reste l'assemblage Élève) |
-| **Gestion des secrets** (Bitwarden API) | `.env` + anti-SSRF `isCloneableUrl` + `sanitizeExternal` | 🟡 **trou → #170** |
+| **Gestion des secrets** (Bitwarden API) | coffre **chiffré AES-256-GCM** + `utilise_secret` (réf→résolu serveur, valeur rédigée) — #170 slice 1 | 🟢 **#170 slice 1 ✅** (Bitwarden/age = upgrade) |
 | **Boucle fonctionnelle** (se réveille seule) | Runs autonomes ([[boucle-nocturne]], `run-mango-nuit.ts`) | ✅ |
 | **Boucle architecturale** (réécrit ses propres skills) | [[auto-amelioration]] (`mango-self.ts` B1-B4) + [[auto-evolution]] (#168) | ✅ |
 
@@ -59,6 +59,8 @@ Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-for
 - fournisseur : **Bitwarden Secrets Manager** (`bws`) + repli souverain `age`/`sops` ;
 - outil Élève `utilise_secret(ref)` à périmètre strict (injecte dans l'appel réseau autorisé #166, ne renvoie jamais la valeur) ;
 - **règle absolue** : ni Claude ni l'Élève ne *saisit* une clé — uniquement des références opaques (cohérent **L27**).
+
+> **🔨 Slice 1 livrée (2026-06-30), prouvée live** : `secret-vault.ts` (références `secret://ns/clé`, **backend fichier chiffré AES-256-GCM** `node:crypto` zéro-dép, `resolveSecret`, garde **`redact`**) + KernelTool **`utilise_secret`** (gaté `ELEVE_VAULT=on` : résout côté serveur, injecte dans l'appel autorisé anti-SSRF, **rédige la valeur** → jamais dans la couche LLM) + CLI `vault-cli.ts`. **30 tests verts**, `tsc` 0. **Live** : secret chiffré → `utilise_secret` sur `httpbin.org/bearer` (200, injection OK) → `"token": "«secret»"`. Reste : brancher `securite`/`RGPD` (#169) ; backend Bitwarden `bws`/`age`. Limite **L67**.
 
 ## Liens
 

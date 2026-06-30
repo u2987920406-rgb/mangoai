@@ -21,6 +21,7 @@ import { buildEleveUnityTools } from "./eleve-unity-tools.js";
 import { buildEleveFluxTools } from "./eleve-flux-tools.js";
 import { buildEleveContentTools } from "./eleve-content-tools.js";
 import { buildEleveBricksTools } from "./eleve-bricks-tools.js";
+import { buildEleveVaultTools } from "./secret-vault-tools.js";
 import { buildEleveSliceTools } from "./eleve-slice-tools.js";
 
 // (Phase 3b) Cache des outils MCP externes pré-chargés (async) UNE fois par le moteur
@@ -370,6 +371,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // assemble_brique compose auth/db/paiement/securite/RGPD dans le projet au lieu de tout réécrire.
   if (process.env.ELEVE_BRICKS === "on") {
     for (const t of buildEleveBricksTools(projectDir)) reg.register(t);
+  }
+
+  // Coffre-fort de secrets #170 (opt-in ELEVE_VAULT=on, défaut OFF) : utilise_secret résout une
+  // référence secret://… côté serveur et l'injecte dans un appel autorisé — la valeur ne touche
+  // jamais la couche LLM (rédigée). Coffre configuré par MANGO_VAULT_FILE/MANGO_VAULT_KEY.
+  if (process.env.ELEVE_VAULT === "on") {
+    for (const t of buildEleveVaultTools(projectDir)) reg.register(t);
   }
 
   // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :
