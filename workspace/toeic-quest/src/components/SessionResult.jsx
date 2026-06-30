@@ -14,7 +14,7 @@ export function SessionResult({ session, onBackHome, onRetry }) {
   const [animatedScore, setAnimatedScore] = useState(0);
 
   const { mode, total, correct, xpEarned, timedOut } = session;
-  const modeInfo = MODE_INFO[mode];
+  const modeInfo = MODE_INFO[mode] || { emoji: "🎯", name: "Session" };
   const accuracy = Math.round((correct / total) * 100);
   const isPerfect = correct === total;
   const isGood = accuracy >= 70;

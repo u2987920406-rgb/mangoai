@@ -1,7 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { BADGES, levelFromXP } from "../data/questions.js";
+import { BADGES, levelFromXP, estimateScore, DIFFICULTY_WEIGHTS } from "../data/questions.js";
+import { getModule, levelToUnlockAfter, LEVEL_ORDER } from "../data/curriculum.js";
+import { resolvePlacement } from "../data/bank/index.js";
 
 const STORAGE_KEY = "toeicquest_progress_v1";
+
+const EMPTY_PART_STATS = { P1: { correct: 0, total: 0 }, P2: { correct: 0, total: 0 }, P3: { correct: 0, total: 0 }, P4: { correct: 0, total: 0 }, P5: { correct: 0, total: 0 }, P6: { correct: 0, total: 0 }, P7: { correct: 0, total: 0 } };
 
 const DEFAULT_STATE = {
   totalXP: 0,
@@ -17,6 +21,15 @@ const DEFAULT_STATE = {
     vocab: { correct: 0, total: 0 },
   },
   sessionHistory: [],
+  // ── Parcours (additif) ──
+  placementDone: false,
+  placementLevel: null,
+  unlockedLevel: "debutant",
+  moduleProgress: {},            // { [moduleId]: { completed, bestAccuracy, stars, attempts, questionsSeen } }
+  partStats: { ...EMPTY_PART_STATS },
+  weightedCorrect: 0,            // Σ(correct · W[difficulty]) — pour le score pondéré
+  weightedTotal: 0,             // Σ(W[difficulty])
+  hardSeen: 0,                   // #questions difficulty ≥ 2 répondues (couverture)
 };
 
 function loadState() {
@@ -24,7 +37,13 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return { ...DEFAULT_STATE };
     const parsed = JSON.parse(raw);
-    return { ...DEFAULT_STATE, ...parsed, skillStats: { ...DEFAULT_STATE.skillStats, ...(parsed.skillStats || {}) } };
+    return {
+      ...DEFAULT_STATE,
+      ...parsed,
+      skillStats: { ...DEFAULT_STATE.skillStats, ...(parsed.skillStats || {}) },
+      partStats: { ...EMPTY_PART_STATS, ...(parsed.partStats || {}) },
+      moduleProgress: { ...(parsed.moduleProgress || {}) },
+    };
   } catch {
     return { ...DEFAULT_STATE };
   }
@@ -38,6 +57,13 @@ function daysBetween(d1, d2) {
   const a = new Date(d1 + "T00:00:00");
   const b = new Date(d2 + "T00:00:00");
   return Math.round((b - a) / 86400000);
+}
+
+function starsFor(accuracy) {
+  if (accuracy >= 1) return 3;
+  if (accuracy >= 0.85) return 2;
+  if (accuracy >= 0.7) return 1;
+  return 0;
 }
 
 export function useProgress() {
@@ -63,27 +89,80 @@ export function useProgress() {
         newStreak = 1;
       }
 
-      const newTotalXP = prev.totalXP + sessionData.xpEarned;
+      const newTotalXP = prev.totalXP + (sessionData.xpEarned || 0);
       const { level } = levelFromXP(newTotalXP);
 
-      // Update skill stats
-      const skillKey = sessionData.mode;
-      const prevSkill = prev.skillStats[skillKey] || { correct: 0, total: 0 };
-      const newSkillStats = {
-        ...prev.skillStats,
-        [skillKey]: {
-          correct: prevSkill.correct + sessionData.correct,
-          total: prevSkill.total + sessionData.total,
-        },
-      };
+      // Détail par question : skillStats + partStats + score pondéré + couverture.
+      // Les stats par compétence se déduisent du DÉTAIL des réponses (gère les
+      // modules « mixed » = bilans). Repli sur sessionData.mode si pas de détail.
+      const results = Array.isArray(sessionData.results) ? sessionData.results : [];
+      const newSkillStats = { ...prev.skillStats };
+      const newPartStats = { ...prev.partStats };
+      let addWeightedCorrect = 0;
+      let addWeightedTotal = 0;
+      let addHardSeen = 0;
+      if (results.length) {
+        for (const r of results) {
+          const skill = r.skill;
+          if (skill && newSkillStats[skill]) {
+            newSkillStats[skill] = {
+              correct: newSkillStats[skill].correct + (r.correct ? 1 : 0),
+              total: newSkillStats[skill].total + 1,
+            };
+          }
+          const part = r.part;
+          if (part && newPartStats[part]) {
+            newPartStats[part] = {
+              correct: newPartStats[part].correct + (r.correct ? 1 : 0),
+              total: newPartStats[part].total + 1,
+            };
+          }
+          const w = DIFFICULTY_WEIGHTS[r.difficulty] ?? 1.0;
+          addWeightedTotal += w;
+          if (r.correct) addWeightedCorrect += w;
+          if ((r.difficulty ?? 1) >= 2) addHardSeen += 1;
+        }
+      } else if (sessionData.mode && newSkillStats[sessionData.mode]) {
+        // Repli legacy (3 modes libres sans détail par question).
+        newSkillStats[sessionData.mode] = {
+          correct: newSkillStats[sessionData.mode].correct + sessionData.correct,
+          total: newSkillStats[sessionData.mode].total + sessionData.total,
+        };
+        addWeightedTotal += sessionData.total;
+        addWeightedCorrect += sessionData.correct;
+      }
+      const weightedCorrect = prev.weightedCorrect + addWeightedCorrect;
+      const weightedTotal = prev.weightedTotal + addWeightedTotal;
+      const hardSeen = prev.hardSeen + addHardSeen;
+      const newEstimatedScore = estimateScore(weightedCorrect, weightedTotal, hardSeen);
 
-      // Update estimated score (weighted by accuracy across all skills)
-      const allCorrect = newSkillStats.listening.correct + newSkillStats.reading.correct + newSkillStats.vocab.correct;
-      const allTotal = newSkillStats.listening.total + newSkillStats.reading.total + newSkillStats.vocab.total;
-      const accuracy = allTotal > 0 ? allCorrect / allTotal : 0;
-      const newEstimatedScore = Math.round(250 + accuracy * 740);
-
+      const accuracy = sessionData.total > 0 ? sessionData.correct / sessionData.total : 0;
       const newPerfectSessions = sessionData.correct === sessionData.total ? prev.perfectSessions + 1 : prev.perfectSessions;
+
+      // Progression du module joué.
+      let newModuleProgress = prev.moduleProgress;
+      let newUnlockedLevel = prev.unlockedLevel;
+      const moduleId = sessionData.moduleId;
+      if (moduleId) {
+        const prevMod = prev.moduleProgress[moduleId] || { completed: false, bestAccuracy: 0, stars: 0, attempts: 0, questionsSeen: 0 };
+        const bestAccuracy = Math.max(prevMod.bestAccuracy, accuracy);
+        newModuleProgress = {
+          ...prev.moduleProgress,
+          [moduleId]: {
+            completed: prevMod.completed || accuracy >= 0.7,
+            bestAccuracy,
+            stars: Math.max(prevMod.stars, starsFor(accuracy)),
+            attempts: prevMod.attempts + 1,
+            questionsSeen: prevMod.questionsSeen + sessionData.total,
+          },
+        };
+        // Bilan réussi → monter le niveau débloqué.
+        const mod = getModule(moduleId);
+        const toUnlock = levelToUnlockAfter(mod, accuracy);
+        if (toUnlock && LEVEL_ORDER[toUnlock] > LEVEL_ORDER[prev.unlockedLevel]) {
+          newUnlockedLevel = toUnlock;
+        }
+      }
 
       const newState = {
         ...prev,
@@ -94,13 +173,19 @@ export function useProgress() {
         perfectSessions: newPerfectSessions,
         estimatedScore: newEstimatedScore,
         skillStats: newSkillStats,
+        partStats: newPartStats,
+        weightedCorrect,
+        weightedTotal,
+        hardSeen,
+        moduleProgress: newModuleProgress,
+        unlockedLevel: newUnlockedLevel,
         sessionHistory: [
-          { ...sessionData, date: today, level },
+          { mode: sessionData.mode, total: sessionData.total, correct: sessionData.correct, xpEarned: sessionData.xpEarned, moduleId: sessionData.moduleId || null, date: today, level },
           ...prev.sessionHistory,
         ].slice(0, 50),
       };
 
-      // Check badges
+      // Badges
       const earnedBadges = [...newState.badges];
       for (const badge of BADGES) {
         if (!earnedBadges.includes(badge.id) && badge.condition(newState)) {
@@ -113,8 +198,21 @@ export function useProgress() {
     });
   }, []);
 
+  // Enregistre le résultat du test de placement → fixe le niveau débloqué.
+  const recordPlacement = useCallback((correct, total) => {
+    const { level: placed } = resolvePlacement(correct, total);
+    setState((prev) => ({
+      ...prev,
+      placementDone: true,
+      placementLevel: placed,
+      // Le placement débloque jusqu'au niveau atteint (sans rétrograder un acquis).
+      unlockedLevel: LEVEL_ORDER[placed] > LEVEL_ORDER[prev.unlockedLevel] ? placed : prev.unlockedLevel,
+    }));
+    return placed;
+  }, []);
+
   const resetProgress = useCallback(() => {
-    setState({ ...DEFAULT_STATE });
+    setState({ ...DEFAULT_STATE, partStats: { ...EMPTY_PART_STATS }, moduleProgress: {} });
   }, []);
 
   const { level, xpInLevel, xpForNext } = levelFromXP(state.totalXP);
@@ -125,6 +223,7 @@ export function useProgress() {
     xpInLevel,
     xpForNext,
     recordSession,
+    recordPlacement,
     resetProgress,
   };
 }

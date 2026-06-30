@@ -2525,3 +2525,31 @@ MangoOS bascule visuellement de « chat avec sidebar » vers un **bureau iconiqu
 **Types de fenêtres Phase 1 :** `agent-factory` (AgentFactory existant), `image-creator` (ComingSoon FLUX), `music-creator` (ComingSoon AudioCraft). App Builder reste dans la zone centrale workspace (non migré en fenêtre flottante à ce stade).
 
 **Roadmap :** Phase 2 = Image Creator (FLUX via Replicate) · Phase 3 = Music Creator (AudioCraft/MusicGen via Replicate). Même `REPLICATE_API_TOKEN`.
+
+---
+
+## Journal — 2026-06-30 : TOEIC Quest finalisée (formation 1 an, score 800+)
+
+**Demande de Raf** : peaufiner et finaliser TOEIC Quest comme une **vraie formation TOEIC** utilisable 2h/semaine pendant un an (cible 800+), avec niveaux Débutant/Intermédiaire/Avancé, modules en difficulté croissante, **conversations homme-femme** (plus seulement voix féminine), design pro, **vendable** ; vérifier tous les paramètres de l'expérience, la cohérence, et **que les images correspondent aux textes**. Précision capitale : **c'est MangoOS (l'Élève GLM) qui réalise la formation, pas Claude** — Claude orchestre et n'intervient qu'en outillage/dernier recours.
+
+**Plan validé (`.claude/plans/a-fait-deux-fois-mellow-finch.md`)** après 3 explorations parallèles + un agent architecte + 4 questions (AskUserQuestion) : **moteur complet + 1er palier vérifié** · **produit mono-utilisateur d'excellence** (pas de backend/paiement) · **voix navigateur** ($0) · **parties officielles TOEIC 1-7**.
+
+### Division du travail
+- **Claude bâtit le moteur** (`workspace/toeic-quest/`, build vert, rétro-compatible) :
+  - `data/curriculum.js` — 52 modules / 3 niveaux / 7 parties, déverrouillage par bilans, prérequis inter-niveaux acquis au placement.
+  - `data/bank/` + façade `data/questions.js` — la banque réelle est taguée (level/part/moduleId/skill/difficulty) ; la façade reconstruit l'API historique (`QUESTIONS.{listening,reading,vocab}`) → les 3 modes libres restent intacts. Schémas : P1 photo, P2 Q-R (3 choix), **P3 conversation `lines[]` M-W**, P4 talk, P5/P6 fill-blank, P7 simple + double passage.
+  - `hooks/useProgress.js` — état additif (moduleProgress, partStats P1-P7, weightedCorrect/Total, hardSeen), **score TOEIC réaliste 800+** (pondéré difficulté + couverture, corrige le plafonnement `250+accuracy*740`), **XP différencié** 10/15/25, déverrouillage, `recordPlacement`, `resetProgress`.
+  - `lib/speech.js` — **moteur de voix H/F** : `pickVoice` (heuristique de noms → UK English Female / UK English Male), `speakLine` (P1/P2/P4), `speakSequence` (P3 : joue le dialogue ligne par ligne, alterne les voix par genre, watchdog `len*90ms` contre le `onend` peu fiable, `resume()` périodique contre la pause Chrome) ; intégré dans SessionPlay avec **surlignage du locuteur actif**.
+  - 5 écrans : `PlacementTest`, `LevelSelect`, **`CurriculumMap`** (carte de parcours verticale type Duolingo — l'écran phare), `ModuleScreen`, `Diagnostic` (barres par partie + recommandations + **bouton de réinitialisation**). Routeur `App.jsx` élargi. Orphelins supprimés (QuizSession/SessionResults/MangoMascot).
+- **GLM rédige la masse** (`server/src/run-toeic-content.ts`) : moteur de génération piloté GLM — prompt système « rédacteur d'items TOEIC ETS », schéma strict par partie, extraction JSON robuste, validation (choix uniques, answer dans la plage, champs requis par partie), retry, **vraies images Pexels** (`searchPexelsImages`) par scène. Resumable (état par niveau). **~290 questions** écrites par `glm-5.2:cloud`, $0 côté Claude : Débutant 177 (145 GLM + 32 migrées), Intermédiaire 59, Avancé 54 (dont le double passage P7 via une instruction « P7D »).
+- **Le VL souverain juge la cohérence image↔texte** (`server/src/run-toeic-coherence.ts`) : pour chaque question Part 1 (où l'image DOIT illustrer la bonne réponse), `qwen3-vl:8b` local juge si l'image correspond. **Bug trouvé** : qwen3-vl est un modèle *thinking* qui met la réponse dans le champ `thinking` (pas `response`) → corrigé (`think:false` + parsing de repli). Résultat : **46 images P1 jugées · 39 OK · 6 images remplacées · 1 question retirée** (sans image Pexels correspondante).
+
+### Vérifié live (Chrome MCP)
+Test de placement de bout en bout : 12 questions (P5/P2/P7/P3/P6/P4), **conversation P3 homme-femme** avec voix distinctes (UK Female ≠ UK Male) + bulles M/W colorées + **surlignage du locuteur actif** pendant l'audio, P2 à 3 choix, XP pondéré (+10 pour une question facile), verdict **12/12 → Niveau Avancé** → carte de parcours. Carte de parcours Débutant **peuplée** (M1 « Photos du quotidien » ouvert « À faire maintenant », suite verrouillée façon Duolingo). ModuleScreen (objectif, conseil de Mango, 10 questions dispo). 0 erreur console, build vert. Compteurs entraînement libre : Listening 149 · Reading 69 · Vocab 72.
+
+### Limites honnêtes
+- **L62** — qualité des voix H/F (SpeechSynthesis) variable selon l'OS/navigateur ; fallback distinct livré, sélecteur de voix + TTS naturel = futur.
+- **L63** — Inter/Avancé = échantillons jouables ; industrialiser le reste au **même moteur GLM** (`run-toeic-content.ts`, resumable).
+- **L64** — bundle JS unique > 500 ko ; code-split (import dynamique des écrans + banque par niveau) à faire pour le polish perf.
+
+Zéro git (en attente du feu vert de Raf).

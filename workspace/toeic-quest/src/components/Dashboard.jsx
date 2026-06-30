@@ -1,34 +1,21 @@
 import { Mascot } from "./Mascot.jsx";
 import { XPBar, StreakBadge, ScoreDisplay, Reveal } from "./Gamification.jsx";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "./ui/card.jsx";
+import { Card, CardContent } from "./ui/card.jsx";
 import { Button } from "./ui/button.jsx";
 import { Badge } from "./ui/badge.jsx";
 import { MODE_INFO, BADGES } from "../data/questions.js";
+import { nextRecommendedModule, getModule, LEVELS, PART_EMOJI } from "../data/curriculum.js";
 
-export function Dashboard({ progress, onStartMode }) {
+export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDiagnostic, onOpenModule }) {
   const { state, level, xpInLevel, xpForNext } = progress;
   const earnedBadges = BADGES.filter((b) => state.badges.includes(b.id));
   const recentSessions = state.sessionHistory.slice(0, 5);
-
-  // Recommend next lesson based on weakest skill
-  const skills = ["listening", "reading", "vocab"];
-  const weakest = skills.reduce((min, s) => {
-    const stats = state.skillStats[s] || { correct: 0, total: 0 };
-    const acc = stats.total > 0 ? stats.correct / stats.total : 1;
-    const minStats = state.skillStats[min] || { correct: 0, total: 0 };
-    const minAcc = minStats.total > 0 ? minStats.correct / minStats.total : 1;
-    return acc < minAcc ? s : min;
-  }, "listening");
+  const next = nextRecommendedModule(state);
 
   const mascotMood = state.streak >= 3 ? "excited" : "happy";
-  const mascotMsg = state.totalSessions === 0
-    ? "Bienvenue ! Je suis Mango. Prêt à conquérir le TOEIC ? Choisis un mode pour commencer !"
-    : state.streak >= 3
-    ? `Incroyable ! ${state.streak} jours de suite ! Tu es en feu ! 🔥`
-    : `Content de te revoir ! Ton score estimé est de ${state.estimatedScore}. Continuons !`;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-6 pb-8 pt-4">
       {/* Hero */}
       <Reveal>
         <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/5 via-accent/5 to-coral/5 p-6 sm:p-8">
@@ -39,10 +26,11 @@ export function Dashboard({ progress, onStartMode }) {
                 {state.streak > 0 && <StreakBadge streak={state.streak} />}
               </div>
               <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                Bonjour, futur TOEIC champion ! 👋
+                {state.totalSessions === 0 ? "Bienvenue, futur TOEIC champion ! 👋" : "Bon retour, champion ! 👋"}
               </h1>
               <p className="text-muted-foreground text-lg">
-                Prépare-toi au TOEIC de façon ludique. Gagne de l'XP, débloque des badges, grimpe ton score !
+                Une vraie formation TOEIC sur un an : 7 parties officielles, 3 niveaux, des conversations,
+                vers le score <span className="font-bold text-foreground">800+</span>.
               </p>
               <div className="flex flex-wrap gap-4 items-center">
                 <ScoreDisplay score={state.estimatedScore} size="md" />
@@ -65,40 +53,72 @@ export function Dashboard({ progress, onStartMode }) {
         </div>
       </Reveal>
 
+      {/* Invitation au test de placement (si non fait) */}
+      {!state.placementDone && (
+        <Reveal delay={80}>
+          <Card className="border-2 border-accent/40 bg-accent/5">
+            <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-4">
+              <div className="text-4xl">🎯</div>
+              <div className="flex-1 text-center sm:text-left">
+                <div className="font-bold text-lg">Commence par un test de placement</div>
+                <div className="text-sm text-muted-foreground">12 questions pour situer ton niveau et personnaliser ton parcours.</div>
+              </div>
+              <Button onClick={onPlacement} className="bg-accent text-accent-foreground hover:bg-accent/90">Passer le test →</Button>
+            </CardContent>
+          </Card>
+        </Reveal>
+      )}
+
       {/* XP Bar */}
       <Reveal delay={100}>
-        <Card>
-          <CardContent className="pt-6">
-            <XPBar level={level} xpInLevel={xpInLevel} xpForNext={xpForNext} />
-          </CardContent>
-        </Card>
+        <Card><CardContent className="pt-6"><XPBar level={level} xpInLevel={xpInLevel} xpForNext={xpForNext} /></CardContent></Card>
       </Reveal>
 
-      {/* Next lesson recommendation */}
-      <Reveal delay={150}>
-        <Card className="border-2 border-accent/30 bg-accent/5">
-          <CardContent className="pt-6 flex items-center gap-4">
-            <div className="text-4xl">{MODE_INFO[weakest].emoji}</div>
-            <div className="flex-1">
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Prochaine leçon recommandée</div>
-              <div className="font-bold text-lg">{MODE_INFO[weakest].name}</div>
-              <div className="text-sm text-muted-foreground">{MODE_INFO[weakest].description}</div>
-            </div>
-            <Button onClick={() => onStartMode(weakest)} className="bg-accent text-accent-foreground hover:bg-accent/90">
-              S'entraîner →
-            </Button>
-          </CardContent>
-        </Card>
-      </Reveal>
+      {/* CTA parcours */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Reveal delay={150}>
+          <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full border-2 border-accent/30 bg-accent/5">
+            <CardContent className="pt-6 h-full flex flex-col" onClick={() => next && onOpenModule(next.id)}>
+              <div className="text-3xl mb-2">{next ? next.emoji : "🚀"}</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Continuer le parcours</div>
+              <div className="font-bold text-lg leading-tight mt-0.5">{next ? next.title : "Tout est complété !"}</div>
+              {next && <div className="text-sm text-muted-foreground mt-1">{LEVELS[next.level].name} · Semaine {next.week}</div>}
+              <div className="mt-auto pt-3 text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Reprendre →</div>
+            </CardContent>
+          </Card>
+        </Reveal>
+        <Reveal delay={200}>
+          <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full">
+            <CardContent className="pt-6 h-full flex flex-col" onClick={onContinue}>
+              <div className="text-3xl mb-2">🗺️</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Carte du parcours</div>
+              <div className="font-bold text-lg mt-0.5">52 semaines, 3 niveaux</div>
+              <div className="text-sm text-muted-foreground mt-1">Visualise toute ta progression.</div>
+              <div className="mt-auto pt-3 text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Ouvrir →</div>
+            </CardContent>
+          </Card>
+        </Reveal>
+        <Reveal delay={250}>
+          <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full">
+            <CardContent className="pt-6 h-full flex flex-col" onClick={onDiagnostic}>
+              <div className="text-3xl mb-2">📊</div>
+              <div className="text-xs text-muted-foreground uppercase tracking-wide">Diagnostic</div>
+              <div className="font-bold text-lg mt-0.5">Forces & faiblesses</div>
+              <div className="text-sm text-muted-foreground mt-1">Ta maîtrise des 7 parties TOEIC.</div>
+              <div className="mt-auto pt-3 text-accent font-bold text-sm group-hover:translate-x-1 transition-transform">Analyser →</div>
+            </CardContent>
+          </Card>
+        </Reveal>
+      </div>
 
-      {/* Mode cards */}
-      <Reveal delay={200}>
-        <h2 className="text-xl font-bold mb-3">Modes d'entraînement</h2>
+      {/* Entraînement libre (3 modes historiques) */}
+      <Reveal delay={300}>
+        <h2 className="text-xl font-bold mb-3">Entraînement libre</h2>
       </Reveal>
       <div className="grid gap-4 sm:grid-cols-3">
         {Object.entries(MODE_INFO).map(([key, info], i) => (
-          <Reveal key={key} delay={250 + i * 100}>
-            <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300" >
+          <Reveal key={key} delay={320 + i * 80}>
+            <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
               <CardContent className="pt-6" onClick={() => onStartMode(key)}>
                 <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{info.emoji}</div>
                 <h3 className="font-bold text-lg mb-1">{info.name}</h3>
@@ -128,26 +148,31 @@ export function Dashboard({ progress, onStartMode }) {
         </Reveal>
       )}
 
-      {/* Recent sessions */}
+      {/* Sessions récentes */}
       {recentSessions.length > 0 && (
         <Reveal delay={450}>
           <h2 className="text-xl font-bold mb-3">Sessions récentes</h2>
           <div className="space-y-2">
-            {recentSessions.map((s, i) => (
-              <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl">{MODE_INFO[s.mode]?.emoji}</span>
-                  <div>
-                    <div className="font-medium text-sm">{MODE_INFO[s.mode]?.name}</div>
-                    <div className="text-xs text-muted-foreground">{s.date}</div>
+            {recentSessions.map((s, i) => {
+              const mod = s.moduleId ? getModule(s.moduleId) : null;
+              const emoji = mod ? mod.emoji : (MODE_INFO[s.mode]?.emoji || "🎯");
+              const label = mod ? mod.title : (MODE_INFO[s.mode]?.name || "Session");
+              return (
+                <div key={i} className="flex items-center justify-between p-3 rounded-xl bg-card border border-border">
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">{emoji}</span>
+                    <div>
+                      <div className="font-medium text-sm">{label}</div>
+                      <div className="text-xs text-muted-foreground">{s.date}</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <span className="text-muted-foreground">{s.correct}/{s.total} ✓</span>
+                    <span className="font-bold text-accent">+{s.xpEarned} XP</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-4 text-sm">
-                  <span className="text-muted-foreground">{s.correct}/{s.total} ✓</span>
-                  <span className="font-bold text-accent">+{s.xpEarned} XP</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </Reveal>
       )}

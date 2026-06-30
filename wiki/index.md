@@ -39,6 +39,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[oeil-coach]] | Critique design MULTI-LENTILLES + boucle « critique → GLM corrige → re-regarde » jusqu'à un seuil — #152 ✅ fait, prouvé live (limite juge VL bruité notée) | ✅ écrite |
 | [[transmission-competences]] | Mission : Claude APPREND son savoir-faire à Mango — tout trou bouché à la main → outil de l'Élève. Transmis : vois_ecran #151, chercher_image #153, chercher_web/lire_page #154, teste_parcours #155, chercher_artefact #156, lire_document #157 (+Office #158), extraire_site #159 (→ [[sharingan-extraction]]), planifier #160 (→ [[planifier-avant-agir]]) | ✅ écrite |
 | [[moteur-gout]] | Capter le goût UI/UX de Raf par préférence multi-variantes (K skins GLM → 1 tap → axiome de goût) — #149, v1.5 livrée | ✅ écrite |
+| [[toeic-quest]] | Formation TOEIC 1 an (800+) construite via MangoOS : moteur Claude, **~290 questions écrites par GLM**, cohérence d'images jugée par le VL — conversations H/F, carte de parcours Duolingo, 7 parties officielles — 2026-06-30 | ✅ écrite |
 | [[audit-souverainete]] | Recensement des défauts-Claude en 3 niveaux + interrupteurs de repli local (`<FEATURE>_PROVIDER`) — Phase E | ✅ écrite |
 | [[coque-souple]] | Assemblage du prompt par blocs/scénario, modes MVP/Élite/Finition — jalon A | ✅ écrite |
 | [[coque-rigide]] | Contrat d'E/S `<mangoos>`, `executor.ts`, `inspection.ts` — jalon C/D | ✅ écrite |
