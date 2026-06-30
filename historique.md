@@ -2553,3 +2553,18 @@ Test de placement de bout en bout : 12 questions (P5/P2/P7/P3/P6/P4), **conversa
 - **L64** — bundle JS unique > 500 ko ; code-split (import dynamique des écrans + banque par niveau) à faire pour le polish perf.
 
 Zéro git (en attente du feu vert de Raf).
+
+---
+
+## Journal — 2026-06-30 (bis) : Transmission de 2 compétences « contenu » à Mango
+
+Après la finalisation de TOEIC Quest, Raf demande : « est-ce que Mango a appris quelque chose — a-t-il créé un agent ou un skill ? ». **Réponse honnête : non.** GLM avait fait un gros travail de PRODUCTION (~455 questions) mais via des **runners externes écrits par Claude** (`run-toeic-content.ts`, `run-toeic-coherence.ts`), pas via des outils que l'Élève appelle. Aucun agent forgé, aucun skill capturé, aucune lacune auto-détectée — le backend agentique (boucle runRelay, Stratège, Forge, self-evolution) n'a jamais été lancé cette session ; GLM était appelé directement via `askLLM`.
+
+Raf : « transmets ces deux compétences ». Conformément à la directive permanente (*toute lacune de Mango → compétence que Mango acquiert*) :
+
+- **`eleve-content.ts`** (cœur générique PUR, testable sans réseau) : `generateContentItems(spec)` (rédige un lot d'items structurés JSON validés via un cerveau — `buildContentPrompt`/`extractJsonArray` tolérant aux fences/texte/`validateItems` ; 1 passe + retry ; seuil 60 %) et `checkImageCoherence(items, opts)` (juge VL par item : conserve / remplace via recherche d'images / signale — ne bloque jamais).
+- **`eleve-content-tools.ts`** (2 KernelTools, deps réelles) : **`genere_contenu`** (GLM rédige → écrit un JSON confiné dans le projet) et **`verifie_coherence_images`** (lit un JSON, fait juger chaque image par `qwen3-vl:8b` en `think:false`, corrige via Pexels). Gate **`ELEVE_CONTENT=on`** (défaut OFF), branché dans `buildEleveActionTools` à côté de Flux.
+
+**Vérif** : `tsc` 0 sur les fichiers de la transmission · **test-eleve-content 31/31** (prompt, extraction, validation, retry, juge/corrige/signale, wiring + écriture anti-évasion). **PROUVÉ LIVE** (vrai GLM + VL + Pexels) : `genere_contenu` → 3 fiches de fruits exotiques (« Salak, Indonésie, goût acidulé-sucré… ») validées et enregistrées ; `verifie_coherence_images` → 2 images jugées, « réunion bureau » OK, « plage tropicale » (sur la photo de bureau) → incohérence détectée → Pexels re-cherche → image corrigée.
+
+Mango sait désormais **peupler et fiabiliser une banque de contenu en autonomie** — la prochaine app formation/quiz/catalogue n'aura plus besoin d'un runner externe. Limite honnête → L65 (qualité bornée par le cerveau Élève ; VL/Pexels requis pour la correction ; durcissements futurs = juge sémantique, images multi-source, déclenchement dans la boucle agentique). Zéro git (en attente Raf).

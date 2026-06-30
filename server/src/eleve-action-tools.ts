@@ -19,6 +19,7 @@ import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveUnityTools } from "./eleve-unity-tools.js";
 import { buildEleveFluxTools } from "./eleve-flux-tools.js";
+import { buildEleveContentTools } from "./eleve-content-tools.js";
 import { buildEleveSliceTools } from "./eleve-slice-tools.js";
 
 // (Phase 3b) Cache des outils MCP externes pré-chargés (async) UNE fois par le moteur
@@ -355,6 +356,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   if (process.env.ELEVE_FLUX === "on") {
     for (const t of buildEleveFluxTools(projectDir)) reg.register(t);
     for (const t of buildEleveSliceTools(projectDir)) reg.register(t);
+  }
+
+  // Compétences « contenu » transmises (opt-in ELEVE_CONTENT=on, défaut OFF) :
+  // genere_contenu (rédige un lot d'items structurés via GLM) + verifie_coherence_images
+  // (fait juger ses images par le VL et les corrige). Né de la finalisation de TOEIC Quest.
+  if (process.env.ELEVE_CONTENT === "on") {
+    for (const t of buildEleveContentTools(projectDir)) reg.register(t);
   }
 
   // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :
