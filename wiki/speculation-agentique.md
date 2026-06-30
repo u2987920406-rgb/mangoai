@@ -1,7 +1,7 @@
 ---
 type: entity
 tags: [agent, souverainete, performance, deepspec]
-statut: 🔨 slices 1-2 livrées (cœur + orchestration + draft GLM live) — #171
+statut: 🔨 slices 1-3 livrées (cœur + orchestration + draft GLM + exécuteur worktree, prouvés live) — #171
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -39,13 +39,22 @@ Né de la lecture de `deepseek-ai/DeepSpec` (2026-06-30, partagé par Raf). Deep
 - `speculativeAttempt(draft, {execute, verify})` : passe par `runSpeculative`, **décide l'escalade** vers le cerveau fort à la 1ʳᵉ divergence.
 - **20 tests verts** + **PROUVÉ LIVE (GLM glm-5.2:cloud)** : sur « ajouter une page Contact + build », GLM drafte d'un coup **4 étapes cohérentes** (read App.jsx → write Contact.jsx → write App.jsx routing → check_build).
 
+## Détails clés (slice 3 — exécuteur en worktree, prouvé live)
+
+`eleve-speculative-exec.ts` — `runSpeculativeInWorktree(repoRoot, slug, draft, deps)`, **chemin additif** (ne touche pas `eleve-runtime`), réutilise l'infra [[auto-amelioration]] #167 :
+- exécute le draft dans un **git worktree** (effets de bord jetables) ;
+- chaque étape : invoke → si **mutante**, **type-check** (build vert ?) → accepte + **checkpoint (commit)** ou rejette ;
+- au 1ᵉʳ rejet = **divergence** → `reset --hard` + `clean` jettent l'étape, on calcule `git diff baseRev..HEAD` et on **applique** le préfixe (`mergeSelfFiles`) ;
+- **invariant de sûreté hérité de #167** : aucun `push`/`merge`, worktree retiré à la fin.
+- **16 tests** + **PROUVÉ LIVE (vrai dépôt git)** : draft [bon → `BROKEN` → jamais atteint] → good.txt **appliqué**, bad.txt **jeté** (type-check rouge), never.txt **absent**.
+
 ## Garde-fou d'architecture
 
-Les étapes à **effet de bord** (écritures, build) doivent être spéculées dans une **copie isolée** ([[auto-amelioration]] : git worktree) puis appliquées une fois le préfixe accepté — on ne peut pas « rejeter » un fichier déjà écrit dans le repo vivant.
+Les étapes à **effet de bord** (écritures, build) sont spéculées dans une **copie isolée** ([[auto-amelioration]] : git worktree) puis appliquées une fois le préfixe accepté — on ne peut pas « rejeter » un fichier déjà écrit dans le repo vivant. Implémenté en slice 3.
 
-## Reste (slice 3)
+## Reste (auto-déclenchement)
 
-Exécuter le préfixe accepté en **git worktree** (effets de bord isolés, infra déjà là côté [[auto-amelioration]]) via le vrai registre d'outils + `verify` = build / Gardien #161, branché dans `eleve-runtime` ; mesurer le gain réel de tours Claude économisés sur un vrai build.
+Brancher l'**auto-déclenchement** dans la boucle live `eleve-runtime` (politique « quand spéculer » + draft GLM réel de la slice 2) et **mesurer** le gain réel de tours Claude économisés sur un vrai build. Le mécanisme (slices 1-3) est complet et prouvé de bout en bout.
 
 ## Liens
 
