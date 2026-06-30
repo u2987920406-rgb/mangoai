@@ -109,6 +109,28 @@ async function run() {
     }
   }
 
+  console.log("\n[6] dossier _bricks RÉEL — la convention passe à 2 briques (auth + db)");
+  {
+    const bricksDir = path.resolve("templates/backend/_bricks");
+    const io: BricksIO = {
+      async readdir(dir) { return fs.readdir(dir); },
+      async readFile(p) { return fs.readFile(p, "utf8"); },
+    };
+    let found: Awaited<ReturnType<typeof listBricks>> = [];
+    try { found = await listBricks(bricksDir, io); } catch { /* hors server/ */ }
+    if (found.length === 0) {
+      console.log("  (dossier _bricks introuvable depuis ce cwd — lancer depuis server/)");
+    } else {
+      check("découvre auth + db", found.some((b) => b.name === "auth") && found.some((b) => b.name === "db"));
+      check("toutes les briques réelles sont valides (0 erreur)", found.every((b) => b.manifest !== null && b.errors.length === 0));
+      const manifests = found.map((b) => b.manifest!).filter(Boolean);
+      const plan = buildAssemblyPlan(manifests);
+      check("plan d'assemblage : 0 conflit de version", plan.conflicts.length === 0);
+      check("plan d'assemblage : 0 require non satisfait", plan.missingRequires.length === 0);
+      check("db fournit 'userStore' (sur quoi auth se branche)", manifests.find((m) => m.name === "db")?.provides.includes("userStore") === true);
+    }
+  }
+
   console.log(`\n=== backend-bricks : ${pass} ✓ / ${fail} ✗ ===`);
   if (fail > 0) process.exit(1);
 }

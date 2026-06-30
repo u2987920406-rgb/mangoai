@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 slice 1 livrée · #170 idée ouverte
+statut: #169 slices 1-2 livrées (auth + db) · #170 idée ouverte
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -43,7 +43,10 @@ Combler le trou « templates » côté **back**. 5 briques composables dans `ser
 
 Passage de « l'IA *réécrit* l'infra à chaque app » (#35) à « l'IA *assemble* de l'infra déjà sûre ». Fidèle à #156 (réutiliser > réinventer) et #74 (constellations).
 
-> **🔨 Slice 1 livrée (2026-06-30)** — squelette + brique `auth`, prouvée. Convention `server/templates/backend/_bricks/<brique>/` (`brick.json` machine-lisible + `RECIPE.md` + `src/` + `tests/`) ; brique `auth` (scrypt $0 pluggable→argon2, tokens HMAC horloge injectable, `UserStore` injectable, router register/login/refresh + `requireAuth`) ; module pur serveur `backend-bricks.ts` (découverte/validation/`buildAssemblyPlan` : fusion deps + conflits + ordre core→app + requires). **49 tests verts** (`backend-bricks` 29 · brique auth 20 HTTP bout-en-bout), `tsc` 0. Reste : briques db/paiement/RGPD/securite + KernelTool `assemble_brique`. Limite **L66**.
+> **🔨 Slices 1-2 livrées (2026-06-30)** — squelette + briques `auth` et `db`, prouvées, qui **se composent**.
+> - **Slice 1** : convention `server/templates/backend/_bricks/<brique>/` (`brick.json` machine-lisible + `RECIPE.md` + `src/` + `tests/`) ; brique `auth` (scrypt $0 pluggable→argon2, tokens HMAC horloge injectable, `UserStore` injectable, register/login/refresh + `requireAuth`) ; module pur serveur `backend-bricks.ts` (découverte/validation/`buildAssemblyPlan`).
+> - **Slice 2** : brique `db` (SQLite via **`node:sqlite`** intégré Node 22+, **zéro dépendance native, $0**), migrations idempotentes+ordonnées, interface `Db` driver-agnostique, et **`createSqliteUserStore` qui implémente le contrat `UserStore` d'`auth`** → composition `createAuthRouter({ store })` **sans toucher à `auth.ts`**.
+> - **67 tests verts** (`backend-bricks` 34 dont **scan du vrai `_bricks/` = découvre auth+db, plan 0 conflit/0 require manquant** · brique db 13 vrai SQLite mémoire · auth 20), `tsc` 0. Reste : briques paiement/RGPD/securite + KernelTool `assemble_brique`. Limite **L66**.
 
 ### #170 — Coffre-fort de secrets : l'Élève manipule le coffre, jamais les clés 🧠 Opus · M
 Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-fort ; aucune clé ne transite dans le prompt. »* MangoOS l'applique à moitié (`.env` gitignoré + réseau durci, mais protection **conventionnelle**, pas structurelle).

@@ -1,0 +1,38 @@
+{
+  "name": "db",
+  "title": "Base de données (SQLite intégré) + migrations + repository",
+  "description": "Connexion SQLite via node:sqlite (INTÉGRÉ à Node 22+, ZÉRO dépendance native), runner de migrations idempotent et ordonné, et un UserStore SQLite qui implémente le contrat de la brique 'auth' (composition directe). Interface Db driver-agnostique : passage à better-sqlite3 / libsql (serverless) sans toucher au repository.",
+  "level": "core",
+  "base": "backend",
+  "dependencies": {},
+  "optionalDependencies": {
+    "better-sqlite3": "^11.3.0"
+  },
+  "devDependencies": {},
+  "env": [
+    {
+      "name": "DATABASE_PATH",
+      "required": false,
+      "description": "Chemin du fichier SQLite (défaut ./data.db ; ':memory:' pour un test éphémère).",
+      "example": "./data.db"
+    }
+  ],
+  "files": [
+    "src/db.ts",
+    "src/migrate.ts",
+    "src/migrations.ts",
+    "src/repo.ts",
+    "src/seed.ts"
+  ],
+  "mount": {
+    "import": "import { openDatabase } from './db.js';\nimport { runMigrations } from './migrate.js';\nimport { MIGRATIONS } from './migrations.js';\nimport { createSqliteUserStore } from './repo.js';",
+    "use": "const db = openDatabase(process.env.DATABASE_PATH);\nrunMigrations(db, MIGRATIONS);\nconst userStore = createSqliteUserStore(db);\n// Brancher l'auth dessus : app.use('/api/auth', createAuthRouter({ secret: process.env.AUTH_SECRET!, store: userStore }));"
+  },
+  "provides": ["db", "userStore"],
+  "requires": [],
+  "upgrades": {
+    "better-sqlite3": "npm i better-sqlite3 puis ouvrir la base via better-sqlite3 dans db.ts (même interface Db) — utile si l'environnement n'a pas node:sqlite (Node < 22).",
+    "libsql": "Pour du serverless/Turso : remplacer openDatabase par un client libsql qui implémente l'interface Db (exec/prepare/close)."
+  },
+  "tests": "tests/db.test.ts"
+}
