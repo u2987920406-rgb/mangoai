@@ -65,7 +65,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[veille-sakana-fugu]] | Sakana Fugu : orchestration multi-agents commerciale (TRINITY/Conductor, ICLR 2026) — la thèse MangoOS poussée à l'échelle, mais propriétaire/opaque ↔ comparatif + 3 idées à reprendre | ✅ écrite |
 | [[trinity]] | TRINITY (Sakana, ICLR 2026) : coordinateur LLM minuscule (~0,6 B) qui réassigne Thinker/Worker/Verifier tour par tour, optimisé par ÉVOLUTION (sep-CMA-ES) — valide la frugalité du cerveau Stratège #164 | ✅ écrite |
 | [[conductor]] | Conductor (Sakana, ICLR 2026) : coordinateur 7 B entraîné par RL qui écrit un workflow en langage naturel (qui·quoi·contexte) + récursion test-time — horizon d'expressivité du Stratège #164 | ✅ écrite |
-| [[speculation-agentique]] | Speculative decoding (DeepSpec) transposé aux ACTIONS : le frugal drafte une séquence, on accepte le préfixe valide (worktree isolé), on escalade à la divergence — auto-déclenchement gaté ; **draft prouvé en réel**, reste un verify projet-agnostique pour l'usage app (69 tests, zéro GPU) — #171 | ✅ écrite |
+| [[speculation-agentique]] | Speculative decoding (DeepSpec) transposé aux ACTIONS : le frugal drafte une séquence, on accepte le préfixe valide (worktree isolé, verify = build réel de l'app), on escalade à la divergence — **prouvé END-TO-END sur une vraie app** (71 tests, zéro GPU) ; résidu = DeepSpec littéral cloud-GPU — #171 | ✅ écrite |
 | [[harnais]] | Le « Harnais » (Flavien Chevret) : l'armature autour d'un LLM interchangeable (skills/scripts/templates/secrets/boucles) = la thèse MangoOS formalisée ↔ comparatif + 2 trous à combler : templates infra back #169 · coffre-fort de secrets #170 | ✅ écrite |
 
 ## Pistes de pages futures

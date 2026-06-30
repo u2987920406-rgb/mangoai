@@ -14,10 +14,17 @@ import {
   runTscInWorktree,
   buildSelfRegistry,
   mergeSelfFiles,
+  SELF_ALLOWED_TOOLS,
   type SelfWorktree,
   type GitRunner,
 } from "./mango-self.js";
+import { inspectProject } from "./inspection.js";
+import { BACKEND_DIR_NAME } from "./backend-generator.js";
+import { buildEleveActionTools } from "./eleve-action-tools.js";
+import { ToolRegistry } from "./kernel-mcp.js";
 import { spawn } from "node:child_process";
+import fs from "node:fs";
+import path from "node:path";
 
 /** Outils dont le nom dénote une MUTATION → on lance un type-check avant d'accepter. */
 const MUTATING = /write|edit|create|modif|patch|append|supprim|delete/i;
@@ -143,6 +150,82 @@ export function realSpecExecDeps(): SpecExecDeps {
       }
     },
     typecheck: async (worktree) => (await runTscInWorktree(worktree)).ok,
+    git: realGit,
+    apply: (repoRoot, worktree, files) => mergeSelfFiles(repoRoot, worktree, files),
+  };
+}
+
+// ── Mode GÉNÉRATION D'APP (projet-agnostique) ─────────────────────────────────
+// Le hook d'auto-déclenchement (#171) vit dans `runRelay` = le chemin APP. Le verify ne doit
+// donc PAS être le `tsc` de MangoOS (`realSpecExecDeps`, lié à l'auto-amélioration #167) mais le
+// BUILD RÉEL de l'app générée (`inspectProject` : `npm run build` + `tsc --noEmit` du back si
+// présent). Tout le reste (worktree jetable, git, apply→projet) est déjà générique.
+
+/**
+ * Jonctions `node_modules` (racine + back `api/`) du PROJET vers le worktree, pour que le build
+ * réel tourne sans réinstaller (un git worktree ne copie pas les fichiers gitignorés). Best-effort,
+ * ne lève jamais. Sans jonction, `inspectProject` rendrait `no-deps` → faux négatif sur chaque étape.
+ */
+export function linkProjectModules(projectDir: string, worktree: string): void {
+  const root = path.resolve(projectDir);
+  for (const sub of ["", BACKEND_DIR_NAME]) {
+    const target = path.join(root, sub, "node_modules");
+    const link = path.join(worktree, sub, "node_modules");
+    try {
+      if (fs.existsSync(target) && !fs.existsSync(link)) {
+        fs.mkdirSync(path.dirname(link), { recursive: true });
+        fs.symlinkSync(target, link, "junction");
+      }
+    } catch { /* best-effort : sans jonction, le build signalera no-deps → repli séquentiel */ }
+  }
+}
+
+/**
+ * Registre projet-agnostique : mêmes outils fichiers confinés que le mode self, mais `check_types`
+ * lance le BUILD RÉEL de l'app (`inspectProject`) au lieu du `tsc` MangoOS. Le nom `check_types`
+ * est conservé pour rester dans `SPECULATIVE_TOOLS` (le draft peut l'appeler sans diverger).
+ */
+function buildAppRegistry(worktree: string): ToolRegistry {
+  const full = buildEleveActionTools(worktree, { allowRun: false });
+  const reg = new ToolRegistry();
+  for (const t of full.list()) if (SELF_ALLOWED_TOOLS.has(t.name)) reg.register(t);
+  reg.register({
+    name: "check_types",
+    description:
+      "Vérifie que l'app COMPILE : lance son build réel (npm run build + tsc du back si présent) " +
+      "dans la copie isolée. N'exécute pas le code applicatif et n'altère pas le projet vivant.",
+    inputSchema: {},
+    handler: async () => {
+      const r = await inspectProject(worktree);
+      return { text: r.ok ? "✅ build de l'app : OK." : `❌ build KO (${r.signal}) :\n${r.detail.slice(0, 3000)}` };
+    },
+  });
+  return reg;
+}
+
+/**
+ * Deps d'exécution spéculative pour la **génération d'app** : verify = build réel de l'app
+ * (`inspectProject`), `node_modules` jointés au worktree, apply → le projet. Réutilise le
+ * cycle de vie worktree / git / merge génériques. `projectDir` = la racine de l'app générée.
+ */
+export function appSpecExecDeps(projectDir: string): SpecExecDeps {
+  return {
+    createWorktree: async (repoRoot, slug) => {
+      const r = await createSelfWorktree(repoRoot, slug);
+      if (r.wt) linkProjectModules(projectDir, r.wt.worktree);
+      return r;
+    },
+    removeWorktree: (wt) => removeSelfWorktree(wt).then(() => undefined),
+    invoke: async (worktree, tool, args) => {
+      try {
+        const reg = buildAppRegistry(worktree);
+        const r = await reg.invoke(tool, args);
+        return { ok: !r.isError, detail: r.text };
+      } catch (e) {
+        return { ok: false, detail: e instanceof Error ? e.message : String(e) };
+      }
+    },
+    typecheck: async (worktree) => (await inspectProject(worktree)).ok,
     git: realGit,
     apply: (repoRoot, worktree, files) => mergeSelfFiles(repoRoot, worktree, files),
   };

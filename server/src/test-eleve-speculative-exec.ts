@@ -1,7 +1,10 @@
 // Tests de l'exécuteur spéculatif en worktree (#171 slice 3) — toutes deps mockées (aucun git, aucun fs).
-import { runSpeculativeInWorktree, type SpecExecDeps } from "./eleve-speculative-exec.js";
+import { runSpeculativeInWorktree, appSpecExecDeps, linkProjectModules, type SpecExecDeps } from "./eleve-speculative-exec.js";
 import type { DraftStep } from "./eleve-speculative-runner.js";
 import type { SelfWorktree } from "./mango-self.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 let pass = 0;
 let fail = 0;
@@ -99,6 +102,37 @@ async function run() {
     const h2 = harness();
     const r2 = await runSpeculativeInWorktree("/repo", "x", [], h2.deps);
     check("draft vide → ok:false, pas de worktree créé", !r2.ok && r2.reason === "draft vide" && !h2.removed);
+  }
+
+  console.log("\n[6] mode APP (projet-agnostique) — jonction node_modules + verify = build réel");
+  {
+    // 6a. linkProjectModules : crée une jonction node_modules du projet vers le worktree (fs réel, temp).
+    const stamp = process.hrtime.bigint().toString();
+    const projectDir = path.join(os.tmpdir(), `spec-app-proj-${stamp}`);
+    const worktree = path.join(os.tmpdir(), `spec-app-wt-${stamp}`);
+    fs.mkdirSync(path.join(projectDir, "node_modules"), { recursive: true });
+    fs.writeFileSync(path.join(projectDir, "node_modules", "marker.txt"), "dep");
+    fs.mkdirSync(worktree, { recursive: true });
+    try {
+      linkProjectModules(projectDir, worktree);
+      const linked = path.join(worktree, "node_modules", "marker.txt");
+      check("jonction node_modules créée → la dépendance est visible dans le worktree", fs.existsSync(linked));
+    } finally {
+      try { fs.rmSync(path.join(worktree, "node_modules"), { recursive: false, force: true }); } catch { /* jonction */ }
+      try { fs.rmSync(worktree, { recursive: true, force: true }); } catch { /* best-effort */ }
+      try { fs.rmSync(projectDir, { recursive: true, force: true }); } catch { /* best-effort */ }
+    }
+
+    // 6b. le verify du mode app = inspectProject : sur un dossier sans package.json, build KO → typecheck false.
+    const emptyDir = path.join(os.tmpdir(), `spec-app-empty-${stamp}`);
+    fs.mkdirSync(emptyDir, { recursive: true });
+    try {
+      const deps = appSpecExecDeps(emptyDir);
+      const green = await deps.typecheck(emptyDir);
+      check("verify projet-agnostique : pas de package.json → build KO (≠ tsc MangoOS)", green === false);
+    } finally {
+      try { fs.rmSync(emptyDir, { recursive: true, force: true }); } catch { /* best-effort */ }
+    }
   }
 
   console.log(`\n=== eleve-speculative-exec : ${pass} ✓ / ${fail} ✗ ===`);

@@ -4,7 +4,7 @@
 // reprend ensuite depuis l'état appliqué. Gaté `ELEVE_SPECULATIVE=on` côté appelant ; ici on
 // expose une fonction pure-ish (deps injectées) qui ne lève jamais.
 import { draftSteps } from "./eleve-speculative-runner.js";
-import { runSpeculativeInWorktree, realSpecExecDeps, type SpecExecDeps } from "./eleve-speculative-exec.js";
+import { runSpeculativeInWorktree, appSpecExecDeps, type SpecExecDeps } from "./eleve-speculative-exec.js";
 import { askLLM } from "./llm-engine.js";
 import { sanitizeSelfSlug } from "./mango-self.js";
 
@@ -19,7 +19,7 @@ export interface PrepassDeps {
   toolNames: string[];
 }
 
-export function realPrepassDeps(): PrepassDeps {
+export function realPrepassDeps(projectDir: string): PrepassDeps {
   return {
     // budget de tokens généreux : un draft de plusieurs étapes a besoin de place (cf. quirk slice 2).
     ask: (system, user) =>
@@ -31,7 +31,9 @@ export function realPrepassDeps(): PrepassDeps {
         maxTokens: 2500,
         timeoutMs: 90_000,
       }),
-    exec: realSpecExecDeps(),
+    // mode APP : verify = build réel de l'app (inspectProject), pas le tsc MangoOS. Le hook vit
+    // dans runRelay (génération d'app) → on vérifie et on applique CONTRE le projet généré.
+    exec: appSpecExecDeps(projectDir),
     toolNames: SPECULATIVE_TOOLS,
   };
 }
@@ -59,7 +61,7 @@ export async function speculativePrepass(
   task: string,
   projectDir: string,
   depth = 4,
-  deps: PrepassDeps = realPrepassDeps(),
+  deps: PrepassDeps = realPrepassDeps(projectDir),
 ): Promise<PrepassResult> {
   let draft;
   try {

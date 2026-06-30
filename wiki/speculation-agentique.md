@@ -1,7 +1,7 @@
 ---
 type: entity
 tags: [agent, souverainete, performance, deepspec]
-statut: 🔨 mécanisme complet + auto-déclenchement gaté (69 tests, draft prouvé en réel) ; reste verify projet-agnostique pour l'usage app — #171
+statut: ✅ mécanisme complet + verify projet-agnostique + prouvé END-TO-END sur une vraie app (71 tests, zéro GPU) — #171 ; résidu = DeepSpec littéral (cloud-GPU)
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -64,7 +64,22 @@ Activer `ELEVE_SPECULATIVE=on` pour mesurer a débusqué 2 écueils :
 
 **Mesure SÛRE obtenue (draft seul, vrai GLM, zéro mutation)** : 5 étapes cohérentes 100 % valides sur 2 tâches → **le draft fonctionne en réel**.
 
-**Reste** : généraliser `SpecExecDeps.typecheck` en **verify projet-agnostique** (le build de l'app via `deps.inspect`/`inspectProject`) + cible d'apply = le projet, pour que l'auto-trigger serve la **génération d'app** — puis mesurer le gain end-to-end. **Hors-périmètre** : DeepSpec *littéral* (token-level = multi-GPU) → cloud-GPU avec [[eleve-local]]/#55 (L68).
+**Hors-périmètre** : DeepSpec *littéral* (token-level = multi-GPU) → cloud-GPU avec [[eleve-local]]/#55 (L68).
+
+## Verify projet-agnostique — le dernier morceau (2026-06-30) ✅
+
+L'écueil de fond est résolu. `eleve-speculative-exec.ts` gagne un **mode génération d'app** à côté du mode self :
+
+- `appSpecExecDeps(projectDir)` — **le verify = le BUILD RÉEL de l'app** (`inspectProject` : `npm run build` + `tsc --noEmit` du back si présent), plus le `tsc` de MangoOS.
+- `linkProjectModules(projectDir, worktree)` — jointe (junction) les `node_modules` (racine + `api/`) du projet dans le worktree : un git worktree ne copie pas les fichiers gitignorés, sinon `inspectProject` rendrait `no-deps` = faux négatif sur chaque étape.
+- `buildAppRegistry(worktree)` — mêmes outils fichiers confinés, mais `check_types` lance `inspectProject` (nom conservé pour rester dans `SPECULATIVE_TOOLS`).
+- L'apply visait **déjà** le projet (`mergeSelfFiles` → `repoRoot`). `realPrepassDeps(projectDir)` bascule sur le mode app.
+
+**71 tests** (cœur 22 · runner 20 · **exec 18** · trigger 11). **MESURE END-TO-END (vrai GLM, `ELEVE_SPECULATIVE=on`, vraie app `fps-doom` git+node_modules, NON-DESTRUCTIF — garde pristine + restauration chirurgicale)** :
+- **Run 1** « ajoute un Footer » → draft **4 étapes**, **2 acceptées** (`read` + `write Footer.jsx` **validée par `npm run build` vert**), divergence à #2 (insertion `App.jsx`) → escalade ; `Footer.jsx` **réellement écrit, build-gaté et appliqué au projet** ; **1 tour économisé** ; 25,8 s.
+- **Run 2** « crée credits.js » → 0/2, divergence à #0 (invoke rejeté), repli séquentiel propre, 4,9 s, zéro dégât.
+
+Le verify est désormais le **build réel de l'app** (impossible avant : il lançait le `tsc` de MangoOS). L'acceptation **varie avec la qualité du draft** (gain quand bon, repli sûr sinon) — la nature même de la spéculation.
 
 ## Liens
 
