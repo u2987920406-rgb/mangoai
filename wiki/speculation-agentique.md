@@ -1,7 +1,7 @@
 ---
 type: entity
 tags: [agent, souverainete, performance, deepspec]
-statut: 🔨 slice 1 livrée (cœur prouvé) — #171
+statut: 🔨 slices 1-2 livrées (cœur + orchestration + draft GLM live) — #171
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -31,13 +31,21 @@ Né de la lecture de `deepseek-ai/DeepSpec` (2026-06-30, partagé par Raf). Deep
 - `summarizeSpeculation` : ligne de log lisible.
 - **22 tests verts**, `tsc` 0, **zéro GPU**.
 
+## Détails clés (slice 2)
+
+- `eleve-speculative-runner.ts` — orchestration, deps injectées, ne lève jamais.
+- `buildDraftPrompt` + `parseDraft` : le cerveau frugal rend un tableau JSON `{label, tool, args}` (extraction **tolérante** + **garde d'outils** : un `tool` hors liste blanche est filtré → pas d'outil inventé/dangereux).
+- `draftSteps({ask}, goal, depth, tools)` : `ask` qui plante → `[]` (repli séquentiel sûr). L'adaptateur réel doit prévoir un budget de tokens suffisant (~2500 ; 800 → réponse vide observée).
+- `speculativeAttempt(draft, {execute, verify})` : passe par `runSpeculative`, **décide l'escalade** vers le cerveau fort à la 1ʳᵉ divergence.
+- **20 tests verts** + **PROUVÉ LIVE (GLM glm-5.2:cloud)** : sur « ajouter une page Contact + build », GLM drafte d'un coup **4 étapes cohérentes** (read App.jsx → write Contact.jsx → write App.jsx routing → check_build).
+
 ## Garde-fou d'architecture
 
 Les étapes à **effet de bord** (écritures, build) doivent être spéculées dans une **copie isolée** ([[auto-amelioration]] : git worktree) puis appliquées une fois le préfixe accepté — on ne peut pas « rejeter » un fichier déjà écrit dans le repo vivant.
 
-## Reste (slice 2)
+## Reste (slice 3)
 
-Câbler dans la boucle agentique : l'Élève drafte N étapes, spéculation en worktree, `verify` = build / Gardien #161 ; preuve live avec GLM. Mesurer le gain réel de tours économisés.
+Exécuter le préfixe accepté en **git worktree** (effets de bord isolés, infra déjà là côté [[auto-amelioration]]) via le vrai registre d'outils + `verify` = build / Gardien #161, branché dans `eleve-runtime` ; mesurer le gain réel de tours Claude économisés sur un vrai build.
 
 ## Liens
 
