@@ -106,6 +106,31 @@ async function run() {
     await new Promise<void>((r) => server.close(() => r()));
   }
 
+  console.log("\n[5] effaceur externe branché sur le coffre (#170) — la clé n'est jamais en clair");
+  {
+    // Un sous-traitant externe (CRM) doit effacer l'utilisateur ; sa clé d'API vient du COFFRE,
+    // résolue au moment de l'appel. RGPD est résolveur-agnostique : l'app capture le resolver.
+    const resolver = (ref: string) => (ref === "secret://crm/api_key" ? "CRM_KEY_42" : null);
+    let usedKey = "";
+    const erasedFromCrm = new Set(["user-1"]);
+    const reg = new PrivacyRegistry();
+    reg.register({
+      name: "crm-externe",
+      collect: () => ({ note: "données chez le sous-traitant CRM" }),
+      erase: (uid) => {
+        const key = resolver("secret://crm/api_key"); // résolu au dernier moment
+        if (!key) return 0;
+        usedKey = key; // simulateur d'appel API authentifié
+        return erasedFromCrm.delete(uid) ? 1 : 0;
+      },
+    });
+    const erased = await reg.eraseUserData("user-1");
+    check("l'effaceur externe a utilisé la clé résolue du coffre", usedKey === "CRM_KEY_42");
+    check("effacement chez le sous-traitant compté", erased["crm-externe"] === 1);
+    const exported = JSON.stringify(await reg.exportUserData("user-1"));
+    check("la clé du coffre n'apparaît PAS dans l'export", !exported.includes("CRM_KEY_42"));
+  }
+
   console.log(`\n=== RGPD brick : ${pass} ✓ / ${fail} ✗ ===`);
   if (fail > 0) process.exit(1);
 }

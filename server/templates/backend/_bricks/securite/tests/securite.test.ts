@@ -3,7 +3,7 @@
 import type { AddressInfo } from "node:net";
 import { RateCounter } from "../src/rate-limit.js";
 import { object, string } from "../src/validate.js";
-import { requireEnv } from "../src/secrets.js";
+import { requireEnv, encryptSecrets, createEncryptedVault, isSecretRef } from "../src/secrets.js";
 import { createApp } from "../src/example.js";
 
 let pass = 0;
@@ -34,16 +34,29 @@ async function run() {
     check("non-objet → échec", !object({}).safeParse(42).success);
   }
 
-  console.log("\n[3] requireEnv — secrets hors-code");
+  console.log("\n[3] requireEnv — secrets hors-code + résolution du coffre");
   {
-    const got = requireEnv(["A", "B"], { A: "1", B: "2" } as NodeJS.ProcessEnv);
+    const got = requireEnv(["A", "B"], { env: { A: "1", B: "2" } as NodeJS.ProcessEnv });
     check("toutes présentes → valeurs rendues", got.A === "1" && got.B === "2");
     let threw = false;
-    try { requireEnv(["A", "MANQUE"], { A: "1" } as NodeJS.ProcessEnv); } catch { threw = true; }
+    try { requireEnv(["A", "MANQUE"], { env: { A: "1" } as NodeJS.ProcessEnv }); } catch { threw = true; }
     check("une manquante → throw (échec rapide au boot)", threw);
     let threwEmpty = false;
-    try { requireEnv(["A"], { A: "  " } as NodeJS.ProcessEnv); } catch { threwEmpty = true; }
+    try { requireEnv(["A"], { env: { A: "  " } as NodeJS.ProcessEnv }); } catch { threwEmpty = true; }
     check("valeur vide compte comme manquante", threwEmpty);
+
+    // Branchement coffre : une valeur secret://… est résolue via le résolveur (jamais en clair dans env).
+    const blob = encryptSecrets({ "auth/secret": "S3CR3T_du_coffre" }, "master-key");
+    const vault = createEncryptedVault({ filePath: "/v", masterKey: "master-key", readFile: (p) => (p === "/v" ? blob : null) });
+    const resolved = requireEnv(["AUTH_SECRET"], { env: { AUTH_SECRET: "secret://auth/secret" } as NodeJS.ProcessEnv, resolve: vault.resolve });
+    check("référence secret:// résolue par le coffre", resolved.AUTH_SECRET === "S3CR3T_du_coffre");
+    check("isSecretRef reconnaît une référence", isSecretRef("secret://a/b") && !isSecretRef("plain"));
+    let threwUnresolved = false;
+    try { requireEnv(["X"], { env: { X: "secret://manque/key" } as NodeJS.ProcessEnv, resolve: vault.resolve }); } catch { threwUnresolved = true; }
+    check("référence introuvable dans le coffre → manquante (throw)", threwUnresolved);
+    let threwNoResolver = false;
+    try { requireEnv(["X"], { env: { X: "secret://a/b" } as NodeJS.ProcessEnv }); } catch { threwNoResolver = true; }
+    check("référence sans résolveur → manquante (pas posée en clair)", threwNoResolver);
   }
 
   console.log("\n[4] HTTP — en-têtes, CORS, validation (rate-limit large pour ne pas interférer)");

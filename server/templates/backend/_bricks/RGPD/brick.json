@@ -31,7 +31,8 @@
   "requires": ["auth"],
   "upgrades": {
     "db": "Brancher les sources sur la brique 'db' (collect = SELECT, erase = DELETE) et persister consentements + retention dans des tables dédiées.",
-    "retention": "Planifier sweepExpired sur un cron (ex. quotidien) par catégorie de données avec son TTL propre."
+    "retention": "Planifier sweepExpired sur un cron (ex. quotidien) par catégorie de données avec son TTL propre.",
+    "vault": "Effaceurs/collecteurs qui appellent un SOUS-TRAITANT externe (CRM, mailing, analytics) : résoudre leur clé d'API via le coffre #170 (createEncryptedVault de la brique 'securite') au moment de l'appel — la clé n'est jamais posée en clair."
   },
   "tests": "tests/rgpd.test.ts"
 }

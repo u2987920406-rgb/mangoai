@@ -43,6 +43,20 @@
 - **`auth`** (requis) : fournit l'identité (`req.user.id`) sur laquelle s'appliquent export/oubli.
 - **`db`** : les `collect`/`erase` des sources sont des `SELECT`/`DELETE` ; persister aussi consentements et rétention dans des tables dédiées.
 - **Rétention** : planifier `sweepExpired(items, DAYS(n), Date.now(), eraseFn)` par catégorie (ex. logs 30 j, paniers abandonnés 90 j).
+- **`securite` + coffre-fort #170** : une source qui efface chez un **sous-traitant externe** (CRM, mailing, analytics) a besoin de sa clé d'API. Résous-la via le coffre **au moment de l'appel**, jamais en clair :
+  ```ts
+  import { createEncryptedVault } from "./secrets.js"; // brique securite
+  const vault = createEncryptedVault({ filePath: process.env.MANGO_VAULT_FILE!, masterKey: process.env.MANGO_VAULT_KEY! });
+
+  registry.register({
+    name: "crm-externe",
+    collect: (uid) => fetchFromCrm(uid),
+    erase: (uid) => {
+      const key = vault.resolve("secret://crm/api_key");   // résolu au dernier moment
+      return deleteFromCrm(uid, key);                       // la clé ne touche jamais l'export ni les logs
+    },
+  });
+  ```
 
 ## Vérifier
 

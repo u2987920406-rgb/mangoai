@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 ✅ COMPLET (5 briques + assemble_brique) · #170 🔨 slice 1 livrée (coffre + utilise_secret, prouvé live)
+statut: #169 ✅ COMPLET · #170 🔨 slices 1-2 (coffre + utilise_secret + jonction securite/RGPD) · reste backend bws/age
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -60,7 +60,9 @@ Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-for
 - outil Élève `utilise_secret(ref)` à périmètre strict (injecte dans l'appel réseau autorisé #166, ne renvoie jamais la valeur) ;
 - **règle absolue** : ni Claude ni l'Élève ne *saisit* une clé — uniquement des références opaques (cohérent **L27**).
 
-> **🔨 Slice 1 livrée (2026-06-30), prouvée live** : `secret-vault.ts` (références `secret://ns/clé`, **backend fichier chiffré AES-256-GCM** `node:crypto` zéro-dép, `resolveSecret`, garde **`redact`**) + KernelTool **`utilise_secret`** (gaté `ELEVE_VAULT=on` : résout côté serveur, injecte dans l'appel autorisé anti-SSRF, **rédige la valeur** → jamais dans la couche LLM) + CLI `vault-cli.ts`. **30 tests verts**, `tsc` 0. **Live** : secret chiffré → `utilise_secret` sur `httpbin.org/bearer` (200, injection OK) → `"token": "«secret»"`. Reste : brancher `securite`/`RGPD` (#169) ; backend Bitwarden `bws`/`age`. Limite **L67**.
+> **🔨 Slice 1 (2026-06-30), prouvée live** : `secret-vault.ts` (références `secret://ns/clé`, **backend fichier chiffré AES-256-GCM** `node:crypto` zéro-dép, `resolveSecret`, garde **`redact`**) + KernelTool **`utilise_secret`** (gaté `ELEVE_VAULT=on` : résout côté serveur, injecte dans l'appel autorisé anti-SSRF, **rédige la valeur** → jamais dans la couche LLM) + CLI `vault-cli.ts`. **30 tests**. **Live** : secret chiffré → `utilise_secret` sur `httpbin.org/bearer` (200) → `"token": "«secret»"`.
+>
+> **🔨 Slice 2 (2026-06-30) — JONCTION #169↔#170** : les briques d'infra puisent leurs secrets dans le coffre. La brique **`securite`** (propriétaire naturel) gagne `createEncryptedVault` + `encryptSecrets` + **`requireEnv(names, { resolve })`** qui résout `AUTH_SECRET=secret://auth/secret` au boot (jamais en clair) ; provides `security`+`secrets`. **`RGPD`** (résolveur-agnostique) : un effaceur vers un sous-traitant externe résout sa clé via le coffre au moment de l'appel (clé absente de l'export). **securite 28/28** (+4) · **RGPD 23/23** (+3), `tsc` 0. Reste : backend Bitwarden `bws`/`age`. Limite **L67**.
 
 ## Liens
 

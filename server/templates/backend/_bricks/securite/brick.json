@@ -26,6 +26,18 @@
       "required": false,
       "description": "Nombre max de requêtes par fenêtre (défaut applicatif).",
       "example": "100"
+    },
+    {
+      "name": "MANGO_VAULT_FILE",
+      "required": false,
+      "description": "Chemin du coffre-fort chiffré (#170). Si défini avec MANGO_VAULT_KEY, requireEnv résout les valeurs secret://… au lieu de les lire en clair.",
+      "example": "./.secrets.vault"
+    },
+    {
+      "name": "MANGO_VAULT_KEY",
+      "required": false,
+      "description": "Clé maître qui déverrouille le coffre chiffré (#170).",
+      "example": "<openssl rand -hex 32>"
     }
   ],
   "files": [
@@ -39,12 +51,12 @@
     "import": "import { securityHeaders } from './headers.js';\nimport { cors } from './cors.js';\nimport { rateLimit } from './rate-limit.js';\nimport { validate, object, string } from './validate.js';",
     "use": "// Gardes transverses AVANT le parsing du corps et les routes.\napp.disable('x-powered-by');\napp.use(securityHeaders());\napp.use(cors({ origins: (process.env.CORS_ORIGINS ?? 'http://localhost:5173').split(',') }));\napp.use(rateLimit({ windowMs: 60_000, max: Number(process.env.RATE_LIMIT_MAX ?? 100) }));\n// Valider une route : app.post('/x', validate(object({ name: string({ min: 1 }) })), handler);"
   },
-  "provides": ["security"],
+  "provides": ["security", "secrets"],
   "requires": [],
   "upgrades": {
     "helmet": "npm i helmet puis remplacer securityHeaders() par helmet() pour une politique d'en-têtes maintenue/plus riche.",
     "zod": "npm i zod puis passer un schéma Zod à validate() (même API safeParse) pour des règles riches.",
-    "vault": "Quand #170 existe : requireEnv lira des références secret://... résolues côté serveur au lieu de process.env."
+    "vault": "BRANCHÉ (#170) : poser AUTH_SECRET=secret://auth/secret etc. + MANGO_VAULT_FILE/MANGO_VAULT_KEY → requireEnv(names, { resolve: createEncryptedVault({...}).resolve }) résout les secrets côté serveur. Backend Bitwarden bws / age = upgrade futur (même interface SecretResolver)."
   },
   "tests": "tests/securite.test.ts"
 }

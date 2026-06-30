@@ -49,7 +49,29 @@ npx tsx templates/backend/_bricks/securite/tests/securite.test.ts
 | CORS | `cors({ origins })` maison | `npm i cors` |
 | Rate-limit | `rateLimit()` mémoire | `npm i express-rate-limit` (+ store Redis pour multi-instance) |
 | Validation | mini-schémas `object`/`string` | `npm i zod` (même API `safeParse`) |
-| **Secrets** | `requireEnv` lit `process.env` | **brique `vault` (#170)** : `requireEnv` résoudra des références `secret://...` côté serveur |
+| **Secrets** | `requireEnv` lit `process.env` | **coffre-fort #170 (BRANCHÉ)** : valeurs `secret://ns/clé` résolues côté serveur (voir ci-dessous) |
+
+## Brancher les secrets sur le coffre-fort (#170)
+
+Plutôt que de poser les clés en clair dans `.env`, on y met des **références** et le coffre chiffré
+les résout au démarrage — la valeur n'apparaît jamais en clair dans l'environnement :
+
+```ts
+import { requireEnv, createEncryptedVault } from "./secrets.js";
+
+const vault = createEncryptedVault({
+  filePath: process.env.MANGO_VAULT_FILE!,   // coffre chiffré AES-256-GCM
+  masterKey: process.env.MANGO_VAULT_KEY!,   // clé maître (passphrase au boot / keyring)
+});
+
+// .env : AUTH_SECRET=secret://auth/secret   STRIPE_SECRET_KEY=secret://stripe/secret_key
+const secrets = requireEnv(["AUTH_SECRET", "STRIPE_SECRET_KEY"], { resolve: vault.resolve });
+// secrets.AUTH_SECRET contient la vraie valeur, résolue depuis le coffre, jamais posée en clair.
+```
+
+Une valeur qui n'est PAS une référence `secret://…` est lue telle quelle (rétro-compatible).
+Une référence sans coffre (ou introuvable) compte comme **manquante** → échec rapide au boot.
+Peupler le coffre : `encryptSecrets({ "auth/secret": "…" }, masterKey)` (ou la CLI du coffre MangoOS #170).
 
 ## Limites assumées de la v1
 
