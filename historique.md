@@ -628,6 +628,19 @@ Pourquoi : le test A/B Mango Crypt a prouvé que le mode Elite produit 154 tests
 
 ## 💡 Détail des idées
 
+### Idée #169 — Bibliothèque de templates d'infra back-end pré-câblés 💡 idée (piste « Harnais », 2026-06-30)
+- **Origine** : Raf a partagé une synthèse de Flavien Chevret sur le concept de **« Harnais »** (l'armature autour d'un LLM interchangeable : skills, scripts déterministes, **~100 templates**, coffre-fort de secrets, boucles). En la comparant à MangoOS, deux trous nets sont apparus côté MangoOS — celui-ci (templates d'infra **back**) et le #170 (coffre-fort de secrets). Le LLM ne contient aucune intelligence métier : toute la valeur est dans la structure réutilisable autour. L'argument central de Flavien : avec un harnais mûr, l'IA « sort un produit propre du premier coup » → **moins de tokens, moins d'itérations** (il revendique ~20 min / ~20 k tokens vs 1 jour / ~1 M sans harnais — chiffre marketing à prendre avec mesure, mais la direction est juste).
+- **Le trou précis chez MangoOS** : aujourd'hui MangoOS a ~30 templates **front** (#81 shadcn, #82 7 stacks graphiques/données, #83 visualisation/flow) + un backend généré **ad hoc** (#35 Express/Fastify écrit au cas par cas). Il **manque des briques d'infra back ÉPROUVÉES**, réutilisables telles quelles, que l'Élève **assemble** au lieu de réinventer à chaque app.
+- **Périmètre proposé — 5 briques** dans `server/templates/backend/<brique>/`, chacune accompagnée d'une fiche « quand / comment l'assembler » lisible par l'Élève :
+  1. **auth** — sessions ou JWT + refresh, hash **argon2**, reset par email, garde de rôles.
+  2. **schéma BDD + migrations** — Drizzle ou Prisma, seed, **RLS** (lié au template `supabase` existant #82).
+  3. **paiement** — Stripe **checkout** + **webhooks signés** + **idempotence** (durcit l'idée #39 Stripe, aujourd'hui surtout front).
+  4. **conformité RGPD** — export/suppression des données d'un utilisateur, **registre de consentement**, politique de rétention.
+  5. **durcissement sécurité** — `helmet`, **rate-limit**, validation **Zod aux frontières**, CORS strict, secrets **hors-code** → pont direct vers le **#170** (coffre-fort de secrets).
+- **Pourquoi en briques composables (et pas un méga-template)** : une app réelle mélange ces préoccupations à la carte (certaines ont du paiement, pas toutes ; certaines de l'auth, pas toutes). Des briques **indépendantes** + une recette d'assemblage = l'Élève compose une infra propre selon le besoin, fidèle à l'esprit #156 (`chercher_artefact` : réutiliser > réinventer) et #74 (constellations = packs de règles coordonnées injectés **avant** la génération).
+- **Différence avec l'existant** : #35 *génère* un backend à chaque fois (variable, à re-vérifier) ; #169 fournit des **socles figés et audités** que l'on **branche**. C'est le passage de « l'IA réécrit l'infra » à « l'IA assemble de l'infra déjà sûre » — exactement le gain de tokens/fiabilité revendiqué par le harnais.
+- **Connexe** : #35 (backend généré), #36 (composants inter-projets), #156 (réutiliser > réinventer), #74 (constellations), #170 (coffre-fort de secrets), #82 (template `supabase`/RLS), #39 (Stripe). **Modèle** : 🧠 Opus 4.8 (décision d'architecture transverse, effets de bord sécurité/paiement). **Effort** : L. **Statut** : 💡 idée, non lancée.
+
 ### Idée 144 — Mango Command Center ✅ FAIT (2026-06-21, app perso, build direct)
 - **Quoi** : le poste de pilotage de toutes les idées/chantiers de MangoOS (#13→#143), premier outil du dossier **`apps/`** (outils persos de Raf, distinct de `workspace/` = expériences générées). Voir page-entité [[command-center]] dans le wiki.
 - **Stack** : Vite + React 19 + TypeScript strict, CSS écrit à la main (zéro Tailwind), local-first localStorage (`mango.command-center.v1` + journal `.history.v1`), export/import JSON, **aucun backend**, port dédié **5180**.
