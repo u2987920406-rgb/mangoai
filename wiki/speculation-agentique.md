@@ -1,7 +1,7 @@
 ---
 type: entity
 tags: [agent, souverainete, performance, deepspec]
-statut: 🔨 slices 1-3 livrées (cœur + orchestration + draft GLM + exécuteur worktree, prouvés live) — #171
+statut: ✅ FAIT — cœur + orchestration + draft GLM + exécuteur worktree + auto-déclenchement gaté (68 tests, 3 preuves live) — #171
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -52,9 +52,14 @@ Né de la lecture de `deepseek-ai/DeepSpec` (2026-06-30, partagé par Raf). Deep
 
 Les étapes à **effet de bord** (écritures, build) sont spéculées dans une **copie isolée** ([[auto-amelioration]] : git worktree) puis appliquées une fois le préfixe accepté — on ne peut pas « rejeter » un fichier déjà écrit dans le repo vivant. Implémenté en slice 3.
 
-## Reste (auto-déclenchement)
+## Auto-déclenchement (câblé, gaté)
 
-Brancher l'**auto-déclenchement** dans la boucle live `eleve-runtime` (politique « quand spéculer » + draft GLM réel de la slice 2) et **mesurer** le gain réel de tours Claude économisés sur un vrai build. Le mécanisme (slices 1-3) est complet et prouvé de bout en bout.
+`eleve-speculative-trigger.ts` — `speculativePrepass(task, projectDir)` compose le draft (slice 2) + l'exécution worktree (slice 3), **ne lève jamais** (repli séquentiel sur toute défaillance). **Hook dans `runRelay`** (eleve.ts) : pré-passe **avant** la boucle séquentielle, gaté **`ELEVE_SPECULATIVE=on` (défaut OFF → zéro régression)**, en `try/catch`, exclu en test ; le préfixe accepté est appliqué, la boucle reprend depuis là (divergence = rend la main). **10 tests** · non-régression `eleve-runtime` 49/0. **#171 = 68 tests** au total.
+
+## Validation-en-usage & hors-périmètre
+
+- **Validation-en-usage** : activer `ELEVE_SPECULATIVE=on` sur une vraie génération (projet git) et mesurer les tours Claude économisés.
+- **Hors-périmètre (parqué)** : DeepSpec *littéral* (decodage spéculatif token-level pour accélérer un modèle) = entraînement multi-GPU → piste cloud-GPU avec [[eleve-local]]/#55 (L68).
 
 ## Liens
 

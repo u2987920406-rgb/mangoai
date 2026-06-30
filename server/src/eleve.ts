@@ -54,6 +54,7 @@ import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gat
 import { scanFilesForBalance, formatBalanceRaison } from "./layout-balance.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
+import { speculativePrepass } from "./eleve-speculative-trigger.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
 import { getTracer } from "./kernel-trace.js";
 // #104 Phase 3 — moyens text-injectables dont Gemma était privé (procédures #75,
@@ -1020,6 +1021,28 @@ export async function runRelay(
   // Gemma & co. jamais concernés). Claude reste l'escalade (finalizeEscalation).
   if (callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (supportsTools(callProvider) || deps.agenticPost)) {
     push(`🤖 Moteur agentique — l'Élève (${callModel}) construit avec ses outils…`);
+
+    // (#171) PRÉ-PASSE SPÉCULATIF — opt-in `ELEVE_SPECULATIVE=on`, défaut OFF → ZÉRO régression.
+    // Le cerveau frugal drafte une séquence d'étapes, on l'exécute en worktree isolé et on applique
+    // le préfixe accepté ; la boucle séquentielle ci-dessous reprend depuis l'état appliqué. Ne casse
+    // JAMAIS le build (try/catch + ne lève jamais). Jamais en test (transport injecté).
+    if (process.env.ELEVE_SPECULATIVE === "on" && !deps.agenticPost) {
+      try {
+        const sp = await speculativePrepass(task, projectDir);
+        if (sp.ran && sp.appliedFiles.length) {
+          push(
+            `⚡ Spéculation : ${sp.accepted}/${sp.drafted} étapes acceptées, ` +
+            `${sp.appliedFiles.length} fichier(s) appliqué(s), ${sp.savedRoundTrips} tour(s) économisé(s)` +
+            `${sp.escalate ? " — divergence, la boucle reprend la main" : ""}`,
+          );
+        } else {
+          push(`⚡ Spéculation : ${sp.reason || "aucun gain"} → mode séquentiel`);
+        }
+      } catch {
+        /* la spéculation est best-effort : un échec n'affecte pas le build séquentiel */
+      }
+    }
+
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
     const visionClause = process.env.ELEVE_VISION === "on" ? AGENTIC_VISION_CLAUSE : "";
     const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}`;
