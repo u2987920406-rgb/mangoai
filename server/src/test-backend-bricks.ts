@@ -109,7 +109,7 @@ async function run() {
     }
   }
 
-  console.log("\n[6] dossier _bricks RÉEL — la convention passe à 2 briques (auth + db)");
+  console.log("\n[6] dossier _bricks RÉEL — la convention passe à 3 briques (auth + db + paiement)");
   {
     const bricksDir = path.resolve("templates/backend/_bricks");
     const io: BricksIO = {
@@ -121,13 +121,15 @@ async function run() {
     if (found.length === 0) {
       console.log("  (dossier _bricks introuvable depuis ce cwd — lancer depuis server/)");
     } else {
-      check("découvre auth + db", found.some((b) => b.name === "auth") && found.some((b) => b.name === "db"));
+      check("découvre auth + db + paiement", ["auth", "db", "paiement"].every((n) => found.some((b) => b.name === n)));
       check("toutes les briques réelles sont valides (0 erreur)", found.every((b) => b.manifest !== null && b.errors.length === 0));
       const manifests = found.map((b) => b.manifest!).filter(Boolean);
       const plan = buildAssemblyPlan(manifests);
-      check("plan d'assemblage : 0 conflit de version", plan.conflicts.length === 0);
+      check("plan d'assemblage : 0 conflit de version (express ^4.18.2 partagé)", plan.conflicts.length === 0);
       check("plan d'assemblage : 0 require non satisfait", plan.missingRequires.length === 0);
+      check("ordre core avant app (auth/db avant paiement)", plan.order.indexOf("paiement") === plan.order.length - 1);
       check("db fournit 'userStore' (sur quoi auth se branche)", manifests.find((m) => m.name === "db")?.provides.includes("userStore") === true);
+      check("paiement fournit 'payments'", manifests.find((m) => m.name === "paiement")?.provides.includes("payments") === true);
     }
   }
 

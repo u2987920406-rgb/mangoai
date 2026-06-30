@@ -1,0 +1,44 @@
+{
+  "name": "paiement",
+  "title": "Paiement Stripe (Checkout + webhooks signés + idempotence)",
+  "description": "Création de sessions Stripe Checkout, réception de webhooks avec VÉRIFICATION DE SIGNATURE maison (node:crypto, zéro dépendance pour la sécurité) et IDEMPOTENCE (un événement livré deux fois n'est traité qu'une fois). Client Stripe et store d'idempotence injectables → testable sans compte Stripe ni réseau ; store d'idempotence branchable sur la brique 'db'.",
+  "level": "app",
+  "base": "backend",
+  "dependencies": {
+    "express": "^4.18.2",
+    "stripe": "^16.0.0"
+  },
+  "optionalDependencies": {},
+  "devDependencies": {},
+  "env": [
+    {
+      "name": "STRIPE_SECRET_KEY",
+      "required": true,
+      "description": "Clé secrète Stripe (sk_...). À terme : référencer le coffre-fort (#170) via secret://stripe/secret_key.",
+      "example": "sk_test_..."
+    },
+    {
+      "name": "STRIPE_WEBHOOK_SECRET",
+      "required": true,
+      "description": "Secret de signature du endpoint webhook (whsec_...), fourni par Stripe à la création du endpoint.",
+      "example": "whsec_..."
+    }
+  ],
+  "files": [
+    "src/signature.ts",
+    "src/idempotency.ts",
+    "src/checkout.ts",
+    "src/payments.ts"
+  ],
+  "mount": {
+    "import": "import express from 'express';\nimport { createCheckoutRouter, createWebhookHandler } from './payments.js';",
+    "use": "// IMPORTANT : le webhook AVANT express.json (signature calculée sur le corps BRUT).\napp.post('/api/payments/webhook', express.raw({ type: 'application/json' }), createWebhookHandler({ webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!, onEvent: async (e) => { /* router e.type : checkout.session.completed, etc. */ } }));\napp.use('/api/payments', express.json(), createCheckoutRouter({ successUrl: '...', cancelUrl: '...' }));"
+  },
+  "provides": ["payments"],
+  "requires": [],
+  "upgrades": {
+    "db": "Persister l'idempotence : remplacer createMemoryIdempotencyStore par un store branché sur la brique 'db' (table processed_events) — sinon un redémarrage oublie les événements déjà traités.",
+    "vault": "Quand #170 existe : résoudre STRIPE_SECRET_KEY / STRIPE_WEBHOOK_SECRET via secret://stripe/* côté serveur au lieu de les poser en clair."
+  },
+  "tests": "tests/payments.test.ts"
+}
