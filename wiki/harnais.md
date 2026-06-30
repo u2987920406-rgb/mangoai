@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 ✅ COMPLET · #170 🔨 slices 1-2 (coffre + utilise_secret + jonction securite/RGPD) · reste backend bws/age
+statut: ✅ HARNAIS RÉALISÉ — #169 COMPLET (5 briques + assemble_brique) · #170 COMPLET (coffre + utilise_secret + jonction #169 + backend Bitwarden bws)
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -25,7 +25,7 @@ L'argument de fond : un harnais mûr fait que l'IA « sort un produit propre du 
 | **Skills internes** (protocoles inter-agents) | [[le-stratege]] · [[gardien-cloture]] · routage `route()` | ✅ |
 | **Scripts déterministes** (~80) | `runParcours`, `measureDesign`, `sharinganAnalyze`, parsing pur… | ✅ (« éviter de cramer des tokens » = logique identique) |
 | **Templates** (~100, dont **infra back** : BDD/paiement/RGPD/sécurité) | ~30 templates **front** (#81-#83) + **5 briques back composables livrées** (#169 : auth·db·paiement·securite·RGPD) | 🟢 **#169 : 5 briques ✅** (reste l'assemblage Élève) |
-| **Gestion des secrets** (Bitwarden API) | coffre **chiffré AES-256-GCM** + `utilise_secret` (réf→résolu serveur, valeur rédigée) — #170 slice 1 | 🟢 **#170 slice 1 ✅** (Bitwarden/age = upgrade) |
+| **Gestion des secrets** (Bitwarden API) | coffre **chiffré AES-256-GCM** + **Bitwarden `bws`** (chaîne) + `utilise_secret` (réf→résolu serveur, valeur rédigée) — #170 | 🟢 **#170 ✅ COMPLET** |
 | **Boucle fonctionnelle** (se réveille seule) | Runs autonomes ([[boucle-nocturne]], `run-mango-nuit.ts`) | ✅ |
 | **Boucle architecturale** (réécrit ses propres skills) | [[auto-amelioration]] (`mango-self.ts` B1-B4) + [[auto-evolution]] (#168) | ✅ |
 
@@ -62,7 +62,9 @@ Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-for
 
 > **🔨 Slice 1 (2026-06-30), prouvée live** : `secret-vault.ts` (références `secret://ns/clé`, **backend fichier chiffré AES-256-GCM** `node:crypto` zéro-dép, `resolveSecret`, garde **`redact`**) + KernelTool **`utilise_secret`** (gaté `ELEVE_VAULT=on` : résout côté serveur, injecte dans l'appel autorisé anti-SSRF, **rédige la valeur** → jamais dans la couche LLM) + CLI `vault-cli.ts`. **30 tests**. **Live** : secret chiffré → `utilise_secret` sur `httpbin.org/bearer` (200) → `"token": "«secret»"`.
 >
-> **🔨 Slice 2 (2026-06-30) — JONCTION #169↔#170** : les briques d'infra puisent leurs secrets dans le coffre. La brique **`securite`** (propriétaire naturel) gagne `createEncryptedVault` + `encryptSecrets` + **`requireEnv(names, { resolve })`** qui résout `AUTH_SECRET=secret://auth/secret` au boot (jamais en clair) ; provides `security`+`secrets`. **`RGPD`** (résolveur-agnostique) : un effaceur vers un sous-traitant externe résout sa clé via le coffre au moment de l'appel (clé absente de l'export). **securite 28/28** (+4) · **RGPD 23/23** (+3), `tsc` 0. Reste : backend Bitwarden `bws`/`age`. Limite **L67**.
+> **🔨 Slice 2 (2026-06-30) — JONCTION #169↔#170** : les briques d'infra puisent leurs secrets dans le coffre. La brique **`securite`** (propriétaire naturel) gagne `createEncryptedVault` + `encryptSecrets` + **`requireEnv(names, { resolve })`** qui résout `AUTH_SECRET=secret://auth/secret` au boot (jamais en clair) ; provides `security`+`secrets`. **`RGPD`** (résolveur-agnostique) : un effaceur vers un sous-traitant externe résout sa clé via le coffre au moment de l'appel (clé absente de l'export). **securite 28/28** (+4) · **RGPD 23/23** (+3).
+>
+> **✅ Slice 3 (2026-06-30) — #170 COMPLET : backend d'entreprise + chaîne** : `createBwsBackend({accessToken, run})` résout via **Bitwarden Secrets Manager** (`bws secret list`, **runner injecté** → testable sans `bws`, ne casse jamais) + `chainBackends(...)` (premier hit gagne — porte ouverte à `age`/`sops`). `realBackend()` compose **`bws` (si `BWS_ACCESS_TOKEN`) → fichier chiffré local**. Le résolveur `bws` est token-based → plus de clé maître locale en prod. **41 tests** (+11), `tsc` 0. **🎯 #170 ✅ FAIT** — et avec #169, **les deux pistes du Harnais sont réalisées**. **L67 ✅ Résolu.**
 
 ## Liens
 

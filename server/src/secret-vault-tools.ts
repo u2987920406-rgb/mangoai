@@ -4,6 +4,7 @@
 // dans la réponse : elle est rédigée). Anti-SSRF réutilisé (isCloneableUrl) + sanitizeExternal.
 import { z } from "zod";
 import fs from "node:fs";
+import { spawn } from "node:child_process";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { isCloneableUrl } from "./vision.js";
 import { sanitizeExternal } from "./agent-contract.js";
@@ -12,8 +13,11 @@ import {
   resolveSecret,
   redact,
   createEncryptedFileBackend,
+  createBwsBackend,
+  chainBackends,
   type SecretBackend,
   type VaultIO,
+  type CommandRunner,
 } from "./secret-vault.js";
 
 export interface VaultToolDeps {
@@ -26,12 +30,38 @@ const realVaultIO: VaultIO = {
   write: (p, data) => fs.writeFileSync(p, data),
 };
 
-/** Backend réel = fichier chiffré (MANGO_VAULT_FILE) déverrouillé par MANGO_VAULT_KEY. null si non configuré. */
+/** Vrai lanceur de commande (spawn) pour la CLI `bws`. Ne lève jamais (code 127 si absent). */
+export const realRunner: CommandRunner = (cmd, args, opts) =>
+  new Promise((resolve) => {
+    try {
+      const child = spawn(cmd, args, { env: { ...process.env, ...(opts?.env ?? {}) } });
+      let stdout = "";
+      child.stdout?.on("data", (d) => (stdout += d));
+      child.on("error", () => resolve({ stdout: "", code: 127 }));
+      child.on("close", (code) => resolve({ stdout, code: code ?? 0 }));
+    } catch {
+      resolve({ stdout: "", code: 127 });
+    }
+  });
+
+/**
+ * Backend réel = CHAÎNE de résolveurs, premier hit gagne :
+ *   1. Bitwarden Secrets Manager (`bws`) si BWS_ACCESS_TOKEN est défini ;
+ *   2. fichier chiffré local (MANGO_VAULT_FILE + MANGO_VAULT_KEY).
+ * null si rien n'est configuré.
+ */
 export function realBackend(): SecretBackend | null {
+  const backends: Array<SecretBackend | null> = [];
+  if (process.env.BWS_ACCESS_TOKEN) {
+    backends.push(createBwsBackend({ accessToken: process.env.BWS_ACCESS_TOKEN, run: realRunner }));
+  }
   const file = process.env.MANGO_VAULT_FILE;
   const key = process.env.MANGO_VAULT_KEY;
-  if (!file || !key) return null;
-  return createEncryptedFileBackend({ filePath: file, masterKey: key, io: realVaultIO });
+  if (file && key) {
+    backends.push(createEncryptedFileBackend({ filePath: file, masterKey: key, io: realVaultIO }));
+  }
+  if (backends.length === 0) return null;
+  return backends.length === 1 ? backends[0]! : chainBackends(...backends);
 }
 
 function realDeps(): VaultToolDeps {

@@ -100,6 +100,60 @@ export async function resolveSecret(ref: string, backend: SecretBackend): Promis
   return backend.get(p.namespace, p.key);
 }
 
+// ── Backend externe : Bitwarden Secrets Manager (CLI `bws`) ───────────────────
+// Le lancement de la CLI est INJECTÉ (CommandRunner) → ce cœur reste pur/testable sans `bws`.
+// Convention : la clé d'un secret Bitwarden = le chemin de la référence « namespace/clé » (minuscules).
+
+export type CommandRunner = (
+  cmd: string,
+  args: string[],
+  opts?: { env?: Record<string, string> },
+) => Promise<{ stdout: string; code: number }>;
+
+export function createBwsBackend(opts: { accessToken?: string; run: CommandRunner; cmd?: string }): SecretBackend {
+  const bin = opts.cmd ?? "bws";
+  let cache: Record<string, string> | null = null;
+  const load = async (): Promise<Record<string, string>> => {
+    if (cache) return cache;
+    try {
+      const env = opts.accessToken ? { BWS_ACCESS_TOKEN: opts.accessToken } : undefined;
+      const { stdout, code } = await opts.run(bin, ["secret", "list", "--output", "json"], { env });
+      if (code !== 0) return (cache = {});
+      const arr = JSON.parse(stdout) as Array<{ key?: string; value?: string }>;
+      const map: Record<string, string> = {};
+      for (const s of Array.isArray(arr) ? arr : []) {
+        if (typeof s.key === "string" && typeof s.value === "string") map[s.key.toLowerCase()] = s.value;
+      }
+      return (cache = map);
+    } catch {
+      return (cache = {}); // bws absent / sortie illisible → aucun secret (ne casse jamais)
+    }
+  };
+  return {
+    async get(ns, key) {
+      return (await load())[`${ns.toLowerCase()}/${key.toLowerCase()}`] ?? null;
+    },
+  };
+}
+
+/** Chaîne de backends : essaie chacun dans l'ordre, la première valeur non-nulle gagne (ex. bws → fichier chiffré local). */
+export function chainBackends(...backends: Array<SecretBackend | null>): SecretBackend {
+  const list = backends.filter((b): b is SecretBackend => !!b);
+  return {
+    async get(ns, key) {
+      for (const b of list) {
+        try {
+          const v = await b.get(ns, key);
+          if (v != null) return v;
+        } catch {
+          /* backend défaillant → on passe au suivant */
+        }
+      }
+      return null;
+    },
+  };
+}
+
 // ── Garde de rédaction (défense en profondeur) ────────────────────────────────
 
 /** Remplace toute occurrence d'une valeur de secret par « «secret» » avant qu'un texte

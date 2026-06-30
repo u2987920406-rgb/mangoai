@@ -6,9 +6,12 @@ import {
   encryptJSON,
   decryptJSON,
   createEncryptedFileBackend,
+  createBwsBackend,
+  chainBackends,
   resolveSecret,
   redact,
   type VaultIO,
+  type CommandRunner,
 } from "./secret-vault.js";
 import { buildEleveVaultTools, type VaultToolDeps } from "./secret-vault-tools.js";
 
@@ -115,6 +118,64 @@ async function run() {
     const [tool2] = buildEleveVaultTools("/proj", { backend: null, fetchFn: fakeFetch });
     const novault = await tool2.handler({ ref: "secret://api/token" });
     check("coffre non configuré → message clair", novault.isError === true && /non configuré/.test(novault.text));
+  }
+
+  console.log("\n[6] backend Bitwarden (bws) — runner injecté (sans bws installé)");
+  {
+    // Faux runner qui simule `bws secret list --output json`.
+    const bwsJson = JSON.stringify([
+      { key: "stripe/secret_key", value: SECRET },
+      { key: "pexels/api_key", value: "px_key_123456" },
+    ]);
+    let sawToken = "";
+    const fakeRun: CommandRunner = async (cmd, args, opts) => {
+      sawToken = opts?.env?.BWS_ACCESS_TOKEN ?? "";
+      if (cmd === "bws" && args[0] === "secret" && args[1] === "list") return { stdout: bwsJson, code: 0 };
+      return { stdout: "", code: 1 };
+    };
+    const bws = createBwsBackend({ accessToken: "tok_abc", run: fakeRun });
+    check("résout via bws secret list", (await bws.get("stripe", "secret_key")) === SECRET);
+    check("le token d'accès a été passé à la CLI", sawToken === "tok_abc");
+    check("clé inconnue → null", (await bws.get("stripe", "absent")) === null);
+
+    const failRun: CommandRunner = async () => ({ stdout: "", code: 127 }); // bws absent
+    const bwsAbsent = createBwsBackend({ run: failRun });
+    check("bws absent (code 127) → null, ne casse pas", (await bwsAbsent.get("stripe", "secret_key")) === null);
+
+    const badJson: CommandRunner = async () => ({ stdout: "pas du json", code: 0 });
+    check("sortie illisible → null", (await createBwsBackend({ run: badJson }).get("a", "b")) === null);
+  }
+
+  console.log("\n[7] chainBackends — bws → fichier chiffré (premier hit gagne)");
+  {
+    const { io } = memIO();
+    const fileVault = createEncryptedFileBackend({ filePath: "/v", masterKey: "mk", io });
+    fileVault.put("local", "only", "valeur_locale");
+    fileVault.put("shared", "key", "valeur_FICHIER");
+
+    const bwsRun: CommandRunner = async () => ({ stdout: JSON.stringify([{ key: "shared/key", value: "valeur_BWS" }]), code: 0 });
+    const bws = createBwsBackend({ run: bwsRun });
+
+    const chain = chainBackends(bws, fileVault);
+    check("hit bws prioritaire sur le fichier", (await resolveSecret("secret://shared/key", chain)) === "valeur_BWS");
+    check("repli fichier si bws ne l'a pas", (await resolveSecret("secret://local/only", chain)) === "valeur_locale");
+    check("aucun backend ne l'a → null", (await resolveSecret("secret://nulle/part", chain)) === null);
+    check("chaîne ignore un backend nul", (await chainBackends(null, fileVault).get("local", "only")) === "valeur_locale");
+  }
+
+  console.log("\n[8] utilise_secret via une chaîne bws → la valeur ne sort jamais");
+  {
+    const bwsRun: CommandRunner = async () => ({ stdout: JSON.stringify([{ key: "api/token", value: SECRET }]), code: 0 });
+    const chain = chainBackends(createBwsBackend({ run: bwsRun }));
+    let sentAuth = "";
+    const fakeFetch = (async (_url: string, init?: { headers?: Record<string, string> }) => {
+      sentAuth = init?.headers?.["Authorization"] ?? "";
+      return { status: 200, text: async () => `{"echo":"${sentAuth}"}` };
+    }) as unknown as typeof fetch;
+    const [tool] = buildEleveVaultTools("/proj", { backend: chain, fetchFn: fakeFetch });
+    const used = await tool.handler({ ref: "secret://api/token", url: "https://api.exemple.com/me" });
+    check("secret bws injecté dans l'appel", sentAuth === `Bearer ${SECRET}`);
+    check("⭐ réponse rédigée (secret absent de la sortie)", !used.isError && !used.text.includes(SECRET) && used.text.includes("«secret»"));
   }
 
   console.log(`\n=== secret-vault : ${pass} ✓ / ${fail} ✗ ===`);
