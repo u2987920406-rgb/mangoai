@@ -1,7 +1,7 @@
 // Tests du pré-passe spéculatif (#171, auto-déclenchement) — ask + exec mockés, aucun LLM/git.
-import { speculativePrepass, type PrepassDeps } from "./eleve-speculative-trigger.js";
+import { speculativePrepass, SPECULATIVE_TOOLS, type PrepassDeps } from "./eleve-speculative-trigger.js";
 import type { SpecExecDeps } from "./eleve-speculative-exec.js";
-import type { SelfWorktree } from "./mango-self.js";
+import { SELF_ALLOWED_TOOLS, type SelfWorktree } from "./mango-self.js";
 
 let pass = 0;
 let fail = 0;
@@ -65,6 +65,13 @@ async function run() {
     const noGit: PrepassDeps = { ask: async () => draftJson, exec: execMock(99, false).deps, toolNames: ["read_file", "write_file", "check_build"] };
     const r3 = await speculativePrepass("x", "/repo", 4, noGit);
     check("projet non-git → ran:false (repli séquentiel), pas de crash", !r3.ran && r3.drafted === 3);
+  }
+
+  console.log("\n[4] garde anti-dérive : tous les outils draftables existent dans le worktree");
+  {
+    // Sinon une étape draftée diverge sur un nom inconnu (bug d'intégration du 2026-06-30).
+    const allKnown = SPECULATIVE_TOOLS.every((t) => SELF_ALLOWED_TOOLS.has(t) || t === "check_types");
+    check("SPECULATIVE_TOOLS ⊆ outils réels du worktree (SELF_ALLOWED_TOOLS + check_types)", allKnown);
   }
 
   console.log(`\n=== eleve-speculative-trigger : ${pass} ✓ / ${fail} ✗ ===`);

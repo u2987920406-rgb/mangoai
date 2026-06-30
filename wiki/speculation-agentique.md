@@ -1,7 +1,7 @@
 ---
 type: entity
 tags: [agent, souverainete, performance, deepspec]
-statut: ✅ FAIT — cœur + orchestration + draft GLM + exécuteur worktree + auto-déclenchement gaté (68 tests, 3 preuves live) — #171
+statut: 🔨 mécanisme complet + auto-déclenchement gaté (69 tests, draft prouvé en réel) ; reste verify projet-agnostique pour l'usage app — #171
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -56,10 +56,15 @@ Les étapes à **effet de bord** (écritures, build) sont spéculées dans une *
 
 `eleve-speculative-trigger.ts` — `speculativePrepass(task, projectDir)` compose le draft (slice 2) + l'exécution worktree (slice 3), **ne lève jamais** (repli séquentiel sur toute défaillance). **Hook dans `runRelay`** (eleve.ts) : pré-passe **avant** la boucle séquentielle, gaté **`ELEVE_SPECULATIVE=on` (défaut OFF → zéro régression)**, en `try/catch`, exclu en test ; le préfixe accepté est appliqué, la boucle reprend depuis là (divergence = rend la main). **10 tests** · non-régression `eleve-runtime` 49/0. **#171 = 68 tests** au total.
 
-## Validation-en-usage & hors-périmètre
+## Mesure en réel (2026-06-30) & ce qui reste
 
-- **Validation-en-usage** : activer `ELEVE_SPECULATIVE=on` sur une vraie génération (projet git) et mesurer les tours Claude économisés.
-- **Hors-périmètre (parqué)** : DeepSpec *littéral* (decodage spéculatif token-level pour accélérer un modèle) = entraînement multi-GPU → piste cloud-GPU avec [[eleve-local]]/#55 (L68).
+Activer `ELEVE_SPECULATIVE=on` pour mesurer a débusqué 2 écueils :
+1. **Bug corrigé** : `SPECULATIVE_TOOLS` listait `check_build`/`teste_parcours`, **absents** du registre worktree (`buildSelfRegistry` = `SELF_ALLOWED_TOOLS` + `check_types`) → corrigé en `read_file/list_files/search_code/write_file/edit_file/check_types` + **test-garde** (`SPECULATIVE_TOOLS ⊆` outils réels).
+2. **Écueil de fond (non résolu)** : `realSpecExecDeps` est **bound au contexte [[auto-amelioration]] #167** — `runTscInWorktree` lance `tsc` en dur dans `<worktree>/server` (repo MangoOS), pas le build de l'app ; l'apply vise `repoRoot`. Or le hook vit dans `runRelay` (chemin **app**) → verify faux sur une vraie app ; et lancer sur MangoOS muterait du code vivant.
+
+**Mesure SÛRE obtenue (draft seul, vrai GLM, zéro mutation)** : 5 étapes cohérentes 100 % valides sur 2 tâches → **le draft fonctionne en réel**.
+
+**Reste** : généraliser `SpecExecDeps.typecheck` en **verify projet-agnostique** (le build de l'app via `deps.inspect`/`inspectProject`) + cible d'apply = le projet, pour que l'auto-trigger serve la **génération d'app** — puis mesurer le gain end-to-end. **Hors-périmètre** : DeepSpec *littéral* (token-level = multi-GPU) → cloud-GPU avec [[eleve-local]]/#55 (L68).
 
 ## Liens
 

@@ -8,8 +8,10 @@ import { runSpeculativeInWorktree, realSpecExecDeps, type SpecExecDeps } from ".
 import { askLLM } from "./llm-engine.js";
 import { sanitizeSelfSlug } from "./mango-self.js";
 
-// Outils que l'Élève peut drafter (sous-ensemble sûr ; un outil hors liste est filtré par parseDraft).
-export const SPECULATIVE_TOOLS = ["read_file", "write_file", "edit_file", "check_build", "teste_parcours"];
+// Outils que l'Élève peut drafter. DOIVENT correspondre EXACTEMENT aux outils réellement exposés
+// dans le worktree par buildSelfRegistry (SELF_ALLOWED_TOOLS + check_types), sinon une étape diverge
+// sur un nom inconnu. (Bug d'intégration corrigé 2026-06-30 : check_build/teste_parcours n'existent pas.)
+export const SPECULATIVE_TOOLS = ["read_file", "list_files", "search_code", "write_file", "edit_file", "check_types"];
 
 export interface PrepassDeps {
   ask: (system: string, user: string) => Promise<string>;
