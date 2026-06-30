@@ -1,7 +1,7 @@
 ---
 type: veille
 tags: [veille, harnais, architecture, securite, templates, souverainete]
-statut: #169 5 briques livrées (auth+db+paiement+securite+RGPD) · reste assemble_brique · #170 idée ouverte
+statut: #169 ✅ COMPLET (5 briques + assemble_brique, prouvé live) · #170 idée ouverte
 sources: [statut, historique, idee]
 maj: 2026-06-30
 ---
@@ -41,7 +41,7 @@ Combler le trou « templates » côté **back**. 5 briques composables dans `ser
 4. **RGPD** (export/suppression, registre de consentement, rétention)
 5. **durcissement sécurité** (helmet, rate-limit, Zod aux frontières, CORS, secrets hors-code → #170)
 
-Passage de « l'IA *réécrit* l'infra à chaque app » (#35) à « l'IA *assemble* de l'infra déjà sûre ». Fidèle à #156 (réutiliser > réinventer) et #74 (constellations).
+Passage de « l'IA *réécrit* l'infra à chaque app » (#35) à « l'IA *assemble* de l'infra déjà sûre ». Fidèle à #156 (réutiliser > réinventer) et #74 (constellations). **✅ RÉALISÉ** : les 5 briques existent et le KernelTool `assemble_brique` permet à l'Élève de les composer lui-même (prouvé live).
 
 > **🔨 Slices 1-2 livrées (2026-06-30)** — squelette + briques `auth` et `db`, prouvées, qui **se composent**.
 > - **Slice 1** : convention `server/templates/backend/_bricks/<brique>/` (`brick.json` machine-lisible + `RECIPE.md` + `src/` + `tests/`) ; brique `auth` (scrypt $0 pluggable→argon2, tokens HMAC horloge injectable, `UserStore` injectable, register/login/refresh + `requireAuth`) ; module pur serveur `backend-bricks.ts` (découverte/validation/`buildAssemblyPlan`).
@@ -49,7 +49,8 @@ Passage de « l'IA *réécrit* l'infra à chaque app » (#35) à « l'IA *assemb
 > - **Slice 3** : brique `paiement` (Stripe Checkout + webhooks signés + idempotence), 1ʳᵉ brique de niveau **`app`**. **Vérification de signature de webhook réimplémentée en `node:crypto`** (HMAC, temps-constant, anti-rejeu = zéro dépendance pour le point critique), idempotence par `event.id` (store injectable→`db`), client Stripe **injectable** → **prouvable sans compte Stripe ni réseau**.
 > - **Slice 4** : brique `securite` (niveau **`core`**, transverse), **zéro dépendance** : en-têtes type helmet, CORS allowlist + préflight, rate-limit (horloge injectable), validation aux frontières **compatible Zod `safeParse`** + mini-schémas intégrés, `requireEnv` (échec rapide au boot, **couture vers #170**). Chaque garde remplaçable par son équivalent npm.
 > - **Slice 5** : brique `RGPD` (niveau **`app`**) — machinerie GDPR générique : `PrivacyRegistry` (sources `collect`/`erase` → export + droit à l'oubli), consentement versionné (store injectable→`db`), rétention pure, router derrière l'auth. **1ʳᵉ brique à déclarer `requires: ["auth"]`** → exerce le lien de dépendance du plan.
-> - **🎯 LES 5 BRIQUES COMPLÈTES. 139 tests verts** (`backend-bricks` 36 dont **scan des 5 briques = 0 conflit/require, core avant app, RGPD→auth satisfait** · RGPD 20 · securite 24 · paiement 26 · db 13 · auth 20), `tsc` 0. Reste : seulement le KernelTool `assemble_brique`. Limite **L66**.
+> - **Slice 6 (CLÔTURE)** : KernelTool **`assemble_brique`** (`eleve-bricks.ts` orchestration pure + `eleve-bricks-tools.ts`, gaté `ELEVE_BRICKS=on`) → l'Élève **compose son infra seul** : catalogue, **résolution transitive des `requires`** (RGPD tire auth), copie des fichiers, fusion non destructive de `package.json`, snippets de montage. **PROUVÉ LIVE** : `assemble_brique(["RGPD","db"])` → auto-ajout auth, 13 fichiers + package.json écrits sur disque, montage ordonné.
+> - **🎯 #169 COMPLET (✅ FAIT). 166 tests verts** (`backend-bricks` 36 · auth 20 · db 13 · paiement 26 · securite 24 · RGPD 20 · **eleve-bricks 27**), `tsc` 0. Le harnais back de Flavien Chevret, réalisé : 5 briques éprouvées + l'Élève les assemble lui-même. **L66 ✅ Résolu.**
 
 ### #170 — Coffre-fort de secrets : l'Élève manipule le coffre, jamais les clés 🧠 Opus · M
 Le principe gravé de Flavien : *« le modèle manipule uniquement le coffre-fort ; aucune clé ne transite dans le prompt. »* MangoOS l'applique à moitié (`.env` gitignoré + réseau durci, mais protection **conventionnelle**, pas structurelle).

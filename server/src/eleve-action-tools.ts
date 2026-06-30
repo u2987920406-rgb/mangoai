@@ -20,6 +20,7 @@ import { buildEleveVisionTools } from "./eleve-vision-tools.js";
 import { buildEleveUnityTools } from "./eleve-unity-tools.js";
 import { buildEleveFluxTools } from "./eleve-flux-tools.js";
 import { buildEleveContentTools } from "./eleve-content-tools.js";
+import { buildEleveBricksTools } from "./eleve-bricks-tools.js";
 import { buildEleveSliceTools } from "./eleve-slice-tools.js";
 
 // (Phase 3b) Cache des outils MCP externes pré-chargés (async) UNE fois par le moteur
@@ -363,6 +364,12 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // (fait juger ses images par le VL et les corrige). Né de la finalisation de TOEIC Quest.
   if (process.env.ELEVE_CONTENT === "on") {
     for (const t of buildEleveContentTools(projectDir)) reg.register(t);
+  }
+
+  // Assemblage d'infra back à partir des briques éprouvées #169 (opt-in ELEVE_BRICKS=on, défaut OFF) :
+  // assemble_brique compose auth/db/paiement/securite/RGPD dans le projet au lieu de tout réécrire.
+  if (process.env.ELEVE_BRICKS === "on") {
+    for (const t of buildEleveBricksTools(projectDir)) reg.register(t);
   }
 
   // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :
