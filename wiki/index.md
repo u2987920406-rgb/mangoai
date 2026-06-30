@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-06-27
+maj: 2026-06-30
 ---
 
 # Index du wiki MangoOS
@@ -65,6 +65,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[veille-sakana-fugu]] | Sakana Fugu : orchestration multi-agents commerciale (TRINITY/Conductor, ICLR 2026) — la thèse MangoOS poussée à l'échelle, mais propriétaire/opaque ↔ comparatif + 3 idées à reprendre | ✅ écrite |
 | [[trinity]] | TRINITY (Sakana, ICLR 2026) : coordinateur LLM minuscule (~0,6 B) qui réassigne Thinker/Worker/Verifier tour par tour, optimisé par ÉVOLUTION (sep-CMA-ES) — valide la frugalité du cerveau Stratège #164 | ✅ écrite |
 | [[conductor]] | Conductor (Sakana, ICLR 2026) : coordinateur 7 B entraîné par RL qui écrit un workflow en langage naturel (qui·quoi·contexte) + récursion test-time — horizon d'expressivité du Stratège #164 | ✅ écrite |
+| [[harnais]] | Le « Harnais » (Flavien Chevret) : l'armature autour d'un LLM interchangeable (skills/scripts/templates/secrets/boucles) = la thèse MangoOS formalisée ↔ comparatif + 2 trous à combler : templates infra back #169 · coffre-fort de secrets #170 | ✅ écrite |
 
 ## Pistes de pages futures
 

@@ -1,0 +1,58 @@
+{
+  "name": "auth",
+  "title": "Authentification (tokens signés + hash de mot de passe)",
+  "description": "Inscription, connexion, refresh token, route protégée. Hash de mot de passe PLUGGABLE (scrypt intégré zéro-dépendance par défaut, argon2 en option). Store utilisateur INJECTABLE (mémoire par défaut, branchable sur la brique 'db' sans toucher au code). Tokens HMAC-SHA256 maison (zéro dépendance ; bascule jsonwebtoken documentée).",
+  "level": "core",
+  "base": "backend",
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "optionalDependencies": {
+    "argon2": "^0.41.1"
+  },
+  "devDependencies": {},
+  "env": [
+    {
+      "name": "AUTH_SECRET",
+      "required": true,
+      "description": "Clé HMAC pour signer les tokens (32+ octets aléatoires). À terme : référencer le coffre-fort (#170) via secret://auth/secret au lieu de la poser en clair.",
+      "example": "openssl rand -hex 32"
+    },
+    {
+      "name": "AUTH_HASH",
+      "required": false,
+      "description": "Algo de hash : 'scrypt' (défaut, intégré) ou 'argon2' (nécessite la dépendance argon2).",
+      "example": "scrypt"
+    },
+    {
+      "name": "AUTH_ACCESS_TTL",
+      "required": false,
+      "description": "Durée de vie de l'access token, en secondes (défaut 900 = 15 min).",
+      "example": "900"
+    },
+    {
+      "name": "AUTH_REFRESH_TTL",
+      "required": false,
+      "description": "Durée de vie du refresh token, en secondes (défaut 1209600 = 14 j).",
+      "example": "1209600"
+    }
+  ],
+  "files": [
+    "src/password.ts",
+    "src/tokens.ts",
+    "src/store.ts",
+    "src/auth.ts"
+  ],
+  "mount": {
+    "import": "import { createAuthRouter, requireAuth } from './auth.js';",
+    "use": "app.use('/api/auth', createAuthRouter({ secret: process.env.AUTH_SECRET! }));\n// Protéger une route : app.get('/api/me', requireAuth(process.env.AUTH_SECRET!), (req, res) => res.json({ user: req.user }));"
+  },
+  "provides": ["auth", "requireAuth"],
+  "requires": [],
+  "upgrades": {
+    "argon2": "npm i argon2 puis AUTH_HASH=argon2 → bascule du scrypt intégré vers argon2 (repli automatique sur scrypt si la dépendance manque).",
+    "db": "Passer un UserStore branché sur la brique 'db' à createAuthRouter({ store }) — l'interface UserStore (store.ts) est le seul contrat.",
+    "vault": "Quand #170 existe : remplacer process.env.AUTH_SECRET par la résolution de secret://auth/secret côté serveur."
+  },
+  "tests": "tests/auth.test.ts"
+}
