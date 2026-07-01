@@ -2,7 +2,7 @@
 // Lancer :  npx tsx src/test-insights.ts
 
 import { computeInsights, weekStart } from "./metrics-insights.js";
-import { inferProjectType } from "./blueprints.js";
+import { inferProjectType, templateForType } from "./blueprints.js";
 import type { TurnMetrics } from "./metrics.js";
 import type { AxiomStats } from "./axioms.js";
 
@@ -96,7 +96,17 @@ check("infer jeu", inferProjectType("un petit jeu en canvas avec des sprites") =
 check("infer slides", inferProjectType("une présentation de slides 16:9") === "slides");
 check("infer vitrine", inferProjectType("un site vitrine pour mon restaurant") === "vitrine");
 check("infer webapp", inferProjectType("une todo app avec auth supabase") === "webapp");
+check("infer carte", inferProjectType("une carte interactive avec des marqueurs") === "carte");
+check("infer carte (des restaurants)", inferProjectType("carte des restaurants de Paris") === "carte");
 check("infer autre (rien)", inferProjectType("bonjour comment ça va") === "autre");
+check("carte ≠ menu (faux positif évité)", inferProjectType("affiche la carte du menu") !== "carte");
+
+// templateForType : lien blueprint → template scaffold (branchement des nouveaux templates)
+check("templateForType carte → leaflet", templateForType("carte") === "leaflet");
+check("templateForType dashboard → charts", templateForType("dashboard") === "charts");
+check("templateForType vitrine → motion", templateForType("vitrine") === "motion");
+check("templateForType webapp → router", templateForType("webapp") === "router");
+check("templateForType jeu → null (pas de socle dédié)", templateForType("jeu") === null);
 
 // Cas vide : aucune métrique → tout à zéro, pas d'exception
 const empty = computeInsights([], { byCat: {}, byMaturity: { confirmé: 0, candidat: 0 }, total: 0 });

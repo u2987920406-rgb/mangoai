@@ -51,6 +51,10 @@ function check(name: string, cond: boolean): void {
   check('blueprint : dashboard détecté', blueprintHintSection('crée un dashboard analytics').includes('dashboard'))
   check('blueprint : jeu détecté', blueprintHintSection('un petit jeu canvas arcade').includes('jeu'))
   check('blueprint : générique → ""', blueprintHintSection('change la couleur du bouton') === '')
+  // branchement template : le hint nomme le template prêt pour les types qui en ont un
+  check('blueprint : dashboard → template charts surfacé', blueprintHintSection('crée un dashboard analytics').includes('`charts`'))
+  check('blueprint : carte → template leaflet surfacé', blueprintHintSection('une carte interactive de mes randonnées').includes('`leaflet`'))
+  check('blueprint : jeu (sans template) → pas de mention de template', !blueprintHintSection('un petit jeu canvas arcade').includes('template prêt'))
 }
 
 // ── indexComponents + relevantComponentsSection ──────────────────────────────

@@ -17,7 +17,7 @@ import { listLayouts, LAYOUTS_DIR_NAME, type LayoutMeta } from './layouts.js'
 import { listSkills, type SkillMeta } from './skills.js'
 import { getBlackboard, type Blackboard } from './kernel-blackboard.js'
 import { embedOllama } from './ollama.js'
-import { inferProjectType } from './blueprints.js'
+import { inferProjectType, templateForType } from './blueprints.js'
 
 export const COMPONENT_SCOPE = 'artifact:component'
 export const LAYOUT_SCOPE = 'artifact:layout'
@@ -290,8 +290,13 @@ export async function relevantSkillsSection(
 export function blueprintHintSection(prompt: string): string {
   const type = inferProjectType(prompt)
   if (type === 'autre') return ''
+  const tpl = templateForType(type)
+  const tplHint = tpl
+    ? ` Un template prêt existe pour ce type : \`${tpl}\` (stack déjà câblée) — pars de lui plutôt que de tout réinstaller.`
+    : ''
   return (
     `\n\n→ Type de projet détecté pour cette demande : **${type}**. ` +
-    `Pars du blueprint « ${type} » ci-dessus (stack + arborescence) plutôt que d'improviser ; adapte si le projet l'exige.`
+    `Pars du blueprint « ${type} » ci-dessus (stack + arborescence) plutôt que d'improviser ; adapte si le projet l'exige.` +
+    tplHint
   )
 }
