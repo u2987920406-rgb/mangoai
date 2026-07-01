@@ -56,6 +56,9 @@ import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gat
 import { scanFilesForBalance, formatBalanceRaison } from "./layout-balance.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
+import { startPreview } from "./preview.js";
+import { runParcours } from "./eleve-parcours.js";
+import { isMangoQaActive, emitPhaseComplete, waitForVerdict } from "./mangoqa.js";
 import { speculativePrepass } from "./eleve-speculative-trigger.js";
 import { resolveBinding, policyForBinding, type BrainPolicy } from "./brain-runtime.js";
 import { getTracer } from "./kernel-trace.js";
@@ -942,6 +945,42 @@ async function ensureExternalMcpLoaded(): Promise<void> {
 }
 
 /** Le rouage de la bascule : l'Élève tente, MangoOS juge, le Maître escalade. */
+// #b incrément 2 — teste_parcours de CLÔTURE : ouvre la preview et vérifie qu'AUCUNE
+// erreur console n'apparaît au chargement (la vérif « ça marche vraiment » du #155,
+// appliquée en clôture — y compris quand le Maître a résolu). Ne lève JAMAIS (best-effort :
+// si la preview est injoignable, on n'invente pas d'erreur → ok:true).
+async function runClosureParcours(projectDir: string): Promise<{ ok: boolean; errors: string[] }> {
+  try {
+    const { url } = await startPreview(projectDir);
+    const report = await runParcours(url, [
+      { description: "Clôture — chargement de l'accueil sans erreur console", attendu: { aucune_erreur_console: true } },
+    ]);
+    return { ok: report.ok, errors: report.consoleErrors ?? [] };
+  } catch {
+    return { ok: true, errors: [] };
+  }
+}
+
+// #b incrément 3 — audit MangoQA de CLÔTURE : si MangoQA tourne (sentinelle), on émet le
+// signal de phase et on attend son verdict ; un RED devient un critère de re-correction
+// (comme le Gardien/parcours). Fail-open : MangoQA absent/timeout → ok:true (ne bloque jamais).
+async function runClosureMangoQA(projectDir: string): Promise<{ ok: boolean; action: string }> {
+  try {
+    if (!isMangoQaActive()) return { ok: true, action: "" };
+    const name = path.basename(projectDir);
+    emitPhaseComplete(name, "closure", []);
+    // Timeout paramétrable : un audit MangoQA « lourd » peut dépasser 60 s (~140 s pour un gros
+    // projet). Défaut inchangé (60 s) → comportement historique ; on peut l'allonger via env.
+    const verdict = await waitForVerdict(name, Number(process.env.MANGOQA_CLOSURE_TIMEOUT) || 60_000);
+    if (verdict && verdict.verdict === "red") {
+      return { ok: false, action: verdict.rejection?.corrective_action || "revois l'architecture (verdict MangoQA RED)" };
+    }
+    return { ok: true, action: "" };
+  } catch {
+    return { ok: true, action: "" };
+  }
+}
+
 export async function runRelay(
   task: string,
   projectDir: string,
@@ -1000,18 +1039,66 @@ export async function runRelay(
     attempts: number,
     esc2?: { incomplete?: boolean; eleveSummary?: string },
   ): Promise<RelayResult> => {
-    push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})${esc2?.incomplete ? " — TERMINER la tâche" : ""}`);
-    const esc = await deps.escalate({
-      task, projectDir, lastError: lastErr, maitreModel, profile: callProfile,
-      incomplete: esc2?.incomplete, eleveSummary: esc2?.eleveSummary,
-    });
-    const insp = await inspectReady();
-    if (insp.ok) {
+    // #b incrément 2 (reboucle Maître) — le Maître escalade, puis si la clôture (Gardien +
+    // teste_parcours + MangoQA) est RED, il RE-CORRIGE avec le feedback précis, borné par
+    // ELEVE_GATE_RELANCE_MAX. Gates tous OFF → issues vide → 1 escalade → retour (historique).
+    const maxMaitreGate = Number(process.env.ELEVE_GATE_RELANCE_MAX) || 2;
+    let feedback = lastErr;
+    let axiomAny = false;
+    let costTotal = 0;
+    for (let gTour = 0; ; gTour++) {
+      push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})${gTour > 0 ? ` — re-correction clôture (${gTour}/${maxMaitreGate})` : esc2?.incomplete ? " — TERMINER la tâche" : ""}`);
+      const esc = await deps.escalate({
+        task, projectDir, lastError: feedback, maitreModel, profile: callProfile,
+        incomplete: esc2?.incomplete, eleveSummary: esc2?.eleveSummary,
+      });
+      axiomAny = axiomAny || esc.axiom;
+      costTotal += esc.costUsd;
+      const insp = await inspectReady();
+      if (!insp.ok) {
+        push(`✗ build encore cassé après escalade — échec`);
+        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
+      }
       push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
-      return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: esc.axiom, costUsd: esc.costUsd, log };
+
+      // CLÔTURE après le Maître (mêmes garde-fous que l'Élève) — collecte les raisons RED.
+      const issues: string[] = [];
+      if (process.env.ELEVE_CLOSURE_GATE === "on") {
+        try {
+          const mResult = { text: esc2?.eleveSummary || "résolu par le Maître", toolTrace: [] as Array<{ name: string; args: string }> };
+          const verdict = await runClosureGate(projectDir, task, mResult, WORKSPACE_DIR, inferProjectType(task));
+          const goutLabel = verdict.design
+            ? verdict.tasteScored
+              ? `, goût ${verdict.design.overall}/100${verdict.tasteObserve ? " (observé)" : ""}`
+              : ", goût non jugeable"
+            : "";
+          push(`🛡 Gardien (après Maître) — intention ${verdict.intent.couverture}/100${goutLabel}${verdict.ok ? " ✓" : " ✗"}`);
+          if (!verdict.ok) issues.push(...(verdict.raisons.length ? verdict.raisons : ["clôture qualité non atteinte"]));
+        } catch (e) {
+          push(`⚠ Gardien (après Maître) indisponible (${(e as Error).message.split("\n")[0]}) — on laisse passer`);
+        }
+      }
+      if (process.env.ELEVE_GATE_PARCOURS === "on") {
+        const pc = await runClosureParcours(projectDir);
+        push(`🧭 teste_parcours (après Maître) — ${pc.ok ? "aucune erreur console ✓" : `${pc.errors.length} erreur(s) console ✗`}`);
+        if (!pc.ok) issues.push(`erreurs console : ${pc.errors.slice(0, 3).join(" | ") || "(voir preview)"}`);
+      }
+      {
+        const qa = await runClosureMangoQA(projectDir);
+        if (qa.action || !qa.ok) push(`🥭 MangoQA (après Maître) — ${qa.ok ? "GREEN ✓" : "RED ✗"}`);
+        if (!qa.ok) issues.push(`MangoQA : ${qa.action}`);
+      }
+
+      if (issues.length === 0) {
+        return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
+      }
+      if (gTour >= maxMaitreGate) {
+        push(`⚠ Clôture encore RED après ${gTour} re-correction(s) du Maître — livré mais INCOMPLET`);
+        return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, incomplete: true };
+      }
+      push(`↻ Clôture RED → le Maître RE-CORRIGE (${gTour + 1}/${maxMaitreGate})`);
+      feedback = `Le livrable compile mais ne passe pas la clôture qualité : ${issues.join(" ; ")}. Corrige EXACTEMENT ces points et garde le build vert.`;
     }
-    push(`✗ build encore cassé après escalade — échec`);
-    return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: esc.axiom, costUsd: esc.costUsd, log };
   };
 
   // ── MOTEUR AGENTIQUE (Phase 2 — « posséder le moteur ») ───────────────────────
@@ -1454,6 +1541,33 @@ export async function runRelay(
           }
         } catch {
           /* la garde d'équilibre ne casse jamais la livraison */
+        }
+      }
+
+      // #b incrément 2 — teste_parcours de clôture CÔTÉ ÉLÈVE (gaté ELEVE_GATE_PARCOURS=on,
+      // défaut OFF) : ouvre la preview, et si l'app charge avec des erreurs console →
+      // renvoie l'Élève corriger (reboucle bornée par selfRelanceMax). C'est la vérif
+      // « ça marche vraiment » (#155) intégrée à la clôture, symétrique du chemin Maître.
+      if (process.env.ELEVE_GATE_PARCOURS === "on" && result?.finished && relances < selfRelanceMax) {
+        const pc = await runClosureParcours(projectDir);
+        if (!pc.ok) {
+          relances++;
+          push(`🧭 teste_parcours — ${pc.errors.length} erreur(s) console → renvoie l'Élève corriger (${relances}/${selfRelanceMax}, coût 0)`);
+          nudge = `⚠ CLÔTURE — l'app se charge AVEC des erreurs console : ${pc.errors.slice(0, 3).join(" | ") || "(voir la preview)"}. Corrige-les, vérifie que la page charge proprement, puis appelle \`finish\`.`;
+          continue;
+        }
+        push(`🧭 teste_parcours — aucune erreur console ✓`);
+      }
+
+      // #b incrément 3 — audit MangoQA CÔTÉ ÉLÈVE (si MangoQA tourne) : un verdict RED
+      // devient un critère de re-correction (renvoie l'Élève corriger). Fail-open.
+      if (result?.finished && relances < selfRelanceMax) {
+        const qa = await runClosureMangoQA(projectDir);
+        if (!qa.ok) {
+          relances++;
+          push(`🥭 MangoQA RED → renvoie l'Élève corriger (${relances}/${selfRelanceMax}, coût 0)`);
+          nudge = `⚠ CLÔTURE — MangoQA a rejeté le livrable. Action corrective : ${qa.action}. Applique-la, puis appelle \`finish\`.`;
+          continue;
         }
       }
 

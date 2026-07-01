@@ -3,7 +3,7 @@ type: entité
 tags: [eleve, gate, qa, gout, intention, boucle-agentique]
 statut: livré
 sources: ["#161"]
-maj: 2026-06-28
+maj: 2026-07-01
 ---
 
 # Gardien-clôture (gate goût/QA/intention)
@@ -42,11 +42,22 @@ Le [[run-validation|run grandeur nature]] du 2026-06-25 a révélé un **faux-n�
 ## Garde de CADRE (piste #2 du juge d'intention, 2026-06-28 — L40 ✅)
 Le juge d'intention notait **100/100 alors que le CADRE livré ne correspond pas** (cas réel `jeu-de-petanques` : user voulait Unity/3D/natif Android, livré = React/2D/web). La cause AMONT était déjà traitée (conscience des limites, cf. [[capacites-mango]]) ; restait à durcir le juge. **`applyScopeGuard(verdict, task)`** (eleve-judge.ts) — PUR : lance `detectOutOfScope(task)` ([[capacites-mango]]) ; si une famille hors périmètre est demandée (Unity, natif iOS/Android, Flutter, desktop natif), **plafonne `couverture` à `SCOPE_MISMATCH_CAP` (40)** (jamais à la hausse) + préfixe un manque « cadre hors périmètre », **quoi que dise le juge LLM**. Appliqué à TOUS les chemins de `judgeIntention`, **y compris le verdict NEUTRE** → **atout : détecte le mismatch SANS réseau, donc même juge cloud indisponible**. Opt-out `JUDGE_SCOPE_GUARD=off`. Reste convergent/non-bloquant. `test-eleve-judge 25/25` (+11).
 
+## Clôture APRÈS le Maître + reboucle (chantier « les 3 correctifs dans le cœur », 2026-07-01)
+
+Le Gardien (et les autres garde-fous) ne s'armaient QUE dans la boucle de l'Élève : dès que l'Élève **escaladait au Maître** (Claude), `finalizeEscalation` renvoyait le build vert **sans repasser** intention/goût/QA, ni `teste_parcours`, ni MangoQA → les garde-fous étaient **court-circuités par l'escalade** (le trou exact signalé par Raf : « pourquoi pas d'auto-vérif / auto-correction / MangoQA / juge après ? »). Corrigé — **3 correctifs + une reboucle, dans le cœur** (`eleve.ts`), gatés OFF (zéro régression) :
+
+1. **Gardien après le Maître** — après résolution par le Maître, `runClosureGate` (intention + goût + QA) re-tourne (`ELEVE_CLOSURE_GATE=on`).
+2. **`teste_parcours` de clôture** (`runClosureParcours`) — ouvre la preview et vérifie qu'**aucune erreur console** n'apparaît, **côté Élève ET côté Maître** (`ELEVE_GATE_PARCOURS=on`). Fail-open (preview injoignable → pas d'erreur inventée).
+3. **MangoQA de clôture** (`runClosureMangoQA`) — si le watcher MangoQA tourne (sentinelle [[mangoqa]]), émet le signal de phase et attend le verdict ; un **RED devient un critère de re-correction** (timeout paramétrable `MANGOQA_CLOSURE_TIMEOUT`, défaut 60 s). Fail-open.
+4. **Le Maître RE-CORRIGE sur RED** — `finalizeEscalation` devient une **boucle bornée** (`ELEVE_GATE_RELANCE_MAX`, défaut 2) : clôture RED → le Maître ré-escalade avec le feedback précis (« Le livrable compile mais ne passe pas la clôture qualité : … ») au lieu de juste signaler ; gates tous OFF → `issues` vide → 1 escalade → retour (comportement historique).
+
+**Prouvé LIVE 2026-07-01** (100 % via MangoOS, `ELEVE_GATE_PARCOURS=on` + MangoQA actif, sans intervention dans la boucle) : GLM `fetch failed` → `⤴ ESCALADE MAÎTRE` → build vert ($1.75) → `🛡 Gardien (après Maître) intention 0/goût 65 ✗` + `🧭 teste_parcours ✓` + `🥭 MangoQA RED ✗` → `↻ Clôture RED → le Maître RE-CORRIGE (1/1)` → 2ᵉ build vert ($1.47) → clôture encore RED → **livré INCOMPLET assumé** (coût borné $3.22). Tests : eleve-runtime 49 · eleve-gate 40 · eleve-parcours-tools 20. **Limites honnêtes révélées** : `intention 0/100` après le Maître (le juge reçoit un résumé placeholder `"résolu par le Maître"`) → [[limites|L69]] ; OOM du watcher MangoQA (disjoncteur qui re-logge les états périmés) → [[limites|L70]].
+
 ## État
 
 **Livré et prouvé live** (#161). LIVE (`runRelay`, vrai GLM + juge qwen + critiqueScreen, $0, seuil goût forcé 99) : GLM finit → `🛡 intention 100/100, goût 76/100 ✗` → GLM **applique les correctifs du Gardien sur 2 fichiers** → re-critique 71 ✗ → laisse passer + `incomplete`. Tests : judge 12 · gate **27** · brain-dispatch 35 (11 agents). **Fiabilisé 2026-06-26 (L28 ✅, piste #2)** — voir la section ci-dessus.
 
-**Limites** : L19 (juge LLM faillible — bruit du VL, cf. [[oeil-coach]] ; atténué par non-bloquant + l'anti-thrash de la piste #2) · L20 (goût/QA exige un rendu → sauté pour le backend) · L21 (juge sur résumé+fichiers, pas un vrai `git diff`) · **L28 ✅ Résolu** (faux 50 du volet goût) · **L40 ✅ Résolu** (mismatch de cadre détecté par `applyScopeGuard`, même sans cloud).
+**Limites** : L19 (juge LLM faillible — bruit du VL, cf. [[oeil-coach]] ; atténué par non-bloquant + l'anti-thrash de la piste #2) · L20 (goût/QA exige un rendu → sauté pour le backend) · L21 (juge sur résumé+fichiers, pas un vrai `git diff`) · **L28 ✅ Résolu** (faux 50 du volet goût) · **L40 ✅ Résolu** (mismatch de cadre détecté par `applyScopeGuard`, même sans cloud) · **L69** (intention aveugle après le Maître — résumé placeholder) · **L70** (OOM du watcher MangoQA sur états périmés).
 
 ## Liens
 [[oeil-coach]] · [[moteur-gout]] · [[planifier-avant-agir]] · [[transmission-competences]] · [[brains]] · [[mangoqa]] · [[statut]] · [[historique]] · [[limites]]

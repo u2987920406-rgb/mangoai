@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-06-30
+maj: 2026-07-01
 ---
 
 # Index du wiki MangoOS
@@ -30,7 +30,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[sharingan-vision-eleve]] | L'œil de GLM : outil `vois_ecran` (rendu→image→VL cloud→critique) pour qu'il VOIE ses écrans et s'auto-corrige — #151 ✅ fait, prouvé live | ✅ écrite |
 | [[sharingan-extraction]] | `extraire_site` : naviguer + voir + comprendre + reformuler un site en dossier structuré, le persister (artefact réutilisable) et l'illustrer (Pexels) — #159 COMPLET 5/5, prouvé live | ✅ écrite |
 | [[planifier-avant-agir]] | `planifier` : l'Élève pose un PLAN d'étapes avant de coder, rappelé quand il dérive (plan-ancre) — #160, prouvé live | ✅ écrite |
-| [[gardien-cloture]] | Gate de clôture goût/QA/intention dans la boucle : GLM ne finit que si c'est la bonne tâche, au bon goût, lisible (convergent, non-bloquant) — #161, prouvé live | ✅ écrite |
+| [[gardien-cloture]] | Gate de clôture goût/QA/intention dans la boucle : GLM ne finit que si c'est la bonne tâche, au bon goût, lisible (convergent, non-bloquant) — #161, prouvé live · **+ clôture APRÈS le Maître (Gardien + teste_parcours + MangoQA) & reboucle du Maître sur RED — prouvé live 2026-07-01** | ✅ écrite |
 | [[le-stratege]] | Raisonnement de déblocage : quand l'exécutant bloque, Mango DIAGNOSTIQUE la cause puis CHOISIT le remède et APPREND, tranche l'ambigu (cerveau frugal) et monte le cerveau de l'exécutant + mesure la souveraineté — #164 ✅ COMPLET (Phases 0-4) | ✅ écrite |
 | [[grand-chantier]] | Orchestrateur qui enchaîne TOUT SEUL les incréments d'un gros projet A-Z (squelette → incrément → Gardien+tests → suivant), checkpoint resumable + budget + quarantaine — Phase 2, cœur prouvé 27/27, gaté OFF | ✅ écrite |
 | [[domaines-unity]] | Abstraction de domaine (Web défaut vs Unity) qui sort le pipeline du tout-Vite + compétence Unity/C# (build headless, tests EditMode, template) — Phase 3a, gaté OFF, build live à prouver | ✅ écrite |
