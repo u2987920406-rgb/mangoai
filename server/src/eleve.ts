@@ -31,6 +31,7 @@ import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
 import { loadHooks } from "./mango-hooks-config.js";
+import { runHooks } from "./mango-hooks.js";
 import { loadExternalMcpTools, defaultMcpConfigPath } from "./mcp-external.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import {
@@ -1576,6 +1577,25 @@ export async function runRelay(
       }
 
       // Build vert + finish explicite → AVANT de déclarer succès, le GARDIEN de
+      // (#172, Phase 2) Point PreFinish EXTENSIBLE : les hooks de config déclarés sur
+      // l'événement PreFinish s'exécutent quand l'Élève veut finir — un hook peut le
+      // renvoyer corriger (deny/ask) EN AMONT du Gardien natif. Gaté ELEVE_HOOKS, borné
+      // par gateRelanceMax, fail-open (un hook cassé ne bloque jamais la clôture).
+      // Choix assumé : le Gardien #161 reste le gate PreFinish NATIF ci-dessous, NON
+      // réécrit — son verdict riche (intention/goût/QA + evaluateGate/anti-thrash) ne se
+      // réduit pas au contrat allow/deny du dispatcher (migration littérale = L71).
+      if (process.env.ELEVE_HOOKS === "on" && result?.finished && (runCtx.hooks?.length ?? 0) > 0 && gateRelances < gateRelanceMax) {
+        try {
+          const pf = await runHooks({ event: "PreFinish", projectDir, detail: result.text }, runCtx.hooks!);
+          if (pf.ran > 0 && pf.decision !== "allow") {
+            gateRelances++;
+            nudge = `Un hook de clôture (PreFinish) a refusé la livraison : ${pf.reasons.join(" ; ") || "revois le livrable"}. Corrige EXACTEMENT ce point, puis conclus.`;
+            push(`↻ Hook PreFinish : renvoie l'Élève corriger (${gateRelances}/${gateRelanceMax})`);
+            continue;
+          }
+        } catch { /* fail-open : jamais un tour cassé par un hook */ }
+      }
+
       // clôture (#161) vérifie intention + goût + QA. Gaté ELEVE_CLOSURE_GATE=on
       // (défaut OFF → zéro régression). Convergent/non-bloquant : convertit (relance
       // bornée) puis cède (incomplete). Ne casse jamais la boucle (try/catch).
