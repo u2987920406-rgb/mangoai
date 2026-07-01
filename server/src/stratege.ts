@@ -51,6 +51,15 @@ export function decomposeNudge(): string {
   );
 }
 
+export function repetitiveNudge(): string {
+  return (
+    "⚠ STRATÈGE — tu réécris en boucle sans résoudre l'erreur de build. STOP le patch au hasard. " +
+    "1) LIS le message d'erreur EXACT et identifie la ligne/le symbole en cause. " +
+    "2) Si c'est un usage de lib/API : appelle `chercher_web` (puis `lire_page`) avant de recoder. " +
+    "3) Sinon DÉLÈGUE la partie qui coince via `delegate`. Puis corrige, vérifie le build et appelle `finish`."
+  );
+}
+
 export function wanderingNudge(planReminder?: string): string {
   const pr = planReminder?.trim();
   return pr
@@ -80,6 +89,8 @@ export function route(d: Diagnosis, state: StrategeState, opts: { planReminder?:
       return { kind: "nudge", label: "documente-toi (web)", nudge: knowledgeNudge() };
     case "plateau-iterations":
       return { kind: "nudge", label: "décompose (delegate)", nudge: decomposeNudge() };
+    case "repetitive-failure":
+      return { kind: "nudge", label: "change d'approche", nudge: repetitiveNudge() };
     case "wandering":
       return { kind: "nudge", label: "ré-ancre le plan", nudge: wanderingNudge(opts.planReminder) };
     default:

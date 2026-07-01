@@ -49,6 +49,7 @@ console.log("[1] parseStrategeClass — sortie contrainte");
   check("CLASSE: wrong-tool (casse/espacement tolérés)", parseStrategeClass("classe :  wrong-tool ") === "wrong-tool");
   check("CLASSE: inconnu → null (reste ambigu)", parseStrategeClass("CLASSE: inconnu\nrien ne colle") === null);
   check("classe hors catalogue → null", parseStrategeClass("CLASSE: missing-dependency") === null);
+  check("nouvelle classe repetitive-failure reconnue (#168 tranche 3)", parseStrategeClass("CLASSE: repetitive-failure\nil patche en boucle") === "repetitive-failure");
   check("texte vide → null", parseStrategeClass("") === null);
   check("repli : 1re classe citée si pas de ligne CLASSE:", parseStrategeClass("je pense que c'est du wandering ici") === "wandering");
   check("« inconnu » avant la classe → null", parseStrategeClass("inconnu, mais peut-être plateau-iterations") === null);

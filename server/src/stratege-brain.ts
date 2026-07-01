@@ -37,6 +37,7 @@ export type StrategeDispatch = (
 export const BRAIN_CATALOGUE: { cls: Exclude<BlockerClass, "none" | "ambiguous" | "missing-dependency">; desc: string }[] = [
   { cls: "knowledge-gap", desc: "usage d'une lib/API erroné, sans s'être documenté (chercher_web)" },
   { cls: "wrong-tool", desc: "tâtonnement sur le mauvais outil (shell en boucle pour lire/éditer)" },
+  { cls: "repetitive-failure", desc: "réécrit en boucle le(s) même(s) fichier(s) sans résoudre l'erreur de build" },
   { cls: "wandering", desc: "dérive / sur-exploration : relit et replanifie sans produire" },
   { cls: "plateau-iterations", desc: "tâche trop large d'un bloc, à décomposer (delegate)" },
   { cls: "flaky-resource", desc: "ressource externe morte dans le livrable (image/URL 404)" },

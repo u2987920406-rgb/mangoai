@@ -84,5 +84,18 @@ check("none → formatDiagnosis vide", REMEDY_BY_CLASS["none"] === "—");
   check("tout diagnostic non-none a une evidence + un remède", cases.every((c) => { const d = diagnose(c); return d.evidence.length > 0 && d.remedy.length > 0; }));
 }
 
+// ── repetitive-failure (#168 tranche 3 : réécriture en boucle sur build cassé) ─
+{
+  const loop = diagnose({ buildOk: false, finished: false, stuck: false, iterations: 14, buildDetail: "SyntaxError: Unexpected token '<'", toolNames: ["edit_file", "edit_file", "write_file", "edit_file", "edit_file"] });
+  check("5 réécritures + build cassé sans cause reconnue → repetitive-failure", loop.blocker === "repetitive-failure");
+  check("… preuve cite le nombre d'écritures", /5 écriture/.test(loop.evidence));
+  const few = diagnose({ buildOk: false, finished: false, stuck: false, iterations: 6, buildDetail: "SyntaxError: Unexpected token", toolNames: ["edit_file", "edit_file"] });
+  check("… sous le seuil → reste ambiguous (pas de faux positif)", few.blocker === "ambiguous");
+  const dep = diagnose({ buildOk: false, finished: false, stuck: false, iterations: 14, buildDetail: `Cannot find module 'leaflet'`, toolNames: ["edit_file", "edit_file", "write_file", "edit_file", "edit_file"] });
+  check("… missing-dependency garde la priorité malgré 5 écritures", dep.blocker === "missing-dependency");
+  const wt = diagnose({ buildOk: false, finished: false, stuck: false, iterations: 14, buildDetail: "boom", toolNames: ["run_command", "run_command", "run_command", "edit_file", "edit_file", "write_file", "edit_file", "edit_file"] });
+  check("… wrong-tool garde la priorité (run_command en rafale)", wt.blocker === "wrong-tool");
+}
+
 console.log(`\n${fail === 0 ? "✅" : "❌"} stratege-signals : ${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

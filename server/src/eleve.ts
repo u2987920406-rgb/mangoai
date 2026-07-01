@@ -47,7 +47,7 @@ import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
 import { consultSpecialist, buildDelegateNudge } from "./specialist-delegate.js";
 import { recordUncoveredGap, markGap } from "./self-evolution.js";
 import { forgeForGap } from "./agent-forge.js";
-import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, type AutoForgeState } from "./self-evolution-autoforge.js";
+import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, resolveGapBlockers, isTransientBlocker, type AutoForgeState } from "./self-evolution-autoforge.js";
 import {
   executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
   type ExecRung,
@@ -1141,7 +1141,9 @@ export async function runRelay(
     // On EXCLUT les transitoires/auto-résolus : flaky-resource (réseau), missing/install-
     // dependency (l'install les règle), stratege-*/ambiguous (méta). Dédup : une lacune par
     // type et par build (évite le spam ; le compteur `hits` du store agrège les builds).
-    const GAP_WORTHY_BLOCKERS = new Set(["plateau-iterations", "wandering", "knowledge-gap", "wrong-tool"]);
+    // #168 tranche 3 — trigger PILOTABLE par env (SELF_EVOLVE_BLOCKERS, CSV). Défaut = les
+    // classes « mur de capacité » (dont repetitive-failure). Élargir/restreindre sans recompiler.
+    const GAP_WORTHY_BLOCKERS = resolveGapBlockers();
     const seenGapBlockers = new Set<string>();
     // #168 tranche 2 — DISJONCTEUR de la forge auto (« frein avant moteur »). La forge ne s'arme
     // seule que si `SELF_EVOLVE_AUTO=on` ET sous plafond de forges/run + garde-coût Opus. Défaut
@@ -1305,7 +1307,10 @@ export async function runRelay(
         // #168 — AUTO-ÉVOLUTION (trigger LARGE) : tout blocage « mur de capacité » non couvert
         // par un agent forgé → on l'inscrit comme lacune ouverte (une fois par type/build).
         // `recordUncoveredGap` ignore en interne si un agent couvre déjà (semi-auto : Raf valide).
-        if (selfEvolveOn && d && GAP_WORTHY_BLOCKERS.has(d.blocker) && !seenGapBlockers.has(d.blocker)) {
+        // #168 tranche 3 — on IGNORE les hoquets réseau transitoires (GLM cloud gratuit :
+        // « fetch failed » parfois mal classé en plateau) : jamais de forge/relance sur du bruit.
+        const gapTransient = isTransientBlocker(`${agErr} ${d?.detail ?? ""} ${d?.cause ?? ""}`);
+        if (selfEvolveOn && d && !gapTransient && GAP_WORTHY_BLOCKERS.has(d.blocker) && !seenGapBlockers.has(d.blocker)) {
           seenGapBlockers.add(d.blocker);
           const g = recordUncoveredGap({ blocker: d.blocker, detail: d.detail, task });
           if (g.recorded && g.gap) {
@@ -1321,7 +1326,22 @@ export async function runRelay(
               if (fr.agent) {
                 markGap(g.gap.id, "forged", { agentId: fr.agent.id });
                 autoForgeState = recordAutoForge(autoForgeState);
-                push(`  🧬 Forge AUTO : agent « ${fr.agent.name} » créé (${fr.agent.provider}/${fr.agent.model}) — disponible au prochain blocage de ce type`);
+                push(`  🧬 Forge AUTO : agent « ${fr.agent.name} » créé (${fr.agent.provider}/${fr.agent.model})`);
+                // #168 tranche 3 — REPRISE AUTO DANS LE MÊME RUN : on n'attend plus « le prochain
+                // blocage ». L'agent est persisté → consultSpecialist le retrouve ; on le consulte
+                // et on RELANCE tout de suite. Bornes anti-boucle : budget de relances + plafond
+                // forges/run + seenGapBlockers (pas de 2ᵉ forge du même type). Coût : $0 (Élève) +
+                // 1 consultation du cerveau du spécialiste ; l'Opus n'a servi qu'à la forge.
+                const resume = relances < selfRelanceMax
+                  ? await consultSpecialist({ task, blockage: d.detail ?? d.cause ?? d.blocker })
+                  : null;
+                if (resume) {
+                  relances++;
+                  push(`  ↻ Reprise auto : délègue au nouvel agent « ${resume.agent.name} » (score ${resume.score}) — relance (${relances}/${selfRelanceMax}, coût 0)`);
+                  nudge = buildDelegateNudge(resume.agent.name, resume.advice);
+                  continue;
+                }
+                push(`  🧬 agent « ${fr.agent.name} » prêt — disponible au prochain blocage de ce type`);
               } else {
                 markGap(g.gap.id, "proposed"); // échec → reste à valider
                 push(`  🧬 Forge auto échouée (${fr.error ?? "?"}) → lacune à valider dans l'Atelier`);

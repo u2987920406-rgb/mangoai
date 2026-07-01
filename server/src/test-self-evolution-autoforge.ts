@@ -1,7 +1,8 @@
 // Tests du disjoncteur de la forge auto (#168 tranche 2) — PUR, aucune I/O, aucun LLM.
 import {
   autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge,
-  OPUS_FORGE_EST_USD, type AutoForgeConfig,
+  OPUS_FORGE_EST_USD, resolveGapBlockers, isTransientBlocker, DEFAULT_GAP_BLOCKERS,
+  type AutoForgeConfig,
 } from "./self-evolution-autoforge.js";
 
 let pass = 0;
@@ -76,6 +77,26 @@ console.log("\n[6] scénario complet — 2 forges autorisées puis disjoncteur")
   check("forge #2 autorisée", canAutoForge(c, s).allow);
   s = recordAutoForge(s, 0.12);
   check("forge #3 refusée (plafond)", !canAutoForge(c, s).allow);
+}
+
+console.log("\n[7] resolveGapBlockers — trigger pilotable (#168 tranche 3)");
+{
+  const def = resolveGapBlockers({});
+  check("défaut = les classes par défaut (dont repetitive-failure)", def.has("repetitive-failure") && def.size === DEFAULT_GAP_BLOCKERS.length);
+  check("défaut contient les 4 classes historiques", def.has("plateau-iterations") && def.has("wandering") && def.has("knowledge-gap") && def.has("wrong-tool"));
+  const custom = resolveGapBlockers({ SELF_EVOLVE_BLOCKERS: "plateau-iterations, wandering ,design-gap" });
+  check("CSV custom → parse + trim des espaces", custom.size === 3 && custom.has("design-gap") && custom.has("wandering"));
+  check("vide/espaces → repli sur le défaut", resolveGapBlockers({ SELF_EVOLVE_BLOCKERS: "   " }).size === DEFAULT_GAP_BLOCKERS.length);
+}
+
+console.log("\n[8] isTransientBlocker — filtre des faux blocages réseau (#168 tranche 3)");
+{
+  check("fetch failed → transitoire", isTransientBlocker("moteur agentique : fetch failed"));
+  check("ECONNRESET → transitoire", isTransientBlocker("Error: read ECONNRESET"));
+  check("socket hang up → transitoire", isTransientBlocker("socket hang up"));
+  check("plafond d'itérations normal → PAS transitoire", !isTransientBlocker("iterations=24/24 tâche trop large"));
+  check("erreur de code normale → PAS transitoire", !isTransientBlocker("SyntaxError: Unexpected token"));
+  check("vide → PAS transitoire", !isTransientBlocker(""));
 }
 
 console.log(`\n=== self-evolution-autoforge : ${pass} ✓ / ${fail} ✗ ===`);

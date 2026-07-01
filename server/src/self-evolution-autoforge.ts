@@ -82,3 +82,36 @@ export function recordAutoForge(state: AutoForgeState, costUsd: number = OPUS_FO
   const c = Number.isFinite(costUsd) && costUsd >= 0 ? costUsd : OPUS_FORGE_EST_USD;
   return { forges: state.forges + 1, spentUsd: state.spentUsd + c };
 }
+
+// ── #168 tranche 3 — TRIGGER pilotable + filtre des faux blocages ──────────────
+
+/** Classes de blocage « mur de capacité » qui, non couvertes, ouvrent une lacune (défaut).
+ *  Les autres classes du catalogue sont exclues à dessein : missing-dependency (l'install la
+ *  règle), flaky-resource/ambiguous (transitoires / pas franches), stratege-* (méta). */
+export const DEFAULT_GAP_BLOCKERS = [
+  "plateau-iterations",
+  "wandering",
+  "knowledge-gap",
+  "wrong-tool",
+  "repetitive-failure",
+] as const;
+
+/** Résout l'ensemble des blockers « gap-worthy » depuis l'environnement. `SELF_EVOLVE_BLOCKERS`
+ *  (CSV) permet d'élargir/restreindre le trigger sans recompiler (réversible). Vide ou absent
+ *  → le défaut. PUR (env injectable), ne lève jamais. */
+export function resolveGapBlockers(env: NodeJS.ProcessEnv = process.env): Set<string> {
+  const raw = env.SELF_EVOLVE_BLOCKERS;
+  if (typeof raw === "string" && raw.trim()) {
+    const items = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    if (items.length) return new Set(items);
+  }
+  return new Set(DEFAULT_GAP_BLOCKERS);
+}
+
+/** Un texte de blocage sent-il un hoquet réseau TRANSITOIRE (GLM cloud gratuit, etc.) plutôt
+ *  qu'un vrai mur de capacité ? On ne forge/relance JAMAIS là-dessus (faux « plateau »). PUR. */
+export function isTransientBlocker(text: string): boolean {
+  return /fetch failed|ECONNRESET|ECONNREFUSED|ETIMEDOUT|socket hang up|ENOTFOUND|EAI_AGAIN|network error|und_err|request timed out/i.test(
+    text ?? "",
+  );
+}

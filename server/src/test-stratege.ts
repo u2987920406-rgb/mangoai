@@ -26,6 +26,9 @@ console.log("[1] routage par classe");
   const pl = route(diag("plateau-iterations"), newStrategeState());
   check("plateau-iterations → nudge (delegate)", pl.kind === "nudge" && /delegate/.test(pl.nudge));
 
+  const rf = route(diag("repetitive-failure"), newStrategeState());
+  check("repetitive-failure → nudge (change d'approche)", rf.kind === "nudge" && /chercher_web|delegate|DÉLÈGUE/i.test(rf.nudge));
+
   const wa = route(diag("wandering"), newStrategeState());
   check("wandering → nudge (ré-ancre)", wa.kind === "nudge" && /finish/.test(wa.nudge));
 

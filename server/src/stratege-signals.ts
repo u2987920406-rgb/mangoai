@@ -17,6 +17,7 @@ export type BlockerClass =
   | "missing-dependency" // build : module/import introuvable
   | "knowledge-gap" // build : usage d'API/lib erroné, sans s'être documenté
   | "wrong-tool" // tâtonnement sur le mauvais outil (run_command shell en boucle)
+  | "repetitive-failure" // build cassé + réécritures en boucle sans résoudre l'erreur
   | "flaky-resource" // ressource externe morte (image/URL 404) dans le livrable
   | "wandering" // build vert MAIS sur-exploration (relit/replanifie sans finir)
   | "plateau-iterations" // plafond d'itérations atteint sans finir (tâche trop large)
@@ -28,11 +29,17 @@ export const REMEDY_BY_CLASS: Record<BlockerClass, string> = {
   "missing-dependency": "add_dependency(<module>)",
   "knowledge-gap": "chercher_web / lire_document / procédure #75",
   "wrong-tool": "réorienter vers read_file/edit_file (pas de shell pour lire)",
+  "repetitive-failure": "changer d'approche : lire l'erreur exacte, se documenter (chercher_web) ou déléguer — ne pas re-patcher au hasard",
   "flaky-resource": "réparer la ressource (patron L30) ou substituer",
   "wandering": "ré-ancrer le plan (L17) ou décomposer via delegate",
   "plateau-iterations": "décomposer la tâche en sous-tâches (delegate)",
   "ambiguous": "consulter le cerveau Stratège local (gemma4:12b) — Phase 3",
 };
+
+/** Seuil de réécritures (write_file+edit_file) qui, sur build cassé, signe une boucle
+ *  de correction stérile (« repetitive-failure ») plutôt qu'un simple tâtonnement.
+ *  Élevé exprès : au-dessous, on reste sur « ambiguous » (pas de faux positif). */
+export const REPETITIVE_WRITES_MIN = 5;
 
 /** Signaux observables au point de blocage (tous déjà captés par eleve.ts). */
 export interface BlockerSymptoms {
@@ -130,6 +137,18 @@ export function diagnose(s: BlockerSymptoms): Diagnosis {
         cause: "usage d'API/lib erroné, sans s'être documenté",
         evidence: "erreur d'usage + chercher_web jamais appelé",
         remedy: REMEDY_BY_CLASS["knowledge-gap"],
+      };
+    }
+    // Réécriture en boucle SANS cause reconnue ci-dessus : l'Élève patche au hasard
+    // (write_file/edit_file en rafale) sans résoudre l'erreur → mur de capacité, pas
+    // un simple bug. Nommé AVANT le repli « ambiguous » (récupère des cas ambigus).
+    const writes = count(tools, "write_file") + count(tools, "edit_file");
+    if (writes >= REPETITIVE_WRITES_MIN) {
+      return {
+        blocker: "repetitive-failure",
+        cause: "réécrit en boucle sans résoudre l'erreur de build",
+        evidence: `${writes} écriture(s) (write_file/edit_file), build toujours cassé`,
+        remedy: REMEDY_BY_CLASS["repetitive-failure"],
       };
     }
     return {
