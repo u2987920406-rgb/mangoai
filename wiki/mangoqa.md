@@ -3,7 +3,7 @@ type: entite
 tags: [architecture, qa, audit]
 statut: actif
 sources: [statut, fondation, historique]
-maj: 2026-06-21
+maj: 2026-07-02
 ---
 
 # MangoQA
@@ -16,7 +16,7 @@ Contrôle qualité en arrière-plan. Il lit le flux du [[kernel]] (exporté en `
 
 ## Détails clés — les 3 visages
 
-1. **① Disjoncteur** (#110) — gardien **déterministe, zéro LLM, défensif** (peut ARRÊTER, jamais créer/modifier). Moteur pur `disjoncteur.ts` (`evaluateBreakers`, 100 % testable), 5 réflexes : circuit nocturne (N échecs de suite), garde-fou coût, verrou régression, dérive mémoire, kill switch agent (tours/tokens/durée). Au run : 5 trips réels (le filet testé = succès).
+1. **① Disjoncteur** (#110) — gardien **déterministe, zéro LLM, défensif** (peut ARRÊTER, jamais créer/modifier). Moteur pur `disjoncteur.ts` (`evaluateBreakers`, 100 % testable), 5 réflexes : circuit nocturne (N échecs de suite), garde-fou coût, verrou régression, dérive mémoire, kill switch agent (tours/tokens/durée). Au run : 5 trips réels (le filet testé = succès). **Fiabilisé 2026-07-02 ([[limites|L70]])** : le watcher ne meurt plus en OOM sur les sessions multi-heures — `runner.ts` `readBusEvents` ne relit que la **QUEUE** (4 Mo) du flux `bus-events.jsonl` append-only qui grossit (cause racine), le kill switch **ignore les agents périmés** (`agentStalenessMs` 30 min → un projet terminé ne re-déclenche plus ~40 agents morts) et le **log est dédupliqué**. Staleness défaut `Infinity` → zéro régression ; test-disjoncteur 45/0.
 2. **② Observateur-Conseil** (Visage 2) — audit multi-branches (architecture, tests, dépendances, régression, build, a11y). Rend des verdicts 🔴/🟢. Méta-pattern repéré et à arbitrer : la branche **architecture** tire souvent au rouge sur du subjectif (« trop stricte ? »).
 3. **③ Œil Design** (#111) — couche **objective et déterministe** du design, **jamais bloquante** (`blocking: false` invariant). Moteurs purs : `contrast.ts` (WCAG 2.1 exact), `tokens.ts` (adhérence palette), `eye.ts` (`inspectDesign`). Sépare le **mesuré** du **subjectif** (présenté en questions de convergence). Limite connue : couverture dépend du style (mesure 0 sur UnoCSS atomic et CSS-vars non résolues).
 
