@@ -133,6 +133,13 @@ export default function Chat({
   const [actionModels, setActionModels] = useState(loadActionModels);
   const [activeAction, setActiveAction] = useState("construire"); // bouton actif (highlight + planificateur)
   const [modelMenuFor, setModelMenuFor] = useState(null);         // id de l'action dont le menu modèle est ouvert
+  // #174 — Skills à invocation directe : « /slug args » tapé au composer est
+  // remplacé par le corps de la skill (substitution côté back). `skills` = liste
+  // légère (slug + description) pour l'autocomplétion et la validation du slug.
+  const [skills, setSkills] = useState([]);
+  const [menuActive, setMenuActive] = useState(0);            // item surligné de l'autocomplete /slug
+  const [menuDismissed, setMenuDismissed] = useState(false);  // Échap ferme jusqu'à la frappe suivante
+  const expandingRef = useRef(false);                        // évite deux expansions concurrentes (double-Entrée)
   useEffect(() => {
     try { localStorage.setItem(ACTION_MODELS_KEY, JSON.stringify(actionModels)); } catch { /* localStorage indispo */ }
   }, [actionModels]);
@@ -152,6 +159,65 @@ export default function Chat({
       onChatMode({ model: modelId, mode: a.mode });
     }
   };
+
+  // #174 — Charge la bibliothèque de skills (slug + description) pour l'autocomplete
+  // et la validation du slug. Rechargée quand l'input (re)devient une commande « / »
+  // pour capter une skill créée en cours de session, sans spammer le réseau.
+  const refetchSkills = useCallback(() => {
+    fetch("/api/skills")
+      .then((r) => (r.ok ? r.json() : { skills: [] }))
+      .then((d) => setSkills((d.skills ?? []).filter((s) => s && s.slug)))
+      .catch(() => {});
+  }, []);
+  useEffect(() => { refetchSkills(); }, [refetchSkills]);
+  const startsSlash = input.startsWith("/");
+  useEffect(() => { if (startsSlash) refetchSkills(); }, [startsSlash, refetchSkills]);
+
+  // Autocomplete : ouvert uniquement tant que le slug est en cours de frappe
+  // (slash + slug SANS espace) ; dès qu'un espace est tapé, on passe aux arguments
+  // et le menu se ferme. Un slug inconnu tapé en entier n'ouvre rien de spécial.
+  const slugTyping = /^\/(\S*)$/.exec(input);
+  const slugQuery = slugTyping ? slugTyping[1].toLowerCase() : null;
+  const skillSuggestions = useMemo(() => {
+    if (slugQuery === null) return [];
+    return skills.filter((s) => s.slug.toLowerCase().includes(slugQuery)).slice(0, 6);
+  }, [slugQuery, skills]);
+  const skillMenuOpen = skillSuggestions.length > 0 && !menuDismissed && !busy;
+  // Reset de la sélection + réouverture (après Échap) à chaque frappe de l'input.
+  useEffect(() => { setMenuActive(0); setMenuDismissed(false); }, [input]);
+
+  // Complète le composer avec « /slug » + un espace (prêt pour les arguments).
+  const completeSkill = (s) => {
+    if (!s) return;
+    setInput(`/${s.slug} `);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) {
+        el.focus();
+        el.style.height = "auto";
+        el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+        el.setSelectionRange(el.value.length, el.value.length);
+      }
+    });
+  };
+
+  // Résout « /slug [args] » → corps expansé (substitution $ARGUMENTS côté back),
+  // ou null si le slug est inconnu / l'endpoint échoue → l'appelant envoie alors
+  // le texte brut tel quel (garde-fou : un slash + slug inconnu ne casse rien).
+  const skillSlugs = useMemo(() => new Set(skills.map((s) => s.slug)), [skills]);
+  async function maybeExpandSkill(raw) {
+    const m = /^\/([^\s]+)([\s\S]*)$/.exec(raw);
+    if (!m || !skillSlugs.has(m[1])) return null;
+    const args = m[2].trim();
+    try {
+      const r = await fetch(`/api/skills/${encodeURIComponent(m[1])}?args=${encodeURIComponent(args)}`);
+      if (!r.ok) return null;
+      const d = await r.json();
+      return typeof d.expanded === "string" ? d.expanded : null;
+    } catch {
+      return null;
+    }
+  }
 
   // Au MONTAGE : synchronise le mode parent sur le bouton actif (Construire→elite).
   // Sans ça, après un remontage (F5, bascule de projet) le highlight revient sur
@@ -442,6 +508,26 @@ export default function Chat({
   }, [buildRequest, busy]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function send(textArg, opts) {
+    // #174 — Expansion de skill : un envoi UTILISATEUR « /slug [args] » dont le
+    // slug est connu est remplacé par le corps de la skill (le « /slug » brut
+    // n'atteint jamais /api/chat). Fait AVANT tout le reste ; on relance send()
+    // avec le texte expansé (traité comme un tour normal). Slug inconnu → on passe.
+    const isUserSend = typeof textArg !== "string";
+    if (isUserSend && !opts?.skillExpanded && !busy && !expandingRef.current) {
+      const raw = input.trim();
+      if (raw.startsWith("/")) {
+        expandingRef.current = true;
+        let expanded = null;
+        try { expanded = await maybeExpandSkill(raw); }
+        finally { expandingRef.current = false; }
+        if (expanded !== null) {
+          setInput("");
+          setMenuDismissed(true);
+          if (inputRef.current) inputRef.current.style.height = "auto";
+          return send(expanded, { ...(opts || {}), skillExpanded: true });
+        }
+      }
+    }
     const typed = (typeof textArg === "string" ? textArg : input).trim();
     // Auto-prompts (fix requests) never carry attachments
     const files = typeof textArg === "string" ? [] : attachments;
@@ -874,13 +960,48 @@ export default function Chat({
 
       <div className="border-t border-edge p-3">
         <div
-          className="rounded-2xl border border-edge bg-bg p-2 focus-within:border-accent/60 transition-colors"
+          className="relative rounded-2xl border border-edge bg-bg p-2 focus-within:border-accent/60 transition-colors"
           onDragOver={(e) => e.preventDefault()}
           onDrop={(e) => {
             e.preventDefault();
             addFiles(e.dataTransfer.files);
           }}
         >
+          {/* #174 — Autocomplete des skills : s'ouvre tant qu'un /slug est en cours de frappe. */}
+          {skillMenuOpen && (
+            <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-md overflow-hidden rounded-xl border border-edge bg-panel shadow-2xl shadow-black/30">
+              <div className="border-b border-edge px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-faint">
+                Skills — ↑↓ choisir · Tab/Entrée insérer · Échap fermer
+              </div>
+              <ul className="nice-scroll max-h-56 overflow-y-auto p-1">
+                {skillSuggestions.map((s, i) => (
+                  <li key={s.slug}>
+                    <button
+                      type="button"
+                      onMouseEnter={() => setMenuActive(i)}
+                      onClick={() => completeSkill(s)}
+                      className={`flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
+                        i === menuActive ? "bg-accent/15" : "hover:bg-edge-soft"
+                      }`}
+                    >
+                      <span className="flex items-center gap-1.5 font-mono text-xs text-accent">
+                        /{s.slug}
+                        {s.disableModelInvocation && (
+                          <span
+                            className="rounded bg-edge-soft px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-faint"
+                            title="Invocation manuelle uniquement (l'agent ne la déclenche pas seul)"
+                          >
+                            manuel
+                          </span>
+                        )}
+                      </span>
+                      {s.description && <span className="w-full truncate text-[11px] text-faint">{s.description}</span>}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           {contextFile && (
             <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
               <span className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2 py-1 text-xs text-accent">
@@ -1065,6 +1186,13 @@ export default function Chat({
                   }
                 }}
                 onKeyDown={(e) => {
+                  // #174 — Navigation de l'autocomplete /slug (prioritaire sur l'envoi).
+                  if (skillMenuOpen) {
+                    if (e.key === "ArrowDown") { e.preventDefault(); setMenuActive((i) => (i + 1) % skillSuggestions.length); return; }
+                    if (e.key === "ArrowUp")   { e.preventDefault(); setMenuActive((i) => (i - 1 + skillSuggestions.length) % skillSuggestions.length); return; }
+                    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); completeSkill(skillSuggestions[menuActive]); return; }
+                    if (e.key === "Escape")    { e.preventDefault(); setMenuDismissed(true); return; }
+                  }
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
                     send();

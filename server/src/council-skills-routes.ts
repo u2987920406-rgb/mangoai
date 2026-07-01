@@ -6,7 +6,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Express, Request, Response } from "express";
 import { runCouncil, loadRecoveryPlan, clearRecoveryPlan } from "./orchestrator.js";
-import { listSkills, SKILLS_DIR } from "./skills.js";
+import { listSkills, readSkill, expandSkillBody, SKILLS_DIR } from "./skills.js";
 import { projectDir, projectExists } from "./projects.js";
 
 export function registerCouncilSkillsRoutes(app: Express): void {
@@ -45,9 +45,39 @@ export function registerCouncilSkillsRoutes(app: Express): void {
 
   // ── Skills API ───────────────────────────────────────────────────────────────
 
-  // List all skills
+  // List all skills — `slug` (identifiant tapé après `/`) et le drapeau
+  // d'invocation manuelle exposés pour l'autocomplétion + l'expansion du composer (#174).
   app.get("/api/skills", (_req: Request, res: Response) => {
-    res.json({ skills: listSkills().map(({ name, description }) => ({ name, description })) });
+    res.json({
+      skills: listSkills().map(({ name, description, slug, disableModelInvocation }) => ({
+        name,
+        description,
+        slug,
+        disableModelInvocation: Boolean(disableModelInvocation),
+      })),
+    });
+  });
+
+  // #174 — Corps complet d'une skill + expansion. `?args=<texte>` renvoie aussi
+  // `expanded` (corps substitué prêt à devenir le tour utilisateur). 404 si le
+  // slug est inconnu/illisible (le composer retombe alors sur l'envoi brut).
+  app.get("/api/skills/:slug", (req: Request, res: Response) => {
+    const slug = req.params["slug"] as string;
+    const skill = readSkill(slug);
+    if (!skill) {
+      res.status(404).json({ error: `Skill "${slug}" introuvable` });
+      return;
+    }
+    const argsText = typeof req.query["args"] === "string" ? (req.query["args"] as string) : "";
+    res.json({
+      name: skill.name,
+      description: skill.description,
+      slug: skill.slug,
+      body: skill.body,
+      disableModelInvocation: skill.disableModelInvocation,
+      arguments: skill.arguments,
+      expanded: expandSkillBody(skill.body, argsText, skill.arguments),
+    });
   });
 
   // Create a new skill
