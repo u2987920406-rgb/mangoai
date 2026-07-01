@@ -24,7 +24,7 @@ L'argument de fond : un harnais mûr fait que l'IA « sort un produit propre du 
 | **Skills utilisateurs** (~35) | Skills + KernelTools de l'Élève (`planifier`, `chercher_web`, `extraire_site`…) | ✅ via [[transmission-competences]] |
 | **Skills internes** (protocoles inter-agents) | [[le-stratege]] · [[gardien-cloture]] · routage `route()` | ✅ |
 | **Scripts déterministes** (~80) | `runParcours`, `measureDesign`, `sharinganAnalyze`, parsing pur… | ✅ (« éviter de cramer des tokens » = logique identique) |
-| **Templates** (~100, dont **infra back** : BDD/paiement/RGPD/sécurité) | ~30 templates **front** (#81-#83) + **5 briques back composables livrées** (#169 : auth·db·paiement·securite·RGPD) | 🟢 **#169 : 5 briques ✅** (reste l'assemblage Élève) |
+| **Templates** (~100, dont **infra back** : BDD/paiement/RGPD/sécurité) | **21 templates front build-vérifiés vert** (#81-#83, audit 2026-07-01 : r3f réparé fiber v9/drei v10 + ajout de `motion`·`charts`·`leaflet`·`router`) + **5 briques back composables** (#169 : auth·db·paiement·securite·RGPD) + assemblage Élève (`assemble_brique`) | 🟢 **front 21 verts · #169 : 5 briques + assemblage ✅** |
 | **Gestion des secrets** (Bitwarden API) | coffre **chiffré AES-256-GCM** + **Bitwarden `bws`** (chaîne) + `utilise_secret` (réf→résolu serveur, valeur rédigée) — #170 | 🟢 **#170 ✅ COMPLET** |
 | **Boucle fonctionnelle** (se réveille seule) | Runs autonomes ([[boucle-nocturne]], `run-mango-nuit.ts`) | ✅ |
 | **Boucle architecturale** (réécrit ses propres skills) | [[auto-amelioration]] (`mango-self.ts` B1-B4) + [[auto-evolution]] (#168) | ✅ |
