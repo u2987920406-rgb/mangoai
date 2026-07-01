@@ -13,6 +13,7 @@ import { z } from "zod";
 import { ToolRegistry, toOpenAITools, type OpenAITool, type KernelTool } from "./kernel-mcp.js";
 import { FINISH_TOOL } from "./eleve-action-tools.js";
 import type { KernelTracer } from "./kernel-trace.js";
+import { runHooks, type HookRegistration } from "./mango-hooks.js";
 
 // ── Types du dialogue OpenAI-compat ──────────────────────────────────────────
 
@@ -83,6 +84,12 @@ export interface AgenticOptions {
    * `true` → la boucle sort proprement avec `aborted:true` (rien n'est tué en
    * plein milieu d'une écriture). Closure → le runtime reste découplé d'interrupt.ts. */
   shouldAbort?: () => boolean;
+  /** (#172) Hooks résolus, exécutés autour de chaque appel d'outil (PreToolUse/PostToolUse).
+   * Injectés par l'appelant (eleve.ts lit <projectDir>/.hooks/hooks.json). N'agissent que si
+   * ELEVE_HOOKS=on ET la liste est non vide → sinon comportement identique (zéro régression). */
+  hooks?: HookRegistration[];
+  /** (#172) Répertoire projet, passé aux hooks comme contexte d'exécution. */
+  projectDir?: string;
 }
 
 export interface AgenticBuildResult {
@@ -120,6 +127,41 @@ function compact(messages: ChatMessage[], ctxMax: number): boolean {
     }
   }
   return compacted;
+}
+
+/**
+ * (#172) Invoque un outil en passant par les hooks PreToolUse/PostToolUse quand ils sont
+ * actifs. Gate : `enabled` (= ELEVE_HOOKS=on, décidé par l'appelant) ET au moins un hook.
+ * Sinon → invocation DIRECTE, strictement identique à avant (zéro régression) :
+ *  - PreToolUse deny/ask → l'outil n'est PAS exécuté, un message de refus est renvoyé (isError) ;
+ *  - PreToolUse updatedInput → l'outil est invoqué avec les arguments réécrits ;
+ *  - PostToolUse → observation (le résultat est déjà produit ; la V1 ne le modifie pas).
+ * runHooks ne lève jamais ; l'invoke lui-même reste protégé par le try/catch de l'appelant.
+ */
+export async function runGatedInvoke(
+  registry: ToolRegistry,
+  name: string,
+  args: Record<string, unknown>,
+  opts: { hooks?: HookRegistration[]; projectDir?: string; enabled?: boolean } = {},
+): Promise<{ text: string; isError: boolean }> {
+  const hooks = opts.hooks ?? [];
+  if (!opts.enabled || hooks.length === 0) {
+    const r = await registry.invoke(name, args);
+    return { text: r.text, isError: !!r.isError };
+  }
+  const projectDir = opts.projectDir ?? "";
+  const pre = await runHooks({ event: "PreToolUse", projectDir, toolName: name, toolInput: args }, hooks);
+  if (pre.decision !== "allow") {
+    const why = pre.reasons.join(" ; ")
+      || (pre.decision === "ask" ? "confirmation requise (aucun humain dans la boucle)" : "refusé");
+    return { text: `⛔ Action « ${name} » bloquée par un hook : ${why}`, isError: true };
+  }
+  const finalArgs = pre.updatedInput ?? args;
+  const r = await registry.invoke(name, finalArgs);
+  const result = { text: r.text, isError: !!r.isError };
+  // PostToolUse : observation seule en V1 (le résultat est déjà produit).
+  await runHooks({ event: "PostToolUse", projectDir, toolName: name, toolInput: finalArgs, result: result.text }, hooks);
+  return result;
 }
 
 /**
@@ -259,9 +301,15 @@ export async function buildAgentic(
           "appelle check_build pour voir l'état réel, ou appelle finish si la tâche est faite.";
       } else {
         try {
-          const r = await registry.invoke(name, JSON.parse(rawArgs) as Record<string, unknown>);
-          resultText = r.text;
-          isErr = !!r.isError;
+          // (#172) Passage par les hooks PreToolUse/PostToolUse — gaté ELEVE_HOOKS ; sans
+          // hooks actifs, runGatedInvoke fait une invocation directe (comportement inchangé).
+          const gated = await runGatedInvoke(registry, name, JSON.parse(rawArgs) as Record<string, unknown>, {
+            hooks: opts.hooks,
+            projectDir: opts.projectDir,
+            enabled: process.env.ELEVE_HOOKS === "on",
+          });
+          resultText = gated.text;
+          isErr = gated.isError;
         } catch (e) {
           resultText = `Erreur outil "${name}" : ${(e as Error).message}`;
           isErr = true;
@@ -361,6 +409,8 @@ export interface AgenticRunCtx {
   planReminder?: () => string;
   /** Interruption coopérative (Stop) — hérité tel quel par les sous-agents délégués. */
   shouldAbort?: () => boolean;
+  /** (#172) Hooks résolus, hérités par la boucle et les sous-agents. Injectés par eleve.ts. */
+  hooks?: HookRegistration[];
 }
 
 /** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
@@ -378,6 +428,8 @@ export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<
       onLog: ctx.onLog,
       planReminder: ctx.planReminder,
       shouldAbort: ctx.shouldAbort,
+      hooks: ctx.hooks,
+      projectDir: ctx.projectDir,
     });
 
   if (!ctx.tracer) return runOnce();

@@ -30,6 +30,7 @@ import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
+import { loadHooks } from "./mango-hooks-config.js";
 import { loadExternalMcpTools, defaultMcpConfigPath } from "./mcp-external.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import {
@@ -1185,6 +1186,9 @@ export async function runRelay(
       // l'utilisateur clique « Stop » (/api/stop → requestInterrupt). Closure
       // surchargeable pour les tests (deps.shouldAbort).
       shouldAbort: deps.shouldAbort ?? isInterrupted,
+      // (#172) Hooks projet — chargés SEULEMENT si ELEVE_HOOKS=on (défaut off → aucun coût,
+      // zéro régression). loadHooks ne lève jamais (fichier absent / JSON cassé → []).
+      hooks: process.env.ELEVE_HOOKS === "on" ? loadHooks(projectDir) : undefined,
     };
 
     // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage
