@@ -20,6 +20,8 @@ import {
   type SpecialistAgent,
 } from "./specialist-agents.js"
 import type { OpenGap } from "./self-evolution.js"
+// Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
+import type { ToolPolicy } from "./eleve-action-tools.js"
 
 /** Chemin du registre des limites, surchargeable par env (testabilité). */
 function limitesFile(): string {
@@ -158,6 +160,43 @@ export function assignBrain(spec: SpecialistAgent): { provider: LLMProvider; mod
 }
 
 /**
+ * #175 — AUTO-ASSIGNATION DU MODE (même patron que `assignBrain`, décidée à la FORGE, jamais
+ * négociée par l'agent à l'exécution). PURE et déterministe : si le nom/rôle/lacune/outils
+ * décrivent un agent qui AGIT (corrige, écrit, génère, répare, refactor…), il passe en mode
+ * "action" avec une `toolPolicy` scellée dérivée de son domaine ; sinon il reste "conseil"
+ * (avis texte, comportement historique — zéro régression sur les agents déjà forgés).
+ *
+ * La `toolPolicy` d'un agent action est RESTRICTIVE par construction : allowlist de base
+ * (lecture + écriture bornée + build + finish) qui EXCLUT toujours run_command (shell libre),
+ * add_dependency et tout accès réseau ; enrichie par domaine (PDF → lire_document/lire_archive,
+ * visuel/contenu → chercher_image).
+ */
+// Regex ASCII — le `hay` est désaccentué (NFD) avant test, donc « génère »/« répare »/
+// « crée » matchent /gener//repar//cree/ sans piège d'accent (même normalisation que tokenize).
+const ACTION_HINTS: RegExp[] = [
+  /corrig/, /repar/, /ecri/, /gener/, /redig/, /implement/, /refactor/, /cree/,
+  /ajoute/, /modifi/, /produi/, /transform/, /nettoie/, /migr/, /fabriqu/, /assembl/,
+]
+const PDF_HINTS: RegExp[] = [/\bpdf\b/, /scan/, /\bocr\b/, /document/, /archive/]
+const CONTENT_HINTS: RegExp[] = [/image/, /photo/, /visuel/, /contenu/, /illustrat/]
+// Base sûre d'un sous-agent action : JAMAIS run_command / add_dependency / réseau.
+const BASE_ACTION_TOOLS: readonly string[] = [
+  "read_file", "list_files", "search_code", "check_build", "write_file", "edit_file", "finish",
+]
+
+export function assignMode(spec: SpecialistAgent): { mode: "conseil" | "action"; toolPolicy?: ToolPolicy } {
+  const hay = [
+    spec.name, spec.role, spec.lacune, (spec.tags ?? []).join(" "),
+    (spec.tools ?? []).map((t) => `${t.name} ${t.desc}`).join(" "),
+  ].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+  if (!ACTION_HINTS.some((re) => re.test(hay))) return { mode: "conseil" }
+  const allowed = [...BASE_ACTION_TOOLS]
+  if (PDF_HINTS.some((re) => re.test(hay))) allowed.push("lire_document", "lire_archive")
+  if (CONTENT_HINTS.some((re) => re.test(hay))) allowed.push("chercher_image")
+  return { mode: "action", toolPolicy: { allowRun: false, allowedTools: [...new Set(allowed)] } }
+}
+
+/**
  * Extrait et valide un tableau d'agents depuis la sortie brute du modèle. Tolérant :
  * retire les fences ```…```, isole le 1er `[` … dernier `]`. Ne lève jamais.
  */
@@ -257,6 +296,9 @@ export async function forgeAgents(
       spec.provider = brain.provider
       spec.model = brain.model
       spec.timeoutMs = brain.timeoutMs
+      // #175 — mode + toolPolicy scellés à la forge (action si le rôle décrit un agent qui agit).
+      const md = assignMode(spec)
+      if (md.mode === "action") { spec.mode = "action"; if (md.toolPolicy) spec.toolPolicy = md.toolPolicy }
       created.push(spec)
       usedNames.push(spec.name.toLowerCase())
       deps.onProgress?.(`✓ agent ${i + 1}/${count} : ${spec.name} (${focus?.id ?? "libre"}) → ${brain.provider}/${brain.model}`)
@@ -304,6 +346,9 @@ export async function forgeForGap(
   spec.provider = brain.provider
   spec.model = brain.model
   spec.timeoutMs = brain.timeoutMs
+  // #175 — mode + toolPolicy scellés à la forge (action si le rôle décrit un agent qui agit).
+  const md = assignMode(spec)
+  if (md.mode === "action") { spec.mode = "action"; if (md.toolPolicy) spec.toolPolicy = md.toolPolicy }
   upsertSpecialists([spec])
   return { agent: spec }
 }

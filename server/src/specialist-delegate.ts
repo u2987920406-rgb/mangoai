@@ -100,6 +100,9 @@ export async function consultSpecialist(
   deps: {
     load?: () => SpecialistAgent[]
     run?: (id: string, task: string) => Promise<{ ok: boolean; text: string }>
+    // #175 — runner AGENTIQUE (le spécialiste AGIT au lieu de conseiller). Fourni/câblé
+    // seulement quand ELEVE_DELEGATE_AGENTIC=on ; absent → on reste sur le conseil (`run`).
+    runAgentic?: (id: string, task: string) => Promise<{ ok: boolean; text: string }>
   } = {},
 ): Promise<ConsultResult | null> {
   const load = deps.load ?? defaultLoad
@@ -112,13 +115,22 @@ export async function consultSpecialist(
   }
   const match = pickSpecialist(specs, `${args.task} ${args.blockage}`, { min: args.min })
   if (!match) return null
-  const subtask =
-    `L'agent de build de Mango BUTE (${args.blockage}) sur cette tâche :\n"${(args.task ?? "").slice(0, 800)}"\n\n` +
-    `En tant que ${match.agent.role}, donne des conseils CONCRETS, PRIORISÉS et BREFS pour débloquer ` +
-    `et terminer (max ~8 points actionnables, pas de généralités).`
+  // #175 — un agent forgé en mode "action" EXÉCUTE le sous-problème (boucle agentique scellée)
+  // quand le câblage agentique est fourni ; sinon il CONSEILLE (avis texte), comportement
+  // historique. Le prompt diffère : « agis directement » vs « donne des conseils ».
+  const useAgentic = match.agent.mode === "action" && !!deps.runAgentic
+  const head = `L'agent de build de Mango BUTE (${args.blockage}) sur cette tâche :\n"${(args.task ?? "").slice(0, 800)}"\n\n`
+  const subtask = useAgentic
+    ? head +
+      `En tant que ${match.agent.role}, RÉSOUS ce sous-problème DIRECTEMENT : lis les fichiers concernés, ` +
+      `écris/édite le code nécessaire, vérifie le build, puis appelle finish avec un bref compte-rendu. ` +
+      `Reste STRICTEMENT dans ton périmètre (n'entreprends rien au-delà de ce blocage).`
+    : head +
+      `En tant que ${match.agent.role}, donne des conseils CONCRETS, PRIORISÉS et BREFS pour débloquer ` +
+      `et terminer (max ~8 points actionnables, pas de généralités).`
   let res: { ok: boolean; text: string }
   try {
-    res = await run(match.agent.id, subtask)
+    res = await (useAgentic ? deps.runAgentic! : run)(match.agent.id, subtask)
   } catch (err) {
     return null
   }

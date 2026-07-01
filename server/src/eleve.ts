@@ -47,6 +47,7 @@ import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
 import { consultSpecialist, buildDelegateNudge, buildForgedResumeNudge } from "./specialist-delegate.js";
+import { runSpecialistAgentic } from "./specialist-agentic.js";
 import { recordUncoveredGap, markGap } from "./self-evolution.js";
 import { forgeForGap } from "./agent-forge.js";
 import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, resolveGapBlockers, isTransientBlocker, type AutoForgeState } from "./self-evolution-autoforge.js";
@@ -1230,6 +1231,20 @@ export async function runRelay(
     // slice 2 (L48b) — DÉLÉGATION RÉELLE : sur plateau-iterations, le Stratège invoque le
     // spécialiste forgé pertinent (au lieu du seul nudge « décompose »). Gaté, défaut off.
     const delegateOn = strategeActs && (process.env.ELEVE_DELEGATE ?? "off").toLowerCase() === "on";
+    // #175 — DÉLÉGATION D'EXÉCUTION : un spécialiste forgé en mode "action" AGIT (sa propre
+    // boucle agentique, outils SCELLÉS par sa toolPolicy, budget réduit) au lieu de conseiller.
+    // Gaté `ELEVE_DELEGATE_AGENTIC` (défaut off) → sans lui, consultSpecialist reste sur le
+    // conseil texte (zéro régression). Le câblage (askEleveAgentic + registre action confiné au
+    // projet) est fourni ICI et capturé par closure ; consultSpecialist choisit le runner selon
+    // le mode de l'agent matché.
+    const delegateAgenticRunner =
+      process.env.ELEVE_DELEGATE_AGENTIC === "on"
+        ? (id: string, subtask: string) =>
+            runSpecialistAgentic(id, subtask, projectDir, {
+              agentic: askEleveAgentic,
+              buildTools: buildEleveActionTools,
+            }).then((r) => ({ ok: r.ok, text: r.text }))
+        : undefined;
     // #168 — Boucle d'AUTO-ÉVOLUTION (semi-auto). Quand un blocage n'est couvert par AUCUN
     // agent forgé, on l'inscrit comme lacune ouverte (store machine) → Mango PROPOSE, Raf
     // valide → le forgeron crée l'agent. Gaté, défaut off (zéro régression).
@@ -1435,7 +1450,7 @@ export async function runRelay(
                 // plafond forges/run (1) + seenGapBlockers (pas de 2ᵉ forge du même type) + budget.
                 if (relances < selfRelanceMax) {
                   relances++;
-                  const resume = await consultSpecialist({ task, blockage: d.detail ?? d.cause ?? d.blocker });
+                  const resume = await consultSpecialist({ task, blockage: d.detail ?? d.cause ?? d.blocker }, { runAgentic: delegateAgenticRunner });
                   if (resume) {
                     push(`  ↻ Reprise auto : délègue au nouvel agent « ${resume.agent.name} » (score ${resume.score}) — relance (${relances}/${selfRelanceMax}, coût 0)`);
                     nudge = buildDelegateNudge(resume.agent.name, resume.advice);
@@ -1481,7 +1496,7 @@ export async function runRelay(
             let remedyNudge = r.nudge;
             if (d.blocker === "plateau-iterations") {
               const consult = delegateOn
-                ? await consultSpecialist({ task, blockage: d.detail ?? "plafond d'itérations atteint" })
+                ? await consultSpecialist({ task, blockage: d.detail ?? "plafond d'itérations atteint" }, { runAgentic: delegateAgenticRunner })
                 : null;
               if (consult) {
                 push(`  🤝 Stratège délègue à « ${consult.agent.name} » (cible ${consult.agent.lacune || "—"}, score ${consult.score})`);

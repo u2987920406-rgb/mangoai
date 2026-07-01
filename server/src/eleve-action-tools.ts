@@ -162,6 +162,36 @@ async function guarded(fn: () => Promise<string>): Promise<KernelToolResult> {
 export interface ToolPolicy {
   /** Autorise run_command (shell libre). false → l'Élève n'a que read/write/edit/check_build/finish. */
   allowRun?: boolean;
+  /** Allowlist explicite (#175) : si présente et non vide, SEULS ces outils survivent
+   *  (plus `finish`, toujours conservé pour une terminaison propre). Scellée à la forge. */
+  allowedTools?: string[];
+  /** Denylist (#175) : ces outils sont retirés même si `allowedTools` les inclurait. */
+  deniedTools?: string[];
+}
+
+// `finish` est toujours conservé (signal de terminaison propre), même hors allowlist ou
+// listé en denylist : sans lui un sous-agent ne pourrait jamais conclure explicitement.
+const ALWAYS_KEEP_TOOLS: ReadonlySet<string> = new Set(["finish"]);
+
+/**
+ * Scelle un registre selon la policy (#175) : allowlist (SEULS ces outils + `finish`)
+ * et/ou denylist. Sans l'une ni l'autre → registre inchangé (rétrocompatible). Reconstruit
+ * un ToolRegistry filtré (jamais de mutation en place). Un nom d'allowlist absent du
+ * registre est simplement ignoré (pas d'erreur).
+ */
+export function applyToolPolicy(reg: ToolRegistry, policy: ToolPolicy): ToolRegistry {
+  const allowSet = policy.allowedTools && policy.allowedTools.length ? new Set(policy.allowedTools) : null;
+  const denySet = new Set(policy.deniedTools ?? []);
+  if (!allowSet && denySet.size === 0) return reg;
+  const filtered = new ToolRegistry();
+  for (const t of reg.list()) {
+    if (!ALWAYS_KEEP_TOOLS.has(t.name)) {
+      if (allowSet && !allowSet.has(t.name)) continue;
+      if (denySet.has(t.name)) continue;
+    }
+    filtered.register(t);
+  }
+  return filtered;
 }
 
 export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {}): ToolRegistry {
@@ -389,7 +419,9 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
     }
   }
 
-  return reg;
+  // #175 — scelle le registre si la policy porte une allowlist/denylist (sous-agent
+  // action). Sans elles, `reg` est renvoyé inchangé (l'Élève principal, rétrocompatible).
+  return applyToolPolicy(reg, policy);
 }
 
 /**

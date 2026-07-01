@@ -19,6 +19,8 @@ import path from "node:path"
 import { atomicWriteFileSync } from "./safe-io.js"
 import { askLLM, type LLMProvider } from "./llm-engine.js"
 import { sanitizeExternal } from "./agent-contract.js"
+// Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
+import type { ToolPolicy } from "./eleve-action-tools.js"
 
 /** Un « outil » d'un spécialiste = une capacité DÉCRITE (nom + description) qui cadre
  *  son comportement (pas un outil exécutable du moteur — il oriente le raisonnement). */
@@ -52,6 +54,12 @@ export interface SpecialistAgent {
   /** Traçabilité : quel agent l'a forgé (ex. « codeur » = l'Élève GLM). */
   createdByAgent: string
   createdAt: string
+  /** #175 — Mode d'action : "conseil" (défaut/implicite si absent = avis texte, `runSpecialist`)
+   *  ou "action" (boucle agentique `runSpecialistAgentic` avec outils scellés). Décidé à la
+   *  FORGE (`assignMode`), jamais négocié par l'agent à l'exécution. */
+  mode?: "conseil" | "action"
+  /** #175 — Policy d'outils scellée à la forge (uniquement si `mode === "action"`). */
+  toolPolicy?: ToolPolicy
 }
 
 const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
@@ -146,6 +154,26 @@ export function validateSpec(
   }
   if (model) out.model = model
   if (timeoutMs) out.timeoutMs = timeoutMs
+
+  // #175 — mode "action" (sinon absent = conseil, rétrocompatible) + toolPolicy scellée.
+  if (r.mode === "action") {
+    out.mode = "action"
+    const tp = r.toolPolicy
+    if (tp && typeof tp === "object") {
+      const t = tp as Record<string, unknown>
+      const policy: ToolPolicy = {}
+      if (typeof t.allowRun === "boolean") policy.allowRun = t.allowRun
+      const allow = Array.isArray(t.allowedTools)
+        ? t.allowedTools.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 30)
+        : []
+      const deny = Array.isArray(t.deniedTools)
+        ? t.deniedTools.filter((x): x is string => typeof x === "string" && x.length > 0).slice(0, 30)
+        : []
+      if (allow.length) policy.allowedTools = allow
+      if (deny.length) policy.deniedTools = deny
+      if (Object.keys(policy).length) out.toolPolicy = policy
+    }
+  }
   return out
 }
 
