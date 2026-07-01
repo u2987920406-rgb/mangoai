@@ -18,6 +18,15 @@ function timeAgo(isoString) {
   return `il y a ${days}j`
 }
 
+// #173 Phase 2 — prochain run selon le rythme ADAPTATIF proposé par Mango (nextRunHint), s'il existe.
+function nextRunLabel(task) {
+  if (typeof task.nextRunHint !== 'number' || !task.lastRun) return null
+  const diff = new Date(task.lastRun).getTime() + task.nextRunHint - Date.now()
+  if (diff <= 0) return 'prochain run imminent'
+  const min = Math.round(diff / 60000)
+  return min < 60 ? `prochain ~${min} min` : `prochain ~${Math.round(min / 60)}h`
+}
+
 export default function CronManager({ onBack }) {
   const [tasks, setTasks] = useState([])
   const [projects, setProjects] = useState([])
@@ -246,6 +255,7 @@ export default function CronManager({ onBack }) {
                   </div>
                   <p className="text-xs text-dim mt-0.5">
                     Dernière exécution : {timeAgo(task.lastRun)}
+                    {nextRunLabel(task) && <span className="text-faint"> · {nextRunLabel(task)}</span>}
                   </p>
                 </div>
 

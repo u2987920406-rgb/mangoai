@@ -2842,3 +2842,19 @@ Raf transmet un ZIP de 4 plans (`docs/plan-172-hooks.md` … `plan-175-subagents
 **Phase 5 — cycle de vie** : `OnEscalate` (escalade Maître), `OnBlock` (diagnostic Stratège, 2 sites : build-cassé et build-vert), `OnGapRecorded` (lacune #168) — via `fireObservationHook` (observationnel, fail-open, fire-and-forget `void`). 3 tests.
 
 **Vérif globale** : tsc propre (hors `_prove-*` préexistants) · mango-hooks 33/0 · mango-hooks-config 17/0 · eleve-runtime 49/0 · eleve-gate 40/0 · build UI vert. Commits P0-P2 poussés (`cb55c1e` · `a7598a0` · `d0189ed`) ; la suite (P4/P5/doc) est committée à la fin (choix de Raf : « je commit a la fin »). **Backlog restant** (plans dans `docs/`) : #173 Loop (le cron appelle la vraie boucle agentique, borné), #174 Skills (invocation directe `/slug`), #175 Subagents (spécialistes exécutants). Page-entité [[hooks]] créée (+ index + log). [[gardien-cloture]] · [[le-stratege]] · [[auto-evolution]] · [[limites]] L71.
+
+## Journal — 2026-07-02 : #173 « Loop » — le cron appelle la vraie boucle agentique, borné par un disjoncteur (gaté OFF)
+
+Raf : « 173 go ». Le cron in-app (`cron-scheduler.ts`) existait mais `executeTask` ne faisait qu'une **complétion texte** (`getBrain().complete`, maxTokens 500) : une tâche planifiée ne pouvait ni lire, ni écrire, ni builder — juste répondre. #173 lui donne la vraie boucle agentique, **bornée**.
+
+**Condition non négociable (A)** du plan : aucun run agentique cron sans disjoncteur → **le frein AVANT le moteur** (Phase 0 avant Phase 1).
+
+**Phase 0 — disjoncteur** (`cron-breaker.ts`, PUR, `now` injecté → testable) : même patron que `self-evolution-autoforge.ts` mais **temporel** — `canRunCron` refuse si `CRON_AGENTIC=off`, si le plafond de **runs/heure glissante** (`CRON_MAX_RUNS_PER_HOUR`, déf. 4) est atteint, ou si le **garde-coût horaire** (`CRON_BUDGET_USD_PER_HOUR`, déf. $1) serait dépassé ; `recordCronRun` comptabilise le coût RÉEL (fenêtre glissante, purge les runs > 1 h). Un cron emballé ne peut pas boucler.
+
+**Phase 1 — swap** : `executeTask` bascule de `getBrain().complete()` à **`runRelay(task.prompt, projectDir(projectName), {maitreModel:'sonnet'}, defaultRelayDeps)`** quand `CRON_AGENTIC=on`, le disjoncteur en **condition d'entrée** (refusé AVANT de lancer runRelay, jamais arrêté en plein milieu). Repli `legacyExecuteTask` (texte, inchangé) si off → **zéro régression**. Chaque run passe par le Gardien #161 (hérité gratuitement de runRelay — pas de chemin cron qui contourne la clôture).
+
+**Phase 2 — rythme adaptatif** : `CronTask.nextRunHint` (ms) + `computeNextRunHint(result)` (miroir du /loop dynamique) : INCOMPLET → 15 min (du travail reste) · fait → 1 h · échec → **backoff 6 h** (ne pas marteler un projet cassé) ; `shouldRun` respecte le hint s'il existe (prime sur le schedule fixe hourly/daily/weekly).
+
+**Phase 3 — diff-friendly + UI** : `extractTouchedFiles` liste les `write_file`/`edit_file` du journal du run → le résumé cron montre les **fichiers touchés** (fini le texte libre) ; `CronManager.jsx` affiche « prochain ~X » (le rythme). Le toggle `enabled` existant permet déjà de désactiver une tâche louche.
+
+**Vérif** : tsc propre (hors `_prove-*` préexistants) · **cron-breaker 20/0** (config · canRunCron plafond/garde-coût/fenêtre glissante · recordCronRun purge+immuable · computeNextRunHint · extractTouchedFiles) · **build UI vert**. Écarts mineurs assumés (plan §7) : le champ `mode` sur CronTask n'est pas ajouté (runRelay a son défaut) ; les scripts nocturnes (`run-mango-nuit`/`nocturnal`) ne sont PAS fusionnés (hors périmètre, à trancher séparément). **Reste** : preuve live (gate ON sur une vraie tâche planifiée) après OBS — même posture que #168/#171. Page-entité [[loop]] créée (+ index + log). Backlog : #174 Skills · #175 Subagents. [[loop]] · [[gardien-cloture]] · [[auto-evolution]].
