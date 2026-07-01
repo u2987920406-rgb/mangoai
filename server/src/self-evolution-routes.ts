@@ -9,10 +9,21 @@
 import type { Express, Request, Response } from "express"
 import { listOpenGaps, getGap, markGap } from "./self-evolution.js"
 import { forgeForGap } from "./agent-forge.js"
+import { autoForgeConfig } from "./self-evolution-autoforge.js"
 
 export function registerSelfEvolutionRoutes(app: Express): void {
   app.get("/api/gaps", (_req: Request, res: Response) => {
     res.json({ gaps: listOpenGaps() })
+  })
+
+  // Config du disjoncteur de la forge auto (#168 tranche 2), lecture seule → l'UI affiche
+  // si la forge s'arme seule et sous quelles bornes. `selfEvolve` = le pré-requis (le hook
+  // qui inscrit les lacunes) ; `autoForge.enabled` = la forge sans clic (sous disjoncteur).
+  app.get("/api/gaps/config", (_req: Request, res: Response) => {
+    res.json({
+      selfEvolve: (process.env.SELF_EVOLVE ?? "off").toLowerCase() !== "off",
+      autoForge: autoForgeConfig(),
+    })
   })
 
   // VALIDATION humaine : Raf accepte de combler la lacune → le forgeron (Opus) crée l'agent.

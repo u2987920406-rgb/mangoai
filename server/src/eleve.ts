@@ -45,7 +45,9 @@ import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
 import { consultSpecialist, buildDelegateNudge } from "./specialist-delegate.js";
-import { recordUncoveredGap } from "./self-evolution.js";
+import { recordUncoveredGap, markGap } from "./self-evolution.js";
+import { forgeForGap } from "./agent-forge.js";
+import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, type AutoForgeState } from "./self-evolution-autoforge.js";
 import {
   executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
   type ExecRung,
@@ -1141,6 +1143,11 @@ export async function runRelay(
     // type et par build (évite le spam ; le compteur `hits` du store agrège les builds).
     const GAP_WORTHY_BLOCKERS = new Set(["plateau-iterations", "wandering", "knowledge-gap", "wrong-tool"]);
     const seenGapBlockers = new Set<string>();
+    // #168 tranche 2 — DISJONCTEUR de la forge auto (« frein avant moteur »). La forge ne s'arme
+    // seule que si `SELF_EVOLVE_AUTO=on` ET sous plafond de forges/run + garde-coût Opus. Défaut
+    // OFF → comportement tranche 1 inchangé (Mango propose, Raf valide). État par run.
+    const autoForgeCfg = autoForgeConfig();
+    let autoForgeState: AutoForgeState = newAutoForgeState();
     const strategeState: StrategeState = newStrategeState();
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
@@ -1301,8 +1308,27 @@ export async function runRelay(
         if (selfEvolveOn && d && GAP_WORTHY_BLOCKERS.has(d.blocker) && !seenGapBlockers.has(d.blocker)) {
           seenGapBlockers.add(d.blocker);
           const g = recordUncoveredGap({ blocker: d.blocker, detail: d.detail, task });
-          if (g.recorded && g.isNew) {
-            push(`  🧬 Auto-évolution : lacune « ${g.gap?.title ?? d.blocker} » notée — forge à valider dans l'Atelier`);
+          if (g.recorded && g.gap) {
+            if (g.isNew) push(`  🧬 Auto-évolution : lacune « ${g.gap.title} » notée`);
+            // #168 tranche 2 — FORGE AUTO sous DISJONCTEUR. Le moteur (créer un agent sans clic)
+            // ne s'arme JAMAIS sans le frein : plafond de forges/run + garde-coût Opus, gate OFF
+            // par défaut. Refus → on reste en tranche 1 (la lacune attend la validation de Raf).
+            const decision = canAutoForge(autoForgeCfg, autoForgeState);
+            if (decision.allow && g.gap.status === "proposed") {
+              push(`  🛡️ Disjoncteur : ${decision.reason} → forge auto…`);
+              markGap(g.gap.id, "forging");
+              const fr = await forgeForGap(g.gap);
+              if (fr.agent) {
+                markGap(g.gap.id, "forged", { agentId: fr.agent.id });
+                autoForgeState = recordAutoForge(autoForgeState);
+                push(`  🧬 Forge AUTO : agent « ${fr.agent.name} » créé (${fr.agent.provider}/${fr.agent.model}) — disponible au prochain blocage de ce type`);
+              } else {
+                markGap(g.gap.id, "proposed"); // échec → reste à valider
+                push(`  🧬 Forge auto échouée (${fr.error ?? "?"}) → lacune à valider dans l'Atelier`);
+              }
+            } else if (g.isNew) {
+              push(`  🧬 Forge à valider dans l'Atelier (${decision.reason})`);
+            }
           }
         }
         // #164 Phase 1 — sur build CASSÉ (pas une erreur moteur), le Stratège tente un remède

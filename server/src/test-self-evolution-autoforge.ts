@@ -1,0 +1,82 @@
+// Tests du disjoncteur de la forge auto (#168 tranche 2) — PUR, aucune I/O, aucun LLM.
+import {
+  autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge,
+  OPUS_FORGE_EST_USD, type AutoForgeConfig,
+} from "./self-evolution-autoforge.js";
+
+let pass = 0;
+let fail = 0;
+function check(label: string, cond: boolean) {
+  if (cond) { pass++; console.log(`  ✓ ${label}`); }
+  else { fail++; console.log(`  ✗ ${label}`); }
+}
+
+const cfg = (o: Partial<AutoForgeConfig> = {}): AutoForgeConfig => ({
+  enabled: true, maxForgesPerRun: 1, opusBudgetUsd: 0.5, ...o,
+});
+
+console.log("[1] autoForgeConfig — défauts sûrs (OFF) + parsing env");
+{
+  const def = autoForgeConfig({});
+  check("gate OFF par défaut", def.enabled === false);
+  check("plafond forges défaut = 1", def.maxForgesPerRun === 1);
+  check("budget Opus défaut = 0.5", def.opusBudgetUsd === 0.5);
+
+  const on = autoForgeConfig({ SELF_EVOLVE_AUTO: "on", SELF_EVOLVE_MAX_FORGES: "3", SELF_EVOLVE_OPUS_BUDGET_USD: "1.25" });
+  check("SELF_EVOLVE_AUTO=on → enabled", on.enabled === true);
+  check("max forges lu", on.maxForgesPerRun === 3);
+  check("budget lu", on.opusBudgetUsd === 1.25);
+
+  const bad = autoForgeConfig({ SELF_EVOLVE_AUTO: "on", SELF_EVOLVE_MAX_FORGES: "-9", SELF_EVOLVE_OPUS_BUDGET_USD: "abc" });
+  check("valeurs invalides → repli défaut", bad.maxForgesPerRun === 1 && bad.opusBudgetUsd === 0.5);
+}
+
+console.log("\n[2] canAutoForge — le disjoncteur (gate OFF interdit)");
+{
+  const d = canAutoForge(cfg({ enabled: false }), newAutoForgeState());
+  check("gate OFF → refus + raison validation humaine", !d.allow && /validation humaine/.test(d.reason));
+}
+
+console.log("\n[3] canAutoForge — plafond de forges par run");
+{
+  const c = cfg({ maxForgesPerRun: 2 });
+  check("0 forge → autorisé", canAutoForge(c, { forges: 0, spentUsd: 0 }).allow);
+  check("1 forge → encore autorisé", canAutoForge(c, { forges: 1, spentUsd: 0 }).allow);
+  const d = canAutoForge(c, { forges: 2, spentUsd: 0 });
+  check("2 forges (=plafond) → refus", !d.allow && /plafond de 2/.test(d.reason));
+  check("plafond 0 → refus", !canAutoForge(cfg({ maxForgesPerRun: 0 }), newAutoForgeState()).allow);
+}
+
+console.log("\n[4] canAutoForge — garde-coût Opus");
+{
+  const c = cfg({ opusBudgetUsd: 0.2 });
+  check("sous le budget → autorisé", canAutoForge(c, { forges: 0, spentUsd: 0 }, 0.12).allow);
+  const d = canAutoForge(c, { forges: 0, spentUsd: 0.12 }, 0.12); // 0.24 > 0.20
+  check("dépasserait le budget → refus + raison garde-coût", !d.allow && /garde-coût Opus/.test(d.reason));
+}
+
+console.log("\n[5] recordAutoForge — comptabilité immuable");
+{
+  const s0 = newAutoForgeState();
+  const s1 = recordAutoForge(s0, 0.1);
+  check("état de départ inchangé (immutable)", s0.forges === 0 && s0.spentUsd === 0);
+  check("forge comptée + coût cumulé", s1.forges === 1 && Math.abs(s1.spentUsd - 0.1) < 1e-9);
+  const s2 = recordAutoForge(s1); // coût par défaut
+  check("2ᵉ forge + coût défaut ajouté", s2.forges === 2 && Math.abs(s2.spentUsd - (0.1 + OPUS_FORGE_EST_USD)) < 1e-9);
+  const s3 = recordAutoForge(s2, -5); // coût invalide → défaut
+  check("coût invalide → repli sur estimation", Math.abs(s3.spentUsd - (s2.spentUsd + OPUS_FORGE_EST_USD)) < 1e-9);
+}
+
+console.log("\n[6] scénario complet — 2 forges autorisées puis disjoncteur");
+{
+  const c = cfg({ maxForgesPerRun: 2, opusBudgetUsd: 1 });
+  let s = newAutoForgeState();
+  check("forge #1 autorisée", canAutoForge(c, s).allow);
+  s = recordAutoForge(s, 0.12);
+  check("forge #2 autorisée", canAutoForge(c, s).allow);
+  s = recordAutoForge(s, 0.12);
+  check("forge #3 refusée (plafond)", !canAutoForge(c, s).allow);
+}
+
+console.log(`\n=== self-evolution-autoforge : ${pass} ✓ / ${fail} ✗ ===`);
+if (fail > 0) process.exit(1);

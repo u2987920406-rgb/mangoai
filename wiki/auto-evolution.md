@@ -43,11 +43,13 @@ Les briques existaient mais la boucle automatique n'était **pas fermée** (vér
 
 **Essai live sur de vrais projets (2026-06-29 az)** — a débusqué 2 bugs invisibles aux tests unitaires, corrigés : (1) **trigger trop étroit** (n'écoutait que `plateau-iterations`, le build a bloqué sur `wandering`) → hook **élargi** ; (2) **`coversGap` faux positif** (la TÂCHE faisait croire à une couverture) → couverture jugée sur le **blocage seul**. **Caveat de signal** : le cloud GLM gratuit a des `fetch failed` transitoires → faux `plateau-iterations` (à filtrer en tranche 2). C'est la propriété-clé : *la boucle s'améliore en étant utilisée et observée*.
 
-**Reste (tranches 2-3, après [[audit-souverainete|observation OBS]])** — voir [[limites]] **L56** : UI « Lacunes à combler » dans l'Atelier · **forge auto-armée sous Disjoncteur [[mangoqa]]** (plafond forges/run + garde-coût Opus) · **reprise auto** de la tâche · déclencheur élargi (tout blocage, pas que `plateau-iterations`).
+**Tranche 2 livrée (2026-07-01) — le « frein avant moteur »** : la forge peut s'armer SANS clic, sous un **disjoncteur déterministe**. `self-evolution-autoforge.ts` (PUR, gaté `SELF_EVOLVE_AUTO` off) : `canAutoForge(config, state, est)` refuse si gate off · **plafond de forges/run** (`SELF_EVOLVE_MAX_FORGES`, déf. 1) · **garde-coût Opus** (`SELF_EVOLVE_OPUS_BUDGET_USD`, déf. 0.50) ; `recordAutoForge` comptabilise. Câblé dans `eleve.ts` au hook #168 : lacune non couverte + disjoncteur OK → `forgeForGap` s'arme seul (`forging`→`forged`) ; sinon reste `proposed` (validation humaine). **UI « Lacunes à combler »** (`AutoEvolution.jsx`, Réglages › Intelligence) : liste des lacunes + Forger/Rejeter + bandeau d'état du disjoncteur, via `GET /api/gaps` + `GET /api/gaps/config`. **21 tests** (disjoncteur) · eleve-runtime 49/0 (gate off = zéro régression) · build UI vert.
+
+**Reste (après observation OBS)** — voir [[limites]] **L56** : **reprise auto DANS le même build** (relancer la tâche aussitôt l'agent forgé — reportée : chirurgie du flux d'escalade `runRelay` ; l'agent forgé reste dispo pour la tentative suivante) · déclencheur encore plus large (couvre déjà 4 classes de mur : plateau-iterations/wandering/knowledge-gap/wrong-tool, transitoires exclus).
 
 ## Le principe à graver
 
-> Un système qui se forge des agents tout seul **DOIT** avoir un frein déterministe. Tranche 1 = le frein est la validation humaine ; tranche 2 = le frein devient le Disjoncteur MangoQA. Le moteur ne s'arme jamais sans le frein.
+> Un système qui se forge des agents tout seul **DOIT** avoir un frein déterministe. Tranche 1 = le frein est la validation humaine ; **tranche 2 = le frein devient le disjoncteur** (plafond de forges/run + garde-coût Opus, `self-evolution-autoforge.ts`). Le moteur ne s'arme jamais sans le frein — gate OFF par défaut.
 
 ## Liens
 [[le-stratege]] · [[transmission-competences]] · [[atelier-cerveaux]] · [[mangoqa]] · [[capacites-mango]] · [[statut]] · [[historique]] · [[limites]]
