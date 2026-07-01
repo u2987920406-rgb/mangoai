@@ -223,3 +223,24 @@ export async function runHooks(
     return base;
   }
 }
+
+/**
+ * (#172, Phase 5) Déclenche des hooks OBSERVATIONNELS de cycle de vie (OnBlock / OnEscalate /
+ * OnGapRecorded) : on NOTIFIE, on n'attend pas de décision qui bloquerait le flux. Fail-open,
+ * ne lève jamais ; `[]` de hooks → no-op immédiat. Renvoie le résultat (utile aux tests) mais
+ * l'appelant peut l'ignorer (fire-and-forget via `void`).
+ */
+export async function fireObservationHook(
+  event: MangoHookEvent,
+  projectDir: string,
+  detail: string,
+  hooks: HookRegistration[],
+): Promise<MangoHookResult> {
+  const base: MangoHookResult = { decision: "allow", reasons: [], ran: 0, errors: 0 };
+  if (!hooks || hooks.length === 0) return base;
+  try {
+    return await runHooks({ event, projectDir, detail }, hooks);
+  } catch {
+    return base;
+  }
+}

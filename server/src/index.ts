@@ -10,6 +10,7 @@ import fs from "node:fs";
 import { ALLOWED_MODELS, ALLOWED_MODES, interruptAgent, runAgent, type AgentEvent, type Mode, type ModelChoice } from "./agent.js";
 import { appendHistory, loadHistory, formatToolLine, type ChatEntry } from "./history.js";
 import { createProject, deleteProject, listProjects, listTemplates, projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
+import { loadHooks } from "./mango-hooks-config.js";
 import { axiomStats } from "./axioms.js";
 import { computeInsights } from "./metrics-insights.js";
 import { inferProjectType } from "./blueprints.js";
@@ -1027,6 +1028,24 @@ app.get("/api/sovereignty", (_req, res) => {
     res.json({ ...rep, line: formatSovereignty(rep) });
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
+  }
+});
+
+// (#172, Phase 4) Hooks — inspection lecture seule des hooks résolus d'un projet
+// (onglet Réglages › Hooks). L'édition se fait dans <projet>/.hooks/hooks.json (V1).
+// `enabled` = état du gate global ELEVE_HOOKS (les hooks ne s'exécutent que s'il est on).
+app.get("/api/hooks", (req, res) => {
+  try {
+    const name = String(req.query.project ?? "").trim();
+    if (!name || !projectExists(name)) return res.status(400).json({ error: "paramètre ?project= invalide" });
+    const hooks = loadHooks(projectDir(name));
+    return res.json({
+      enabled: process.env.ELEVE_HOOKS === "on",
+      count: hooks.length,
+      hooks: hooks.map((h) => ({ event: h.event, matcher: h.matcher ?? "*", ref: h.id ?? null })),
+    });
+  } catch (err) {
+    return res.status(500).json({ error: (err as Error).message });
   }
 });
 

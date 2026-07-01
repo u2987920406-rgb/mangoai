@@ -31,7 +31,7 @@ import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
 import { loadHooks } from "./mango-hooks-config.js";
-import { runHooks } from "./mango-hooks.js";
+import { runHooks, fireObservationHook } from "./mango-hooks.js";
 import { loadExternalMcpTools, defaultMcpConfigPath } from "./mcp-external.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "./eleve-plan.js";
 import {
@@ -1019,6 +1019,11 @@ export async function runRelay(
     opts.onLog?.(s);
   };
 
+  // (#172) Hooks du projet chargés UNE FOIS par run — partagés par toute la boucle :
+  // PreToolUse/PostToolUse (via runCtx), PreFinish (Phase 2) et les événements de cycle de
+  // vie OnEscalate/OnBlock/OnGapRecorded (Phase 5). [] si ELEVE_HOOKS off → aucun coût.
+  const relayHooks = process.env.ELEVE_HOOKS === "on" ? loadHooks(projectDir) : [];
+
   // Sans dépendances, l'inspection renverrait un faux "no-deps" — on les pose une fois.
   await deps.ensureDeps(projectDir, push);
 
@@ -1050,6 +1055,7 @@ export async function runRelay(
     let costTotal = 0;
     for (let gTour = 0; ; gTour++) {
       push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})${gTour > 0 ? ` — re-correction clôture (${gTour}/${maxMaitreGate})` : esc2?.incomplete ? " — TERMINER la tâche" : ""}`);
+      void fireObservationHook("OnEscalate", projectDir, feedback || "escalade Maître", relayHooks);
       const esc = await deps.escalate({
         task, projectDir, lastError: feedback, maitreModel, profile: callProfile,
         incomplete: esc2?.incomplete, eleveSummary: esc2?.eleveSummary,
@@ -1187,9 +1193,8 @@ export async function runRelay(
       // l'utilisateur clique « Stop » (/api/stop → requestInterrupt). Closure
       // surchargeable pour les tests (deps.shouldAbort).
       shouldAbort: deps.shouldAbort ?? isInterrupted,
-      // (#172) Hooks projet — chargés SEULEMENT si ELEVE_HOOKS=on (défaut off → aucun coût,
-      // zéro régression). loadHooks ne lève jamais (fichier absent / JSON cassé → []).
-      hooks: process.env.ELEVE_HOOKS === "on" ? loadHooks(projectDir) : undefined,
+      // (#172) Hooks projet chargés en tête de run (relayHooks) — undefined si aucun.
+      hooks: relayHooks.length ? relayHooks : undefined,
     };
 
     // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage
@@ -1396,6 +1401,7 @@ export async function runRelay(
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) {
         const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
+        if (d) void fireObservationHook("OnBlock", projectDir, `${d.blocker}: ${d.detail ?? ""}`, relayHooks);
         // #168 — AUTO-ÉVOLUTION (trigger LARGE) : tout blocage « mur de capacité » non couvert
         // par un agent forgé → on l'inscrit comme lacune ouverte (une fois par type/build).
         // `recordUncoveredGap` ignore en interne si un agent couvre déjà (semi-auto : Raf valide).
@@ -1406,6 +1412,7 @@ export async function runRelay(
           seenGapBlockers.add(d.blocker);
           const g = recordUncoveredGap({ blocker: d.blocker, detail: d.detail, task });
           if (g.recorded && g.gap) {
+            void fireObservationHook("OnGapRecorded", projectDir, g.gap.title, relayHooks);
             if (g.isNew) push(`  🧬 Auto-évolution : lacune « ${g.gap.title} » notée`);
             // #168 tranche 2 — FORGE AUTO sous DISJONCTEUR. Le moteur (créer un agent sans clic)
             // ne s'arme JAMAIS sans le frein : plafond de forges/run + garde-coût Opus, gate OFF
@@ -1646,6 +1653,7 @@ export async function runRelay(
       // Build vert MAIS arrêt sans `finish` (blocage/plafond) : l'Élève se RELANCE.
       if (relances < selfRelanceMax) {
         const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
+        if (d) void fireObservationHook("OnBlock", projectDir, `${d.blocker}: ${d.detail ?? ""}`, relayHooks);
         relances++;
         // #164 Phase 1 — remède CHOISI : wandering → ré-ancre le plan (L17) ; plateau →
         // décompose via delegate. Escalade Stratège (ou mode off) → nudge générique (#160).

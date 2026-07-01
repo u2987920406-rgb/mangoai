@@ -7,6 +7,7 @@ import {
   matchesMatcher,
   selectHooks,
   runHooks,
+  fireObservationHook,
   type HookRegistration,
   type MangoHookInput,
 } from "./mango-hooks.js";
@@ -146,6 +147,19 @@ async function main() {
     reg({ event: "PreToolUse", matcher: "run_command", run: () => ({ decision: "deny" }) }),
   ]);
   check("hook sur 'run_command' ne s'exécute pas pour 'read_file'", filtered.decision === "allow" && filtered.ran === 0);
+
+  // ---- fireObservationHook (Phase 5 : événements de cycle de vie) ----
+  const obsEmpty = await fireObservationHook("OnBlock", "/tmp/p", "plateau", []);
+  check("fireObservationHook sans hooks → no-op (ran 0)", obsEmpty.ran === 0);
+  let seenDetail = "";
+  const obsRan = await fireObservationHook("OnEscalate", "/tmp/p", "build cassé", [
+    reg({ event: "OnEscalate", run: (i) => { seenDetail = String(i.detail); } }),
+  ]);
+  check("fireObservationHook exécute le hook + transmet le detail", obsRan.ran === 1 && seenDetail === "build cassé");
+  const obsThrow = await fireObservationHook("OnGapRecorded", "/tmp/p", "x", [
+    reg({ event: "OnGapRecorded", run: () => { throw new Error("boom"); } }),
+  ]);
+  check("fireObservationHook fail-open (hook qui plante → errors, ne lève jamais)", obsThrow.errors === 1);
 
   console.log(`\n✅ mango-hooks : ${pass} pass, ${fail} fail`);
   process.exit(fail > 0 ? 1 : 0);
