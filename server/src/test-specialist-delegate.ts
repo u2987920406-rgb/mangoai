@@ -1,6 +1,6 @@
 // Tests de la délégation (specialist-delegate.ts) — matching pur + consultation injectée.
 import {
-  tokenize, pickSpecialist, consultSpecialist, buildDelegateNudge,
+  tokenize, pickSpecialist, consultSpecialist, buildDelegateNudge, buildForgedResumeNudge,
 } from "./specialist-delegate.js"
 import type { SpecialistAgent } from "./specialist-agents.js"
 
@@ -60,6 +60,14 @@ console.log("\n[4] buildDelegateNudge")
 {
   const n = buildDelegateNudge("Déchiffreur de PDF scannés", "1. fais X\n2. fais Y")
   check("contient nom + analyse + finish", n.includes("Déchiffreur de PDF scannés") && n.includes("fais X") && n.includes("finish"))
+}
+
+console.log("\n[5] buildForgedResumeNudge (reprise robuste #168 T3)")
+{
+  const n = buildForgedResumeNudge("Aiguilleur d'outillage", "wrong-tool", "réorienter vers read_file/edit_file")
+  check("mentionne l'agent forgé", n.includes("Aiguilleur d'outillage"))
+  check("cite le blocage", n.includes("wrong-tool"))
+  check("porte le remède + appelle finish", n.includes("réorienter vers read_file/edit_file") && n.includes("finish"))
 }
 
 console.log(`\n${pass} pass, ${fail} fail`)

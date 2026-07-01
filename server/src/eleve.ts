@@ -44,7 +44,7 @@ import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
-import { consultSpecialist, buildDelegateNudge } from "./specialist-delegate.js";
+import { consultSpecialist, buildDelegateNudge, buildForgedResumeNudge } from "./specialist-delegate.js";
 import { recordUncoveredGap, markGap } from "./self-evolution.js";
 import { forgeForGap } from "./agent-forge.js";
 import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, resolveGapBlockers, isTransientBlocker, type AutoForgeState } from "./self-evolution-autoforge.js";
@@ -1327,18 +1327,23 @@ export async function runRelay(
                 markGap(g.gap.id, "forged", { agentId: fr.agent.id });
                 autoForgeState = recordAutoForge(autoForgeState);
                 push(`  🧬 Forge AUTO : agent « ${fr.agent.name} » créé (${fr.agent.provider}/${fr.agent.model})`);
-                // #168 tranche 3 — REPRISE AUTO DANS LE MÊME RUN : on n'attend plus « le prochain
-                // blocage ». L'agent est persisté → consultSpecialist le retrouve ; on le consulte
-                // et on RELANCE tout de suite. Bornes anti-boucle : budget de relances + plafond
-                // forges/run + seenGapBlockers (pas de 2ᵉ forge du même type). Coût : $0 (Élève) +
-                // 1 consultation du cerveau du spécialiste ; l'Opus n'a servi qu'à la forge.
-                const resume = relances < selfRelanceMax
-                  ? await consultSpecialist({ task, blockage: d.detail ?? d.cause ?? d.blocker })
-                  : null;
-                if (resume) {
+                // #168 tranche 3 — REPRISE AUTO DANS LE MÊME RUN, ROBUSTE. Après une forge réussie
+                // on RELANCE tout de suite (si budget de relances) pour exploiter l'agent au lieu
+                // d'attendre « le prochain blocage ». Deux niveaux : (1) consultSpecialist réussit →
+                // nudge avec son analyse ; (2) l'invocation de son cerveau rate (hoquet GLM cloud —
+                // constaté en OBS 2026-07-01, forge=2/reprise=0) → on relance QUAND MÊME avec le
+                // remède du diagnostic + la mention de l'agent, au lieu d'escalader. Anti-boucle :
+                // plafond forges/run (1) + seenGapBlockers (pas de 2ᵉ forge du même type) + budget.
+                if (relances < selfRelanceMax) {
                   relances++;
-                  push(`  ↻ Reprise auto : délègue au nouvel agent « ${resume.agent.name} » (score ${resume.score}) — relance (${relances}/${selfRelanceMax}, coût 0)`);
-                  nudge = buildDelegateNudge(resume.agent.name, resume.advice);
+                  const resume = await consultSpecialist({ task, blockage: d.detail ?? d.cause ?? d.blocker });
+                  if (resume) {
+                    push(`  ↻ Reprise auto : délègue au nouvel agent « ${resume.agent.name} » (score ${resume.score}) — relance (${relances}/${selfRelanceMax}, coût 0)`);
+                    nudge = buildDelegateNudge(resume.agent.name, resume.advice);
+                  } else {
+                    push(`  ↻ Reprise auto : nouvel agent « ${fr.agent.name} » créé (consultation indisponible) — relance avec le remède (${relances}/${selfRelanceMax}, coût 0)`);
+                    nudge = buildForgedResumeNudge(fr.agent.name, d.blocker, d.remedy);
+                  }
                   continue;
                 }
                 push(`  🧬 agent « ${fr.agent.name} » prêt — disponible au prochain blocage de ce type`);

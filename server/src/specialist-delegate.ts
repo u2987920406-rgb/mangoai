@@ -134,3 +134,13 @@ export function buildDelegateNudge(agentName: string, advice: string): string {
     `Applique ces points CONCRETS un par un, puis vérifie le build et appelle \`finish\`.`
   )
 }
+
+/** Nudge de REPRISE quand un agent vient d'être forgé mais que sa consultation (invocation
+ *  du cerveau) échoue (hoquet cloud). On relance quand même avec le REMÈDE du diagnostic +
+ *  la mention de l'agent, au lieu d'escalader — c'est ce qui ferme la boucle #168 en réel. */
+export function buildForgedResumeNudge(agentName: string, blocker: string, remedy: string): string {
+  return (
+    `🧬 STRATÈGE — un spécialiste « ${agentName} » vient d'être créé pour ce blocage (${blocker}). ` +
+    `Applique son remède : ${remedy}. Puis vérifie le build et appelle \`finish\`.`
+  )
+}
