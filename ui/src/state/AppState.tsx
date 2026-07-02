@@ -1,6 +1,6 @@
 // État global LÉGER de la 2.0 — un Context, pas un framework (audit §3.2 U3 : 427 useState / 0 Context).
-// Porte : navigation active du shell, thème, toasts. Le reste demeure local aux écrans.
-// La 1.0 (App.jsx) migrera dessus écran par écran en Phase C.
+// Porte : navigation du shell (avec HISTORIQUE → bouton Retour), toasts, et la « graine »
+// de projet (Accueil/palette → builder avec premier prompt). Le reste demeure local aux écrans.
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 
 export interface ToastItem {
@@ -9,10 +9,25 @@ export interface ToastItem {
   text: string;
 }
 
+/** Graine passée au builder : projet à ouvrir + premier prompt à auto-envoyer (optionnel). */
+export interface BuilderSeed {
+  project: string;
+  prompt: string | null;
+}
+
 export interface AppState {
   /** Item de navigation actif du shell (id du catalogue). */
   active: string;
-  setActive: (id: string) => void;
+  /** Navigue vers un item en empilant l'historique (→ bouton Retour). */
+  go: (id: string) => void;
+  /** Revient à l'item précédent (no-op si historique vide). */
+  back: () => void;
+  /** true si le bouton Retour a quelque chose à dépiler. */
+  canBack: boolean;
+  /** Ouvre le builder sur un projet (créé au premier tour de chat si nouveau). */
+  openProject: (name: string, prompt?: string | null) => void;
+  builderSeed: BuilderSeed | null;
+  consumeBuilderSeed: () => void;
   /** Toasts (pont vers le composant Toast existant). */
   toasts: ToastItem[];
   pushToast: (kind: ToastItem["kind"], text: string) => void;
@@ -23,8 +38,33 @@ const Ctx = createContext<AppState | null>(null);
 
 export function AppStateProvider({ children, initialActive = "accueil" }: { children: ReactNode; initialActive?: string }) {
   const [active, setActive] = useState(initialActive);
+  const [history, setHistory] = useState<string[]>([]);
+  const [builderSeed, setBuilderSeed] = useState<BuilderSeed | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
+
+  const go = useCallback((id: string) => {
+    setActive((current) => {
+      if (id === current) return current;
+      setHistory((h) => [...h, current].slice(-20)); // borne : 20 pas d'historique
+      return id;
+    });
+  }, []);
+
+  const back = useCallback(() => {
+    setHistory((h) => {
+      if (h.length === 0) return h;
+      setActive(h[h.length - 1]);
+      return h.slice(0, -1);
+    });
+  }, []);
+
+  const openProject = useCallback((name: string, prompt: string | null = null) => {
+    setBuilderSeed({ project: name, prompt });
+    go("builder");
+  }, [go]);
+
+  const consumeBuilderSeed = useCallback(() => setBuilderSeed(null), []);
 
   const pushToast = useCallback((kind: ToastItem["kind"], text: string) => {
     const id = nextId.current++;
@@ -37,8 +77,12 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
   }, []);
 
   const value = useMemo(
-    () => ({ active, setActive, toasts, pushToast, dismissToast }),
-    [active, toasts, pushToast, dismissToast],
+    () => ({
+      active, go, back, canBack: history.length > 0,
+      openProject, builderSeed, consumeBuilderSeed,
+      toasts, pushToast, dismissToast,
+    }),
+    [active, go, back, history.length, openProject, builderSeed, consumeBuilderSeed, toasts, pushToast, dismissToast],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

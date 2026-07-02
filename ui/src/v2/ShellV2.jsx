@@ -7,8 +7,9 @@ import {
   FolderOpen, Boxes, Image as ImageIcon, Music2, Bot, Dna, Brain,
   BookOpen, Lightbulb, FileText, Palette, Settings, Sun, Moon, Search,
   Sparkles, Home as HomeIcon, ArrowUp, Mic, Paperclip, Command,
-  Activity, Ghost, SwatchBook, Inbox, X,
+  Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft,
 } from "lucide-react";
+import { slugify } from "../slugify.js";
 import { lazy, Suspense } from "react";
 import { getTheme, toggleTheme } from "../theme.js";
 import { BrandMark, Button, Chip, Badge, Input, Textarea, Modal, EmptyState, TEXT, SECTION_LABEL, cx } from "../design";
@@ -137,8 +138,28 @@ function CommandPalette({ open, onClose, onGo }) {
   );
 }
 
-/* Accueil — le panneau signature (chat plein cadre, type claude.ai/ChatGPT). */
+/* Accueil — le panneau signature (chat plein cadre, type claude.ai/ChatGPT).
+   FONCTIONNEL : décrire → openProject(slug, prompt) → le builder s'ouvre et
+   le premier prompt part tout seul (même mécanique que la Home 1.0). */
 function AccueilPane() {
+  const { openProject } = useAppState();
+  const [text, setText] = useState("");
+  const inputRef = useRef(null);
+
+  const submit = () => {
+    const desc = text.trim();
+    if (!desc) return;
+    setText("");
+    openProject(slugify(desc), desc);
+  };
+  const fillSuggestion = (s) => {
+    setText(`${s} — `);
+    requestAnimationFrame(() => {
+      const el = inputRef.current;
+      if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
+    });
+  };
+
   return (
     <div className="hero-glow flex h-full flex-col items-center justify-center px-6">
       <div className="w-full max-w-[640px] animate-fade-up">
@@ -148,7 +169,13 @@ function AccueilPane() {
         <p className="mb-7 text-center text-[14px] text-dim">Que crée-t-on aujourd'hui ?</p>
         <div className="rounded-2xl border border-edge bg-raised p-3 shadow-lg transition-colors duration-150 focus-within:border-faint">
           <textarea
+            ref={inputRef}
             rows={2}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
+            }}
             placeholder="Décris ton app, ton image, ta musique…"
             className="w-full resize-none bg-transparent px-1.5 pt-1 text-[14px] leading-relaxed text-ink outline-none placeholder:text-faint"
           />
@@ -156,12 +183,21 @@ function AccueilPane() {
             <Button variant="ghost" iconOnly icon={<Paperclip size={16} />} title="Joindre un fichier" aria-label="Joindre un fichier" />
             <span className="ml-1 rounded-md border border-edge px-2 py-1 text-[11px] text-dim">GLM 5.2 · souverain</span>
             <Button variant="ghost" iconOnly icon={<Mic size={16} />} className="ml-auto" title="Entrée vocale" aria-label="Entrée vocale" />
-            <Button variant="primary" iconOnly icon={<ArrowUp size={16} strokeWidth={2.2} />} className="rounded-xl" title="Envoyer" aria-label="Envoyer" />
+            <Button
+              variant="primary"
+              iconOnly
+              icon={<ArrowUp size={16} strokeWidth={2.2} />}
+              className="rounded-xl"
+              title="Envoyer (Entrée)"
+              aria-label="Envoyer"
+              disabled={!text.trim()}
+              onClick={submit}
+            />
           </div>
         </div>
         <div className="mt-4 flex flex-wrap justify-center gap-2">
           {["Landing page animée", "Dashboard avec charts", "Jeu 2D", "App multi-pages"].map((s) => (
-            <Chip key={s}>{s}</Chip>
+            <Chip key={s} onClick={() => fillSuggestion(s)}>{s}</Chip>
           ))}
         </div>
       </div>
@@ -348,17 +384,18 @@ function ToastStack() {
 
 /* ── Shell ─────────────────────────────────────────────────────────── */
 function ShellV2Inner() {
-  const { active, setActive, pushToast } = useAppState();
+  const { active, go, back, canBack, pushToast } = useAppState();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [, setThemeTick] = useState(0);
 
   useEffect(() => {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen((v) => !v); }
+      if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); back(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [back]);
 
   // Le client API remonte ses erreurs dans les toasts — câblé UNE fois ici.
   useEffect(() => onApiError((e) => pushToast("error", e.userMessage)), [pushToast]);
@@ -392,7 +429,7 @@ function ShellV2Inner() {
               <div className={cx(SECTION_LABEL, "px-2.5 pb-1 pt-4")}>{s.label}</div>
               <div className="space-y-0.5">
                 {s.items.map((it) => (
-                  <NavItem key={it.id} item={it} active={active === it.id} onClick={() => setActive(it.id)} />
+                  <NavItem key={it.id} item={it} active={active === it.id} onClick={() => go(it.id)} />
                 ))}
               </div>
             </div>
@@ -410,7 +447,7 @@ function ShellV2Inner() {
             <NavItem
               item={{ id: "reglages", label: "Réglages", icon: Settings }}
               active={isReglages}
-              onClick={() => setActive("reglages")}
+              onClick={() => go("reglages")}
             />
             <Button
               variant="ghost"
@@ -427,6 +464,17 @@ function ShellV2Inner() {
       {/* Panneau principal */}
       <main className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-[46px] shrink-0 items-center gap-2.5 border-b border-edge-soft px-5">
+          <Button
+            variant="ghost"
+            size="sm"
+            iconOnly
+            icon={<ArrowLeft size={15} />}
+            disabled={!canBack}
+            onClick={back}
+            className="-ml-2"
+            title="Retour (Alt+←)"
+            aria-label="Retour"
+          />
           <span className="text-[13px] font-medium">{isReglages ? "Réglages" : activeItem?.label}</span>
           {!isReglages && activeItem && activeItem.id !== "accueil" && (
             <span className="text-[12px] text-faint">· {activeItem.section}</span>
@@ -452,7 +500,7 @@ function ShellV2Inner() {
         </div>
       </main>
 
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onGo={setActive} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onGo={go} />
       <ToastStack />
     </div>
   );
