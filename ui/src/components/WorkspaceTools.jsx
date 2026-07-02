@@ -299,17 +299,20 @@ export default function WorkspaceTools({
   onBuildIncrement,
   planRefresh = 0,
   agentBusy = false,
+  // Ids d'outils à MASQUER (le shell 2.0 trie son rail — ex. ["memoire","mangoqa","mirror","thinking"]).
+  hidden = [],
 }) {
   const [active, setActive] = useState(null);
   const toggle = (id) => setActive((v) => (v === id ? null : id));
   const close = () => setActive(null);
+  const show = (id) => !hidden.includes(id);
 
   return (
     <div className="flex h-full shrink-0 border-r border-edge">
       {/* Rail d'icônes */}
       <div className="flex w-14 flex-col items-center gap-0.5 bg-panel/60 px-1.5 py-2">
-        <RailBtn icon={BrainCircuit} label="Mémoire" active={active === "memoire"} onClick={() => toggle("memoire")} />
-        <RailBtn icon={ClipboardCheck} label="Revue du build" active={active === "revue"} onClick={() => toggle("revue")} />
+        {show("memoire") && <RailBtn icon={BrainCircuit} label="Mémoire" active={active === "memoire"} onClick={() => toggle("memoire")} />}
+        {show("revue") && <RailBtn icon={ClipboardCheck} label="Revue du build" active={active === "revue"} onClick={() => toggle("revue")} />}
         {onStyleStrength && (
           <RailBtn icon={SlidersHorizontal} label="Dosage de style" active={active === "style" || (!clientMode && styleStrength !== 100)} onClick={() => toggle("style")} />
         )}
@@ -329,9 +332,9 @@ export default function WorkspaceTools({
         <Sep />
 
         {/* Actions directes (sans panneau) */}
-        <RailBtn icon={ShieldCheck} label="MangoQA" onClick={() => { close(); onMangoQA?.(); }} />
-        <RailBtn icon={Squircle} label="Mode Miroir" onClick={() => { close(); onOpenMirror?.(); }} />
-        {onClientMode && (
+        {show("mangoqa") && <RailBtn icon={ShieldCheck} label="MangoQA" onClick={() => { close(); onMangoQA?.(); }} />}
+        {show("mirror") && <RailBtn icon={Squircle} label="Mode Miroir" onClick={() => { close(); onOpenMirror?.(); }} />}
+        {show("client") && onClientMode && (
           <RailBtn
             icon={Briefcase}
             label={clientMode ? "Mode Client ✓" : "Mode Client"}
@@ -339,12 +342,14 @@ export default function WorkspaceTools({
             onClick={() => onClientMode(!clientMode)}
           />
         )}
-        <RailBtn
-          icon={showThinking ? Eye : EyeOff}
-          label={showThinking ? "Masquer la réflexion" : "Afficher la réflexion"}
-          active={showThinking}
-          onClick={() => onToggleThinking?.()}
-        />
+        {show("thinking") && (
+          <RailBtn
+            icon={showThinking ? Eye : EyeOff}
+            label={showThinking ? "Masquer la réflexion" : "Afficher la réflexion"}
+            active={showThinking}
+            onClick={() => onToggleThinking?.()}
+          />
+        )}
         {projectName && (
           <a href={`/api/export/${encodeURIComponent(projectName)}`} download className="w-full">
             <RailBtn icon={Download} label="Exporter le projet (zip)" />

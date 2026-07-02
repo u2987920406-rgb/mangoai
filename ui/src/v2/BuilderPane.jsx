@@ -380,6 +380,7 @@ export default function BuilderPane() {
               onToggleThinking={() => setShowThinking((v) => !v)}
               styleStrength={styleStrength}
               onStyleStrength={changeStyleStrength}
+              hidden={["memoire", "mangoqa", "mirror", "thinking"]}
             />
             <Chat
               key={projectName}
