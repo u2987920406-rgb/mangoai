@@ -2,7 +2,7 @@
 // validée par Raf (audit-mango-2.0 §4.3) : chaque section = onglets de composants
 // réels, réutilisés tels quels (pattern Phase C : remonter, pas réécrire).
 import { lazy, Suspense, useState } from "react";
-import { Image as ImageIcon, Music2 } from "lucide-react";
+import { Music2 } from "lucide-react";
 import { slugify } from "../slugify.js";
 import { useAppState } from "../state/AppState";
 import { cx, TEXT } from "../design";
@@ -21,6 +21,7 @@ const PromptLab         = lazy(() => import("../components/PromptLab.jsx"));
 const DocGenerator      = lazy(() => import("../components/DocGenerator.jsx"));
 const DesignReview      = lazy(() => import("../components/DesignReview.jsx"));
 const TasteGallery      = lazy(() => import("../components/TasteGallery.jsx"));
+const ImageCreatorPane  = lazy(() => import("./ImageCreatorPane.jsx"));
 
 const lastProject = () => localStorage.getItem("mangoos.v2.project") || "";
 
@@ -149,7 +150,11 @@ export default function AppsPane({ sectionId }) {
         />
       );
     case "image":
-      return <ComingSoon icon={ImageIcon} title="Image Creator" subtitle="Génération d'images via FLUX" envKey="REPLICATE_API_TOKEN" />;
+      return (
+        <Suspense fallback={<Loader />}>
+          <ImageCreatorPane />
+        </Suspense>
+      );
     case "music":
       return <ComingSoon icon={Music2} title="Music Creator" subtitle="Génération musicale via AudioCraft / MusicGen" envKey="REPLICATE_API_TOKEN" />;
     default:

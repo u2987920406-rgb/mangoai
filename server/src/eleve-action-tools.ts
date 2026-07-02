@@ -387,8 +387,12 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
 
   // Génération d'images IA souveraine via Flux local (L16, opt-in ELEVE_FLUX=on, défaut OFF) :
   // genere_image appelle l'API ComfyUI locale ($0). chercher_image (Pexels) reste le défaut rapide.
-  if (process.env.ELEVE_FLUX === "on") {
+  // ELEVE_KREA=on suffit aussi : genere_image passe alors par l'API Krea 2 (maillon cloud,
+  // krea.ts) quand ComfyUI est absent — les outils de découpe (slice) restent Flux-only.
+  if (process.env.ELEVE_FLUX === "on" || process.env.ELEVE_KREA === "on") {
     for (const t of buildEleveFluxTools(projectDir)) reg.register(t);
+  }
+  if (process.env.ELEVE_FLUX === "on") {
     for (const t of buildEleveSliceTools(projectDir)) reg.register(t);
   }
 

@@ -6,6 +6,8 @@
 // Pipeline : POST le workflow Flux schnell (GGUF) à ComfyUI (/prompt) → poll /history →
 // récupère le PNG (/view) → l'écrit dans public/generated/ du projet (Vite le sert à la
 // racine → `<img src="/generated/xxx.png">`). Gaté ELEVE_FLUX=on (défaut OFF). Ne lève jamais ;
+// Maillon cloud : si ComfyUI échoue et ELEVE_KREA=on + KREA_API_KEY, l'image passe par
+// l'API Krea 2 (krea.ts) — même contrat, même dossier de sortie.
 // si ComfyUI est injoignable, renvoie une erreur pédagogique (repli chercher_image/Pexels).
 //
 // Tout est configurable par env (URL, modèles, étapes) et les deps réseau/horloge sont
@@ -18,6 +20,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { freeGpuForFlux } from "./gpu-serialize.js";
+import { generateKreaImage, kreaEnabled } from "./krea.js";
 
 function comfyUrl(): string {
   return (process.env.FLUX_COMFY_URL || "http://127.0.0.1:8188").replace(/\/$/, "");
@@ -198,7 +201,7 @@ function resolveInside(root: string, rel: string): string {
   return abs;
 }
 
-function slugify(s: string): string {
+export function slugify(s: string): string {
   return (
     s
       .toLowerCase()
@@ -214,6 +217,11 @@ export interface FluxToolDeps extends FluxDeps {
   writeImage: (absPath: string, bytes: Uint8Array) => void;
   /** Détourage : retire le fond → PNG RGBA transparent (étape « PNG transparent » de la vidéo). */
   removeBg: (bytes: Uint8Array) => Promise<Uint8Array>;
+  /** Maillon Krea 2 (api.krea.ai) : tenté si ComfyUI échoue et que ELEVE_KREA=on + clé.
+   *  Absent (ex. en test) → chaîne inchangée (ComfyUI seul). */
+  generateKrea?: (opts: { prompt: string; aspectRatio?: string }) => Promise<
+    { ok: true; bytes: Uint8Array } | { ok: false; error: string }
+  >;
 }
 
 /** Python qui porte rembg (par défaut celui de ComfyUI). Donné par l'env (machine-dépendant). */
@@ -251,6 +259,11 @@ const realToolDeps: FluxToolDeps = {
     fs.writeFileSync(absPath, bytes);
   },
   removeBg: realRemoveBg,
+  generateKrea: async ({ prompt, aspectRatio }) => {
+    if (process.env.ELEVE_KREA !== "on" || !kreaEnabled()) return { ok: false, error: "Krea désactivé" };
+    const r = await generateKreaImage({ prompt, aspectRatio });
+    return r.ok ? { ok: true, bytes: r.bytes } : { ok: false, error: r.error };
+  },
 };
 
 export function buildEleveFluxTools(projectDir: string, deps: FluxToolDeps = realToolDeps): KernelTool[] {
@@ -277,10 +290,25 @@ export function buildEleveFluxTools(projectDir: string, deps: FluxToolDeps = rea
       const seed = (Math.abs(hashString(prompt)) % 1_000_000) + 1; // déterministe par prompt (reproductible, sans Math.random)
       try {
         const r = await generateFlux(prompt, { width, height, seed, upscale }, deps);
-        if (!r.ok) {
+        let bytes: Uint8Array;
+        let engine = "Flux local";
+        if (r.ok) {
+          bytes = r.bytes;
+        } else if (deps.generateKrea) {
+          // Maillon Krea 2 (api.krea.ai) : ComfyUI indisponible → on tente le cloud Krea.
+          const ratio = width === height ? "1:1" : width > height ? (width / height > 1.6 ? "16:9" : "3:2") : (height / width > 1.6 ? "9:16" : "2:3");
+          const k = await deps.generateKrea({ prompt, aspectRatio: ratio });
+          if (!k.ok) {
+            return {
+              text: `Génération impossible : ${r.error} · Krea : ${k.error}\n(Repli : utilise chercher_image pour une vraie photo Pexels.)`,
+              isError: true,
+            };
+          }
+          bytes = k.bytes;
+          engine = "Krea 2";
+        } else {
           return { text: `Génération impossible : ${r.error}\n(Repli : utilise chercher_image pour une vraie photo Pexels.)`, isError: true };
         }
-        let bytes = r.bytes;
         if (transparent) {
           try {
             bytes = await deps.removeBg(bytes);
@@ -295,7 +323,7 @@ export function buildEleveFluxTools(projectDir: string, deps: FluxToolDeps = rea
         const rel = path.join("public", "generated", `${base}.png`);
         const abs = resolveInside(projectDir, rel);
         deps.writeImage(abs, bytes);
-        const tags = [transparent ? "transparent" : null, upscale ? "upscalé ×4" : null].filter(Boolean).join(", ");
+        const tags = [engine, transparent ? "transparent" : null, upscale && engine === "Flux local" ? "upscalé ×4" : null].filter(Boolean).join(", ");
         return {
           text:
             `Image générée${tags ? ` (${tags})` : ""} et enregistrée : ${rel}\n` +
