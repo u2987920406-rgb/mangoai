@@ -156,17 +156,45 @@ export default function AtelierMango({ onBack }) {
         {/* Résultat + diff + actions */}
         {result && (
           <div className="mt-5">
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
-              <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${result.usedChecks ? "bg-emerald-500/15 text-emerald-300" : "bg-edge-soft text-faint"}`}>
-                <ShieldCheck size={12} /> type-check {result.usedChecks ? "✓" : "—"}
-              </span>
-              <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${result.usedTests ? "bg-emerald-500/15 text-emerald-300" : "bg-edge-soft text-faint"}`}>
-                <FlaskConical size={12} /> tests (bac à sable) {result.usedTests ? "✓" : "—"}
-              </span>
-              {result.files?.map((f) => (
-                <span key={f} className="flex items-center gap-1 rounded-full bg-edge-soft px-2 py-0.5 text-dim"><FileCode size={12} /> {f}</span>
-              ))}
-            </div>
+            {(() => {
+              // Badges HONNÊTES (#atelier) : le verify de clôture reflète l'état FINAL réel.
+              // 3 états — vert ✓ (vérifié OK) · rouge ✗ (vérifié ÉCHOUÉ) · gris — (non vérifié).
+              const v = result.verify;
+              const typeState = v?.ran ? (v.typesOk ? "ok" : "ko") : (result.usedChecks ? "ok" : "none");
+              const testState = v?.ran ? (v.testsOk ? "ok" : "ko") : (result.usedTests ? "ok" : "none");
+              const cls = (s) => (s === "ok" ? "bg-emerald-500/15 text-emerald-300" : s === "ko" ? "bg-red-500/15 text-red-300" : "bg-edge-soft text-faint");
+              const mark = (s) => (s === "ok" ? "✓" : s === "ko" ? "✗" : "—");
+              return (
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-[12px]">
+                  <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${cls(typeState)}`}>
+                    <ShieldCheck size={12} /> type-check {mark(typeState)}
+                  </span>
+                  <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 ${cls(testState)}`}>
+                    <FlaskConical size={12} /> tests (bac à sable) {mark(testState)}
+                  </span>
+                  {result.files?.map((f) => (
+                    <span key={f} className="flex items-center gap-1 rounded-full bg-edge-soft px-2 py-0.5 text-dim"><FileCode size={12} /> {f}</span>
+                  ))}
+                </div>
+              );
+            })()}
+
+            {/* Clôture ROUGE : prévient AVANT de fusionner (le badge honnête reflète l'état final réel). */}
+            {result.verify?.ran && (!result.verify.typesOk || !result.verify.testsOk) && (
+              <div className="mb-3 rounded-lg border border-red-500/40 bg-red-500/[0.07] px-3 py-2 text-[12.5px] text-red-300">
+                <p className="mb-1 font-semibold">⚠ Ce chantier n'est PAS vert sur l'état final — le fusionner cassera le repo.</p>
+                {!result.verify.typesOk && result.verify.typesOutput && (
+                  <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-[11px] text-red-200">{result.verify.typesOutput}</pre>
+                )}
+                {result.verify.tests?.filter((t) => !t.ok).map((t) => (
+                  <div key={t.file} className="mt-1">
+                    <span className="font-mono text-[11px]">✗ {t.file}</span>
+                    <pre className="mt-0.5 max-h-32 overflow-auto whitespace-pre-wrap rounded bg-black/30 p-2 text-[11px] text-red-200">{t.output}</pre>
+                  </div>
+                ))}
+                <p className="mt-1.5 text-[11.5px] text-red-300/80">Renvoie Mango corriger, ou fusionne puis corrige à la main (le repo doit rester vert).</p>
+              </div>
+            )}
 
             {result.summary && (
               <p className="mb-3 whitespace-pre-wrap rounded-lg border border-edge bg-panel/40 px-3 py-2 text-[13px] text-dim">{result.summary}</p>

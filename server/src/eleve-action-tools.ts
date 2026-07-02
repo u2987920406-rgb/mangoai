@@ -39,6 +39,7 @@ import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { buildEleveDocumentTools } from "./eleve-document-tools.js";
 import { buildEleveArchiveTools } from "./eleve-archive-tools.js";
 import { buildEleveSiteTools } from "./eleve-site-tools.js";
+import { buildEleveImageTools } from "./eleve-image-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
 
@@ -375,6 +376,7 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // défaut OFF → zéro régression). Profite aussi aux sous-agents délégués.
   if (process.env.ELEVE_VISION === "on") {
     for (const t of buildEleveVisionTools(projectDir)) reg.register(t);
+    for (const t of buildEleveImageTools(projectDir)) reg.register(t);
   }
 
   // Compétence Unity/C# (Phase 3a, opt-in ELEVE_UNITY=on, défaut OFF → zéro régression) :

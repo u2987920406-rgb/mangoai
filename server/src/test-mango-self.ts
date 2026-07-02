@@ -3,7 +3,7 @@
 import {
   sanitizeSelfSlug, selfWorktreeBase, createSelfWorktree, selfDiff, removeSelfWorktree,
   formatSelfWorktree, buildSelfRegistry, runSelfExperiment, runTestSandboxed,
-  mergeSelfFiles, isInsidePath, SELF_ALLOWED_TOOLS,
+  mergeSelfFiles, isInsidePath, SELF_ALLOWED_TOOLS, verifySelfClosure,
   type GitRunner, type SelfAgentRun,
 } from "./mango-self.js";
 import path from "node:path";
@@ -233,6 +233,31 @@ console.log("\n[13] mergeSelfFiles — copie au repo vivant, newline, anti-évas
   check("isInsidePath : dehors → false", !isInsidePath(repo, path.join(root, "autre")));
 
   try { fs.rmSync(root, { recursive: true, force: true }); } catch { /* nettoyage */ }
+}
+
+// ── #atelier — verifySelfClosure : verdict de CLÔTURE (vrai tsc + tests), deps injectées ──
+{
+  const okTsc = async () => ({ ok: true, output: "" });
+  const koTsc = async () => ({ ok: false, output: "src/x.ts(3,5): error TS2304: Cannot find name 'Foo'." });
+  const okTest = async (_w: string, f: string) => ({ ok: true, output: `ran ${f}` });
+  const koTest = async (_w: string, f: string) => ({ ok: false, output: `FAIL ${f}` });
+  const changed = ["server/src/foo.ts", "server/src/test-foo.ts", "server/src/bar.ts"];
+
+  const v1 = await verifySelfClosure("/wt", changed, () => {}, { runTsc: okTsc, runTest: okTest });
+  check("clôture : ran=true", v1.ran === true);
+  check("clôture : typesOk quand tsc vert", v1.typesOk === true && v1.typesOutput === "");
+  check("clôture : n'exécute QUE les test-*.ts (1 sur 3)", v1.tests.length === 1 && v1.tests[0]!.file === "server/src/test-foo.ts");
+  check("clôture : testsOk quand test vert", v1.testsOk === true);
+
+  const v2 = await verifySelfClosure("/wt", changed, () => {}, { runTsc: koTsc, runTest: okTest });
+  check("clôture : typesOk=false + output porté quand tsc rouge", v2.typesOk === false && /TS2304/.test(v2.typesOutput));
+  check("clôture : testsOk indépendant du tsc (reste vert ici)", v2.testsOk === true);
+
+  const v3 = await verifySelfClosure("/wt", changed, () => {}, { runTsc: okTsc, runTest: koTest });
+  check("clôture : testsOk=false quand un test échoue", v3.testsOk === false && v3.tests[0]!.ok === false);
+
+  const v4 = await verifySelfClosure("/wt", ["server/src/foo.ts"], () => {}, { runTsc: okTsc, runTest: koTest });
+  check("clôture : aucun test-*.ts modifié → testsOk vrai (vacuité)", v4.testsOk === true && v4.tests.length === 0);
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} mango-self : ${pass} ok, ${fail} ko`);

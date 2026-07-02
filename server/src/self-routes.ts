@@ -47,13 +47,18 @@ export function registerSelfRoutes(app: Express): void {
       });
       if (!r.ok) { send({ type: "error", error: r.reason }); return; }
       const files = r.wt ? await selfChangedFiles(r.wt) : [];
-      const usedChecks = r.trace.some((t) => t.name === "check_types");
-      const usedTests = r.trace.some((t) => t.name === "run_tests");
+      // #atelier — badges HONNÊTES : le verify de clôture reflète l'état FINAL (vrai
+      // `tsc --noEmit` + tests exécutés), plus « l'Élève a APPELÉ l'outil ». usedChecks/
+      // usedTests pointent dessus → un chantier « vert » l'est vraiment à la fusion.
+      // Repli sur l'ancien comportement seulement si la vérif n'a pas tourné.
+      const verify = r.verify;
+      const usedChecks = verify?.ran ? verify.typesOk : r.trace.some((t) => t.name === "check_types");
+      const usedTests = verify?.ran ? verify.testsOk : r.trace.some((t) => t.name === "run_tests");
       send({
         type: "done",
         branch: r.branch, worktree: r.worktree,
         summary: r.summary, stat: r.diff.stat, patch: r.diff.patch, files,
-        tools: r.trace.map((t) => t.name), usedChecks, usedTests,
+        tools: r.trace.map((t) => t.name), usedChecks, usedTests, verify,
       });
     } catch (err) {
       send({ type: "error", error: err instanceof Error ? err.message : String(err) });

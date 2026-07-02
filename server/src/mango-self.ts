@@ -383,10 +383,65 @@ export const SELF_SYSTEM_TESTS =
   "\n- TESTS : tu as l'outil `run_tests` (exécution en bac à sable). Après avoir écrit/modifié un test, " +
   "appelle-le sur ton fichier de test pour vérifier qu'il PASSE. Corrige jusqu'au vert avant `finish`.";
 
+/** Regex : un chemin de fichier de test (`test-*.ts` / `.tsx`), à n'importe quel niveau. */
+const TEST_FILE_RE = /(?:^|[\\/])test-[^\\/]+\.tsx?$/;
+
+/** Dépendances de la vérif de clôture (injectables pour les tests). */
+export interface VerifyDeps {
+  runTsc?: (worktree: string) => Promise<{ ok: boolean; output: string }>;
+  runTest?: (worktree: string, testRel: string) => Promise<{ ok: boolean; output: string }>;
+}
+
+/**
+ * Vérification de CLÔTURE (#atelier) : sur l'état FINAL du worktree, lance le VRAI
+ * `tsc --noEmit` (le même contrôle que le repo) puis exécute en bac à sable les fichiers
+ * `test-*.ts` modifiés. Le verdict reflète ce que le repo verra à la FUSION — fini le badge
+ * « ✓ » basé sur « l'Élève a appelé l'outil ». Node_modules doit être jointe. Ne lève jamais.
+ */
+export async function verifySelfClosure(
+  worktree: string,
+  changedFiles: string[],
+  onLog: (s: string) => void = () => {},
+  deps: VerifyDeps = {},
+): Promise<SelfVerify> {
+  const runTsc = deps.runTsc ?? runTscInWorktree;
+  const runTest = deps.runTest ?? runTestSandboxed;
+  onLog("🔎 Vérification de clôture : tsc réel + tests sur l'état final…");
+  const tsc = await runTsc(worktree);
+  onLog(tsc.ok ? "  ✅ tsc --noEmit : aucun problème de types" : "  ❌ tsc --noEmit : des erreurs de types subsistent");
+  const testFiles = (changedFiles ?? []).filter((f) => TEST_FILE_RE.test(f));
+  const tests: SelfVerify["tests"] = [];
+  for (const rel of testFiles) {
+    const r = await runTest(worktree, rel);
+    onLog(`  ${r.ok ? "✅" : "❌"} tests ${rel}`);
+    tests.push({ file: rel, ok: r.ok, output: r.output.slice(-1500) });
+  }
+  return {
+    ran: true,
+    typesOk: tsc.ok,
+    typesOutput: tsc.ok ? "" : tsc.output.slice(0, 2500),
+    testsOk: tests.every((t) => t.ok), // vrai aussi si aucun test-*.ts modifié
+    tests,
+  };
+}
+
 /** Comment lancer l'agent dans le worktree (injectable pour les tests). */
 export type SelfAgentRun = (
   worktree: string, system: string, task: string, onLog: (s: string) => void,
 ) => Promise<{ text: string; toolTrace: { name: string; args: string }[] }>;
+
+/**
+ * Verdict de CLÔTURE — reflète l'état FINAL du worktree tel que le repo le verra à la fusion
+ * (le VRAI `tsc --noEmit` + les tests modifiés exécutés), PAS « l'Élève a appelé l'outil ».
+ * C'est ce qui empêche un chantier « vert » de casser le repo une fois fusionné.
+ */
+export interface SelfVerify {
+  ran: boolean; // false si non vérifié (node_modules non jointe)
+  typesOk: boolean; // `tsc --noEmit` final sans erreur
+  typesOutput: string; // erreurs tsc (tronquées) si rouge, sinon ""
+  testsOk: boolean; // aucun test-*.ts modifié en échec (vrai aussi si aucun)
+  tests: { file: string; ok: boolean; output: string }[]; // par fichier de test exécuté
+}
 
 export interface SelfExperimentResult {
   ok: boolean;
@@ -396,6 +451,8 @@ export interface SelfExperimentResult {
   summary: string; // le résumé de l'Élève
   trace: { name: string; args: string }[]; // outils appelés
   diff: { patch: string; stat: string };
+  /** Verdict de clôture (état final réel) — présent si la vérif a pu tourner (#atelier). */
+  verify?: SelfVerify;
   wt: SelfWorktree | null;
 }
 
@@ -448,6 +505,16 @@ export async function runSelfExperiment(
     return { ok: false, reason: `agent : ${(e as Error).message}`, branch: wt.branch, worktree: wt.worktree, summary: "", trace: [], diff: empty, wt };
   }
   const diff = await selfDiff(wt, { git: opts.git });
+  // Vérification de CLÔTURE : reflète l'état FINAL (vrai tsc + tests) tel que le repo le verra
+  // à la fusion. Node_modules est encore jointe ici (unlink juste après). Best-effort : un
+  // échec de la vérif ne cache pas le diff (verify reste undefined).
+  let verify: SelfVerify | undefined;
+  if (linked && (opts.allowChecks || opts.allowTests)) {
+    try {
+      const changed = await selfChangedFiles(wt);
+      verify = await verifySelfClosure(wt.worktree, changed, onLog);
+    } catch { /* best-effort : on rend quand même le diff */ }
+  }
   if (linked) unlinkNodeModules(wt.worktree);
-  return { ok: true, reason: "", branch: wt.branch, worktree: wt.worktree, summary, trace, diff, wt };
+  return { ok: true, reason: "", branch: wt.branch, worktree: wt.worktree, summary, trace, diff, verify, wt };
 }
