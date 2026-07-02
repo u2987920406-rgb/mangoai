@@ -25,16 +25,22 @@ export function Modal({ open, onClose, title, children, footer, widthClass = "w-
   const previouslyFocused = useRef<HTMLElement | null>(null);
   const titleId = useId();
 
+  // `onClose` est souvent une fonction inline (nouvelle référence à chaque rendu du
+  // parent) : la lire via une ref évite de relancer l'effet à chaque frappe — sinon
+  // le focus repartait sur le bouton « fermer » lettre après lettre (bug 2026-07-02).
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
   useEffect(() => {
     if (!open) return;
     previouslyFocused.current = document.activeElement as HTMLElement | null;
-    // Focus initial : premier élément focusable du panneau (souvent le bouton Fermer).
     const panel = panelRef.current;
-    const first = panel?.querySelector<HTMLElement>(FOCUSABLE);
-    first?.focus();
+    // Focus initial : d'abord un champ de saisie (formulaire), sinon le premier focusable.
+    const field = panel?.querySelector<HTMLElement>('textarea:not([disabled]), input:not([disabled]), select:not([disabled])');
+    (field ?? panel?.querySelector<HTMLElement>(FOCUSABLE))?.focus();
 
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") { e.stopPropagation(); onClose(); return; }
+      if (e.key === "Escape") { e.stopPropagation(); onCloseRef.current(); return; }
       if (e.key !== "Tab" || !panel) return;
       // Piège du focus : Tab boucle à l'intérieur du panneau.
       const items = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE));
@@ -48,7 +54,7 @@ export function Modal({ open, onClose, title, children, footer, widthClass = "w-
       document.removeEventListener("keydown", onKey, true);
       previouslyFocused.current?.focus?.();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
   return (
