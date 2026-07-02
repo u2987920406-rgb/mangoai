@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FolderOpen, Boxes, Image as ImageIcon, Music2, Bot, Dna, Brain,
   BookOpen, Lightbulb, FileText, Palette, Settings, Sun, Moon, Search,
-  Sparkles, Home as HomeIcon, Mic, Command, HelpCircle,
+  Sparkles, Home as HomeIcon, Mic, Command, HelpCircle, MessagesSquare,
   Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
@@ -21,6 +21,8 @@ const BuilderPane = lazy(() => import("./BuilderPane.jsx"));
 const AccueilPane = lazy(() => import("./AccueilPane.jsx"));
 // Toutes les autres sections : vraies apps 1.0 fusionnées (onglets) + vrai Réglages.
 const AppsPane = lazy(() => import("./AppsPane.jsx"));
+// Écran « Conversation » : liste des discussions d'accueil passées (auto-save) → reprise.
+const ConversationsPane = lazy(() => import("./ConversationsPane.jsx"));
 const ReglagesReel = lazy(() => import("../components/Reglages.jsx"));
 // Outils secondaires flottants (audit §4.3 « Garder — fenêtres flottantes ») rebranchés
 // dans le shell 2.0 en modales accessibles : Artefacts (Blackboard), Aide, détail MangoQA.
@@ -33,8 +35,9 @@ const SECTIONS = [
   {
     id: "creer", label: "Créer",
     items: [
-      { id: "accueil",  label: "Accueil",      icon: HomeIcon,   desc: "Discute avec Mango — et si ça devient une app, l'atelier est à un clic." },
-      { id: "builder",  label: "App Builder",  icon: FolderOpen, desc: "Générer et itérer une app web complète, aperçu live à côté." },
+      { id: "accueil",  label: "Accueil",      icon: HomeIcon,       desc: "Discute avec Mango — et si ça devient une app, l'atelier est à un clic." },
+      { id: "conversations", label: "Conversation", icon: MessagesSquare, desc: "Reprends une discussion passée avec Mango." },
+      { id: "builder",  label: "App Builder",  icon: FolderOpen,     desc: "Générer et itérer une app web complète, aperçu live à côté." },
       { id: "projets",  label: "Projets",      icon: Boxes,      desc: "Gros projets (Kanban incrémental) et suites d'apps — ex Multi-Projet + OS d'apps." },
       { id: "image",    label: "Image",        icon: ImageIcon,  desc: "Création d'images." },
       { id: "music",    label: "Music",        icon: Music2,     desc: "Création musicale." },
@@ -483,6 +486,7 @@ function ShellV2Inner() {
               <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement…</div>}>
                 {isReglages ? <ReglagesReel onBack={back} onOpenProject={(name) => openProject(name)} />
                   : active === "accueil" ? <AccueilPane />
+                  : active === "conversations" ? <ConversationsPane />
                   : active === "composants" ? <VitrinePane />
                   : active === "builder" ? <BuilderPane />
                   : <AppsPane sectionId={active} />}

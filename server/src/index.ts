@@ -97,6 +97,7 @@ import { sweepOrphanPreviews } from "./preview-sweep.js";
 import { lanIPv4s } from "./net.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
+import { registerHomeConversationsRoutes } from "./home-conversations-routes.js";
 import { registerAgentFactoryRoutes } from "./agent-routes.js";
 import { restoreAgents } from "./agent-runtime.js";
 // #138 OS d'apps — colonne de données partagée + surface Suite (la spine).
@@ -1001,6 +1002,7 @@ registerDesignCoachRoutes(app);
 registerSelfRoutes(app); // Atelier de Mango — auto-amélioration (barreaux 1-4)
 registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
 registerSelfEvolutionRoutes(app); // #168 — Boucle d'auto-évolution (semi-auto) : lacunes → forge validée
+registerHomeConversationsRoutes(app); // Écran « Conversation » : revoir/reprendre les discussions d'accueil
 
 app.post("/api/stop", async (_req, res) => {
   // Deux cerveaux, deux mécaniques d'arrêt :

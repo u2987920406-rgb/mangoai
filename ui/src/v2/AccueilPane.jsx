@@ -10,8 +10,10 @@ import { useAppState } from "../state/AppState";
 import { BrandMark, Button, Chip, Input, cx, TEXT } from "../design";
 
 export default function AccueilPane() {
-  const { openProject, pushToast } = useAppState();
-  const [convId] = useState(() => `v2-${crypto.randomUUID?.() ?? Date.now()}`);
+  const { openProject, pushToast, homeConvSeed, consumeHomeConvSeed } = useAppState();
+  // Reprise d'une conversation PASSÉE (depuis l'écran « Conversation ») : on adopte son
+  // convId pour continuer AU MÊME endroit ; sinon une conversation neuve.
+  const [convId] = useState(() => homeConvSeed || `v2-${crypto.randomUUID?.() ?? Date.now()}`);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [thinking, setThinking] = useState(false);
@@ -26,6 +28,28 @@ export default function AccueilPane() {
     if (hasChat) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, thinking, hasChat]);
 
+  // Reprise : si on arrive avec une graine (clic sur une conversation passée), charge ses
+  // messages une seule fois au montage. Le convId a déjà été adopté (voir useState ci-dessus).
+  useEffect(() => {
+    if (!homeConvSeed) return;
+    consumeHomeConvSeed();
+    fetch(`/api/home/conversations/${encodeURIComponent(homeConvSeed)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => { if (Array.isArray(d?.messages)) setMessages(d.messages); })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Auto-save « façon ChatGPT » : à chaque tour terminé, on persiste la conversation
+  // (best-effort, ne bloque rien) → elle réapparaît dans l'écran « Conversation ».
+  function persist(conv) {
+    fetch(`/api/home/conversations/${encodeURIComponent(convId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ messages: conv }),
+    }).catch(() => {});
+  }
+
   // Un tour : envoie l'historique à l'Élève et ajoute sa réponse (mécanique 1.0).
   async function runTurn(history) {
     setThinking(true);
@@ -37,7 +61,9 @@ export default function AccueilPane() {
       });
       if (!res.ok) throw new Error(`erreur serveur (HTTP ${res.status})`);
       const data = await res.json();
-      setMessages([...history, { role: "assistant", content: data.text ?? "Erreur de réponse." }]);
+      const full = [...history, { role: "assistant", content: data.text ?? "Erreur de réponse." }];
+      setMessages(full);
+      persist(full); // auto-save → revenable depuis l'écran « Conversation »
       // Mango a détecté une intention de CONSTRUIRE → propose de passer à l'atelier.
       if (data.suggestGraduate) setGraduateOpen(true);
     } catch (e) {

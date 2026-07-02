@@ -32,6 +32,11 @@ export interface AppState {
   requestNewProject: () => void;
   /** Nonce lu par le builder : incrémenté → ouvre la modale de création. 0 = rien. */
   newProjectNonce: number;
+  /** Ouvre une conversation d'accueil PASSÉE (depuis l'écran « Conversation ») → va à l'Accueil et l'y charge. */
+  openConversation: (convId: string) => void;
+  /** convId de la conversation d'accueil à (re)charger, lu par l'Accueil au montage. null = nouvelle. */
+  homeConvSeed: string | null;
+  consumeHomeConvSeed: () => void;
   /** Toasts (pont vers le composant Toast existant). */
   toasts: ToastItem[];
   pushToast: (kind: ToastItem["kind"], text: string) => void;
@@ -45,6 +50,7 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
   const [history, setHistory] = useState<string[]>([]);
   const [builderSeed, setBuilderSeed] = useState<BuilderSeed | null>(null);
   const [newProjectNonce, setNewProjectNonce] = useState(0);
+  const [homeConvSeed, setHomeConvSeed] = useState<string | null>(null);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
@@ -76,6 +82,13 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
     go("builder");
   }, [go]);
 
+  const openConversation = useCallback((convId: string) => {
+    setHomeConvSeed(convId);
+    go("accueil");
+  }, [go]);
+
+  const consumeHomeConvSeed = useCallback(() => setHomeConvSeed(null), []);
+
   const pushToast = useCallback((kind: ToastItem["kind"], text: string) => {
     const id = nextId.current++;
     setToasts((t) => [...t, { id, kind, text }]);
@@ -91,9 +104,10 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
       active, go, back, canBack: history.length > 0,
       openProject, builderSeed, consumeBuilderSeed,
       requestNewProject, newProjectNonce,
+      openConversation, homeConvSeed, consumeHomeConvSeed,
       toasts, pushToast, dismissToast,
     }),
-    [active, go, back, history.length, openProject, builderSeed, consumeBuilderSeed, requestNewProject, newProjectNonce, toasts, pushToast, dismissToast],
+    [active, go, back, history.length, openProject, builderSeed, consumeBuilderSeed, requestNewProject, newProjectNonce, openConversation, homeConvSeed, consumeHomeConvSeed, toasts, pushToast, dismissToast],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

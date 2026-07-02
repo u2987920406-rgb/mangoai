@@ -255,7 +255,7 @@ export default function BuilderPane() {
 
   // « Nouveau projet » demandé depuis une autre section (ex. Projets) → ouvre la modale.
   useEffect(() => {
-    if (newProjectNonce > 0) { setNewOpen(true); setNewDesc(""); setNewIsBig(false); }
+    if (newProjectNonce > 0) { setNewOpen(true); setNewDesc(""); setNewKind("rapide"); }
   }, [newProjectNonce]);
 
   // Graine venue de l'Accueil : sélectionne le projet et arme le premier prompt.
