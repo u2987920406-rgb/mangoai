@@ -209,7 +209,7 @@ function ModeSelector({ tier, onPick }) {
 }
 
 export default function BuilderPane() {
-  const { pushToast, builderSeed, consumeBuilderSeed } = useAppState();
+  const { pushToast, builderSeed, consumeBuilderSeed, newProjectNonce } = useAppState();
   const [projects, setProjects] = useState([]);
   const [projectName, setProjectName] = useState(() => localStorage.getItem(PROJECT_KEY) || "");
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -249,6 +249,11 @@ export default function BuilderPane() {
       .catch(() => {});
   }, []);
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
+
+  // « Nouveau projet » demandé depuis une autre section (ex. Projets) → ouvre la modale.
+  useEffect(() => {
+    if (newProjectNonce > 0) { setNewOpen(true); setNewDesc(""); setNewIsBig(false); }
+  }, [newProjectNonce]);
 
   // Graine venue de l'Accueil : sélectionne le projet et arme le premier prompt.
   useEffect(() => {

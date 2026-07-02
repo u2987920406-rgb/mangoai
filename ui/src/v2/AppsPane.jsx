@@ -2,10 +2,10 @@
 // validée par Raf (audit-mango-2.0 §4.3) : chaque section = onglets de composants
 // réels, réutilisés tels quels (pattern Phase C : remonter, pas réécrire).
 import { lazy, Suspense, useState } from "react";
-import { Music2 } from "lucide-react";
+import { Music2, Plus } from "lucide-react";
 import { slugify } from "../slugify.js";
 import { useAppState } from "../state/AppState";
-import { cx, TEXT } from "../design";
+import { Button, cx, TEXT } from "../design";
 
 const MultiProject      = lazy(() => import("../components/MultiProject.jsx"));
 const SuiteWindow       = lazy(() => import("../components/SuiteWindow.jsx"));
@@ -30,7 +30,7 @@ function Loader() {
 }
 
 /* Onglets de fusion — segmented control discret sous la top bar du shell. */
-function Tabs({ tabs }) {
+function Tabs({ tabs, action }) {
   const [active, setActive] = useState(0);
   return (
     <div className="flex h-full min-h-0 flex-col">
@@ -47,6 +47,7 @@ function Tabs({ tabs }) {
             {t.label}
           </button>
         ))}
+        {action && <div className="ml-auto">{action}</div>}
       </div>
       <div className="min-h-0 flex-1 overflow-hidden">
         <Suspense fallback={<Loader />}>{tabs[active].render()}</Suspense>
@@ -76,14 +77,19 @@ function ComingSoon({ icon: Icon, title, subtitle, envKey }) {
 }
 
 export default function AppsPane({ sectionId }) {
-  const { back, openProject, pushToast } = useAppState();
+  const { back, openProject, pushToast, requestNewProject } = useAppState();
 
   switch (sectionId) {
     case "projets":
       return (
         <Tabs
+          action={
+            <Button variant="primary" size="sm" icon={<Plus size={13} />} onClick={requestNewProject}>
+              Nouveau projet
+            </Button>
+          }
           tabs={[
-            { label: "Gros projet (Kanban)", render: () => <MultiProject onBack={back} /> },
+            { label: "Bibliothèque de composants", render: () => <MultiProject onBack={back} /> },
             { label: "Suite d'apps", render: () => <SuiteWindow win={{ props: { onOpen: (name) => openProject(name) } }} onClose={() => {}} /> },
           ]}
         />

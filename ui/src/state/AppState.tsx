@@ -28,6 +28,10 @@ export interface AppState {
   openProject: (name: string, prompt?: string | null) => void;
   builderSeed: BuilderSeed | null;
   consumeBuilderSeed: () => void;
+  /** Va au builder et y ouvre la modale « Nouveau projet » (depuis n'importe quelle section). */
+  requestNewProject: () => void;
+  /** Nonce lu par le builder : incrémenté → ouvre la modale de création. 0 = rien. */
+  newProjectNonce: number;
   /** Toasts (pont vers le composant Toast existant). */
   toasts: ToastItem[];
   pushToast: (kind: ToastItem["kind"], text: string) => void;
@@ -40,6 +44,7 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
   const [active, setActive] = useState(initialActive);
   const [history, setHistory] = useState<string[]>([]);
   const [builderSeed, setBuilderSeed] = useState<BuilderSeed | null>(null);
+  const [newProjectNonce, setNewProjectNonce] = useState(0);
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
 
@@ -66,6 +71,11 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
 
   const consumeBuilderSeed = useCallback(() => setBuilderSeed(null), []);
 
+  const requestNewProject = useCallback(() => {
+    setNewProjectNonce((n) => n + 1);
+    go("builder");
+  }, [go]);
+
   const pushToast = useCallback((kind: ToastItem["kind"], text: string) => {
     const id = nextId.current++;
     setToasts((t) => [...t, { id, kind, text }]);
@@ -80,9 +90,10 @@ export function AppStateProvider({ children, initialActive = "accueil" }: { chil
     () => ({
       active, go, back, canBack: history.length > 0,
       openProject, builderSeed, consumeBuilderSeed,
+      requestNewProject, newProjectNonce,
       toasts, pushToast, dismissToast,
     }),
-    [active, go, back, history.length, openProject, builderSeed, consumeBuilderSeed, toasts, pushToast, dismissToast],
+    [active, go, back, history.length, openProject, builderSeed, consumeBuilderSeed, requestNewProject, newProjectNonce, toasts, pushToast, dismissToast],
   );
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }
