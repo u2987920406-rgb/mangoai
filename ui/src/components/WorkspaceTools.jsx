@@ -313,7 +313,7 @@ export default function WorkspaceTools({
       <div className="flex w-14 flex-col items-center gap-0.5 bg-panel/60 px-1.5 py-2">
         {show("memoire") && <RailBtn icon={BrainCircuit} label="Mémoire" active={active === "memoire"} onClick={() => toggle("memoire")} />}
         {show("revue") && <RailBtn icon={ClipboardCheck} label="Revue du build" active={active === "revue"} onClick={() => toggle("revue")} />}
-        {onStyleStrength && (
+        {show("style") && onStyleStrength && (
           <RailBtn icon={SlidersHorizontal} label="Dosage de style" active={active === "style" || (!clientMode && styleStrength !== 100)} onClick={() => toggle("style")} />
         )}
         {versions.length > 0 && (

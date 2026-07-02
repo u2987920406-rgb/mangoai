@@ -9,7 +9,7 @@
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
 import {
   FolderOpen, Boxes, Plus, Trash2, Zap, Gem, Shield, Sparkles, ChevronDown,
-  Rocket, Cloud, Triangle, Globe, GitBranch, Download, ExternalLink, Loader2,
+  Rocket, Cloud, Triangle, Globe, GitBranch, Download, ExternalLink, Loader2, SlidersHorizontal,
 } from "lucide-react";
 import { api } from "../api";
 import { slugify } from "../slugify.js";
@@ -84,6 +84,68 @@ function PublishMenu({ disabled, deploying, onDeploy }) {
               </button>
             );
           })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Dosage de style (0→100 % du goût Mango) — version COMPACTE pour la barre supérieure
+// (remonté du rail à la demande de Raf). Bouton + popover avec curseur et presets.
+function StyleControl({ value, onChange }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+  const PRESETS = [0, 25, 50, 75, 100];
+  const label =
+    value >= 100 ? "Plein style Mango" :
+    value <= 0 ? "Style libre (le sujet mène)" :
+    value >= 75 ? "Surtout mon style" :
+    value <= 25 ? "Surtout le sujet" : "Équilibre";
+  return (
+    <div className="relative" ref={ref}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        title="Dosage de style"
+        aria-label={`Dosage de style : ${value} %`}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        className={cx(TEXT.base, "flex items-center gap-1.5 rounded-lg border border-edge bg-bg px-2 py-1 text-ink transition-colors hover:border-faint focus-visible:outline-2 focus-visible:outline-accent")}
+      >
+        <SlidersHorizontal size={13} className="text-accent-soft" />
+        Style {value}%
+        <ChevronDown size={12} className="text-faint" />
+      </button>
+      {open && (
+        <div role="dialog" aria-label="Dosage de style" className="absolute right-0 top-full z-50 mt-1 w-72 rounded-xl border border-edge bg-panel p-3 shadow-2xl">
+          <div className="mb-2 flex items-baseline justify-between">
+            <span className="text-xl font-bold text-ink">{value}%</span>
+            <span className="text-[12px] font-semibold text-accent-soft">{label}</span>
+          </div>
+          <input
+            type="range" min={0} max={100} step={5} value={value}
+            onChange={(e) => onChange(Number(e.target.value))}
+            className="w-full accent-accent"
+          />
+          <div className="mt-1 flex justify-between">
+            {PRESETS.map((p) => (
+              <button
+                key={p}
+                onClick={() => onChange(p)}
+                className={cx("rounded-md px-2 py-1 text-[11px] transition-colors", value === p ? "bg-accent/20 font-semibold text-accent-soft" : "text-faint hover:text-dim")}
+              >
+                {p}%
+              </button>
+            ))}
+          </div>
+          <p className="mt-2 text-[11px] leading-relaxed text-faint">
+            Part de TON style (palette, typo, design system) vs l'identité propre du sujet. Mémorisé par projet, appliqué au prochain message.
+          </p>
         </div>
       )}
     </div>
@@ -322,8 +384,9 @@ export default function BuilderPane() {
         </select>
         <span className={cx(TEXT.xs, "font-mono text-dim")}>${cost.toFixed(4)}</span>
 
-        {/* — Droite : palier de build · publier/GitHub/export · supprimer (poubelle tout à droite) — */}
+        {/* — Droite : dosage de style · palier de build · publier/GitHub/export · supprimer — */}
         <div className="ml-auto flex items-center gap-2">
+          {projectName && <StyleControl value={styleStrength} onChange={changeStyleStrength} />}
           <ModeSelector tier={buildTier} onPick={changeTier} />
           {projectName && (
             <>
@@ -380,7 +443,7 @@ export default function BuilderPane() {
               onToggleThinking={() => setShowThinking((v) => !v)}
               styleStrength={styleStrength}
               onStyleStrength={changeStyleStrength}
-              hidden={["memoire", "mangoqa", "mirror", "thinking"]}
+              hidden={["memoire", "mangoqa", "mirror", "thinking", "style"]}
             />
             <Chat
               key={projectName}
