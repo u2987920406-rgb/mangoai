@@ -271,6 +271,50 @@ function ToastStack() {
   );
 }
 
+/* Indicateur de souveraineté RÉEL (L7) — branché sur /api/sovereignty (part de tours
+   résolus par l'Élève vs escaladés au Maître Claude). Fini le « 95 % » en dur : on montre
+   le taux RÉCENT (représentatif de maintenant) quand l'échantillon suffit, sinon le global,
+   avec le détail en tooltip. */
+function SovereigntyChip({ collapsed }) {
+  const [rep, setRep] = useState(null);
+  useEffect(() => { api("/api/sovereignty").then(setRep).catch(() => {}); }, []);
+
+  if (!rep || rep.totalTurns === 0) {
+    return collapsed ? null : (
+      <div className="mb-1.5 flex items-center gap-2 rounded-lg bg-bg px-2.5 py-2" title="Aucun tour Élève mesuré pour l'instant">
+        <Activity size={13} className="text-faint" />
+        <span className="text-[11px] text-dim">Souverain · GLM 5.2</span>
+        <span className="ml-auto text-[11px] font-medium text-faint">—</span>
+      </div>
+    );
+  }
+
+  const useRecent = rep.trend?.sampleSufficient;
+  const sovereign = useRecent ? 1 - rep.trend.recentRate : rep.sovereignRate;
+  const pct = Math.round(sovereign * 100);
+  const tone = pct >= 80 ? "text-ok" : pct >= 50 ? "text-warn" : "text-err";
+  const trendTxt = rep.trend?.sampleSufficient
+    ? rep.trend.improving ? " · escalade en baisse ✅" : " · escalade en hausse"
+    : "";
+  const title = `Souveraineté ${useRecent ? "récente" : "globale"} : ${pct} % de tours résolus par l'Élève (GLM), sans Claude.\n`
+    + `Global : ${Math.round(rep.sovereignRate * 100)} % souverain · ${rep.eleve}/${rep.totalTurns} tours · escalade Claude ${Math.round(rep.claudeRate * 100)} %${trendTxt}`;
+
+  if (collapsed) {
+    return (
+      <div className="mb-1 flex justify-center" title={title}>
+        <span className={cx("text-[10px] font-semibold", tone)}>{pct}%</span>
+      </div>
+    );
+  }
+  return (
+    <div className="mb-1.5 flex items-center gap-2 rounded-lg bg-bg px-2.5 py-2" title={title}>
+      <Activity size={13} className={tone} />
+      <span className="text-[11px] text-dim">Souverain · GLM 5.2</span>
+      <span className={cx("ml-auto text-[11px] font-medium", tone)}>{pct} %</span>
+    </div>
+  );
+}
+
 /* ── Shell ─────────────────────────────────────────────────────────── */
 const COLLAPSE_KEY = "mangoos.v2.sidebarCollapsed";
 
@@ -330,7 +374,7 @@ function ShellV2Inner() {
           ) : (
             <>
               <BrandMark size={15} />
-              <span className="rounded-full border border-edge px-1.5 py-px text-[9.5px] font-medium text-faint">2.0</span>
+              <span className="rounded-full border border-edge px-1.5 py-px text-[9.5px] font-medium text-dim">2.0</span>
               <button onClick={toggleCollapsed} title="Replier (⌘B)" aria-label="Replier la barre latérale" className="ml-auto text-faint transition-colors hover:text-ink">
                 <PanelLeftClose size={16} />
               </button>
@@ -344,7 +388,7 @@ function ShellV2Inner() {
             title={collapsed ? "Rechercher (⌘K)" : undefined}
             aria-label="Rechercher"
             className={cx(
-              "flex w-full items-center rounded-lg border border-edge bg-bg py-[7px] text-[12.5px] text-faint transition-colors duration-150 hover:border-faint hover:text-dim",
+              "flex w-full items-center rounded-lg border border-edge bg-bg py-[7px] text-[12.5px] text-dim transition-colors duration-150 hover:border-faint hover:text-ink",
               collapsed ? "justify-center px-0" : "gap-2 px-2.5",
             )}
           >
@@ -373,13 +417,7 @@ function ShellV2Inner() {
 
         {/* Pied : souveraineté + réglages + thème */}
         <div className={cx("border-t border-edge-soft", collapsed ? "p-2" : "p-2.5")}>
-          {!collapsed && (
-            <div className="mb-1.5 flex items-center gap-2 rounded-lg bg-bg px-2.5 py-2">
-              <Activity size={13} className="text-ok" />
-              <span className="text-[11px] text-dim">Souverain · GLM 5.2</span>
-              <span className="ml-auto text-[11px] font-medium text-ok">95 %</span>
-            </div>
-          )}
+          <SovereigntyChip collapsed={collapsed} />
           <div className={cx("flex items-center", collapsed ? "flex-col gap-0.5" : "gap-0.5")}>
             <NavItem
               item={{ id: "reglages", label: "Réglages", icon: Settings }}
@@ -415,10 +453,10 @@ function ShellV2Inner() {
           />
           <span className="text-[13px] font-medium">{isReglages ? "Réglages" : activeItem?.label}</span>
           {!isReglages && activeItem && activeItem.id !== "accueil" && (
-            <span className="text-[12px] text-faint">· {activeItem.section}</span>
+            <span className="text-[12px] text-dim">· {activeItem.section}</span>
           )}
           <div className="ml-auto flex items-center gap-2.5">
-            <span className="flex items-center gap-1.5 text-[11px] text-faint" title="MangoQA audite en fantôme — jamais bloquant">
+            <span className="flex items-center gap-1.5 text-[11px] text-dim" title="MangoQA audite en fantôme — jamais bloquant">
               <Ghost size={12} className="text-dim" /> QA fantôme
               <span className="h-1.5 w-1.5 rounded-full bg-ok" />
             </span>

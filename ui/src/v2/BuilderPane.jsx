@@ -213,6 +213,7 @@ export default function BuilderPane() {
         <select
           value={projectName}
           onChange={(e) => pickProject(e.target.value)}
+          aria-label="Choisir un projet"
           className={cx(TEXT.base, "max-w-[280px] rounded-lg border border-edge bg-bg px-2 py-1 text-ink outline-none focus:border-faint")}
         >
           <option value="">— choisir un projet —</option>
@@ -240,7 +241,7 @@ export default function BuilderPane() {
         {projectName && (
           <Badge tone="accent">{building ? `Construire · ${tierLabel}` : "Discuter"}</Badge>
         )}
-        <span className={cx(TEXT.xs, "ml-auto font-mono text-faint")}>${cost.toFixed(4)}</span>
+        <span className={cx(TEXT.xs, "ml-auto font-mono text-dim")}>${cost.toFixed(4)}</span>
       </div>
 
       {!projectName ? (

@@ -143,6 +143,7 @@ export default function ImageCreatorPane() {
               <select
                 value={sendTarget}
                 onChange={(e) => setSendTarget(e.target.value)}
+                aria-label="Envoyer vers un projet"
                 className={cx(TEXT.sm, "mr-auto rounded-lg border border-edge bg-bg px-2 py-1.5 text-ink outline-none focus:border-faint")}
               >
                 <option value="">Envoyer vers un projet…</option>

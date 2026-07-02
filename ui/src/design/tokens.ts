@@ -13,9 +13,10 @@ export const TEXT = {
   /** titres de page */ xl: "text-[20px] font-semibold tracking-tight",
 } as const;
 
-/** Libellé de section (sidebar, groupes de réglages). */
+/** Libellé de section (sidebar, groupes de réglages). `text-dim` (pas `text-faint`)
+ *  pour tenir le contraste AA à cette petite taille (audit a11y 2026-07-02). */
 export const SECTION_LABEL =
-  "text-[10.5px] font-semibold uppercase tracking-[0.08em] text-faint";
+  "text-[10.5px] font-semibold uppercase tracking-[0.08em] text-dim";
 
 /** Rayons — 3 niveaux seulement. */
 export const RADIUS = {
