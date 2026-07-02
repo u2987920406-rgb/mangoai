@@ -7,13 +7,16 @@
 // + suppression de projet confirmée. Panneaux Backend/GitHub/PerfectPlan/Kanban :
 // leurs boutons de rail restent masqués tant que leurs props ne sont pas câblées.
 import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react";
-import { FolderOpen, Boxes, Plus, Trash2, Zap, Gem, Shield, Sparkles, ChevronDown } from "lucide-react";
+import {
+  FolderOpen, Boxes, Plus, Trash2, Zap, Gem, Shield, Sparkles, ChevronDown,
+  Rocket, Cloud, Triangle, Globe, GitBranch, Download, ExternalLink, Loader2,
+} from "lucide-react";
 import { api } from "../api";
 import { slugify } from "../slugify.js";
 import { useAppState } from "../state/AppState";
 import { useVersions } from "../hooks/useVersions.js";
 import ConfirmModal from "../components/ConfirmModal.jsx";
-import { EmptyState, Badge, Button, Textarea, Modal, cx, TEXT } from "../design";
+import { EmptyState, Button, Textarea, Modal, cx, TEXT } from "../design";
 
 const Chat = lazy(() => import("../Chat.jsx"));
 const Preview = lazy(() => import("../Preview.jsx"));
@@ -30,6 +33,62 @@ const BUILD_MODES = [
   { id: "finition",   label: "Finition",   hint: "Durcissement & QA — pas de nouvelle feature",   icon: Shield },
   { id: "esthetique", label: "Esthétique", hint: "Raffinement graphique — micro-interactions, animations", icon: Sparkles },
 ];
+
+// Cibles de déploiement (POST /api/deploy/:name) — reprises de Header.jsx 1.0.
+const DEPLOY_TARGETS = [
+  { id: "cloudflare", label: "Cloudflare Pages", hint: "Edge gratuit — défaut", icon: Cloud },
+  { id: "vercel",     label: "Vercel",           hint: "Idéal Next.js / SSR",   icon: Triangle },
+  { id: "netlify",    label: "Netlify",          hint: "Sites statiques + forms", icon: Globe },
+];
+
+// Menu « Publier » : déploie l'app sur un hébergeur statique en un clic.
+function PublishMenu({ disabled, deploying, onDeploy }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onOutside = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", onOutside);
+    return () => document.removeEventListener("mousedown", onOutside);
+  }, [open]);
+  return (
+    <div className="relative" ref={ref}>
+      <Button
+        variant="primary"
+        size="sm"
+        icon={deploying ? <Loader2 size={13} className="animate-spin" /> : <Rocket size={13} />}
+        disabled={disabled || deploying}
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="menu"
+        aria-expanded={open}
+      >
+        {deploying ? "Publication…" : "Publier"}
+        <ChevronDown size={12} />
+      </Button>
+      {open && (
+        <div role="menu" className="absolute right-0 top-full z-50 mt-1 w-60 overflow-hidden rounded-xl border border-edge bg-panel shadow-2xl">
+          {DEPLOY_TARGETS.map((t) => {
+            const TIcon = t.icon;
+            return (
+              <button
+                key={t.id}
+                role="menuitem"
+                onClick={() => { onDeploy(t.id); setOpen(false); }}
+                className="flex w-full items-start gap-2.5 px-3 py-2 text-left transition-colors hover:bg-raised"
+              >
+                <TIcon size={15} className="mt-0.5 shrink-0 text-dim" />
+                <span className="min-w-0">
+                  <span className="block text-[13px] text-ink">{t.label}</span>
+                  <span className="block text-[11px] leading-snug text-faint">{t.hint}</span>
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // Sélecteur de palier de build (bouton + menu), dans la barre projet du builder.
 function ModeSelector({ tier, onPick }) {
@@ -166,8 +225,6 @@ export default function BuilderPane() {
     setChatMode({ model, mode: mode === "elite" ? buildTier : mode });
   };
 
-  const building = chatMode.mode !== "discuss";
-  const tierLabel = BUILD_MODES.find((m) => m.id === buildTier)?.label ?? "Élite";
 
   // Règle UX de Raf (documentée dans NewProjectForm 1.0, « je me suis fait avoir ») :
   // ce formulaire ne sert QU'À NOMMER — AUCUNE construction n'est lancée. Le composer
@@ -185,6 +242,43 @@ export default function BuilderPane() {
     setAutoPrompt(null); // composer vide — c'est Raf qui décide de Construire/Discuter/Planifier
     pushToast("ok", `Projet « ${name} » créé — décris, discute ou planifie quand tu veux`);
   };
+
+  // Publication / GitHub — endpoints 1.0 (POST /api/deploy, /api/github). Peuvent
+  // échouer sans jetons configurés (Cloudflare/Vercel/Netlify/GitHub) → toast honnête.
+  const [deploying, setDeploying] = useState(false);
+  const [deployedUrl, setDeployedUrl] = useState(null);
+  const [pushingGithub, setPushingGithub] = useState(false);
+
+  const deploy = async (target) => {
+    if (!projectName || deploying) return;
+    setDeploying(true);
+    setDeployedUrl(null);
+    try {
+      const d = await api(`/api/deploy/${encodeURIComponent(projectName)}`, { method: "POST", body: { target } });
+      setDeployedUrl(d.url);
+      pushToast("ok", `Publié sur ${target} → ${d.url}`);
+    } catch { /* toast global (jeton manquant, agent occupé…) */ }
+    finally { setDeploying(false); }
+  };
+
+  const pushGithub = async () => {
+    if (!projectName || pushingGithub) return;
+    setPushingGithub(true);
+    try {
+      const d = await api(`/api/github/${encodeURIComponent(projectName)}`, { method: "POST", body: { private: true } });
+      pushToast("ok", `Poussé sur GitHub → ${d.url}`);
+      window.open(d.url, "_blank", "noopener");
+    } catch { /* toast global (GITHUB_TOKEN manquant…) */ }
+    finally { setPushingGithub(false); }
+  };
+
+  // Export zip : téléchargement direct (GET), pas d'appel api() (réponse binaire).
+  const exportZip = () => {
+    if (!projectName) return;
+    window.location.href = `/api/export/${encodeURIComponent(projectName)}`;
+  };
+
+  useEffect(() => { setDeployedUrl(null); }, [projectName]);
 
   // Suppression (définitive) — même endpoint que la 1.0, derrière confirmation.
   const askDeleteProject = () => {
@@ -207,41 +301,64 @@ export default function BuilderPane() {
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      {/* Barre projet : sélection + création + suppression + coût du tour */}
-      <div className="flex h-[42px] shrink-0 items-center gap-2.5 border-b border-edge-soft px-4">
+      {/* Barre projet réorganisée : GAUCHE = créer + sélectionner · DROITE = build + publier + supprimer.
+          (Réorg demandée par Raf : « + tout à gauche », publier/GitHub/export à droite, poubelle tout à droite.) */}
+      <div className="flex h-[42px] shrink-0 items-center gap-2 border-b border-edge-soft px-4">
+        {/* — Gauche : créer, puis choisir — */}
+        <Button variant="secondary" size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>
+          Nouveau
+        </Button>
         <FolderOpen size={14} className="text-faint" />
         <select
           value={projectName}
           onChange={(e) => pickProject(e.target.value)}
           aria-label="Choisir un projet"
-          className={cx(TEXT.base, "max-w-[280px] rounded-lg border border-edge bg-bg px-2 py-1 text-ink outline-none focus:border-faint")}
+          className={cx(TEXT.base, "max-w-[240px] rounded-lg border border-edge bg-bg px-2 py-1 text-ink outline-none focus:border-faint")}
         >
           <option value="">— choisir un projet —</option>
           {projects.map((p) => (
             <option key={p} value={p}>{p}</option>
           ))}
         </select>
-        <Button variant="secondary" size="sm" icon={<Plus size={13} />} onClick={() => setNewOpen(true)}>
-          Nouveau
-        </Button>
-        {projectName && (
-          <Button
-            variant="ghost"
-            size="sm"
-            iconOnly
-            icon={<Trash2 size={14} />}
-            onClick={askDeleteProject}
-            className="hover:text-err"
-            title="Supprimer ce projet"
-            aria-label="Supprimer ce projet"
-          />
-        )}
-        {/* Palier de build (MVP/Élite/Finition/Esthétique) — remonté de la 1.0 */}
-        <ModeSelector tier={buildTier} onPick={changeTier} />
-        {projectName && (
-          <Badge tone="accent">{building ? `Construire · ${tierLabel}` : "Discuter"}</Badge>
-        )}
-        <span className={cx(TEXT.xs, "ml-auto font-mono text-dim")}>${cost.toFixed(4)}</span>
+        <span className={cx(TEXT.xs, "font-mono text-dim")}>${cost.toFixed(4)}</span>
+
+        {/* — Droite : palier de build · publier/GitHub/export · supprimer (poubelle tout à droite) — */}
+        <div className="ml-auto flex items-center gap-2">
+          <ModeSelector tier={buildTier} onPick={changeTier} />
+          {projectName && (
+            <>
+              <div className="mx-0.5 h-5 w-px bg-edge-soft" />
+              {deployedUrl && (
+                <a
+                  href={deployedUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  title={deployedUrl}
+                  className={cx(TEXT.xs, "flex max-w-[160px] items-center gap-1 text-ok hover:underline")}
+                >
+                  <ExternalLink size={11} className="shrink-0" />
+                  <span className="truncate">{deployedUrl.replace(/^https?:\/\//, "")}</span>
+                </a>
+              )}
+              <PublishMenu disabled={!projectName} deploying={deploying} onDeploy={deploy} />
+              <Button
+                variant="secondary" size="sm" iconOnly icon={pushingGithub ? <Loader2 size={14} className="animate-spin" /> : <GitBranch size={14} />}
+                onClick={pushGithub} disabled={pushingGithub}
+                title="Pousser sur GitHub" aria-label="Pousser sur GitHub"
+              />
+              <Button
+                variant="secondary" size="sm" iconOnly icon={<Download size={14} />}
+                onClick={exportZip}
+                title="Exporter le projet (.zip)" aria-label="Exporter le projet en zip"
+              />
+              <Button
+                variant="ghost" size="sm" iconOnly icon={<Trash2 size={14} />}
+                onClick={askDeleteProject} className="hover:text-err"
+                title="Supprimer ce projet" aria-label="Supprimer ce projet"
+              />
+            </>
+          )}
+        </div>
       </div>
 
       {!projectName ? (
