@@ -52,3 +52,12 @@ RUN-PLAN.md
 # Livrable d'audit local (non versionné)
 *AUDIT COMPLET*.md
 .claude/
+
+# Lacunes ouvertes (#168 auto-évolution) — runtime, jamais versionnée
+server/data/open-gaps.json
+
+# Contenu TOEIC généré — runtime, jamais versionné
+server/.toeic-content.state.json
+server/.toeic-content.avance.state.json
+server/.toeic-content.debutant.state.json
+server/.toeic-content.intermediaire.state.json
