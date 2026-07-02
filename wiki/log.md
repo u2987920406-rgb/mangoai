@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, log]
-maj: 2026-07-01
+maj: 2026-07-02
 ---
 
 # Journal du wiki
@@ -637,3 +637,6 @@ Raf : « sous Accueil, il manque Conversation pour revenir aux conversations pas
 
 ## [2026-07-02] ingest | Menu Projet (étoiles/poubelle/lot/apps-revues) + étoiles au sélecteur workspace + Fable 5 & sélecteur de cerveau à l'Accueil
 Raf : poubelle par projet, sélection multi pour jeter des lots, « toutes les apps revues », étoiles par projet comme la V1 (liste + menu déroulant workspace) ; connecter Fable 5 ; rendre opérationnel le sélecteur de cerveau à l'Accueil (menu scroll tous modèles). 3 agents ont cartographié la V1 → presque tout existait déjà (données/backend), l'essentiel = câblage UI. Livré : (1) onglet « Mes projets » (`v2/ProjectsManager.jsx` monté dans AppsPane) — étoiles colorées 1-5 (`.build-review.json` #93, déjà servi par GET /api/projects → reviews), poubelle par projet (ConfirmDelete + DELETE /api/projects/:name), sélection multi + « Supprimer la sélection » (boucle DELETE client), filtre « Revus uniquement » = apps revues ; (2) étoiles ★ Unicode dans le <select> du BuilderPane (captait plus reviews ; <select> natif = texte only, limite assumée) ; (3) Fable 5 connecté = 1 ligne `fable:"claude-fable-5"` au MODEL_MAP de /api/home-chat (provider Claude déjà câblé via abonnement dans llm-engine) + branche qwen→ollama qwen3.5:cloud ; (4) sélecteur de cerveau scrollable à l'Accueil (AccueilPane) : Fable 5 · Opus 4.8 · Sonnet 4.6 · Haiku 4.5 · GLM 5.2 souverain · Qwen, model passé à /api/home-chat. Preuves : tsc+build verts, backend redémarré, navigateur — Fable 5 répond « Bonjour 👋 » (vrai claude-fable-5), 102 projets listés, filtre revus (étoiles jusqu'à ★★★★★), sélection lot, sélecteur Builder 49 options étoilées, console propre. Limite : pas de DELETE groupé atomique (boucle client). [[composer-os]] · [[moteur-gout]]. Zéro git.
+
+## [2026-07-02] ingest | Étoiles colorées portées dans le sélecteur de projet du workspace (levée de la limite de la livraison précédente)
+Raf : « oui fais le » — porter le vrai `ProjectSwitcher` V1 (déjà dans `Header.jsx`, jamais supprimé) à la place du `<select>` natif du BuilderPane, dont les glyphes ★/☆ Unicode étaient une limite assumée. Livré : import `ProjectSwitcher` dans `v2/BuilderPane.jsx`, `<select>` remplacé par `<ProjectSwitcher projectName projects reviews onSwitch={pickProject} onRefresh={refreshProjects} />` — zéro nouveau code, portage direct (props déjà toutes câblées côté BuilderPane). Bonus gratuit du composant V1 : recherche filtrante, tri Récent/Nom persisté, projet actif en tête. Preuves : tsc backend propre (hors `_prove-*` préexistant) · build UI vert · navigateur (backend/Vite déjà tournants) — menu déroulant avec vraies icônes `<Star>` jaunes pleines/vides par projet (`paper-storm` ★★★★☆, `mango-mont-saint-michel` ★★★★★). [[composer-os]] · [[shell-2-0]]. Zéro git.

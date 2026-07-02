@@ -17,6 +17,7 @@ import { slugify } from "../slugify.js";
 import { useAppState } from "../state/AppState";
 import { useVersions } from "../hooks/useVersions.js";
 import ConfirmModal from "../components/ConfirmModal.jsx";
+import { ProjectSwitcher } from "../components/Header.jsx";
 import { EmptyState, Button, Textarea, Modal, cx, TEXT } from "../design";
 
 const Chat = lazy(() => import("../Chat.jsx"));
@@ -457,21 +458,13 @@ export default function BuilderPane() {
           Nouveau
         </Button>
         <FolderOpen size={14} className="text-faint" />
-        <select
-          value={projectName}
-          onChange={(e) => pickProject(e.target.value)}
-          aria-label="Choisir un projet"
-          className={cx(TEXT.base, "max-w-[240px] rounded-lg border border-edge bg-bg px-2 py-1 text-ink outline-none focus:border-faint")}
-        >
-          <option value="">— choisir un projet —</option>
-          {projects.map((p) => {
-            // Étoiles (Unicode) accolées au nom : repérer d'un coup d'œil les beaux/mauvais projets.
-            // Un <option> natif n'accepte que du texte → glyphes ★/☆ plutôt qu'une icône.
-            const s = reviews[p]?.score ?? 0;
-            const stars = s > 0 ? `${"★".repeat(s)}${"☆".repeat(5 - s)}  ` : "";
-            return <option key={p} value={p}>{stars}{p}</option>;
-          })}
-        </select>
+        <ProjectSwitcher
+          projectName={projectName || "— choisir un projet —"}
+          projects={projects}
+          reviews={reviews}
+          onSwitch={pickProject}
+          onRefresh={refreshProjects}
+        />
         <span className={cx(TEXT.xs, "font-mono text-dim")}>${cost.toFixed(4)}</span>
 
         {/* — Droite : dosage de style · palier/gros-projet · publier/GitHub/export · supprimer — */}
