@@ -325,9 +325,9 @@ export default function WorkspaceTools({
         {canGithub && (
           <RailBtn icon={GitFork} label="GitHub" active={active === "github"} onClick={() => toggle("github")} />
         )}
-        <RailBtn icon={Sparkles} label="Perfect Plan" active={active === "perfectPlan" || Boolean(perfectPlanContract)} onClick={() => toggle("perfectPlan")} />
+        {show("perfectPlan") && <RailBtn icon={Sparkles} label="Perfect Plan" active={active === "perfectPlan" || Boolean(perfectPlanContract)} onClick={() => toggle("perfectPlan")} />}
         {/* #139 Gros Projet — le Kanban de pages/stages du chantier */}
-        <RailBtn icon={Hammer} label="Chantier (Gros Projet)" active={active === "chantier"} onClick={() => toggle("chantier")} />
+        {show("chantier") && <RailBtn icon={Hammer} label="Chantier (Gros Projet)" active={active === "chantier"} onClick={() => toggle("chantier")} />}
 
         <Sep />
 

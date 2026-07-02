@@ -10,6 +10,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import {
   FolderOpen, Boxes, Plus, Trash2, Zap, Gem, Shield, Sparkles, ChevronDown,
   Rocket, Cloud, Triangle, Globe, GitBranch, Download, ExternalLink, Loader2, SlidersHorizontal,
+  Hammer, Layers, X,
 } from "lucide-react";
 import { api } from "../api";
 import { slugify } from "../slugify.js";
@@ -21,6 +22,8 @@ import { EmptyState, Button, Textarea, Modal, cx, TEXT } from "../design";
 const Chat = lazy(() => import("../Chat.jsx"));
 const Preview = lazy(() => import("../Preview.jsx"));
 const WorkspaceTools = lazy(() => import("../components/WorkspaceTools.jsx"));
+const PerfectPlan = lazy(() => import("../components/PerfectPlan.jsx"));
+const ProjectKanban = lazy(() => import("../components/ProjectKanban.jsx"));
 
 const PROJECT_KEY = "mangoos.v2.project";
 const TIER_KEY = "mangoos.v2.buildTier";
@@ -218,6 +221,13 @@ export default function BuilderPane() {
   const [autoPrompt, setAutoPrompt] = useState(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newDesc, setNewDesc] = useState("");
+  const [newIsBig, setNewIsBig] = useState(false); // fork « Gros projet » de la modale de création
+  // Flux GROS PROJET (Perfect Plan → squelette → Chantier/Kanban) — amont, pas dans le rail.
+  const [isBigProject, setIsBigProject] = useState(false); // le projet courant a-t-il un Perfect Plan ?
+  const [perfectPlanFor, setPerfectPlanFor] = useState(null); // nom du projet dont l'assistant Perfect Plan est ouvert
+  const [chantierOpen, setChantierOpen] = useState(false); // panneau Kanban ouvert
+  const [buildRequest, setBuildRequest] = useState(null); // Kanban → Chat (build d'un incrément)
+  const [planRefresh, setPlanRefresh] = useState(0); // force le Kanban à recharger après un tour
   // Rail workspace : réflexion visible + dosage de style (persisté par projet, comme la 1.0).
   const [showThinking, setShowThinking] = useState(true);
   const [styleStrength, setStyleStrength] = useState(100);
@@ -266,11 +276,22 @@ export default function BuilderPane() {
     try { localStorage.setItem(`mangoos.styleStrength.${projectName}`, String(v)); } catch { /* localStorage indispo */ }
   };
 
+  // Détecte si le projet courant est un GROS PROJET (a un Perfect Plan) → mode projet + Chantier.
+  useEffect(() => {
+    if (!projectName) { setIsBigProject(false); return; }
+    let alive = true;
+    api(`/api/perfect-plan/${encodeURIComponent(projectName)}`)
+      .then((c) => { if (alive) setIsBigProject(Boolean(c?.answers?.length)); })
+      .catch(() => { if (alive) setIsBigProject(false); });
+    return () => { alive = false; };
+  }, [projectName]);
+
   const pickProject = (name) => {
     setProjectName(name);
     setPreviewUrl(null);
     setPreviewKey((k) => k + 1);
     setAutoPrompt(null);
+    setChantierOpen(false);
   };
 
   // Changer le palier de build : persiste, et l'applique aussitôt si on est en mode build.
@@ -281,20 +302,22 @@ export default function BuilderPane() {
   };
 
   // Le chat rapporte "elite" quand on clique Construire (helper Chat), "discuss" pour
-  // Planifier/Discuter. On substitue le palier choisi au "elite" générique → Construire
-  // envoie réellement mvp/elite/finition/esthetique. Planifier/Discuter restent intacts.
+  // Planifier/Discuter. Gros projet → Construire envoie mode "projet" (squelette+incréments) ;
+  // petit projet → le palier choisi (mvp/elite/finition/esthetique). Discuter intact.
   const handleChatMode = ({ model, mode }) => {
-    setChatMode({ model, mode: mode === "elite" ? buildTier : mode });
+    setChatMode({ model, mode: mode === "elite" ? (isBigProject ? "projet" : buildTier) : mode });
   };
 
-
-  // Règle UX de Raf (documentée dans NewProjectForm 1.0, « je me suis fait avoir ») :
-  // ce formulaire ne sert QU'À NOMMER — AUCUNE construction n'est lancée. Le composer
-  // s'ouvre VIDE ; le démarrage « depuis une idée » reste l'affaire de l'Accueil/Ideation.
+  // Règle UX de Raf : le formulaire ne fait que NOMMER (petit projet = composer vide).
   const createProject = () => {
     const raw = newDesc.trim();
     if (!raw) return;
     const name = slugify(raw);
+    if (newIsBig) {
+      // GROS PROJET : on ouvre l'assistant Perfect Plan AVANT d'ouvrir le projet.
+      setPerfectPlanFor(name);
+      return;
+    }
     setNewOpen(false);
     setNewDesc("");
     setProjects((prev) => (prev.includes(name) ? prev : [name, ...prev]));
@@ -303,6 +326,40 @@ export default function BuilderPane() {
     setPreviewKey((k) => k + 1);
     setAutoPrompt(null); // composer vide — c'est Raf qui décide de Construire/Discuter/Planifier
     pushToast("ok", `Projet « ${name} » créé — décris, discute ou planifie quand tu veux`);
+  };
+
+  // GROS PROJET : l'assistant Perfect Plan est validé → enregistre le contrat, ouvre le
+  // projet en mode "projet", et amorce la pose du squelette (SCAFFOLD_RULES côté backend).
+  const launchBigProject = async ({ answers, refs }) => {
+    const name = perfectPlanFor;
+    setPerfectPlanFor(null);
+    setNewOpen(false);
+    setNewDesc("");
+    setNewIsBig(false);
+    try {
+      await api(`/api/perfect-plan/${encodeURIComponent(name)}`, { method: "POST", body: { answers, refs } });
+    } catch { /* toast global — mais on continue d'ouvrir le projet */ }
+    setProjects((prev) => (prev.includes(name) ? prev : [name, ...prev]));
+    setProjectName(name);
+    setIsBigProject(true);
+    setPreviewUrl(null);
+    setPreviewKey((k) => k + 1);
+    setChatMode({ model: "eleve", mode: "projet" });
+    setAutoPrompt(
+      "Démarre ce gros projet : pose d'abord le SQUELETTE (design system + router multi-pages + layout partagé + pages placeholder) selon le Perfect Plan, puis écris le plan des pages/stages. Ne construis pas encore le contenu détaillé.",
+    );
+    pushToast("ok", `Gros projet « ${name} » — pose du squelette lancée`);
+  };
+
+  // Kanban → Chat : construit un incrément (page/stage). Repris de App.jsx (1.0).
+  const buildIncrement = (inc) => {
+    setChatMode({ model: "eleve", mode: "projet" });
+    const prompt =
+      `Construis l'incrément « ${inc.title} »${inc.route ? ` (route ${inc.route})` : ""}. ` +
+      `Ne touche qu'à cette page/stage, réutilise le squelette existant (router, layout, design tokens, modèle de données), ` +
+      `puis marque cet incrément "done" dans .project-plan.json.`;
+    setBuildRequest({ id: Date.now(), prompt, incrementId: inc.id });
+    setChantierOpen(false);
   };
 
   // Publication / GitHub — endpoints 1.0 (POST /api/deploy, /api/github). Peuvent
@@ -384,10 +441,21 @@ export default function BuilderPane() {
         </select>
         <span className={cx(TEXT.xs, "font-mono text-dim")}>${cost.toFixed(4)}</span>
 
-        {/* — Droite : dosage de style · palier de build · publier/GitHub/export · supprimer — */}
+        {/* — Droite : dosage de style · palier/gros-projet · publier/GitHub/export · supprimer — */}
         <div className="ml-auto flex items-center gap-2">
           {projectName && <StyleControl value={styleStrength} onChange={changeStyleStrength} />}
-          <ModeSelector tier={buildTier} onPick={changeTier} />
+          {isBigProject ? (
+            <>
+              <span className={cx(TEXT.base, "flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2 py-1 text-accent-soft")} title="Projet multi-pages piloté par un plan">
+                <Layers size={13} /> Gros projet
+              </span>
+              <Button variant="secondary" size="sm" icon={<Hammer size={13} />} onClick={() => setChantierOpen(true)}>
+                Chantier
+              </Button>
+            </>
+          ) : (
+            <ModeSelector tier={buildTier} onPick={changeTier} />
+          )}
           {projectName && (
             <>
               <div className="mx-0.5 h-5 w-px bg-edge-soft" />
@@ -443,7 +511,7 @@ export default function BuilderPane() {
               onToggleThinking={() => setShowThinking((v) => !v)}
               styleStrength={styleStrength}
               onStyleStrength={changeStyleStrength}
-              hidden={["memoire", "mangoqa", "mirror", "thinking", "style"]}
+              hidden={["memoire", "mangoqa", "mirror", "thinking", "style", "perfectPlan", "chantier"]}
             />
             <Chat
               key={projectName}
@@ -453,10 +521,12 @@ export default function BuilderPane() {
               template={null}
               autoPrompt={autoPrompt}
               onAutoPromptConsumed={() => setAutoPrompt(null)}
+              buildRequest={buildRequest}
+              onBuildConsumed={() => setBuildRequest(null)}
               onPreviewUrl={setPreviewUrl}
               onCost={(c) => setCost((prev) => prev + c)}
               onContext={() => {}}
-              onAgentDone={() => { setPreviewKey((k) => k + 1); refreshVersions(); }}
+              onAgentDone={() => { setPreviewKey((k) => k + 1); refreshVersions(); setPlanRefresh((n) => n + 1); }}
               onChatMode={handleChatMode}
               onToast={pushToast}
               showThinking={showThinking}
@@ -480,19 +550,17 @@ export default function BuilderPane() {
 
       <Modal
         open={newOpen}
-        onClose={() => setNewOpen(false)}
+        onClose={() => { setNewOpen(false); setNewIsBig(false); }}
         title="Nouveau projet"
         footer={
           <>
-            <Button variant="ghost" onClick={() => setNewOpen(false)}>Annuler</Button>
-            <Button variant="primary" disabled={!newDesc.trim()} onClick={createProject}>Créer &amp; ouvrir l'atelier</Button>
+            <Button variant="ghost" onClick={() => { setNewOpen(false); setNewIsBig(false); }}>Annuler</Button>
+            <Button variant="primary" disabled={!newDesc.trim()} onClick={createProject}>
+              {newIsBig ? "Définir le plan →" : "Créer & ouvrir l'atelier"}
+            </Button>
           </>
         }
       >
-        <p className="mb-2 text-dim">
-          Nomme le projet — l'atelier s'ouvre avec le composer <span className="text-ink">vide</span> : aucune
-          construction n'est lancée maintenant, c'est toi qui décides ensuite (Construire / Discuter / Planifier).
-        </p>
         <Textarea
           autoFocus
           rows={1}
@@ -502,9 +570,51 @@ export default function BuilderPane() {
           placeholder="nom-du-projet — ex. mango-boutique"
         />
         {newDesc.trim() && slugify(newDesc) !== newDesc.trim() && (
-          <p className="mt-2 font-mono text-[11px] text-faint">Créé sous : workspace/{slugify(newDesc)}</p>
+          <p className="mt-1.5 font-mono text-[11px] text-faint">Créé sous : workspace/{slugify(newDesc)}</p>
         )}
+
+        {/* Aiguillage : petit projet (rapide) vs gros projet (plan + chantier). */}
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <button
+            onClick={() => setNewIsBig(false)}
+            className={cx("rounded-xl border p-3 text-left transition-colors", !newIsBig ? "border-accent/60 bg-accent/8" : "border-edge hover:border-faint")}
+          >
+            <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink"><Sparkles size={14} className={!newIsBig ? "text-accent" : "text-dim"} /> Rapide</div>
+            <p className="mt-1 text-[11px] leading-snug text-faint">1 app / 1 page. L'atelier s'ouvre vide, tu décides ensuite.</p>
+          </button>
+          <button
+            onClick={() => setNewIsBig(true)}
+            className={cx("rounded-xl border p-3 text-left transition-colors", newIsBig ? "border-accent/60 bg-accent/8" : "border-edge hover:border-faint")}
+          >
+            <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink"><Layers size={14} className={newIsBig ? "text-accent" : "text-dim"} /> Gros projet</div>
+            <p className="mt-1 text-[11px] leading-snug text-faint">Multi-pages/stages. On pose un plan (Perfect Plan) puis un Chantier page par page.</p>
+          </button>
+        </div>
       </Modal>
+
+      {/* Assistant Perfect Plan (gros projet) — les 5 questions + références. */}
+      {perfectPlanFor && (
+        <Suspense fallback={null}>
+          <PerfectPlan onClose={() => setPerfectPlanFor(null)} onLaunch={launchBigProject} />
+        </Suspense>
+      )}
+
+      {/* Panneau Chantier (Kanban) — seulement pour un gros projet, ouvert depuis la barre. */}
+      {chantierOpen && projectName && (
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/40" onMouseDown={(e) => { if (e.target === e.currentTarget) setChantierOpen(false); }}>
+          <div className="flex h-full w-[600px] max-w-[92vw] animate-fade flex-col border-l border-edge bg-panel shadow-2xl">
+            <div className="flex items-center justify-between border-b border-edge-soft px-4 py-3">
+              <span className="flex items-center gap-2 text-[14px] font-semibold"><Hammer size={16} className="text-accent-soft" /> Chantier — {projectName}</span>
+              <Button variant="ghost" size="sm" iconOnly icon={<X size={15} />} onClick={() => setChantierOpen(false)} aria-label="Fermer" />
+            </div>
+            <div className="min-h-0 flex-1 overflow-hidden">
+              <Suspense fallback={<div className={cx(TEXT.base, "m-auto p-6 text-faint")}>Chargement du chantier…</div>}>
+                <ProjectKanban projectName={projectName} onBuild={buildIncrement} refreshKey={planRefresh} busy={false} />
+              </Suspense>
+            </div>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal config={confirmConfig} onClose={() => setConfirmConfig(null)} />
     </div>
