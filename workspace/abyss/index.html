@@ -5,6 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="ABYSS — Plongée immersive dans les grands fonds marins. Explorez les zones de profondeur, découvrez les créatures abyssales et testez vos connaissances." />
     <title>ABYSS — Plongée dans les grands fonds marins</title>
+      <script data-mangoos="error-relay">
+      // MangoOS error relay - reports runtime errors to the builder UI
+      (function () {
+        function report(message) {
+          try {
+            window.parent.postMessage(
+              { source: "mangoos-preview", message: String(message).slice(0, 2000) },
+              "*"
+            );
+          } catch (_) {}
+        }
+        window.addEventListener("error", function (e) {
+          report(e.message + (e.filename ? " (" + e.filename.split("/").pop() + ":" + e.lineno + ")" : ""));
+        });
+        window.addEventListener("unhandledrejection", function (e) {
+          var r = e.reason;
+          report("Unhandled promise rejection: " + (r && r.message ? r.message : r));
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

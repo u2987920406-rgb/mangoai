@@ -61,6 +61,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[cartographie-projet]] | Modèle « photogrammétrie → indexation IA » : EXIF/AST + keypoints/embeddings + recalage/vault — à sortir à la Phase 2 de #139 | ✅ écrite |
 | [[agents-specialises]] | Constellation UX/UI · Layout · PDF — spécialistes Gemma locaux, `ModelProfile`, relay paramétrable — #145 | ✅ écrite |
 | [[audit-general]] | Super audit rétrospectif + empirique : évolution, validé vs manquant, 3 écarts honnêtes (souveraineté minoritaire · coût cloud non tracé · promesses de périphérie) — 2026-06 | ✅ écrite |
+| [[audit-2-0]] | Audit complet préparant la refonte 2.0 : moteur mature à consolider, UI = vrai chantier (design system, état, monolithes, a11y) — feuille de route A→E, rapport `docs/audit-mango-2.0.md` — 2026-07-02 | ✅ écrite |
 
 ## Veille externe
 
