@@ -7,11 +7,11 @@ import {
   FolderOpen, Boxes, Image as ImageIcon, Music2, Bot, Dna, Brain,
   BookOpen, Lightbulb, FileText, Palette, Settings, Sun, Moon, Search,
   Sparkles, Home as HomeIcon, Mic, Command,
-  Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft,
+  Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { getTheme, toggleTheme } from "../theme.js";
-import { BrandMark, Button, Chip, Badge, Input, Textarea, Modal, EmptyState, TEXT, SECTION_LABEL, cx } from "../design";
+import { BrandMark, Button, Chip, Badge, Input, Textarea, Modal, EmptyState, ErrorBoundary, TEXT, SECTION_LABEL, cx } from "../design";
 import { api, onApiError } from "../api";
 import { AppStateProvider, useAppState } from "../state/AppState";
 
@@ -64,17 +64,21 @@ const ALL_ITEMS = SECTIONS.flatMap((s) => s.items.map((it) => ({ ...it, section:
 
 /* ── Briques locales de la maquette ───────────────────────────────── */
 
-function NavItem({ item, active, onClick }) {
+function NavItem({ item, active, onClick, collapsed = false }) {
   const Icon = item.icon;
   return (
     <button
       onClick={onClick}
-      className={`group flex w-full items-center gap-2.5 rounded-lg px-2.5 py-[7px] text-left text-[13px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-accent ${
-        active ? "bg-accent/12 font-medium text-ink" : "text-dim hover:bg-raised hover:text-ink"
-      }`}
+      aria-current={active ? "page" : undefined}
+      title={collapsed ? item.label : undefined}
+      className={cx(
+        "group flex w-full items-center gap-2.5 rounded-lg py-[7px] text-left text-[13px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent",
+        collapsed ? "justify-center px-0" : "px-2.5",
+        active ? "bg-accent/12 font-medium text-ink" : "text-dim hover:bg-raised hover:text-ink",
+      )}
     >
-      <Icon size={16} strokeWidth={1.8} className={active ? "text-accent" : "text-faint group-hover:text-dim"} />
-      {item.label}
+      <Icon size={16} strokeWidth={1.8} className={cx("shrink-0", active ? "text-accent" : "text-faint group-hover:text-dim")} />
+      {!collapsed && item.label}
     </button>
   );
 }
@@ -268,19 +272,40 @@ function ToastStack() {
 }
 
 /* ── Shell ─────────────────────────────────────────────────────────── */
+const COLLAPSE_KEY = "mangoos.v2.sidebarCollapsed";
+
 function ShellV2Inner() {
   const { active, go, back, canBack, pushToast, openProject } = useAppState();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [, setThemeTick] = useState(0);
+  const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
+
+  const toggleCollapsed = () => {
+    setCollapsed((v) => {
+      const next = !v;
+      try { localStorage.setItem(COLLAPSE_KEY, next ? "1" : "0"); } catch { /* localStorage indispo */ }
+      return next;
+    });
+  };
 
   useEffect(() => {
     const onKey = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setPaletteOpen((v) => !v); }
+      if ((e.metaKey || e.ctrlKey) && e.key === "b") { e.preventDefault(); toggleCollapsed(); } // ⌘B replie la sidebar (pattern VS Code)
       if (e.altKey && e.key === "ArrowLeft") { e.preventDefault(); back(); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [back]);
+
+  // Repli auto sous une fenêtre étroite (< 900px) — desktop-first, mais utilisable serré.
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 900px)");
+    const apply = () => { if (mq.matches) setCollapsed(true); };
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
+  }, []);
 
   // Le client API remonte ses erreurs dans les toasts — câblé UNE fois ici.
   useEffect(() => onApiError((e) => pushToast("error", e.userMessage)), [pushToast]);
@@ -290,31 +315,56 @@ function ShellV2Inner() {
 
   return (
     <div className="flex h-screen bg-bg text-ink">
-      {/* Sidebar */}
-      <aside className="flex w-[248px] shrink-0 flex-col border-r border-edge-soft bg-panel">
-        <div className="flex items-center gap-2 px-4 pb-2 pt-4">
-          <BrandMark size={15} />
-          <span className="rounded-full border border-edge px-1.5 py-px text-[9.5px] font-medium text-faint">2.0</span>
+      {/* Sidebar — largeur animée (repliable ⌘B, auto sous 900px) */}
+      <aside
+        className={cx(
+          "flex shrink-0 flex-col border-r border-edge-soft bg-panel transition-[width] duration-200 ease-out",
+          collapsed ? "w-[60px]" : "w-[248px]",
+        )}
+      >
+        <div className={cx("flex items-center pb-2 pt-4", collapsed ? "justify-center px-0" : "gap-2 px-4")}>
+          {collapsed ? (
+            <button onClick={toggleCollapsed} title="Déplier (⌘B)" aria-label="Déplier la barre latérale" className="text-dim transition-colors hover:text-ink">
+              <PanelLeft size={17} />
+            </button>
+          ) : (
+            <>
+              <BrandMark size={15} />
+              <span className="rounded-full border border-edge px-1.5 py-px text-[9.5px] font-medium text-faint">2.0</span>
+              <button onClick={toggleCollapsed} title="Replier (⌘B)" aria-label="Replier la barre latérale" className="ml-auto text-faint transition-colors hover:text-ink">
+                <PanelLeftClose size={16} />
+              </button>
+            </>
+          )}
         </div>
 
-        <div className="px-2.5 pt-2">
+        <div className={cx("pt-2", collapsed ? "px-2" : "px-2.5")}>
           <button
             onClick={() => setPaletteOpen(true)}
-            className="flex w-full items-center gap-2 rounded-lg border border-edge bg-bg px-2.5 py-[7px] text-[12.5px] text-faint transition-colors duration-150 hover:border-faint hover:text-dim"
+            title={collapsed ? "Rechercher (⌘K)" : undefined}
+            aria-label="Rechercher"
+            className={cx(
+              "flex w-full items-center rounded-lg border border-edge bg-bg py-[7px] text-[12.5px] text-faint transition-colors duration-150 hover:border-faint hover:text-dim",
+              collapsed ? "justify-center px-0" : "gap-2 px-2.5",
+            )}
           >
             <Search size={14} />
-            Rechercher…
-            <span className="ml-auto flex items-center gap-0.5 text-[10px]"><Command size={10} />K</span>
+            {!collapsed && (
+              <>
+                Rechercher…
+                <span className="ml-auto flex items-center gap-0.5 text-[10px]"><Command size={10} />K</span>
+              </>
+            )}
           </button>
         </div>
 
-        <nav className="flex-1 overflow-y-auto px-2.5 pb-3">
+        <nav aria-label="Sections" className={cx("flex-1 overflow-y-auto overflow-x-hidden pb-3", collapsed ? "px-2" : "px-2.5")}>
           {SECTIONS.map((s) => (
             <div key={s.id}>
-              <div className={cx(SECTION_LABEL, "px-2.5 pb-1 pt-4")}>{s.label}</div>
+              {collapsed ? <div className="mx-auto my-2 w-6 border-t border-edge-soft" /> : <div className={cx(SECTION_LABEL, "px-2.5 pb-1 pt-4")}>{s.label}</div>}
               <div className="space-y-0.5">
                 {s.items.map((it) => (
-                  <NavItem key={it.id} item={it} active={active === it.id} onClick={() => go(it.id)} />
+                  <NavItem key={it.id} item={it} active={active === it.id} collapsed={collapsed} onClick={() => go(it.id)} />
                 ))}
               </div>
             </div>
@@ -322,16 +372,19 @@ function ShellV2Inner() {
         </nav>
 
         {/* Pied : souveraineté + réglages + thème */}
-        <div className="border-t border-edge-soft p-2.5">
-          <div className="mb-1.5 flex items-center gap-2 rounded-lg bg-bg px-2.5 py-2">
-            <Activity size={13} className="text-ok" />
-            <span className="text-[11px] text-dim">Souverain · GLM 5.2</span>
-            <span className="ml-auto text-[11px] font-medium text-ok">95 %</span>
-          </div>
-          <div className="flex items-center gap-0.5">
+        <div className={cx("border-t border-edge-soft", collapsed ? "p-2" : "p-2.5")}>
+          {!collapsed && (
+            <div className="mb-1.5 flex items-center gap-2 rounded-lg bg-bg px-2.5 py-2">
+              <Activity size={13} className="text-ok" />
+              <span className="text-[11px] text-dim">Souverain · GLM 5.2</span>
+              <span className="ml-auto text-[11px] font-medium text-ok">95 %</span>
+            </div>
+          )}
+          <div className={cx("flex items-center", collapsed ? "flex-col gap-0.5" : "gap-0.5")}>
             <NavItem
               item={{ id: "reglages", label: "Réglages", icon: Settings }}
               active={isReglages}
+              collapsed={collapsed}
               onClick={() => go("reglages")}
             />
             <Button
@@ -373,13 +426,19 @@ function ShellV2Inner() {
           </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement…</div>}>
-            {isReglages ? <ReglagesReel onBack={back} onOpenProject={(name) => openProject(name)} />
-              : active === "accueil" ? <AccueilPane />
-              : active === "composants" ? <VitrinePane />
-              : active === "builder" ? <BuilderPane />
-              : <AppsPane sectionId={active} />}
-          </Suspense>
+          {/* key={active} → fondu doux à chaque changement de section ; ErrorBoundary →
+              un panneau qui plante n'emporte pas le shell (resetKey l'efface au changement). */}
+          <div key={active} className="h-full animate-fade">
+            <ErrorBoundary label={isReglages ? "Réglages" : activeItem?.label} resetKey={active}>
+              <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement…</div>}>
+                {isReglages ? <ReglagesReel onBack={back} onOpenProject={(name) => openProject(name)} />
+                  : active === "accueil" ? <AccueilPane />
+                  : active === "composants" ? <VitrinePane />
+                  : active === "builder" ? <BuilderPane />
+                  : <AppsPane sectionId={active} />}
+              </Suspense>
+            </ErrorBoundary>
+          </div>
         </div>
       </main>
 
@@ -391,8 +450,10 @@ function ShellV2Inner() {
 
 export default function ShellV2() {
   return (
-    <AppStateProvider>
-      <ShellV2Inner />
-    </AppStateProvider>
+    <ErrorBoundary label="MangoOS">
+      <AppStateProvider>
+        <ShellV2Inner />
+      </AppStateProvider>
+    </ErrorBoundary>
   );
 }

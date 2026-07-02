@@ -6,4 +6,5 @@ export { Badge, Chip, type BadgeProps, type ChipProps, type BadgeTone } from "./
 export { Modal, type ModalProps } from "./Modal";
 export { EmptyState, type EmptyStateProps } from "./EmptyState";
 export { BrandMark, type BrandMarkProps } from "./BrandMark";
+export { ErrorBoundary } from "./ErrorBoundary";
 export { TEXT, SECTION_LABEL, RADIUS, TRANSITION, FOCUS_RING, cx } from "./tokens";
