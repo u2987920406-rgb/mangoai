@@ -87,18 +87,21 @@ export default function BuilderPane() {
     setAutoPrompt(null);
   };
 
+  // Règle UX de Raf (documentée dans NewProjectForm 1.0, « je me suis fait avoir ») :
+  // ce formulaire ne sert QU'À NOMMER — AUCUNE construction n'est lancée. Le composer
+  // s'ouvre VIDE ; le démarrage « depuis une idée » reste l'affaire de l'Accueil/Ideation.
   const createProject = () => {
-    const desc = newDesc.trim();
-    if (!desc) return;
-    const name = slugify(desc);
+    const raw = newDesc.trim();
+    if (!raw) return;
+    const name = slugify(raw);
     setNewOpen(false);
     setNewDesc("");
     setProjects((prev) => (prev.includes(name) ? prev : [name, ...prev]));
     setProjectName(name);
     setPreviewUrl(null);
     setPreviewKey((k) => k + 1);
-    setAutoPrompt(desc); // le projet naît au premier tour de chat (même mécanique que la 1.0)
-    pushToast("ok", `Projet « ${name} » — construction lancée`);
+    setAutoPrompt(null); // composer vide — c'est Raf qui décide de Construire/Discuter/Planifier
+    pushToast("ok", `Projet « ${name} » créé — décris, discute ou planifie quand tu veux`);
   };
 
   // Suppression (définitive) — même endpoint que la 1.0, derrière confirmation.
@@ -214,21 +217,24 @@ export default function BuilderPane() {
         footer={
           <>
             <Button variant="ghost" onClick={() => setNewOpen(false)}>Annuler</Button>
-            <Button variant="primary" disabled={!newDesc.trim()} onClick={createProject}>Créer et construire</Button>
+            <Button variant="primary" disabled={!newDesc.trim()} onClick={createProject}>Créer &amp; ouvrir l'atelier</Button>
           </>
         }
       >
-        <p className="mb-2 text-dim">Décris l'app — le nom du projet est dérivé, et la construction démarre aussitôt.</p>
+        <p className="mb-2 text-dim">
+          Nomme le projet — l'atelier s'ouvre avec le composer <span className="text-ink">vide</span> : aucune
+          construction n'est lancée maintenant, c'est toi qui décides ensuite (Construire / Discuter / Planifier).
+        </p>
         <Textarea
           autoFocus
-          rows={3}
+          rows={1}
           value={newDesc}
           onChange={(e) => setNewDesc(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); createProject(); } }}
-          placeholder="Ex : un portfolio minimaliste pour photographe, 3 pages, galerie filtrable…"
+          placeholder="nom-du-projet — ex. mango-boutique"
         />
-        {newDesc.trim() && (
-          <p className="mt-2 font-mono text-[11px] text-faint">→ workspace/{slugify(newDesc)}</p>
+        {newDesc.trim() && slugify(newDesc) !== newDesc.trim() && (
+          <p className="mt-2 font-mono text-[11px] text-faint">Créé sous : workspace/{slugify(newDesc)}</p>
         )}
       </Modal>
 

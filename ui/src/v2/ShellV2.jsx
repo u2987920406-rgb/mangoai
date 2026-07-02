@@ -19,6 +19,9 @@ import { AppStateProvider, useAppState } from "../state/AppState";
 const BuilderPane = lazy(() => import("./BuilderPane.jsx"));
 // Accueil conversationnel (home-chat 1.0 + graduation vers l'atelier).
 const AccueilPane = lazy(() => import("./AccueilPane.jsx"));
+// Toutes les autres sections : vraies apps 1.0 fusionnées (onglets) + vrai Réglages.
+const AppsPane = lazy(() => import("./AppsPane.jsx"));
+const ReglagesReel = lazy(() => import("../components/Reglages.jsx"));
 
 /* ── Catalogue 2.0 (fusions validées) ─────────────────────────────── */
 const SECTIONS = [
@@ -55,13 +58,6 @@ const SECTIONS = [
       { id: "composants", label: "Composants",    icon: SwatchBook, desc: "Vitrine du design system 2.0 — la cohérence en un coup d'œil." },
     ],
   },
-];
-
-const REGLAGES_GROUPS = [
-  { label: "Compte",         items: ["Facturation"] },
-  { label: "Automatisation", items: ["Tâches planifiées", "Hooks", "Review nocturne"] },
-  { label: "Observatoire",   items: ["Souveraineté", "Métriques", "Traces", "Évolution"] },
-  { label: "Veille",         items: ["Radar & veille IA", "Tokeniseur"] },
 ];
 
 const ALL_ITEMS = SECTIONS.flatMap((s) => s.items.map((it) => ({ ...it, section: s.label })));
@@ -245,55 +241,8 @@ function VitrinePane() {
   );
 }
 
-/* Panneau générique de la maquette pour les apps non encore migrées. */
-function PlaceholderPane({ item }) {
-  return (
-    <div className="mx-auto w-full max-w-[860px] animate-fade-up px-8 py-10">
-      <h1 className={TEXT.xl}>{item.label}</h1>
-      <p className={cx(TEXT.base, "mt-1.5 max-w-[560px] leading-relaxed text-dim")}>{item.desc}</p>
-      <div className="mt-8 grid grid-cols-3 gap-3">
-        {[...Array(6)].map((_, i) => (
-          <div key={i} className="h-28 rounded-xl border border-edge-soft bg-panel p-4">
-            <div className="h-2.5 w-2/3 rounded bg-raised" />
-            <div className="mt-2 h-2 w-1/2 rounded bg-raised/70" />
-          </div>
-        ))}
-      </div>
-      <div className="mt-6 rounded-xl border border-dashed border-edge px-4 py-3 text-[12px] text-faint">
-        Maquette — l'app réelle sera migrée ici en Phase C (audit-mango-2.0 §5).
-      </div>
-    </div>
-  );
-}
-
-function ReglagesPane() {
-  return (
-    <div className="mx-auto w-full max-w-[860px] animate-fade-up px-8 py-10">
-      <h1 className={TEXT.xl}>Réglages</h1>
-      <p className={cx(TEXT.base, "mt-1.5 text-dim")}>Juste ce qu'il faut — 4 groupes, tout le reste a fusionné.</p>
-      <div className="mt-8 space-y-6">
-        {REGLAGES_GROUPS.map((g) => (
-          <div key={g.label}>
-            <div className={cx(SECTION_LABEL, "mb-2 px-0")}>{g.label}</div>
-            <div className="overflow-hidden rounded-xl border border-edge-soft bg-panel">
-              {g.items.map((it, i) => (
-                <button
-                  key={it}
-                  className={`flex w-full items-center justify-between px-4 py-3 text-left text-[13px] text-ink transition-colors duration-100 hover:bg-raised ${
-                    i > 0 ? "border-t border-edge-soft" : ""
-                  }`}
-                >
-                  {it}
-                  <span className="text-faint">›</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
+// Les placeholders et la façade Réglages ont disparu : toutes les sections montent
+// désormais les vraies apps 1.0 (AppsPane) et le vrai Reglages.jsx.
 
 /* Toasts branchés sur l'état global (pont visuel minimal de la maquette). */
 function ToastStack() {
@@ -320,7 +269,7 @@ function ToastStack() {
 
 /* ── Shell ─────────────────────────────────────────────────────────── */
 function ShellV2Inner() {
-  const { active, go, back, canBack, pushToast } = useAppState();
+  const { active, go, back, canBack, pushToast, openProject } = useAppState();
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [, setThemeTick] = useState(0);
 
@@ -424,19 +373,13 @@ function ShellV2Inner() {
           </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
-          {isReglages ? <ReglagesPane />
-            : active === "accueil" ? (
-              <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement…</div>}>
-                <AccueilPane />
-              </Suspense>
-            )
-            : active === "composants" ? <VitrinePane />
-            : active === "builder" ? (
-              <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement du builder…</div>}>
-                <BuilderPane />
-              </Suspense>
-            )
-            : <PlaceholderPane item={activeItem} />}
+          <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement…</div>}>
+            {isReglages ? <ReglagesReel onBack={back} onOpenProject={(name) => openProject(name)} />
+              : active === "accueil" ? <AccueilPane />
+              : active === "composants" ? <VitrinePane />
+              : active === "builder" ? <BuilderPane />
+              : <AppsPane sectionId={active} />}
+          </Suspense>
         </div>
       </main>
 
