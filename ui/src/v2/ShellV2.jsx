@@ -6,10 +6,9 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FolderOpen, Boxes, Image as ImageIcon, Music2, Bot, Dna, Brain,
   BookOpen, Lightbulb, FileText, Palette, Settings, Sun, Moon, Search,
-  Sparkles, Home as HomeIcon, ArrowUp, Mic, Paperclip, Command,
+  Sparkles, Home as HomeIcon, Mic, Command,
   Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft,
 } from "lucide-react";
-import { slugify } from "../slugify.js";
 import { lazy, Suspense } from "react";
 import { getTheme, toggleTheme } from "../theme.js";
 import { BrandMark, Button, Chip, Badge, Input, Textarea, Modal, EmptyState, TEXT, SECTION_LABEL, cx } from "../design";
@@ -18,13 +17,15 @@ import { AppStateProvider, useAppState } from "../state/AppState";
 
 // C3 — l'App Builder RÉEL (Chat + Preview de la 1.0) monté dans le panneau du shell.
 const BuilderPane = lazy(() => import("./BuilderPane.jsx"));
+// Accueil conversationnel (home-chat 1.0 + graduation vers l'atelier).
+const AccueilPane = lazy(() => import("./AccueilPane.jsx"));
 
 /* ── Catalogue 2.0 (fusions validées) ─────────────────────────────── */
 const SECTIONS = [
   {
     id: "creer", label: "Créer",
     items: [
-      { id: "accueil",  label: "Accueil",      icon: HomeIcon,   desc: "Décris ce que tu veux créer — Mango s'occupe du reste." },
+      { id: "accueil",  label: "Accueil",      icon: HomeIcon,   desc: "Discute avec Mango — et si ça devient une app, l'atelier est à un clic." },
       { id: "builder",  label: "App Builder",  icon: FolderOpen, desc: "Générer et itérer une app web complète, aperçu live à côté." },
       { id: "projets",  label: "Projets",      icon: Boxes,      desc: "Gros projets (Kanban incrémental) et suites d'apps — ex Multi-Projet + OS d'apps." },
       { id: "image",    label: "Image",        icon: ImageIcon,  desc: "Création d'images." },
@@ -138,72 +139,7 @@ function CommandPalette({ open, onClose, onGo }) {
   );
 }
 
-/* Accueil — le panneau signature (chat plein cadre, type claude.ai/ChatGPT).
-   FONCTIONNEL : décrire → openProject(slug, prompt) → le builder s'ouvre et
-   le premier prompt part tout seul (même mécanique que la Home 1.0). */
-function AccueilPane() {
-  const { openProject } = useAppState();
-  const [text, setText] = useState("");
-  const inputRef = useRef(null);
-
-  const submit = () => {
-    const desc = text.trim();
-    if (!desc) return;
-    setText("");
-    openProject(slugify(desc), desc);
-  };
-  const fillSuggestion = (s) => {
-    setText(`${s} — `);
-    requestAnimationFrame(() => {
-      const el = inputRef.current;
-      if (el) { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }
-    });
-  };
-
-  return (
-    <div className="hero-glow flex h-full flex-col items-center justify-center px-6">
-      <div className="w-full max-w-[640px] animate-fade-up">
-        <div className="mb-2 text-center">
-          <BrandMark size={26} />
-        </div>
-        <p className="mb-7 text-center text-[14px] text-dim">Que crée-t-on aujourd'hui ?</p>
-        <div className="rounded-2xl border border-edge bg-raised p-3 shadow-lg transition-colors duration-150 focus-within:border-faint">
-          <textarea
-            ref={inputRef}
-            rows={2}
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); submit(); }
-            }}
-            placeholder="Décris ton app, ton image, ta musique…"
-            className="w-full resize-none bg-transparent px-1.5 pt-1 text-[14px] leading-relaxed text-ink outline-none placeholder:text-faint"
-          />
-          <div className="flex items-center gap-1.5 pt-1.5">
-            <Button variant="ghost" iconOnly icon={<Paperclip size={16} />} title="Joindre un fichier" aria-label="Joindre un fichier" />
-            <span className="ml-1 rounded-md border border-edge px-2 py-1 text-[11px] text-dim">GLM 5.2 · souverain</span>
-            <Button variant="ghost" iconOnly icon={<Mic size={16} />} className="ml-auto" title="Entrée vocale" aria-label="Entrée vocale" />
-            <Button
-              variant="primary"
-              iconOnly
-              icon={<ArrowUp size={16} strokeWidth={2.2} />}
-              className="rounded-xl"
-              title="Envoyer (Entrée)"
-              aria-label="Envoyer"
-              disabled={!text.trim()}
-              onClick={submit}
-            />
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {["Landing page animée", "Dashboard avec charts", "Jeu 2D", "App multi-pages"].map((s) => (
-            <Chip key={s} onClick={() => fillSuggestion(s)}>{s}</Chip>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
+// Accueil conversationnel (home-chat + graduation vers l'atelier) — v2/AccueilPane.jsx.
 
 /* Vitrine du design system — tous les composants d'un coup d'œil (preuve B2). */
 function VitrinePane() {
@@ -489,7 +425,11 @@ function ShellV2Inner() {
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
           {isReglages ? <ReglagesPane />
-            : active === "accueil" ? <AccueilPane />
+            : active === "accueil" ? (
+              <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement…</div>}>
+                <AccueilPane />
+              </Suspense>
+            )
             : active === "composants" ? <VitrinePane />
             : active === "builder" ? (
               <Suspense fallback={<div className="flex h-full items-center justify-center text-[13px] text-faint">Chargement du builder…</div>}>

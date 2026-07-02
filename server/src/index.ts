@@ -206,6 +206,11 @@ app.post("/api/home-chat", async (req, res) => {
     res.status(400).json({ error: "messages required" });
     return;
   }
+  // Chaque tour d'accueil repart d'un drapeau d'arrêt PROPRE — même règle que /api/chat.
+  // Sans ça, un seul « Stop » (drapeau module de interrupt.ts) rendait TOUTES les
+  // discussions d'accueil suivantes muettes (« ⏹ Arrêté à ta demande »). Bug débusqué
+  // en montant l'Accueil conversationnel du shell 2.0 (2026-07-02).
+  clearInterrupt();
   const MODEL_MAP: Record<string, string> = {
     sonnet: "claude-sonnet-4-6",
     opus:   "claude-opus-4-8",
