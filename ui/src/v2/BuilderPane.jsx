@@ -211,6 +211,7 @@ function ModeSelector({ tier, onPick }) {
 export default function BuilderPane() {
   const { pushToast, builderSeed, consumeBuilderSeed, newProjectNonce } = useAppState();
   const [projects, setProjects] = useState([]);
+  const [reviews, setReviews] = useState({}); // { nom: { score } } — note 1-5 par projet (#93)
   const [projectName, setProjectName] = useState(() => localStorage.getItem(PROJECT_KEY) || "");
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewKey, setPreviewKey] = useState(0);
@@ -248,7 +249,7 @@ export default function BuilderPane() {
 
   const refreshProjects = useCallback(() => {
     api("/api/projects")
-      .then((d) => setProjects(d.projects ?? []))
+      .then((d) => { setProjects(d.projects ?? []); setReviews(d.reviews ?? {}); })
       .catch(() => {});
   }, []);
   useEffect(() => { refreshProjects(); }, [refreshProjects]);
@@ -463,9 +464,13 @@ export default function BuilderPane() {
           className={cx(TEXT.base, "max-w-[240px] rounded-lg border border-edge bg-bg px-2 py-1 text-ink outline-none focus:border-faint")}
         >
           <option value="">— choisir un projet —</option>
-          {projects.map((p) => (
-            <option key={p} value={p}>{p}</option>
-          ))}
+          {projects.map((p) => {
+            // Étoiles (Unicode) accolées au nom : repérer d'un coup d'œil les beaux/mauvais projets.
+            // Un <option> natif n'accepte que du texte → glyphes ★/☆ plutôt qu'une icône.
+            const s = reviews[p]?.score ?? 0;
+            const stars = s > 0 ? `${"★".repeat(s)}${"☆".repeat(5 - s)}  ` : "";
+            return <option key={p} value={p}>{stars}{p}</option>;
+          })}
         </select>
         <span className={cx(TEXT.xs, "font-mono text-dim")}>${cost.toFixed(4)}</span>
 

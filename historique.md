@@ -2913,6 +2913,22 @@ Raf : « c'est quoi la priorité maintenant ? » (les 4 plans #172-#175 livrés)
 
 **Reste** : la preuve « tient plusieurs jours » se fera **via l'OBS elle-même** — relancer le watcher (avec le fix) puis allumer les gates `ELEVE_HOOKS` / `CRON_AGENTIC` / `ELEVE_DELEGATE_AGENTIC` un par un et mesurer. [[mangoqa]] (point ① Disjoncteur fiabilisé) · [[limites]] L70 ✅.
 
+## Journal — 2026-07-02 (PC maison) : gestion des projets (étoiles/poubelle/lot/apps-revues), étoiles au sélecteur workspace, Fable 5 + sélecteur de cerveau à l'Accueil
+
+Raf, sur le menu Projet et l'Accueil : « il manque la poubelle sur chaque projet, le sélecteur pour jeter plusieurs lots, toutes les apps revues ; je veux les étoiles à côté de chaque projet comme la V1, et dans le menu déroulant du workspace, pour voir d'un coup d'œil les beaux et mauvais projets. En plus : connecte Fable 5 à MangoOS, et le sélecteur de cerveau à l'Accueil n'est pas opérationnel — je veux un menu scroll pour choisir entre Fable 5, Haïku, Sonnet, Opus, GLM 5.2, Qwen, tous les modèles. »
+
+**Méthode** : chargé la référence modèles (skill `claude-api` → Fable 5 = `claude-fable-5`) puis **3 agents en parallèle** pour cartographier la V1 (étoiles/notes · suppression/lot/apps-revues · système de modèles). **Constat clé : presque tout existait déjà côté données/backend — l'essentiel était du câblage UI dans le shell 2.0.**
+
+**(1) Onglet « Mes projets »** (nouveau `ui/src/v2/ProjectsManager.jsx`, monté 1ᵉʳ dans `AppsPane` case `projets`). La note **1-5 étoiles** vient de `.build-review.json` par projet (#93 Revue du build) et `GET /api/projects` renvoyait DÉJÀ la map `reviews` (nom→{score}) — aucun backend à écrire. La vue rend : **étoiles colorées** (composant `Stars`, pleines jaunes + creux, calqué sur le `ProjectSwitcher` V1) ; **poubelle par projet** (réutilise le composant V1 `ConfirmDelete` + `DELETE /api/projects/:name`) ; **sélection multiple** (cases à cocher + « Tout » + barre « N sélectionné · Supprimer la sélection ») via une boucle DELETE côté client ; **filtre « Revus uniquement »** (= la demande « toutes les apps revues », filtre `score>0`). `openProject` (AppState) pour ouvrir dans le Builder.
+
+**(2) Étoiles dans le `<select>` de l'App Builder** (`BuilderPane`). Il **jetait** `d.reviews` de `/api/projects` : ajout d'un state `reviews` + préfixe **★/☆ Unicode** au texte de chaque `<option>`. Limite honnête assumée : un `<select>` NATIF n'accepte que du texte, donc glyphes mono (pas d'icône colorée) — la vraie couleur est dans « Mes projets ».
+
+**(3) Fable 5 connecté** (backend `/api/home-chat`, index.ts). L'agent 3 a prouvé que le provider Claude est **déjà câblé** (`llm-engine.ts` → `askClaude` via l'abonnement, env nettoyé de `ANTHROPIC_API_KEY`) : connecter Fable 5 = **une ligne**, `fable: "claude-fable-5"` ajouté au `MODEL_MAP`. Ajout aussi d'une branche `qwen` → `askLLM(system, msg, { provider: "ollama", model: "qwen3.5:cloud" })` (Qwen n'est pas Claude, routage provider explicite).
+
+**(4) Sélecteur de cerveau opérationnel à l'Accueil** (`AccueilPane`). Le `<span>` statique « GLM 5.2 · souverain · $0 » (et le `model:"eleve"` hardcodé) est remplacé par un **menu déroulant scrollable** (`max-h-64 overflow-y-auto`, banque `MODELS` locale) : GLM 5.2 (souverain $0, défaut) · Fable 5 · Opus 4.8 · Sonnet 4.6 · Haiku 4.5 · Qwen. Le `model` du state est passé à `/api/home-chat` ; `eleve` garde le chemin agentique souverain (askEleveAgentic), les autres passent par askLLM (Claude/Ollama).
+
+**Vérif** : tsc backend propre (hors `_prove-*`) · tsc + build UI verts · **navigateur, backend REDÉMARRÉ** (anti-orphelin 3000, PID 18392) — **Fable 5 répond « Bonjour 👋 »** (vrai appel `claude-fable-5` bout-en-bout) ; « Mes projets » liste 102 projets, filtre revus → étoiles colorées (jusqu'à ★★★★★ pour idee-de-creation-d-agent-design) ; sélection lot → barre « N sélectionné » + « Supprimer la sélection » ; sélecteur Builder = **49 options étoilées** (vérifié DOM) ; console propre. **Limite honnête** : pas de `DELETE /api/projects` groupé/atomique (la boucle DELETE client suffit ; à ajouter si l'atomicité devient nécessaire). **Zéro git (en attente Raf).** [[composer-os]] · [[shell-2-0]] · [[moteur-gout]].
+
 ## Journal — 2026-07-02 (PC maison) : sidebar « Conversation » (reprendre les discussions d'Accueil) + fix d'un bug livré
 
 Raf : « dans la sidebar (Accueil / App Builder / Projets / Images / Musique), il manque juste, sous Accueil, **Conversation** pour revenir à des conversations passées. »

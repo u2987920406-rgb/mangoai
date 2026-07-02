@@ -5,9 +5,20 @@
 // projet workspace, ouvert dans l'App Builder.
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { ArrowUp, Hammer, Mic, Paperclip, Sparkles, X } from "lucide-react";
+import { ArrowUp, ChevronDown, Hammer, Mic, Paperclip, Sparkles, X } from "lucide-react";
 import { useAppState } from "../state/AppState";
 import { BrandMark, Button, Chip, Input, cx, TEXT } from "../design";
+
+// Cerveaux sélectionnables à l'Accueil. `id` = alias envoyé à /api/home-chat (MODEL_MAP côté
+// backend). GLM 5.2 (eleve) = Élève souverain agentique ($0) ; les autres passent par askLLM.
+const MODELS = [
+  { id: "eleve",  label: "GLM 5.2",   hint: "souverain · $0" },
+  { id: "fable",  label: "Fable 5",   hint: "le plus capable" },
+  { id: "opus",   label: "Opus 4.8",  hint: "puissant" },
+  { id: "sonnet", label: "Sonnet 4.6", hint: "équilibré" },
+  { id: "haiku",  label: "Haiku 4.5", hint: "rapide" },
+  { id: "qwen",   label: "Qwen",      hint: "local · souverain" },
+];
 
 export default function AccueilPane() {
   const { openProject, pushToast, homeConvSeed, consumeHomeConvSeed } = useAppState();
@@ -20,6 +31,9 @@ export default function AccueilPane() {
   const [graduateOpen, setGraduateOpen] = useState(false);
   const [graduateName, setGraduateName] = useState("");
   const [gradBusy, setGradBusy] = useState(false);
+  const [model, setModel] = useState("eleve"); // cerveau choisi (défaut = Élève souverain)
+  const [modelMenu, setModelMenu] = useState(false);
+  const activeModel = MODELS.find((m) => m.id === model) ?? MODELS[0];
   const inputRef = useRef(null);
   const bottomRef = useRef(null);
   const hasChat = messages.length > 0;
@@ -57,7 +71,7 @@ export default function AccueilPane() {
       const res = await fetch("/api/home-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, model: "eleve", convId }),
+        body: JSON.stringify({ messages: history, model, convId }),
       });
       if (!res.ok) throw new Error(`erreur serveur (HTTP ${res.status})`);
       const data = await res.json();
@@ -127,7 +141,40 @@ export default function AccueilPane() {
       />
       <div className="flex items-center gap-1.5 pt-1.5">
         <Button variant="ghost" iconOnly icon={<Paperclip size={16} />} title="Joindre un fichier" aria-label="Joindre un fichier" />
-        <span className="ml-1 rounded-md border border-edge px-2 py-1 text-[11px] text-dim">GLM 5.2 · souverain · $0</span>
+        {/* Sélecteur de cerveau — menu déroulant scrollable (Fable 5, Haiku, Sonnet, Opus, GLM 5.2, Qwen). */}
+        <div className="relative ml-1">
+          <button
+            type="button"
+            onClick={() => setModelMenu((v) => !v)}
+            className="flex items-center gap-1 rounded-md border border-edge px-2 py-1 text-[11px] text-dim transition-colors hover:border-faint hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+            title="Choisir le cerveau"
+          >
+            {activeModel.label}
+            <span className="text-faint">· {activeModel.hint}</span>
+            <ChevronDown size={12} className="text-faint" />
+          </button>
+          {modelMenu && (
+            <>
+              <div className="fixed inset-0 z-40" onMouseDown={() => setModelMenu(false)} />
+              <div className="absolute bottom-full left-0 z-50 mb-1.5 max-h-64 w-56 overflow-y-auto rounded-xl border border-edge bg-panel p-1 shadow-xl shadow-black/30">
+                {MODELS.map((m) => (
+                  <button
+                    key={m.id}
+                    type="button"
+                    onClick={() => { setModel(m.id); setModelMenu(false); }}
+                    className={cx(
+                      "flex w-full items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[12.5px] transition-colors",
+                      m.id === model ? "bg-accent/12 font-medium text-ink" : "text-dim hover:bg-raised hover:text-ink",
+                    )}
+                  >
+                    <span>{m.label}</span>
+                    <span className="text-[10.5px] text-faint">{m.hint}</span>
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
         {hasChat && !graduateOpen && (
           <Button variant="secondary" size="sm" icon={<Hammer size={13} />} onClick={() => setGraduateOpen(true)} className="ml-2"
             title="Passer cette discussion dans l'atelier (construire)">

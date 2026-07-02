@@ -215,6 +215,7 @@ app.post("/api/home-chat", async (req, res) => {
   // en montant l'Accueil conversationnel du shell 2.0 (2026-07-02).
   clearInterrupt();
   const MODEL_MAP: Record<string, string> = {
+    fable:  "claude-fable-5",              // Fable 5 — le plus capable (via abonnement, cf. llm-engine)
     sonnet: "claude-sonnet-4-6",
     opus:   "claude-opus-4-8",
     haiku:  "claude-haiku-4-5-20251001",
@@ -262,6 +263,10 @@ app.post("/api/home-chat", async (req, res) => {
     let text: string;
     if (model === "eleve") {
       text = await chatEleve(system, last.content);
+    } else if (model === "qwen") {
+      // Qwen (« KUEN ») — VL/juge local via Ollama Cloud, souverain. Routage explicite du provider.
+      const { askLLM } = await import("./llm-engine.js");
+      text = await askLLM(system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
     } else {
       const { askLLM } = await import("./llm-engine.js");
       text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });

@@ -7,6 +7,7 @@ import { slugify } from "../slugify.js";
 import { useAppState } from "../state/AppState";
 import { Button, cx, TEXT } from "../design";
 
+const ProjectsManager   = lazy(() => import("./ProjectsManager.jsx"));
 const MultiProject      = lazy(() => import("../components/MultiProject.jsx"));
 const SuiteWindow       = lazy(() => import("../components/SuiteWindow.jsx"));
 const AgentFactory      = lazy(() => import("../components/AgentFactory.jsx"));
@@ -89,6 +90,7 @@ export default function AppsPane({ sectionId }) {
             </Button>
           }
           tabs={[
+            { label: "Mes projets", render: () => <ProjectsManager /> },
             { label: "Bibliothèque de composants", render: () => <MultiProject onBack={back} /> },
             { label: "Suite d'apps", render: () => <SuiteWindow win={{ props: { onOpen: (name) => openProject(name) } }} onClose={() => {}} /> },
           ]}
