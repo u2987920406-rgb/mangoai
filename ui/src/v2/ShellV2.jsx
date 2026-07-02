@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   FolderOpen, Boxes, Image as ImageIcon, Music2, Bot, Dna, Brain,
   BookOpen, Lightbulb, FileText, Palette, Settings, Sun, Moon, Search,
-  Sparkles, Home as HomeIcon, Mic, Command,
+  Sparkles, Home as HomeIcon, Mic, Command, HelpCircle,
   Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft, PanelLeftClose, PanelLeft,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
@@ -22,6 +22,11 @@ const AccueilPane = lazy(() => import("./AccueilPane.jsx"));
 // Toutes les autres sections : vraies apps 1.0 fusionnées (onglets) + vrai Réglages.
 const AppsPane = lazy(() => import("./AppsPane.jsx"));
 const ReglagesReel = lazy(() => import("../components/Reglages.jsx"));
+// Outils secondaires flottants (audit §4.3 « Garder — fenêtres flottantes ») rebranchés
+// dans le shell 2.0 en modales accessibles : Artefacts (Blackboard), Aide, détail MangoQA.
+const ArtifactsPane = lazy(() => import("../components/Artifacts.jsx"));
+const GuidePane = lazy(() => import("../components/Guide.jsx"));
+const QADetailPane = lazy(() => import("../components/QAPanel.jsx"));
 
 /* ── Catalogue 2.0 (fusions validées) ─────────────────────────────── */
 const SECTIONS = [
@@ -323,6 +328,8 @@ function ShellV2Inner() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [, setThemeTick] = useState(0);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
+  // Outils secondaires en modale : null | "artefacts" | "aide" | "qa".
+  const [overlay, setOverlay] = useState(null);
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {
@@ -456,11 +463,16 @@ function ShellV2Inner() {
             <span className="text-[12px] text-dim">· {activeItem.section}</span>
           )}
           <div className="ml-auto flex items-center gap-2.5">
-            <span className="flex items-center gap-1.5 text-[11px] text-dim" title="MangoQA audite en fantôme — jamais bloquant">
+            <button
+              onClick={() => setOverlay("qa")}
+              className="flex items-center gap-1.5 rounded-lg px-1.5 py-1 text-[11px] text-dim transition-colors hover:bg-raised hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent"
+              title="MangoQA audite en fantôme — clique pour le détail des audits"
+            >
               <Ghost size={12} className="text-dim" /> QA fantôme
               <span className="h-1.5 w-1.5 rounded-full bg-ok" />
-            </span>
-            <Button variant="ghost" size="sm" iconOnly icon={<Sparkles size={15} />} title="Artefacts (fenêtre)" aria-label="Artefacts" />
+            </button>
+            <Button variant="ghost" size="sm" iconOnly icon={<HelpCircle size={15} />} title="Aide" aria-label="Aide" onClick={() => setOverlay("aide")} />
+            <Button variant="ghost" size="sm" iconOnly icon={<Sparkles size={15} />} title="Artefacts · Blackboard" aria-label="Artefacts" onClick={() => setOverlay("artefacts")} />
           </div>
         </header>
         <div className="min-h-0 flex-1 overflow-y-auto">
@@ -479,6 +491,23 @@ function ShellV2Inner() {
           </div>
         </div>
       </main>
+
+      {/* Outils secondaires flottants rebranchés (audit parité V1→V2) */}
+      <Modal open={overlay === "artefacts"} onClose={() => setOverlay(null)} title="Artefacts · Blackboard" widthClass="w-[900px]">
+        <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
+          <ArtifactsPane />
+        </Suspense>
+      </Modal>
+      <Modal open={overlay === "aide"} onClose={() => setOverlay(null)} title="Aide" widthClass="w-[820px]">
+        <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
+          <GuidePane />
+        </Suspense>
+      </Modal>
+      <Modal open={overlay === "qa"} onClose={() => setOverlay(null)} title="MangoQA · détail des audits" widthClass="w-[900px]">
+        <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
+          <QADetailPane projectName={localStorage.getItem("mangoos.v2.project") || ""} />
+        </Suspense>
+      </Modal>
 
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onGo={go} />
       <ToastStack />

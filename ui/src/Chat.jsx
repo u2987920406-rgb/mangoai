@@ -123,8 +123,16 @@ export default function Chat({
     return skills.filter((s) => s.slug.toLowerCase().includes(slugQuery)).slice(0, 6);
   }, [slugQuery, skills]);
   const skillMenuOpen = skillSuggestions.length > 0 && !menuDismissed && !busy;
-  // Reset de la sélection + réouverture (après Échap) à chaque frappe de l'input.
-  useEffect(() => { setMenuActive(0); setMenuDismissed(false); }, [input]);
+  // Reset de la sélection + réouverture (après Échap) à chaque frappe — MAIS uniquement
+  // pour une commande « /… » (le seul cas où l'autocomplete existe). Sans ce gate,
+  // 2 setState partaient à CHAQUE frappe de prose ; en dev (StrictMode double les
+  // effets) la frappe rapide empile assez de rendus synchrones pour franchir la limite
+  // React « Maximum update depth exceeded ». Gaté sur `startsSlash` → zéro churn hors slug.
+  useEffect(() => {
+    if (!startsSlash) return;
+    setMenuActive(0);
+    setMenuDismissed(false);
+  }, [input, startsSlash]);
 
   // Complète le composer avec « /slug » + un espace (prêt pour les arguments).
   const completeSkill = (s) => {

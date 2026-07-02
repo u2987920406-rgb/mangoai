@@ -10,7 +10,7 @@ import { lazy, Suspense, useCallback, useEffect, useRef, useState } from "react"
 import {
   FolderOpen, Boxes, Plus, Trash2, Zap, Gem, Shield, Sparkles, ChevronDown,
   Rocket, Cloud, Triangle, Globe, GitBranch, Download, ExternalLink, Loader2, SlidersHorizontal,
-  Hammer, Layers, X,
+  Hammer, Layers, X, ClipboardList,
 } from "lucide-react";
 import { api } from "../api";
 import { slugify } from "../slugify.js";
@@ -221,10 +221,13 @@ export default function BuilderPane() {
   const [autoPrompt, setAutoPrompt] = useState(null);
   const [newOpen, setNewOpen] = useState(false);
   const [newDesc, setNewDesc] = useState("");
-  const [newIsBig, setNewIsBig] = useState(false); // fork « Gros projet » de la modale de création
-  // Flux GROS PROJET (Perfect Plan → squelette → Chantier/Kanban) — amont, pas dans le rail.
-  const [isBigProject, setIsBigProject] = useState(false); // le projet courant a-t-il un Perfect Plan ?
-  const [perfectPlanFor, setPerfectPlanFor] = useState(null); // nom du projet dont l'assistant Perfect Plan est ouvert
+  // Aiguillage de la modale de création : "rapide" (0 q → construction), "perfect"
+  // (15 q → app unique planifiée) ou "chantier" (30 q → gros projet multi-pages + Kanban).
+  const [newKind, setNewKind] = useState("rapide");
+  // Flux PLANIFIÉ (Perfect Plan → build). Le « chantier » ajoute squelette + Kanban.
+  const [isBigProject, setIsBigProject] = useState(false); // le projet courant est-il un GROS CHANTIER ?
+  const [perfectPlanFor, setPerfectPlanFor] = useState(null); // nom du projet dont l'assistant est ouvert
+  const [perfectPlanKind, setPerfectPlanKind] = useState("perfect"); // "perfect" (15 q) | "chantier" (30 q)
   const [chantierOpen, setChantierOpen] = useState(false); // panneau Kanban ouvert
   const [buildRequest, setBuildRequest] = useState(null); // Kanban → Chat (build d'un incrément)
   const [planRefresh, setPlanRefresh] = useState(0); // force le Kanban à recharger après un tour
@@ -281,12 +284,18 @@ export default function BuilderPane() {
     try { localStorage.setItem(`mangoos.styleStrength.${projectName}`, String(v)); } catch { /* localStorage indispo */ }
   };
 
-  // Détecte si le projet courant est un GROS PROJET (a un Perfect Plan) → mode projet + Chantier.
+  // Détecte si le projet courant est un GROS CHANTIER (→ mode projet + Kanban). Un Perfect
+  // Plan (app unique) a aussi un contrat mais NE déclenche PAS le Chantier : on tranche sur
+  // `kind`. Rétrocompat : un contrat sans `kind` (avant cette feature) = ancien gros projet.
   useEffect(() => {
     if (!projectName) { setIsBigProject(false); return; }
     let alive = true;
     api(`/api/perfect-plan/${encodeURIComponent(projectName)}`)
-      .then((c) => { if (alive) setIsBigProject(Boolean(c?.answers?.length)); })
+      .then((c) => {
+        if (!alive) return;
+        const big = c?.kind ? c.kind === "chantier" : Boolean(c?.answers?.length);
+        setIsBigProject(big);
+      })
       .catch(() => { if (alive) setIsBigProject(false); });
     return () => { alive = false; };
   }, [projectName]);
@@ -313,18 +322,21 @@ export default function BuilderPane() {
     setChatMode({ model, mode: mode === "elite" ? (isBigProject ? "projet" : buildTier) : mode });
   };
 
-  // Règle UX de Raf : le formulaire ne fait que NOMMER (petit projet = composer vide).
+  // Règle UX de Raf : le formulaire ne fait que NOMMER. Rapide = composer vide ;
+  // Perfect Plan (15 q) et Gros chantier (30 q) = ouvrent l'assistant AVANT le projet.
   const createProject = () => {
     const raw = newDesc.trim();
     if (!raw) return;
     const name = slugify(raw);
-    if (newIsBig) {
-      // GROS PROJET : on ouvre l'assistant Perfect Plan AVANT d'ouvrir le projet.
-      setPerfectPlanFor(name);
+    if (newKind === "perfect" || newKind === "chantier") {
+      setPerfectPlanKind(newKind);
+      setPerfectPlanFor(name); // → l'assistant s'ouvre ; le lancement se fait dans launchPlanned
       return;
     }
+    // RAPIDE : 0 question, on ouvre direct en construction (composer vide).
     setNewOpen(false);
     setNewDesc("");
+    setNewKind("rapide");
     setProjects((prev) => (prev.includes(name) ? prev : [name, ...prev]));
     setProjectName(name);
     setPreviewUrl(null);
@@ -333,27 +345,38 @@ export default function BuilderPane() {
     pushToast("ok", `Projet « ${name} » créé — décris, discute ou planifie quand tu veux`);
   };
 
-  // GROS PROJET : l'assistant Perfect Plan est validé → enregistre le contrat, ouvre le
-  // projet en mode "projet", et amorce la pose du squelette (SCAFFOLD_RULES côté backend).
-  const launchBigProject = async ({ answers, refs }) => {
+  // L'assistant (Perfect Plan 15 q OU Gros chantier 30 q) est validé → enregistre le contrat
+  // (avec son `kind`), ouvre le projet en mode planifié. Le CHANTIER pose en plus un squelette
+  // multi-pages + active le Kanban ; le PERFECT PLAN construit l'app unique selon le plan.
+  const launchPlanned = async ({ answers, refs }) => {
     const name = perfectPlanFor;
+    const kind = perfectPlanKind;
     setPerfectPlanFor(null);
     setNewOpen(false);
     setNewDesc("");
-    setNewIsBig(false);
+    setNewKind("rapide");
     try {
-      await api(`/api/perfect-plan/${encodeURIComponent(name)}`, { method: "POST", body: { answers, refs } });
+      await api(`/api/perfect-plan/${encodeURIComponent(name)}`, { method: "POST", body: { answers, refs, kind } });
     } catch { /* toast global — mais on continue d'ouvrir le projet */ }
     setProjects((prev) => (prev.includes(name) ? prev : [name, ...prev]));
     setProjectName(name);
-    setIsBigProject(true);
+    setIsBigProject(kind === "chantier");
     setPreviewUrl(null);
     setPreviewKey((k) => k + 1);
-    setChatMode({ model: "eleve", mode: "projet" });
-    setAutoPrompt(
-      "Démarre ce gros projet : pose d'abord le SQUELETTE (design system + router multi-pages + layout partagé + pages placeholder) selon le Perfect Plan, puis écris le plan des pages/stages. Ne construis pas encore le contenu détaillé.",
-    );
-    pushToast("ok", `Gros projet « ${name} » — pose du squelette lancée`);
+    if (kind === "chantier") {
+      setChatMode({ model: "eleve", mode: "projet" });
+      setAutoPrompt(
+        "Démarre ce gros projet : pose d'abord le SQUELETTE (design system + router multi-pages + layout partagé + pages placeholder) selon le Perfect Plan, puis écris le plan des pages/stages. Ne construis pas encore le contenu détaillé.",
+      );
+      pushToast("ok", `Gros chantier « ${name} » — pose du squelette lancée`);
+    } else {
+      // PERFECT PLAN : une app unique, construite d'un bloc selon le contrat (pas de Kanban).
+      setChatMode({ model: "eleve", mode: buildTier });
+      setAutoPrompt(
+        "Construis cette application en respectant à la lettre le Perfect Plan ci-dessus (type, objectif, style, ambiance, navigation, données, contraintes). Vise un rendu COMPLET, cohérent et soigné en une seule app (pas un squelette). Utilise de vraies images si pertinent, puis finis proprement.",
+      );
+      pushToast("ok", `Perfect Plan « ${name} » — construction planifiée lancée`);
+    }
   };
 
   // Kanban → Chat : construit un incrément (page/stage). Repris de App.jsx (1.0).
@@ -555,13 +578,14 @@ export default function BuilderPane() {
 
       <Modal
         open={newOpen}
-        onClose={() => { setNewOpen(false); setNewIsBig(false); }}
+        onClose={() => { setNewOpen(false); setNewKind("rapide"); }}
         title="Nouveau projet"
+        widthClass="w-[560px]"
         footer={
           <>
-            <Button variant="ghost" onClick={() => { setNewOpen(false); setNewIsBig(false); }}>Annuler</Button>
+            <Button variant="ghost" onClick={() => { setNewOpen(false); setNewKind("rapide"); }}>Annuler</Button>
             <Button variant="primary" disabled={!newDesc.trim()} onClick={createProject}>
-              {newIsBig ? "Définir le plan →" : "Créer & ouvrir l'atelier"}
+              {newKind === "rapide" ? "Créer & ouvrir l'atelier" : "Définir le plan →"}
             </Button>
           </>
         }
@@ -578,29 +602,42 @@ export default function BuilderPane() {
           <p className="mt-1.5 font-mono text-[11px] text-faint">Créé sous : workspace/{slugify(newDesc)}</p>
         )}
 
-        {/* Aiguillage : petit projet (rapide) vs gros projet (plan + chantier). */}
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <button
-            onClick={() => setNewIsBig(false)}
-            className={cx("rounded-xl border p-3 text-left transition-colors", !newIsBig ? "border-accent/60 bg-accent/8" : "border-edge hover:border-faint")}
-          >
-            <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink"><Sparkles size={14} className={!newIsBig ? "text-accent" : "text-dim"} /> Rapide</div>
-            <p className="mt-1 text-[11px] leading-snug text-faint">1 app / 1 page. L'atelier s'ouvre vide, tu décides ensuite.</p>
-          </button>
-          <button
-            onClick={() => setNewIsBig(true)}
-            className={cx("rounded-xl border p-3 text-left transition-colors", newIsBig ? "border-accent/60 bg-accent/8" : "border-edge hover:border-faint")}
-          >
-            <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink"><Layers size={14} className={newIsBig ? "text-accent" : "text-dim"} /> Gros projet</div>
-            <p className="mt-1 text-[11px] leading-snug text-faint">Multi-pages/stages. On pose un plan (Perfect Plan) puis un Chantier page par page.</p>
-          </button>
+        {/* Aiguillage : Rapide (0 q → construction) · Perfect Plan (15 q → app planifiée) ·
+            Gros chantier (30 q → multi-pages + Kanban). */}
+        <div className="mt-4 grid grid-cols-3 gap-2">
+          {[
+            { id: "rapide",   icon: Sparkles,      label: "Rapide",       desc: "0 question — l'atelier s'ouvre en construction, tu décides." },
+            { id: "perfect",  icon: ClipboardList, label: "Perfect Plan", desc: "15 questions → une app unique, planifiée et soignée." },
+            { id: "chantier", icon: Layers,        label: "Gros chantier", desc: "30 questions → multi-pages, squelette puis Chantier page par page." },
+          ].map((opt) => {
+            const sel = newKind === opt.id;
+            const Icon = opt.icon;
+            return (
+              <button
+                key={opt.id}
+                onClick={() => setNewKind(opt.id)}
+                className={cx("rounded-xl border p-3 text-left transition-colors", sel ? "border-accent/60 bg-accent/8" : "border-edge hover:border-faint")}
+              >
+                <div className="flex items-center gap-1.5 text-[13px] font-medium text-ink">
+                  <Icon size={14} className={sel ? "text-accent" : "text-dim"} /> {opt.label}
+                </div>
+                <p className="mt-1 text-[11px] leading-snug text-faint">{opt.desc}</p>
+              </button>
+            );
+          })}
         </div>
       </Modal>
 
-      {/* Assistant Perfect Plan (gros projet) — les 5 questions + références. */}
+      {/* Assistant planifié : Perfect Plan (15 q) OU Gros chantier (30 q) selon le fork choisi. */}
       {perfectPlanFor && (
         <Suspense fallback={null}>
-          <PerfectPlan onClose={() => setPerfectPlanFor(null)} onLaunch={launchBigProject} />
+          <PerfectPlan
+            onClose={() => setPerfectPlanFor(null)}
+            onLaunch={launchPlanned}
+            count={perfectPlanKind === "chantier" ? 30 : 15}
+            title={perfectPlanKind === "chantier" ? "Gros chantier" : "Perfect Plan"}
+            launchLabel={perfectPlanKind === "chantier" ? "Lancer le chantier" : "Lancer avec ce plan"}
+          />
         </Suspense>
       )}
 
