@@ -186,6 +186,12 @@ Mode 🌙 Génération nocturne — full autonomy, polished design:
 - You build ALONE, at night: NOBODY is available to answer. Take EVERY scoping, product and design decision yourself with your best judgement — never ask a question, never wait for validation, never present a plan for approval. Just decide and ship a complete, polished app.
 - Design bar = Élite: deploy the FULL visual moodboard below (real web leaders + Sharingan capture) to ground a genuine, distinctive visual identity. This is the whole point of this mode — do NOT settle for a generic default look.
 - You MAY write plan.md as an internal design doc to organise yourself, but it is NEVER a gate: do not stop to have it validated, just build.`,
+  // "esthetique" — mode INTERNE désormais (retiré d'ALLOWED_MODES le 2026-07-02,
+  // même statut que "nocturne") : plus sélectionnable par l'utilisateur (le
+  // chemin utilisateur est l'agent conversationnel « Esthète », esthete-agent.ts),
+  // mais encore utilisé par le pipeline nocturne (run-finish.ts/run-showcase.ts)
+  // et par la boucle de goût du Gardien (design-coach.ts → applyFixes). Ne pas
+  // retirer sans adapter ces 3 appelants.
   esthetique: `
 Mode ✨ Esthétique — high-fidelity graphic polish phase (the project is built and works; now make it BEAUTIFUL). This is a polish phase, NOT a construction phase: the graphic-polish protocol below governs this turn.`,
   // Mode 🏗️ Gros Projet (#139) — construction incrémentale d'UN grand produit
@@ -296,6 +302,10 @@ Finition protocol (apply rigorously this turn — you are now a Lead QA, not a b
 
 // Chantier #68 — Graphic polish high-fidelity pass: the aesthetic twin of the
 // finition phase. Where finition hardens robustness, esthetique polishes BEAUTY.
+// Mode retiré d'ALLOWED_MODES le 2026-07-02 (plus sélectionnable par
+// l'utilisateur — voir esthete-agent.ts pour le chemin conversationnel qui le
+// remplace) mais encore utilisé en INTERNE par run-finish.ts/run-showcase.ts
+// et par design-coach.ts (boucle de goût du Gardien) : ne pas retirer.
 const GRAPHIC_POLISH_RULES = `
 Graphic polish — high-fidelity aesthetic pass (apply rigorously this turn — you are now a Visual Lead, not a builder):
 - FEATURE FREEZE — add NO new feature, page or scope. This mode embellishes existing UI; it does NOT build. If a request implies a genuinely new feature, say so briefly and ask the user to switch back to MVP/Élite.
@@ -488,7 +498,7 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // Bloc prompt-only : zéro fichier, zéro réseau.
   selfCritique: () => SELF_CRITIQUE_RULES,
   // Chantier #68 — graphic polish protocol: the aesthetic twin of finition.
-  // Governs the esthetique mode — high-fidelity visual polish pass.
+  // Governs the (désormais interne) esthetique mode — high-fidelity visual polish pass.
   graphicPolish: () => GRAPHIC_POLISH_RULES,
   // Idée #99 — Perfect Plan : contrat contraignant (type / style / navigation /
   // données / ambiance + références) défini AVANT le premier message. Injecté en
@@ -531,10 +541,11 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // architecte questionneur (PLAN_RULES → remplacé par moodboardNocturne), ainsi
   // que tutorial (pas de tuto la nuit) et tests (build rapide ciblé design).
   nocturne: ["mode", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
-  // Esthétique (#68) — polish graphique haute fidélité : projet fonctionnel,
-  // on l'embellit. Mène avec le protocole graphicPolish, garde tout l'arsenal
-  // qualité (analytic + visionElite + design-system) SANS nouveau scope/plan
-  // (pas de cadrage/clarification/Miroir) ni tests ni tutorial.
+  // Esthétique (#68) — polish graphique haute fidélité, désormais mode INTERNE
+  // (run-finish/run-showcase/design-coach) : projet fonctionnel, on l'embellit.
+  // Mène avec le protocole graphicPolish, garde tout l'arsenal qualité
+  // (analytic + visionElite + design-system) SANS nouveau scope/plan (pas de
+  // cadrage/clarification/Miroir) ni tests ni tutorial.
   esthetique: ["mode", "clientContext", "base", "graphicPolish", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
   // Discussion — conversation naturelle sans build automatique. Zéro arsenal de
   // génération : juste la posture conversationnelle + contexte projet (notes,

@@ -90,6 +90,8 @@ import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { registerSelfRoutes } from "./self-routes.js";
 import { registerSpecialistRoutes } from "./specialist-routes.js";
+import { registerEstheteRoutes } from "./esthete-routes.js";
+import { ensureEstheteAgent } from "./esthete-agent.js";
 import { registerSelfEvolutionRoutes } from "./self-evolution-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
 import { prewarmVision } from "./vision-prewarm.js";
@@ -1006,6 +1008,8 @@ registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 registerSelfRoutes(app); // Atelier de Mango — auto-amélioration (barreaux 1-4)
 registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
+ensureEstheteAgent(); // Agent système « Esthète » — seed idempotent au boot (sidebar Design)
+registerEstheteRoutes(app); // Chat conversationnel de l'Esthète (voit la preview, retouche)
 registerSelfEvolutionRoutes(app); // #168 — Boucle d'auto-évolution (semi-auto) : lacunes → forge validée
 registerHomeConversationsRoutes(app); // Écran « Conversation » : revoir/reprendre les discussions d'accueil
 

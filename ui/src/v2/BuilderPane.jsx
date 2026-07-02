@@ -29,13 +29,15 @@ const ProjectKanban = lazy(() => import("../components/ProjectKanban.jsx"));
 const PROJECT_KEY = "mangoos.v2.project";
 const TIER_KEY = "mangoos.v2.buildTier";
 
-// Les 4 paliers de build (repris tels quels de la 1.0, Header.jsx). Ils changent
-// vraiment le comportement de Mango (scenario.ts), pas juste un libellé.
+// Les 3 paliers de build (repris de la 1.0, Header.jsx). Ils changent vraiment le
+// comportement de Mango (scenario.ts), pas juste un libellé. Le 4e palier
+// « Esthétique » a été retiré (2026-07-02) : remplacé par l'agent conversationnel
+// « Esthète » (sidebar, groupe Design) qui voit la preview et retouche à la
+// demande plutôt qu'un balayage autonome via ce sélecteur.
 const BUILD_MODES = [
-  { id: "mvp",        label: "MVP",        hint: "Rapide & économe — droit au but",              icon: Zap },
-  { id: "elite",      label: "Élite",      hint: "Qualité max — analyse + vérif visuelle",        icon: Gem },
-  { id: "finition",   label: "Finition",   hint: "Durcissement & QA — pas de nouvelle feature",   icon: Shield },
-  { id: "esthetique", label: "Esthétique", hint: "Raffinement graphique — micro-interactions, animations", icon: Sparkles },
+  { id: "mvp",      label: "MVP",      hint: "Rapide & économe — droit au but",            icon: Zap },
+  { id: "elite",    label: "Élite",    hint: "Qualité max — analyse + vérif visuelle",      icon: Gem },
+  { id: "finition", label: "Finition", hint: "Durcissement & QA — pas de nouvelle feature", icon: Shield },
 ];
 
 // Cibles de déploiement (POST /api/deploy/:name) — reprises de Header.jsx 1.0.
@@ -217,8 +219,12 @@ export default function BuilderPane() {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [chatMode, setChatMode] = useState({ model: "eleve", mode: "elite" });
-  // Palier de build choisi (mvp/elite/finition/esthetique), persisté — les 4 modes 1.0.
-  const [buildTier, setBuildTier] = useState(() => localStorage.getItem(TIER_KEY) || "elite");
+  // Palier de build choisi (mvp/elite/finition), persisté. Défensif : un ancien
+  // réglage "esthetique" (palier retiré le 2026-07-02) retombe sur "elite".
+  const [buildTier, setBuildTier] = useState(() => {
+    const saved = localStorage.getItem(TIER_KEY);
+    return saved && BUILD_MODES.some((m) => m.id === saved) ? saved : "elite";
+  });
   const [cost, setCost] = useState(0);
   const [autoPrompt, setAutoPrompt] = useState(null);
   const [newOpen, setNewOpen] = useState(false);

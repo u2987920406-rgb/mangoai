@@ -29,6 +29,9 @@ const ReglagesReel = lazy(() => import("../components/Reglages.jsx"));
 const ArtifactsPane = lazy(() => import("../components/Artifacts.jsx"));
 const GuidePane = lazy(() => import("../components/Guide.jsx"));
 const QADetailPane = lazy(() => import("../components/QAPanel.jsx"));
+// L'Esthète (2026-07-02) : agent conversationnel qui voit la preview live et
+// retouche à la demande, en remplacement du palier de build « Esthétique ».
+const EstheteChat = lazy(() => import("../components/EstheteChat.jsx"));
 
 /* ── Catalogue 2.0 (fusions validées) ─────────────────────────────── */
 const SECTIONS = [
@@ -62,7 +65,7 @@ const SECTIONS = [
   {
     id: "design", label: "Design",
     items: [
-      { id: "studio",     label: "Design Studio", icon: Palette,    desc: "Revue design, variantes de goût, éditeur visuel — ex Design Review + Goût + Éditeur." },
+      { id: "studio",     label: "Esthète",       icon: Palette,    desc: "Discute avec l'Esthète pour affiner le style visuel de ton projet — il voit la preview et retouche en direct." },
       { id: "composants", label: "Composants",    icon: SwatchBook, desc: "Vitrine du design system 2.0 — la cohérence en un coup d'œil." },
     ],
   },
@@ -331,7 +334,7 @@ function ShellV2Inner() {
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [, setThemeTick] = useState(0);
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
-  // Outils secondaires en modale : null | "artefacts" | "aide" | "qa".
+  // Outils secondaires en modale : null | "artefacts" | "aide" | "qa" | "esthete".
   const [overlay, setOverlay] = useState(null);
 
   const toggleCollapsed = () => {
@@ -418,7 +421,13 @@ function ShellV2Inner() {
               {collapsed ? <div className="mx-auto my-2 w-6 border-t border-edge-soft" /> : <div className={cx(SECTION_LABEL, "px-2.5 pb-1 pt-4")}>{s.label}</div>}
               <div className="space-y-0.5">
                 {s.items.map((it) => (
-                  <NavItem key={it.id} item={it} active={active === it.id} collapsed={collapsed} onClick={() => go(it.id)} />
+                  <NavItem
+                    key={it.id}
+                    item={it}
+                    active={it.id === "studio" ? overlay === "esthete" : active === it.id}
+                    collapsed={collapsed}
+                    onClick={() => (it.id === "studio" ? setOverlay("esthete") : go(it.id))}
+                  />
                 ))}
               </div>
             </div>
@@ -510,6 +519,11 @@ function ShellV2Inner() {
       <Modal open={overlay === "qa"} onClose={() => setOverlay(null)} title="MangoQA · détail des audits" widthClass="w-[900px]">
         <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
           <QADetailPane projectName={localStorage.getItem("mangoos.v2.project") || ""} />
+        </Suspense>
+      </Modal>
+      <Modal open={overlay === "esthete"} onClose={() => setOverlay(null)} title="Esthète" widthClass="w-[640px]">
+        <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
+          <EstheteChat projectName={localStorage.getItem("mangoos.v2.project") || ""} />
         </Suspense>
       </Modal>
 
