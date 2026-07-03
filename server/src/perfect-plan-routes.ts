@@ -21,12 +21,16 @@ export function registerPerfectPlanRoutes(app: Express): void {
 
   app.post("/api/perfect-plan/:name", (req, res) => {
     const name = req.params["name"] as string;
-    const body = req.body as { answers: PerfectPlanAnswer[]; refs?: PerfectPlanRef[] };
+    const body = req.body as { answers: PerfectPlanAnswer[]; refs?: PerfectPlanRef[]; kind?: "perfect" | "chantier" };
     if (!Array.isArray(body?.answers)) {
       res.status(400).json({ error: "answers required" });
       return;
     }
-    saveContract(projectDir(name), { answers: body.answers, refs: body.refs ?? [] });
+    saveContract(projectDir(name), {
+      answers: body.answers,
+      refs: body.refs ?? [],
+      ...(body.kind ? { kind: body.kind } : {}),
+    });
     res.json({ ok: true });
   });
 

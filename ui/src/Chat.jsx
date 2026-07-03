@@ -1,75 +1,15 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import ReactMarkdown from "react-markdown";
-import { ArrowUp, Bookmark, BrainCircuit, ChevronDown, Eye, FileCode, FolderOpen, Mic, MicOff, Paperclip, RotateCcw, Scan, Sparkles, Square, X } from "lucide-react";
-import ToolGroup from "./components/ToolGroup.jsx";
-import NocturnalReviewForm from "./components/NocturnalReviewForm.jsx";
-import DiffSlider from "./components/DiffSlider.jsx";
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+// Phase C (audit-mango-2.0 §5) — le monolithe s'est découpé : helpers purs et blocs
+// autonomes vivent dans components/chat/, Chat.jsx reste l'orchestrateur (état + réseau).
+import {
+  parseQuestion,
+  CHAT_ACTIONS, ACTION_MODELS_KEY, loadActionModels, groupMessages,
+} from "./components/chat/helpers.js";
+import ChatMessages from "./components/chat/ChatMessages.jsx";
+import ChatComposer from "./components/chat/ChatComposer.jsx";
 
 let nextId = 1;
 const uid = () => nextId++;
-
-// Réponse guidée : l'agent peut clore son message par une demande de décision
-// (PROTOCOLE DE RÉPONSE GUIDÉE du prompt), sous deux formes :
-//  • [OUI/NON]                       → box Oui / Non (touches Y/N)
-//  • [[OPTIONS]] - a | desc … [[/OPTIONS]]  → box de 2-4 choix (touches 1-4)
-// On les détecte pour afficher une box cliquable, et on les masque à l'affichage.
-const YESNO_RE = /\s*\[\s*oui\s*\/\s*non\s*\]\s*$/i;
-const OPTIONS_RE = /\[\[\s*options\s*\]\]([\s\S]*?)\[\[\s*\/\s*options\s*\]\]/i;
-
-function parseOptionsBlock(text = "") {
-  const m = text.match(OPTIONS_RE);
-  if (!m) return null;
-  const options = m[1]
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l.startsWith("-"))
-    .map((l) => {
-      const body = l.replace(/^-\s*/, "");
-      const [label, ...rest] = body.split("|");
-      return { label: label.trim(), description: rest.join("|").trim() || null };
-    })
-    .filter((o) => o.label);
-  return options.length ? options : null;
-}
-
-// → { kind: "yesno" | "options" | null, options: [{label, description}] }
-function parseQuestion(text = "") {
-  const options = parseOptionsBlock(text);
-  if (options) return { kind: "options", options };
-  if (YESNO_RE.test(text)) return { kind: "yesno", options: [{ label: "Oui" }, { label: "Non" }] };
-  return { kind: null, options: [] };
-}
-
-const stripQuestionMarkers = (text = "") =>
-  text.replace(OPTIONS_RE, "").replace(YESNO_RE, "").trimEnd();
-
-// Les 3 actions de la chatbox. Le MODÈLE n'est plus codé en dur par action :
-// chaque action a son propre modèle, configurable par bouton (menu déroulant) et
-// mémorisé. Par défaut tout est sur l'Élève (GLM-5.2) → « rester sur GLM » vaut
-// pour Discuter, Planifier ET Construire. Construire = build (elite/runRelay côté
-// Élève) ; Planifier & Discuter = tour conversationnel (mode discuss, zéro build).
-const CHAT_ACTIONS = [
-  { id: "construire", label: "Construire", mode: "elite"   },
-  { id: "planifier",  label: "Planifier",  mode: "discuss" },
-  { id: "discuter",   label: "Discuter",   mode: "discuss" },
-];
-const ACTION_MODEL_OPTIONS = [
-  { id: "eleve",  label: "GLM-5.2"   },
-  { id: "sonnet", label: "Sonnet 4.6" },
-  { id: "opus",   label: "Opus 4.8"   },
-  { id: "haiku",  label: "Haiku 4.5"  },
-];
-const DEFAULT_ACTION_MODELS = { construire: "eleve", planifier: "eleve", discuter: "eleve" };
-const ACTION_MODELS_KEY = "mangoos.actionModels";
-function loadActionModels() {
-  try {
-    const raw = JSON.parse(localStorage.getItem(ACTION_MODELS_KEY) || "{}");
-    return { ...DEFAULT_ACTION_MODELS, ...raw };
-  } catch {
-    return { ...DEFAULT_ACTION_MODELS };
-  }
-}
-const actionModelLabel = (id) => ACTION_MODEL_OPTIONS.find((m) => m.id === id)?.label ?? id;
 
 export default function Chat({
   projectName,
@@ -183,8 +123,16 @@ export default function Chat({
     return skills.filter((s) => s.slug.toLowerCase().includes(slugQuery)).slice(0, 6);
   }, [slugQuery, skills]);
   const skillMenuOpen = skillSuggestions.length > 0 && !menuDismissed && !busy;
-  // Reset de la sélection + réouverture (après Échap) à chaque frappe de l'input.
-  useEffect(() => { setMenuActive(0); setMenuDismissed(false); }, [input]);
+  // Reset de la sélection + réouverture (après Échap) à chaque frappe — MAIS uniquement
+  // pour une commande « /… » (le seul cas où l'autocomplete existe). Sans ce gate,
+  // 2 setState partaient à CHAQUE frappe de prose ; en dev (StrictMode double les
+  // effets) la frappe rapide empile assez de rendus synchrones pour franchir la limite
+  // React « Maximum update depth exceeded ». Gaté sur `startsSlash` → zéro churn hors slug.
+  useEffect(() => {
+    if (!startsSlash) return;
+    setMenuActive(0);
+    setMenuDismissed(false);
+  }, [input, startsSlash]);
 
   // Complète le composer avec « /slug » + un espace (prêt pour les arguments).
   const completeSkill = (s) => {
@@ -804,6 +752,34 @@ export default function Chat({
     setListening(true);
   }
 
+  // Phase C2 — callbacks passés aux blocs extraits (ChatMessages / ChatComposer).
+  // « Confirmer et construire » après un plan validé.
+  const confirmPlan = () => {
+    setAwaitingPlanConfirm(false);
+    setActiveAction("construire");
+    onChatMode({ model: actionModels.construire, mode: "elite" });
+    setInput("Confirmé — construis maintenant selon ce plan.");
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+  // Applique le correctif diagnostiqué en mode Discuter : on embarque le diagnostic
+  // (dernier message de l'agent) pour que le chemin Construire soit auto-suffisant.
+  const applyDiagnosedFix = () => {
+    setAwaitingApply(false);
+    setActiveAction("construire");
+    onChatMode({ model: actionModels.construire, mode: "elite" });
+    const diagnosis = [...messages].reverse().find((mm) => mm.role === "agent")?.text ?? "";
+    send(
+      `Applique RÉELLEMENT dans le code le correctif diagnostiqué ci-dessous (write_file / edit_file), puis vérifie le build (check_build). Ne te contente pas de le re-décrire — fais la modification, puis finish.\n\n--- Correctif à appliquer ---\n${diagnosis}`,
+      { modeOverride: "elite" },
+    );
+  };
+  // 1) avorte le flux côté client → la main revient tout de suite ;
+  // 2) prévient le serveur d'arrêter le travail (Claude + Élève).
+  const stopAgent = () => {
+    abortRef.current?.abort();
+    fetch("/api/stop", { method: "POST" }).catch(() => {});
+  };
+
   return (
     <section className="flex w-2/5 min-w-[360px] flex-col border-r border-edge bg-panel">
       {snapMode && (
@@ -836,665 +812,72 @@ export default function Chat({
           )}
         </div>
       )}
-      <div ref={listRef} className="nice-scroll flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
-        {messages.length === 0 && !busy && (
-          <div className="m-auto flex flex-col items-center gap-3 text-center text-dim">
-            <Sparkles size={28} className="text-accent-soft" />
-            <p className="leading-relaxed">
-              Décris ce que tu veux construire,
-              <br />
-              MangoOS s'occupe du code.
-            </p>
-          </div>
-        )}
-        {grouped.map((g) =>
-          g.kind === "tools" ? (
-            <ToolGroup key={g.key} items={g.items} busy={busy && g.isLast} />
-          ) : (
-            <Message
-              key={g.key}
-              m={g.message}
-              showThinking={showThinking}
-              onFeedback={handleFeedback}
-              onReuse={handleReuse}
-            />
-          ),
-        )}
-        {/* Projet généré la nuit : reviewer directement sous le prompt (#58/#59). */}
-        {nocturnalEntry && !nocturnalEntry.reviewed && !busy && (
-          <NocturnalReviewForm id={nocturnalEntry.id} onToast={onToast} onReviewed={onReviewed} />
-        )}
-        {/* Réponse guidée émise par l'agent : Oui/Non ([OUI/NON]) ou box de choix ([[OPTIONS]]). */}
-        {question.kind === "yesno" && (
-          <div className="flex items-center justify-center gap-2 py-3">
-            <span className="text-xs text-faint">Ta réponse&nbsp;:</span>
-            <button
-              onClick={() => answerConfirm("Oui")}
-              className="flex items-center gap-1.5 rounded-xl bg-ok/90 px-4 py-2 text-sm font-semibold text-white shadow-md transition-colors hover:bg-ok"
-            >
-              ✓ Oui
-              <kbd className="ml-0.5 rounded bg-white/20 px-1 text-[10px] font-bold">Y</kbd>
-            </button>
-            <button
-              onClick={() => answerConfirm("Non")}
-              className="flex items-center gap-1.5 rounded-xl bg-err/90 px-4 py-2 text-sm font-semibold text-white shadow-md transition-colors hover:bg-err"
-            >
-              ✕ Non
-              <kbd className="ml-0.5 rounded bg-white/20 px-1 text-[10px] font-bold">N</kbd>
-            </button>
-          </div>
-        )}
-        {question.kind === "options" && (
-          <div className="animate-fade-up w-full max-w-[95%] self-start rounded-2xl border border-accent/25 bg-accent/[0.04] p-2.5">
-            <div className="mb-1.5 px-1 text-[11px] font-semibold tracking-wide text-accent-soft">
-              CHOISIS UNE RÉPONSE
-            </div>
-            <div className="flex flex-col gap-1.5">
-              {question.options.map((o, i) => (
-                <button
-                  key={i}
-                  onClick={() => answerConfirm(o.label)}
-                  className="group flex items-start gap-2.5 rounded-xl border border-edge bg-bg px-3 py-2 text-left transition-colors hover:border-accent/50 hover:bg-accent/[0.07]"
-                >
-                  <span className="mt-px flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-edge-soft text-[11px] font-bold text-faint transition-colors group-hover:bg-accent/20 group-hover:text-accent">
-                    {i + 1}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-sm font-medium text-ink">{o.label}</span>
-                    {o.description && <span className="mt-0.5 block text-xs leading-snug text-faint">{o.description}</span>}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-        {awaitingPlanConfirm && !busy && (
-          <div className="flex justify-center py-3">
-            <button
-              onClick={() => {
-                setAwaitingPlanConfirm(false);
-                setActiveAction("construire");
-                onChatMode({ model: actionModels.construire, mode: "elite" });
-                setInput("Confirmé — construis maintenant selon ce plan.");
-                requestAnimationFrame(() => inputRef.current?.focus());
-              }}
-              className="flex items-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-semibold text-white shadow-md transition-colors hover:bg-accent/90"
-            >
-              <Sparkles size={14} />
-              Confirmer et construire
-            </button>
-          </div>
-        )}
-        {awaitingApply && !busy && (
-          <div className="flex justify-center py-3">
-            <button
-              onClick={() => {
-                setAwaitingApply(false);
-                setActiveAction("construire");
-                onChatMode({ model: actionModels.construire, mode: "elite" });
-                // On embarque le diagnostic (dernier message de l'agent) pour que le
-                // chemin Construire soit auto-suffisant, même sans l'historique du chat.
-                const diagnosis = [...messages].reverse().find((mm) => mm.role === "agent")?.text ?? "";
-                send(
-                  `Applique RÉELLEMENT dans le code le correctif diagnostiqué ci-dessous (write_file / edit_file), puis vérifie le build (check_build). Ne te contente pas de le re-décrire — fais la modification, puis finish.\n\n--- Correctif à appliquer ---\n${diagnosis}`,
-                  { modeOverride: "elite" },
-                );
-              }}
-              className="flex items-center gap-2 rounded-xl border border-accent/50 bg-accent/10 px-5 py-2.5 text-sm font-semibold text-accent shadow-sm transition-colors hover:bg-accent/20"
-              title="Bascule en mode Construire et fait appliquer le correctif diagnostiqué"
-            >
-              <Sparkles size={14} />
-              🛠 Appliquer ce correctif (Construire)
-            </button>
-          </div>
-        )}
-        {working && (
-          <div className="animate-fade-up flex items-center gap-2 self-start rounded-xl border border-accent/25 bg-accent/[0.08] px-3 py-1.5">
-            <BrainCircuit size={15} className="animate-pulse text-accent-soft" />
-            <span className="shimmer-text text-[13px] font-semibold">
-              {busy ? "MangoOS réfléchit…" : "L'agent travaille (occupé) — patiente avant d'envoyer"}
-            </span>
-          </div>
-        )}
-      </div>
+      <ChatMessages
+        listRef={listRef}
+        grouped={grouped}
+        empty={messages.length === 0 && !busy}
+        busy={busy}
+        working={working}
+        showThinking={showThinking}
+        onFeedback={handleFeedback}
+        onReuse={handleReuse}
+        nocturnalEntry={nocturnalEntry}
+        onToast={onToast}
+        onReviewed={onReviewed}
+        question={question}
+        onAnswer={answerConfirm}
+        awaitingPlanConfirm={awaitingPlanConfirm}
+        onConfirmPlan={confirmPlan}
+        awaitingApply={awaitingApply}
+        onApplyFix={applyDiagnosedFix}
+      />
 
-      <div className="border-t border-edge p-3">
-        <div
-          className="relative rounded-2xl border border-edge bg-bg p-2 focus-within:border-accent/60 transition-colors"
-          onDragOver={(e) => e.preventDefault()}
-          onDrop={(e) => {
-            e.preventDefault();
-            addFiles(e.dataTransfer.files);
-          }}
-        >
-          {/* #174 — Autocomplete des skills : s'ouvre tant qu'un /slug est en cours de frappe. */}
-          {skillMenuOpen && (
-            <div className="absolute bottom-full left-0 z-50 mb-2 w-full max-w-md overflow-hidden rounded-xl border border-edge bg-panel shadow-2xl shadow-black/30">
-              <div className="border-b border-edge px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-faint">
-                Skills — ↑↓ choisir · Tab/Entrée insérer · Échap fermer
-              </div>
-              <ul className="nice-scroll max-h-56 overflow-y-auto p-1">
-                {skillSuggestions.map((s, i) => (
-                  <li key={s.slug}>
-                    <button
-                      type="button"
-                      onMouseEnter={() => setMenuActive(i)}
-                      onClick={() => completeSkill(s)}
-                      className={`flex w-full flex-col items-start gap-0.5 rounded-lg px-2.5 py-1.5 text-left transition-colors ${
-                        i === menuActive ? "bg-accent/15" : "hover:bg-edge-soft"
-                      }`}
-                    >
-                      <span className="flex items-center gap-1.5 font-mono text-xs text-accent">
-                        /{s.slug}
-                        {s.disableModelInvocation && (
-                          <span
-                            className="rounded bg-edge-soft px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-faint"
-                            title="Invocation manuelle uniquement (l'agent ne la déclenche pas seul)"
-                          >
-                            manuel
-                          </span>
-                        )}
-                      </span>
-                      {s.description && <span className="w-full truncate text-[11px] text-faint">{s.description}</span>}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {contextFile && (
-            <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
-              <span className="flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent/10 px-2 py-1 text-xs text-accent">
-                <FileCode size={10} className="shrink-0" />
-                <span className="max-w-52 truncate font-mono">{contextFile}</span>
-                <button onClick={() => setContextFile(null)} className="text-accent/60 hover:text-accent transition-colors">
-                  <X size={11} />
-                </button>
-              </span>
-            </div>
-          )}
-          {attachments.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
-              {attachments.map((f, i) => (
-                <span
-                  key={`${f.name}-${i}`}
-                  className="flex items-center gap-1.5 rounded-lg border border-edge bg-panel px-2 py-1 text-xs text-dim"
-                >
-                  <AttachmentThumb file={f} />
-                  <span className="max-w-40 truncate">{f.name}</span>
-                  <button
-                    onClick={() => setAttachments((prev) => prev.filter((_, j) => j !== i))}
-                    className="text-faint hover:text-err transition-colors"
-                    title="Retirer"
-                  >
-                    <X size={11} />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-          <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
-            {CHAT_ACTIONS.map((a) => {
-              const active = activeAction === a.id;
-              return (
-                <div key={a.id} className="relative flex items-center">
-                  {/* Le bouton d'action : active l'action + applique son modèle/mode */}
-                  <button
-                    onClick={() => pickAction(a)}
-                    className={`rounded-l-lg px-2.5 py-1 text-xs font-medium transition-colors ${
-                      active ? "bg-accent/15 text-accent" : "text-faint hover:text-dim hover:bg-edge-soft"
-                    }`}
-                  >
-                    {a.label}
-                  </button>
-                  {/* Le sélecteur de modèle PROPRE à ce bouton (mémorisé) */}
-                  <button
-                    onClick={() => setModelMenuFor(modelMenuFor === a.id ? null : a.id)}
-                    title="Choisir le modèle de ce bouton"
-                    className={`flex items-center gap-0.5 rounded-r-lg border-l px-1.5 py-1 text-[10px] font-medium transition-colors ${
-                      active
-                        ? "border-accent/20 bg-accent/15 text-accent"
-                        : "border-edge/40 text-faint hover:text-dim hover:bg-edge-soft"
-                    }`}
-                  >
-                    {actionModelLabel(actionModels[a.id])}
-                    <ChevronDown size={9} />
-                  </button>
-                  {modelMenuFor === a.id && (
-                    <>
-                      <div className="fixed inset-0 z-40" onClick={() => setModelMenuFor(null)} />
-                      <div className="absolute bottom-full left-0 z-50 mb-1 w-36 overflow-hidden rounded-lg border border-edge bg-panel shadow-2xl">
-                        {ACTION_MODEL_OPTIONS.map((m) => (
-                          <button
-                            key={m.id}
-                            onClick={() => setActionModel(a.id, m.id)}
-                            className={`flex w-full items-center gap-2 px-2.5 py-1.5 text-left text-[11px] transition-colors hover:bg-edge-soft ${
-                              actionModels[a.id] === m.id ? "text-accent font-medium" : "text-dim"
-                            }`}
-                          >
-                            <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${actionModels[a.id] === m.id ? "bg-accent" : "border border-edge"}`} />
-                            {m.label}
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <div className="flex items-end gap-1.5 pl-1.5">
-              <button
-                onClick={() => fileRef.current?.click()}
-                disabled={busy}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-faint hover:text-ink disabled:opacity-30 transition-colors"
-                title="Joindre une image ou un PDF (ou colle/glisse-le ici)"
-              >
-                <Paperclip size={16} />
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                multiple
-                accept=".png,.jpg,.jpeg,.webp,.gif,.pdf,.docx,.xlsx,.pptx,.txt,.md,.csv,.json,.zip,.rar"
-                className="hidden"
-                onChange={(e) => {
-                  addFiles(e.target.files);
-                  e.target.value = "";
-                }}
-              />
-              <button
-                onClick={() => setSnapMode(true)}
-                disabled={busy || snapBusy}
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
-                  snapBusy ? "animate-pulse text-accent" : "text-faint hover:text-ink"
-                }`}
-                title="Snap : capturer une zone de l'aperçu"
-              >
-                <Scan size={16} />
-              </button>
-              <button
-                onClick={coachSend}
-                disabled={busy || !projectName.trim()}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-faint transition-colors hover:text-accent-soft disabled:opacity-30"
-                title="Coach design — l'œil critique le rendu et fait corriger jusqu'au seuil de qualité"
-              >
-                <Eye size={16} />
-              </button>
-              <div className="relative" ref={pickerRef}>
-                <button
-                  onClick={() => { setFilePicker((v) => !v); setFileSearch(""); }}
-                  disabled={busy}
-                  className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
-                    contextFile ? "text-accent" : "text-faint hover:text-ink"
-                  }`}
-                  title="Cibler un fichier du projet comme contexte"
-                >
-                  <FolderOpen size={16} />
-                </button>
-                {filePicker && (
-                  <div className="absolute bottom-full left-0 mb-2 w-72 rounded-xl border border-edge bg-panel shadow-xl shadow-black/30 z-50">
-                    <div className="p-2 border-b border-edge">
-                      <input
-                        autoFocus
-                        value={fileSearch}
-                        onChange={(e) => setFileSearch(e.target.value)}
-                        placeholder="Rechercher un fichier…"
-                        className="w-full rounded-lg border border-edge bg-bg px-2.5 py-1.5 text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none transition-colors"
-                      />
-                    </div>
-                    <ul className="nice-scroll max-h-52 overflow-y-auto p-1">
-                      {fileList
-                        .filter((f) => !fileSearch || f.toLowerCase().includes(fileSearch.toLowerCase()))
-                        .map((f) => (
-                          <li key={f}>
-                            <button
-                              onClick={() => { setContextFile(f); setFilePicker(false); }}
-                              className={`flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-xs transition-colors ${
-                                contextFile === f
-                                  ? "bg-accent/15 text-accent"
-                                  : "text-dim hover:bg-edge-soft hover:text-ink"
-                              }`}
-                            >
-                              <FileCode size={12} className="shrink-0 text-faint" />
-                              <span className="truncate font-mono">{f}</span>
-                            </button>
-                          </li>
-                        ))}
-                      {fileList.length === 0 && (
-                        <li className="px-2.5 py-3 text-center text-xs text-faint">Aucun fichier trouvé</li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-              </div>
-              <textarea
-                ref={inputRef}
-                data-tour="composer"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onInput={autoGrow}
-                onPaste={(e) => {
-                  const pasted = [...e.clipboardData.items]
-                    .filter((it) => it.kind === "file")
-                    .map((it) => it.getAsFile())
-                    .filter(Boolean);
-                  if (pasted.length > 0) {
-                    e.preventDefault();
-                    addFiles(pasted);
-                  }
-                }}
-                onKeyDown={(e) => {
-                  // #174 — Navigation de l'autocomplete /slug (prioritaire sur l'envoi).
-                  if (skillMenuOpen) {
-                    if (e.key === "ArrowDown") { e.preventDefault(); setMenuActive((i) => (i + 1) % skillSuggestions.length); return; }
-                    if (e.key === "ArrowUp")   { e.preventDefault(); setMenuActive((i) => (i - 1 + skillSuggestions.length) % skillSuggestions.length); return; }
-                    if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); completeSkill(skillSuggestions[menuActive]); return; }
-                    if (e.key === "Escape")    { e.preventDefault(); setMenuDismissed(true); return; }
-                  }
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    send();
-                  }
-                }}
-                placeholder={working ? "⏳ L'agent travaille — patiente la fin de la réflexion…" : "Décris ton app ou demande une modification…"}
-                rows={1}
-                className="max-h-40 flex-1 resize-none bg-transparent py-1.5 text-sm leading-relaxed placeholder:text-faint focus:outline-none"
-              />
-            </div>
-            <div className="flex items-center justify-end gap-1.5 pr-1.5">
-              <button
-                onClick={toggleMic}
-                disabled={busy || transcribing}
-                data-tour="mic"
-                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-30 ${
-                  listening ? "animate-pulse text-err" : transcribing ? "animate-pulse text-accent" : "text-faint hover:text-ink"
-                }`}
-                title={listening ? "Arrêter l'enregistrement" : transcribing ? "Transcription Whisper…" : "Dicter (Whisper local)"}
-              >
-                {listening ? <MicOff size={16} /> : <Mic size={16} />}
-              </button>
-              {busy ? (
-                <button
-                  onClick={() => {
-                    // 1) avorte le flux côté client → la main revient tout de suite ;
-                    // 2) prévient le serveur d'arrêter le travail (Claude + Élève).
-                    abortRef.current?.abort();
-                    fetch("/api/stop", { method: "POST" }).catch(() => {});
-                  }}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-err/90 text-white hover:bg-err transition-colors"
-                  title="Arrêter l'agent (le travail déjà fait est conservé)"
-                >
-                  <Square size={14} fill="currentColor" />
-                </button>
-              ) : externalBusy ? (
-                // Agent occupé AILLEURS (pas notre tour) : on signale clairement
-                // l'attente plutôt qu'un envoi voué au 409. Cliquable quand même
-                // (le 409 est désormais doux + le texte est conservé).
-                <button
-                  onClick={send}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent-soft transition-colors"
-                  title="L'agent travaille (occupé) — patiente la fin avant d'envoyer"
-                >
-                  <BrainCircuit size={16} className="animate-pulse" />
-                </button>
-              ) : (
-                <button
-                  onClick={send}
-                  disabled={!input.trim() && attachments.length === 0}
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white hover:bg-accent-soft disabled:opacity-30 transition"
-                  title="Envoyer (Entrée)"
-                >
-                  <ArrowUp size={17} strokeWidth={2.5} />
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <ChatComposer
+        input={input}
+        setInput={setInput}
+        inputRef={inputRef}
+        autoGrow={autoGrow}
+        placeholder={working ? "⏳ L'agent travaille — patiente la fin de la réflexion…" : "Décris ton app ou demande une modification…"}
+        busy={busy}
+        working={working}
+        externalBusy={externalBusy}
+        canSend={!!input.trim() || attachments.length > 0}
+        onSend={send}
+        onStop={stopAgent}
+        skill={{
+          menuOpen: skillMenuOpen,
+          suggestions: skillSuggestions,
+          activeIndex: menuActive,
+          setActiveIndex: setMenuActive,
+          complete: completeSkill,
+          dismiss: () => setMenuDismissed(true),
+        }}
+        files={{
+          attachments,
+          removeAttachment: (i) => setAttachments((prev) => prev.filter((_, j) => j !== i)),
+          addFiles,
+          fileRef,
+          contextFile,
+          clearContextFile: () => setContextFile(null),
+          picker: filePicker,
+          setPicker: setFilePicker,
+          pickerRef,
+          list: fileList,
+          search: fileSearch,
+          setSearch: setFileSearch,
+          pickContextFile: (f) => { setContextFile(f); setFilePicker(false); },
+        }}
+        actions={{ activeAction, actionModels, modelMenuFor, pickAction, setModelMenuFor, setActionModel }}
+        snap={{ start: () => setSnapMode(true), busy: snapBusy }}
+        onCoach={coachSend}
+        coachDisabled={!projectName.trim()}
+        mic={{ toggle: toggleMic, listening, transcribing }}
+      />
     </section>
   );
 }
 
-// Image attachments get a live thumbnail in their chip; other files (PDF)
-// keep the paperclip icon. The object URL is revoked on unmount.
-function AttachmentThumb({ file }) {
-  const [url, setUrl] = useState(null);
-  useEffect(() => {
-    if (!file.type?.startsWith("image/")) return undefined;
-    const u = URL.createObjectURL(file);
-    setUrl(u);
-    return () => URL.revokeObjectURL(u);
-  }, [file]);
-  if (!url) return <Paperclip size={10} className="shrink-0 text-accent-soft" />;
-  return <img src={url} alt="" className="h-5 w-5 shrink-0 rounded object-cover" />;
-}
 
-// Collapse consecutive tool messages into one expandable group
-function groupMessages(messages) {
-  const out = [];
-  for (const m of messages) {
-    const prev = out[out.length - 1];
-    if (m.role === "tool") {
-      if (prev?.kind === "tools") prev.items.push(m);
-      else out.push({ kind: "tools", key: `g${m.id}`, items: [m] });
-    } else {
-      out.push({ kind: "msg", key: m.id, message: m });
-    }
-  }
-  out.forEach((g, i) => {
-    g.isLast = i === out.length - 1;
-  });
-  return out;
-}
-
-function EscalationCard({ projectName }) {
-  const [ref, setRef] = useState("");
-  const [sent, setSent] = useState(false);
-  const [sending, setSending] = useState(false);
-
-  async function submit() {
-    if (!ref.trim() || sending || sent) return;
-    setSending(true);
-    try {
-      await fetch("/api/escalation-reference", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ projectName, referenceText: ref.trim() }),
-      });
-      setSent(true);
-    } catch {}
-    setSending(false);
-  }
-
-  return (
-    <div className="animate-fade-up max-w-[95%] self-start">
-      <div className="rounded-2xl rounded-tl-md border border-amber-500/30 bg-amber-500/[0.06] px-3.5 py-3 text-sm">
-        <div className="mb-2 flex items-center gap-1.5 text-xs font-semibold text-amber-500">
-          <span>⚠</span>
-          <span>MangoOS bloque sur le visuel</span>
-        </div>
-        {sent ? (
-          <p className="text-xs text-ok">
-            ✓ Référence reçue — axiome de goût enregistré. Redécris maintenant ce que tu veux changer.
-          </p>
-        ) : (
-          <>
-            <p className="mb-3 text-xs text-dim leading-relaxed">
-              Je tourne en rond. Montre-moi une référence visuelle pour recadrer ma direction — une URL, un mot-clé, une description de style.
-            </p>
-            <div className="flex gap-2">
-              <input
-                autoFocus
-                value={ref}
-                onChange={(e) => setRef(e.target.value)}
-                onKeyDown={(e) => e.key === "Enter" && submit()}
-                placeholder="Ex: minimaliste noir, style Linear, site raycast.com…"
-                className="flex-1 rounded-lg border border-edge bg-bg px-2.5 py-1.5 text-xs text-ink placeholder:text-faint focus:border-amber-500/60 focus:outline-none transition-colors"
-                disabled={sending}
-              />
-              <button
-                onClick={submit}
-                disabled={!ref.trim() || sending}
-                className="rounded-lg bg-amber-500/20 px-3 py-1.5 text-xs font-medium text-amber-500 hover:bg-amber-500/30 disabled:opacity-40 transition-colors"
-              >
-                {sending ? "…" : "Ancrer"}
-              </button>
-            </div>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// memo() : un message ne re-rend que si ses propres props changent. Couplé au
-// callback onFeedback stable (useCallback côté Chat) et à des objets `m`
-// référentiellement stables, taper dans la chatbox ne re-rend plus l'historique
-// — c'est ce qui rendait l'édition et le micro laggy sur les longues sessions.
-export const Message = memo(function Message({ m, showThinking = true, onFeedback, onReuse }) {
-  const [voted, setVoted] = useState(null); // "like" | "dislike" | null
-
-  function handleVote(rating) {
-    if (voted) return;
-    setVoted(rating);
-    onFeedback?.(rating, m.text);
-  }
-
-  switch (m.role) {
-    case "user":
-      return (
-        <div className="animate-fade-up group flex max-w-[85%] flex-col items-end gap-1 self-end">
-          <div className="rounded-2xl rounded-br-md bg-bubble px-3.5 py-2.5 text-sm leading-relaxed whitespace-pre-wrap break-words">
-            {m.text}
-          </div>
-          {onReuse && m.text?.trim() && (
-            <button
-              onClick={() => onReuse(m.text)}
-              className="flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] text-faint transition-colors hover:bg-edge-soft hover:text-ink"
-              title="Recopier ce message dans la barre de saisie pour le modifier et le renvoyer (sans envoi automatique)"
-            >
-              <RotateCcw size={11} />
-              Relancer
-            </button>
-          )}
-        </div>
-      );
-    case "agent":
-      return (
-        <div className="animate-fade-up max-w-[95%] self-start">
-          <div className="mb-1 flex items-center gap-1.5 text-xs font-semibold text-accent-soft">
-            <Sparkles size={12} />
-            MangoOS
-          </div>
-          <div className="md rounded-2xl rounded-tl-md border border-accent/15 bg-accent/[0.06] px-3.5 py-2.5 text-sm leading-relaxed break-words">
-            <ReactMarkdown>{stripQuestionMarkers(m.text)}</ReactMarkdown>
-          </div>
-          <div className="mt-1 flex items-center gap-1.5">
-            <button
-              onClick={() => handleVote("like")}
-              disabled={!!voted}
-              className={`rounded-lg px-2 py-0.5 text-xs transition-colors disabled:cursor-default ${
-                voted === "like"
-                  ? "bg-green-500/20 text-green-500"
-                  : voted
-                  ? "text-faint opacity-30"
-                  : "text-faint hover:text-green-500 hover:bg-green-500/10"
-              }`}
-              title="J'aime — enregistre ce pattern"
-            >
-              👍
-            </button>
-            <button
-              onClick={() => handleVote("dislike")}
-              disabled={!!voted}
-              className={`rounded-lg px-2 py-0.5 text-xs transition-colors disabled:cursor-default ${
-                voted === "dislike"
-                  ? "bg-err/20 text-err"
-                  : voted
-                  ? "text-faint opacity-30"
-                  : "text-faint hover:text-err hover:bg-err/10"
-              }`}
-              title="Je n'aime pas — éviter ce pattern"
-            >
-              👎
-            </button>
-            {voted && (
-              <span className="text-[10px] text-faint">
-                {voted === "like" ? "Pattern enregistré ✓" : "Pattern évité ✓"}
-              </span>
-            )}
-          </div>
-        </div>
-      );
-    case "escalation":
-      return <EscalationCard projectName={m.projectName} />;
-    case "thinking":
-      if (!showThinking) return null;
-      return (
-        <details className="animate-fade-up max-w-[95%] self-start">
-          <summary className="flex cursor-pointer list-none items-center gap-1.5 px-1 text-xs font-medium text-faint transition-colors hover:text-dim">
-            <BrainCircuit size={12} />
-            Réflexion
-          </summary>
-          <div className="mt-1 rounded-xl border border-edge-soft bg-panel px-3.5 py-2.5 text-xs leading-relaxed text-dim whitespace-pre-wrap break-words">
-            {m.text}
-          </div>
-        </details>
-      );
-    case "version":
-      return (
-        <div className="animate-fade-up flex items-center gap-1.5 self-start px-1 font-mono text-xs text-ok/80">
-          <Bookmark size={11} />
-          {m.text}
-        </div>
-      );
-    case "diff":
-      return <DiffSlider before={m.before} after={m.after} />;
-    case "error":
-      return (
-        <div className="animate-fade-up self-stretch rounded-xl border border-err/50 bg-err/10 px-3.5 py-2.5 text-sm text-err whitespace-pre-wrap break-words">
-          {m.text}
-        </div>
-      );
-    case "critique": {
-      const c = m.critique || {};
-      const lenses = c.lenses || [];
-      const tone = (s) => (s >= 85 ? "text-sys-green" : s >= 70 ? "text-accent-soft" : "text-sys-red");
-      return (
-        <div className="animate-fade-up self-stretch rounded-xl border border-edge bg-panel/70 px-3.5 py-3 backdrop-blur-sm">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-[12.5px] font-semibold text-ink">👁 {m.round === 0 ? "Critique initiale" : `Après le tour ${m.round}`}</span>
-            <span className={`ml-auto text-lg font-bold ${tone(c.overall)}`}>{c.overall}<span className="text-xs text-faint">/100</span></span>
-          </div>
-          <div className="flex flex-col gap-1">
-            {lenses.map((l, i) => (
-              <div key={i} className="flex items-baseline gap-2 text-[11.5px]">
-                <span className={`w-7 shrink-0 text-right font-semibold ${tone(l.score)}`}>{l.score}</span>
-                <span className="w-32 shrink-0 truncate text-dim">{l.name}</span>
-                <span className="truncate text-faint" title={`${l.issue}${l.fix ? " → " + l.fix : ""}`}>{l.issue}{l.fix ? ` → ${l.fix}` : ""}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      );
-    }
-    case "coach-done": {
-      const delta = (m.after ?? 0) - (m.before ?? 0);
-      return (
-        <div className="animate-fade-up self-stretch rounded-xl border border-accent/40 bg-accent/[0.07] px-3.5 py-2.5 text-sm">
-          <span className="font-semibold text-ink">Coach design terminé</span>{" "}
-          <span className="text-dim">— {m.before} → <span className="font-bold text-sys-green">{m.after}</span>/100{delta > 0 ? ` (+${delta})` : ""} en {m.rounds} tour{m.rounds > 1 ? "s" : ""} · {m.reason}</span>
-        </div>
-      );
-    }
-    case "status":
-    default:
-      return (
-        <div className="animate-fade-up self-start px-1 font-mono text-xs text-faint">
-          {m.text}
-        </div>
-      );
-  }
-});
+// Phase C2 — `Message` vit désormais dans components/chat/Message.jsx ;
+// ré-exporté ici pour ne casser aucun consommateur (tests).
+export { Message } from "./components/chat/Message.jsx";

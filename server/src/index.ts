@@ -25,6 +25,8 @@ import { spawnBackgroundReview } from "./review.js";
 import { spawnPatrol } from "./patrol.js";
 import { interruptCompaction, maybeCompactSession } from "./compaction.js";
 import { clearInterrupt, requestInterrupt } from "./interrupt.js";
+import { generateKreaImage } from "./krea.js";
+import { slugify as fluxSlugify } from "./eleve-flux-tools.js";
 import { saveUpload } from "./uploads.js";
 import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildIntent } from "./home-scratch.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
@@ -35,6 +37,7 @@ import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js
 import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
+import { domainTemplateSection } from "./template-library.js";
 import { uxuiProfile } from "./models/uxui.js";
 import { layoutProfile } from "./models/layout.js";
 import { getBus } from "./kernel-bus.js";
@@ -88,6 +91,8 @@ import { registerTasteRoutes } from "./taste-routes.js";
 import { registerDesignCoachRoutes } from "./design-coach-routes.js";
 import { registerSelfRoutes } from "./self-routes.js";
 import { registerSpecialistRoutes } from "./specialist-routes.js";
+import { registerEstheteRoutes } from "./esthete-routes.js";
+import { ensureEstheteAgent } from "./esthete-agent.js";
 import { registerSelfEvolutionRoutes } from "./self-evolution-routes.js";
 import { startTasteNocturnalScheduler } from "./taste-nocturnal.js";
 import { prewarmVision } from "./vision-prewarm.js";
@@ -95,6 +100,7 @@ import { sweepOrphanPreviews } from "./preview-sweep.js";
 import { lanIPv4s } from "./net.js";
 import { bootstrapProfile, hasProfile, type OnboardingAnswers } from "./onboarding.js";
 import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
+import { registerHomeConversationsRoutes } from "./home-conversations-routes.js";
 import { registerAgentFactoryRoutes } from "./agent-routes.js";
 import { restoreAgents } from "./agent-runtime.js";
 // #138 OS d'apps — colonne de données partagée + surface Suite (la spine).
@@ -206,7 +212,13 @@ app.post("/api/home-chat", async (req, res) => {
     res.status(400).json({ error: "messages required" });
     return;
   }
+  // Chaque tour d'accueil repart d'un drapeau d'arrêt PROPRE — même règle que /api/chat.
+  // Sans ça, un seul « Stop » (drapeau module de interrupt.ts) rendait TOUTES les
+  // discussions d'accueil suivantes muettes (« ⏹ Arrêté à ta demande »). Bug débusqué
+  // en montant l'Accueil conversationnel du shell 2.0 (2026-07-02).
+  clearInterrupt();
   const MODEL_MAP: Record<string, string> = {
+    fable:  "claude-fable-5",              // Fable 5 — le plus capable (via abonnement, cf. llm-engine)
     sonnet: "claude-sonnet-4-6",
     opus:   "claude-opus-4-8",
     haiku:  "claude-haiku-4-5-20251001",
@@ -254,6 +266,10 @@ app.post("/api/home-chat", async (req, res) => {
     let text: string;
     if (model === "eleve") {
       text = await chatEleve(system, last.content);
+    } else if (model === "qwen") {
+      // Qwen (« KUEN ») — VL/juge local via Ollama Cloud, souverain. Routage explicite du provider.
+      const { askLLM } = await import("./llm-engine.js");
+      text = await askLLM(system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
     } else {
       const { askLLM } = await import("./llm-engine.js");
       text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
@@ -558,7 +574,15 @@ app.post("/api/chat", async (req, res) => {
       // mémoire…) — mêmes blocs que Claude. Le moteur agentique (profil fort + GLM)
       // s'en sert pour piloter la coquille entière, pas un prompt nu. Sur le chemin
       // contrat (Gemma) runRelay l'ignore → zéro impact.
-      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN });
+      // Nuit 2026-07-03 — template de DOMAINE (bibliothèque locale) : squelette +
+      // contraintes design du domaine détecté sur la demande. "" si non détecté.
+      let templateSection = "";
+      try {
+        templateSection = domainTemplateSection(agentPrompt);
+      } catch {
+        templateSection = "";
+      }
+      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN, templateSection });
       const r = await runRelay(agentPrompt, dir, {
         ...(specialistProfile
           ? { profile: specialistProfile, eleveModel: specialistModel }
@@ -993,7 +1017,10 @@ registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 registerSelfRoutes(app); // Atelier de Mango — auto-amélioration (barreaux 1-4)
 registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
+ensureEstheteAgent(); // Agent système « Esthète » — seed idempotent au boot (sidebar Design)
+registerEstheteRoutes(app); // Chat conversationnel de l'Esthète (voit la preview, retouche)
 registerSelfEvolutionRoutes(app); // #168 — Boucle d'auto-évolution (semi-auto) : lacunes → forge validée
+registerHomeConversationsRoutes(app); // Écran « Conversation » : revoir/reprendre les discussions d'accueil
 
 app.post("/api/stop", async (_req, res) => {
   // Deux cerveaux, deux mécaniques d'arrêt :
@@ -1029,6 +1056,72 @@ app.get("/api/sovereignty", (_req, res) => {
   } catch (err) {
     res.status(500).json({ error: (err as Error).message });
   }
+});
+
+// ── Image Creator (Krea 2 via api.krea.ai) — galerie globale + envoi vers projet ──
+// Galerie : workspace/.images (hors projets). Vers un projet : public/generated/
+// (même dossier que genere_image → servi par Vite). Anti path-traversal strict.
+const IMAGES_DIR = path.join(WORKSPACE_DIR, ".images");
+const IMAGE_NAME_RE = /^[a-z0-9][a-z0-9._-]*\.png$/i;
+
+app.post("/api/image/generate", async (req, res) => {
+  const { prompt, aspectRatio, resolution, project } = (req.body ?? {}) as {
+    prompt?: string; aspectRatio?: string; resolution?: string; project?: string;
+  };
+  const p = String(prompt ?? "").trim();
+  if (!p) return res.status(400).json({ error: "prompt requis" });
+  if (project && !projectExists(project)) return res.status(400).json({ error: "projet inconnu" });
+
+  const r = await generateKreaImage({ prompt: p, aspectRatio, resolution });
+  if (!r.ok) return res.status(r.status && r.status >= 400 ? r.status : 502).json({ error: r.error });
+
+  const name = `${Date.now()}-${fluxSlugify(p)}.png`;
+  if (project) {
+    const abs = path.join(projectDir(project), "public", "generated", name);
+    fs.mkdirSync(path.dirname(abs), { recursive: true });
+    fs.writeFileSync(abs, r.bytes);
+    return res.json({ name, project, url: `/generated/${name}`, ms: r.ms });
+  }
+  fs.mkdirSync(IMAGES_DIR, { recursive: true });
+  fs.writeFileSync(path.join(IMAGES_DIR, name), r.bytes);
+  res.json({ name, url: `/api/image/file/${name}`, ms: r.ms });
+});
+
+app.get("/api/image/list", (_req, res) => {
+  try {
+    if (!fs.existsSync(IMAGES_DIR)) return res.json({ images: [] });
+    const images = fs
+      .readdirSync(IMAGES_DIR)
+      .filter((f) => IMAGE_NAME_RE.test(f))
+      .map((f) => {
+        const st = fs.statSync(path.join(IMAGES_DIR, f));
+        return { name: f, size: st.size, mtime: st.mtimeMs };
+      })
+      .sort((a, b) => b.mtime - a.mtime);
+    res.json({ images });
+  } catch {
+    res.json({ images: [] });
+  }
+});
+
+app.get("/api/image/file/:name", (req, res) => {
+  const name = String(req.params.name ?? "");
+  if (!IMAGE_NAME_RE.test(name)) return res.status(400).json({ error: "nom invalide" });
+  const abs = path.resolve(IMAGES_DIR, name);
+  if (!abs.startsWith(path.resolve(IMAGES_DIR)) || !fs.existsSync(abs)) return res.status(404).json({ error: "introuvable" });
+  res.sendFile(abs);
+});
+
+app.post("/api/image/send-to-project", (req, res) => {
+  const { name, project } = (req.body ?? {}) as { name?: string; project?: string };
+  if (!name || !IMAGE_NAME_RE.test(name)) return res.status(400).json({ error: "nom invalide" });
+  if (!project || !projectExists(project)) return res.status(400).json({ error: "projet inconnu" });
+  const src = path.resolve(IMAGES_DIR, name);
+  if (!src.startsWith(path.resolve(IMAGES_DIR)) || !fs.existsSync(src)) return res.status(404).json({ error: "introuvable" });
+  const dst = path.join(projectDir(project), "public", "generated", name);
+  fs.mkdirSync(path.dirname(dst), { recursive: true });
+  fs.copyFileSync(src, dst);
+  res.json({ project, url: `/generated/${name}` });
 });
 
 // (#172, Phase 4) Hooks — inspection lecture seule des hooks résolus d'un projet

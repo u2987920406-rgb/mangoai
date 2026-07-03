@@ -35,6 +35,7 @@ import { buildElevePlanifierTools } from "./eleve-planifier-tools.js";
 import { buildEleveWebTools } from "./eleve-web-tools.js";
 import { buildEleveHttpTools } from "./eleve-http-tools.js";
 import { buildEleveParcoursTools } from "./eleve-parcours-tools.js";
+import { buildEleveAutotestTools } from "./eleve-autotest-tools.js";
 import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { buildEleveDocumentTools } from "./eleve-document-tools.js";
 import { buildEleveArchiveTools } from "./eleve-archive-tools.js";
@@ -387,8 +388,12 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
 
   // Génération d'images IA souveraine via Flux local (L16, opt-in ELEVE_FLUX=on, défaut OFF) :
   // genere_image appelle l'API ComfyUI locale ($0). chercher_image (Pexels) reste le défaut rapide.
-  if (process.env.ELEVE_FLUX === "on") {
+  // ELEVE_KREA=on suffit aussi : genere_image passe alors par l'API Krea 2 (maillon cloud,
+  // krea.ts) quand ComfyUI est absent — les outils de découpe (slice) restent Flux-only.
+  if (process.env.ELEVE_FLUX === "on" || process.env.ELEVE_KREA === "on") {
     for (const t of buildEleveFluxTools(projectDir)) reg.register(t);
+  }
+  if (process.env.ELEVE_FLUX === "on") {
     for (const t of buildEleveSliceTools(projectDir)) reg.register(t);
   }
 
@@ -397,6 +402,13 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // (fait juger ses images par le VL et les corrige). Né de la finalisation de TOEIC Quest.
   if (process.env.ELEVE_CONTENT === "on") {
     for (const t of buildEleveContentTools(projectDir)) reg.register(t);
+  }
+
+  // Compétence AUTO-TEST (opt-in ELEVE_AUTOTEST=on, défaut OFF) : ecris_test / lance_tests.
+  // L'Élève se construit un filet de parcours rejouables et attrape SES régressions seul
+  // (bâti sur le moteur teste_parcours #155, zéro dépendance ajoutée dans le projet).
+  if (process.env.ELEVE_AUTOTEST === "on") {
+    for (const t of buildEleveAutotestTools(projectDir)) reg.register(t);
   }
 
   // Assemblage d'infra back à partir des briques éprouvées #169 (opt-in ELEVE_BRICKS=on, défaut OFF) :

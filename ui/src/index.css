@@ -41,6 +41,7 @@
   --color-scroll-hover: #363c4f;
 
   --animate-fade-up: fade-up 0.25s ease-out both;
+  --animate-fade: fade 0.18s ease-out both;
   --animate-shimmer: shimmer 1.8s linear infinite;
   --animate-pop: pop 0.18s ease-out both;
 
@@ -52,6 +53,14 @@
     to {
       opacity: 1;
       transform: translateY(0);
+    }
+  }
+  @keyframes fade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
   @keyframes shimmer {
@@ -105,6 +114,18 @@ body {
   transition:
     background-color 0.25s ease,
     color 0.25s ease;
+}
+
+/* Accessibilité : couper animations et transitions pour qui préfère moins de mouvement. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Subtle violet glow used behind the Home hero */

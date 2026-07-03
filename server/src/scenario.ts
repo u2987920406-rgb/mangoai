@@ -78,6 +78,10 @@ export type PromptContext = {
   // tri sémantique Blackboard + repli mots-clés), pré-calculés par agent.ts.
   // Remplace le dump complet quand fourni ; sinon → liste exhaustive.
   skillsSection?: string;
+  // Nuit 2026-07-03 — TEMPLATE DE DOMAINE (bibliothèque locale server/templates/*.md) :
+  // squelette + contraintes design + pièges du domaine détecté sur la demande
+  // (template-library.detectDomain), pré-calculé par l'appelant. "" si aucun domaine.
+  templateSection?: string;
 };
 
 // ── Prompt text blocks (moved verbatim from agent.ts) ──────────────────────
@@ -186,6 +190,12 @@ Mode 🌙 Génération nocturne — full autonomy, polished design:
 - You build ALONE, at night: NOBODY is available to answer. Take EVERY scoping, product and design decision yourself with your best judgement — never ask a question, never wait for validation, never present a plan for approval. Just decide and ship a complete, polished app.
 - Design bar = Élite: deploy the FULL visual moodboard below (real web leaders + Sharingan capture) to ground a genuine, distinctive visual identity. This is the whole point of this mode — do NOT settle for a generic default look.
 - You MAY write plan.md as an internal design doc to organise yourself, but it is NEVER a gate: do not stop to have it validated, just build.`,
+  // "esthetique" — mode INTERNE désormais (retiré d'ALLOWED_MODES le 2026-07-02,
+  // même statut que "nocturne") : plus sélectionnable par l'utilisateur (le
+  // chemin utilisateur est l'agent conversationnel « Esthète », esthete-agent.ts),
+  // mais encore utilisé par le pipeline nocturne (run-finish.ts/run-showcase.ts)
+  // et par la boucle de goût du Gardien (design-coach.ts → applyFixes). Ne pas
+  // retirer sans adapter ces 3 appelants.
   esthetique: `
 Mode ✨ Esthétique — high-fidelity graphic polish phase (the project is built and works; now make it BEAUTIFUL). This is a polish phase, NOT a construction phase: the graphic-polish protocol below governs this turn.`,
   // Mode 🏗️ Gros Projet (#139) — construction incrémentale d'UN grand produit
@@ -296,6 +306,10 @@ Finition protocol (apply rigorously this turn — you are now a Lead QA, not a b
 
 // Chantier #68 — Graphic polish high-fidelity pass: the aesthetic twin of the
 // finition phase. Where finition hardens robustness, esthetique polishes BEAUTY.
+// Mode retiré d'ALLOWED_MODES le 2026-07-02 (plus sélectionnable par
+// l'utilisateur — voir esthete-agent.ts pour le chemin conversationnel qui le
+// remplace) mais encore utilisé en INTERNE par run-finish.ts/run-showcase.ts
+// et par design-coach.ts (boucle de goût du Gardien) : ne pas retirer.
 const GRAPHIC_POLISH_RULES = `
 Graphic polish — high-fidelity aesthetic pass (apply rigorously this turn — you are now a Visual Lead, not a builder):
 - FEATURE FREEZE — add NO new feature, page or scope. This mode embellishes existing UI; it does NOT build. If a request implies a genuinely new feature, say so briefly and ask the user to switch back to MVP/Élite.
@@ -307,6 +321,42 @@ Graphic polish — high-fidelity aesthetic pass (apply rigorously this turn — 
 - CONSISTENCY — respect the project's existing design-system, component conventions and language contract. Polish, do not rewrite.
 - PROPORTIONALITY — no over-animation; respect prefers-reduced-motion; preserve contrast ratios for accessibility.
 - PROACTIVE CLOSURE (mandatory final step) — after completing the polish pass, deliver: (1) a short French summary of the visual refinements applied (file by file), (2) exactly 3 concrete suggestions for additional visual optimisations the user could pursue next.`;
+
+// Nuit 2026-07-03 (level-up) — Design craft : les règles d'exécution CHIFFRÉES
+// (typo, palette ancrée, motion) qui n'existaient qu'en mode esthetique interne.
+// Compilées depuis la recherche web du 2026-07-03 + les audits de la nuit :
+// les builds naissaient statiques, en Inter, avec des palettes flottantes.
+const DESIGN_CRAFT_RULES = `
+Design craft — non-negotiable execution rules for EVERY build turn (typography, color, motion):
+
+TYPOGRAPHY (default Inter everywhere is the #1 marker of generic output):
+- Choose a DISPLAY face + a BODY face matching the subject's emotional register, and name the pairing in a code comment. Registers: editorial/heritage → serif display (Playfair Display, Fraunces, Cormorant) + humanist body; tech/product → strong grotesk (Space Grotesk, Sora, Manrope); playful/kids → rounded (Baloo 2, Nunito); luxe → spaced serif (Cormorant, Marcellus); retro/game → pixel or slab display. Import via a Google Fonts <link> in index.html, always with system fallbacks.
+- Modular scale: hero clamp(2.5rem, 7vw, 5.5rem) · section titles clamp(1.6rem, 3.5vw, 2.6rem) · body 1rem/1.6. Display faces get letter-spacing -0.02em to -0.04em. NEVER thin weights on dark backgrounds. tabular-nums on any live number.
+- ONE memorable typographic moment per page (a giant hero word, an oversized number, a kinetic title) — not three medium titles.
+
+COLOR — anchored palette (a palette without an anchor is the root of generic output):
+- Derive the palette from the SUBJECT's real chromatic identity (mango → solar orange; abyss → deep blue-blacks; matcha → leaf greens). Write the anchor as a comment: /* palette anchor: <color> because <subject reason> */.
+- Structure: one dominant neutral family (dark themes use true greys #0f0f12→#17171c, never pure #000), ONE saturated accent max (reserved for CTAs/highlights), 1-2 support tones. Everything as CSS custom properties — zero one-off magic hex in components.
+- Dark data-heavy UIs: a desaturated series palette designed FOR dark (never invert a light palette); gridlines 3-8% lighter than the base.
+
+MOTION — a static page reads as unfinished. Minimum per app:
+- 3+ real micro-interactions: hover with transform (translateY(-4px) or scale 1.02 + shadow lift), click feedback (scale 0.97), visible focus ring.
+- Entrance choreography: content fades/slides in on load or scroll (IntersectionObserver), stagger 60-100ms between siblings.
+- Durations 150-250ms for UI, 400-700ms for hero moments; ease-out or cubic-bezier(0.22,1,0.36,1). ALWAYS honor @media (prefers-reduced-motion: reduce).`;
+
+// Nuit 2026-07-03 — Axiomes design APPRIS (distillés des builds réellement jugés,
+// UX 10-34 + AVOID 25-39). Ils vivaient dans la mémoire de session du Maître,
+// invisibles du modèle qui GÉNÈRE : transcrits ici, ils atteignent enfin l'Élève.
+const DESIGN_AXIOMS_RULES = `
+Learned design axioms — distilled from real judged builds; treat them as law:
+- DECIDE THE ANGLE FIRST: before any code, choose ONE non-obvious creative angle and write it as a comment at the top of App. A sum of "fine" sections is never memorable — the angle is. (UX-34)
+- CENTRAL CONCEPT: every screen needs one federating concept everything serves. No concept → uniform mediocrity, guaranteed. (AVOID-27/30)
+- SEMANTIC MATCH: every visual choice (color, type, motion, density) must be justifiable by the subject. If it could ship unchanged for another subject, it is generic. (UX-10, AVOID-25)
+- HIERARCHY BEFORE COLOR: fix size/weight/spacing first; color never rescues a flat hierarchy. (AVOID-26)
+- COMPOSITION ≠ ACCUMULATION: five excellent sections beat eight average ones — cut the weakest instead of polishing it. (AVOID-31)
+- FUNCTIONAL-FELT: code-correct ≠ functional-felt. Walk the real user path and LOOK at the render; judge what the user feels, not what the code says. (UX-24, AVOID-33)
+- TRANSLATE THE ANGLE: an angle not translated into concrete visual constraints (a specific palette, a specific type choice, a specific layout rule) does not exist — write the 3 constraints your angle imposes. (AVOID-35)
+- ORIGINAL EXECUTION: an original concept with generic execution still fails; originality must be visible in the pixels. (AVOID-37)`;
 
 // Chantier #35 — Generated backend (Express alongside the React/Vite frontend).
 // Injected only when the project already has an api/ folder (hasBackend check
@@ -370,6 +420,13 @@ const BLOCKS: Record<string, (ctx: PromptContext) => string> = {
   // Idée #74 — constellations: pack de règles coordonnées injecté quand la demande
   // matche un contexte (ex. formulaire). Pré-calculé par agent.ts. "" si aucune.
   constellations: (ctx) => ctx.constellationsSection ?? "",
+  // Nuit 2026-07-03 — template de domaine (bibliothèque locale). "" si non détecté.
+  domainTemplate: (ctx) => ctx.templateSection ?? "",
+  // Nuit 2026-07-03 — artisanat design chiffré (typo/palette ancrée/motion) + axiomes
+  // design appris, enfin injectés dans les modes de BUILD (ils n'existaient qu'en
+  // esthetique interne / mémoire de session du Maître).
+  designCraft: () => DESIGN_CRAFT_RULES,
+  designAxioms: () => DESIGN_AXIOMS_RULES,
   mode: (ctx) => MODE_RULES[ctx.mode],
   base: () => SYSTEM_APPEND,
   // « Contexte d'abord » (Raf) — recherche d'identité du sujet réel avant de coder.
@@ -488,7 +545,7 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // Bloc prompt-only : zéro fichier, zéro réseau.
   selfCritique: () => SELF_CRITIQUE_RULES,
   // Chantier #68 — graphic polish protocol: the aesthetic twin of finition.
-  // Governs the esthetique mode — high-fidelity visual polish pass.
+  // Governs the (désormais interne) esthetique mode — high-fidelity visual polish pass.
   graphicPolish: () => GRAPHIC_POLISH_RULES,
   // Idée #99 — Perfect Plan : contrat contraignant (type / style / navigation /
   // données / ambiance + références) défini AVANT le premier message. Injecté en
@@ -520,8 +577,8 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
 const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout", string[]> = {
-  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
-  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
+  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
   // feature design) and leads with the finition protocol to frame the phase.
   finition: ["tutorial", "mode", "clientContext", "base", "finition", "blueprints", "supabase", "backend", "analytic", "tests", "visionElite", "axioms", "designSystem", "components", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
@@ -530,12 +587,13 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // humaines (cadrage qui sollicite, clarification, Miroir) et le scoping
   // architecte questionneur (PLAN_RULES → remplacé par moodboardNocturne), ainsi
   // que tutorial (pas de tuto la nuit) et tests (build rapide ciblé design).
-  nocturne: ["mode", "base", "contexteFirst", "blueprints", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
-  // Esthétique (#68) — polish graphique haute fidélité : projet fonctionnel,
-  // on l'embellit. Mène avec le protocole graphicPolish, garde tout l'arsenal
-  // qualité (analytic + visionElite + design-system) SANS nouveau scope/plan
-  // (pas de cadrage/clarification/Miroir) ni tests ni tutorial.
-  esthetique: ["mode", "clientContext", "base", "graphicPolish", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
+  nocturne: ["mode", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  // Esthétique (#68) — polish graphique haute fidélité, désormais mode INTERNE
+  // (run-finish/run-showcase/design-coach) : projet fonctionnel, on l'embellit.
+  // Mène avec le protocole graphicPolish, garde tout l'arsenal qualité
+  // (analytic + visionElite + design-system) SANS nouveau scope/plan (pas de
+  // cadrage/clarification/Miroir) ni tests ni tutorial.
+  esthetique: ["mode", "clientContext", "base", "graphicPolish", "designCraft", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
   // Discussion — conversation naturelle sans build automatique. Zéro arsenal de
   // génération : juste la posture conversationnelle + contexte projet (notes,
   // mémoire, identité) pour que Claude puisse conseiller pertinemment.

@@ -26,10 +26,12 @@ console.log("─".repeat(60));
 console.log("test-perfect-plan");
 console.log("─".repeat(60));
 
-// 1. Structure des questions
-check("5 questions définies", PERFECT_PLAN_QUESTIONS.length === 5);
+// 1. Structure des questions (15 Perfect Plan + 15 Gros chantier = 30)
+check("30 questions définies", PERFECT_PLAN_QUESTIONS.length === 30);
+check("première question = type", PERFECT_PLAN_QUESTIONS[0]?.id === "type");
+check("ids uniques", new Set(PERFECT_PLAN_QUESTIONS.map((q) => q.id)).size === PERFECT_PLAN_QUESTIONS.length);
 for (const q of PERFECT_PLAN_QUESTIONS) {
-  check(`${q.id} — au moins 3 options`, q.options.length >= 3);
+  check(`${q.id} — au moins 2 options`, q.options.length >= 2);
 }
 
 // 2. hasContract — absent par défaut
@@ -49,7 +51,16 @@ const c2 = loadContract(dir2)!;
 check("loadContract retourne les answers", c2.answers[0].value === "webapp");
 check("loadContract ajoute createdAt", Boolean(c2.createdAt));
 check("refs vide quand non fourni", Array.isArray(c2.refs) && c2.refs.length === 0);
+check("kind absent quand non fourni (rétrocompat)", c2.kind === undefined);
 fs.rmSync(dir2, { recursive: true });
+
+// 3b. kind « perfect » / « chantier » persiste
+const dirK = tmpDir();
+saveContract(dirK, { answers: [{ id: "type", value: "webapp", label: "App web" }], refs: [], kind: "chantier" });
+check("kind chantier persiste", loadContract(dirK)?.kind === "chantier");
+saveContract(dirK, { answers: [{ id: "type", value: "webapp", label: "App web" }], refs: [], kind: "perfect" });
+check("kind perfect persiste", loadContract(dirK)?.kind === "perfect");
+fs.rmSync(dirK, { recursive: true });
 
 // 4. deleteContract
 const dir3 = tmpDir();
@@ -128,7 +139,7 @@ fs.rmSync(dir9, { recursive: true });
 
 console.log("─".repeat(60));
 if (failures === 0) {
-  console.log(`✅ ${PERFECT_PLAN_QUESTIONS.length + 21} vérifications passées`);
+  console.log(`✅ ${PERFECT_PLAN_QUESTIONS.length + 27} vérifications passées`);
   process.exit(0);
 } else {
   console.log(`❌ ${failures} vérification(s) en échec`);

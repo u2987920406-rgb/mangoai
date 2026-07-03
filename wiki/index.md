@@ -43,6 +43,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[oeil-coach]] | Critique design MULTI-LENTILLES + boucle « critique → GLM corrige → re-regarde » jusqu'à un seuil — #152 ✅ fait, prouvé live (limite juge VL bruité notée) | ✅ écrite |
 | [[transmission-competences]] | Mission : Claude APPREND son savoir-faire à Mango — tout trou bouché à la main → outil de l'Élève. Transmis : vois_ecran #151, chercher_image #153, chercher_web/lire_page #154, teste_parcours #155, chercher_artefact #156, lire_document #157 (+Office #158), extraire_site #159 (→ [[sharingan-extraction]]), planifier #160 (→ [[planifier-avant-agir]]) | ✅ écrite |
 | [[moteur-gout]] | Capter le goût UI/UX de Raf par préférence multi-variantes (K skins GLM → 1 tap → axiome de goût) — #149, v1.5 livrée | ✅ écrite |
+| [[templates-domaines]] | Bibliothèque locale de 20 manifests de domaine (angle + squelette + typo/palette/motion + pièges AVOID) injectés au prompt quand la demande matche (`template-library.ts`, détection mots-clés FR/EN, seuil anti-faux-positifs) — nuit 2026-07-03 | ✅ écrite |
 | [[toeic-quest]] | Formation TOEIC 1 an (800+) construite via MangoOS : moteur Claude, **~290 questions écrites par GLM**, cohérence d'images jugée par le VL — conversations H/F, carte de parcours Duolingo, 7 parties officielles — 2026-06-30 | ✅ écrite |
 | [[audit-souverainete]] | Recensement des défauts-Claude en 3 niveaux + interrupteurs de repli local (`<FEATURE>_PROVIDER`) — Phase E | ✅ écrite |
 | [[coque-souple]] | Assemblage du prompt par blocs/scénario, modes MVP/Élite/Finition — jalon A | ✅ écrite |
@@ -61,6 +62,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[cartographie-projet]] | Modèle « photogrammétrie → indexation IA » : EXIF/AST + keypoints/embeddings + recalage/vault — à sortir à la Phase 2 de #139 | ✅ écrite |
 | [[agents-specialises]] | Constellation UX/UI · Layout · PDF — spécialistes Gemma locaux, `ModelProfile`, relay paramétrable — #145 | ✅ écrite |
 | [[audit-general]] | Super audit rétrospectif + empirique : évolution, validé vs manquant, 3 écarts honnêtes (souveraineté minoritaire · coût cloud non tracé · promesses de périphérie) — 2026-06 | ✅ écrite |
+| [[audit-2-0]] | Audit complet préparant la refonte 2.0 : moteur mature à consolider, UI = vrai chantier (design system, état, monolithes, a11y) — feuille de route A→E, rapport `docs/audit-mango-2.0.md` — 2026-07-02 | ✅ écrite |
 
 ## Veille externe
 

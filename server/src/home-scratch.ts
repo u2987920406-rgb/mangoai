@@ -42,6 +42,75 @@ export function cleanHomeScratch(convId: string): void {
   } catch { /* déjà parti / verrouillé */ }
 }
 
+// ── Persistance des conversations d'accueil (auto-save « façon ChatGPT ») ───────
+// Chaque conversation d'accueil est sauvegardée dans son brouillon (`.home/<convId>/conv.json`)
+// pour pouvoir y REVENIR depuis l'écran « Conversation ». Le titre = 1er message utilisateur.
+
+export interface HomeConvMsg { role: string; content: string }
+export interface HomeConversation {
+  convId: string;
+  title: string;
+  messages: HomeConvMsg[];
+  updatedAt: string;
+}
+const CONV_FILE = "conv.json";
+
+function convTitle(messages: HomeConvMsg[]): string {
+  const firstUser = messages.find((m) => m.role === "user" && m.content?.trim());
+  const t = (firstUser?.content ?? "").trim().replace(/\s+/g, " ");
+  if (!t) return "Conversation";
+  return t.length > 60 ? `${t.slice(0, 60)}…` : t;
+}
+
+/** Sauvegarde (auto) une conversation d'accueil. Ignore s'il n'y a aucun message utilisateur. Ne lève pas. */
+export function saveHomeConversation(convId: string, messages: HomeConvMsg[]): void {
+  if (!messages?.some((m) => m.role === "user" && m.content?.trim())) return;
+  try {
+    const dir = ensureHomeScratch(convId);
+    const conv: HomeConversation = {
+      convId: safeConvId(convId),
+      title: convTitle(messages),
+      messages,
+      updatedAt: new Date().toISOString(),
+    };
+    fs.writeFileSync(path.join(dir, CONV_FILE), JSON.stringify(conv, null, 2), "utf8");
+  } catch { /* best-effort */ }
+}
+
+/** Liste les conversations d'accueil sauvegardées, plus récentes d'abord. Ne lève pas. */
+export function listHomeConversations(): Array<{ convId: string; title: string; updatedAt: string; count: number }> {
+  try {
+    if (!fs.existsSync(HOME_ROOT)) return [];
+    const out: Array<{ convId: string; title: string; updatedAt: string; count: number }> = [];
+    for (const entry of fs.readdirSync(HOME_ROOT, { withFileTypes: true })) {
+      if (!entry.isDirectory()) continue;
+      const file = path.join(HOME_ROOT, entry.name, CONV_FILE);
+      if (!fs.existsSync(file)) continue;
+      try {
+        const conv = JSON.parse(fs.readFileSync(file, "utf8")) as HomeConversation;
+        out.push({
+          convId: conv.convId || entry.name,
+          title: conv.title || "Conversation",
+          updatedAt: conv.updatedAt || "",
+          count: conv.messages?.length ?? 0,
+        });
+      } catch { /* fichier corrompu → ignoré */ }
+    }
+    return out.sort((a, b) => (b.updatedAt || "").localeCompare(a.updatedAt || ""));
+  } catch {
+    return [];
+  }
+}
+
+/** Charge une conversation d'accueil complète (ou null si absente/corrompue). Ne lève pas. */
+export function loadHomeConversation(convId: string): HomeConversation | null {
+  try {
+    return JSON.parse(fs.readFileSync(path.join(homeScratchDir(convId), CONV_FILE), "utf8")) as HomeConversation;
+  } catch {
+    return null;
+  }
+}
+
 // ── Détection d'intention de CONSTRUIRE (pour proposer la graduation) ──────────
 // Volontairement CONSERVATEUR (mot entier, accents normalisés) : on ne propose la
 // graduation que sur un signal franc, jamais sur une simple discussion. PUR.

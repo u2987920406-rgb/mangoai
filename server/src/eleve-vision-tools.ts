@@ -25,7 +25,7 @@ function visionBudget(): number {
 /** Dépendances injectables (tests sans réseau ni navigateur). */
 export interface VisionDeps {
   startPreview: (projectDir: string) => Promise<{ url: string }>;
-  capturePreview: (url: string) => Promise<Buffer>;
+  capturePreview: (url: string, opts?: { fullPage?: boolean }) => Promise<Buffer>;
   dispatch: (
     agentId: "vision",
     system: string,
@@ -58,11 +58,22 @@ export function buildEleveVisionTools(projectDir: string, deps: VisionDeps = rea
       "Utilise-le APRÈS un travail d'UI pour vérifier toi-même la cohérence de charte (couleurs/typo/" +
       "espacements), la lisibilité et le layout sur l'écran — un build vert ne prouve PAS l'apparence. " +
       "Donne dans `objectif` ce que tu veux faire vérifier (ex. « la page d'accueil est-elle cohérente " +
-      "et lisible ? »). Corrige ensuite les écarts signalés, puis re-vérifie si besoin.",
+      "et lisible ? »). `chemin` (optionnel) te permet de regarder une AUTRE page que l'accueil " +
+      "(ex. '/contact', '/jeu') — vérifie CHAQUE page importante, pas seulement la devanture. " +
+      "`page_entiere: true` capture toute la hauteur (sections basses + footer inclus). " +
+      "Corrige ensuite les écarts signalés, puis re-vérifie si besoin.",
     inputSchema: {
       objectif: z
         .string()
         .describe("Ce que tu veux faire vérifier visuellement (ex. « cohérence des couleurs sur l'accueil »)"),
+      chemin: z
+        .string()
+        .optional()
+        .describe("Route à visiter avant la capture (ex. '/contact'). Défaut : la page d'accueil."),
+      page_entiere: z
+        .boolean()
+        .optional()
+        .describe("true = capturer TOUTE la hauteur de la page (pas seulement l'écran visible)."),
     },
     handler: async (args): Promise<KernelToolResult> => {
       const budget = visionBudget();
@@ -89,10 +100,20 @@ export function buildEleveVisionTools(projectDir: string, deps: VisionDeps = rea
         };
       }
 
-      // 2. Capture du rendu.
+      // 2. Capture du rendu — route interne optionnelle (multi-pages) + pleine hauteur.
+      const chemin = String(args.chemin ?? "").trim();
+      const fullPage = args.page_entiere === true;
+      let target = url;
+      if (chemin) {
+        try {
+          target = new URL(chemin, url).toString();
+        } catch {
+          return { text: `Chemin invalide (« ${chemin} ») — donne une route relative comme '/contact'.`, isError: true };
+        }
+      }
       let imageBase64: string;
       try {
-        const buf = await deps.capturePreview(url);
+        const buf = await deps.capturePreview(target, { fullPage });
         imageBase64 = buf.toString("base64");
       } catch (e) {
         return { text: `Capture impossible (${(e as Error).message}). Continue sans la vision.`, isError: true };
@@ -113,7 +134,7 @@ export function buildEleveVisionTools(projectDir: string, deps: VisionDeps = rea
 
       return {
         text:
-          `👁 Vision — objectif « ${objectif} » :\n${r.summary.trim()}\n\n` +
+          `👁 Vision — objectif « ${objectif} »${chemin ? ` (page ${chemin})` : ""}${fullPage ? " (pleine hauteur)" : ""} :\n${r.summary.trim()}\n\n` +
           "→ Corrige les écarts visuels signalés (edit_file), puis re-vérifie si nécessaire avant finish.",
       };
     },

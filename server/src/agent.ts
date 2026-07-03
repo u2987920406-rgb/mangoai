@@ -6,6 +6,7 @@ import { assembleSystemPrompt } from "./scenario.js";
 import { visionServer } from "./vision.js";
 import { relevantNotesSection } from "./notes-rag.js";
 import { constellationsSection } from "./constellations.js";
+import { domainTemplateSection } from "./template-library.js";
 import { proceduresPromptSection } from "./procedures.js";
 import { inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
@@ -24,20 +25,23 @@ export type ModelChoice = (typeof ALLOWED_MODELS)[number];
 // future advanced feature (Mango Plan, moodboard, temporal QA…) plugs into.
 // "uxui"   = agent spécialisé UX/UI (shadcn, accessibilité, micro-interactions — Gemma local #145).
 // "layout" = agent spécialisé CSS Layout (Grid, Flex, Container Queries, responsive — Gemma local #145).
-export const ALLOWED_MODES = ["mvp", "elite", "finition", "esthetique", "discuss", "projet", "compose", "uxui", "layout"] as const;
+export const ALLOWED_MODES = ["mvp", "elite", "finition", "discuss", "projet", "compose", "uxui", "layout"] as const;
 // "nocturne" = mode INTERNE de génération autonome (boucle nocturne #58) : il
 // déploie l'arsenal DESIGN d'Élite (moodboard Sharingan + recherche web +
 // design-system) mais SANS les portes humaines (cadrage qui sollicite,
 // clarification, Miroir) — personne ne répond la nuit. Non exposé au sélecteur
 // UI → hors d'ALLOWED_MODES, ajouté au seul type Mode.
-// "esthetique" = mode UTILISATEUR de polish graphique haute fidélité (#68) :
-// raffine la BEAUTÉ d'un projet déjà construit — micro-interactions, animations,
-// tokens granulaires, boucle visuelle complète. Pas de nouvelle feature, pas de
-// web research — polissage pur sur l'existant.
+// "esthetique" (#68) — retiré d'ALLOWED_MODES le 2026-07-02 : plus sélectionnable
+// par l'utilisateur (le chemin utilisateur est désormais l'agent conversationnel
+// « Esthète », esthete-agent.ts/esthete-routes.ts, accessible depuis la sidebar —
+// il voit la preview et retouche à la demande plutôt que de balayer tout le
+// projet en autonomie). Reste un mode INTERNE (même statut que "nocturne") :
+// encore utilisé par le pipeline nocturne (run-finish.ts/run-showcase.ts) et par
+// la boucle de goût du Gardien (design-coach.ts → applyFixes).
 // "compose" = mode 🧩 App composable (#138) : l'app générée est UN composant
 // d'un OS d'apps qui se parlent. Arsenal Élite + contrat MangoApp (manifest
 // .mangoapp.json) + colonne de données partagée (REST /api/shared) en tête.
-export type Mode = (typeof ALLOWED_MODES)[number] | "nocturne";
+export type Mode = (typeof ALLOWED_MODES)[number] | "nocturne" | "esthetique";
 const DEFAULT_MODE: Mode = "elite";
 
 export type AgentEvent =
@@ -165,6 +169,14 @@ export async function* runAgent(
   } catch {
     constellationsBlock = "";
   }
+  // Nuit 2026-07-03 — template de DOMAINE (bibliothèque locale server/templates/*.md) :
+  // squelette + contraintes design du domaine détecté sur la demande. "" si non détecté.
+  let templateBlock = "";
+  try {
+    templateBlock = domainTemplateSection(prompt);
+  } catch {
+    templateBlock = "";
+  }
   // Idée #75 — mémoire procédurale : récupère (sémantique + repli mots-clés) les
   // démarches de résolution passées qui matchent CETTE demande, "" si aucune.
   // Best-effort, n'embed que la requête (les procédures sont pré-indexées).
@@ -231,7 +243,7 @@ export async function* runAgent(
           // Coque Souple: the append is assembled from named blocks following
           // the scenario (= effort mode). Behavior-constant vs the old inline
           // concatenation (verified byte-for-byte).
-          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
+          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, templateSection: templateBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
         },
         ...(sessionId ? { resume: sessionId } : {}),
       },

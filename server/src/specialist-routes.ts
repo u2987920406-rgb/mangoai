@@ -12,6 +12,7 @@ import {
   loadSpecialists, updateSpecialistBrain, removeSpecialist, runSpecialist,
 } from "./specialist-agents.js"
 import { forgeAgents } from "./agent-forge.js"
+import { ESTHETE_AGENT_ID } from "./esthete-agent.js"
 
 export function registerSpecialistRoutes(app: Express): void {
   app.get("/api/specialists", (_req: Request, res: Response) => {
@@ -52,6 +53,10 @@ export function registerSpecialistRoutes(app: Express): void {
   })
 
   app.delete("/api/specialists/:id", (req: Request, res: Response) => {
+    if (req.params["id"] === ESTHETE_AGENT_ID) {
+      res.status(403).json({ error: "L'Esthète est un agent système, non supprimable." })
+      return
+    }
     const ok = removeSpecialist(req.params["id"] as string)
     if (!ok) { res.status(404).json({ error: "agent introuvable" }); return }
     res.json({ ok: true })

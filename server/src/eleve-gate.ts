@@ -33,6 +33,8 @@ export interface GateVerdict {
   wcagOk: boolean; // mesures objectives #111 (indépendantes du VL)
   balanceOk: boolean; // ÉQUILIBRE de mise en page (déterministe) — max-w sans centrage = collé à gauche
   balance: BalanceFinding[]; // détails des blocs à largeur max non centrés (vide si ok)
+  placeholdersOk: boolean; // garde « vraies images » : aucun placeholder aléatoire vivant dans le code écrit
+  placeholders: PlaceholderFinding[]; // URLs de placeholder trouvées (vide si ok)
   testsRan: boolean; // (L55) la suite de tests a-t-elle vraiment tourné ? (script présent + gate on)
   testsOk: boolean; // (L55) tests verts OU non lancés (sauté → ne pénalise pas)
   tests?: TestRun; // détail de la suite de tests (absent si non lancée)
@@ -59,6 +61,8 @@ export interface GateDeps {
   stopPreview: (dir: string) => Promise<void>;
   /** Garde déterministe d'équilibre : scanne les fichiers écrits (max-w sans centrage). */
   scanBalance: (projectDir: string, files: string[]) => BalanceFinding[];
+  /** Garde déterministe « vraies images » : placeholders aléatoires dans les fichiers écrits. */
+  scanPlaceholders: (projectDir: string, files: string[]) => PlaceholderFinding[];
   /** (L55) Lance la suite de tests du projet (gated ELEVE_GATE_TESTS). Ne lève jamais. */
   runTests: (projectDir: string) => Promise<TestRun>;
 }
@@ -74,12 +78,53 @@ function realScanBalance(projectDir: string, files: string[]): BalanceFinding[] 
   });
 }
 
+// ── Garde « vraies images » (règle ⭐ de Raf) ────────────────────────────────────
+// Un placeholder ALÉATOIRE qui CHARGE (picsum, loremflickr…) passe le check 404 et
+// toutes les clôtures — image hors-sujet garantie, indétectée. Détection déterministe
+// sur les fichiers écrits, même mécanique que la garde d'équilibre.
+export interface PlaceholderFinding { file: string; url: string }
+
+const PLACEHOLDER_URL_RE =
+  /https?:\/\/(?:www\.)?(?:picsum\.photos|loremflickr\.com|via\.placeholder\.com|unsplash\.it|placekitten\.com|placehold\.co|placebear\.com|dummyimage\.com|baconmockup\.com)[^"'`\s)>,]*/gi;
+
+/** Détecteur PUR : URLs de placeholder aléatoire dans les fichiers écrits. */
+export function scanFilesForPlaceholders(files: string[], read: (f: string) => string | null): PlaceholderFinding[] {
+  const out: PlaceholderFinding[] = [];
+  for (const f of files) {
+    if (!/\.(jsx?|tsx?|css|html?|json|md|svelte|vue)$/i.test(f)) continue;
+    const src = read(f);
+    if (!src) continue;
+    for (const m of src.matchAll(PLACEHOLDER_URL_RE)) out.push({ file: f, url: m[0] });
+  }
+  return out;
+}
+
+export function formatPlaceholdersRaison(findings: PlaceholderFinding[]): string {
+  const lines = findings.slice(0, 8).map((p) => `  - ${p.file} : ${p.url}`);
+  return (
+    `IMAGES — ${findings.length} URL(s) de placeholder ALÉATOIRE dans le code (interdites : l'image ne correspondra jamais au contenu) :\n` +
+    `${lines.join("\n")}\n` +
+    `  Remplace CHAQUE URL par une vraie photo via chercher_image('description anglaise de la scène') — copie l'URL Pexels EXACTE renvoyée.`
+  );
+}
+
+function realScanPlaceholders(projectDir: string, files: string[]): PlaceholderFinding[] {
+  return scanFilesForPlaceholders(files, (f) => {
+    try {
+      return fs.readFileSync(path.join(projectDir, f), "utf8");
+    } catch {
+      return null;
+    }
+  });
+}
+
 const realGateDeps: GateDeps = {
   judge: (task, summary, files, projectDir) => judgeIntention(task, summary, files, projectDir),
   critique: (projectDir, workspaceDir, projectType) =>
     critiqueScreen(projectDir, buildJudgeContext(workspaceDir, projectType)),
   stopPreview: (dir) => realCoachDeps.stopPreview(dir),
   scanBalance: realScanBalance,
+  scanPlaceholders: realScanPlaceholders,
   runTests: (dir) => runProjectTests(dir),
 };
 
@@ -137,8 +182,11 @@ export async function runClosureGate(
     design = await deps.critique(projectDir, workspaceDir, projectType);
     tasteScored = design.scored !== false; // tolère d'anciennes critiques sans le champ
     const wcagFails = design.measure?.contrastFails.length ?? 0;
-    // En observe, le goût ne pèse jamais sur le verdict (tasteOk=true) — il est seulement mesuré.
-    tasteOk = tasteObserve || !tasteScored || design.overall >= th.tasteMin;
+    // En observe, le goût ne pèse pas sur le verdict — SAUF échec grossier : un score
+    // fiable sous le PLANCHER (défaut 50/100) bloque même en observe. « Build-vert ≠
+    // réussi » : une app laide mais couvrante ne doit plus sortir verte sans un regard.
+    const tasteFloor = Number(process.env.ELEVE_GATE_TASTE_FLOOR ?? 50);
+    tasteOk = !tasteScored || (tasteObserve ? design.overall >= tasteFloor : design.overall >= th.tasteMin);
     wcagOk = wcagFails <= th.wcagMaxFails;
   } catch {
     design = undefined; // pas de rendu jugeable → ne pénalise pas
@@ -162,6 +210,19 @@ export async function runClosureGate(
       balance = [];
     }
     balanceOk = balance.length === 0;
+  }
+
+  // 4bis. VRAIES IMAGES (déterministe) — un placeholder aléatoire vivant est indétectable
+  // par le check 404 et par le VL : garde dédiée, opt-out ELEVE_GATE_PLACEHOLDERS=off.
+  let placeholders: PlaceholderFinding[] = [];
+  let placeholdersOk = true;
+  if (process.env.ELEVE_GATE_PLACEHOLDERS !== "off") {
+    try {
+      placeholders = deps.scanPlaceholders(projectDir, files);
+    } catch {
+      placeholders = [];
+    }
+    placeholdersOk = placeholders.length === 0;
   }
 
   // 5. TESTS (#L55) — un build VERT ne prouve pas que ça MARCHE. Si le projet a un
@@ -192,6 +253,9 @@ export async function runClosureGate(
   if (!balanceOk) {
     raisons.push(formatBalanceRaison(balance));
   }
+  if (!placeholdersOk) {
+    raisons.push(formatPlaceholdersRaison(placeholders));
+  }
   if (!testsOk && tests) {
     raisons.push(
       `TESTS rouges — la suite \`npm test\` échoue (build vert ≠ tests verts). ` +
@@ -204,6 +268,10 @@ export async function runClosureGate(
     if (!tasteObserve && tasteScored && design.overall < th.tasteMin) {
       const fixes = prioritizedFixes(design, th.tasteMin);
       raisons.push(`GOÛT ${design.overall}/100 (seuil ${th.tasteMin}) — corrige :\n${fixes.map((f) => `  ${f}`).join("\n")}`);
+    } else if (tasteObserve && tasteScored && !tasteOk) {
+      // Échec GROSSIER sous le plancher : bloque même en observe (build-vert ≠ réussi).
+      const fixes = prioritizedFixes(design, th.tasteMin);
+      raisons.push(`GOÛT ${design.overall}/100 — ÉCHEC GROSSIER (plancher ${Number(process.env.ELEVE_GATE_TASTE_FLOOR ?? 50)}, même en observation) — corrige :\n${fixes.map((f) => `  ${f}`).join("\n")}`);
     }
     const wf = design.measure?.contrastFails ?? [];
     if (wf.length > th.wcagMaxFails) {
@@ -211,7 +279,7 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && tasteOk && wcagOk && balanceOk && testsOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, testsRan, testsOk, tests, raisons };
+  return { ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, placeholdersOk, placeholders, testsRan, testsOk, tests, raisons };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */
@@ -247,7 +315,7 @@ export function evaluateGate(
   if (verdict.ok) return { action: "ok" };
   if (gateRelances >= max) return { action: "laisse-passer" };
 
-  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && verdict.testsOk && verdict.tasteScored && !verdict.tasteOk;
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && verdict.tasteScored && !verdict.tasteOk;
   const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
   if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
     return { action: "laisse-passer" };
