@@ -547,10 +547,10 @@ app.post("/api/chat", async (req, res) => {
           });
           answer = r.text.trim() || "(réponse vide de l'Élève)";
         } catch {
-          answer = (await chatEleve(system, userMsg, binding.model, binding.provider)).trim() || "(réponse vide de l'Élève)";
+          answer = (await chatEleve(system, userMsg, binding.model, binding.provider, { baseUrl: binding.baseUrl, apiKeyEnv: binding.apiKeyEnv })).trim() || "(réponse vide de l'Élève)";
         }
       } else {
-        answer = (await chatEleve(system, userMsg, binding.model, binding.provider)).trim() || "(réponse vide de l'Élève)";
+        answer = (await chatEleve(system, userMsg, binding.model, binding.provider, { baseUrl: binding.baseUrl, apiKeyEnv: binding.apiKeyEnv })).trim() || "(réponse vide de l'Élève)";
       }
       record("agent", answer);
       send({ type: "text", text: answer });
@@ -595,7 +595,7 @@ app.post("/api/chat", async (req, res) => {
         ...(specialistProfile
           ? { profile: specialistProfile, eleveModel: specialistModel }
           : buildBinding
-            ? { profile: buildBinding.profile, eleveModel: buildBinding.model, provider: buildBinding.provider, toolPolicy: policyForBinding(buildBinding) }
+            ? { profile: buildBinding.profile, eleveModel: buildBinding.model, provider: buildBinding.provider, toolPolicy: policyForBinding(buildBinding), endpoint: { baseUrl: buildBinding.baseUrl, apiKeyEnv: buildBinding.apiKeyEnv } }
             : {}),
         systemFull,
         onLog: (line) => {

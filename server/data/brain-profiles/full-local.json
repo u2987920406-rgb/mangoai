@@ -1,0 +1,15 @@
+{
+  "orchestrateur": { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
+  "architecte":    { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 90000, "localOnly": true },
+  "codeur":        { "provider": "ollama", "model": "qwen2.5-coder:14b", "timeoutMs": 180000, "localOnly": true },
+  "vision":        { "provider": "ollama", "model": "qwen3-vl:8b", "timeoutMs": 90000, "localOnly": true },
+  "designer_ux":   { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
+  "extracteur":    { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
+  "testeur":       { "provider": "ollama", "model": "qwen2.5-coder:14b", "timeoutMs": 90000, "localOnly": true },
+  "auditeur":      { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
+  "optimiseur":    { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
+  "chercheur":     { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 90000, "localOnly": true },
+  "juge":          { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
+  "stratege":      { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 90000, "localOnly": true },
+  "forgeron":      { "provider": "ollama", "model": "qwen2.5-coder:14b", "timeoutMs": 120000, "localOnly": true }
+}

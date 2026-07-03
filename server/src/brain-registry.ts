@@ -8,6 +8,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { atomicWriteFileSync } from "./safe-io.js"
+import { flag } from "./flags.js"
 import type { LLMProvider } from "./llm-engine.js"
 
 export interface BrainConfig {
@@ -74,10 +75,34 @@ const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
   ["claude", "ollama", "openai", "deepseek", "mistral", "groq", "litellm"],
 )
 
-/** Chemin du registre, surchargeable par env (testabilité). Résolu paresseusement. */
+/** Dossier des profils de cerveau (C4) : registres COMPLETS pré-remplis
+ *  (full-local, cloud-actuel…) qu'on bascule en une commande ou une ligne d'env. */
+export function brainProfileDir(): string {
+  return path.join(import.meta.dirname, "..", "data", "brain-profiles")
+}
+export function brainProfilePath(name: string): string {
+  return path.join(brainProfileDir(), `${name}.json`)
+}
+
+/**
+ * Chemin du registre, résolu paresseusement. Priorité :
+ *  1. `BRAIN_REGISTRY_FILE` (override explicite — testabilité) ;
+ *  2. (C4-P1) `BRAIN_PROFILE=<nom>` → `data/brain-profiles/<nom>.json` s'il EXISTE
+ *     (« une ligne de config » : basculer sur un profil sans toucher au registre
+ *     principal ; l'enlever revient à l'état d'avant). Profil manquant → warning
+ *     + registre habituel (fail-open) ;
+ *  3. le registre principal `data/brain-registry.json`.
+ */
 function registryFile(): string {
-  return process.env.BRAIN_REGISTRY_FILE
-    ?? path.join(import.meta.dirname, "..", "data", "brain-registry.json")
+  const explicit = process.env.BRAIN_REGISTRY_FILE
+  if (explicit) return explicit
+  const profile = (process.env.BRAIN_PROFILE ?? "").trim()
+  if (profile) {
+    const pf = brainProfilePath(profile)
+    if (fs.existsSync(pf)) return pf
+    console.warn(`[brain-registry] BRAIN_PROFILE="${profile}" introuvable (${pf}) → registre habituel`)
+  }
+  return path.join(import.meta.dirname, "..", "data", "brain-registry.json")
 }
 
 /** Valide un objet brut en BrainConfig sûr, en repliant champ par champ sur `fallback`. */
@@ -113,17 +138,26 @@ export function loadBrainRegistry(): Record<AgentId, BrainConfig> {
   const file = registryFile()
   let parsed: unknown
   try {
-    if (!fs.existsSync(file)) return cloneDefaults()
+    if (!fs.existsSync(file)) return applyLocalOnly(cloneDefaults())
     parsed = JSON.parse(fs.readFileSync(file, "utf8"))
   } catch (err) {
     console.warn(`[brain-registry] registre corrompu (${file}) → repli sur les défauts :`, (err as Error).message)
-    return cloneDefaults()
+    return applyLocalOnly(cloneDefaults())
   }
-  if (!parsed || typeof parsed !== "object") return cloneDefaults()
+  if (!parsed || typeof parsed !== "object") return applyLocalOnly(cloneDefaults())
   const raw = parsed as Record<string, unknown>
   const out = {} as Record<AgentId, BrainConfig>
   for (const id of AGENT_IDS) out[id] = coerceConfig(raw[id], DEFAULT_REGISTRY[id])
-  return out
+  return applyLocalOnly(out)
+}
+
+/** (C4-P1) « Rideau de fer » : si BRAIN_LOCAL_ONLY est actif, force localOnly=true
+ *  sur TOUS les rôles → le garde de dispatch refuse alors tout provider cloud.
+ *  Gate off → registre inchangé (identité stricte). */
+function applyLocalOnly(reg: Record<AgentId, BrainConfig>): Record<AgentId, BrainConfig> {
+  if (!flag("BRAIN_LOCAL_ONLY")) return reg
+  for (const id of AGENT_IDS) reg[id] = { ...reg[id], localOnly: true }
+  return reg
 }
 
 /** Persiste un registre (atomique). Valide/normalise avant écriture. */

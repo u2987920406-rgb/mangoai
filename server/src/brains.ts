@@ -55,6 +55,10 @@ export interface BrainCard {
   avgLatencyMs?: number;
   /** Date du scan (ISO). */
   scannedAt: string;
+  /** Endpoint OpenAI-compat custom (C1-P0, ex. Zhipu). Absent = endpoint .env global. */
+  baseUrl?: string;
+  /** Nom de la variable d'env qui porte la clé API (ex. "ZHIPU_API_KEY") — jamais la clé elle-même. */
+  apiKeyEnv?: string;
 }
 
 export interface BrainRegistry {
@@ -115,9 +119,11 @@ export function saveRegistry(reg: BrainRegistry): void {
 export function cardFromScan(
   report: ScanReport,
   provider: LLMProvider,
-  opts: { label?: string; scannedAt: string },
+  // baseUrl/apiKeyEnv optionnels (C1-P0) : absents par défaut → fiche identique
+  // à avant (repli sur l'endpoint .env global via brain-runtime/eleve).
+  opts: { label?: string; scannedAt: string; baseUrl?: string; apiKeyEnv?: string },
 ): BrainCard {
-  return {
+  const card: BrainCard = {
     id: slugifyModel(report.model),
     label: opts.label?.trim() || report.model,
     model: report.model,
@@ -129,6 +135,9 @@ export function cardFromScan(
     avgLatencyMs: report.avgLatencyMs,
     scannedAt: opts.scannedAt,
   };
+  if (opts.baseUrl) card.baseUrl = opts.baseUrl;
+  if (opts.apiKeyEnv) card.apiKeyEnv = opts.apiKeyEnv;
+  return card;
 }
 
 // ── CRUD (chaque mutation lit → modifie → réécrit le registre) ─────────────────

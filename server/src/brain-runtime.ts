@@ -27,12 +27,20 @@ export interface EleveBinding {
   profile: ModelProfile;
   /** La fiche mesurée employée (null = aucun routage → repli global). */
   card: BrainCard | null;
+  /** Endpoint OpenAI-compat custom (C1-P0) — absent = endpoint .env (ELEVE_API_URL). */
+  baseUrl?: string;
+  /** Nom de la variable d'env qui porte la clé API — JAMAIS la clé elle-même. */
+  apiKeyEnv?: string;
 }
 
 export interface RuntimeFallback {
   model: string;
   provider: LLMProvider;
   profile: ModelProfile;
+  /** Endpoint OpenAI-compat custom (C1-P0) — repris de l'agent `codeur` du registre. */
+  baseUrl?: string;
+  /** Nom de la variable d'env qui porte la clé API — JAMAIS la clé elle-même. */
+  apiKeyEnv?: string;
 }
 
 /** Le cerveau Élève « par défaut » (sans routage par intention) = l'agent `codeur`
@@ -42,7 +50,11 @@ export function globalFallback(): RuntimeFallback {
   const c = getBrain("codeur");
   const model = (c.model ?? "").trim() || ELEVE_MODEL;
   const provider = c.provider ?? envProvider();
-  return { model, provider, profile: resolveProfile(model) };
+  // C1-P0 — le registre (server/data/brain-registry.json) peut porter un endpoint
+  // custom (baseUrl + NOM de variable d'env pour la clé). Absents aujourd'hui →
+  // undefined ici, donc AUCUN changement de comportement (repli .env inchangé,
+  // résolu au tout dernier moment dans eleve.ts:openAiEndpoint).
+  return { model, provider, profile: resolveProfile(model), baseUrl: c.baseUrl, apiKeyEnv: c.apiKeyEnv };
 }
 
 /** Profil RUNTIME d'un cerveau mesuré : la prose de famille (system, fichiers
@@ -55,8 +67,16 @@ export function profileForBrain(card: BrainCard): ModelProfile {
 /** Le routeur d'intention : la fiche affectée → binding complet ; sinon repli global. */
 export function resolveBinding(intention: Intention, fallback: RuntimeFallback = globalFallback()): EleveBinding {
   const card = resolveBrainForIntention(intention);
-  if (!card) return { intention, model: fallback.model, provider: fallback.provider, profile: fallback.profile, card: null };
-  return { intention, model: card.model, provider: card.provider, profile: profileForBrain(card), card };
+  if (!card) {
+    return {
+      intention, model: fallback.model, provider: fallback.provider, profile: fallback.profile, card: null,
+      baseUrl: fallback.baseUrl, apiKeyEnv: fallback.apiKeyEnv,
+    };
+  }
+  return {
+    intention, model: card.model, provider: card.provider, profile: profileForBrain(card), card,
+    baseUrl: card.baseUrl, apiKeyEnv: card.apiKeyEnv,
+  };
 }
 
 // ── Phase E3 — politique d'outils gatée par la FORCE MESURÉE du cerveau ────────

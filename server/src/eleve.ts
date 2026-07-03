@@ -123,18 +123,31 @@ export const ELEVE_PROVIDER_DEFAULT: LLMProvider = ELEVE_PROVIDER === "openai" ?
 export function isOpenAICompat(p: LLMProvider): boolean {
   return p === "openai" || p === "deepseek" || p === "mistral" || p === "groq" || p === "litellm";
 }
+/** Endpoint custom (C1-P0) — le registre porte une base URL + le NOM de la
+ * variable d'env qui tient la clé. On ne threade JAMAIS la valeur de la clé en
+ * clair : seule cette fonction lit process.env[apiKeyEnv], au tout dernier moment. */
+export interface EndpointOverride {
+  baseUrl?: string;
+  apiKeyEnv?: string;
+}
+
 /** Résout l'endpoint (url + clé) d'un provider openai-compat. Défaut = endpoint
- * Élève (ELEVE_API_URL/KEY, p.ex. Ollama Cloud) ; presets pour deepseek/mistral/groq/litellm. */
-function openAiEndpoint(provider: LLMProvider): { url: string; key: string } {
+ * Élève (ELEVE_API_URL/KEY, p.ex. Ollama Cloud) ; presets pour deepseek/mistral/groq/litellm.
+ * `endpoint` (C1-P0, depuis le registre/le binding) PRIME sur le repli .env — mais
+ * SEULEMENT là où ELEVE_API_URL/ELEVE_API_KEY intervenaient déjà. `endpoint` absent
+ * (ou champs vides) → résolution STRICTEMENT identique à avant l'ajout de C1-P0. */
+export function openAiEndpoint(provider: LLMProvider, endpoint?: EndpointOverride): { url: string; key: string } {
+  const fallbackUrl = endpoint?.baseUrl?.trim() || ELEVE_API_URL;
+  const fallbackKey = (endpoint?.apiKeyEnv ? process.env[endpoint.apiKeyEnv] : undefined)?.trim() || ELEVE_API_KEY;
   if (provider === "deepseek" || provider === "mistral" || provider === "groq") {
     const p = PROVIDER_PRESETS[provider];
-    return { url: completionsUrl(p.baseURL), key: (process.env[p.apiKeyEnv] ?? ELEVE_API_KEY).trim() };
+    return { url: completionsUrl(p.baseURL), key: (process.env[p.apiKeyEnv] ?? fallbackKey).trim() };
   }
   if (provider === "litellm") {
     return { url: completionsUrl(process.env.LITELLM_BASE_URL ?? "http://localhost:4000/v1"), key: (process.env.LITELLM_API_KEY ?? "sk-litellm-local").trim() };
   }
-  // "openai" générique (inclut Ollama Cloud) → endpoint Élève.
-  return { url: completionsUrl(ELEVE_API_URL), key: ELEVE_API_KEY };
+  // "openai" générique (inclut Ollama Cloud) → endpoint Élève, ou registre si fourni.
+  return { url: completionsUrl(fallbackUrl), key: fallbackKey };
 }
 
 export type ResolvedBy = "eleve" | "maitre" | "none";
@@ -178,6 +191,9 @@ export interface RelayOptions {
    * Absent → provider global (.env). Permet de router une intention vers un cerveau
    * cloud (openai-compat) ou local (ollama) indépendamment du global. */
   provider?: LLMProvider;
+  /** Endpoint OpenAI-compat custom du binding courant (C1-P0, depuis le registre).
+   * Absent → endpoint .env global (ELEVE_API_URL/KEY), comportement inchangé. */
+  endpoint?: EndpointOverride;
   /** Politique d'outils gatée par la force mesurée du cerveau (Phase E3). Absent →
    * plein pouvoir (run_command + délégation), = comportement actuel. */
   toolPolicy?: BrainPolicy;
@@ -428,8 +444,8 @@ async function askEleveOllama(system: string, user: string, model?: string): Pro
 // Même contrat d'E/S (system + user → texte) que la version Ollama → la boucle
 // de relais est INCHANGÉE. ⚠ Payant : la note n'est PAS captée dans les
 // métriques (le tour Élève reste compté coût 0 ; seule l'escalade Claude l'est).
-async function askEleveOpenAI(system: string, user: string, model?: string, provider: LLMProvider = "openai"): Promise<string> {
-  const { url, key } = openAiEndpoint(provider);
+async function askEleveOpenAI(system: string, user: string, model?: string, provider: LLMProvider = "openai", endpoint?: EndpointOverride): Promise<string> {
+  const { url, key } = openAiEndpoint(provider, endpoint);
   if (!key) {
     throw new Error("Clé API Élève manquante (provider openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
   }
@@ -454,8 +470,8 @@ async function askEleveOpenAI(system: string, user: string, model?: string, prov
 
 // Aiguillage du cerveau Élève selon le provider. Défaut = global (.env) ; un appel
 // peut router vers SON cerveau (Phase E2) : ollama local vs openai-compat cloud.
-async function askEleveDispatch(system: string, user: string, model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT): Promise<string> {
-  return provider === "ollama" ? askEleveOllama(system, user, model) : askEleveOpenAI(system, user, model, provider);
+async function askEleveDispatch(system: string, user: string, model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT, endpoint?: EndpointOverride): Promise<string> {
+  return provider === "ollama" ? askEleveOllama(system, user, model) : askEleveOpenAI(system, user, model, provider, endpoint);
 }
 
 // ── Tour CONVERSATIONNEL de l'Élève (modes Discuter / Planifier) ──────────────
@@ -464,8 +480,8 @@ async function askEleveDispatch(system: string, user: string, model?: string, pr
 // veut une réponse de conseil/plan, pas une construction. Modèle = ELEVE_MODEL
 // (l'Élève actif), surchargeable par appel. Le system prompt (posture Discussion
 // + contexte projet) est fourni par l'appelant (assembleSystemPrompt mode discuss).
-export async function chatEleve(system: string, user: string, model?: string, provider?: LLMProvider): Promise<string> {
-  return askEleveDispatch(system, user, model, provider ?? ELEVE_PROVIDER_DEFAULT);
+export async function chatEleve(system: string, user: string, model?: string, provider?: LLMProvider, endpoint?: EndpointOverride): Promise<string> {
+  return askEleveDispatch(system, user, model, provider ?? ELEVE_PROVIDER_DEFAULT, endpoint);
 }
 
 // ── Boucle AGENTIQUE de l'Élève (function-calling) — vers « Mango = Claude » ────
@@ -491,8 +507,9 @@ async function postEleveCompletions(
   tools: OpenAITool[] | null,
   model?: string,
   provider: LLMProvider = "openai",
+  endpoint?: EndpointOverride,
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
-  const { url, key } = openAiEndpoint(provider);
+  const { url, key } = openAiEndpoint(provider, endpoint);
   const payload = JSON.stringify({
     model: model ?? ELEVE_MODEL,
     stream: false,
@@ -610,7 +627,7 @@ export function supportsTools(provider: LLMProvider): boolean {
   return isOpenAICompat(provider) || provider === "ollama";
 }
 
-export function elevePost(model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT): PostFn {
+export function elevePost(model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT, endpoint?: EndpointOverride): PostFn {
   // E4 — local souverain : Ollama tool-capable pilote la même boucle.
   if (provider === "ollama") {
     return (messages, tools) => postEleveOllamaTools(messages, tools, model);
@@ -618,11 +635,11 @@ export function elevePost(model?: string, provider: LLMProvider = ELEVE_PROVIDER
   if (!isOpenAICompat(provider)) {
     throw new Error(`runtime agentique : provider « ${provider} » non function-calling.`);
   }
-  const { key } = openAiEndpoint(provider);
+  const { key } = openAiEndpoint(provider, endpoint);
   if (!key) {
     throw new Error("Clé API Élève manquante (openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
   }
-  return (messages, tools) => postEleveCompletions(messages, tools, model, provider);
+  return (messages, tools) => postEleveCompletions(messages, tools, model, provider, endpoint);
 }
 
 // Base système minimale du moteur agentique quand l'appelant ne fournit pas le
@@ -1080,6 +1097,9 @@ export async function runRelay(
   const callModel      = opts.eleveModel ?? ELEVE_MODEL;
   // Phase E2 — provider de l'appel (multi-cerveaux). Défaut = global.
   const callProvider   = opts.provider ?? ELEVE_PROVIDER_DEFAULT;
+  // C1-P0 — endpoint custom du binding courant (registre). Absent → undefined,
+  // openAiEndpoint retombe alors EXACTEMENT sur ELEVE_API_URL/KEY (.env).
+  const callEndpoint   = opts.endpoint;
   // Phase E3 — politique d'outils. Défaut = plein pouvoir (= comportement actuel).
   const callPolicy: BrainPolicy = opts.toolPolicy ?? { allowRun: true, allowDelegate: true };
   const callMaxAttempts = opts.maxEleveAttempts ?? Number(process.env.ELEVE_MAX_ATTEMPTS ?? callProfile.caps.maxAttempts);
@@ -1090,7 +1110,7 @@ export async function runRelay(
   // Si le modèle de l'appel diffère du modèle global, enveloppe avec le bon modèle.
   const callAskEleve: (sys: string, usr: string) => Promise<string> =
     callModel !== ELEVE_MODEL || callProvider !== ELEVE_PROVIDER_DEFAULT
-      ? (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider)
+      ? (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint)
       : deps.askEleve;
   const maitreModel = opts.maitreModel ?? "sonnet";
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
@@ -1254,7 +1274,7 @@ export async function runRelay(
       const pol = policyForBinding(b);
       return {
         system: agenticSystem,
-        post: elevePost(b.model, b.provider),
+        post: elevePost(b.model, b.provider, { baseUrl: b.baseUrl, apiKeyEnv: b.apiKeyEnv }),
         buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: pol.allowRun }),
         buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
         allowDelegate: pol.allowDelegate,
@@ -1280,7 +1300,7 @@ export async function runRelay(
     const runCtx = {
       projectDir,
       system: agenticSystem,
-      post: deps.agenticPost ?? elevePost(callModel, callProvider),
+      post: deps.agenticPost ?? elevePost(callModel, callProvider, callEndpoint),
       buildRegistry: (pd: string) => withMemoire(pd, callPolicy.allowRun),
       buildUser: (subtask: string) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
       depth: 0,

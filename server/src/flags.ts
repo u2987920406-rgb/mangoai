@@ -76,6 +76,12 @@ export const FLAGS = {
     default: false,
     description: "Phase de réflexion explicite (un tour sans outils) périodique ou après un blocage, bornée par run.",
   },
+  // ── Pilier C — liquidité de cerveau ─────────────────────────────────────
+  BRAIN_LOCAL_ONLY: {
+    env: "BRAIN_LOCAL_ONLY",
+    default: false,
+    description: "« Rideau de fer » souveraineté : force localOnly=true sur TOUS les rôles → le garde de dispatch refuse tout provider cloud. À activer le jour où un modèle local tient la boucle (mur L51).",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;
