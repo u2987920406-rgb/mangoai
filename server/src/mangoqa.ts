@@ -4,6 +4,7 @@
 // Si Mango QA n'est pas lancé, MangoOS continue immédiatement (fail open).
 import fs from 'node:fs'
 import path from 'node:path'
+import type { Express, Request, Response } from 'express'
 import { WORKSPACE_DIR } from './projects.js'
 import { appendHistory } from './history.js'
 
@@ -240,4 +241,99 @@ export function spawnVerdictWatcher(
     .then(msg => { if (msg) console.log(`[mangoqa] verdict surfacé (${projectName})`) })
     .catch(err => console.warn('[mangoqa]', err instanceof Error ? err.message : err))
     .finally(() => { watching.delete(projectName) })
+}
+
+// ── Observateur-Conseil (D2b) — rapport global cross-projets ──────────────────
+// Visage 2 de Mango QA : contrairement au Contrôleur et à l'Auditeur de Flux
+// (par projet), l'Observateur-Conseil écrit un unique rapport à la racine du
+// workspace : <workspace>/.mangoqa/observer-report.json (même dossier que
+// bus-events.jsonl, cf. kernel-mangoqa-bridge.ts). SEULE LECTURE, fail-open :
+// le fichier peut être absent (gate QA_OBSERVER off côté MangoQA) sans jamais
+// casser MangoOS.
+const OBSERVER_REPORT_FILE = 'observer-report.json'
+const OBSERVER_REPORT_MAX_BYTES = 1_000_000 // garde-fou — le rapport est petit en pratique
+
+export interface ObserverPattern {
+  kind: 'branche-recurrente' | 'regle-recurrente' | 'projet-recurrent' | string
+  subject: string
+  count: number
+  share: number
+  examples: string[]
+}
+
+export interface ObserverReportBody {
+  totalEvents: number
+  patterns: ObserverPattern[]
+  suggestions: string[]
+  summary: string
+}
+
+export interface ObserverReport {
+  generatedAt: string
+  windowEvents: number
+  report: ObserverReportBody
+  rendered: string
+}
+
+export type ObserverReportResult =
+  | ({ available: true } & ObserverReport)
+  | { available: false; reason: 'absent' | 'invalide' | 'illisible' }
+
+function isValidObserverReport(v: unknown): v is ObserverReport {
+  if (!v || typeof v !== 'object') return false
+  const o = v as Record<string, unknown>
+  if (typeof o.generatedAt !== 'string') return false
+  if (typeof o.windowEvents !== 'number') return false
+  if (typeof o.rendered !== 'string') return false
+  if (!o.report || typeof o.report !== 'object') return false
+  const r = o.report as Record<string, unknown>
+  if (typeof r.summary !== 'string') return false
+  if (!Array.isArray(r.suggestions)) return false
+  if (!Array.isArray(r.patterns)) return false
+  return true
+}
+
+// Résout, lit et valide observer-report.json. `workspaceDir` injectable pour
+// les tests (défaut : WORKSPACE_DIR réel). Jamais de throw.
+export function readObserverReport(workspaceDir: string = WORKSPACE_DIR): ObserverReportResult {
+  const file = path.join(workspaceDir, QA_DIR, OBSERVER_REPORT_FILE)
+  let stat: fs.Stats
+  try {
+    stat = fs.statSync(file)
+  } catch {
+    return { available: false, reason: 'absent' }
+  }
+  if (stat.size > OBSERVER_REPORT_MAX_BYTES) return { available: false, reason: 'illisible' }
+
+  let raw: string
+  try {
+    raw = fs.readFileSync(file, 'utf8')
+  } catch {
+    return { available: false, reason: 'illisible' }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return { available: false, reason: 'invalide' }
+  }
+
+  if (!isValidObserverReport(parsed)) return { available: false, reason: 'invalide' }
+
+  return {
+    available: true,
+    generatedAt: parsed.generatedAt,
+    windowEvents: parsed.windowEvents,
+    report: parsed.report,
+    rendered: parsed.rendered,
+  }
+}
+
+// Route additive en lecture seule — pas de gate nécessaire (fail-open assuré
+// par readObserverReport). Enregistrée dans index.ts près de registerControleurRoutes.
+export function registerMangoQaRoutes(app: Express): void {
+  app.get('/api/mangoqa/observer', (_req: Request, res: Response) => {
+    res.json(readObserverReport())
+  })
 }

@@ -29,6 +29,8 @@ const ReglagesReel = lazy(() => import("../components/Reglages.jsx"));
 const ArtifactsPane = lazy(() => import("../components/Artifacts.jsx"));
 const GuidePane = lazy(() => import("../components/Guide.jsx"));
 const QADetailPane = lazy(() => import("../components/QAPanel.jsx"));
+// Observateur-Conseil (D2b) — Visage 2 de MangoQA, rapport global cross-projets.
+const ObserverConseil = lazy(() => import("../components/ObserverConseil.jsx"));
 // L'Esthète (2026-07-02) : agent conversationnel qui voit la preview live et
 // retouche à la demande, en remplacement du palier de build « Esthétique ».
 const EstheteChat = lazy(() => import("../components/EstheteChat.jsx"));
@@ -336,6 +338,8 @@ function ShellV2Inner() {
   const [collapsed, setCollapsed] = useState(() => localStorage.getItem(COLLAPSE_KEY) === "1");
   // Outils secondaires en modale : null | "artefacts" | "aide" | "qa" | "esthete".
   const [overlay, setOverlay] = useState(null);
+  // Onglets de la modale QA (D2b) : "controleur" (Contrôleur LLM) | "observateur" (Observateur-Conseil MangoQA).
+  const [qaTab, setQaTab] = useState("controleur");
 
   const toggleCollapsed = () => {
     setCollapsed((v) => {
@@ -517,9 +521,32 @@ function ShellV2Inner() {
         </Suspense>
       </Modal>
       <Modal open={overlay === "qa"} onClose={() => setOverlay(null)} title="MangoQA · détail des audits" widthClass="w-[900px]">
-        <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
-          <QADetailPane projectName={localStorage.getItem("mangoos.v2.project") || ""} />
-        </Suspense>
+        <div className="flex h-[70vh] flex-col">
+          <div className="flex shrink-0 items-center gap-1 border-b border-edge-soft px-4 py-1.5">
+            {[
+              { id: "controleur", label: "Contrôleur" },
+              { id: "observateur", label: "Observateur-Conseil" },
+            ].map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setQaTab(t.id)}
+                className={cx(
+                  "rounded-lg px-3 py-1.5 text-[12.5px] transition-colors duration-150 focus-visible:outline-2 focus-visible:outline-accent",
+                  qaTab === t.id ? "bg-accent/12 font-medium text-ink" : "text-dim hover:bg-raised hover:text-ink",
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
+              {qaTab === "controleur"
+                ? <QADetailPane projectName={localStorage.getItem("mangoos.v2.project") || ""} />
+                : <ObserverConseil />}
+            </Suspense>
+          </div>
+        </div>
       </Modal>
       <Modal open={overlay === "esthete"} onClose={() => setOverlay(null)} title="Esthète" widthClass="w-[640px]">
         <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
