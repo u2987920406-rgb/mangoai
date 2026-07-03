@@ -221,6 +221,17 @@ export async function buildAgentic(
   let workingState: WorkingState = emptyWorkingState();
   let stateMsgIndex: number | null = null;
 
+  // (B1.2, gate ELEVE_REFLEXION) Phase de RÉFLEXION explicite : un tour SANS outils
+  // où le modèle fait le point (acquis / blocage / prochaine étape). Déclenchée
+  // périodiquement OU après un blocage (errorStreak), bornée par run, jamais deux
+  // d'affilée. Le point survit comme message assistant → informe les tours suivants.
+  // Gate off → aucun appel supplémentaire (comportement identique).
+  const eleveReflexionOn = flag("ELEVE_REFLEXION");
+  const REFLEXION_EVERY = Math.max(3, Number(process.env.ELEVE_REFLEXION_EVERY ?? 8));
+  const REFLEXION_MAX = Math.max(1, Number(process.env.ELEVE_REFLEXION_MAX ?? 3));
+  let reflexionsCount = 0;
+  let lastReflexionIter = -2;
+
   // (B0.3, gate ELEVE_RESUME) Snapshot de reprise — ÉCRITURE SEULE (la restauration
   // est hors périmètre, = B1.4). Gate off OU projectDir absent → jamais écrit.
   const eleveResumeOn = flag("ELEVE_RESUME");
@@ -290,6 +301,28 @@ export async function buildAgentic(
         });
         const capped = await opts.post(messages, null);
         return { text: capped.content, toolTrace, finished: false, iterations: iter + 1, stuck: false, budgetExhausted: true };
+      }
+    }
+    // (B1.2) RÉFLEXION explicite avant l'appel principal : le modèle prend du
+    // recul (un tour sans outils) toutes les REFLEXION_EVERY itérations, OU après
+    // un blocage (échecs consécutifs). Bornée REFLEXION_MAX/run, jamais deux tours
+    // de suite (lastReflexionIter). Le « point » reste dans le contexte (message
+    // assistant) → le raisonnement suivant en bénéficie.
+    if (eleveReflexionOn && reflexionsCount < REFLEXION_MAX && iter > 0 && iter !== lastReflexionIter + 1) {
+      const periodic = iter % REFLEXION_EVERY === 0;
+      const bloque = errorStreak >= 3;
+      if (periodic || bloque) {
+        reflexionsCount++;
+        lastReflexionIter = iter;
+        messages.push({
+          role: "user",
+          content:
+            "Fais le POINT en 3 à 5 lignes, SANS appeler d'outil : (1) ce qui est ACQUIS, " +
+            "(2) ce qui BLOQUE s'il y a lieu, (3) la PROCHAINE étape concrète. Puis reprends.",
+        });
+        const refl = await opts.post(messages, null);
+        messages.push({ role: "assistant", content: refl.content });
+        opts.onLog?.(`💭 Réflexion ${reflexionsCount}/${REFLEXION_MAX}${bloque ? " (après blocage)" : ""}`);
       }
     }
     const { content, toolCalls } = await opts.post(messages, tools);

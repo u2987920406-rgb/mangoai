@@ -7,6 +7,8 @@ import {
   getPlan,
   clearPlan,
   markStepDone,
+  markStepBlocked,
+  hasBlocked,
   nextStep,
   mergePlan,
   formatPlan,
@@ -160,6 +162,38 @@ function run() {
     const merged = mergePlan(existing, changed);
     check("matching par titre malgré réordonnancement → done = [1,3]", merged.done?.slice().sort().join() === "1,3");
     check("étape neuve (Aperçu) non cochée", !merged.done?.includes(2));
+  }
+
+  console.log("\n[B1.1] Statut BLOQUÉ (ELEVE_PLAN_V2)");
+  {
+    const dir = "/proj-blocked";
+    setPlan(dir, { titre: "Feature X", etapes: [{ n: 1, titre: "A" }, { n: 2, titre: "B" }, { n: 3, titre: "C" }], at: 1, done: [1] });
+    const p = markStepBlocked(dir, 2);
+    check("étape 2 marquée bloquée", p?.blocked?.includes(2) === true);
+    check("hasBlocked → true (bloquée non faite)", hasBlocked(p!) === true);
+    check("bloquer n'altère pas les faites (1 reste fait)", p?.done?.includes(1) === true);
+    // Bloquer une étape déjà faite la retire de done (bloqué ≠ fait).
+    markStepBlocked(dir, 1);
+    check("bloquer une étape faite la retire de done", getPlan(dir)?.done?.includes(1) === false);
+    // Rendu : 🚫 présent + invite à re-planifier.
+    const rendu = formatPlanReminder(getPlan(dir)!);
+    check("formatPlanReminder montre 🚫 + invite re-planifier", rendu.includes("🚫") && /re-planifie/i.test(rendu));
+    const full = formatPlan(getPlan(dir)!);
+    check("formatPlan montre 🚫 et l'invite de blocage", full.includes("🚫") && /BLOQUÉES/.test(full));
+    // Bornes : numéro invalide → no-op sans crash.
+    check("numéro hors bornes → plan inchangé (pas de crash)", markStepBlocked(dir, 99)?.blocked?.includes(99) === false);
+    check("pas de plan → undefined", markStepBlocked("/inexistant", 1) === undefined);
+    clearPlan(dir);
+  }
+
+  console.log("\n[B1.1] Gate off = rendu identique (aucune étape bloquée jamais)");
+  {
+    // Sans jamais appeler markStepBlocked, blocked reste absent → rendu strictement
+    // identique à #160 (pas de 🚫, pas de ligne de blocage).
+    const plan: ElevePlan = { titre: "T", etapes: [{ n: 1, titre: "A" }, { n: 2, titre: "B" }], at: 1, done: [1] };
+    check("hasBlocked → false sans blocage", hasBlocked(plan) === false);
+    check("formatPlanReminder sans 🚫", !formatPlanReminder(plan).includes("🚫"));
+    check("formatPlan sans ligne de blocage", !formatPlan(plan).includes("BLOQUÉES"));
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-plan : ${pass} pass, ${fail} fail`);

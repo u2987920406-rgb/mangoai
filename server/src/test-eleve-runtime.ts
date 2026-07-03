@@ -399,6 +399,69 @@ async function run() {
     check("gate off → finish normal", r.finished === true && r.text === "ok");
   }
 
+  console.log("\n[B1.2] Réflexion explicite (ELEVE_REFLEXION)");
+  {
+    const prev = process.env.ELEVE_REFLEXION;
+    const prevEvery = process.env.ELEVE_REFLEXION_EVERY;
+    const prevMax = process.env.ELEVE_REFLEXION_MAX;
+    // post qui écrit un fichier distinct à chaque iter puis appelle finish à `finishAt`.
+    // Les réflexions sont les SEULS posts avec tools===null (pas de tour de conclusion,
+    // car on finit AVANT le plafond) → comptage isolé et déterministe.
+    function scriptedTo(finishAt: number): { post: PostFn; reflexions: () => number } {
+      let i = 0;
+      let refl = 0;
+      const post: PostFn = async (_m, tools) => {
+        if (tools === null) { refl++; return { content: "POINT: acquis / blocage / next" }; }
+        const step = i++;
+        if (step >= finishAt) return { content: "", toolCalls: [call("finish", { summary: "ok" })] };
+        return { content: "", toolCalls: [call("write_file", { path: `f${step}.js`, content: "x" })] };
+      };
+      return { post, reflexions: () => refl };
+    }
+
+    // Gate ON, EVERY=3, MAX=2, finish à iter 12 → réflexions possibles iter 3,6,9 mais CAP à 2.
+    process.env.ELEVE_REFLEXION = "on";
+    process.env.ELEVE_REFLEXION_EVERY = "3";
+    process.env.ELEVE_REFLEXION_MAX = "2";
+    {
+      const reg = stubRegistry([]);
+      const { post, reflexions } = scriptedTo(12);
+      const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20 });
+      check("réflexions périodiques bornées par MAX (=2)", reflexions() === 2);
+      check("la boucle a bien fini (finish, pas plafond)", r.finished === true);
+    }
+
+    // Gate ON + blocage (errorStreak) hors période (EVERY=99) → au moins 1 réflexion.
+    process.env.ELEVE_REFLEXION_EVERY = "99";
+    process.env.ELEVE_REFLEXION_MAX = "3";
+    {
+      const reg = stubRegistry([]);
+      let refl = 0;
+      // Échecs à args DISTINCTS (évite l'anti-répétition) → errorStreak monte → blocage.
+      let j = 0;
+      const post: PostFn = async (_m, tools) => {
+        if (tools === null) { refl++; return { content: "POINT" }; }
+        return { content: "", toolCalls: [call("run_command", { command: `boom-${j++}` })] };
+      };
+      await buildAgentic("sys", "x", reg, { post, maxIterations: 12 });
+      check("réflexion déclenchée après blocage (errorStreak) hors période", refl >= 1);
+    }
+
+    // Gate OFF → ZÉRO réflexion (finish avant plafond → aucun post null).
+    delete process.env.ELEVE_REFLEXION;
+    process.env.ELEVE_REFLEXION_EVERY = "3";
+    {
+      const reg = stubRegistry([]);
+      const { post, reflexions } = scriptedTo(9);
+      const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20 });
+      check("gate off → 0 réflexion", reflexions() === 0);
+      check("gate off → finish normal", r.finished === true);
+    }
+    if (prev === undefined) delete process.env.ELEVE_REFLEXION; else process.env.ELEVE_REFLEXION = prev;
+    if (prevEvery === undefined) delete process.env.ELEVE_REFLEXION_EVERY; else process.env.ELEVE_REFLEXION_EVERY = prevEvery;
+    if (prevMax === undefined) delete process.env.ELEVE_REFLEXION_MAX; else process.env.ELEVE_REFLEXION_MAX = prevMax;
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

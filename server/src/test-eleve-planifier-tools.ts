@@ -33,10 +33,26 @@ function tool(over: Partial<PlanifierDeps> = {}) {
         if (n >= 1 && n <= plan.etapes.length && !done.includes(n)) done.push(n);
         return plan;
       }),
+    markStepBlocked:
+      over.markStepBlocked ??
+      ((dir, n) => {
+        const plan = store.get(dir);
+        if (!plan) return undefined;
+        const blocked = plan.blocked ?? (plan.blocked = []);
+        if (n >= 1 && n <= plan.etapes.length && !blocked.includes(n)) blocked.push(n);
+        if (plan.done) plan.done = plan.done.filter((d) => d !== n);
+        return plan;
+      }),
     now: over.now ?? (() => 42),
   };
-  const [t, etape] = buildElevePlanifierTools("/tmp/proj", deps);
-  return { t, etape, calls };
+  // (B1.1) etape_bloquee n'est offert que si ELEVE_PLAN_V2 est on → on force le gate
+  // pour ce helper de test afin de pouvoir exercer l'outil.
+  const prevFlag = process.env.ELEVE_PLAN_V2;
+  process.env.ELEVE_PLAN_V2 = "on";
+  const built = buildElevePlanifierTools("/tmp/proj", deps);
+  if (prevFlag === undefined) delete process.env.ELEVE_PLAN_V2; else process.env.ELEVE_PLAN_V2 = prevFlag;
+  const [t, etape, bloquee] = built;
+  return { t, etape, bloquee, calls };
 }
 
 async function run() {
@@ -155,6 +171,27 @@ async function run() {
     const r2 = await t.handler({ titre: "RPG", etapes: [{ titre: "Constants" }, { titre: "ENTITIES" }, { titre: "world" }, { titre: "combat" }] });
     const merged = calls.plans[calls.plans.length - 1];
     check("matching titre insensible casse → 1&2 cochées, world(3) neuf non coché", merged.done?.slice().sort().join() === "1,2");
+  }
+
+  console.log("\n[B1.1] Outil etape_bloquee (gate ELEVE_PLAN_V2)");
+  {
+    const { t, bloquee } = tool();
+    await t.handler({ titre: "Feature", etapes: [{ titre: "un" }, { titre: "deux" }, { titre: "trois" }] });
+    check("outil etape_bloquee présent quand gate on", bloquee?.name === "etape_bloquee");
+    const r = await bloquee!.handler({ n: 2 });
+    check("marque bloquée + invite re-planifier", !r.isError && /🚫/.test(r.text) && /re-planifie/i.test(r.text));
+    const rBad = await bloquee!.handler({ n: 0 });
+    check("numéro invalide → isError", rBad.isError === true);
+  }
+  {
+    // Gate OFF → l'outil n'est PAS offert (2 outils seulement, comme #160).
+    const prev = process.env.ELEVE_PLAN_V2;
+    delete process.env.ELEVE_PLAN_V2;
+    const built = buildElevePlanifierTools("/tmp/p2", {
+      setPlan: () => {}, getPlan: () => undefined, markStepDone: () => undefined, markStepBlocked: () => undefined, now: () => 0,
+    });
+    check("gate off → 2 outils (planifier, etape_faite), pas d'etape_bloquee", built.length === 2 && !built.some((x) => x.name === "etape_bloquee"));
+    if (prev === undefined) delete process.env.ELEVE_PLAN_V2; else process.env.ELEVE_PLAN_V2 = prev;
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-planifier-tools : ${pass} pass, ${fail} fail`);

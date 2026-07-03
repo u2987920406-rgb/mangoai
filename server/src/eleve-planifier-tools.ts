@@ -8,7 +8,8 @@
 
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
-import { setPlan, getPlan, markStepDone, mergePlan, formatPlan, type ElevePlan, type PlanEtape } from "./eleve-plan.js";
+import { setPlan, getPlan, markStepDone, markStepBlocked, mergePlan, formatPlan, type ElevePlan, type PlanEtape } from "./eleve-plan.js";
+import { flag } from "./flags.js";
 
 const MIN_ETAPES = 2; // un « plan » d'une seule étape n'est pas un plan
 const MAX_ETAPES = 12; // au-delà, c'est du sur-découpage
@@ -18,10 +19,11 @@ export interface PlanifierDeps {
   setPlan: (projectDir: string, plan: ElevePlan) => void;
   getPlan: (projectDir: string) => ElevePlan | undefined;
   markStepDone: (projectDir: string, n: number) => ElevePlan | undefined;
+  markStepBlocked: (projectDir: string, n: number) => ElevePlan | undefined;
   now: () => number;
 }
 
-const realDeps: PlanifierDeps = { setPlan, getPlan, markStepDone, now: () => Date.now() };
+const realDeps: PlanifierDeps = { setPlan, getPlan, markStepDone, markStepBlocked, now: () => Date.now() };
 
 export function buildElevePlanifierTools(projectDir: string, deps: PlanifierDeps = realDeps): KernelTool[] {
   const planifier: KernelTool = {
@@ -114,5 +116,41 @@ export function buildElevePlanifierTools(projectDir: string, deps: PlanifierDeps
     },
   };
 
-  return [planifier, etapeFaite];
+  // (B1.1, gate ELEVE_PLAN_V2) L'Élève SIGNALE un blocage au lieu de tourner en
+  // rond dessus. Marquer une étape bloquée déclenche, dans tous les rappels de
+  // plan (formatPlanReminder → nudges d'auto-relance), une invite à re-planifier
+  // ou contourner. Auto-conscience du blocage → le modèle sort de l'impasse.
+  const etapeBloquee: KernelTool = {
+    name: "etape_bloquee",
+    description:
+      "Signale qu'une étape de ton plan est BLOQUÉE (tu n'arrives pas à la faire après plusieurs essais). " +
+      "Donne `n` = le numéro de l'étape. Au lieu de t'acharner, tu seras invité à re-planifier (planifier) pour " +
+      "découper autrement ou CONTOURNER l'obstacle. N'abuse pas : à utiliser quand tu es vraiment coincé.",
+    inputSchema: {
+      n: z.number().int().min(1).describe("Numéro de l'étape sur laquelle tu es bloqué"),
+    },
+    handler: (args): KernelToolResult => {
+      const n = Math.trunc(Number(args.n));
+      if (!Number.isFinite(n) || n < 1) {
+        return { text: "Donne le numéro `n` de l'étape bloquée (entier ≥ 1).", isError: true };
+      }
+      try {
+        const plan = deps.markStepBlocked(projectDir, n);
+        if (!plan) {
+          return { text: "Aucun plan en cours — appelle d'abord planifier pour poser tes étapes.", isError: true };
+        }
+        return {
+          text:
+            formatPlan(plan) +
+            "\n\n🚫 Étape marquée bloquée. Re-planifie (planifier) pour contourner l'obstacle, ou passe à une autre approche — ne t'acharne pas.",
+        };
+      } catch (e) {
+        return { text: `Étape non marquée : ${e instanceof Error ? e.message : String(e)}`, isError: true };
+      }
+    },
+  };
+
+  // Gate off → l'outil n'est pas offert (le modèle ne peut pas le voir/appeler),
+  // donc `blocked` reste toujours vide → rendu du plan strictement identique à #160.
+  return flag("ELEVE_PLAN_V2") ? [planifier, etapeFaite, etapeBloquee] : [planifier, etapeFaite];
 }
