@@ -23,15 +23,24 @@ export function usePreview({ screen, projectName, pushToast, onRequestFix }) {
   // Entrer dans le workspace (ou changer de projet) démarre/relance l'aperçu Vite.
   useEffect(() => {
     if (screen !== SCREENS.WORKSPACE || !projectName.trim()) return;
+    // (Un, 2026-07-03) U6 — anti-réponse périmée : si on change de projet avant
+    // que le POST du projet PRÉCÉDENT réponde, sa réponse tardive écrasait
+    // l'URL du projet courant (aperçu du mauvais projet). Le cleanup marque
+    // l'effet comme périmé → la réponse tardive est ignorée.
+    let stale = false;
     fetch(`/api/preview/${encodeURIComponent(projectName)}`, { method: "POST" })
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => {
+        if (stale) return;
         if (d?.url) {
           setPreviewUrl(d.url);
           setPreviewKey((k) => k + 1);
         }
       })
       .catch(() => {});
+    return () => {
+      stale = true;
+    };
   }, [screen, projectName]);
 
   // Canal unique iframe → app : inspect-pick (clic sur un élément) et erreurs JS.

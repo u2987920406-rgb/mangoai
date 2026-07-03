@@ -56,6 +56,7 @@ import {
   type ExecRung,
 } from "./stratege-escalate.js";
 import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gate.js";
+import { measureProjectDesign, measureSummary } from "./design-metrics.js";
 import { scanFilesForBalance, formatBalanceRaison } from "./layout-balance.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
@@ -981,13 +982,48 @@ async function ensureExternalMcpLoaded(): Promise<void> {
 // erreur console n'apparaît au chargement (la vérif « ça marche vraiment » du #155,
 // appliquée en clôture — y compris quand le Maître a résolu). Ne lève JAMAIS (best-effort :
 // si la preview est injoignable, on n'invente pas d'erreur → ok:true).
+// (N15, 2026-07-03) Résumé d'ARTISANAT statique — lit les fichiers du projet et
+// rend les défauts mesurables (polices, échelle typo, couleurs littérales, motion)
+// en UNE ligne de log. Déterministe, $0, best-effort (l'appelant catch).
+function measureCraftSummary(projectDir: string, changedFiles: string[]): string {
+  const read = (rel: string): string => {
+    try {
+      return fs.readFileSync(path.join(projectDir, rel), "utf8");
+    } catch {
+      return "";
+    }
+  };
+  const cssFiles = [read("src/index.css"), read("src/App.css")].filter(Boolean);
+  const componentFiles = changedFiles
+    .filter((f) => /\.(jsx|tsx)$/i.test(f))
+    .map(read)
+    .filter(Boolean);
+  if (!cssFiles.length && !componentFiles.length) return "";
+  const m = measureProjectDesign({ cssFiles, componentFiles, indexHtml: read("index.html"), packageJson: read("package.json") });
+  // Seules les lignes N15 nous intéressent ici (contrastes/palette = déjà portés par la critique).
+  const lines = measureSummary(m)
+    .split("\n")
+    .filter((l) => /polices|échelle typographique|littérales|statique|motion/i.test(l));
+  return lines.length ? lines.map((l) => l.replace(/^- /, "")).join(" · ") : "";
+}
+
 async function runClosureParcours(projectDir: string): Promise<{ ok: boolean; errors: string[]; skipped?: string }> {
   try {
     const { url } = await startPreview(projectDir);
+    // (N7, nuit 2026-07-03) au-delà du seul chargement de l'accueil, deux SONDES
+    // génériques provoquent les erreurs qui n'apparaissent qu'à l'INTERACTION
+    // (le motif « cassé au 2ᵉ clic ») : cliquer un lien de nav interne, cliquer
+    // le premier bouton visible. Ces sondes sont TOLÉRANTES : un élément
+    // introuvable (app sans nav, canvas plein écran…) ne compte PAS comme un
+    // échec — seules les erreurs CONSOLE qu'elles révèlent comptent.
     const report = await runParcours(url, [
       { description: "Clôture — chargement de l'accueil sans erreur console", attendu: { aucune_erreur_console: true } },
+      { description: "Sonde — clic sur un lien de navigation interne", actions: [{ clickSelector: 'nav a[href^="/"], header a[href^="/"], nav a[href^="#"]' }, { wait: 600 }] },
+      { description: "Sonde — clic sur le premier bouton visible", actions: [{ clickSelector: "main button, button" }, { wait: 600 }] },
     ]);
-    return { ok: report.ok, errors: report.consoleErrors ?? [] };
+    const chargementOk = report.etapes[0]?.ok ?? report.ok;
+    const errors = report.consoleErrors ?? [];
+    return { ok: chargementOk && errors.length === 0, errors };
   } catch (e) {
     // Fail-open assumé (tâche non-UI, preview impossible) mais JAMAIS silencieux :
     // « ok non vérifié » et « ok vérifié » ne doivent plus être indiscernables.
@@ -1113,6 +1149,9 @@ export async function runRelay(
               : ", goût non jugeable"
             : "";
           push(`🛡 Gardien (après Maître) — intention ${verdict.intent.couverture}/100${goutLabel}${verdict.ok ? " ✓" : " ✗"}`);
+          // (N9) un volet SAUTÉ pour cause d'incident n'est plus silencieux.
+          if (verdict.judgeSkipped) push(`  ⚠ juge d'intention KO (${verdict.judgeSkipped}) — couverture NEUTRE (100), NON vérifiée`);
+          if (verdict.critiqueSkipped) push(`  ⚠ critique visuelle KO (${verdict.critiqueSkipped}) — goût + WCAG NON vérifiés ce tour`);
           if (!verdict.ok) issues.push(...(verdict.raisons.length ? verdict.raisons : ["clôture qualité non atteinte"]));
         } catch (e) {
           push(`⚠ Gardien (après Maître) indisponible (${(e as Error).message.split("\n")[0]}) — on laisse passer`);
@@ -1673,6 +1712,17 @@ export async function runRelay(
               : ", goût non jugeable (sauté)"
             : "";
           push(`🛡 Gardien — intention ${verdict.intent.couverture}/100${goutLabel}${verdict.ok ? " ✓" : " ✗"}`);
+          // (N9) un volet SAUTÉ pour cause d'incident n'est plus silencieux :
+          // « ok non vérifié » doit se voir dans le log, pas se déguiser en ✓.
+          if (verdict.judgeSkipped) push(`  ⚠ juge d'intention KO (${verdict.judgeSkipped}) — couverture NEUTRE (100), NON vérifiée`);
+          if (verdict.critiqueSkipped) push(`  ⚠ critique visuelle KO (${verdict.critiqueSkipped}) — goût + WCAG NON vérifiés ce tour`);
+          // (N15, 2026-07-03) mesures d'ARTISANAT statiques (déterministes, $0) en
+          // OBSERVATION : familles de polices, échelle typo, couleurs littérales,
+          // motion présent. Non-bloquant pour l'instant (calibrage) — mais VISIBLE.
+          try {
+            const craft = measureCraftSummary(projectDir, changedFilesFromTrace(result.toolTrace));
+            if (craft) push(`  🔎 artisanat : ${craft}`);
+          } catch { /* observation best-effort */ }
           const decision = evaluateGate(projectDir, verdict, gateRelances, gateRelanceMax, prevGateGout);
           // mémorise le goût FIABLE de ce tour pour l'anti-thrash du tour suivant.
           if (verdict.tasteScored && verdict.design) prevGateGout = verdict.design.overall;

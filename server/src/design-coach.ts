@@ -236,7 +236,11 @@ function readProjectCss(dir: string): string[] {
 export const realCoachDeps: CoachDeps = {
   startPreview: (dir) => realStart(dir),
   stopPreview: (dir) => realStop(dir).catch(() => {}),
-  capture: (url) => realCapture(url),
+  // (N8, nuit 2026-07-03) capture PLEINE HAUTEUR : le Gardien ne jugeait que le
+  // viewport 1280×800 de l'accueil au repos — les sections basses et le footer
+  // n'étaient JAMAIS vus par aucun œil (motif UIUX-11). Le VL reçoit désormais
+  // toute la page. (Les ROUTES internes restent l'angle mort résiduel — N8 partiel.)
+  capture: (url) => realCapture(url, { fullPage: true }),
   readCss: readProjectCss,
   dispatch: (agentId, system, user, opts) => realDispatch(agentId, system, user, opts),
   applyFixes: async (prompt, dir, onLog) => {

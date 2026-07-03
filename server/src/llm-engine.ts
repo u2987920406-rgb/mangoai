@@ -103,6 +103,33 @@ export function subscriptionEnv(): Record<string, string | undefined> {
   return env
 }
 
+// (N16, nuit 2026-07-03) Deadline DURE sur les itérations query() : l'option
+// timeoutMs d'askLLM n'était appliquée qu'aux providers HTTP — un stream SDK
+// qui pend (réseau muet) gelait le juge nocturne, donc TOUT le batch de nuit,
+// `running=true` pour toujours. On interrompt le query proprement puis on lève
+// (l'appelant a déjà ses catch : verdict neutre / repli — jamais un gel).
+const CLAUDE_QUERY_TIMEOUT_MS = Math.max(60_000, Number(process.env.CLAUDE_QUERY_TIMEOUT_MS ?? 300_000))
+
+async function withQueryDeadline(
+  q: { interrupt?: () => Promise<void> },
+  work: Promise<string>,
+  timeoutMs: number,
+  label: string,
+): Promise<string> {
+  let timer: NodeJS.Timeout | undefined
+  const deadline = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => {
+      void q.interrupt?.().catch(() => undefined) // best-effort : libère le process SDK
+      reject(new Error(`${label} : aucune réponse après ${Math.round(timeoutMs / 1000)} s (deadline)`))
+    }, timeoutMs)
+  })
+  try {
+    return await Promise.race([work, deadline])
+  } finally {
+    if (timer) clearTimeout(timer)
+  }
+}
+
 // ── Provider claude : query() via l'ABONNEMENT ───────────────────────────────
 async function askClaude(system: string, user: string, model: string): Promise<string> {
   const env = subscriptionEnv()
@@ -116,14 +143,17 @@ async function askClaude(system: string, user: string, model: string): Promise<s
       env,
     },
   })
-  let text = ''
-  for await (const m of q) {
-    if (m.type === 'assistant') {
-      const content = (m as { message?: { content?: Array<{ type: string; text?: string }> } }).message?.content ?? []
-      for (const b of content) if (b.type === 'text' && b.text) text += b.text
+  const drain = (async () => {
+    let text = ''
+    for await (const m of q) {
+      if (m.type === 'assistant') {
+        const content = (m as { message?: { content?: Array<{ type: string; text?: string }> } }).message?.content ?? []
+        for (const b of content) if (b.type === 'text' && b.text) text += b.text
+      }
     }
-  }
-  return text.trim()
+    return text.trim()
+  })()
+  return withQueryDeadline(q, drain, CLAUDE_QUERY_TIMEOUT_MS, 'askClaude')
 }
 
 // ── Recherche web via l'ABONNEMENT (query + outil WebSearch, multi-tours) ────
@@ -145,14 +175,18 @@ export async function claudeWebResearch(
       env,
     },
   })
-  let text = ''
-  for await (const m of q) {
-    if (m.type === 'assistant') {
-      const content = (m as { message?: { content?: Array<{ type: string; text?: string }> } }).message?.content ?? []
-      for (const b of content) if (b.type === 'text' && b.text) text += b.text + '\n'
+  const drain = (async () => {
+    let text = ''
+    for await (const m of q) {
+      if (m.type === 'assistant') {
+        const content = (m as { message?: { content?: Array<{ type: string; text?: string }> } }).message?.content ?? []
+        for (const b of content) if (b.type === 'text' && b.text) text += b.text + '\n'
+      }
     }
-  }
-  return text.trim()
+    return text.trim()
+  })()
+  // Recherche web réelle = plus lente qu'un tour de texte → marge ×2.
+  return withQueryDeadline(q, drain, CLAUDE_QUERY_TIMEOUT_MS * 2, 'claudeWebResearch')
 }
 
 // ── Provider openai-compatible (generic + deepseek / mistral / groq) ─────────

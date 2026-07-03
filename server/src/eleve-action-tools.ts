@@ -42,7 +42,7 @@ import { buildEleveArchiveTools } from "./eleve-archive-tools.js";
 import { buildEleveSiteTools } from "./eleve-site-tools.js";
 import { buildEleveImageTools } from "./eleve-image-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
-import { searchPexelsImages, pexelsConfigured, loremflickrUrl } from "./taste-images.js";
+import { searchPexelsImages, pexelsConfigured } from "./taste-images.js";
 
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
 const RUN_TIMEOUT_MS = Number(process.env.ELEVE_RUN_TIMEOUT_MS ?? 120_000);
@@ -286,16 +286,31 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
         if (!scene) return { text: "Donne une description de la scène (en anglais, mots-clés).", isError: true };
         const n = Math.min(3, Math.max(1, Number(args.n ?? 1)));
         if (!pexelsConfigured()) {
-          // Pas de clé Pexels : repli honnête (loremflickr thématique) plutôt qu'aléatoire pur.
-          const url = loremflickrUrl(scene, scene.length, 800, 600);
-          return { text: `Pexels non configuré (PEXELS_API_KEY absente). Repli thématique :\n${url}` };
+          // (N5/N13, 2026-07-03) plus JAMAIS de repli placeholder : la garde
+          // « vraies images » du Gardien refuse désormais loremflickr & co — en
+          // proposer un ici créait une contradiction interne (outil qui tend le
+          // piège que la clôture sanctionne). Sans clé → alternative honnête.
+          return {
+            text:
+              "Pexels non configuré (PEXELS_API_KEY absente) — AUCUNE image de repli. " +
+              "N'utilise PAS de placeholder aléatoire (picsum/loremflickr : refusés à la clôture). " +
+              "À la place : un dégradé CSS soigné aux couleurs de la palette, un pattern SVG inline, ou une composition typographique.",
+            isError: true,
+          };
         }
         const results = await searchPexelsImages(scene, n);
         if (results.length === 0) {
           return { text: `Aucune photo trouvée pour « ${scene} ». Reformule en mots-clés plus simples (ex. moins de mots, sujet concret).`, isError: true };
         }
         const lines = results.map((r, i) => `${i + 1}. ${r.url}${r.alt ? `  (${r.alt})` : ""}`);
-        return { text: `Photos réelles pour « ${scene} » (Pexels — utilise une de ces URLs telle quelle) :\n${lines.join("\n")}` };
+        // (N13) direction artistique : la cohérence du TRAITEMENT photo fait la
+        // différence entre un collage de stock et une identité visuelle.
+        return {
+          text:
+            `Photos réelles pour « ${scene} » (Pexels — utilise une de ces URLs telle quelle) :\n${lines.join("\n")}\n` +
+            `Direction artistique : garde UN SEUL style photographique par app (même lumière, même traitement) ; ` +
+            `unifie les photos hétérogènes avec un overlay teinté aux couleurs de la palette (ex. linear-gradient semi-transparent).`,
+        };
       },
     },
     {

@@ -12,6 +12,7 @@
 // Moule = orchestrator.ts (#44) : gather borné → askLLM → proposition → validation
 // humaine → application. Parse robuste = parseRadar. Scheduler = nocturnal.ts.
 import path from "node:path";
+import { atomicWriteFileSync } from "./safe-io.js";
 import fs from "node:fs";
 import type { Express, Request, Response } from "express";
 import { resolveProvider } from "./llm-engine.js";
@@ -228,7 +229,7 @@ export function loadRuns(): EvolutionRun[] {
 
 export function saveRuns(runs: EvolutionRun[]): void {
   ensureDataDir();
-  fs.writeFileSync(RUNS_FILE, JSON.stringify({ runs: runs.slice(0, 20) }, null, 2), "utf8");
+  atomicWriteFileSync(RUNS_FILE, JSON.stringify({ runs: runs.slice(0, 20) }, null, 2));
 }
 
 function findProposal(runs: EvolutionRun[], runId: string, proposalId: string): EvolutionProposal | null {
@@ -249,7 +250,7 @@ export function applyProposal(workspaceDir: string, runId: string, proposalId: s
       raw = "";
     }
     const next = applyToAxioms(raw, p);
-    fs.writeFileSync(axiomsPath, `${next}\n`, "utf8");
+    atomicWriteFileSync(axiomsPath, `${next}\n`);
   }
   p.status = "applied";
   p.appliedAt = ts;
@@ -284,7 +285,7 @@ function loadConfig(): EvolutionConfig {
 
 function saveConfig(c: EvolutionConfig): void {
   ensureDataDir();
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify(c, null, 2), "utf8");
+  atomicWriteFileSync(CONFIG_FILE, JSON.stringify(c, null, 2));
 }
 
 function localDate(): string {

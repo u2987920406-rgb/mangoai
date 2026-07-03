@@ -180,10 +180,14 @@ function viteInstalled(projectDir: string): boolean {
 const installInFlight = new Map<string, Promise<void>>();
 let installChain: Promise<void> = Promise.resolve();
 
-/** Lance réellement `npm install` dans un projet. Best-effort, ne rejette jamais. */
-function runNpmInstall(projectDir: string, timeoutMs: number): Promise<void> {
+/** Lance réellement `npm install` dans un projet. Best-effort, ne rejette jamais —
+ * mais (N22, nuit 2026-07-03) il DIT désormais s'il a réussi : un timeout/échec
+ * passait pour un succès (« terminé (code 1) » noyé dans les logs), puis Vite
+ * plantait en aval avec une erreur obscure sur un node_modules à moitié installé. */
+function runNpmInstall(projectDir: string, timeoutMs: number): Promise<boolean> {
   console.log(`[preview] node_modules absent → npm install dans ${path.basename(projectDir)} …`);
   return new Promise((resolve) => {
+    let timedOut = false;
     const proc = spawn(process.platform === "win32" ? "npm.cmd" : "npm", ["install", "--no-audit", "--no-fund"], {
       cwd: projectDir,
       stdio: ["ignore", "pipe", "pipe"],
@@ -192,14 +196,20 @@ function runNpmInstall(projectDir: string, timeoutMs: number): Promise<void> {
     proc.stdout?.on("data", (d: Buffer) => process.stdout.write(`[preview:install] ${d}`));
     proc.stderr?.on("data", (d: Buffer) => process.stderr.write(`[preview:install] ${d}`));
     const timer = setTimeout(() => {
+      timedOut = true;
       if (proc.pid) {
         if (process.platform === "win32") spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
         else proc.kill("SIGKILL");
       }
     }, timeoutMs);
-    const finish = () => { clearTimeout(timer); resolve(); };
-    proc.on("error", finish);
-    proc.on("exit", (code) => { console.log(`[preview] npm install terminé (code ${code})`); finish(); });
+    proc.on("error", () => { clearTimeout(timer); resolve(false); });
+    proc.on("exit", (code) => {
+      clearTimeout(timer);
+      const ok = code === 0 && !timedOut;
+      if (ok) console.log(`[preview] npm install terminé (code 0)`);
+      else console.warn(`[preview] ⚠ npm install ÉCHOUÉ dans ${path.basename(projectDir)} (${timedOut ? `timeout ${Math.round(timeoutMs / 1000)}s` : `code ${code}`}) — node_modules possiblement incomplet, Vite échouera probablement`);
+      resolve(ok);
+    });
   });
 }
 
@@ -220,9 +230,9 @@ function ensurePreviewDeps(projectDir: string, timeoutMs = 180_000): Promise<voi
   // On s'accroche à la chaîne globale : un seul npm install à la fois sur la machine.
   const p = installChain
     .catch(() => {}) // un échec précédent ne bloque jamais la file
-    .then(() => {
+    .then(async () => {
       if (viteInstalled(projectDir)) return; // installé entre-temps par un autre appel
-      return runNpmInstall(projectDir, timeoutMs);
+      await runNpmInstall(projectDir, timeoutMs); // (N22) échec déjà loggé explicitement
     })
     .finally(() => { installInFlight.delete(key); });
   installInFlight.set(key, p);
@@ -270,13 +280,28 @@ const defaultLaunch: Launcher = async (projectDir, configHash) => {
   async function stopThis(): Promise<void> {
     if (proc.exitCode === null) {
       if (process.platform === "win32" && proc.pid) {
-        // Kill the whole tree on Windows (npm spawns vite as a child).
-        spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
+        // (N20, nuit 2026-07-03) taskkill ATTENDU + mort re-vérifiée : le
+        // fire-and-forget + 300 ms fixes laissait des Vite orphelins quand
+        // taskkill échouait (le pool les avait déjà oubliés) — la racine du
+        // problème récurrent des ports 3000/5174 squattés.
+        await new Promise<void>((resolve) => {
+          const k = spawn("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore" });
+          k.on("exit", () => resolve());
+          k.on("error", () => resolve());
+          setTimeout(resolve, 3_000); // taskkill lui-même ne doit jamais nous bloquer
+        });
       } else {
         proc.kill("SIGTERM");
       }
     }
-    await new Promise((r) => setTimeout(r, 300));
+    // Vérifie la mort réelle (jusqu'à ~2 s) ; escalade SIGKILL hors Windows.
+    for (let i = 0; i < 10 && proc.exitCode === null; i++) {
+      await new Promise((r) => setTimeout(r, 200));
+    }
+    if (proc.exitCode === null) {
+      console.warn(`[preview] le dev server (pid ${proc.pid}) survit au kill — orphelin possible`);
+      if (process.platform !== "win32") proc.kill("SIGKILL");
+    }
   }
 
   return {

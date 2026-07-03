@@ -6,6 +6,7 @@
 // L'agent l'écrit (au scaffold) et le met à jour (en cochant un incrément) ; le
 // backend le réconcilie après commit (garde-fou) et l'UI Kanban le lit/édite.
 import fs from "node:fs";
+import { atomicWriteFileSync } from "./safe-io.js";
 import path from "node:path";
 
 export type IncrementStatus = "todo" | "doing" | "done";
@@ -121,7 +122,7 @@ export function slugify(s: string): string {
 export function savePlan(dir: string, plan: ProjectPlan): void {
   fs.mkdirSync(dir, { recursive: true });
   const out: ProjectPlan = { ...plan, updatedAt: Date.now() };
-  fs.writeFileSync(filePath(dir), JSON.stringify(out, null, 2), "utf8");
+  atomicWriteFileSync(filePath(dir), JSON.stringify(out, null, 2));
 }
 
 export function skeletonDone(dir: string): boolean {

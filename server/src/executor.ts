@@ -51,6 +51,49 @@ function resolveInside(projectDir: string, rel: string): string {
 const FORBIDDEN_RUN =
   /\b(rm\s+-rf\s+[~/]|del\s+\/|rd\s+\/s|format|mkfs|shutdown|reboot|git|npm\s+publish|curl[^\n]*\|\s*(sh|bash)|:\(\)\s*\{)/i;
 
+// (Un, 2026-07-03) U2 — anti-fuite de secrets : le spawn de <run> héritait de TOUT
+// process.env, donc une commande proposée par le modèle (ex. `node -e
+// "console.log(process.env.ELEVE_API_KEY)"`) pouvait exfiltrer les clés API
+// (ELEVE_API_KEY, GITHUB_TOKEN, PEXELS_API_KEY, FIGMA_TOKEN, MANGO_VAULT_KEY…).
+// On ne transmet qu'un allowlist MINIMAL : ce qu'il faut pour que node/npm/vite
+// buildent (PATH, dossiers temp/cache, variables système Windows) — JAMAIS les clés.
+const ENV_ALLOWLIST = [
+  "PATH",
+  "SystemRoot",
+  "SYSTEMROOT",
+  "TEMP",
+  "TMP",
+  "APPDATA",
+  "LOCALAPPDATA",
+  "USERPROFILE",
+  "HOME",
+  "ProgramFiles",
+  "ProgramFiles(x86)",
+  "ProgramData",
+  "npm_config_cache",
+  "NODE_OPTIONS",
+  "ComSpec",
+  "PATHEXT",
+  "HOMEDRIVE",
+  "HOMEPATH",
+  "NUMBER_OF_PROCESSORS",
+  "OS",
+] as const;
+
+/** Environnement RESTREINT pour tout process enfant qui exécute du contenu
+ * proposé par un modèle. Réutilisable partout où on spawn une commande. */
+export function buildRestrictedEnv(): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = {};
+  for (const key of ENV_ALLOWLIST) {
+    // Sous Windows, process.env est insensible à la casse (PATH ↔ Path) : on
+    // évite de poser deux clés qui ne diffèrent que par la casse dans l'objet.
+    if (Object.keys(env).some((k) => k.toLowerCase() === key.toLowerCase())) continue;
+    const value = process.env[key];
+    if (value !== undefined) env[key] = value;
+  }
+  return env;
+}
+
 function killTree(pid: number): void {
   if (process.platform === "win32") {
     spawn("taskkill", ["/pid", String(pid), "/T", "/F"], { stdio: "ignore" });
@@ -73,6 +116,9 @@ function runCommand(
       cwd: projectDir,
       shell: true,
       windowsHide: true,
+      // (Un, 2026-07-03) U2 — env restreint : les clés API du serveur ne doivent
+      // JAMAIS être visibles d'une commande proposée par un modèle.
+      env: buildRestrictedEnv(),
       detached: process.platform !== "win32", // groupe de process tuable sous *nix
     });
     let out = "";

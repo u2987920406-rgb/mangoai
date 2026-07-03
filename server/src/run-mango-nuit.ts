@@ -13,6 +13,7 @@
 // Reprendre : même commande.
 
 import "dotenv/config";
+import { atomicWriteFileSync } from "./safe-io.js";
 import fs from "node:fs";
 import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
@@ -49,7 +50,7 @@ function loadState(): State {
   }
 }
 function saveState(s: State): void {
-  fs.writeFileSync(STATE_FILE, JSON.stringify(s, null, 2));
+  atomicWriteFileSync(STATE_FILE, JSON.stringify(s, null, 2));
 }
 function markDone(s: State, id: string): void {
   if (!s.done.includes(id)) s.done.push(id);
@@ -296,7 +297,7 @@ async function main(): Promise<void> {
       const r = await runProject(spec, state);
       if (r) {
         results.push(r);
-        fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
+        atomicWriteFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
         writeBilan(results); // bilan réécrit à chaque projet → consultable en cours de nuit
       }
     } catch (e) {

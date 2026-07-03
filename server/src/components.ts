@@ -8,8 +8,18 @@
 //   - meta.json      — description, tags, props, usedIn, timestamps
 import path from "node:path";
 import fs from "node:fs";
+import { isSafeSlug } from "./references.js";
 
 export const COMPONENTS_DIR_NAME = ".components";
+
+/** (Un, 2026-07-03) U1 — anti path-traversal : `name` vient du client (meta.name
+ * ou :name d'URL) et finissait BRUT dans path.join → `../../x` permettait de
+ * lire/écrire/supprimer HORS de .components (RCE via écrasement de fichiers
+ * serveur). On réutilise EXACTEMENT la garde isSafeSlug de references.ts, en
+ * tolérant le PascalCase des composants via un lowercase de validation. */
+export function isSafeComponentName(name: string): boolean {
+  return isSafeSlug(name.toLowerCase());
+}
 
 export interface ComponentMeta {
   name: string;        // PascalCase folder name
@@ -51,6 +61,7 @@ export function listComponents(workspaceDir: string): ComponentMeta[] {
 }
 
 export function loadComponent(workspaceDir: string, name: string): ComponentEntry | null {
+  if (!isSafeComponentName(name)) return null; // (Un, 2026-07-03) U1 — pas de lecture hors .components
   const dir = path.join(componentsDir(workspaceDir), name);
   try {
     const metaRaw = fs.readFileSync(path.join(dir, "meta.json"), "utf8");
@@ -62,6 +73,10 @@ export function loadComponent(workspaceDir: string, name: string): ComponentEntr
 }
 
 export function saveComponent(workspaceDir: string, entry: ComponentEntry): void {
+  // (Un, 2026-07-03) U1 — un meta.name du type "../../server/src/x" écrirait hors du store
+  if (!isSafeComponentName(entry.meta.name)) {
+    throw new Error(`nom de composant invalide : "${entry.meta.name}"`);
+  }
   const dir = path.join(componentsDir(workspaceDir), entry.meta.name);
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify(entry.meta, null, 2), "utf8");
@@ -69,6 +84,10 @@ export function saveComponent(workspaceDir: string, entry: ComponentEntry): void
 }
 
 export function deleteComponent(workspaceDir: string, name: string): void {
+  // (Un, 2026-07-03) U1 — rmSync récursif sur un nom brut = suppression arbitraire
+  if (!isSafeComponentName(name)) {
+    throw new Error(`nom de composant invalide : "${name}"`);
+  }
   const dir = path.join(componentsDir(workspaceDir), name);
   fs.rmSync(dir, { recursive: true, force: true });
 }

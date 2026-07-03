@@ -128,7 +128,7 @@ function VersionsPanel({ versions, onRollback, onClose }) {
 }
 
 // ─── Panneau Backend ───────────────────────────────────────────────────────────
-function BackendPanel({ status, onScaffold, onStart, onStop, onClose }) {
+function BackendPanel({ status, starting = false, onScaffold, onStart, onStop, onClose }) {
   const { scaffolded, running, url } = status;
   return (
     <PanelShell title="Backend" onClose={onClose}>
@@ -159,11 +159,14 @@ function BackendPanel({ status, onScaffold, onStart, onStop, onClose }) {
         ) : (
           <>
             <p className="text-xs text-dim">Backend arrêté.</p>
+            {/* (Un, 2026-07-03) U7 — disabled pendant le démarrage : un double-clic
+                lançait deux serveurs Express (process orphelin sur le port) */}
             <button
               onClick={onStart}
-              className="rounded-lg border border-warn/40 bg-warn/10 px-3 py-2 text-sm text-warn hover:bg-warn/20 transition-colors"
+              disabled={starting}
+              className="rounded-lg border border-warn/40 bg-warn/10 px-3 py-2 text-sm text-warn hover:bg-warn/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              Démarrer
+              {starting ? "Démarrage…" : "Démarrer"}
             </button>
           </>
         )}
@@ -283,6 +286,7 @@ export default function WorkspaceTools({
   onGithub,
   githubUrl,
   backendStatus = null,
+  backendStarting = false, // (Un, 2026-07-03) U7 — désactive « Démarrer » pendant un start en cours
   onBackendScaffold,
   onBackendStart,
   onBackendStop,
@@ -383,6 +387,7 @@ export default function WorkspaceTools({
           {active === "backend" && backendStatus && (
             <BackendPanel
               status={backendStatus}
+              starting={backendStarting}
               onScaffold={onBackendScaffold}
               onStart={onBackendStart}
               onStop={onBackendStop}

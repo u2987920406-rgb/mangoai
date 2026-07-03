@@ -78,6 +78,20 @@ async function stage1(): Promise<void> {
       dir,
     );
     check("arrêt à la 1ʳᵉ erreur (b.txt jamais écrit)", !r5.ok && !fs.existsSync(path.join(dir, "b.txt")));
+
+    // f) (Un, 2026-07-03) U2 — env restreint : un secret posé dans process.env du
+    //    serveur ne doit PAS être visible d'une commande <run>. La commande sort
+    //    en code 1 si elle voit la clé → executeContract doit rester ok (exit 0).
+    process.env["ELEVE_API_KEY_TEST_LEAK"] = "sk-secret-ne-doit-pas-fuiter";
+    try {
+      const r6 = await executeContract(
+        [{ kind: "run", command: 'node -e "process.exit(process.env.ELEVE_API_KEY_TEST_LEAK ? 1 : 0)"' }],
+        dir,
+      );
+      check("env restreint : le secret ne fuit pas dans <run>", r6.ok);
+    } finally {
+      delete process.env["ELEVE_API_KEY_TEST_LEAK"];
+    }
   } finally {
     fs.rmSync(dir, { recursive: true, force: true }); // pas de node_modules ici → sûr
   }

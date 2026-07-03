@@ -4,6 +4,8 @@ import {
   parseHex, contrastRatio, isLargeText, wcagLevel,
   collectUsedColors, extractDeclaredPalette, extractContrastPairs, offPalette,
   measureDesign, measureSummary,
+  countFontFamilies, detectTypoScale, countLiteralColorsInComponents, detectMotion,
+  measureProjectDesign, FONT_FAMILIES_MAX, LITERAL_COLORS_MAX,
 } from "./design-metrics.js";
 
 let pass = 0, fail = 0;
@@ -66,6 +68,90 @@ check("measureDesign : title (blanc/violet 32px gras) PAS en échec", !m.contras
 check("measureDesign remonte les hors-palette", m.offPalette.includes("#ff5577"));
 check("measureSummary produit du texte quand il y a des écarts", measureSummary(m).includes("WCAG") || measureSummary(m).includes("palette"));
 check("measureSummary vide si RAS", measureSummary({ contrastFails: [], offPalette: [], paletteSize: 3 }) === "");
+
+// ═══ Mesures statiques enrichies (N15) ═══
+
+// ── (1) familles de polices ──
+{
+  const cssFonts = `
+:root { --serif: "Cormorant Garamond", Georgia, serif; --sans: Inter, system-ui, sans-serif; }
+body { font-family: var(--sans); }
+code { font-family: "JetBrains Mono", monospace; }
+`;
+  const html = `<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Inter:wght@400;500&display=swap" rel="stylesheet">`;
+  const f = countFontFamilies([cssFonts], html);
+  check("countFontFamilies : 3 familles (Cormorant/Inter/JetBrains, dédupliquées CSS+HTML)", f.count === 3);
+  check("countFontFamilies ignore les génériques et var()", !f.families.includes("serif") && !f.families.some((x) => x.startsWith("var(")));
+  check("countFontFamilies : 3 = pas trop (max " + FONT_FAMILIES_MAX + ")", f.tooMany === false);
+  const g = countFontFamilies([`h1{font-family:Lobster;} h2{font-family:Pacifico;} p{font-family:Raleway;} em{font-family:Caveat;}`]);
+  check("countFontFamilies : 4 familles = TROP", g.count === 4 && g.tooMany === true);
+  check("countFontFamilies : vide → 0, pas trop", countFontFamilies([]).count === 0 && !countFontFamilies([]).tooMany);
+}
+
+// ── (2) échelle typographique ──
+{
+  const clamped = detectTypoScale([`h1 { font-size: clamp(2rem, 5vw, 4rem); }`]);
+  check("detectTypoScale : clamp() → échelle présente", clamped.usesClamp === true && clamped.present === true);
+  const suite = detectTypoScale([`p{font-size:14px} h3{font-size:1.25rem} h2{font-size:28px} h1{font-size:2.5rem}`]);
+  check("detectTypoScale : suite 14/20/28/40 → cohérente", suite.coherent === true && suite.present === true);
+  check("detectTypoScale : tailles converties en px triées", suite.distinctSizesPx.join(",") === "14,20,28,40");
+  const flat = detectTypoScale([`p{font-size:15px} h2{font-size:16px} h1{font-size:17px}`]);
+  check("detectTypoScale : amplitude plate (15/16/17) → PAS d'échelle", flat.present === false);
+  const holed = detectTypoScale([`p{font-size:12px} h2{font-size:14px} h1{font-size:64px}`]);
+  check("detectTypoScale : trou brutal (14→64) → PAS cohérente", holed.coherent === false);
+  check("detectTypoScale : une seule taille → absente", detectTypoScale([`p{font-size:16px}`]).present === false);
+}
+
+// ── (3) couleurs littérales dans les composants ──
+{
+  const comp = `export function Card() { return <div style={{ color: "#ff5577", background: "rgba(10, 20, 30, 0.5)" }}>x</div>; }`;
+  const c = countLiteralColorsInComponents([comp]);
+  check("countLiteralColorsInComponents : hex + rgba comptés", c.count === 2 && c.samples.includes("#ff5577"));
+  check("countLiteralColorsInComponents : 2 ≤ seuil → pas de dérive", c.overThreshold === false);
+  const many = countLiteralColorsInComponents([Array.from({ length: LITERAL_COLORS_MAX + 1 }, (_, i) => `"#0${i}0${i}0${i}"`).join(";")]);
+  check("countLiteralColorsInComponents : au-delà du seuil → overThreshold", many.overThreshold === true);
+  check("countLiteralColorsInComponents : composant en var(--x) → 0", countLiteralColorsInComponents([`<div style={{ color: "var(--ink)" }} />`]).count === 0);
+}
+
+// ── (4) présence de mouvement ──
+{
+  const still = detectMotion([`.card { color: #fff; }`], [`export const A = () => <div/>;`], "{}");
+  check("detectMotion : rien → page statique", still.present === false);
+  const trans = detectMotion([`.card { transition: transform 0.2s ease; }`]);
+  check("detectMotion : transition CSS détectée", trans.hasTransition === true && trans.present === true);
+  const keyf = detectMotion([`@keyframes pulse { from { opacity: 0 } to { opacity: 1 } }`]);
+  check("detectMotion : @keyframes détecté", keyf.hasKeyframes === true && keyf.present === true);
+  const framer = detectMotion([], [`import { motion } from "framer-motion";`]);
+  check("detectMotion : import framer-motion détecté", framer.hasFramerMotion === true && framer.present === true);
+  const pkg = detectMotion([], [], `{"dependencies":{"framer-motion":"^11.0.0"}}`);
+  check("detectMotion : framer-motion en dépendance détecté", pkg.hasFramerMotion === true);
+}
+
+// ── measureProjectDesign + measureSummary enrichi (bout-à-bout) ──
+{
+  const staticCss = `
+:root { --bg: #ffffff; --ink: #111111; }
+body { font-family: Arial; font-size: 16px; }
+h1 { font-family: Verdana; } h2 { font-family: Tahoma; } h3 { font-family: Georgia; }
+`;
+  const comp = `export const X = () => <div style={{ color: "#123456" }}/>;`;
+  const pm = measureProjectDesign({ cssFiles: [staticCss], componentFiles: [comp] });
+  check("measureProjectDesign : les 4 champs N15 remplis", !!pm.fontFamilies && !!pm.typoScale && !!pm.literalColors && !!pm.motion);
+  check("measureProjectDesign : garde la mesure de base (paletteSize)", pm.paletteSize === 2);
+  const s = measureSummary(pm);
+  check("measureSummary enrichi : signale trop de polices", s.includes("TROP de familles"));
+  check("measureSummary enrichi : signale l'absence d'échelle typo", s.includes("échelle typographique"));
+  check("measureSummary enrichi : signale la page statique", s.includes("STATIQUE"));
+  check("measureSummary enrichi : 1 couleur littérale sous seuil → PAS signalée", !s.includes("couleurs LITTÉRALES"));
+  // Rétrocompat : un DesignMeasure « ancien » (sans champs N15) rend comme avant.
+  check("measureSummary rétrocompat : mesure sans champs N15 → vide si RAS", measureSummary({ contrastFails: [], offPalette: [], paletteSize: 3 }) === "");
+  // Projet SAIN : duo de polices, clamp, motion, composants propres → résumé vide.
+  const healthy = measureProjectDesign({
+    cssFiles: [`:root{--sans:Inter,sans-serif}h1{font-family:"Playfair Display";font-size:clamp(2rem,5vw,4rem)}.c{transition:opacity .2s}`],
+    componentFiles: [`export const Y = () => <div className="c"/>;`],
+  });
+  check("measureProjectDesign : projet sain → résumé vide", measureSummary(healthy) === "");
+}
 
 console.log(`\n${pass} pass / ${fail} fail`);
 if (fail > 0) process.exit(1);

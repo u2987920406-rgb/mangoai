@@ -125,6 +125,7 @@ export default function App() {
   } = useTutorial({ setScreen, pushToast });
   const {
     status: backendStatus,
+    starting: backendStarting, // (Un, 2026-07-03) U7 — garde anti double-clic « Démarrer »
     scaffold: scaffoldBackend,
     start: startBackend,
     stop: stopBackend,
@@ -365,6 +366,7 @@ export default function App() {
     onGithub: pushGithub,
     githubUrl,
     backendStatus: projects.includes(projectName) ? backendStatus : null,
+    backendStarting, // (Un, 2026-07-03) U7
     onBackendScaffold: scaffoldBackend,
     onBackendStart: startBackend,
     onBackendStop: stopBackend,

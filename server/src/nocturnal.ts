@@ -11,14 +11,16 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Express, Request, Response } from "express";
 import { createProject, projectDir, WORKSPACE_DIR } from "./projects.js";
-import { runAgent } from "./agent.js";
+import { runAgent, interruptAgent } from "./agent.js";
+import { tryAcquireAgent, releaseAgent } from "./agent-lock.js";
 import { appendHistory, formatToolLine, loadHistory, type ChatEntry } from "./history.js";
 import { inspectProject, type InspectionSignal } from "./inspection.js";
 import { installBackendDepsAsync } from "./backend-generator.js";
 import { generateUniquePrompts } from "./train-loop.js";
 import { askLLM, resolveProvider } from "./llm-engine.js";
 import { getBrain } from "./kernel.js";
-import { capturePreview, getPreviewUrl } from "./vision.js";
+import { capturePreview } from "./vision.js";
+import { startPreview } from "./preview.js";
 import { loadPreferences } from "./preferences.js";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
@@ -171,15 +173,18 @@ export async function judgeProject(dir: string, task: string): Promise<{ score: 
   const prefs = loadPreferences(WORKSPACE_DIR);
 
   // Tentative de capture du rendu visuel — best-effort, jamais bloquant.
+  // (N19, nuit 2026-07-03) On démarre la preview DU projet jugé (startPreview(dir))
+  // au lieu de lire getPreviewUrl() : cette variable globale est positionnée par le
+  // DERNIER tour de chat, jamais par la génération nocturne → le juge screenshotait
+  // soit rien, soit l'app d'un AUTRE projet — toute la boucle de goût (tri matinal,
+  // axiomes) était polluée. Et un échec de capture est désormais LOGGÉ, plus avalé.
   let imageBase64: string | undefined;
   try {
-    const url = getPreviewUrl();
-    if (url) {
-      const buf = await capturePreview(url);
-      imageBase64 = buf.toString("base64");
-    }
-  } catch {
-    // preview absent ou Playwright indispo — on juge sur le code uniquement
+    const { url } = await startPreview(dir);
+    const buf = await capturePreview(url);
+    imageBase64 = buf.toString("base64");
+  } catch (e) {
+    console.warn(`[nocturnal] capture du rendu impossible pour ${dir} (${(e as Error).message.split("\n")[0]}) — jugé sur le code seul`);
   }
 
   const hasVision = !!imageBase64;
@@ -274,6 +279,8 @@ async function buildOne(
   batchId: string,
   index: number,
   curationDirective = "",
+  // (N17) budget MURAL du projet (epoch ms) — Infinity si non fourni (rétrocompat tests).
+  deadlineAt: number = Number.POSITIVE_INFINITY,
 ): Promise<NocturnalEntry> {
   const name = `nuit-${batchId}-${index}`;
   const dir = projectDir(name);
@@ -292,17 +299,31 @@ async function buildOne(
   // Mode "nocturne" : arsenal design d'Élite (moodboard Sharingan + web +
   // design-system) SANS les portes humaines (personne ne valide la nuit).
   const consumeTurn = async (genPrompt: string): Promise<void> => {
-    for await (const ev of runAgent(genPrompt, dir, sessionId, "sonnet", "nocturne")) {
-      if (ev.type === "result") {
-        costUsd += ev.costUsd ?? 0;
-        sessionId = ev.sessionId;
-        if (!ev.ok) record("error", `L'agent s'est arrêté : ${ev.error}`);
-      } else if (ev.type === "text") record("agent", ev.text);
-      else if (ev.type === "thinking") record("thinking", ev.text);
-      else if (ev.type === "tool") record("tool", formatToolLine(ev.name, ev.detail));
-      else if (ev.type === "error") record("error", ev.message);
+    // (N17) montre de chantier : au-delà du budget mural du projet, on interrompt
+    // le tour EN COURS (interruptAgent) — sinon un seul projet rétif mange la nuit.
+    const watchdog = Number.isFinite(deadlineAt)
+      ? setTimeout(() => {
+          record("error", `⏱ Budget mural du projet dépassé — tour interrompu (deadline nocturne).`);
+          void interruptAgent().catch(() => undefined);
+        }, Math.max(1_000, deadlineAt - Date.now()))
+      : undefined;
+    try {
+      for await (const ev of runAgent(genPrompt, dir, sessionId, "sonnet", "nocturne")) {
+        if (ev.type === "result") {
+          costUsd += ev.costUsd ?? 0;
+          sessionId = ev.sessionId;
+          if (!ev.ok) record("error", `L'agent s'est arrêté : ${ev.error}`);
+        } else if (ev.type === "text") record("agent", ev.text);
+        else if (ev.type === "thinking") record("thinking", ev.text);
+        else if (ev.type === "tool") record("tool", formatToolLine(ev.name, ev.detail));
+        else if (ev.type === "error") record("error", ev.message);
+      }
+    } finally {
+      if (watchdog) clearTimeout(watchdog);
     }
   };
+  // (N17) plus de budget → ne PAS lancer de nouveau tour (réparations comprises).
+  const outOfBudget = () => Date.now() >= deadlineAt;
   try {
     await createProject(name);
     // provider claude → runAgent (Claude/abonnement). (Un provider non-claude
@@ -318,7 +339,8 @@ async function buildOne(
     //    rebuild réellement et, si ça casse, on fait corriger l'agent (borné).
     const verdict = await ensureBuildPasses(dir, {
       inspect: (d) => inspectProject(d),
-      repairTurn: (p) => consumeTurn(p),
+      // (N17) une réparation ne démarre que s'il reste du budget mural.
+      repairTurn: (p) => (outOfBudget() ? Promise.resolve() : consumeTurn(p)),
       ensureBackendDeps: (d) => installBackendDepsAsync(d),
       onStatus: (msg) => record("status", msg),
     });
@@ -362,13 +384,27 @@ async function buildOne(
  * builds se disputeraient npm/disque en parallèle). Met à jour l'état `running`. */
 export async function runNocturnalBatch(count: number, opts: { freeStyle?: boolean } = {}): Promise<void> {
   if (running) return;
+  // (N18, nuit 2026-07-03) le batch prend le VERROU AGENT global (agent-lock),
+  // comme un tour de chat : avant, il tournait hors verrou → `currentQuery`
+  // (singleton d'agent.ts) écrasé par le dernier lancé, `/api/stop` interrompait
+  // le mauvais agent, et le contexte vision capturait la preview d'un AUTRE
+  // projet. Si un tour de chat est en cours, le batch NE démarre PAS (log clair).
+  if (!tryAcquireAgent()) {
+    console.warn("[nocturnal] agent occupé (tour de chat en cours) — batch refusé, relance plus tard");
+    return;
+  }
   running = true;
   const batchId = genId();
   const n = Math.max(1, Math.min(count || 5, 10));
   progress = { current: 0, total: n, label: "Préparation…" };
+  // (N17, nuit 2026-07-03) Deadline MURALE du batch : maxTurns borne les TOURS,
+  // pas le temps — un projet rétif pouvait manger les 8 h de la nuit et les
+  // projets suivants n'étaient jamais générés. Défauts : 45 min/projet (repères
+  // réels de la nuit du 03-07 : 6-45 min/app), 8 h pour le lot entier.
+  const projectBudgetMs = Math.max(10 * 60_000, Number(process.env.NOCTURNAL_PROJECT_BUDGET_MIN ?? 45) * 60_000);
+  const batchDeadline = Date.now() + Math.max(60 * 60_000, Number(process.env.NOCTURNAL_BATCH_BUDGET_H ?? 8) * 3_600_000);
   try {
     const prompts = generateUniquePrompts(n, opts);
-    const entries = loadEntries();
     // Curation pondérée par le rendement (#125) : calculée UNE fois pour la nuit,
     // partagée par tous les projets du lot. Best-effort (jamais bloquante).
     // #126/#130 — Avance l'amortissement du réglage d'UN pas et horodate dans le
@@ -386,13 +422,25 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
       /* pas de priorité → récolte non orientée (comportement historique) */
     }
     for (let i = 0; i < prompts.length; i++) {
+      // (N17) plus de budget mural → on ARRÊTE le lot proprement (les projets
+      // faits restent enregistrés) au lieu de déborder sur la matinée.
+      if (Date.now() >= batchDeadline) {
+        console.warn(`[nocturnal] deadline du lot atteinte — ${i}/${prompts.length} projet(s) générés, arrêt propre`);
+        break;
+      }
       progress = { current: i + 1, total: n, label: prompts[i].task.slice(0, 60) };
-      const entry = await buildOne(prompts[i], batchId, i + 1, curationDirective);
-      entries.unshift(entry);
-      saveEntries(entries); // persiste au fil de l'eau (récupérable si crash)
+      const entry = await buildOne(prompts[i], batchId, i + 1, curationDirective, Date.now() + projectBudgetMs);
+      // (N21, nuit 2026-07-03) RECHARGER avant chaque save : l'ancienne copie
+      // mémoire gardée toute la nuit ÉCRASAIT les écritures concurrentes
+      // (review POST /:id/review, DELETE /:id) — reviews perdues, projets
+      // supprimés qui ressuscitaient au projet suivant.
+      const fresh = loadEntries();
+      fresh.unshift(entry);
+      saveEntries(fresh); // persiste au fil de l'eau (récupérable si crash)
     }
   } finally {
     running = false;
+    releaseAgent(); // (N18) symétrique de l'acquisition — jamais un verrou zombie
     progress = { current: 0, total: 0, label: "" };
   }
 }

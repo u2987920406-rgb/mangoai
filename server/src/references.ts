@@ -38,8 +38,10 @@ function slugify(title: string): string {
     .slice(0, 80);
 }
 
-/** Guard against path-traversal: slug must be a single safe path segment. */
-function isSafeSlug(slug: string): boolean {
+/** Guard against path-traversal: slug must be a single safe path segment.
+ * (Un, 2026-07-03) U1 — exporté pour être réutilisé par components.ts /
+ * library-routes.ts : même garde partout, pas de ré-implémentation divergente. */
+export function isSafeSlug(slug: string): boolean {
   if (!slug) return false;
   // Must not contain separators or traversal sequences
   if (/[/\\]/.test(slug)) return false;

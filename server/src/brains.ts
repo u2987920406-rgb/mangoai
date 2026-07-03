@@ -16,6 +16,7 @@
 // racine MangoOS (.brains/registry.json) — fiches + routage dans un seul fichier.
 
 import path from "node:path";
+import { atomicWriteFileSync } from "./safe-io.js";
 import fs from "node:fs";
 import type { LLMProvider } from "./llm-engine.js";
 import type { ScanReport, ScanVerdict } from "./model-scan.js";
@@ -105,7 +106,7 @@ export function loadRegistry(): BrainRegistry {
 
 export function saveRegistry(reg: BrainRegistry): void {
   fs.mkdirSync(brainsDir(), { recursive: true });
-  fs.writeFileSync(registryFile(), JSON.stringify(reg, null, 2) + "\n", "utf8");
+  atomicWriteFileSync(registryFile(), JSON.stringify(reg, null, 2) + "\n");
 }
 
 // ── Construction d'une fiche depuis un rapport de scan #148 ────────────────────

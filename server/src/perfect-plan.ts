@@ -1,4 +1,5 @@
 import fs from "node:fs";
+import { atomicWriteFileSync } from "./safe-io.js";
 import path from "node:path";
 
 export interface PerfectPlanAnswer {
@@ -344,7 +345,7 @@ export function saveContract(
 ): void {
   fs.mkdirSync(dir, { recursive: true });
   const contract: PerfectPlanContract = { ...data, createdAt: new Date().toISOString() };
-  fs.writeFileSync(path.join(dir, FILE), JSON.stringify(contract, null, 2), "utf8");
+  atomicWriteFileSync(path.join(dir, FILE), JSON.stringify(contract, null, 2));
 }
 
 export function deleteContract(dir: string): void {

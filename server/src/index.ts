@@ -29,7 +29,7 @@ import { generateKreaImage } from "./krea.js";
 import { slugify as fluxSlugify } from "./eleve-flux-tools.js";
 import { saveUpload } from "./uploads.js";
 import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildIntent } from "./home-scratch.js";
-import { setVisionContext, snapZone, visionStatus, getPreviewUrl } from "./vision.js";
+import { setVisionContext, snapZone, visionStatus, getPreviewUrl, closeBrowser } from "./vision.js";
 import { shouldCaptureDiff, captureDiff } from "./vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "./metrics.js";
 import { sovereigntyReport, formatSovereignty } from "./sovereignty-metrics.js";
@@ -38,6 +38,7 @@ import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
 import { domainTemplateSection } from "./template-library.js";
+import { isAgentBusy, tryAcquireAgent, releaseAgent } from "./agent-lock.js";
 import { uxuiProfile } from "./models/uxui.js";
 import { layoutProfile } from "./models/layout.js";
 import { getBus } from "./kernel-bus.js";
@@ -127,14 +128,20 @@ const PORT = Number(process.env.PORT ?? 3000);
 // uniquement — pas d'Internet (cf. décision d'archi : LAN + push ntfy, zéro tunnel).
 const HOST = process.env.HOST ?? "0.0.0.0";
 const app = express();
-app.use(cors());
+// (Un, 2026-07-03) U11 — CORS était grand ouvert (toute origine) alors que le
+// serveur écoute sur le LAN : n'importe quelle page web visitée depuis une
+// machine du réseau pouvait appeler l'API en cross-origin. Origines limitées à
+// l'UI (5173), l'app générée (5174) et le backend lui-même (3000).
+app.use(cors({ origin: ["http://localhost:5173", "http://localhost:5174", "http://localhost:3000"] }));
 // Limite de corps relevée à 25 Mo : les pièces jointes du chat (ex. statut.md
 // ~200 Ko, voire plusieurs fichiers) embarquent leur contenu dans le JSON du
 // message. La limite Express par défaut (100 Ko) faisait échouer ces requêtes en
 // 413 silencieux. 25 Mo = large marge sans risque (local-first, pas exposé).
 app.use(express.json({ limit: "25mb" }));
 
-let agentBusy = false;
+// (N18, nuit 2026-07-03) le verrou agent vit désormais dans agent-lock.ts
+// (module partagé) pour que la boucle NOCTURNE l'acquière aussi — fini les
+// collisions chat/nocturne (currentQuery écrasé, vision d'un autre projet).
 
 app.get("/api/projects", (_req, res) => {
   const projects = listProjects();
@@ -318,15 +325,16 @@ app.post("/api/chat", async (req, res) => {
     res.status(400).json({ error: "prompt and projectName are required" });
     return;
   }
-  if (agentBusy) {
+  // (N18) acquisition ATOMIQUE (test+set en un appel) — plus de fenêtre entre
+  // le « if busy » et le « busy = true ».
+  // From here on the lock is held; EVERYTHING that can throw must sit inside
+  // the try below so the finally always releases it. A stuck lock used to
+  // freeze the whole UI — including preview switching, which 409s while a turn
+  // "runs". Between here and the try there is only synchronous header setup.
+  if (!tryAcquireAgent()) {
     res.status(409).json({ error: "Agent is already working, wait for it to finish" });
     return;
   }
-  // From here on agentBusy is true; EVERYTHING that can throw must sit inside
-  // the try below so the finally always clears it. A stuck agentBusy used to
-  // freeze the whole UI — including preview switching, which 409s while a turn
-  // "runs". Between here and the try there is only synchronous header setup.
-  agentBusy = true;
   // Nouveau tour → on repart d'un drapeau d'interruption propre (un Stop d'un tour
   // précédent ne doit pas arrêter celui-ci). Le clic « Stop » l'armera via /api/stop.
   clearInterrupt();
@@ -720,7 +728,7 @@ app.post("/api/chat", async (req, res) => {
     record("error", message);
     send({ type: "error", message });
   } finally {
-    agentBusy = false;
+    releaseAgent();
     if (historyDir) {
       try {
         appendHistory(historyDir, turn);
@@ -879,7 +887,7 @@ app.post("/api/snap", async (req, res) => {
   const dir = projectDir(projectName);
   // Reusing the running preview is always safe; starting one for a NOT-yet-
   // previewed project while the agent works is not.
-  if (agentBusy && !isPreviewing(dir)) {
+  if (isAgentBusy() && !isPreviewing(dir)) {
     res.status(409).json({ error: "L'agent travaille — la capture suivra le projet actif" });
     return;
   }
@@ -931,7 +939,7 @@ app.post("/api/preview/:name", async (req, res) => {
     res.status(404).json({ error: `Project "${name}" not found` });
     return;
   }
-  if (agentBusy) {
+  if (isAgentBusy()) {
     res.status(409).json({ error: "Agent is working — preview follows the active project" });
     return;
   }
@@ -957,7 +965,7 @@ app.post("/api/deploy/:name", async (req, res) => {
     res.status(400).json({ error: `Cible de déploiement inconnue : ${String(target)}` });
     return;
   }
-  if (agentBusy) {
+  if (isAgentBusy()) {
     res.status(409).json({ error: "L'agent travaille — attends la fin avant de publier" });
     return;
   }
@@ -986,7 +994,7 @@ app.post("/api/github/:name", async (req, res) => {
     res.status(404).json({ error: `Project "${name}" not found` });
     return;
   }
-  if (agentBusy) {
+  if (isAgentBusy()) {
     res.status(409).json({ error: "L'agent travaille — attends la fin avant de publier sur GitHub" });
     return;
   }
@@ -1008,7 +1016,7 @@ registerKnowledgeStoresRoutes(app);
 registerLibraryRoutes(app);
 registerCouncilSkillsRoutes(app);
 registerBackendServerRoutes(app);
-registerProjectIORoutes(app, () => agentBusy);
+registerProjectIORoutes(app, () => isAgentBusy());
 registerFeedbackRoutes(app);
 registerBrainRoutes(app);
 registerBrainDispatchRoutes(app);
@@ -1034,7 +1042,7 @@ app.post("/api/stop", async (_req, res) => {
   // Guaranteed escape hatch: free the slot even if a wedged turn's finally never
   // runs, so a hang can't keep the UI (and preview switching, which 409s while
   // "busy") frozen. Idempotent with the chat handler's own finally.
-  agentBusy = false;
+  releaseAgent();
   res.json({ stopped: stopped || true });
 });
 
@@ -1043,7 +1051,7 @@ app.post("/api/stop", async (_req, res) => {
 // Raf sur le même backend, run nocturne…) : avant, l'utilisateur envoyait une requête
 // sans savoir que l'agent travaillait → 409 « Agent is already working » en rouge.
 app.get("/api/agent-status", (_req, res) => {
-  res.json({ busy: agentBusy });
+  res.json({ busy: isAgentBusy() });
 });
 
 // #164 Phase 4 — Métrique de souveraineté : taux d'escalade Claude (resolvedBy
@@ -1383,3 +1391,23 @@ const httpServer = app.listen(PORT, HOST, () => {
 // Node.js 18+ ferme les connexions après requestTimeout=300s (HTTP 408) par défaut.
 // Les sessions SSE Claude Élite durent jusqu'à 1h → on désactive cette limite.
 httpServer.requestTimeout = 0;
+
+// (N20, nuit 2026-07-03) Shutdown PROPRE : tuer/crasher le backend (ce que fait
+// chaque redémarrage, y compris la session automatique nocturne) laissait
+// jusqu'à MAX_PREVIEWS serveurs Vite + un msedge headless orphelins qui
+// squattaient les ports au réveil — la moitié de la procédure anti-orphelin
+// du CLAUDE.md compensait CE trou. On draine le pool + on ferme Playwright.
+let shuttingDown = false;
+async function gracefulShutdown(signal: string): Promise<void> {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  console.log(`[shutdown] ${signal} reçu — arrêt des aperçus Vite + navigateur…`);
+  // Borne dure : le shutdown lui-même ne doit jamais pendre (taskkill bornés à 3 s).
+  const work = Promise.allSettled([stopPreview(), closeBrowser()]);
+  await Promise.race([work, new Promise((r) => setTimeout(r, 8_000))]);
+  process.exit(0);
+}
+process.on("SIGINT", () => void gracefulShutdown("SIGINT"));
+process.on("SIGTERM", () => void gracefulShutdown("SIGTERM"));
+// Windows : la fermeture de la console émet SIGHUP via le wrapper — best-effort.
+process.on("SIGHUP", () => void gracefulShutdown("SIGHUP"));

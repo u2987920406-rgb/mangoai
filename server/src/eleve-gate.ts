@@ -35,6 +35,8 @@ export interface GateVerdict {
   balance: BalanceFinding[]; // détails des blocs à largeur max non centrés (vide si ok)
   placeholdersOk: boolean; // garde « vraies images » : aucun placeholder aléatoire vivant dans le code écrit
   placeholders: PlaceholderFinding[]; // URLs de placeholder trouvées (vide si ok)
+  judgeSkipped?: string; // (N9) le juge d'intention a ÉCHOUÉ (verdict neutre 100) — raison
+  critiqueSkipped?: string; // (N9) la critique visuelle a ÉCHOUÉ (goût/WCAG sautés) — raison
   testsRan: boolean; // (L55) la suite de tests a-t-elle vraiment tourné ? (script présent + gate on)
   testsOk: boolean; // (L55) tests verts OU non lancés (sauté → ne pénalise pas)
   tests?: TestRun; // détail de la suite de tests (absent si non lancée)
@@ -157,10 +159,15 @@ export async function runClosureGate(
   const files = changedFilesFromTrace(result.toolTrace);
 
   // 1. INTENTION (souverain, ne lève jamais).
+  // (N9, nuit 2026-07-03) un juge KO (hoquet réseau) donnait un 100/100 SILENCIEUX,
+  // indiscernable d'une vraie validation dans les logs. La note "(juge KO)" existe
+  // depuis toujours — on la SURFACE désormais (champ judgeSkipped + log appelant).
   let intent: IntentVerdict;
+  let judgeSkipped: string | undefined;
   try {
     intent = await deps.judge(task, result.text, files, projectDir);
-  } catch {
+  } catch (e) {
+    judgeSkipped = (e as Error).message.split("\n")[0];
     intent = { couverture: 100, manques: [], note: "(juge KO)" };
   }
   const intentOk = intent.couverture >= th.intentMin;
@@ -175,6 +182,7 @@ export async function runClosureGate(
   // goût réel de Raf avant de durcir). Passer ELEVE_GATE_TASTE_OBSERVE=off pour l'activer en frein.
   const tasteObserve = process.env.ELEVE_GATE_TASTE_OBSERVE !== "off";
   let design: DesignCritique | undefined;
+  let critiqueSkipped: string | undefined; // (N9) raison si la critique a échoué (≠ tâche non-UI)
   let tasteScored = false;
   let tasteOk = true;
   let wcagOk = true;
@@ -188,8 +196,11 @@ export async function runClosureGate(
     const tasteFloor = Number(process.env.ELEVE_GATE_TASTE_FLOOR ?? 50);
     tasteOk = !tasteScored || (tasteObserve ? design.overall >= tasteFloor : design.overall >= th.tasteMin);
     wcagOk = wcagFails <= th.wcagMaxFails;
-  } catch {
+  } catch (e) {
     design = undefined; // pas de rendu jugeable → ne pénalise pas
+    // (N9) mais on garde la RAISON : un échec d'infra (preview morte, orphelin
+    // port…) doit être discernable d'une tâche non-UI dans les logs.
+    critiqueSkipped = (e as Error).message.split("\n")[0];
   } finally {
     try {
       await deps.stopPreview(projectDir);
@@ -279,7 +290,7 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, placeholdersOk, placeholders, testsRan, testsOk, tests, raisons };
+  return { ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, testsRan, testsOk, tests, raisons };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */

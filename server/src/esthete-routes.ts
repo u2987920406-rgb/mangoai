@@ -16,6 +16,11 @@ import { getSpecialist } from "./specialist-agents.js";
 import { sanitizeExternal } from "./agent-contract.js";
 import { ESTHETE_AGENT_ID, buildEstheteTools, ESTHETE_TOOL_POLICY } from "./esthete-agent.js";
 import { SPECIALIST_MAX_ITER } from "./specialist-agentic.js";
+
+// (V3-1, 2026-07-03) budget DÉDIÉ du super agent de finition : 6 itérations (le cap
+// des spécialistes forgés) coupaient une passe de polish sérieuse en plein vol —
+// regarder + retoucher + re-regarder + vérifier le parcours consomme déjà 5-6 appels.
+const ESTHETE_MAX_ITER = Math.max(SPECIALIST_MAX_ITER, Number(process.env.ESTHETE_MAX_ITER ?? 10));
 import { loadEstheteHistory, appendEstheteHistory, clearEstheteHistory } from "./esthete-history.js";
 import type { ChatEntry } from "./history.js";
 import { projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
@@ -97,7 +102,7 @@ export function registerEstheteRoutes(app: Express): void {
       const registry = buildEstheteTools(dir, agent.toolPolicy ?? ESTHETE_TOOL_POLICY);
 
       let result = await askEleveAgentic(agent.systemPrompt, task, registry, {
-        maxIterations: SPECIALIST_MAX_ITER,
+        maxIterations: ESTHETE_MAX_ITER,
         model: agent.model,
         onTool: (toolName, args) => send({ type: "tool", name: toolName, args }),
       });
@@ -112,7 +117,7 @@ export function registerEstheteRoutes(app: Express): void {
           relances++;
           send({ type: "status", text: `Gardien : correction ${relances}/${GATE_RELANCE_MAX}` });
           result = await askEleveAgentic(agent.systemPrompt, decision.nudge, registry, {
-            maxIterations: SPECIALIST_MAX_ITER,
+            maxIterations: ESTHETE_MAX_ITER,
             model: agent.model,
             onTool: (toolName, args) => send({ type: "tool", name: toolName, args }),
           });

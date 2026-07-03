@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import multer from "multer";
 import type { Express, Request, Response } from "express";
-import { listComponents, loadComponent, saveComponent, deleteComponent, type ComponentEntry } from "./components.js";
+import { listComponents, loadComponent, saveComponent, deleteComponent, isSafeComponentName, type ComponentEntry } from "./components.js";
 import { listReferences, loadReference, saveReference, deleteReference, referenceImagePath, type ReferenceMeta } from "./references.js";
 import { WORKSPACE_DIR } from "./projects.js";
 
@@ -21,6 +21,11 @@ export function registerLibraryRoutes(app: Express): void {
 
   // Get a single component (meta + code)
   app.get("/api/components/:name", (req: Request, res: Response) => {
+    // (Un, 2026-07-03) U1 — :name brut dans path.join = lecture hors .components
+    if (!isSafeComponentName(req.params["name"] as string)) {
+      res.status(400).json({ error: "nom de composant invalide" });
+      return;
+    }
     const entry = loadComponent(WORKSPACE_DIR, req.params["name"] as string);
     if (!entry) {
       res.status(404).json({ error: `Composant "${req.params["name"] as string}" introuvable` });
@@ -34,6 +39,12 @@ export function registerLibraryRoutes(app: Express): void {
     const { meta, code } = req.body as Partial<ComponentEntry>;
     if (!meta?.name?.trim() || !code?.trim()) {
       res.status(400).json({ error: "meta.name et code requis" });
+      return;
+    }
+    // (Un, 2026-07-03) U1 — meta.name devient un nom de dossier : on le valide
+    // AVANT tout path.join (sinon "../../x" écrit hors du store → RCE).
+    if (!isSafeComponentName(meta.name.trim())) {
+      res.status(400).json({ error: "nom de composant invalide (lettres/chiffres/tirets uniquement)" });
       return;
     }
     const now = new Date().toISOString();
@@ -60,6 +71,11 @@ export function registerLibraryRoutes(app: Express): void {
 
   // Delete a component
   app.delete("/api/components/:name", (req: Request, res: Response) => {
+    // (Un, 2026-07-03) U1 — rmSync récursif : un :name traversant supprimerait n'importe quel dossier
+    if (!isSafeComponentName(req.params["name"] as string)) {
+      res.status(400).json({ error: "nom de composant invalide" });
+      return;
+    }
     try {
       deleteComponent(WORKSPACE_DIR, req.params["name"] as string);
       res.json({ ok: true });

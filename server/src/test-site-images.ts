@@ -9,6 +9,9 @@ import {
   generationPromptsFromDossier,
   suggestSiteImages,
   formatSiteImages,
+  detectImageDomain,
+  composeImageQuery,
+  imageArtDirection,
   type SiteImagesDeps,
 } from "./site-images.js";
 import type { SiteDossier } from "./site-dossier.js";
@@ -48,13 +51,14 @@ function dossier(over: Partial<SiteDossier> = {}): SiteDossier {
 }
 
 async function run() {
-  console.log("\n[1] imageQueriesFromDossier — dérivation PURE");
+  console.log("\n[1] imageQueriesFromDossier — dérivation art-dirigée (N13)");
   {
     const qs = imageQueriesFromDossier(dossier());
     check("au moins 1 requête", qs.length >= 1);
-    check("1ʳᵉ requête = concept + mood, stopwords retirés (pas 'de')", /quartier/.test(qs[0]) && !/\bde\b/.test(qs[0]));
-    check("mood injecté dans la 1ʳᵉ", /chaleureux/.test(qs[0]));
-    check("une requête par mécanique", qs.some((q) => /commande/.test(q)));
+    check("1ʳᵉ requête = sujet ANGLICISÉ (café→coffee), stopwords retirés", /coffee/.test(qs[0]) && !/\bde\b/.test(qs[0]));
+    check("mood du domaine food injecté dans la 1ʳᵉ", /warm appetizing/.test(qs[0]));
+    check("garde-fou langue : aucune requête accentuée", qs.every((q) => !/[à-ÿ]/i.test(q)));
+    check("une requête par mécanique, anglicisée (commande→order)", qs.some((q) => /order/.test(q)));
     check("borné à 3", qs.length <= 3);
   }
 
@@ -62,6 +66,32 @@ async function run() {
   {
     const qs = imageQueriesFromDossier(dossier({ concept: "", mood: "", mecaniques: [] }));
     check("ne lève pas, au moins borné", Array.isArray(qs));
+  }
+
+  console.log("\n[2b] detectImageDomain / composeImageQuery — table domaine→ambiance (N13)");
+  {
+    check("food détecté (torréfacteur)", detectImageDomain("torréfacteur artisanal").domain === "food");
+    check("voyage détecté → golden hour", detectImageDomain("agence de voyage en montagne").mood === "golden hour landscape");
+    check("tech détecté (dashboard SaaS)", detectImageDomain("dashboard SaaS analytics").domain === "tech");
+    check("aucun domaine → mood par défaut, jamais vide", detectImageDomain("xyzzy introuvable").mood.length > 0 && detectImageDomain("xyzzy introuvable").domain === "generic");
+    const q = composeImageQuery("Café de quartier torréfacteur artisanal");
+    check("composeImageQuery = sujet anglicisé + mood", /coffee/.test(q) && /warm appetizing close-up/.test(q));
+    check("composeImageQuery : pas d'accents (garde-fou)", !/[à-ÿ]/i.test(q));
+    check("composeImageQuery : pas de doublon de mots", (() => { const w = q.split(" "); return new Set(w).size === w.length; })());
+    check("composeImageQuery : domainText élargit la détection", /golden hour/.test(composeImageQuery("aurores boréales", "carnet de voyage")));
+    check("composeImageQuery : sujet vide → au moins le mood", composeImageQuery("").length > 0);
+  }
+
+  console.log("\n[2c] imageArtDirection — requête + consigne de cohérence (N13)");
+  {
+    const ad = imageArtDirection("Café de quartier torréfacteur artisanal");
+    check("domaine + mood cohérents", ad.domain === "food" && ad.mood === "warm appetizing close-up");
+    check("requête composée présente", /coffee/.test(ad.query) && ad.query.includes(ad.mood));
+    check("consigne : un seul style photographique", /UN SEUL style photographique/.test(ad.consigne));
+    check("consigne : overlay teinté aux couleurs de la palette", /overlay teinté/.test(ad.consigne) && /palette/.test(ad.consigne));
+    check("consigne : rappelle le mood retenu", ad.consigne.includes(ad.mood));
+    const neutral = imageArtDirection("");
+    check("concept vide → ne lève pas, consigne quand même", neutral.consigne.length > 0 && neutral.domain === "generic");
   }
 
   console.log("\n[3] generationPromptsFromDossier — PUR");

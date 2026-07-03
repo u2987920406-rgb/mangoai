@@ -31,15 +31,128 @@ function keywords(text: string, max = 5): string[] {
   return out;
 }
 
-/** Dérive jusqu'à `max` requêtes d'image du dossier (concept+mood, puis mécaniques). PUR. */
+// ─────────────────────────────────────────────────────────────────────────────
+// Direction artistique (N13 — audit nuit 2026-07-03)
+//
+// La dérivation naïve (« premiers mots du concept ») produisait des sacs de mots
+// FRANÇAIS sans ambiance — or Pexels indexe en anglais et une photo sans mood
+// ne raconte rien. Nouvelle composition, PURE et testable :
+//   requête = [sujet nettoyé, anglicisé] + [mood tiré d'une table domaine→ambiance]
+// + une CONSIGNE de cohérence (un seul style photo par app) que les appelants
+// injectent au prompt — l'harmonie photo↔palette se joue là, pas dans l'URL.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Table domaine→ambiance : le mot d'ambiance qui transforme un sac de mots en
+ *  brief photo. Regex sur concept+mood (français ou anglais) ; premier match gagne
+ *  → ordonner du plus spécifique au plus générique. */
+const DOMAIN_MOODS: Array<{ kw: RegExp; domain: string; mood: string }> = [
+  { kw: /caf[ée]|coffee|restaurant|cuisine|food|boulanger|p[âa]tisser|torr[ée]fact|recette|gastro|bistro|traiteur/i, domain: "food", mood: "warm appetizing close-up" },
+  { kw: /voyage|travel|tourisme|h[ôo]tel|montagne|plage|randonn|trek|croisi[èe]re|d[ée]sert|island/i, domain: "voyage", mood: "golden hour landscape" },
+  { kw: /\btech\b|saas|startup|logiciel|software|dashboard|cloud|\bdata\b|\bia\b|\bai\b|crypto|fintech/i, domain: "tech", mood: "clean minimal workspace" },
+  { kw: /sport|fitness|course|v[ée]lo|yoga|muscu|running|escalade/i, domain: "sport", mood: "dynamic motion energy" },
+  { kw: /mode\b|fashion|beaut[ée]|cosm[ée]t|bijou|luxe|parfum|couture/i, domain: "mode", mood: "editorial studio lighting" },
+  { kw: /immobilier|architect|int[ée]rieur|d[ée]coration|design d'espace|loft|villa/i, domain: "architecture", mood: "architectural daylight wide angle" },
+  { kw: /musique|festival|concert|\bdj\b|\bclub\b|vinyle/i, domain: "musique", mood: "concert stage lights night" },
+  { kw: /sant[ée]|bien-[êe]tre|\bspa\b|m[ée]dita|clinique|m[ée]dec|th[ée]rap/i, domain: "santé", mood: "calm soft natural light" },
+  { kw: /nature|jardin|plante|fleur|for[êe]t|oc[ée]an|\bmer\b|animal|abysse|marin/i, domain: "nature", mood: "lush natural light" },
+];
+
+/** Ambiance par défaut quand aucun domaine ne matche — neutre mais photographique. */
+const DEFAULT_MOOD = "professional cinematic lighting";
+
+/** Détecte le domaine visuel d'un texte (concept+mood). PUR. */
+export function detectImageDomain(text: string): { domain: string; mood: string } {
+  const hay = text ?? "";
+  for (const { kw, domain, mood } of DOMAIN_MOODS) {
+    if (kw.test(hay)) return { domain, mood };
+  }
+  return { domain: "generic", mood: DEFAULT_MOOD };
+}
+
+// Garde-fou langue : Pexels comprend MAL le français. Petit lexique FR→EN des
+// sujets fréquents ; les mots inconnus sont gardés (souvent des noms propres ou
+// déjà anglais) mais désaccentués — une requête ASCII passe toujours mieux.
+const FR_EN: Record<string, string> = {
+  cafe: "coffee shop", restaurant: "restaurant", cuisine: "kitchen", nourriture: "food",
+  boulangerie: "bakery", patisserie: "pastry", torrefacteur: "coffee roaster", recette: "recipe",
+  voyage: "travel", montagne: "mountain", plage: "beach", mer: "sea", ville: "city",
+  desert: "desert", foret: "forest", ocean: "ocean", jardin: "garden", fleur: "flower",
+  maison: "house", appartement: "apartment", bureau: "office", atelier: "workshop",
+  musique: "music", livre: "book", peinture: "painting", photographie: "photography",
+  velo: "bicycle", chien: "dog", chat: "cat", cheval: "horse", oiseau: "bird",
+  vetement: "clothing", bijou: "jewelry", parfum: "perfume", beaute: "beauty",
+  sante: "health", sport: "sport", jeu: "game", enfant: "child", famille: "family",
+  mariage: "wedding", fete: "party", hiver: "winter", ete: "summer", nuit: "night",
+  commande: "order", fidelite: "loyalty", carte: "card", panier: "basket",
+  artisanal: "artisan", quartier: "neighborhood", agence: "agency", ferme: "farm",
+};
+
+/** Désaccentue (é→e, ç→c…) — une requête ASCII est comprise partout. PUR. */
+function stripAccents(s: string): string {
+  return s.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+/** Anglicise un mot : lexique FR→EN (clé désaccentuée), sinon mot désaccentué. PUR. */
+function anglicize(word: string): string {
+  const key = stripAccents(word.toLowerCase());
+  return FR_EN[key] ?? key;
+}
+
+/**
+ * Compose UNE requête d'image art-dirigée : [sujet nettoyé anglicisé] + [mood du
+ * domaine]. `domainText` (optionnel) élargit la détection de domaine au-delà du
+ * sujet (ex. concept + mood du dossier). PUR, déterministe.
+ */
+export function composeImageQuery(subject: string, domainText?: string): string {
+  const { mood } = detectImageDomain(`${subject} ${domainText ?? ""}`);
+  const words: string[] = [];
+  for (const kw of keywords(subject, 4)) {
+    for (const w of anglicize(kw).split(" ")) {
+      if (w && !words.includes(w)) words.push(w);
+    }
+  }
+  // Le mood COMPLÈTE le sujet (jamais l'inverse) ; dédupliqué mot à mot.
+  for (const w of mood.split(" ")) if (w && !words.includes(w)) words.push(w);
+  return words.join(" ").trim();
+}
+
+/** Direction artistique complète d'un concept : requête + consigne de cohérence. */
+export interface ImageArtDirection {
+  domain: string;   // domaine détecté (food, voyage, tech… ou generic)
+  mood: string;     // ambiance photo du domaine (anglais, prêt Pexels)
+  query: string;    // requête composée [sujet anglicisé + mood]
+  consigne: string; // consigne texte à injecter au prompt (cohérence de style)
+}
+
+/**
+ * Direction artistique d'un concept (N13). Renvoie la requête ET la consigne de
+ * COHÉRENCE que les appelants doivent injecter au prompt : une app dont chaque
+ * photo a sa propre lumière ressemble à un collage ; le style unique + l'overlay
+ * teinté aux couleurs de la palette recollent les images à l'interface. PUR.
+ */
+export function imageArtDirection(concept: string): ImageArtDirection {
+  const { domain, mood } = detectImageDomain(concept ?? "");
+  const query = composeImageQuery(concept ?? "");
+  const consigne =
+    `Direction artistique images — UN SEUL style photographique pour toute l'app : même lumière, même traitement, même ambiance (« ${mood} ») sur chaque photo — rejette celle qui détonne. ` +
+    `Applique un overlay teinté aux couleurs de la palette (calque semi-transparent de la couleur d'accent, ou filtre CSS commun du type sepia/saturate/hue-rotate identique partout) pour unifier les photos entre elles et avec l'interface.`;
+  return { domain, mood, query, consigne };
+}
+
+/** Dérive jusqu'à `max` requêtes d'image du dossier — art-dirigées (N13) :
+ *  tête = concept anglicisé + mood du domaine ; puis une requête par mécanique,
+ *  anglicisée elle aussi (garde-fou langue). PUR. */
 export function imageQueriesFromDossier(d: SiteDossier, max = 3): string[] {
   const queries: string[] = [];
-  const conceptKw = keywords(d.concept, 4);
-  const moodKw = keywords(d.mood, 2);
-  const head = [...conceptKw, ...moodKw].join(" ").trim();
+  // La détection de domaine voit concept ET mood du dossier (signal plus riche).
+  const head = composeImageQuery(d.concept, d.mood);
   if (head) queries.push(head);
   for (const m of d.mecaniques.slice(0, max)) {
-    const k = keywords(m, 3).join(" ").trim();
+    const k = keywords(m, 3)
+      .flatMap((w) => anglicize(w).split(" "))
+      .filter((w, i, a) => w && a.indexOf(w) === i)
+      .join(" ")
+      .trim();
     if (k) queries.push(k);
   }
   return [...new Set(queries)].slice(0, Math.max(1, max));

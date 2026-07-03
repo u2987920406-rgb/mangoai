@@ -2,7 +2,7 @@
 // alongside a React/Vite project (#35).
 // All routes are self-contained (no agentBusy, no SSE).
 import type { Express, Request, Response } from "express";
-import { backendServerStatus, hasBackend, installBackendDeps, scaffoldBackend, startBackendServer, stopBackendServer } from "./backend-generator.js";
+import { backendServerStatus, hasBackend, installBackendDepsAsync, scaffoldBackend, startBackendServer, stopBackendServer } from "./backend-generator.js";
 import { projectDir } from "./projects.js";
 
 export function registerBackendServerRoutes(app: Express): void {
@@ -39,7 +39,10 @@ export function registerBackendServerRoutes(app: Express): void {
         res.status(400).json({ error: "No api/ folder found. Scaffold the backend first." });
         return;
       }
-      installBackendDeps(dir); // sync npm install if node_modules absent
+      // (Un, 2026-07-03) U3 — l'execSync de installBackendDeps gelait TOUT
+      // l'event loop du serveur jusqu'à 120 s (aucune autre requête servie
+      // pendant le npm install). Version async non-bloquante déjà fournie.
+      await installBackendDepsAsync(dir); // npm install si node_modules absent
       const { url, port } = await startBackendServer(dir);
       res.json({ ok: true, url, port });
     } catch (err) {

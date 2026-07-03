@@ -137,10 +137,33 @@ export async function capturePreview(url: string, opts: { fullPage?: boolean } =
 // The browser is a subprocess (jalon 1 isolation stance): a Playwright crash
 // surfaces as a tool error, never as a server crash. Closed after idle so a
 // finished turn doesn't keep Edge in memory.
+// (N23, nuit 2026-07-03) on mémoïse la PROMESSE de launch, pas seulement
+// l'instance : deux appels concurrents lançaient DEUX Chromium — le premier
+// était écrasé par l'assignation et fuyait (jamais fermé, l'idle timer ne
+// référençant que le nouveau).
+let launchInFlight: Promise<Browser> | null = null;
 export async function getBrowser(): Promise<Browser> {
   if (browser?.isConnected()) return browser;
-  browser = await chromium.launch({ channel: "msedge", headless: true });
-  return browser;
+  if (!launchInFlight) {
+    launchInFlight = chromium
+      .launch({ channel: "msedge", headless: true })
+      .then((b) => {
+        browser = b;
+        return b;
+      })
+      .finally(() => {
+        launchInFlight = null;
+      });
+  }
+  return launchInFlight;
+}
+
+/** (N20) Fermeture propre au shutdown du backend — sans elle, tuer le process
+ * laissait un msedge headless orphelin en mémoire (avec les Vite du pool). */
+export async function closeBrowser(): Promise<void> {
+  const b = browser;
+  browser = null;
+  await b?.close().catch(() => undefined);
 }
 
 function touchIdleTimer(): void {

@@ -30,6 +30,14 @@ function pdfFilePath(docId: string): string {
   return path.join(UPLOAD_DIR, `${docId}.pdf`);
 }
 
+/** (Un, 2026-07-03) U10 — anti path-traversal : docId est concaténé dans un
+ * chemin (pdfFilePath). Un docId légitime est TOUJOURS un randomUUID (36 car.
+ * hex + tirets) ; tout autre format (ex. "../../x") est rejeté en 400 avant
+ * d'atteindre le filesystem. */
+function isValidDocId(docId: string): boolean {
+  return /^[0-9a-f-]{36}$/i.test(docId);
+}
+
 const pdfUpload = multer({
   storage: multer.diskStorage({
     destination: (_req, _file, cb) => {
@@ -97,6 +105,11 @@ export async function registerPdfRoutes(app: Express, depsOverride?: PdfDeps): P
   // GET /api/pdf/:docId/page/:n — rastérise une page en PNG (#147).
   // Query : scale (0.25–8), crop=x,y,w,h (pixels du rendu). Renvoie image/png.
   app.get("/api/pdf/:docId/page/:n", async (req: Request, res: Response) => {
+    // (Un, 2026-07-03) U10 — docId non-UUID = tentative de traversal, rejet
+    if (!isValidDocId(String(req.params.docId))) {
+      res.status(400).json({ error: "docId invalide (UUID attendu)" });
+      return;
+    }
     const file = pdfFilePath(String(req.params.docId));
     if (!fs.existsSync(file)) {
       res.status(404).json({ error: "document introuvable (binaire non conservé)" });
@@ -122,6 +135,11 @@ export async function registerPdfRoutes(app: Express, depsOverride?: PdfDeps): P
 
   // GET /api/pdf/:docId/images — images embarquées en PNG base64 (#147, lacune #32).
   app.get("/api/pdf/:docId/images", async (req: Request, res: Response) => {
+    // (Un, 2026-07-03) U10 — docId non-UUID = tentative de traversal, rejet
+    if (!isValidDocId(String(req.params.docId))) {
+      res.status(400).json({ error: "docId invalide (UUID attendu)" });
+      return;
+    }
     const file = pdfFilePath(String(req.params.docId));
     if (!fs.existsSync(file)) {
       res.status(404).json({ error: "document introuvable (binaire non conservé)" });
@@ -184,6 +202,12 @@ export async function registerPdfRoutes(app: Express, depsOverride?: PdfDeps): P
   // DELETE /api/pdf/:docId — supprime un document (chunks + métadonnée + binaire).
   app.delete("/api/pdf/:docId", (req: Request, res: Response) => {
     const docId = String(req.params.docId);
+    // (Un, 2026-07-03) U10 — fs.rm sur un chemin dérivé de docId : sans ce
+    // filtre, "../../<fichier>" supprimerait un fichier arbitraire du serveur.
+    if (!isValidDocId(docId)) {
+      res.status(400).json({ error: "docId invalide (UUID attendu)" });
+      return;
+    }
     const removed = deletePdfDoc(docId, getPdfBoard());
     fs.rm(pdfFilePath(docId), { force: true }, () => {}); // binaire conservé pour le rendu (#147)
     res.json({ ok: true, chunksRemoved: removed });

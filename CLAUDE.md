@@ -1,5 +1,15 @@
 # MangoOS — Instructions de session
 
+## ⚡ Auto-reprise sur limite d'usage (règle permanente de Raf, 2026-07-03)
+
+**Pour TOUTE tâche non triviale (> ~15 min de travail estimé), poser un filet de reprise AVANT de commencer :**
+1. Créer les tâches de suivi (TaskCreate) — c'est le fil qu'une reprise relit pour savoir où on en est.
+2. Poser un **cron heartbeat récurrent défensif** (CronCreate, ~toutes les 30 min, minutes décalées type 23/53) dont le prompt dit : « via TaskList, si une tâche est in_progress/pending ET que le travail a été interrompu (rate-limit, crash), reprends immédiatement sans demander ; sinon réponds juste "heartbeat OK" sans rien relancer en double ».
+3. Si l'heure de réinitialisation de la limite est CONNUE (le client l'affiche), poser EN PLUS un cron one-shot à reset+1 min (comme la nuit du 2026-07-03 : limite à 2h00 → reprise à 2h01, prouvé).
+4. À la fin de la mission : **CronDelete** du heartbeat (ne pas laisser des crons zombies).
+
+Raf dort ou s'absente pendant les longues missions : ne jamais rester bloqué en attente d'un humain — trancher avec les options recommandées, documenter le choix, continuer.
+
 ## Démarrage automatique
 
 **Au début de chaque session (après /clear ou reprise) :**

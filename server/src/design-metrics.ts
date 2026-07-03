@@ -111,10 +111,178 @@ export function extractContrastPairs(css: string): ColorPair[] {
 }
 
 export interface ContrastFail { fg: string; bg: string; ratio: number; required: number; level: WcagLevel; where?: string }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Mesures statiques enrichies (N15 — audit nuit 2026-07-03)
+//
+// POURQUOI : les lentilles de critique étaient subjectives (le VL « trouve » un
+// défaut ou pas) ; ces 4 mesures sont des FAITS calculés depuis les fichiers du
+// projet, que ni l'œil ni l'Élève ne peuvent contester. Toutes PURES : elles
+// reçoivent des CONTENUS de fichiers (string), jamais de chemins — zéro I/O,
+// 100% testable, fail-open (jamais d'exception).
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Au-delà de 3 familles, la page perd son registre typographique (bruit visuel). */
+export const FONT_FAMILIES_MAX = 3;
+/** Au-delà de 6 couleurs littérales dans les composants, la palette n'est plus
+ *  gouvernée par les custom properties — chaque retouche dérive. */
+export const LITERAL_COLORS_MAX = 6;
+
+export interface FontFamiliesMeasure {
+  families: string[]; // familles distinctes, normalisées (minuscule, dédupliquées)
+  count: number;
+  tooMany: boolean; // > FONT_FAMILIES_MAX → « trop »
+}
+
+export interface TypoScaleMeasure {
+  usesClamp: boolean;       // clamp() sur un font-size = échelle fluide déclarée
+  distinctSizesPx: number[]; // tailles distinctes converties en px, triées
+  coherent: boolean;         // suite cohérente : ≥3 tailles, pas 2 tailles quasi-identiques ni de trou > ×2
+  present: boolean;          // clamp OU suite cohérente = il Y A une échelle
+}
+
+export interface LiteralColorsMeasure {
+  count: number;      // occurrences hex/rgb()/hsl() dans les composants (hors index.css)
+  samples: string[];  // jusqu'à 8 exemples pour pointer le doigt
+  threshold: number;  // LITERAL_COLORS_MAX (rappelé pour le rendu texte)
+  overThreshold: boolean;
+}
+
+export interface MotionMeasure {
+  hasTransition: boolean;   // au moins une `transition:` (CSS ou style inline JSX)
+  hasKeyframes: boolean;    // au moins un @keyframes ou `animation:`
+  hasFramerMotion: boolean; // framer-motion importé (composants) ou en dépendance
+  present: boolean;         // aucune des trois = page statique
+}
+
 export interface DesignMeasure {
   contrastFails: ContrastFail[];
   offPalette: string[]; // couleurs employées hors de la palette déclarée
   paletteSize: number;
+  // Champs OPTIONNELS (N15) — rétrocompat : les appelants existants construisent
+  // des DesignMeasure sans eux et measureSummary les ignore quand absents.
+  fontFamilies?: FontFamiliesMeasure;
+  typoScale?: TypoScaleMeasure;
+  literalColors?: LiteralColorsMeasure;
+  motion?: MotionMeasure;
+}
+
+// Mots-clés génériques CSS qui ne sont PAS des familles (on compte les familles
+// CHOISIES, pas les fallbacks système — c'est le choix design qu'on mesure).
+const GENERIC_FAMILIES = new Set([
+  "serif", "sans-serif", "monospace", "cursive", "fantasy", "system-ui",
+  "ui-serif", "ui-sans-serif", "ui-monospace", "ui-rounded",
+  "inherit", "initial", "unset", "revert",
+]);
+
+/** Normalise un nom de famille : sans guillemets, minuscule, espaces resserrés. */
+function normalizeFamily(raw: string): string {
+  return raw.replace(/["']/g, "").replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+/**
+ * (1) Familles de polices distinctes déclarées : première famille de chaque
+ * `font-family:` CSS (la famille VOULUE ; les fallbacks après la virgule ne
+ * comptent pas) + familles importées via Google Fonts dans index.html
+ * (`family=Nom+Compose`). Verdict : > FONT_FAMILIES_MAX = trop.
+ */
+export function countFontFamilies(cssFiles: string[], indexHtml: string = ""): FontFamiliesMeasure {
+  const families = new Set<string>();
+  const css = cssFiles.join("\n");
+  for (const m of css.matchAll(/font-family\s*:\s*([^;}{]+)/gi)) {
+    const first = normalizeFamily(m[1].split(",")[0] ?? "");
+    // var(--x) = indirection vers un token (bonne pratique) — la vraie famille
+    // est comptée là où le token est défini, pas ici.
+    if (!first || first.startsWith("var(") || GENERIC_FAMILIES.has(first)) continue;
+    families.add(first);
+  }
+  // Imports Google Fonts : `family=Cormorant+Garamond:wght@…` (le `+` encode l'espace).
+  for (const m of indexHtml.matchAll(/family=([^"&:]+)/gi)) {
+    const name = normalizeFamily(m[1].replace(/\+/g, " "));
+    if (name) families.add(name);
+  }
+  const list = [...families].sort();
+  return { families: list, count: list.length, tooMany: list.length > FONT_FAMILIES_MAX };
+}
+
+/**
+ * (2) Échelle typographique : soit clamp() sur un font-size (échelle fluide
+ * déclarée = intention claire), soit une suite COHÉRENTE de tailles — au moins
+ * 3 tailles distinctes, avec une vraie amplitude (max/min ≥ 1.4, sinon tout se
+ * ressemble) et sans trou brutal (ratio entre tailles voisines ≤ 2.2, sinon
+ * l'échelle a des marches manquantes). Verdict : present=false = pas d'échelle.
+ */
+export function detectTypoScale(cssFiles: string[]): TypoScaleMeasure {
+  const css = cssFiles.join("\n");
+  const usesClamp = /font-size\s*:\s*clamp\s*\(/i.test(css);
+  const sizes = new Set<number>();
+  for (const m of css.matchAll(/font-size\s*:\s*([\d.]+)(px|rem|em)\b/gi)) {
+    const n = parseFloat(m[1]);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    const px = m[2].toLowerCase() === "px" ? n : n * 16;
+    sizes.add(Math.round(px * 100) / 100);
+  }
+  const distinctSizesPx = [...sizes].sort((a, b) => a - b);
+  let coherent = distinctSizesPx.length >= 3;
+  if (coherent) {
+    const min = distinctSizesPx[0], max = distinctSizesPx[distinctSizesPx.length - 1];
+    if (max / min < 1.4) coherent = false; // amplitude trop faible = hiérarchie plate
+    for (let i = 1; i < distinctSizesPx.length && coherent; i++) {
+      if (distinctSizesPx[i] / distinctSizesPx[i - 1] > 2.2) coherent = false; // trou
+    }
+  }
+  return { usesClamp, distinctSizesPx, coherent, present: usesClamp || coherent };
+}
+
+// Couleurs littérales dans du JSX/TSX : hex, rgb()/rgba(), hsl()/hsla().
+const LITERAL_COLOR_RE = /#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)|hsla?\([^)]*\)/g;
+
+/**
+ * (3) Couleurs LITTÉRALES dans les composants (.jsx/.tsx, PAS index.css — le
+ * fichier de tokens a le DROIT de contenir des hex, c'est sa raison d'être).
+ * Une couleur en dur dans un composant échappe au design system : elle ne
+ * suivra ni un changement de palette ni un thème. Verdict : > seuil = dérive.
+ */
+export function countLiteralColorsInComponents(componentFiles: string[]): LiteralColorsMeasure {
+  let count = 0;
+  const samples: string[] = [];
+  for (const content of componentFiles) {
+    for (const m of (content ?? "").matchAll(LITERAL_COLOR_RE)) {
+      count++;
+      if (samples.length < 8) samples.push(m[0]);
+    }
+  }
+  return { count, samples, threshold: LITERAL_COLORS_MAX, overThreshold: count > LITERAL_COLORS_MAX };
+}
+
+/**
+ * (4) Présence de mouvement : au moins une transition CSS (ou inline JSX), un
+ * @keyframes / `animation:`, ou framer-motion importé. Verdict : rien du tout
+ * = page statique (axiome MOTION : « a static page reads as unfinished »).
+ */
+export function detectMotion(
+  cssFiles: string[],
+  componentFiles: string[] = [],
+  packageJson: string = "",
+): MotionMeasure {
+  const css = cssFiles.join("\n");
+  const comps = componentFiles.join("\n");
+  const hasTransition = /(^|[;{\s"'])transition(-property|-duration)?\s*:/im.test(css + "\n" + comps);
+  const hasKeyframes = /@keyframes\s+[\w-]+/i.test(css) || /(^|[;{\s"'])animation\s*:/im.test(css + "\n" + comps);
+  const hasFramerMotion = /from\s+["']framer-motion["']/.test(comps) || /"framer-motion"/.test(packageJson);
+  return { hasTransition, hasKeyframes, hasFramerMotion, present: hasTransition || hasKeyframes || hasFramerMotion };
+}
+
+/** Entrée de la mesure enrichie : des CONTENUS de fichiers, jamais des chemins. */
+export interface ProjectDesignInput {
+  /** Contenus CSS (index.css et consorts) — contraste, palette, typo, motion. */
+  cssFiles: string[];
+  /** Contenus des composants .jsx/.tsx (SANS index.css) — couleurs littérales, framer-motion. */
+  componentFiles?: string[];
+  /** Contenu de index.html — imports Google Fonts. */
+  indexHtml?: string;
+  /** Contenu de package.json — dépendance framer-motion. */
+  packageJson?: string;
 }
 
 /** Couleurs employées absentes de la palette déclarée (si une palette est déclarée). */
@@ -145,7 +313,26 @@ export function measureDesign(cssFiles: string[]): DesignMeasure {
   return { contrastFails, offPalette: offPalette(used, palette), paletteSize: palette.length };
 }
 
-/** Rend la mesure en quelques lignes à injecter dans le prompt de critique (vide si RAS). */
+/**
+ * Mesure ENRICHIE (N15) : contraste + palette (measureDesign) + les 4 mesures
+ * statiques. Même contrat : pur, déterministe, fail-open. Les appelants qui ne
+ * fournissent que du CSS obtiennent quand même familles/échelle/motion (les
+ * mesures composants restent calculées sur un tableau vide → count 0, honnête).
+ */
+export function measureProjectDesign(input: ProjectDesignInput): DesignMeasure {
+  const base = measureDesign(input.cssFiles);
+  return {
+    ...base,
+    fontFamilies: countFontFamilies(input.cssFiles, input.indexHtml ?? ""),
+    typoScale: detectTypoScale(input.cssFiles),
+    literalColors: countLiteralColorsInComponents(input.componentFiles ?? []),
+    motion: detectMotion(input.cssFiles, input.componentFiles ?? [], input.packageJson ?? ""),
+  };
+}
+
+/** Rend la mesure en quelques lignes à injecter dans le prompt de critique (vide si RAS).
+ *  Les champs N15 sont rendus SEULEMENT s'ils sont présents ET en défaut — un
+ *  DesignMeasure « ancien » (sans les champs optionnels) rend exactement comme avant. */
 export function measureSummary(m: DesignMeasure): string {
   const lines: string[] = [];
   for (const c of m.contrastFails.slice(0, 6)) {
@@ -153,6 +340,18 @@ export function measureSummary(m: DesignMeasure): string {
   }
   if (m.offPalette.length) {
     lines.push(`- Hors palette déclarée : ${m.offPalette.slice(0, 8).join(", ")}`);
+  }
+  if (m.fontFamilies?.tooMany) {
+    lines.push(`- TROP de familles de polices : ${m.fontFamilies.count} (max ${FONT_FAMILIES_MAX}) — ${m.fontFamilies.families.join(", ")}. Réduis à un duo display+labeur (+ mono si données).`);
+  }
+  if (m.typoScale && !m.typoScale.present) {
+    lines.push(`- AUCUNE échelle typographique : ni clamp(), ni suite cohérente de tailles (${m.typoScale.distinctSizesPx.length} taille(s) distincte(s) trouvée(s)). Déclare une échelle (ex. 14/16/20/28/40 ou clamp()).`);
+  }
+  if (m.literalColors?.overThreshold) {
+    lines.push(`- ${m.literalColors.count} couleurs LITTÉRALES dans les composants (seuil ${m.literalColors.threshold}) — ex. ${m.literalColors.samples.slice(0, 5).join(", ")}. Passe par les custom properties de index.css.`);
+  }
+  if (m.motion && !m.motion.present) {
+    lines.push(`- AUCUNE transition/animation détectée : page STATIQUE. Ajoute au moins des micro-interactions (hover transform, entrée en fondu) — une page figée paraît inachevée.`);
   }
   return lines.join("\n");
 }

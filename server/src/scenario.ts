@@ -12,7 +12,7 @@
 import path from "node:path";
 import { MEMORY_RULES, MEMORY_FILE_NAME, memoryPromptSection } from "./memory.js";
 import { skillsPromptSection } from "./skills.js";
-import { selectAxioms } from "./axioms.js";
+import { selectAxioms, designAxiomsSection } from "./axioms.js";
 import { BLUEPRINTS_RULES } from "./blueprints.js";
 import { CADRAGE_RULES, PLAN_RULES, MOODBOARD_RULES, MOODBOARD_RULES_MVP } from "./plan.js";
 import { WORKSPACE_DIR } from "./projects.js";
@@ -477,6 +477,12 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   },
   // Future retrieval seam: today returns the capped registry unchanged.
   axioms: (ctx) => (tasteOff(ctx) ? "" : selectAxioms(WORKSPACE_DIR)),
+  // (N12, 2026-07-03) axiomes DESIGN vivants (workspace/.axioms.design.md, cap
+  // dédié 1500) : la partition empêche les axiomes BUILD-xx de noyer le savoir
+  // design dans le cap global — et les axiomes FUTURS appris y aboutissent aussi
+  // (appendAxiom {design:true}). DESIGN_AXIOMS_RULES statique = le socle ;
+  // ce bloc = ce que Mango CONTINUE d'apprendre.
+  designAxiomsLive: (ctx) => (tasteOff(ctx) ? "" : designAxiomsSection(WORKSPACE_DIR)),
   memory: (ctx) => memoryPromptSection(ctx.projectDir, WORKSPACE_DIR),
   // Idée #42 — personal identity layers (.language / .thinking-style / .vision):
   // who the user is deeply, across all projects. Injected right after the user
@@ -577,8 +583,8 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
 const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout", string[]> = {
-  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
-  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "designAxiomsLive", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
+  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxiomsLive", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
   // feature design) and leads with the finition protocol to frame the phase.
   finition: ["tutorial", "mode", "clientContext", "base", "finition", "blueprints", "supabase", "backend", "analytic", "tests", "visionElite", "axioms", "designSystem", "components", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
@@ -587,7 +593,7 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
   // humaines (cadrage qui sollicite, clarification, Miroir) et le scoping
   // architecte questionneur (PLAN_RULES → remplacé par moodboardNocturne), ainsi
   // que tutorial (pas de tuto la nuit) et tests (build rapide ciblé design).
-  nocturne: ["mode", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  nocturne: ["mode", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "designAxiomsLive", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
   // Esthétique (#68) — polish graphique haute fidélité, désormais mode INTERNE
   // (run-finish/run-showcase/design-coach) : projet fonctionnel, on l'embellit.
   // Mène avec le protocole graphicPolish, garde tout l'arsenal qualité

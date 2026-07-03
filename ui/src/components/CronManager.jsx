@@ -33,6 +33,9 @@ export default function CronManager({ onBack }) {
   const [showForm, setShowForm] = useState(false)
   const [expandedResult, setExpandedResult] = useState(null)
   const [running, setRunning] = useState(null)
+  // (Un, 2026-07-03) U9 — garde anti double-soumission : deux clics rapides sur
+  // « Créer la tâche » créaient DEUX crons identiques (exécutions dupliquées = coût réel).
+  const [creating, setCreating] = useState(false)
   const [form, setForm] = useState({
     name: '',
     projectName: '',
@@ -66,7 +69,9 @@ export default function CronManager({ onBack }) {
 
   const handleCreate = async (e) => {
     e.preventDefault()
+    if (creating) return // (Un, 2026-07-03) U9 — une création à la fois
     if (!form.name.trim() || !form.projectName || !form.prompt.trim()) return
+    setCreating(true)
     try {
       const res = await fetch('/api/cron/tasks', {
         method: 'POST',
@@ -79,6 +84,7 @@ export default function CronManager({ onBack }) {
         fetchTasks()
       }
     } catch {}
+    setCreating(false)
   }
 
   const handleToggle = async (task) => {
@@ -197,9 +203,10 @@ export default function CronManager({ onBack }) {
             </div>
             <button
               type="submit"
-              className="mt-5 px-4 py-2 bg-accent text-bg text-sm font-medium rounded hover:opacity-90 transition-opacity"
+              disabled={creating}
+              className="mt-5 px-4 py-2 bg-accent text-bg text-sm font-medium rounded hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
             >
-              Créer la tâche
+              {creating ? 'Création…' : 'Créer la tâche'}
             </button>
           </div>
         </form>

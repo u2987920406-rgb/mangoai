@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { atomicWriteFileSync } from "./safe-io.js";
 import path from 'node:path'
 import type { Express, Request, Response } from 'express'
 import { WORKSPACE_DIR } from './projects.js'
@@ -87,7 +88,7 @@ function saveControleurHistory(projectName: string, result: ControleurResult): v
   const history = loadControleurHistory(projectName)
   history.unshift(result)
   const trimmed = history.slice(0, CONTROLEUR_HISTORY_MAX)
-  fs.writeFileSync(histPath, JSON.stringify(trimmed, null, 2), 'utf8')
+  atomicWriteFileSync(histPath, JSON.stringify(trimmed, null, 2))
 }
 
 async function runControleurAnalysis(projectName: string): Promise<ControleurResult> {

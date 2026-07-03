@@ -103,6 +103,13 @@ export function registerCouncilSkillsRoutes(app: Express): void {
   // Delete a skill
   app.delete("/api/skills/:name", (req: Request, res: Response) => {
     const slug = req.params["name"] as string;
+    // (Un, 2026-07-03) U8 — :name brut + fs.rmSync récursif = suppression de
+    // n'importe quel dossier via "../..". Un slug de skill est toujours
+    // kebab-case (cf. POST /api/skills) : tout le reste est rejeté.
+    if (!/^[a-z0-9][a-z0-9-]*$/i.test(slug)) {
+      res.status(400).json({ error: "nom de skill invalide" });
+      return;
+    }
     const dir = path.join(SKILLS_DIR, slug);
     try {
       fs.rmSync(dir, { recursive: true, force: true });

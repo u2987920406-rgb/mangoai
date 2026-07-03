@@ -5,6 +5,10 @@ import { useState, useEffect, useCallback } from "react";
 
 export function useBackendServer({ projectName, pushToast }) {
   const [status, setStatus] = useState(null);
+  // (Un, 2026-07-03) U7 — garde in-flight : un double-clic sur « Démarrer »
+  // lançait DEUX npm install + deux serveurs Express → process orphelin qui
+  // squatte le port. Tant qu'un démarrage est en cours, on refuse le second.
+  const [starting, setStarting] = useState(false);
 
   const refresh = useCallback(() => {
     if (!projectName.trim()) { setStatus(null); return; }
@@ -23,16 +27,22 @@ export function useBackendServer({ projectName, pushToast }) {
   }, [projectName, pushToast, refresh]);
 
   const start = useCallback(async () => {
+    if (starting) return; // (Un, 2026-07-03) U7 — un démarrage à la fois
+    setStarting(true);
     pushToast("info", "Démarrage du backend (npm install si nécessaire)…");
-    const r = await fetch(`/api/backend-server/${encodeURIComponent(projectName)}/start`, { method: "POST" });
-    const d = await r.json();
-    if (d.ok) {
-      pushToast("ok", `Backend actif sur ${d.url}`);
-    } else {
-      pushToast("err", `Erreur backend : ${d.error}`);
+    try {
+      const r = await fetch(`/api/backend-server/${encodeURIComponent(projectName)}/start`, { method: "POST" });
+      const d = await r.json();
+      if (d.ok) {
+        pushToast("ok", `Backend actif sur ${d.url}`);
+      } else {
+        pushToast("err", `Erreur backend : ${d.error}`);
+      }
+      refresh();
+    } finally {
+      setStarting(false);
     }
-    refresh();
-  }, [projectName, pushToast, refresh]);
+  }, [starting, projectName, pushToast, refresh]);
 
   const stop = useCallback(async () => {
     await fetch(`/api/backend-server/${encodeURIComponent(projectName)}/stop`, { method: "POST" });
@@ -40,5 +50,5 @@ export function useBackendServer({ projectName, pushToast }) {
     refresh();
   }, [projectName, pushToast, refresh]);
 
-  return { status, refresh, scaffold, start, stop };
+  return { status, starting, refresh, scaffold, start, stop };
 }

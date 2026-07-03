@@ -1,4 +1,5 @@
 import fs from 'node:fs'
+import { atomicWriteFileSync } from './safe-io.js'
 import path from 'node:path'
 import type { Express } from 'express'
 import { resolveProvider } from './llm-engine.js'
@@ -38,7 +39,7 @@ function loadTasks(): CronTask[] {
 
 function saveTasks(tasks: CronTask[]): void {
   fs.mkdirSync(DATA_DIR, { recursive: true })
-  fs.writeFileSync(DATA_FILE, JSON.stringify(tasks, null, 2), 'utf-8')
+  atomicWriteFileSync(DATA_FILE, JSON.stringify(tasks, null, 2))
 }
 
 function generateId(): string {

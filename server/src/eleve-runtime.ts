@@ -122,7 +122,9 @@ function compact(messages: ChatMessage[], ctxMax: number): boolean {
   for (let i = 2; i < messages.length - KEEP_RECENT; i++) {
     const m = messages[i];
     if (m.role === "tool" && m.content.length > 200) {
-      m.content = m.content.slice(0, 200) + " … [résultat compacté]";
+      // (N10) longueur d'origine dans le marqueur : le modèle sait qu'il doit RELIRE
+      // s'il veut ce contenu, au lieu de croire que ces 200 car. étaient tout.
+      m.content = m.content.slice(0, 200) + ` … [résultat compacté — original ${m.content.length} car., relis si besoin]`;
       compacted = true;
     }
   }
@@ -339,7 +341,16 @@ export async function buildAgentic(
         readsSinceWrite = 0; // une action remet le budget à zéro
         hasWritten = true; // (L17) on a produit du concret → le cue « appelle finish » s'active
       }
-      messages.push({ role: "tool", tool_call_id: tc.id, content: resultText.slice(0, maxToolResult) });
+      // (N10, nuit 2026-07-03) Troncature MARQUÉE : sans marqueur, le modèle croit
+      // avoir lu le fichier ENTIER et le réécrit amputé (régression invisible au tsc
+      // si la syntaxe reste valide). On lui dit quoi faire à la place.
+      const clipped =
+        resultText.length > maxToolResult
+          ? resultText.slice(0, maxToolResult) +
+            `\n…[TRONQUÉ à ${maxToolResult} car. — l'original fait ${resultText.length} car. et CONTINUE. ` +
+            `Ne réécris JAMAIS ce fichier en entier depuis cette lecture partielle : relis par sections (search_code) ou utilise edit_file.]`
+          : resultText;
+      messages.push({ role: "tool", tool_call_id: tc.id, content: clipped });
     }
 
     if (corrections >= maxCorrections) {

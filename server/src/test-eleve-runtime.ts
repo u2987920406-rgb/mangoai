@@ -89,10 +89,10 @@ async function run() {
     // read_big à chaque tour ; repeatLimit haut pour ne PAS déclencher l'anti-répétition.
     const { post, snapshots } = scriptedPost([{ toolCalls: [call("read_big", {})] }]);
     await buildAgentic("sys", "explore", reg, { post, maxIterations: 6, ctxMaxChars: 800, maxToolResult: 4000, repeatLimit: 999 });
-    const compacted = snapshots.some((snap) => snap.some((m) => m.content.includes("[résultat compacté]")));
+    const compacted = snapshots.some((snap) => snap.some((m) => m.content.includes("[résultat compacté")));
     check("un vieux résultat d'outil a été compacté", compacted);
     const lastSnap = snapshots[snapshots.length - 1];
-    check("les derniers messages restent intacts (non compactés)", lastSnap.slice(-3).every((m) => !m.content.includes("[résultat compacté]")));
+    check("les derniers messages restent intacts (non compactés)", lastSnap.slice(-3).every((m) => !m.content.includes("[résultat compacté")));
   }
 
   console.log("\n[4] Conclusion sans finish (modèle s'arrête)");

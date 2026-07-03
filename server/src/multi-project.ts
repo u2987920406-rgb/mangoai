@@ -1,4 +1,5 @@
 import type { Express, Request, Response } from 'express'
+import { atomicWriteFileSync } from "./safe-io.js";
 import fs from 'node:fs'
 import path from 'node:path'
 import { resolveProvider } from './llm-engine.js'
@@ -225,7 +226,7 @@ function loadIndex(): IndexStore {
 
 function saveIndex(store: IndexStore): void {
   ensureDataDir()
-  fs.writeFileSync(INDEX_FILE, JSON.stringify(store, null, 2), 'utf-8')
+  atomicWriteFileSync(INDEX_FILE, JSON.stringify(store, null, 2))
 }
 
 // Empreinte légère du contenu : taille + mtime (ms). Suffit pour détecter
