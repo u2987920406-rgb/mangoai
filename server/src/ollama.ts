@@ -17,6 +17,17 @@ export interface OllamaOptions {
   timeoutMs?: number
   /** Image en base64 pour les modèles vision (ex. Gemma 4). */
   imageBase64?: string
+  /** Endpoint Ollama custom (ex. instance distante). Absent → OLLAMA_URL (env)
+   * → défaut localhost, comme aujourd'hui. Pris en compte par askOllama
+   * uniquement (C1-P1, overrides baseUrl/apiKeyEnv d'askLLM). */
+  baseUrl?: string
+}
+
+/** Résout l'URL de base Ollama : override explicite > OLLAMA_URL (env, lu à
+ * l'appel — pas au chargement du module, pour rester testable) > défaut local.
+ * Fonction pure, zéro effet de bord — sert aussi de brique testée isolément. */
+export function resolveOllamaBaseUrl(baseUrlOverride?: string): string {
+  return baseUrlOverride ?? process.env.OLLAMA_URL ?? 'http://localhost:11434'
 }
 
 /** Un appel chat non-streamé à Ollama. Renvoie le texte de la réponse (trim).
@@ -28,10 +39,11 @@ export async function askOllama(
 ): Promise<string> {
   const model = opts.model ?? DEFAULT_MODEL
   const timeoutMs = opts.timeoutMs ?? 180_000
+  const baseUrl = resolveOllamaBaseUrl(opts.baseUrl)
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), timeoutMs)
   try {
-    const res = await fetch(`${OLLAMA_URL}/api/chat`, {
+    const res = await fetch(`${baseUrl}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({

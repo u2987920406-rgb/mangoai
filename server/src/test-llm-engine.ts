@@ -1,10 +1,15 @@
 // Pure unit tests for llm-engine.ts — zero network calls.
 // Tests: resolveProvider (6 providers, fallback, LLM_PROVIDER env),
 //        PROVIDER_PRESETS coherence (baseURL / defaultModel / apiKeyEnv).
+//        C1-P1 : resolveOllamaBaseUrl / resolvePresetEndpoint / resolveLitellmEndpoint
+//        — override baseUrl/apiKeyEnv honoré pour ollama/presets/litellm, avec
+//        égalité stricte à la résolution historique quand l'override est absent,
+//        et repli fail-open quand apiKeyEnv nomme une variable non définie.
 //
 // Run: npx tsx src/test-llm-engine.ts
 
-import { resolveProvider, PROVIDER_PRESETS } from './llm-engine.js'
+import { resolveProvider, PROVIDER_PRESETS, resolvePresetEndpoint, resolveLitellmEndpoint } from './llm-engine.js'
+import { resolveOllamaBaseUrl } from './ollama.js'
 
 const line = (c = '─') => console.log(c.repeat(64))
 let pass = 0
@@ -108,6 +113,99 @@ check("mistral apiKeyEnv = MISTRAL_API_KEY", PROVIDER_PRESETS.mistral.apiKeyEnv 
 check("groq baseURL = https://api.groq.com/openai/v1", PROVIDER_PRESETS.groq.baseURL === 'https://api.groq.com/openai/v1')
 check("groq defaultModel = llama-3.3-70b-versatile", PROVIDER_PRESETS.groq.defaultModel === 'llama-3.3-70b-versatile')
 check("groq apiKeyEnv = GROQ_API_KEY", PROVIDER_PRESETS.groq.apiKeyEnv === 'GROQ_API_KEY')
+
+line('═')
+console.log('C1-P1 — resolveOllamaBaseUrl : override baseUrl honoré, absent = identique à aujourd\'hui')
+line()
+
+withEnv({ OLLAMA_URL: undefined }, () => {
+  // Sans override, sans OLLAMA_URL en env → défaut historique inchangé
+  check("sans override, OLLAMA_URL absent → défaut 'http://localhost:11434' (comportement actuel)", resolveOllamaBaseUrl() === 'http://localhost:11434')
+  check("sans override, OLLAMA_URL absent → identique en appelant explicitement undefined", resolveOllamaBaseUrl(undefined) === 'http://localhost:11434')
+})
+
+withEnv({ OLLAMA_URL: 'http://ollama-interne:11434' }, () => {
+  // Sans override → OLLAMA_URL (comportement actuel, juste testable maintenant)
+  check("sans override, OLLAMA_URL=custom → OLLAMA_URL (repli historique)", resolveOllamaBaseUrl() === 'http://ollama-interne:11434')
+  // Avec override → l'override prime, OLLAMA_URL ignoré
+  check("avec override → l'override prime sur OLLAMA_URL", resolveOllamaBaseUrl('http://override:9999') === 'http://override:9999')
+})
+
+withEnv({ OLLAMA_URL: undefined }, () => {
+  check("avec override, OLLAMA_URL absent → l'override est quand même utilisé", resolveOllamaBaseUrl('http://override:9999') === 'http://override:9999')
+})
+
+line()
+console.log('C1-P1 — resolvePresetEndpoint (deepseek/mistral/groq) : override + égalité stricte + fail-open')
+line()
+
+// ── Sans override : égalité stricte avec la résolution historique ───────────
+withEnv({ DEEPSEEK_API_KEY: 'dsk-real-key', LLM_OPENAI_KEY: undefined, ELEVE_API_KEY: undefined }, () => {
+  const r = resolvePresetEndpoint('deepseek')
+  check("deepseek sans override : baseURL = preset.baseURL (identique à aujourd'hui)", r.baseURL === PROVIDER_PRESETS.deepseek.baseURL)
+  check("deepseek sans override : key = process.env[DEEPSEEK_API_KEY] (identique à aujourd'hui)", r.key === 'dsk-real-key')
+})
+
+withEnv({ MISTRAL_API_KEY: undefined, LLM_OPENAI_KEY: 'fallback-openai-key', ELEVE_API_KEY: undefined }, () => {
+  const r = resolvePresetEndpoint('mistral')
+  check("mistral sans override, sans MISTRAL_API_KEY : repli sur LLM_OPENAI_KEY (identique à aujourd'hui)", r.key === 'fallback-openai-key')
+  check("mistral sans override : baseURL = preset.baseURL", r.baseURL === PROVIDER_PRESETS.mistral.baseURL)
+})
+
+withEnv({ GROQ_API_KEY: undefined, LLM_OPENAI_KEY: undefined, ELEVE_API_KEY: 'fallback-eleve-key' }, () => {
+  const r = resolvePresetEndpoint('groq')
+  check("groq sans override, sans GROQ_API_KEY ni LLM_OPENAI_KEY : repli sur ELEVE_API_KEY (identique à aujourd'hui)", r.key === 'fallback-eleve-key')
+})
+
+withEnv({ DEEPSEEK_API_KEY: undefined, LLM_OPENAI_KEY: undefined, ELEVE_API_KEY: undefined }, () => {
+  const r = resolvePresetEndpoint('deepseek')
+  check("deepseek sans override, aucune clé en env : key = '' (identique à aujourd'hui — l'appelant lève)", r.key === '')
+})
+
+// ── Avec override : baseUrl et apiKeyEnv priment ─────────────────────────────
+withEnv({ ZHIPU_KEY_TEST: 'zhipu-secret-123', DEEPSEEK_API_KEY: 'dsk-should-be-ignored' }, () => {
+  const r = resolvePresetEndpoint('deepseek', { baseUrl: 'https://custom-endpoint.example/v1', apiKeyEnv: 'ZHIPU_KEY_TEST' })
+  check("deepseek + override baseUrl : pointe vers l'override (pas preset.baseURL)", r.baseURL === 'https://custom-endpoint.example/v1')
+  check("deepseek + override apiKeyEnv : key = process.env[ZHIPU_KEY_TEST], pas DEEPSEEK_API_KEY", r.key === 'zhipu-secret-123')
+})
+
+// ── Fail-open : apiKeyEnv nomme une variable ABSENTE d'env → repli, pas de crash ──
+withEnv({ VAR_INEXISTANTE_XYZ: undefined, MISTRAL_API_KEY: 'mistral-preset-key' }, () => {
+  const r = resolvePresetEndpoint('mistral', { apiKeyEnv: 'VAR_INEXISTANTE_XYZ' })
+  check("apiKeyEnv absent d'env → fail-open : repli sur la résolution historique (pas de crash, pas d'exception)", r.key === 'mistral-preset-key')
+})
+
+withEnv({ VAR_INEXISTANTE_XYZ: undefined, MISTRAL_API_KEY: undefined, LLM_OPENAI_KEY: undefined, ELEVE_API_KEY: undefined }, () => {
+  const r = resolvePresetEndpoint('mistral', { apiKeyEnv: 'VAR_INEXISTANTE_XYZ' })
+  check("apiKeyEnv absent d'env + aucun repli disponible → key = '' (pas de throw dans la fonction pure)", r.key === '')
+})
+
+line()
+console.log('C1-P1 — resolveLitellmEndpoint : override + égalité stricte + fail-open')
+line()
+
+withEnv({ LITELLM_BASE_URL: undefined, LITELLM_API_KEY: undefined }, () => {
+  const r = resolveLitellmEndpoint()
+  check("litellm sans override, sans env : baseURL = défaut localhost:4000 (identique à aujourd'hui)", r.baseURL === 'http://localhost:4000/v1')
+  check("litellm sans override, sans env : key = placeholder 'sk-litellm-local' (identique à aujourd'hui)", r.key === 'sk-litellm-local')
+})
+
+withEnv({ LITELLM_BASE_URL: 'http://litellm-interne:4000/v1', LITELLM_API_KEY: 'litellm-real-key' }, () => {
+  const r = resolveLitellmEndpoint()
+  check("litellm sans override, env défini : baseURL = LITELLM_BASE_URL (identique à aujourd'hui)", r.baseURL === 'http://litellm-interne:4000/v1')
+  check("litellm sans override, env défini : key = LITELLM_API_KEY (identique à aujourd'hui)", r.key === 'litellm-real-key')
+})
+
+withEnv({ LITELLM_BASE_URL: 'http://litellm-interne:4000/v1', ZHIPU_KEY_TEST_2: 'zhipu-secret-456' }, () => {
+  const r = resolveLitellmEndpoint({ baseUrl: 'https://override.example/v1', apiKeyEnv: 'ZHIPU_KEY_TEST_2' })
+  check("litellm + override baseUrl : pointe vers l'override (pas LITELLM_BASE_URL)", r.baseURL === 'https://override.example/v1')
+  check("litellm + override apiKeyEnv : key = process.env[ZHIPU_KEY_TEST_2]", r.key === 'zhipu-secret-456')
+})
+
+withEnv({ VAR_INEXISTANTE_ABC: undefined, LITELLM_API_KEY: 'litellm-fallback-key' }, () => {
+  const r = resolveLitellmEndpoint({ apiKeyEnv: 'VAR_INEXISTANTE_ABC' })
+  check("litellm apiKeyEnv absent d'env → fail-open : repli sur LITELLM_API_KEY (pas de crash)", r.key === 'litellm-fallback-key')
+})
 
 line('═')
 const total = pass + fail

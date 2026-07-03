@@ -7,6 +7,7 @@
 import {
   createBrain,
   resolveBrainConfig,
+  resolveBrainFallbackConfig,
   getBrain,
   setBrain,
   resetBrain,
@@ -63,6 +64,24 @@ function spyDeps(): { deps: BrainDeps; last: () => { system: string; user: strin
     },
   }
   return { deps, last: () => captured }
+}
+
+/** Fake ask scripté (C2-P1 — repli) : chaque appel consomme une entrée de
+ * `plan` ("throw" = échec, sinon = réponse) et enregistre les opts reçus, pour
+ * vérifier le nombre d'appels et quel provider/model a été visé. */
+function scriptedDeps(plan: Array<'throw' | string>): { deps: BrainDeps; calls: () => AskLLMOptions[] } {
+  const seen: AskLLMOptions[] = []
+  let i = 0
+  const deps: BrainDeps = {
+    ask: async (_system, _user, opts) => {
+      seen.push(opts ?? {})
+      const step = plan[Math.min(i, plan.length - 1)]
+      i++
+      if (step === 'throw') throw new Error(`échec principal/repli #${i}`)
+      return step
+    },
+  }
+  return { deps, calls: () => seen }
 }
 
 async function main(): Promise<void> {
@@ -200,6 +219,151 @@ async function main(): Promise<void> {
     }
     check('ask qui lève → complete propage l’erreur', threw === true)
     check('span passé en error', ended.length === 1 && ended[0].status === 'error')
+  }
+
+  line('═')
+  console.log('resolveBrainFallbackConfig — env reading (C2-P1)')
+  line()
+
+  await withEnv({ BRAIN_FALLBACK_PROVIDER: undefined, BRAIN_FALLBACK_MODEL: undefined }, () => {
+    check('pas de BRAIN_FALLBACK_PROVIDER → null (pas de repli)', resolveBrainFallbackConfig() === null)
+  })
+
+  await withEnv({ BRAIN_FALLBACK_PROVIDER: 'ollama', BRAIN_FALLBACK_MODEL: 'gemma4:12b' }, () => {
+    const fb = resolveBrainFallbackConfig()
+    check('BRAIN_FALLBACK_PROVIDER lu', fb?.provider === 'ollama')
+    check('BRAIN_FALLBACK_MODEL lu', fb?.model === 'gemma4:12b')
+  })
+
+  await withEnv({ BRAIN_FALLBACK_PROVIDER: 'banana' }, () => {
+    const fb = resolveBrainFallbackConfig()
+    check("provider de repli invalide → borné à 'claude'", fb?.provider === 'claude')
+  })
+
+  line('═')
+  console.log('complete — repli inter-providers (C2-P1, gate BRAIN_FALLBACK)')
+  line()
+
+  {
+    // Gate OFF + repli défini dans l'env → AUCUN repli : le principal échoue,
+    // complete() lève, exactement comme avant C2-P1.
+    const { deps, calls } = scriptedDeps(['throw'])
+    let threw: unknown = null
+    await withEnv(
+      { BRAIN_FALLBACK: undefined, BRAIN_FALLBACK_PROVIDER: 'ollama', BRAIN_FALLBACK_MODEL: 'gemma4:12b' },
+      async () => {
+        const b = createBrain({ provider: 'claude' }, deps)
+        try {
+          await b.complete('S', 'U')
+        } catch (e) {
+          threw = e
+        }
+      },
+    )
+    check('gate off → un seul appel (pas de repli)', calls().length === 1)
+    check('gate off → complete lève comme aujourd’hui', threw instanceof Error)
+    check('gate off → message = erreur du principal', threw instanceof Error && threw.message === 'échec principal/repli #1')
+  }
+
+  {
+    // Gate ON mais BRAIN_FALLBACK_PROVIDER absent → pas de chaîne déclarée →
+    // aucun repli : le principal échoue, complete() lève.
+    const { deps, calls } = scriptedDeps(['throw'])
+    let threw: unknown = null
+    await withEnv(
+      { BRAIN_FALLBACK: 'on', BRAIN_FALLBACK_PROVIDER: undefined, BRAIN_FALLBACK_MODEL: undefined },
+      async () => {
+        const b = createBrain({ provider: 'claude' }, deps)
+        try {
+          await b.complete('S', 'U')
+        } catch (e) {
+          threw = e
+        }
+      },
+    )
+    check('gate on + repli absent → un seul appel', calls().length === 1)
+    check('gate on + repli absent → complete lève quand même', threw instanceof Error)
+  }
+
+  {
+    // Gate ON + repli défini : le principal échoue, le repli réussit → le
+    // résultat du repli est retourné, DEUX appels, et le 2e vise bien le repli.
+    const { deps, calls } = scriptedDeps(['throw', 'RESULTAT-REPLI'])
+    let out: string | null = null
+    let threw = false
+    await withEnv(
+      { BRAIN_FALLBACK: 'on', BRAIN_FALLBACK_PROVIDER: 'ollama', BRAIN_FALLBACK_MODEL: 'gemma4:12b' },
+      async () => {
+        const b = createBrain({ provider: 'claude' }, deps)
+        try {
+          out = await b.complete('S', 'U')
+        } catch {
+          threw = true
+        }
+      },
+    )
+    check('repli réussit → pas de levée', threw === false)
+    check('repli réussit → résultat du repli retourné', out === 'RESULTAT-REPLI')
+    check('deux appels (principal + repli)', calls().length === 2)
+    check('le 2e appel vise le repli (provider)', calls()[1].provider === 'ollama')
+    check('le 2e appel vise le repli (model)', calls()[1].model === 'gemma4:12b')
+  }
+
+  {
+    // Gate ON + repli défini + traceur : le repli réussi est annoté fallback:true.
+    const ended: SpanData[] = []
+    const tracer = new KernelTracer({ onEnd: (s) => ended.push(s) })
+    const { deps } = scriptedDeps(['throw', 'RESULTAT-REPLI'])
+    await withEnv(
+      { BRAIN_FALLBACK: 'on', BRAIN_FALLBACK_PROVIDER: 'ollama', BRAIN_FALLBACK_MODEL: 'gemma4:12b' },
+      async () => {
+        const b = createBrain({ provider: 'claude' }, { ...deps, tracer })
+        await b.complete('S', 'U')
+      },
+    )
+    check('deux spans (principal error + repli ok)', ended.length === 2)
+    check('span principal en erreur', ended[0].status === 'error')
+    check('span repli en succès', ended[1].status === 'ok')
+    check('span repli annoté fallback:true', ended[1].attributes.fallback === true)
+  }
+
+  {
+    // Gate ON + repli défini : principal ET repli échouent → complete() relève
+    // l'erreur ORIGINALE du principal (pas celle du repli).
+    const { deps, calls } = scriptedDeps(['throw', 'throw'])
+    let threw: unknown = null
+    await withEnv(
+      { BRAIN_FALLBACK: 'on', BRAIN_FALLBACK_PROVIDER: 'ollama', BRAIN_FALLBACK_MODEL: 'gemma4:12b' },
+      async () => {
+        const b = createBrain({ provider: 'claude' }, deps)
+        try {
+          await b.complete('S', 'U')
+        } catch (e) {
+          threw = e
+        }
+      },
+    )
+    check('principal + repli échouent → deux appels', calls().length === 2)
+    check('complete lève quand même', threw instanceof Error)
+    check(
+      'erreur relevée = erreur ORIGINALE du principal (pas celle du repli)',
+      threw instanceof Error && threw.message === 'échec principal/repli #1',
+    )
+  }
+
+  {
+    // Principal réussit → un seul appel, jamais de repli, même gate ON + repli défini.
+    const { deps, calls } = scriptedDeps(['RESULTAT-PRINCIPAL'])
+    let out: string | null = null
+    await withEnv(
+      { BRAIN_FALLBACK: 'on', BRAIN_FALLBACK_PROVIDER: 'ollama', BRAIN_FALLBACK_MODEL: 'gemma4:12b' },
+      async () => {
+        const b = createBrain({ provider: 'claude' }, deps)
+        out = await b.complete('S', 'U')
+      },
+    )
+    check('principal réussit → résultat du principal', out === 'RESULTAT-PRINCIPAL')
+    check('principal réussit → un seul appel (jamais de repli)', calls().length === 1)
   }
 
   line('═')

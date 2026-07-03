@@ -38,11 +38,17 @@ export interface AskLLMOptions {
   imageBase64?: string
   /** Type MIME de l'image — défaut 'image/jpeg'. */
   imageMimeType?: string
-  /** Endpoint OpenAI-compat custom (ex. Zhipu "https://open.bigmodel.cn/api/paas/v4").
-   *  Pris en compte par le provider 'openai'. */
+  /** Endpoint custom (ex. Zhipu "https://open.bigmodel.cn/api/paas/v4", ou un
+   *  Ollama distant). Pris en compte par TOUS les providers HTTP — 'openai',
+   *  'ollama', 'deepseek'/'mistral'/'groq' (prime sur le preset), 'litellm'
+   *  (prime sur LITELLM_BASE_URL). Absent → résolution historique inchangée
+   *  (C1-P1). Ignoré par 'claude' (query() ne passe pas par HTTP). */
   baseUrl?: string
   /** Nom de la variable d'env qui contient la clé API (ex. "ZHIPU_API_KEY").
-   *  Lu dans process.env ; pris en compte par le provider 'openai'. */
+   *  Lu dans process.env AU DERNIER MOMENT (jamais stocké en clair) ; pris en
+   *  compte par 'openai', 'deepseek'/'mistral'/'groq', 'litellm'. Si la variable
+   *  nommée est absente de l'env, repli fail-open sur la résolution historique
+   *  (jamais de crash). Sans objet pour 'ollama' (pas d'auth). */
   apiKeyEnv?: string
 }
 
@@ -77,6 +83,44 @@ export function resolveProvider(envValue?: string, fallback: LLMProvider = 'clau
   const raw = (envValue ?? process.env.LLM_PROVIDER ?? '').trim().toLowerCase()
   const valid: LLMProvider[] = ['claude', 'ollama', 'openai', 'deepseek', 'mistral', 'groq', 'litellm']
   return (valid.includes(raw as LLMProvider) ? raw : fallback) as LLMProvider
+}
+
+// ── C1-P1 : résolution pure d'endpoint par provider (override baseUrl/apiKeyEnv) ──
+// Extrait de askLLM pour être testable sans réseau. RÈGLE ABSOLUE : quand
+// opts.baseUrl / opts.apiKeyEnv sont absents, résultat STRICTEMENT identique à la
+// résolution historique (mêmes replis d'env, dans le même ordre). apiKeyEnv est un
+// NOM de variable, jamais une clé en clair — résolue via process.env[...] ici,
+// au dernier moment, jamais stockée ni loguée ailleurs.
+export interface EndpointOverrides {
+  baseUrl?: string
+  apiKeyEnv?: string
+}
+
+/** Résolution pour les presets OpenAI-compat deepseek / mistral / groq.
+ * Sans override : baseURL = preset.baseURL, clé = repli historique
+ * (preset.apiKeyEnv → LLM_OPENAI_KEY → ELEVE_API_KEY). Avec override : baseUrl
+ * prime sur preset.baseURL ; apiKeyEnv prime sur la clé SI la variable nommée
+ * est bien présente dans l'env — sinon fail-open, on retombe sur le repli
+ * historique (jamais de crash pour une var d'env absente). */
+export function resolvePresetEndpoint(
+  provider: 'deepseek' | 'mistral' | 'groq',
+  overrides: EndpointOverrides = {},
+): { baseURL: string; key: string } {
+  const preset = PROVIDER_PRESETS[provider]
+  const baseURL = overrides.baseUrl ?? preset.baseURL
+  const overrideKey = overrides.apiKeyEnv ? (process.env[overrides.apiKeyEnv] ?? '').trim() : ''
+  const key = overrideKey || (process.env[preset.apiKeyEnv] ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
+  return { baseURL, key }
+}
+
+/** Résolution pour le proxy litellm. Sans override : baseURL = LITELLM_BASE_URL
+ * (ou défaut localhost:4000), clé = LITELLM_API_KEY (ou placeholder). Avec
+ * override : mêmes règles de priorité / fail-open que resolvePresetEndpoint. */
+export function resolveLitellmEndpoint(overrides: EndpointOverrides = {}): { baseURL: string; key: string } {
+  const baseURL = (overrides.baseUrl ?? process.env.LITELLM_BASE_URL ?? 'http://localhost:4000/v1').trim()
+  const overrideKey = overrides.apiKeyEnv ? (process.env[overrides.apiKeyEnv] ?? '').trim() : ''
+  const key = overrideKey || (process.env.LITELLM_API_KEY ?? 'sk-litellm-local').trim()
+  return { baseURL, key }
 }
 
 function defaultModel(provider: LLMProvider): string {
@@ -251,19 +295,18 @@ export async function askLLM(system: string, user: string, opts: AskLLMOptions =
   const maxTokens = opts.maxTokens ?? 1024
   const timeoutMs = opts.timeoutMs ?? 180_000
   const { imageBase64, imageMimeType } = opts
-  if (provider === 'ollama') return askOllama(system, user, { model, timeoutMs, imageBase64 })
+  if (provider === 'ollama') return askOllama(system, user, { model, timeoutMs, imageBase64, baseUrl: opts.baseUrl })
   if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq') {
     const preset = PROVIDER_PRESETS[provider]
-    const key = (process.env[preset.apiKeyEnv] ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
+    const { baseURL, key } = resolvePresetEndpoint(provider, { baseUrl: opts.baseUrl, apiKeyEnv: opts.apiKeyEnv })
     if (!key) throw new Error(`Clé manquante pour le provider "${provider}" (${preset.apiKeyEnv} dans server/.env).`)
-    return askOpenAI(system, user, model, maxTokens, timeoutMs, preset.baseURL, key, imageBase64, imageMimeType)
+    return askOpenAI(system, user, model, maxTokens, timeoutMs, baseURL, key, imageBase64, imageMimeType)
   }
   if (provider === 'litellm') {
     // Proxy LiteLLM = endpoint OpenAI-compat unique vers 100+ modèles. Le proxy
     // local n'exige souvent pas d'auth ; on passe une clé placeholder que le
     // proxy ignore (sa propre master-key gère l'accès s'il en a une).
-    const baseURL = (process.env.LITELLM_BASE_URL ?? 'http://localhost:4000/v1').trim()
-    const key = (process.env.LITELLM_API_KEY ?? 'sk-litellm-local').trim()
+    const { baseURL, key } = resolveLitellmEndpoint({ baseUrl: opts.baseUrl, apiKeyEnv: opts.apiKeyEnv })
     return askOpenAI(system, user, model, maxTokens, timeoutMs, baseURL, key, imageBase64, imageMimeType)
   }
   if (provider === 'openai') {

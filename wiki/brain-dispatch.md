@@ -2,8 +2,8 @@
 type: entite
 tags: [multi-agents, cerveaux, orchestration, atelier]
 statut: fait-validé-live
-sources: [statut #150, historique 2026-06-24, docs/plan-106-brain-dispatch.md]
-maj: 2026-06-24
+sources: [statut #150, historique 2026-06-24, docs/plan-106-brain-dispatch.md, docs/plan-pilier-C-liquidite-cerveau.md, historique 2026-07-03]
+maj: 2026-07-03
 ---
 
 # Brain-Dispatch
@@ -43,6 +43,17 @@ Pousser la vision multi-cerveaux de [[phase-e-multicerveaux]] à sa forme la plu
 Le registre comptait **11 agents** depuis [[gardien-cloture]] #161 (ajout du `juge`). Mais MangoOS traînait **deux annuaires de cerveaux séparés** : (1) l'**Élève** (les « mains » qui codent en Construire/Discuter), routé par le `.env` (`ELEVE_MODEL=glm-5.2:cloud`, provider openai → Ollama Cloud) via `globalFallback()` dans `brain-runtime.ts` ; (2) ce registre, dont l'agent `codeur` = `gemma4:12b` **sans lien** avec l'Élève réel. Constat de Raf : « le codeur, c'est GLM 5.2, pas Gemma » + « expose l'Élève dans l'[[atelier-cerveaux]] ».
 
 **Fusion (#162)** : l'agent **`codeur` devient la source de vérité unique de l'Élève**. `globalFallback()` lit désormais `getBrain("codeur")` (lecture **à chaud** → un édit dans l'Atelier prend effet sans redémarrage ; `.env` = repli profond), et `DEFAULT_REGISTRY.codeur` + le JSON disque = `{provider:"openai", model:"glm-5.2:cloud"}`. Les **secrets** (endpoint `ELEVE_API_URL` + clé `ELEVE_API_KEY`) restent dans `.env` ; le registre ne porte que provider+modèle ([[limites]] L27). Conséquence : éditer la carte `codeur` (badge « Élève · les mains ») dans l'[[atelier-cerveaux]] **pilote l'Élève réel**. Note coût : `codeur` étant maintenant `openai`, `estimatePipelineCost` le tarife (`openai/* = 2 $/Mtok`) au lieu de $0 — plus honnête (cf. [[audit-general]] L7).
+
+## Pilier C « liquidité de cerveau » — les portes de l'avenir (fondations 2026-07-03)
+
+Chantier « Fondations harnais dernière génération » : le jour où un cerveau performant arrive (local ou cloud), le brancher = **éditer le registre**, pas coder. Conçu par Fable 5 (`docs/plan-pilier-C-liquidite-cerveau.md`), qui a constaté que dispatch propageait DÉJÀ `baseUrl`/`apiKeyEnv` → C1 = boucher 4 trous, pas construire. Tout gaté défaut OFF (catalogue `flags.ts`), byte-identique gate off prouvé par tests.
+
+- **C1 — cerveau en une ligne** : `baseUrl`/`apiKeyEnv` du registre threadés au runtime Élève (`openAiEndpoint`) PUIS à tous les providers HTTP d'`askLLM` — `resolveOllamaBaseUrl` (ollama), `resolvePresetEndpoint` (deepseek/mistral/groq), `resolveLitellmEndpoint` (litellm) : fonctions pures, `apiKeyEnv` = un NOM de variable résolu au dernier moment, fail-open si absente. Résout [[limites|L27]].
+- **C2 — fallback automatique** : `BrainConfig.fallback[]` (chaîne ordonnée ≤2, double verrou flag `BRAIN_FALLBACK` + champ) dans dispatch — `runOnce` distingue échec RETRYABLE (timeout/transport) d'un parsing raté ; garde `localOnly` re-passée par cible ; `AgentResult.brainUsed` trace le repli ; $0 abonnement préservé par construction. + repli one-shot du Kernel `complete()` (`BRAIN_FALLBACK_PROVIDER`/`MODEL`, re-throw de l'erreur ORIGINALE si le repli échoue — contrat préservé).
+- **C3 — ensemble/vote** : `brain-ensemble.ts` pur — `deliberate(agentId, members, {majority|judge})`, membres = closures injectées (découplé du transport), majorité sur clé catégorielle (`keyFn`/`minAgree`) ou arbitre final (≥2 avis), jamais de crash (pas de consensus → dégradé = l'appelant garde son repli). Gate `BRAIN_ENSEMBLE`. **Non câblé** au juge pour l'instant (freeform+numérique — point de câble identifié : `eleve-judge.ts:167`).
+- **C4 — interrupteur souveraineté** : profils `data/brain-profiles/full-local.json` (13 rôles → Ollama local, localOnly) / `cloud-actuel.json`, `apply-brain-profile.ts` (backup + avertissement L51), `BRAIN_PROFILE=<nom>` et rideau de fer `BRAIN_LOCAL_ONLY` (force localOnly sur TOUS les rôles). Souveraineté = 3 gestes, zéro code, quand [[limites|L51]] tombe.
+
+Vérif de clôture : 9 suites du domaine = **273 checks verts** (llm-engine 62 · kernel 56 · ensemble 11 · fallback 18 · dispatch 38 · brains 30 · brain-runtime 24 · endpoints 19 · profile 15).
 
 ## Liens
 

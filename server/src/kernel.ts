@@ -26,6 +26,7 @@ import {
   type AskLLMOptions,
 } from './llm-engine.js'
 import { getTracer, type KernelTracer } from './kernel-trace.js'
+import { flag } from './flags.js'
 
 // ── Le contrat universel du cerveau ──────────────────────────────────────────
 // Tout ce que MangoOS demande à un LLM passe par cette interface. Rien d'autre.
@@ -35,7 +36,10 @@ export interface MangosBrain {
   /** Modèle actif, ou '' si on laisse llm-engine choisir son défaut. */
   readonly model: string
   /** (system, user) → texte. Lève si le provider échoue ; l'appelant décide
-   * du fallback (le Kernel centralisera retry/fallback à l'étape Event Bus). */
+   * du fallback. Exception étroite (C2-P1) : sous le gate BRAIN_FALLBACK ET un
+   * repli configuré (BRAIN_FALLBACK_PROVIDER), UN essai de repli est tenté ;
+   * s'il échoue aussi, l'erreur ORIGINALE du principal est relevée — le contrat
+   * « lève, l'appelant décide » reste vrai dans tous les cas terminaux. */
   complete(system: string, user: string, opts?: BrainCompleteOptions): Promise<string>
   /** Étiquette lisible pour logs / OpenTelemetry / UI. */
   describe(): string
@@ -84,6 +88,22 @@ export function resolveBrainConfig(env: NodeJS.ProcessEnv = process.env): {
   }
 }
 
+/** Résout le repli inter-providers du cerveau depuis l'environnement
+ * (BRAIN_FALLBACK_PROVIDER / BRAIN_FALLBACK_MODEL). Contrairement au principal,
+ * l'ABSENCE de BRAIN_FALLBACK_PROVIDER signifie explicitement « pas de repli »
+ * (jamais de défaut implicite via LLM_PROVIDER) — on ne veut PAS qu'un repli
+ * apparaisse tout seul parce qu'une variable globale traîne. */
+export function resolveBrainFallbackConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): { provider: LLMProvider; model: string } | null {
+  const raw = (env.BRAIN_FALLBACK_PROVIDER ?? '').trim()
+  if (!raw) return null
+  return {
+    provider: resolveProvider(raw),
+    model: (env.BRAIN_FALLBACK_MODEL ?? '').trim(),
+  }
+}
+
 /** Construit un cerveau. `config` surcharge l'environnement ; `deps` permet
  * d'injecter un faux `ask` (tests). */
 export function createBrain(config: BrainConfig = {}, deps: BrainDeps = {}): MangosBrain {
@@ -94,6 +114,9 @@ export function createBrain(config: BrainConfig = {}, deps: BrainDeps = {}): Man
   const model = (config.model ?? base.model).trim()
   const maxTokens = config.maxTokens
   const timeoutMs = config.timeoutMs
+  // Repli inter-providers (C2-P1) : résolu UNE fois à la construction, comme le
+  // reste de la config — pas de défaut implicite (voir resolveBrainFallbackConfig).
+  const fallback = resolveBrainFallbackConfig()
 
   return {
     provider,
@@ -119,12 +142,44 @@ export function createBrain(config: BrainConfig = {}, deps: BrainDeps = {}): Man
       // visible par MangoQA — comme chat.turn. Fire-and-forget : un span n'altère
       // ni le résultat ni l'erreur (withSpan rejette si ask lève, comportement
       // inchangé). Sans tracer, appel direct (createBrain reste pur).
-      if (!tracer) return ask(system, user, askOpts)
-      return tracer.withSpan(
-        'brain.complete',
-        () => ask(system, user, askOpts),
-        { attributes: { provider: callProvider, model: chosenModel ?? 'default' } },
-      )
+      const runAsk = (runOpts: AskLLMOptions, spanAttributes: Record<string, unknown>): Promise<string> => {
+        if (!tracer) return ask(system, user, runOpts)
+        return tracer.withSpan('brain.complete', () => ask(system, user, runOpts), { attributes: spanAttributes })
+      }
+
+      // Sans le gate BRAIN_FALLBACK OU sans repli configuré : comportement
+      // STRICTEMENT identique à avant C2-P1 — appel principal, lève tel quel à
+      // l'échec. Le contrat « lève, l'appelant décide » du Kernel est préservé.
+      if (!flag('BRAIN_FALLBACK') || !fallback) {
+        return runAsk(askOpts, { provider: callProvider, model: chosenModel ?? 'default' })
+      }
+
+      try {
+        return await runAsk(askOpts, { provider: callProvider, model: chosenModel ?? 'default' })
+      } catch (mainError) {
+        // Repli inter-providers (C2-P1) : UN seul essai. S'il réussit, son
+        // résultat remplace celui du principal ; s'il échoue AUSSI, on relève
+        // l'erreur ORIGINALE du principal (pas celle du repli) pour que
+        // l'appelant garde la sémantique/le message d'erreur habituels.
+        const reason = mainError instanceof Error ? mainError.message : String(mainError)
+        console.warn(`[kernel-fallback] ${callProvider}→${fallback.provider} : ${reason}`)
+        const fallbackModel = fallback.model || undefined
+        const fallbackOpts: AskLLMOptions = {
+          provider: fallback.provider,
+          model: fallbackModel,
+          maxTokens: askOpts.maxTokens,
+          timeoutMs: askOpts.timeoutMs,
+        }
+        try {
+          return await runAsk(fallbackOpts, {
+            provider: fallback.provider,
+            model: fallbackModel ?? 'default',
+            fallback: true,
+          })
+        } catch {
+          throw mainError
+        }
+      }
     },
     describe() {
       return `MangosBrain(provider=${provider}, model=${model || 'default'})`
