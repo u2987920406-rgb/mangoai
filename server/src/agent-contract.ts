@@ -17,6 +17,10 @@ export interface AgentResult {
   data: Record<string, unknown>
   confidence: number   // 0.0 → 1.0
   durationMs: number
+  /** (C2, 2026-07-03) Quel cerveau a RÉELLEMENT produit ce résultat, et si c'est
+   *  via un REPLI (fallback inter-providers). Champ OPTIONNEL — sur-ensemble strict,
+   *  aucun consommateur existant impacté ; présent seulement quand un repli a joué. */
+  brainUsed?: { provider: string; model?: string; fallback: boolean }
 }
 
 /** Fragment injecté en tête du system de CHAQUE agent — impose le format Mango. */

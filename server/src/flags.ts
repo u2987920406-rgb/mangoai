@@ -82,6 +82,11 @@ export const FLAGS = {
     default: false,
     description: "« Rideau de fer » souveraineté : force localOnly=true sur TOUS les rôles → le garde de dispatch refuse tout provider cloud. À activer le jour où un modèle local tient la boucle (mur L51).",
   },
+  BRAIN_FALLBACK: {
+    env: "BRAIN_FALLBACK",
+    default: false,
+    description: "Fallback AUTOMATIQUE inter-providers : sur timeout/erreur transport d'un rôle, bascule vers la chaîne `fallback` déclarée dans son registre (garde localOnly préservée, $0 abonnement Claude préservé).",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

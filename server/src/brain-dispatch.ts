@@ -6,7 +6,8 @@
 // timeout dégradé, rate limiting par provider avec retry exponentiel, et parsing
 // robuste. Ne throw JAMAIS : toute erreur devient un AgentResult dégradé.
 import { askLLM, type AskLLMOptions, type LLMProvider } from "./llm-engine.js"
-import { getBrain, type AgentId } from "./brain-registry.js"
+import { getBrain, type AgentId, type BrainConfig } from "./brain-registry.js"
+import { flag } from "./flags.js"
 import {
   MANGO_CONTRACT_PROMPT,
   parseAgentResponse,
@@ -91,6 +92,62 @@ function degraded(agentId: AgentId, summary: string, durationMs: number, status:
   return { status, agent: agentId, summary, data: {}, confidence: 0, durationMs }
 }
 
+/** (C2) Un cerveau EFFECTIF pour UNE tentative : provider + éventuels modèle,
+ *  endpoint, clé, timeout. Réutilisé pour le cerveau principal ET chaque repli. */
+interface BrainAttempt {
+  provider: LLMProvider
+  model?: string
+  baseUrl?: string
+  apiKeyEnv?: string
+  timeoutMs?: number
+}
+
+/** Contexte immuable partagé par toutes les tentatives d'un dispatch. */
+interface AttemptCtx {
+  fullSystem: string
+  safeUser: string
+  imageBase64?: string
+  freeform: boolean
+  ask: AskFn
+  started: number
+}
+
+/**
+ * (C2) UNE tentative sur un cerveau donné. `retryable` = l'échec est un problème
+ * de DISPONIBILITÉ (timeout ou erreur transport) → un repli est justifié. Un
+ * échec de PARSING (le modèle a répondu) N'est PAS retryable : re-payer un appel
+ * ne le corrigerait pas. Reproduit exactement l'ancien chemin pour le principal.
+ */
+async function runOnce(agentId: AgentId, cfg: BrainAttempt, ctx: AttemptCtx): Promise<{ result: AgentResult; retryable: boolean }> {
+  const timeoutMs = cfg.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  const askOpts: AskLLMOptions = {
+    provider: cfg.provider,
+    model: cfg.model,
+    timeoutMs,
+    baseUrl: cfg.baseUrl,
+    apiKeyEnv: cfg.apiKeyEnv,
+    imageBase64: ctx.imageBase64,
+  }
+  try {
+    const raced = await withAgentTimeout(ctx.ask(ctx.fullSystem, ctx.safeUser, askOpts), timeoutMs, agentId)
+    if (isTimeout(raced)) {
+      return { result: degraded(agentId, `délai dépassé (${timeoutMs} ms)`, Date.now() - ctx.started, "timeout"), retryable: true }
+    }
+    if (ctx.freeform) {
+      const txt = (raced ?? "").trim()
+      // Réponse vide en prose = pas un problème de disponibilité (le modèle a
+      // répondu, juste vide) → NON retryable, cohérent avec « repli sur timeout/transport ».
+      return txt
+        ? { result: { status: "ok", agent: agentId, summary: txt, data: {}, confidence: 1, durationMs: Date.now() - ctx.started }, retryable: false }
+        : { result: degraded(agentId, "réponse vide du cerveau", Date.now() - ctx.started), retryable: false }
+    }
+    return { result: parseAgentResponse(raced, agentId, Date.now() - ctx.started), retryable: false }
+  } catch (err) {
+    // Erreur de TRANSPORT (réseau, provider injoignable) → retryable.
+    return { result: degraded(agentId, `erreur cerveau : ${(err as Error).message}`.slice(0, 200), Date.now() - ctx.started), retryable: true }
+  }
+}
+
 export async function dispatch(
   agentId: AgentId,
   system: string,
@@ -125,33 +182,43 @@ export async function dispatch(
   // 6. Rate limiting (avec retry exponentiel interne).
   await acquireSlot(brain.provider, sleep)
 
-  // 7. Appel borné par timeout dégradé.
-  const askOpts: AskLLMOptions = {
-    provider: brain.provider,
-    model: brain.model,
-    timeoutMs: brain.timeoutMs ?? DEFAULT_TIMEOUT_MS,
-    baseUrl: brain.baseUrl,
-    apiKeyEnv: brain.apiKeyEnv,
-    imageBase64,
-  }
+  // 7. Appel borné par timeout dégradé (tentative sur le cerveau PRINCIPAL).
+  const ctx: AttemptCtx = { fullSystem, safeUser, imageBase64, freeform, ask, started }
+  let { result, retryable } = await runOnce(agentId, brain, ctx)
 
-  let result: AgentResult
-  try {
-    const raced = await withAgentTimeout(ask(fullSystem, safeUser, askOpts), brain.timeoutMs ?? DEFAULT_TIMEOUT_MS, agentId)
-    if (isTimeout(raced)) {
-      result = degraded(agentId, `délai dépassé (${brain.timeoutMs ?? DEFAULT_TIMEOUT_MS} ms)`, Date.now() - started, "timeout")
-    } else if (freeform) {
-      // 8b. Prose libre : pas de parsing, le texte brut EST le résultat.
-      const txt = (raced ?? "").trim()
-      result = txt
-        ? { status: "ok", agent: agentId, summary: txt, data: {}, confidence: 1, durationMs: Date.now() - started }
-        : degraded(agentId, "réponse vide du cerveau", Date.now() - started)
-    } else {
-      // 8. Parsing robuste.
-      result = parseAgentResponse(raced, agentId, Date.now() - started)
+  // 7bis. (C2) FALLBACK inter-providers — DANS le contrat « ne throw jamais » :
+  // si l'échec est un problème de DISPONIBILITÉ (retryable) ET que le flag +
+  // une chaîne de repli sont présents (double verrou), on essaie les cibles
+  // déclarées, dans l'ordre. Première réussite gagne ; chaîne épuisée → le
+  // dernier résultat dégradé (sortie ultime inchangée). Garde localOnly
+  // re-passée sur CHAQUE cible + acquireSlot + timeout borné au principal.
+  if (retryable && flag("BRAIN_FALLBACK") && Array.isArray(brain.fallback) && brain.fallback.length) {
+    const brainTimeout = brain.timeoutMs ?? DEFAULT_TIMEOUT_MS
+    for (const fb of brain.fallback) {
+      // Un rôle localOnly ne bascule JAMAIS vers un cloud, même en repli.
+      if (brain.localOnly && fb.provider !== "ollama") {
+        console.warn(`[brain-fallback] ${agentId}: repli ${fb.provider} REFUSÉ (rôle localOnly)`)
+        continue
+      }
+      await acquireSlot(fb.provider, sleep)
+      // Timeout de la cible plafonné à celui du principal (évite de doubler le budget).
+      const target: BrainAttempt = {
+        provider: fb.provider,
+        model: fb.model ?? brain.model, // hérite du modèle du rôle si non précisé
+        baseUrl: fb.baseUrl,
+        apiKeyEnv: fb.apiKeyEnv,
+        timeoutMs: Math.min(fb.timeoutMs ?? brainTimeout, brainTimeout),
+      }
+      const att = await runOnce(agentId, target, ctx)
+      result = att.result
+      retryable = att.retryable
+      if (att.result.status === "ok") {
+        console.warn(`[brain-fallback] ${agentId}: ${brain.provider}→${fb.provider} (repli réussi)`)
+        result = { ...att.result, brainUsed: { provider: fb.provider, model: target.model, fallback: true } }
+        break
+      }
+      // Sinon (encore retryable ou dégradé) : on tente la cible suivante s'il en reste.
     }
-  } catch (err) {
-    result = degraded(agentId, `erreur cerveau : ${(err as Error).message}`.slice(0, 200), Date.now() - started)
   }
 
   // 9. Trace dans la session immuable.

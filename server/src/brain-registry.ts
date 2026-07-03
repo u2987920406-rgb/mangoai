@@ -11,6 +11,17 @@ import { atomicWriteFileSync } from "./safe-io.js"
 import { flag } from "./flags.js"
 import type { LLMProvider } from "./llm-engine.js"
 
+/** (C2) Une cible de REPLI : un mini-cerveau (provider + éventuels endpoint/clé/
+ *  timeout) essayé si le cerveau principal échoue en disponibilité. PAS de champ
+ *  `fallback` imbriqué (une chaîne, pas un arbre) ni `localOnly` (hérité du rôle). */
+export interface BrainFallback {
+  provider: LLMProvider
+  model?: string
+  baseUrl?: string
+  apiKeyEnv?: string
+  timeoutMs?: number
+}
+
 export interface BrainConfig {
   provider: LLMProvider
   model?: string
@@ -21,7 +32,13 @@ export interface BrainConfig {
   timeoutMs?: number
   /** true → refuse de router vers un cloud (souveraineté / non-fuite du code). */
   localOnly?: boolean
+  /** (C2) Chaîne de repli ORDONNÉE (bornée à 2) essayée sur timeout/erreur
+   *  transport, seulement si le flag BRAIN_FALLBACK est actif. */
+  fallback?: BrainFallback[]
 }
+
+/** Nombre max de cibles de repli par rôle (au-delà → tronqué). */
+export const MAX_FALLBACK_CHAIN = 2
 
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
@@ -125,7 +142,30 @@ function coerceConfig(raw: unknown, fallback: BrainConfig): BrainConfig {
   if (timeoutMs) out.timeoutMs = timeoutMs
   if (typeof r.localOnly === "boolean") out.localOnly = r.localOnly
   else if (fallback.localOnly) out.localOnly = fallback.localOnly
+  // (C2) Chaîne de repli : validée entrée par entrée, bornée, jamais imbriquée.
+  const chain = coerceFallbackChain(r.fallback) ?? fallback.fallback
+  if (chain && chain.length) out.fallback = chain
   return out
+}
+
+/** Valide une chaîne de repli brute (tableau de mini-cerveaux). Entrées invalides
+ *  ignorées (fail-open), tronquée à MAX_FALLBACK_CHAIN. undefined si rien d'exploitable. */
+function coerceFallbackChain(raw: unknown): BrainFallback[] | undefined {
+  if (!Array.isArray(raw)) return undefined
+  const out: BrainFallback[] = []
+  for (const item of raw) {
+    if (out.length >= MAX_FALLBACK_CHAIN) break
+    if (!item || typeof item !== "object") continue
+    const it = item as Record<string, unknown>
+    if (typeof it.provider !== "string" || !VALID_PROVIDERS.has(it.provider)) continue
+    const fb: BrainFallback = { provider: it.provider as LLMProvider }
+    if (typeof it.model === "string" && it.model.trim()) fb.model = it.model.trim()
+    if (typeof it.baseUrl === "string" && it.baseUrl.trim()) fb.baseUrl = it.baseUrl.trim()
+    if (typeof it.apiKeyEnv === "string" && it.apiKeyEnv.trim()) fb.apiKeyEnv = it.apiKeyEnv.trim()
+    if (typeof it.timeoutMs === "number" && Number.isFinite(it.timeoutMs) && it.timeoutMs > 0) fb.timeoutMs = it.timeoutMs
+    out.push(fb)
+  }
+  return out.length ? out : undefined
 }
 
 /**
