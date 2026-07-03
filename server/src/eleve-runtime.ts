@@ -16,7 +16,7 @@ import type { KernelTracer } from "./kernel-trace.js";
 import { runHooks, type HookRegistration } from "./mango-hooks.js";
 import { flag } from "./flags.js";
 import { emptyWorkingState, updateWorkingState, formatWorkingState, type WorkingState } from "./working-memory.js";
-import { saveSnapshot, clearSnapshot } from "./loop-state.js";
+import { saveSnapshot, clearSnapshot, loadSnapshot } from "./loop-state.js";
 
 // ── Types du dialogue OpenAI-compat ──────────────────────────────────────────
 
@@ -252,7 +252,33 @@ export async function buildAgentic(
     return (plan ? plan + "\n\n" : "") + base + finishCue;
   };
 
-  for (let iter = 0; iter < maxIter; iter++) {
+  // (B1.4, gate ELEVE_RESUME) REPRISE inter-session : si un snapshot FRAIS de la
+  // MÊME tâche existe (le serveur a crashé/redémarré au milieu d'un run), on
+  // restaure l'historique + la trace + les compteurs et on reprend là où on en
+  // était, avec un nudge de RE-VÉRIFICATION (l'espace de travail a pu changer).
+  // Garde « même tâche » : le user d'origine du snapshot doit correspondre au
+  // `user` courant — sinon c'est une AUTRE tâche, on ignore (run neuf, le snapshot
+  // sera écrasé). Gate off OU projectDir absent → jamais de reprise (identique).
+  let startIter = 0;
+  if (eleveResumeOn && opts.projectDir) {
+    const snap = loadSnapshot(opts.projectDir);
+    if (snap && snap.messages.length >= 2 && snap.messages[1]?.role === "user" && snap.messages[1]?.content === user) {
+      messages.length = 0;
+      messages.push(...snap.messages);
+      for (const t of snap.toolTrace) toolTrace.push(t);
+      hasWritten = snap.hasWritten;
+      startIter = Math.max(0, Math.min(snap.iter, maxIter));
+      messages.push({
+        role: "user",
+        content:
+          "↩ REPRISE après interruption : l'espace de travail a PU changer depuis. AVANT de continuer, " +
+          "re-vérifie l'état réel (list_files / check_build), puis reprends exactement là où tu en étais.",
+      });
+      opts.onLog?.(`↩ Reprise du run à l'itération ${startIter} (snapshot).`);
+    }
+  }
+
+  for (let iter = startIter; iter < maxIter; iter++) {
     // Interruption coopérative (clic « Stop ») : on sort sur la frontière
     // d'itération, AVANT de relancer le modèle ou d'exécuter un outil → aucun
     // état corrompu, et on rend la main tout de suite. `aborted` signale à

@@ -206,6 +206,102 @@ async function run() {
     }
   }
 
+  console.log("\n[B1.4] Reprise inter-session : restauration du snapshot dans buildAgentic");
+  {
+    const prevEnv = process.env.ELEVE_RESUME;
+    process.env.ELEVE_RESUME = "on";
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume-"));
+    try {
+      const snap: LoopSnapshot = {
+        version: 1, ts: Date.now(), iter: 5, hasWritten: true,
+        messages: [
+          { role: "system", content: "sys" },
+          { role: "user", content: "construis la todo app" },
+          { role: "assistant", content: "j'ai écrit src/App.jsx" },
+        ],
+        toolTrace: [{ name: "write_file", args: '{"path":"src/App.jsx"}' }],
+      };
+      fs.writeFileSync(path.join(tmpDir, SNAPSHOT_FILE), JSON.stringify(snap));
+
+      const reg = new ToolRegistry();
+      reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+      let firstMessagesLen = 0;
+      let sawResumeNudge: boolean = false;
+      const post: PostFn = async (messages) => {
+        if (firstMessagesLen === 0) {
+          firstMessagesLen = messages.length;
+          sawResumeNudge = messages.some((m) => m.role === "user" && /REPRISE après interruption/.test(m.content));
+        }
+        return { content: "", toolCalls: [call("finish", { summary: "repris et fini" })] };
+      };
+      const r = await buildAgentic("sys", "construis la todo app", reg, { post, projectDir: tmpDir, maxIterations: 30 });
+      check("historique restauré (system+user+assistant+nudge > 3)", firstMessagesLen > 3);
+      check("nudge de RE-VÉRIFICATION injecté", sawResumeNudge);
+      check("trace du run précédent conservée (write_file)", r.toolTrace.some((t) => t.name === "write_file"));
+      check("le run reprend et finit", r.finished === true);
+      check("snapshot supprimé après finish", !fs.existsSync(path.join(tmpDir, SNAPSHOT_FILE)));
+    } finally {
+      if (prevEnv === undefined) delete process.env.ELEVE_RESUME; else process.env.ELEVE_RESUME = prevEnv;
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  console.log("\n[B1.4] Tâche DIFFÉRENTE → pas de reprise (run neuf)");
+  {
+    const prevEnv = process.env.ELEVE_RESUME;
+    process.env.ELEVE_RESUME = "on";
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume2-"));
+    try {
+      const snap: LoopSnapshot = {
+        version: 1, ts: Date.now(), iter: 3, hasWritten: true,
+        messages: [{ role: "system", content: "sys" }, { role: "user", content: "ANCIENNE tâche" }],
+        toolTrace: [{ name: "write_file", args: "{}" }],
+      };
+      fs.writeFileSync(path.join(tmpDir, SNAPSHOT_FILE), JSON.stringify(snap));
+      const reg = new ToolRegistry();
+      reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+      let sawResumeNudge: boolean = false;
+      const post: PostFn = async (messages) => {
+        sawResumeNudge = sawResumeNudge || messages.some((m) => /REPRISE après interruption/.test(m.content));
+        return { content: "", toolCalls: [call("finish", { summary: "neuf" })] };
+      };
+      const r = await buildAgentic("sys", "NOUVELLE tâche différente", reg, { post, projectDir: tmpDir, maxIterations: 10 });
+      check("tâche différente → aucun nudge de reprise", !sawResumeNudge);
+      check("trace de l'ancien run NON héritée", !r.toolTrace.some((t) => t.name === "write_file"));
+    } finally {
+      if (prevEnv === undefined) delete process.env.ELEVE_RESUME; else process.env.ELEVE_RESUME = prevEnv;
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  console.log("\n[B1.4] Gate OFF → jamais de reprise (identique)");
+  {
+    const prevEnv = process.env.ELEVE_RESUME;
+    delete process.env.ELEVE_RESUME;
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume3-"));
+    try {
+      const snap: LoopSnapshot = {
+        version: 1, ts: Date.now(), iter: 4, hasWritten: true,
+        messages: [{ role: "system", content: "sys" }, { role: "user", content: "t" }],
+        toolTrace: [{ name: "write_file", args: "{}" }],
+      };
+      fs.writeFileSync(path.join(tmpDir, SNAPSHOT_FILE), JSON.stringify(snap));
+      const reg = new ToolRegistry();
+      reg.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+      let sawResumeNudge: boolean = false;
+      const post: PostFn = async (messages) => {
+        sawResumeNudge = sawResumeNudge || messages.some((m) => /REPRISE après interruption/.test(m.content));
+        return { content: "", toolCalls: [call("finish", { summary: "off" })] };
+      };
+      const r = await buildAgentic("sys", "t", reg, { post, projectDir: tmpDir, maxIterations: 10 });
+      check("gate off → aucun nudge de reprise", !sawResumeNudge);
+      check("gate off → trace non héritée", !r.toolTrace.some((t) => t.name === "write_file"));
+    } finally {
+      if (prevEnv === undefined) delete process.env.ELEVE_RESUME; else process.env.ELEVE_RESUME = prevEnv;
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} loop-state : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }
