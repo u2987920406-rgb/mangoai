@@ -32,6 +32,14 @@ export interface BlackboardStore {
   search(scope: string, queryEmbedding: number[], k: number): SearchHit[]
   /** Libère les ressources (no-op en mémoire ; ferme la base en SQLite). */
   close(): void
+  /**
+   * OPTIONNELLE (tous les backends n'ont pas de notion d'âge — MemoryStore ne
+   * l'implémente pas). Purge du scope selon âge (`olderThanMs`) et/ou volume
+   * (`maxEntries`, garde les plus récents). Retourne le nombre supprimé.
+   * Outil de maintenance : jamais appelé automatiquement, réservé à un job
+   * nocturne gaté BLACKBOARD_TTL (cf. flags.ts).
+   */
+  prune?(scope: string, opts: { olderThanMs?: number; maxEntries?: number }): number
 }
 
 /** Similarité cosinus entre deux vecteurs (0 si l'un est nul). Pur. */

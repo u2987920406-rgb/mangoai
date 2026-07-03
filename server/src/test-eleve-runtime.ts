@@ -365,6 +365,40 @@ async function run() {
     check("ne consomme pas tout le plafond d'itérations", r1.iterations < 10);
   }
 
+  console.log("\n[B0.1] Budget explicite de boucle");
+  {
+    // maxToolCalls : après N appels d'outils, conclusion forcée + budgetExhausted.
+    const writes: Array<Record<string, unknown>> = [];
+    const reg = stubRegistry(writes);
+    // Le modèle voudrait écrire indéfiniment (jamais finish) — le budget doit couper.
+    let k = 0;
+    const post: PostFn = async () => ({ content: "", toolCalls: [call("write_file", { path: `f${k++}.js`, content: "x" })] });
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 100, budget: { maxToolCalls: 3 } });
+    check("budgetExhausted === true (plafond d'appels d'outils)", r.budgetExhausted === true);
+    check("n'a pas consommé le plafond d'itérations (100)", r.iterations < 100);
+    check("finished === false (coupé par budget, pas finish)", r.finished === false);
+    check("environ 3 appels d'outils avant coupure", r.toolTrace.length === 3);
+  }
+  {
+    // maxPromptChars : un gros contexte déclenche la coupure douce.
+    const reg = stubRegistry([]);
+    const post: PostFn = async () => ({ content: "", toolCalls: [call("read_big", {})] });
+    const r = await buildAgentic("sys", "X".repeat(5000), reg, { post, maxIterations: 100, budget: { maxPromptChars: 1000 } });
+    check("budgetExhausted sur poids contexte", r.budgetExhausted === true);
+  }
+  {
+    // Sans budget → comportement STRICTEMENT identique (pas de budgetExhausted).
+    const writes: Array<Record<string, unknown>> = [];
+    const reg = stubRegistry(writes);
+    const { post } = scriptedPost([
+      { toolCalls: [call("write_file", { path: "a.js", content: "x" })] },
+      { toolCalls: [call("finish", { summary: "ok" })] },
+    ]);
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 10 });
+    check("gate off (pas de budget) → budgetExhausted absent", r.budgetExhausted === undefined);
+    check("gate off → finish normal", r.finished === true && r.text === "ok");
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-runtime : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }

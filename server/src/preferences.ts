@@ -9,6 +9,7 @@
 // Stored at workspace/.preferences.md alongside .design-system.md.
 import path from "node:path";
 import fs from "node:fs";
+import { atomicWriteFileSync } from "./safe-io.js";
 import { getBrain } from "./kernel.js";
 import { loadDesignSystem } from "./design-system.js";
 import { loadLanguage, loadThinkingStyle } from "./identity.js";
@@ -37,7 +38,9 @@ export function loadPreferences(workspaceDir: string): string {
 
 export function savePreferences(workspaceDir: string, content: string): void {
   fs.mkdirSync(workspaceDir, { recursive: true });
-  fs.writeFileSync(path.join(workspaceDir, PREFERENCES_FILE_NAME), content, "utf8");
+  // (A0.1) écriture atomique : les préférences apprises ne doivent pas être
+  // tronquées par un crash mi-écriture.
+  atomicWriteFileSync(path.join(workspaceDir, PREFERENCES_FILE_NAME), content);
 }
 
 /** System-prompt section injecting learned preferences ("" if empty — zero

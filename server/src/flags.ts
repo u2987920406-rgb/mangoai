@@ -1,0 +1,98 @@
+// Registre CENTRAL des drapeaux de fonctionnalité (gates) de MangoOS.
+//
+// Pourquoi ce module (chantier « Fondations harnais dernière génération »,
+// 2026-07-03) : les capacités nouvelles s'activent par variable d'environnement,
+// défaut OFF (rétrocompatibilité stricte). Éparpillées, ces lectures de
+// `process.env` deviennent inauditables sur 10 ans. On les CENTRALISE ici :
+// une seule source de vérité, un nom + une valeur par défaut + une description
+// par gate, et un helper de dump pour les diagnostiquer d'un coup.
+//
+// Règle : un gate ne CHANGE JAMAIS le comportement quand il est OFF. Les
+// corrections de robustesse pure (atomicité, versioning) n'ont PAS de gate —
+// elles ne modifient aucune sémantique observable.
+//
+// Lecture PARESSEUSE (à l'appel), pas au chargement du module : les tests et la
+// config .env peuvent muter `process.env` avant le premier usage réel.
+
+/** Un flag booléen piloté par env, défaut explicite, décrit pour l'audit. */
+export interface FlagSpec {
+  /** Nom de la variable d'environnement (ex. "ELEVE_MEMOIRE"). */
+  env: string;
+  /** Valeur par défaut si la variable est absente. */
+  default: boolean;
+  /** À quoi sert ce gate (une phrase). */
+  description: string;
+}
+
+/**
+ * Catalogue des gates du chantier fondations. On y ajoute chaque nouveau flag
+ * au fil des items — jamais un `process.env.X === "on"` dispersé ailleurs.
+ */
+export const FLAGS = {
+  // ── Pilier A — mémoire ──────────────────────────────────────────────────
+  AXIOMS_ROTATE: {
+    env: "AXIOMS_ROTATE",
+    default: false,
+    description: "Rotation du registre d'axiomes : au-delà du cap, archive le surplus dans .axioms.archive.md au lieu de le couper en silence.",
+  },
+  BLACKBOARD_TTL: {
+    env: "BLACKBOARD_TTL",
+    default: false,
+    description: "Purge/TTL du Blackboard SQLite (prune des artefacts trop vieux / au-delà d'un maximum).",
+  },
+  MEMORY_MANIFEST: {
+    env: "MEMORY_MANIFEST",
+    default: false,
+    description: "Écrit/maintient .memory-manifest.json (versions de schéma des magasins fichiers). Lecture toujours fail-open.",
+  },
+  ELEVE_MEMOIRE: {
+    env: "ELEVE_MEMOIRE",
+    default: false,
+    description: "Rappel sémantique du Blackboard DANS la boucle : injection proactive de souvenirs pertinents + outil memoire_rappel.",
+  },
+  AXIOMS_DRIFT: {
+    env: "AXIOMS_DRIFT",
+    default: false,
+    description: "Détecteur de contradiction/dérive à l'écriture d'un axiome (consigne les paires suspectes pour le reviewer nocturne, ne supprime jamais).",
+  },
+  // ── Pilier B — boucle cognitive ─────────────────────────────────────────
+  ELEVE_ETAT: {
+    env: "ELEVE_ETAT",
+    default: false,
+    description: "Maintient un « état de travail » compact (objectif/fichiers écrits/plan/blocage) réinjecté quand la compaction tronque le contexte.",
+  },
+  ELEVE_RESUME: {
+    env: "ELEVE_RESUME",
+    default: false,
+    description: "Snapshot de reprise (.eleve-run.json) écrit à chaque frontière d'itération et restauré après interruption (TTL borné).",
+  },
+  ELEVE_PLAN_V2: {
+    env: "ELEVE_PLAN_V2",
+    default: false,
+    description: "Plan structuré re-planifiable (statuts d'étapes) au lieu du simple rappel-texte ; suggère une replanification sur blocage.",
+  },
+  ELEVE_REFLEXION: {
+    env: "ELEVE_REFLEXION",
+    default: false,
+    description: "Phase de réflexion explicite (un tour sans outils) périodique ou après un blocage, bornée par run.",
+  },
+} as const satisfies Record<string, FlagSpec>;
+
+export type FlagName = keyof typeof FLAGS;
+
+/** Vrai si le gate est actif. Convention d'activation : "on" | "1" | "true"
+ *  (insensible à la casse). Toute autre valeur = OFF ; absence = valeur par défaut. */
+export function flag(name: FlagName): boolean {
+  const spec = FLAGS[name];
+  const raw = process.env[spec.env];
+  if (raw === undefined) return spec.default;
+  return /^(on|1|true|yes)$/i.test(raw.trim());
+}
+
+/** Dump de l'état de tous les gates (diagnostic /debug, jamais un secret). */
+export function flagsSnapshot(): Array<{ name: FlagName; env: string; active: boolean; default: boolean; description: string }> {
+  return (Object.keys(FLAGS) as FlagName[]).map((name) => {
+    const spec = FLAGS[name];
+    return { name, env: spec.env, active: flag(name), default: spec.default, description: spec.description };
+  });
+}

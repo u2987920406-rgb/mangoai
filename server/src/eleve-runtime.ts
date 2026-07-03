@@ -14,6 +14,9 @@ import { ToolRegistry, toOpenAITools, type OpenAITool, type KernelTool } from ".
 import { FINISH_TOOL } from "./eleve-action-tools.js";
 import type { KernelTracer } from "./kernel-trace.js";
 import { runHooks, type HookRegistration } from "./mango-hooks.js";
+import { flag } from "./flags.js";
+import { emptyWorkingState, updateWorkingState, formatWorkingState, type WorkingState } from "./working-memory.js";
+import { saveSnapshot, clearSnapshot } from "./loop-state.js";
 
 // ── Types du dialogue OpenAI-compat ──────────────────────────────────────────
 
@@ -90,6 +93,13 @@ export interface AgenticOptions {
   hooks?: HookRegistration[];
   /** (#172) Répertoire projet, passé aux hooks comme contexte d'exécution. */
   projectDir?: string;
+  /** (B0.1, 2026-07-03) Budget EXPLICITE de la boucle, au-delà du plafond
+   * d'itérations. Optionnel → absent = comportement identique à aujourd'hui.
+   * Au dépassement, on sort par la même porte douce que le plafond d'itérations
+   * (un dernier tour sans outils pour conclure) et on marque `budgetExhausted`.
+   * `maxPromptChars` = plafond du poids contexte (proxy tokens) mesuré avant
+   * chaque appel modèle ; `maxToolCalls` = plafond cumulé d'appels d'outils. */
+  budget?: { maxPromptChars?: number; maxToolCalls?: number };
 }
 
 export interface AgenticBuildResult {
@@ -106,6 +116,10 @@ export interface AgenticBuildResult {
   /** `true` si l'utilisateur a demandé l'arrêt (Stop) — sortie volontaire, PAS un
    * échec : l'appelant ne doit ni escalader vers Claude ni traiter ça comme un bug. */
   aborted?: boolean;
+  /** (B0.1) `true` si la boucle a été conclue pour cause de BUDGET dépassé
+   * (poids contexte ou nombre d'appels d'outils), et non de plafond d'itérations
+   * ou de blocage. Diagnostic / garde-fou de coût — champ optionnel, rétrocompat. */
+  budgetExhausted?: boolean;
 }
 
 /** Somme des longueurs de contenu (proxy du poids contexte). */
@@ -199,6 +213,21 @@ export async function buildAgentic(
   let readsSinceWrite = 0; // lectures réussies depuis la dernière écriture (anti-exploration-stérile)
   let hasWritten = false; // (L17) au moins une écriture/édition/délégation réussie ce run
 
+  // (B0.2, gate ELEVE_ETAT) État de travail DÉDUIT de la boucle, réinjecté quand
+  // la compaction tronque le contexte. Gate off → jamais calculé/inséré (identique
+  // à avant). `stateMsgIndex` mémorise où vit le message d'état pour le REMPLACER
+  // (jamais l'empiler) une fois qu'il existe.
+  const eleveEtatOn = flag("ELEVE_ETAT");
+  let workingState: WorkingState = emptyWorkingState();
+  let stateMsgIndex: number | null = null;
+
+  // (B0.3, gate ELEVE_RESUME) Snapshot de reprise — ÉCRITURE SEULE (la restauration
+  // est hors périmètre, = B1.4). Gate off OU projectDir absent → jamais écrit.
+  const eleveResumeOn = flag("ELEVE_RESUME");
+  const clearRunSnapshot = (): void => {
+    if (eleveResumeOn && opts.projectDir) clearSnapshot(opts.projectDir);
+  };
+
   // (L17) Enrichit le nudge d'une garde anti-sur-exploration : on PRÉFIXE le rappel
   // du plan (l'ancre — l'Élève qui dérive se voit remettre ses étapes EN COURS de
   // boucle), et si des fichiers ont DÉJÀ été écrits, on pousse explicitement à clore
@@ -219,14 +248,56 @@ export async function buildAgentic(
     // l'appelant que c'est volontaire (ne pas escalader vers Claude).
     if (opts.shouldAbort?.()) {
       opts.onLog?.("⏹ Arrêt demandé — l'Élève s'arrête proprement.");
+      clearRunSnapshot();
       return { text: "", toolTrace, finished: false, iterations: iter, stuck: false, aborted: true };
     }
-    compact(messages, ctxMax);
+    // (B0.3) Frontière d'itération : snapshot AVANT compact (on veut l'état tel
+    // que le modèle l'a laissé, pas déjà tronqué).
+    if (eleveResumeOn && opts.projectDir) {
+      saveSnapshot(opts.projectDir, {
+        version: 1,
+        ts: Date.now(),
+        iter,
+        hasWritten,
+        messages,
+        toolTrace,
+      });
+    }
+    const didCompact = compact(messages, ctxMax);
+    // (B0.2) La compaction a tronqué du contexte : compense en (ré)insérant l'état
+    // de travail compact JUSTE APRÈS le system initial (index 1) — jamais empilé.
+    if (eleveEtatOn && didCompact) {
+      const formatted = formatWorkingState(workingState);
+      if (stateMsgIndex === null) {
+        messages.splice(1, 0, { role: "system", content: formatted });
+        stateMsgIndex = 1;
+      } else {
+        messages[stateMsgIndex].content = formatted;
+      }
+    }
+    // (B0.1, 2026-07-03) Garde de BUDGET explicite (opt-in) : au-delà du poids
+    // contexte ou du nombre d'appels d'outils autorisés, on conclut par la même
+    // porte douce que le plafond d'itérations — un garde-fou de COÛT distinct du
+    // simple nombre de tours. Sans `budget`, ce bloc est inerte (rétrocompat).
+    if (opts.budget) {
+      const overChars = opts.budget.maxPromptChars !== undefined && totalChars(messages) > opts.budget.maxPromptChars;
+      const overCalls = opts.budget.maxToolCalls !== undefined && toolTrace.length >= opts.budget.maxToolCalls;
+      if (overChars || overCalls) {
+        opts.onLog?.(`⚠ Budget de boucle atteint (${overChars ? "poids contexte" : "appels d'outils"}) — conclusion forcée.`);
+        messages.push({
+          role: "user",
+          content: "Budget atteint. Conclus à partir de ce que tu as déjà fait, sans appeler d'outil.",
+        });
+        const capped = await opts.post(messages, null);
+        return { text: capped.content, toolTrace, finished: false, iterations: iter + 1, stuck: false, budgetExhausted: true };
+      }
+    }
     const { content, toolCalls } = await opts.post(messages, tools);
     messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
 
     // Le modèle ne demande plus d'outil : il a conclu (sans `finish` explicite).
     if (!toolCalls?.length) {
+      clearRunSnapshot();
       return { text: content, toolTrace, finished: false, iterations: iter + 1, stuck: false };
     }
 
@@ -244,6 +315,7 @@ export async function buildAgentic(
         } catch {
           summary = "Terminé.";
         }
+        clearRunSnapshot();
         return { text: summary, toolTrace, finished: true, iterations: iter + 1, stuck: false };
       }
 
@@ -340,6 +412,16 @@ export async function buildAgentic(
       if (writeTools.has(name) && !isErr) {
         readsSinceWrite = 0; // une action remet le budget à zéro
         hasWritten = true; // (L17) on a produit du concret → le cue « appelle finish » s'active
+      }
+      // (B0.2) Accumule cet appel dans l'état de travail (gate off → jamais calculé).
+      if (eleveEtatOn) {
+        let parsedArgs: Record<string, unknown> = {};
+        try {
+          parsedArgs = JSON.parse(rawArgs) as Record<string, unknown>;
+        } catch {
+          // args illisibles → on accumule quand même l'événement, sans chemin de fichier
+        }
+        workingState = updateWorkingState(workingState, name, parsedArgs, isErr, opts.planReminder?.());
       }
       // (N10, nuit 2026-07-03) Troncature MARQUÉE : sans marqueur, le modèle croit
       // avoir lu le fichier ENTIER et le réécrit amputé (régression invisible au tsc

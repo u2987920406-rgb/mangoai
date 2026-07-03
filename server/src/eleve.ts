@@ -57,6 +57,22 @@ import {
 } from "./stratege-escalate.js";
 import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gate.js";
 import { measureProjectDesign, measureSummary } from "./design-metrics.js";
+import { flag } from "./flags.js";
+import { memoireSection, buildMemoireTool, type MemoireDeps } from "./eleve-memoire.js";
+import { safeEmbed } from "./notes-rag.js";
+import { getBlackboard } from "./kernel-blackboard.js";
+import { ARTIFACT_SCOPE } from "./kernel-artifacts.js";
+
+/** (A1.2) Câblage RÉEL des deps de mémoire : embarque via nomic (safeEmbed,
+ *  fail-open → null) et cherche dans le Blackboard partagé (scope des artefacts
+ *  design appris cross-projet). Le cœur d'eleve-memoire reste pur/testable ;
+ *  seul ce câblage tire la plomberie réelle. */
+function realMemoireDeps(): MemoireDeps {
+  return {
+    embed: (text: string) => safeEmbed(text),
+    search: (vec: number[], k: number) => getBlackboard().search(ARTIFACT_SCOPE, vec, k),
+  };
+}
 import { scanFilesForBalance, formatBalanceRaison } from "./layout-balance.js";
 import { isInterrupted } from "./interrupt.js";
 import { runAgenticTask, type PostFn, type ChatMessage, type ToolCall, type AgenticBuildResult, type DelegateOverride } from "./eleve-runtime.js";
@@ -1213,7 +1229,19 @@ export async function runRelay(
 
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
     const visionClause = process.env.ELEVE_VISION === "on" ? AGENTIC_VISION_CLAUSE : "";
-    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}`;
+    // (A1.2/B1.3, 2026-07-03) Rappel PROACTIF de la mémoire cross-projet : on
+    // embarque la tâche, on cherche les souvenirs pertinents (palettes/artefacts
+    // appris) et on les injecte en section BORNÉE. Gaté ELEVE_MEMOIRE (off →
+    // section vide, system identique). Fail-open : jamais bloquant (memoireSection
+    // rend "" si Ollama/Blackboard indispo). Jamais en test (transport injecté).
+    let memoireClause = "";
+    if (flag("ELEVE_MEMOIRE") && !deps.agenticPost) {
+      try {
+        memoireClause = await memoireSection(task, realMemoireDeps());
+        if (memoireClause) push("  🧠 Mémoire : souvenirs pertinents injectés");
+      } catch { memoireClause = ""; }
+    }
+    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}${memoireClause}`;
     let user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     // Phase E3 — un sous-agent peut prendre SON cerveau via agentType (= intention),
     // seulement s'il est explicitement routé, agentique et openai-compat ; sinon il
@@ -1240,11 +1268,20 @@ export async function runRelay(
 
     // Contexte commun à chaque (re)lancement du moteur. Seul le prompt `user`
     // change entre relances (on y ajoute un coup de pouce) — d'où l'extraction ici.
+    // (A1.2) Enregistre l'outil `memoire_rappel` dans le registre construit, pour
+    // que l'Élève interroge sa mémoire EN COURS de boucle. Gaté ELEVE_MEMOIRE.
+    const withMemoire = (pd: string, allowRun: boolean): ReturnType<typeof buildEleveActionTools> => {
+      const reg = buildEleveActionTools(pd, { allowRun });
+      if (flag("ELEVE_MEMOIRE") && !deps.agenticPost) {
+        try { for (const t of buildMemoireTool(realMemoireDeps())) reg.register(t); } catch { /* mémoire best-effort */ }
+      }
+      return reg;
+    };
     const runCtx = {
       projectDir,
       system: agenticSystem,
       post: deps.agenticPost ?? elevePost(callModel, callProvider),
-      buildRegistry: (pd: string) => buildEleveActionTools(pd, { allowRun: callPolicy.allowRun }),
+      buildRegistry: (pd: string) => withMemoire(pd, callPolicy.allowRun),
       buildUser: (subtask: string) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
       depth: 0,
       maxDepth: Number(process.env.ELEVE_DELEGATE_MAX_DEPTH ?? 2),

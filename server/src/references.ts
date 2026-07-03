@@ -9,6 +9,7 @@
 //   - <image>    — fichier image optionnel référencé par meta.image
 import path from "node:path";
 import fs from "node:fs";
+import { atomicWriteFileSync } from "./safe-io.js";
 
 export const REFERENCES_DIR_NAME = ".references";
 
@@ -94,7 +95,8 @@ export function saveReference(workspaceDir: string, meta: ReferenceMeta): void {
   const safeSlug = slugify(meta.slug || meta.title);
   const dir = path.join(refsDir(workspaceDir), safeSlug);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "meta.json"), JSON.stringify({ ...meta, slug: safeSlug }, null, 2), "utf8");
+  // (A0.1) écriture atomique du meta.json de référence (anti-corruption).
+  atomicWriteFileSync(path.join(dir, "meta.json"), JSON.stringify({ ...meta, slug: safeSlug }, null, 2));
 }
 
 export function deleteReference(workspaceDir: string, slug: string): void {
