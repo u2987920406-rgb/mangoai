@@ -26,7 +26,9 @@ import { atomicWriteFileSync } from "./safe-io.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
 import { recordCurationSample, getTunedCurationPriority } from "./kernel-curation-effect.js";
 import { flag } from "./flags.js";
-import { readBreakerVerdict, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
+import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
+import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel-chat-bridge.js";
+import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const FILE = path.join(DATA_DIR, "nocturnal.json");
@@ -279,6 +281,48 @@ export async function ensureBuildPasses(
   return { ok: inspection.ok, signal: inspection.signal, attempts };
 }
 
+// ── Branchement Bus/QA nocturne (gaté NOCTURNAL_QA_BUS) ──────────────────────
+// Conforme au pont chat interactif (kernel-chat-bridge.ts) : chaque projet
+// nocturne devient UN tour (comme un tour de /api/chat) pour le Disjoncteur —
+// mêmes noms de champs (costUsd/turns/durationMs) que ChatTurnOutcome. PLAN
+// PUR (aucun I/O) : décide QUOI publier à partir du résultat du projet ; le
+// call-site (buildOne) fait les appels impurs (finishChatTurn/emitPhaseComplete)
+// SEULEMENT si un plan est renvoyé. gate OFF → null → 0 appel, comportement
+// byte-identique. Même discipline que decideBreakerStop.
+export interface NocturnalTurnOutcome {
+  project: string;
+  ok: boolean;
+  costUsd: number;
+  numTurns: number;
+  durationMs: number;
+  changedFiles: string[];
+}
+
+export interface NocturnalQaPlan {
+  chatTurn: ChatTurnOutcome;
+  phaseComplete: { projectName: string; phase: string; changedFiles: string[] };
+}
+
+export function planNocturnalQaEmission(
+  gateOn: boolean,
+  outcome: NocturnalTurnOutcome,
+): NocturnalQaPlan | null {
+  if (!gateOn) return null;
+  return {
+    chatTurn: {
+      project: outcome.project,
+      mode: "nocturne",
+      model: "sonnet",
+      ok: outcome.ok,
+      costUsd: outcome.costUsd,
+      numTurns: outcome.numTurns,
+      durationMs: outcome.durationMs,
+      ...(outcome.ok ? {} : { error: "build non valide après génération nocturne" }),
+    },
+    phaseComplete: { projectName: outcome.project, phase: "nocturne", changedFiles: outcome.changedFiles },
+  };
+}
+
 async function buildOne(
   prompt: { task: string; kind: string; projectType: string },
   batchId: string,
@@ -291,7 +335,15 @@ async function buildOne(
   const dir = projectDir(name);
   const provider = resolveProvider(process.env.NOCTURNAL_PROVIDER, "claude");
   let costUsd = 0;
+  let numTurns = 0;
   let success = false;
+  const startedAt = Date.now();
+  // Fichiers touchés (Write/Edit) — pour phase-complete (NOCTURNAL_QA_BUS).
+  const changedFiles: string[] = [];
+  // Kernel : ouvre le span de ce "tour" nocturne (gaté). Fire-and-forget, ne
+  // lève jamais — voir startChatTurn (kernel-chat-bridge.ts).
+  const qaBusOn = flag("NOCTURNAL_QA_BUS");
+  const turnSpan = qaBusOn ? startChatTurn({ project: name, mode: "nocturne", model: "sonnet" }) : null;
   // Génération directe via runAgent (≠ /api/chat) : on reconstitue ici l'historique
   // de chat du projet, comme le fait index.ts, pour qu'ouvrir un projet nocturne
   // montre le prompt initial + la conversation de génération dans le panneau Chat.
@@ -316,11 +368,15 @@ async function buildOne(
       for await (const ev of runAgent(genPrompt, dir, sessionId, "sonnet", "nocturne")) {
         if (ev.type === "result") {
           costUsd += ev.costUsd ?? 0;
+          numTurns += ev.numTurns ?? 0;
           sessionId = ev.sessionId;
           if (!ev.ok) record("error", `L'agent s'est arrêté : ${ev.error}`);
         } else if (ev.type === "text") record("agent", ev.text);
         else if (ev.type === "thinking") record("thinking", ev.text);
-        else if (ev.type === "tool") record("tool", formatToolLine(ev.name, ev.detail));
+        else if (ev.type === "tool") {
+          record("tool", formatToolLine(ev.name, ev.detail));
+          if ((ev.name === "Write" || ev.name === "Edit") && ev.detail) changedFiles.push(ev.detail);
+        }
         else if (ev.type === "error") record("error", ev.message);
       }
     } finally {
@@ -361,6 +417,22 @@ async function buildOne(
     appendHistory(dir, turn);
   } catch {
     /* best effort */
+  }
+  // Branchement fabrique QA (🔴 revue 2026-07-03) : ce projet nocturne devient un
+  // "tour" pour le Disjoncteur (chat.turn sur le Bus) + un audit MangoQA demandé
+  // (phase-complete), EXACTEMENT comme un tour de chat interactif (index.ts).
+  // gate OFF (défaut) → planNocturnalQaEmission renvoie null → 0 appel, 0 I/O.
+  const qaPlan = planNocturnalQaEmission(qaBusOn, {
+    project: name,
+    ok: success,
+    costUsd,
+    numTurns,
+    durationMs: Date.now() - startedAt,
+    changedFiles,
+  });
+  if (qaPlan) {
+    finishChatTurn(turnSpan, qaPlan.chatTurn);
+    if (isMangoQaActive()) emitPhaseComplete(qaPlan.phaseComplete.projectName, qaPlan.phaseComplete.phase, qaPlan.phaseComplete.changedFiles);
   }
   const entry: NocturnalEntry = {
     id: genId(),
@@ -425,13 +497,17 @@ export function decideBreakerStop(
   };
 }
 
-/** Persiste la raison de l'arrêt Disjoncteur dans l'état du run (résumabilité).
- * Best-effort atomique — n'empêche jamais l'arrêt propre du lot. */
+/** Persiste la raison de l'arrêt (Disjoncteur MangoQA OU budget-$ dur) dans
+ * l'état du run (résumabilité). Best-effort atomique — n'empêche jamais
+ * l'arrêt propre du lot. `cause` distingue les deux sources d'arrêt possibles
+ * à la frontière d'itération. */
 function persistBatchStop(
   batchId: string,
   projectsGenerated: number,
   projectsPlanned: number,
-  decision: BreakerStopDecision,
+  cause: "mangoqa-breaker" | "budget-hard",
+  reason: string,
+  trips: BreakerTripLite[] = [],
 ): void {
   try {
     fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -441,11 +517,11 @@ function persistBatchStop(
         {
           batchId,
           stoppedAt: new Date().toISOString(),
-          cause: "mangoqa-breaker",
+          cause,
           projectsGenerated,
           projectsPlanned,
-          reason: decision.reason ?? "",
-          trips: decision.trips ?? [],
+          reason,
+          trips,
         },
         null,
         2,
@@ -479,6 +555,11 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
   // réels de la nuit du 03-07 : 6-45 min/app), 8 h pour le lot entier.
   const projectBudgetMs = Math.max(10 * 60_000, Number(process.env.NOCTURNAL_PROJECT_BUDGET_MIN ?? 45) * 60_000);
   const batchDeadline = Date.now() + Math.max(60 * 60_000, Number(process.env.NOCTURNAL_BATCH_BUDGET_H ?? 8) * 3_600_000);
+  // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 0
+  // (train-loop.ts) et Phase 1 (run-tonight.ts/run-mango-nuit.ts) via le ledger
+  // data/global-budget.json (nocturnal-budget.ts). $0/absent = illimité — même
+  // convention que FINISH_BUDGET_USD (run-finish.ts).
+  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
   try {
     const prompts = generateUniquePrompts(n, opts);
     // Curation pondérée par le rendement (#125) : calculée UNE fois pour la nuit,
@@ -514,11 +595,28 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
       );
       if (breakerStop.stop) {
         console.warn(`[nocturnal] ⚡ ${breakerStop.reason} — arrêt propre du lot (${i}/${prompts.length} projet(s) générés).`);
-        persistBatchStop(batchId, i, prompts.length, breakerStop);
+        persistBatchStop(batchId, i, prompts.length, "mangoqa-breaker", breakerStop.reason ?? "", breakerStop.trips ?? []);
+        break;
+      }
+      // Budget-$ DUR (gaté NOCTURNAL_BUDGET_HARD) : même frontière que le
+      // Disjoncteur ci-dessus — jamais en cours de génération. Gate OFF ou
+      // plafond 0/absent → readGlobalBudgetState n'est PAS appelé (0 I/O).
+      const budgetStop = decideBudgetStop(
+        flag("NOCTURNAL_BUDGET_HARD"),
+        globalBudgetCapUsd,
+        globalBudgetToday(),
+        () => readGlobalBudgetState(),
+      );
+      if (budgetStop.stop) {
+        console.warn(`[nocturnal] 💰 ${budgetStop.reason} — arrêt propre du lot (${i}/${prompts.length} projet(s) générés).`);
+        persistBatchStop(batchId, i, prompts.length, "budget-hard", budgetStop.reason ?? "");
         break;
       }
       progress = { current: i + 1, total: n, label: prompts[i].task.slice(0, 60) };
       const entry = await buildOne(prompts[i], batchId, i + 1, curationDirective, Date.now() + projectBudgetMs);
+      // Comptabilise la dépense réelle du projet sur le ledger PARTAGÉ — best
+      // effort, seulement si le gate est ON (0 I/O sinon).
+      if (flag("NOCTURNAL_BUDGET_HARD")) spendGlobalBudget(entry.costUsd);
       // (N21, nuit 2026-07-03) RECHARGER avant chaque save : l'ancienne copie
       // mémoire gardée toute la nuit ÉCRASAIT les écritures concurrentes
       // (review POST /:id/review, DELETE /:id) — reviews perdues, projets

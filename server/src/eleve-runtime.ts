@@ -128,9 +128,38 @@ export interface AgenticBuildResult {
   budgetExhausted?: boolean;
 }
 
-/** Somme des longueurs de contenu (proxy du poids contexte). */
+// (Revue globale 2026-07-03, 🔴 « Budget & compaction ignorent tool_calls.arguments »)
+// Réduction PARTAGÉE des arguments d'un appel d'outil : write_file/edit_file → le
+// `path` SEUL (le contenu entier du fichier n'a aucune valeur une fois écrit — le
+// modèle peut relire le fichier s'il en a besoin), les autres tronqués à
+// SNAPSHOT_ARGS_MAX. C'était déjà la logique du snapshot de reprise (persistance) ;
+// elle sert maintenant AUSSI la compaction de la boucle VIVANTE (ci-dessous), qui
+// jusqu'ici ne touchait jamais aux `tool_calls` et laissait le fichier ENTIER d'un
+// vieux write_file resservi au modèle à CHAQUE tour suivant.
+const SNAPSHOT_ARGS_MAX = 300;
+function reduceToolArgs(name: string, args: string): string {
+  if (name === "write_file" || name === "edit_file") {
+    try {
+      const a = JSON.parse(args) as { path?: unknown };
+      if (typeof a.path === "string") return JSON.stringify({ path: a.path });
+    } catch {
+      /* args illisibles : tronqués comme les autres, ci-dessous */
+    }
+  }
+  return args.length > SNAPSHOT_ARGS_MAX ? args.slice(0, SNAPSHOT_ARGS_MAX) : args;
+}
+
+/** Somme des longueurs de contenu (proxy du poids contexte). Inclut désormais les
+ * arguments des `tool_calls` d'un message assistant (🔴 revue 2026-07-03) : un
+ * `write_file` y range le fichier ENTIER, renvoyé au modèle à CHAQUE tour suivant
+ * tant qu'il n'a pas été compacté (cf. `compact` ci-dessous) — un `totalChars` qui
+ * ne comptait que `content` sous-estimait donc largement le vrai poids du prompt,
+ * et le fusible `maxPromptChars` (budget) ne se déclenchait jamais à temps. */
 function totalChars(messages: ChatMessage[]): number {
-  return messages.reduce((n, m) => n + (m.content?.length ?? 0), 0);
+  return messages.reduce((n, m) => {
+    const toolCallsLen = m.tool_calls?.reduce((s, tc) => s + (tc.function.arguments?.length ?? 0), 0) ?? 0;
+    return n + (m.content?.length ?? 0) + toolCallsLen;
+  }, 0);
 }
 
 // (Revue Fable 2026-07-03, 🟠4) Trace COMPRESSÉE pour le snapshot : sans elle,
@@ -139,45 +168,29 @@ function totalChars(messages: ChatMessage[]): number {
 // d'I/O synchrone sur un run long. Les écritures gardent un args PARSEABLE réduit
 // au `path` seul (changedFilesFromTrace — eleve-gate.ts — continue de fonctionner
 // sur une trace restaurée) ; le reste est tronqué.
-const SNAPSHOT_ARGS_MAX = 300;
 function snapshotTrace(trace: Array<{ name: string; args: string }>): Array<{ name: string; args: string }> {
   return trace.map((t) => {
-    if (t.name === "write_file" || t.name === "edit_file") {
-      try {
-        const a = JSON.parse(t.args) as { path?: unknown };
-        if (typeof a.path === "string") return { name: t.name, args: JSON.stringify({ path: a.path }) };
-      } catch {
-        /* args illisibles : tronqués comme les autres */
-      }
-    }
-    return t.args.length > SNAPSHOT_ARGS_MAX ? { name: t.name, args: t.args.slice(0, SNAPSHOT_ARGS_MAX) } : t;
+    const reduced = reduceToolArgs(t.name, t.args);
+    return reduced === t.args ? t : { name: t.name, args: reduced };
   });
 }
 
 /** (🟠4 suite — trouvé par test-fondations-gates-combines) Messages compressés
  * pour le snapshot : les `tool_calls` des messages assistant portent les args
- * COMPLETS (contenus entiers des write_file), que la compaction ne compte PAS
- * (elle ne mesure que `content`). Sans cette compression, le snapshot re-sérialisé
- * à chaque itération embarque tous les contenus écrits (123 Ko mesurés pour 12
- * écritures de 10 k). Même règle que snapshotTrace ; copies, jamais de mutation
- * des messages vivants. */
+ * COMPLETS (contenus entiers des write_file), que la compaction ne comptait PAS
+ * avant (elle ne mesurait que `content`). Sans cette compression, le snapshot
+ * re-sérialisé à chaque itération embarque tous les contenus écrits (123 Ko mesurés
+ * pour 12 écritures de 10 k). Même règle que snapshotTrace ; copies, jamais de
+ * mutation des messages vivants (la boucle vivante, elle, mute en place — cf. `compact`). */
 function snapshotMessages(messages: ChatMessage[]): ChatMessage[] {
   return messages.map((m) => {
     if (m.role !== "assistant" || !m.tool_calls?.length) return m;
     return {
       ...m,
       tool_calls: m.tool_calls.map((tc) => {
-        const name = tc.function.name;
         const args = tc.function.arguments ?? "";
-        if (name === "write_file" || name === "edit_file") {
-          try {
-            const a = JSON.parse(args) as { path?: unknown };
-            if (typeof a.path === "string") return { ...tc, function: { name, arguments: JSON.stringify({ path: a.path }) } };
-          } catch {
-            /* illisible : tronqué ci-dessous */
-          }
-        }
-        return args.length > SNAPSHOT_ARGS_MAX ? { ...tc, function: { name, arguments: args.slice(0, SNAPSHOT_ARGS_MAX) } } : tc;
+        const reduced = reduceToolArgs(tc.function.name, args);
+        return reduced === args ? tc : { ...tc, function: { name: tc.function.name, arguments: reduced } };
       }),
     };
   });
@@ -201,7 +214,14 @@ function filesFromTrace(trace: Array<{ name: string; args: string }>): string[] 
 
 /** Compaction : au-delà de `ctxMax`, tronque les VIEUX résultats d'outils
  * volumineux (read_file/search_code…), en gardant intacts system, user et les
- * derniers échanges. Sans elle, une longue boucle fait exploser contexte + coût. */
+ * derniers échanges. Sans elle, une longue boucle fait exploser contexte + coût.
+ *
+ * (🔴 revue 2026-07-03) Compacte AUSSI les `tool_calls.arguments` des vieux messages
+ * assistant : un `write_file` y range le fichier ENTIER, et sans cette réduction ce
+ * message est resservi au modèle IDENTIQUE à chaque tour suivant, même une fois
+ * « compacté » (avant ce correctif, seul `content` — jamais renseigné pour un tour
+ * assistant qui appelle un outil — était concerné). Même réduction que le snapshot
+ * de reprise (`reduceToolArgs`) : write_file/edit_file → `path` seul, le reste tronqué. */
 function compact(messages: ChatMessage[], ctxMax: number): boolean {
   if (totalChars(messages) <= ctxMax) return false;
   let compacted = false;
@@ -212,6 +232,16 @@ function compact(messages: ChatMessage[], ctxMax: number): boolean {
       // s'il veut ce contenu, au lieu de croire que ces 200 car. étaient tout.
       m.content = m.content.slice(0, 200) + ` … [résultat compacté — original ${m.content.length} car., relis si besoin]`;
       compacted = true;
+    }
+    if (m.role === "assistant" && m.tool_calls?.length) {
+      for (const tc of m.tool_calls) {
+        const before = tc.function.arguments ?? "";
+        const reduced = reduceToolArgs(tc.function.name, before);
+        if (reduced !== before) {
+          tc.function.arguments = reduced;
+          compacted = true;
+        }
+      }
     }
   }
   return compacted;

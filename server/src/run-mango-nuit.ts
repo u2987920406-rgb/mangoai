@@ -22,6 +22,8 @@ import { runRelay, defaultRelayDeps } from "./eleve.js";
 import { judgeProject } from "./nocturnal.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "./vision.js";
 import { MANGO_NUIT, type MangoNuitSpec } from "./mango-nuit-specs.js";
+import { flag } from "./flags.js";
+import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 
 const STATE_FILE = path.join(WORKSPACE_DIR, ".mango-nuit.state.json");
 const LOG_FILE = path.join(WORKSPACE_DIR, ".mango-nuit.log");
@@ -282,6 +284,10 @@ function writeBilan(results: ProjectResult[]): void {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
+  if (!flag("ELEVE_CLOSURE_GATE")) {
+    console.warn("[gardien] ⚠ ELEVE_CLOSURE_GATE est OFF pour ce run — le Gardien (intention+goût+QA) ne s'exécutera pas, seul le build sera vérifié.");
+  }
+
   log("\n🌙 ═══════════════════════════════════════════════════════════════");
   log(`   RUN NOCTURNE « commande de Raf » — ${MANGO_NUIT.length} projets`);
   log("   Élève GLM au volant · Claude = escalade seule · Images Pexels · 0 Flux");
@@ -292,13 +298,24 @@ async function main(): Promise<void> {
 
   const state = loadState();
   const results: ProjectResult[] = [];
+  // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 0
+  // (train-loop.ts) et Phase 2 (nocturnal.ts) via le ledger data/global-budget.json
+  // (nocturnal-budget.ts). $0/absent = illimité.
+  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
   for (const spec of MANGO_NUIT) {
+    // Frontière d'itération — jamais en cours de génération. Gate OFF → 0 I/O.
+    const budgetStop = decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd, globalBudgetToday(), () => readGlobalBudgetState());
+    if (budgetStop.stop) {
+      log(`💰 ${budgetStop.reason} — arrêt propre (${results.length}/${MANGO_NUIT.length} projet(s) traité(s)).`);
+      break;
+    }
     try {
       const r = await runProject(spec, state);
       if (r) {
         results.push(r);
         atomicWriteFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
         writeBilan(results); // bilan réécrit à chaque projet → consultable en cours de nuit
+        if (flag("NOCTURNAL_BUDGET_HARD")) spendGlobalBudget(r.costUsd);
       }
     } catch (e) {
       log(`✗ ${spec.name} exception : ${(e as Error).stack ?? e}`);

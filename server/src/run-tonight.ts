@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 // Run nocturne 2026-06-19 — 3 projets M / L / XL
 // OBJECTIF (consigne Raf) : « moins utiliser Claude ».
 //   - Sharingan PRÉ-CALCULÉ par sharinganAnalyze() (Playwright pur, $0, zéro LLM)
@@ -19,6 +21,8 @@ import { judgeProject } from "./nocturnal.js";
 import { runEvolution } from "./prompt-evolution.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "./vision.js";
 import { TONIGHT, type Spec } from "./tonight-specs.js";
+import { flag } from "./flags.js";
+import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 
 const STATE_FILE   = path.join(WORKSPACE_DIR, ".tonight.state.json");
 const LOG_FILE     = path.join(WORKSPACE_DIR, ".tonight.log");
@@ -251,6 +255,10 @@ const SPECS: Spec[] = TONIGHT;
 
 // ── Main ────────────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
+  if (!flag("ELEVE_CLOSURE_GATE")) {
+    console.warn("[gardien] ⚠ ELEVE_CLOSURE_GATE est OFF pour ce run — le Gardien (intention+goût+QA) ne s'exécutera pas, seul le build sera vérifié.");
+  }
+
   log("\n🌙 ═══════════════════════════════════════════════════════════════");
   log(`   RUN NOCTURNE — ${SPECS.length} apps (entraînement de l'Élève)`);
   log("   Gemma 4 12B + Sharingan pré-calculé ($0) · Claude = escalade seule");
@@ -263,11 +271,25 @@ async function main(): Promise<void> {
 
   const state = loadState();
   const results: ProjectResult[] = [];
+  // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 0
+  // (train-loop.ts) et Phase 2 (nocturnal.ts) via le ledger data/global-budget.json
+  // (nocturnal-budget.ts). $0/absent = illimité.
+  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
 
   for (const spec of SPECS) {
+    // Frontière d'itération — jamais en cours de génération. Gate OFF → 0 I/O.
+    const budgetStop = decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd, globalBudgetToday(), () => readGlobalBudgetState());
+    if (budgetStop.stop) {
+      log(`💰 ${budgetStop.reason} — arrêt propre (${results.length}/${SPECS.length} projet(s) traité(s)).`);
+      break;
+    }
     try {
       const r = await runProject(spec, state);
-      if (r) { results.push(r); fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2)); }
+      if (r) {
+        results.push(r);
+        fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
+        if (flag("NOCTURNAL_BUDGET_HARD")) spendGlobalBudget(r.costUsd);
+      }
     } catch (e) {
       log(`✗ ${spec.name} exception : ${(e as Error).stack ?? e}`);
     }

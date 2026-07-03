@@ -95,6 +95,57 @@ async function run() {
     check("les derniers messages restent intacts (non compactés)", lastSnap.slice(-3).every((m) => !m.content.includes("[résultat compacté")));
   }
 
+  console.log("\n[3b] 🔴 revue 2026-07-03 : tool_calls.arguments comptés dans le budget contexte");
+  {
+    // Un write_file au CONTENU volumineux mais dont le RÉSULTAT d'outil est minuscule
+    // ("écrit") : avant le correctif, totalChars ne regardait que `content` → ce
+    // write_file (rangé dans tool_calls.arguments) était invisible du budget, quelle
+    // que soit sa taille. Avec le correctif, il doit déclencher budgetExhausted.
+    const writes: Array<Record<string, unknown>> = [];
+    const reg = stubRegistry(writes);
+    const bigContent = "X".repeat(5000);
+    let step = 0;
+    const post: PostFn = async () => {
+      step++;
+      if (step === 1) return { content: "", toolCalls: [call("write_file", { path: "big.js", content: bigContent })] };
+      return { content: "conclu" }; // tour de conclusion forcé par le budget (tools=null)
+    };
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 50, budget: { maxPromptChars: 2000 } });
+    check("budgetExhausted déclenché par les arguments d'un write_file volumineux (pas par content)", r.budgetExhausted === true);
+    check("le write_file a bien été exécuté avant la coupure", writes.length === 1 && writes[0].path === "big.js");
+  }
+
+  console.log("\n[3c] 🔴 revue 2026-07-03 : la compaction réduit aussi tool_calls.arguments (pas seulement content)");
+  {
+    // 8 write_file successifs à gros contenu (2000 car. chacun) puis finish. ctxMax
+    // bas force la compaction bien avant la fin. On vérifie qu'un VIEUX write_file
+    // (hors fenêtre KEEP_RECENT) perd son `content` dans les messages VIVANTS de la
+    // boucle (réduit à {path}, comme le fait déjà le snapshot de reprise), tandis
+    // qu'un write_file RÉCENT reste intact.
+    const reg = stubRegistry([]);
+    const bigContent = "Y".repeat(2000);
+    const snapshots: ChatMessage[][] = [];
+    let step = 0;
+    const post: PostFn = async (messages) => {
+      snapshots.push(messages.map((m) => ({ ...m, tool_calls: m.tool_calls?.map((tc) => ({ id: tc.id, function: { ...tc.function } })) })));
+      step++;
+      if (step <= 8) return { content: "", toolCalls: [call("write_file", { path: `f${step}.js`, content: bigContent })] };
+      return { content: "", toolCalls: [call("finish", { summary: "fait" })] };
+    };
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20, ctxMaxChars: 3000 });
+    check("le run conclut (finish) malgré les gros write_file", r.finished === true);
+    const lastSnap = snapshots[snapshots.length - 1] ?? [];
+    const writeMsgs = lastSnap.filter((m) => m.role === "assistant" && m.tool_calls?.[0]?.function.name === "write_file");
+    const earlyWrite = writeMsgs[0];
+    const recentWrite = writeMsgs[writeMsgs.length - 1];
+    const earlyArgs = earlyWrite ? (JSON.parse(earlyWrite.tool_calls![0].function.arguments) as Record<string, unknown>) : {};
+    const recentArgs = recentWrite ? (JSON.parse(recentWrite.tool_calls![0].function.arguments) as Record<string, unknown>) : {};
+    check("un VIEUX write_file a été réduit à son path (content retiré) dans les messages VIVANTS",
+      !!earlyWrite && earlyArgs.content === undefined && typeof earlyArgs.path === "string");
+    check("un write_file RÉCENT garde son content intact (fenêtre KEEP_RECENT non touchée)",
+      !!recentWrite && recentArgs.content === bigContent);
+  }
+
   console.log("\n[4] Conclusion sans finish (modèle s'arrête)");
   {
     const reg = stubRegistry([]);

@@ -98,6 +98,23 @@ export const FLAGS = {
     default: false,
     description: "Autorité d'arrêt réelle du Disjoncteur MangoQA : la boucle nocturne LIT breaker-verdict.json entre deux projets et s'arrête elle-même si safe:false (jamais MangoQA qui agit). OFF → verdict ignoré (comportement historique, byte-identique).",
   },
+  // ── Pilier D — finition (clôture) ───────────────────────────────────────
+  ELEVE_CLOSURE_GATE: {
+    env: "ELEVE_CLOSURE_GATE",
+    default: false,
+    description: "Gardien de clôture (intention+goût+QA) avant de finir un tour. Défaut OFF pour compat historique — MEMORY du projet dit 'toujours actif', d'où l'avertissement si absent au boot des runners nocturnes.",
+  },
+  // ── Nocturne — fabrique QA + budget-$ dur (revue globale 2026-07-03) ─────
+  NOCTURNAL_QA_BUS: {
+    env: "NOCTURNAL_QA_BUS",
+    default: false,
+    description: "Branche la boucle nocturne (Phase 1/2, nocturnal.ts) sur la fabrique QA : émet chat.turn (Bus — cost/turns/durationMs, comme kernel-chat-bridge.ts pour le chat interactif) + un phase-complete (mangoqa.ts) par projet généré. OFF → génération inchangée, AUCUN événement émis (comportement historique, byte-identique).",
+  },
+  NOCTURNAL_BUDGET_HARD: {
+    env: "NOCTURNAL_BUDGET_HARD",
+    default: false,
+    description: "Budget-$ DUR partagé entre Phase 0 (train-loop), Phase 1 (run-tonight/run-mango-nuit) et Phase 2 (nocturnal) : arrêt NET à la frontière d'itération (jamais en cours de génération) si le cumul dépensé (ledger partagé data/global-budget.json, fenêtre = la nuit courante) dépasse NOCTURNAL_GLOBAL_BUDGET_USD ($0/absent = illimité, mêmes conventions que FINISH_BUDGET_USD). OFF → l'état n'est jamais lu, 0 I/O, comportement historique.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

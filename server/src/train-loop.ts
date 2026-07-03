@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 // Boucle d'entraînement nocturne (idée 32) — CLI autonome, JAMAIS importé en
 // prod (comme audit-scan.ts). À lancer avant de dormir : MangoOS génère en
 // boucle des créations TOUTES différentes (fond × forme × UX) et accumule de
@@ -25,6 +27,8 @@ import { createProject, projectDir, WORKSPACE_DIR } from "./projects.js";
 import { runRelay, defaultRelayDeps, ELEVE_PROVIDER, type RelayDeps } from "./eleve.js";
 import { recordTurnMetrics } from "./metrics.js";
 import { inferProjectType } from "./blueprints.js";
+import { flag } from "./flags.js";
+import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 
 const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const TRAIN_LOG = path.join(WORKSPACE_DIR, ".train.jsonl");
@@ -187,6 +191,10 @@ function rmProject(dir: string): void {
 }
 
 async function main(): Promise<void> {
+  if (!flag("ELEVE_CLOSURE_GATE")) {
+    console.warn("[gardien] ⚠ ELEVE_CLOSURE_GATE est OFF pour ce run — le Gardien (intention+goût+QA) ne s'exécutera pas, seul le build sera vérifié.");
+  }
+
   // Dry-run : juste prouver la diversité, sans rien lancer.
   const dry = arg("dry-run");
   if (dry !== undefined) {
@@ -236,9 +244,26 @@ async function main(): Promise<void> {
   const queue = generateUniquePrompts(count === Infinity ? 2000 : count);
   const stats = { done: 0, eleve: 0, maitre: 0, failed: 0, axioms: 0, costUsd: 0, kept: 0 };
   let i = 0;
+  // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 1
+  // (run-tonight.ts/run-mango-nuit.ts) et Phase 2 (nocturnal.ts) via le ledger
+  // data/global-budget.json (nocturnal-budget.ts). $0/absent = illimité.
+  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
 
   for (const p of queue) {
     if (Date.now() >= deadline || stats.done >= count) break;
+    // Même frontière que le cap --max-escalations ci-dessus : arrêt NET AVANT
+    // l'itération suivante si le cumul $ (partagé Phase 0/1/2) dépasse le
+    // plafond — jamais en cours de génération. Gate OFF → 0 I/O.
+    const budgetStop = decideBudgetStop(
+      flag("NOCTURNAL_BUDGET_HARD"),
+      globalBudgetCapUsd,
+      globalBudgetToday(),
+      () => readGlobalBudgetState(),
+    );
+    if (budgetStop.stop) {
+      console.warn(`[train] 💰 ${budgetStop.reason} — arrêt propre (${stats.done}/${i} itération(s) faite(s)).`);
+      break;
+    }
     i++;
     const name = `train-${i}`;
     const dir = projectDir(name);
@@ -277,6 +302,9 @@ async function main(): Promise<void> {
 
       stats.done++;
       stats.costUsd += r.costUsd;
+      // Comptabilise la dépense réelle sur le ledger PARTAGÉ — best effort,
+      // seulement si le gate est ON (0 I/O sinon).
+      if (flag("NOCTURNAL_BUDGET_HARD")) spendGlobalBudget(r.costUsd);
       if (r.axiom) stats.axioms++;
       if (r.resolvedBy === "eleve") stats.eleve++;
       else if (r.resolvedBy === "maitre") stats.maitre++;

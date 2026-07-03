@@ -1,3 +1,5 @@
+import "dotenv/config";
+
 // Phase 0 (#104) — Claude FINIT les 3 projets de la nuit, en mode CAPTURE.
 //   1. Archive l'état Gemma de chaque projet (→ .gemma-snapshots/<name>) pour
 //      pouvoir differ Gemma-vs-Claude plus tard (Phase 1 reverse-engineering).
@@ -14,6 +16,7 @@ import path from "node:path";
 import { projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
 import { judgeProject } from "./nocturnal.js";
 import { FINISH_SPECS } from "./tonight-specs.js";
+import { flag } from "./flags.js";
 
 const BASE = process.env.MANGO_URL ?? "http://localhost:3000";
 const STATE_FILE   = path.join(WORKSPACE_DIR, ".finish.state.json");
@@ -185,6 +188,10 @@ function writeBilan(results: ProjectResult[]): void {
 
 // ── Main ──────────────────────────────────────────────────────────────────────
 async function main(): Promise<void> {
+  if (!flag("ELEVE_CLOSURE_GATE")) {
+    console.warn("[gardien] ⚠ ELEVE_CLOSURE_GATE est OFF pour ce run — le Gardien (intention+goût+QA) ne s'exécutera pas, seul le build sera vérifié.");
+  }
+
   log("\n🎯 ═══════════════════════════════════════════════════════════════");
   log(`   PHASE 0 (#104) — Claude finit ${Object.keys(SPECS).length} app(s) du run`);
   log("   Archive Gemma → elite (features) → esthetique → finition → juge");

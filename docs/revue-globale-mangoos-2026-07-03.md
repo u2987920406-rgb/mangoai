@@ -64,13 +64,13 @@ Sévérité : 🔴 critique (fiabilité/coût/sécurité en run réel) · 🟠 r
 
 Modèle optimal : ⚡ Haiku 4.5 (1-3 fichiers/trivial) · ⚖️ Sonnet 4.6 (feature standard 3-8 fichiers) · 🧠 Opus 4.8 (architecture/cross-cutting).
 
-| # | Action | Sév. visée | Modèle optimal | Effort |
-|---|---|---|---|---|
-| 1 | **Autorité d'arrêt réelle pour MangoQA** : canal `stop-signal` lu par MangoOS avant chaque tour nocturne + consommation de `breaker-verdict.json`. Trancher aussi `fondation.md` §V (arrêt réel vs advisory acté). *Fondation directe de #176/#180.* | 🔴🟠 | 🧠 Opus 4.8 | L |
-| 2 | **Brancher la nuit sur la fabrique QA** : `nocturnal.ts` émet `chat.turn` (Bus) + `emitPhaseComplete` par projet ; circuit-breaker nocturne réellement alimenté. | 🔴 | 🧠 Opus 4.8 | M |
-| 3 | **Budget-$ dur global** partagé Phase 0/1/2 (généraliser `FINISH_BUDGET_USD`), arrêt net au dépassement + mesure du coût Élève cloud. | 🔴🟡 | ⚖️ Sonnet 4.6 | M |
-| 4 | **Gates jamais silencieusement OFF** : `import "dotenv/config"` dans chaque runner + forcer `ELEVE_CLOSURE_GATE=on` au boot (ou assert). | 🔴 | ⚡ Haiku 4.5 | S |
-| 5 | **Fusible budget honnête** : compter `tool_calls.arguments` dans `totalChars` + les compacter dans la boucle vivante (aligner sur le snapshot). | 🔴 | ⚖️ Sonnet 4.6 | S |
+| # | Action | Sév. visée | Modèle optimal | Effort | Statut |
+|---|---|---|---|---|---|
+| 1 | **Autorité d'arrêt réelle pour MangoQA** : canal `stop-signal` lu par MangoOS avant chaque tour nocturne + consommation de `breaker-verdict.json`. Trancher aussi `fondation.md` §V (arrêt réel vs advisory acté). *Fondation directe de #176/#180.* | 🔴🟠 | 🧠 Opus 4.8 | L | ✅ FAIT (`MANGOQA_STOP_AUTHORITY`) |
+| 2 | **Brancher la nuit sur la fabrique QA** : `nocturnal.ts` émet `chat.turn` (Bus) + `emitPhaseComplete` par projet ; circuit-breaker nocturne réellement alimenté. | 🔴 | 🧠 Opus 4.8 | M | ✅ FAIT (`NOCTURNAL_QA_BUS`) |
+| 3 | **Budget-$ dur global** partagé Phase 0/1/2 (généraliser `FINISH_BUDGET_USD`), arrêt net au dépassement + mesure du coût Élève cloud. | 🔴🟡 | ⚖️ Sonnet 4.6 | M | ✅ FAIT (`NOCTURNAL_BUDGET_HARD`, ledger `data/global-budget.json`) — mesure du coût Élève cloud restant en 🟡 non traitée |
+| 4 | **Gates jamais silencieusement OFF** : `import "dotenv/config"` dans chaque runner + forcer `ELEVE_CLOSURE_GATE=on` au boot (ou assert). | 🔴 | ⚡ Haiku 4.5 | S | ✅ FAIT (dotenv + avertissement clair si OFF, défaut inchangé) |
+| 5 | **Fusible budget honnête** : compter `tool_calls.arguments` dans `totalChars` + les compacter dans la boucle vivante (aligner sur le snapshot). | 🔴 | ⚖️ Sonnet 4.6 | S | ✅ FAIT (`reduceToolArgs` partagé avec le snapshot) |
 | 6 | **Fail-open = non-vérifié, pas vert** : logger `runClosureMangoQA` ; bloquer la clôture si intention ET critique KO ensemble. | 🟠 | ⚖️ Sonnet 4.6 | S |
 | 7 | **Circuit breaker Ollama/réseau** : N échecs consécutifs → pause + alerte, dans train-loop et nocturnal. | 🟠 | ⚖️ Sonnet 4.6 | S |
 | 8 | **Écritures atomiques** : axiomes (`nocturnal.ts`) + verdicts MangoQA → tmp+rename. | 🟠 | ⚡ Haiku 4.5 | XS |
@@ -79,6 +79,8 @@ Modèle optimal : ⚡ Haiku 4.5 (1-3 fichiers/trivial) · ⚖️ Sonnet 4.6 (fea
 | 11 | **Réflexes Disjoncteur** : clé par projet pour #1 ; émettre un score d'audit (ou retirer #3) ; watchdog liveness du Bus. | 🟠 | ⚖️ Sonnet 4.6 | S |
 | 12 | **Watchdog mural par tâche** généralisé aux runners (modèle N17). | 🟠 | ⚡ Haiku 4.5 | S |
 | 13 | Nettoyages : retirer/câbler `NOCTURNAL_PROVIDER` ; unifier compteurs de relance ; anti-exploration sur écriture substantielle ; MAJ README MangoQA ; vérifier teardown `startPreview`. | 🟡 | ⚡ Haiku 4.5 | S |
+
+**État au 2026-07-03/04** : les 4 🔴 (actions 1-2-4-5 ci-dessus, plus l'action 1 qui referme aussi le 🟠 "MangoQA signale sans arrêter") sont **corrigés**, gatés OFF par défaut, tests + non-régression verts, `tsc` propre. Les 9 🟠 et 1 🟡 restants (actions 6-13, plus la mesure du coût Élève cloud dans l'action 3) restent en backlog ouvert.
 
 ---
 
