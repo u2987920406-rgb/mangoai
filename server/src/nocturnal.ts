@@ -25,10 +25,15 @@ import { loadPreferences } from "./preferences.js";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
 import { recordCurationSample, getTunedCurationPriority } from "./kernel-curation-effect.js";
+import { flag } from "./flags.js";
+import { readBreakerVerdict, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const FILE = path.join(DATA_DIR, "nocturnal.json");
 const CONFIG_FILE = path.join(DATA_DIR, "nocturnal-config.json");
+// Trace de résumabilité : quand le Disjoncteur MangoQA fait arrêter le lot, on y
+// persiste POURQUOI (batch, projets faits, trips) — une reprise sait ce qui s'est passé.
+const STOP_FILE = path.join(DATA_DIR, "nocturnal-stop.json");
 
 export interface JudgeDims {
   design: number;
@@ -380,6 +385,77 @@ async function buildOne(
   return entry;
 }
 
+// ── Autorité d'arrêt du Disjoncteur MangoQA (gaté MANGOQA_STOP_AUTHORITY) ─────
+// Conforme à fondation.md §V : MangoQA n'AGIT jamais sur MangoOS — il ÉCRIT un
+// verdict, MangoOS le LIT et s'arrête LUI-MÊME. Cette décision est prise UNIQUEMENT
+// à la FRONTIÈRE d'itération (avant de démarrer un nouveau projet), jamais au
+// milieu d'une génération — même discipline que le kill-switch réel du reste du
+// harnais. PURE et testable : `readVerdict` est un thunk paresseux, appelé
+// SEULEMENT si le gate est ON → gate OFF = zéro I/O, comportement byte-identique.
+
+export interface BreakerStopDecision {
+  stop: boolean;
+  /** Raison lisible (loguée + persistée) quand stop=true. */
+  reason?: string;
+  /** Trips ayant motivé l'arrêt (persistés pour la reprise). */
+  trips?: BreakerTripLite[];
+}
+
+/** Décide si le lot nocturne doit s'arrêter AVANT le prochain projet.
+ * - gate OFF                    → jamais (et `readVerdict` n'est PAS appelé → 0 I/O)
+ * - verdict absent/illisible    → continue (fail-open : MangoQA non lancé)
+ * - verdict safe:true           → continue
+ * - verdict safe:false          → ARRÊT propre, avec la raison (quels trips). */
+export function decideBreakerStop(
+  gateOn: boolean,
+  readVerdict: () => BreakerVerdictResult,
+): BreakerStopDecision {
+  if (!gateOn) return { stop: false };
+  const verdict = readVerdict();
+  if (!verdict.available) return { stop: false }; // MangoQA non lancé / illisible → fail-open
+  if (verdict.safe) return { stop: false };
+  const trips = verdict.trips;
+  const detail = trips.length
+    ? trips.map((t) => `${t.breaker} — ${t.reason}`).join(" ; ")
+    : "aucun trip détaillé";
+  return {
+    stop: true,
+    reason: `Disjoncteur MangoQA non-sûr (safe:false) : ${detail}`,
+    trips,
+  };
+}
+
+/** Persiste la raison de l'arrêt Disjoncteur dans l'état du run (résumabilité).
+ * Best-effort atomique — n'empêche jamais l'arrêt propre du lot. */
+function persistBatchStop(
+  batchId: string,
+  projectsGenerated: number,
+  projectsPlanned: number,
+  decision: BreakerStopDecision,
+): void {
+  try {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+    atomicWriteFileSync(
+      STOP_FILE,
+      JSON.stringify(
+        {
+          batchId,
+          stoppedAt: new Date().toISOString(),
+          cause: "mangoqa-breaker",
+          projectsGenerated,
+          projectsPlanned,
+          reason: decision.reason ?? "",
+          trips: decision.trips ?? [],
+        },
+        null,
+        2,
+      ),
+    );
+  } catch {
+    /* best effort — la persistance de la raison ne doit jamais casser l'arrêt */
+  }
+}
+
 /** Génère un lot de `count` projets, les garde et les juge. Séquentiel (les
  * builds se disputeraient npm/disque en parallèle). Met à jour l'état `running`. */
 export async function runNocturnalBatch(count: number, opts: { freeStyle?: boolean } = {}): Promise<void> {
@@ -426,6 +502,19 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
       // faits restent enregistrés) au lieu de déborder sur la matinée.
       if (Date.now() >= batchDeadline) {
         console.warn(`[nocturnal] deadline du lot atteinte — ${i}/${prompts.length} projet(s) générés, arrêt propre`);
+        break;
+      }
+      // Autorité d'arrêt MangoQA (gaté MANGOQA_STOP_AUTHORITY, off par défaut) : à
+      // la FRONTIÈRE d'itération seulement, on lit le verdict du Disjoncteur et on
+      // s'arrête NOUS-MÊMES s'il est non-sûr — jamais MangoQA qui agit (fondation §V).
+      // Gate OFF ou verdict absent (MangoQA non lancé) → 0 I/O, comportement inchangé.
+      const breakerStop = decideBreakerStop(
+        flag("MANGOQA_STOP_AUTHORITY"),
+        () => readBreakerVerdict(WORKSPACE_DIR),
+      );
+      if (breakerStop.stop) {
+        console.warn(`[nocturnal] ⚡ ${breakerStop.reason} — arrêt propre du lot (${i}/${prompts.length} projet(s) générés).`);
+        persistBatchStop(batchId, i, prompts.length, breakerStop);
         break;
       }
       progress = { current: i + 1, total: n, label: prompts[i].task.slice(0, 60) };

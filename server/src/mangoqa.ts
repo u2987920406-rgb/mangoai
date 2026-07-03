@@ -330,6 +330,91 @@ export function readObserverReport(workspaceDir: string = WORKSPACE_DIR): Observ
   }
 }
 
+// ── Disjoncteur (Visage 1) — lecture du verdict d'arrêt ──────────────────────
+// Le Disjoncteur MangoQA (dépôt MangoQA, module DÉTERMINISTE zéro-LLM) écrit
+// toutes les 5 s <workspace>/.mangoqa/breaker-verdict.json — un snapshot du
+// dernier verdict de ses 5 réflexes de sécurité. Conforme à la fondation §V,
+// MangoQA n'AGIT jamais : il ÉCRIT un constat, MangoOS le LIT et décide seul de
+// s'arrêter (cf. decideBreakerStop dans nocturnal.ts). SEULE LECTURE, fail-open
+// exactement comme readObserverReport : absent/invalide/trop gros → valeur
+// neutre, jamais de throw. Miroir minimal du type BreakerReport (MangoQA).
+const BREAKER_VERDICT_FILE = 'breaker-verdict.json'
+const BREAKER_VERDICT_MAX_BYTES = 1_000_000 // garde-fou — le verdict est petit en pratique
+
+export interface BreakerTripLite {
+  breaker: string
+  action: string
+  reason: string
+}
+
+export type BreakerVerdictResult =
+  | { available: true; safe: boolean; trips: BreakerTripLite[]; evaluatedAt: number }
+  | { available: false; reason: 'absent' | 'invalide' | 'illisible' }
+
+// Garde de forme minimale : on n'exige que `safe: boolean` + `trips: array` — le
+// reste est optionnel et lu défensivement (un champ absent ne casse rien).
+function isValidBreakerVerdict(v: unknown): v is { safe: boolean; trips: unknown[] } {
+  if (!v || typeof v !== 'object') return false
+  const o = v as Record<string, unknown>
+  if (typeof o.safe !== 'boolean') return false
+  if (!Array.isArray(o.trips)) return false
+  return true
+}
+
+// Ne garde que les champs texte utiles d'un trip, tout défensivement (un verdict
+// mal formé ne doit jamais faire crasher la lecture).
+function normalizeTrips(raw: unknown[]): BreakerTripLite[] {
+  const out: BreakerTripLite[] = []
+  for (const t of raw) {
+    if (!t || typeof t !== 'object') continue
+    const o = t as Record<string, unknown>
+    out.push({
+      breaker: typeof o.breaker === 'string' ? o.breaker : '?',
+      action: typeof o.action === 'string' ? o.action : '?',
+      reason: typeof o.reason === 'string' ? o.reason : '',
+    })
+  }
+  return out
+}
+
+// Résout, lit et valide breaker-verdict.json. `workspaceDir` injectable pour les
+// tests (défaut : WORKSPACE_DIR réel). Jamais de throw — même esprit que
+// readObserverReport / ObserverReportResult.
+export function readBreakerVerdict(workspaceDir: string = WORKSPACE_DIR): BreakerVerdictResult {
+  const file = path.join(workspaceDir, QA_DIR, BREAKER_VERDICT_FILE)
+  let stat: fs.Stats
+  try {
+    stat = fs.statSync(file)
+  } catch {
+    return { available: false, reason: 'absent' }
+  }
+  if (stat.size > BREAKER_VERDICT_MAX_BYTES) return { available: false, reason: 'illisible' }
+
+  let raw: string
+  try {
+    raw = fs.readFileSync(file, 'utf8')
+  } catch {
+    return { available: false, reason: 'illisible' }
+  }
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(raw)
+  } catch {
+    return { available: false, reason: 'invalide' }
+  }
+
+  if (!isValidBreakerVerdict(parsed)) return { available: false, reason: 'invalide' }
+
+  const o = parsed as Record<string, unknown>
+  return {
+    available: true,
+    safe: parsed.safe,
+    trips: normalizeTrips(parsed.trips),
+    evaluatedAt: typeof o.evaluatedAt === 'number' ? o.evaluatedAt : 0,
+  }
+}
+
 // Route additive en lecture seule — pas de gate nécessaire (fail-open assuré
 // par readObserverReport). Enregistrée dans index.ts près de registerControleurRoutes.
 export function registerMangoQaRoutes(app: Express): void {

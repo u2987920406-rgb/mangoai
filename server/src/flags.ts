@@ -92,6 +92,12 @@ export const FLAGS = {
     default: false,
     description: "Ensemble/vote : pour une décision critique, N modèles répondent et un agrégateur tranche (majorité/juge). Mécanisme d'avenir, gaté + champ `ensemble` requis (double verrou).",
   },
+  // ── MangoQA — autorité d'arrêt du Disjoncteur (Visage 1) ─────────────────
+  MANGOQA_STOP_AUTHORITY: {
+    env: "MANGOQA_STOP_AUTHORITY",
+    default: false,
+    description: "Autorité d'arrêt réelle du Disjoncteur MangoQA : la boucle nocturne LIT breaker-verdict.json entre deux projets et s'arrête elle-même si safe:false (jamais MangoQA qui agit). OFF → verdict ignoré (comportement historique, byte-identique).",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

@@ -331,6 +331,17 @@ trop simple pour être corrompu.
 ```
 Règles intouchables : défensif uniquement · déterministe (zéro LLM) · borné (non-extensible).
 
+**Comment l'« arrêt » est réel sans jamais violer l'indépendance (état 2026-07-03).**
+Le Disjoncteur n'AGIT jamais sur MangoOS — il ÉCRIT toutes les 5 s un verdict
+(`.mangoqa/breaker-verdict.json`). L'autorité d'arrêt est câblée dans le SENS
+CORRECT : c'est MangoOS qui LIT ce verdict entre deux itérations nocturnes
+(`nocturnal.ts` → `readBreakerVerdict` + `decideBreakerStop`) et s'arrête
+LUI-MÊME si `safe:false` — à la frontière d'un projet, jamais en pleine génération.
+MangoQA reste un fantôme : aucune écriture, aucun ordre, aucun contrôle actif sur
+le système surveillé. Ce mécanisme est **gaté** (`MANGOQA_STOP_AUTHORITY`, OFF par
+défaut aujourd'hui, activation opt-in) : gate OFF ou MangoQA non lancé → verdict
+ignoré, comportement historique inchangé.
+
 ## Visage 2 — L'Observateur-Conseil (amélioration de MangoOS · utile)
 
 Lit OpenTelemetry dans la durée, détecte les patterns de défaillance récurrents,
