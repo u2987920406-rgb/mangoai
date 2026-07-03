@@ -367,6 +367,76 @@ async function main(): Promise<void> {
   }
 
   line('═')
+  console.log('complete — rideau de fer BRAIN_LOCAL_ONLY couvre aussi le repli (Un, U3)')
+  line()
+
+  {
+    // BRAIN_LOCAL_ONLY=on + repli claude (non-ollama) déclaré + gate BRAIN_FALLBACK
+    // on : le repli ne doit JAMAIS être tenté — un seul appel, erreur ORIGINALE levée.
+    const { deps, calls } = scriptedDeps(['throw', 'ne-devrait-jamais-être-utilisé'])
+    let threw: unknown = null
+    const originalWarn = console.warn
+    const warnings: string[] = []
+    console.warn = (...args: unknown[]) => { warnings.push(args.map(String).join(' ')) }
+    await withEnv(
+      {
+        BRAIN_LOCAL_ONLY: 'on',
+        BRAIN_FALLBACK: 'on',
+        BRAIN_FALLBACK_PROVIDER: 'claude',
+        BRAIN_FALLBACK_MODEL: 'sonnet',
+      },
+      async () => {
+        const b = createBrain({ provider: 'ollama', model: 'gemma4:12b' }, deps)
+        try {
+          await b.complete('S', 'U')
+        } catch (e) {
+          threw = e
+        }
+      },
+    )
+    console.warn = originalWarn
+    check('BRAIN_LOCAL_ONLY + repli non-ollama → un seul appel (repli jamais tenté)', calls().length === 1)
+    check('BRAIN_LOCAL_ONLY + repli non-ollama → erreur ORIGINALE relevée', threw instanceof Error && threw.message === 'échec principal/repli #1')
+    check('BRAIN_LOCAL_ONLY + repli non-ollama → warn "REFUSÉ"', warnings.some((w) => w.includes('REFUSÉ') && w.includes('BRAIN_LOCAL_ONLY')))
+  }
+
+  {
+    // Même flag, mais le repli EST ollama : autorisé, comportement C2-P1 normal.
+    const { deps, calls } = scriptedDeps(['throw', 'RESULTAT-REPLI-OLLAMA'])
+    let out: string | null = null
+    await withEnv(
+      {
+        BRAIN_LOCAL_ONLY: 'on',
+        BRAIN_FALLBACK: 'on',
+        BRAIN_FALLBACK_PROVIDER: 'ollama',
+        BRAIN_FALLBACK_MODEL: 'gemma4:12b',
+      },
+      async () => {
+        const b = createBrain({ provider: 'ollama' }, deps)
+        out = await b.complete('S', 'U')
+      },
+    )
+    check('BRAIN_LOCAL_ONLY + repli ollama → autorisé, résultat du repli', out === 'RESULTAT-REPLI-OLLAMA')
+    check('BRAIN_LOCAL_ONLY + repli ollama → deux appels', calls().length === 2)
+  }
+
+  {
+    // Flag OFF (défaut) : comportement IDENTIQUE à avant U3, même avec un repli
+    // non-ollama déclaré — le repli est tenté normalement (non-régression C2-P1).
+    const { deps, calls } = scriptedDeps(['throw', 'RESULTAT-REPLI'])
+    let out: string | null = null
+    await withEnv(
+      { BRAIN_LOCAL_ONLY: undefined, BRAIN_FALLBACK: 'on', BRAIN_FALLBACK_PROVIDER: 'claude', BRAIN_FALLBACK_MODEL: 'sonnet' },
+      async () => {
+        const b = createBrain({ provider: 'ollama' }, deps)
+        out = await b.complete('S', 'U')
+      },
+    )
+    check('BRAIN_LOCAL_ONLY off → repli non-ollama tenté normalement (inchangé)', out === 'RESULTAT-REPLI')
+    check('BRAIN_LOCAL_ONLY off → deux appels (inchangé)', calls().length === 2)
+  }
+
+  line('═')
   console.log('singleton — getBrain / setBrain / resetBrain')
   line()
 

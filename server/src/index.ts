@@ -111,6 +111,9 @@ import {
   loadManifest, findManifestById, accessAllowsWrite,
   findCollectionSchema, validateAgainstSchema, type MangoAppManifest,
 } from "./mango-app-contract.js";
+// (Un, 2026-07-03) U4 — ensureManifest (A0.2) n'avait AUCUN appelant en prod : le
+// gate MEMORY_MANIFEST promettait un comportement que rien ne déclenchait jamais.
+import { ensureManifest } from "./memory-manifest.js";
 
 // Last-resort safety net: a bug in a fire-and-forget background task (review,
 // compaction) or any forgotten await must never take the whole server down —
@@ -1348,6 +1351,15 @@ const httpServer = app.listen(PORT, HOST, () => {
   // Curation de goût nocturne (#149 v2) — scheduler opt-in (config.enabled défaut false).
   startTasteNocturnalScheduler();
   restoreAgents().catch((e) => console.warn("[agent-factory] restoreAgents:", e));
+  // (Un, 2026-07-03) U4 — A0.2 : manifeste des magasins mémoire fichiers
+  // (workspace/.memory-manifest.json). ensureManifest se gate déjà elle-même sur
+  // MEMORY_MANIFEST (no-op tant qu'il est OFF, défaut) ; ce try/catch est une
+  // deuxième ceinture fail-open — un souci d'écriture ne doit jamais empêcher le boot.
+  try {
+    ensureManifest(WORKSPACE_DIR);
+  } catch (e) {
+    console.warn("[memory-manifest] ensureManifest au boot ignoré :", e instanceof Error ? e.message : e);
+  }
   // Kernel : branche MangoQA (fantôme externe) sur l'Event Bus via le pont
   // d'export — l'observateur '*' déverse le flux du bus dans .mangoqa/ que le
   // fantôme lit. Silencieux tant que rien ne publie (migration du chat à venir).

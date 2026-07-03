@@ -128,21 +128,45 @@ export function referencesSnapshot(workspaceDir: string): string {
   }
 }
 
+// (Un, 2026-07-03) U-refs — c'était la seule injection système NON plafonnée du
+// harnais (les autres : axiomes 3000, design 1500, préférences 2500, souvenirs
+// 800). Même pattern qu'ailleurs : cap dur caractères + nombre d'entrées max,
+// marqueur visible si tronqué. Sous le cap → sortie STRICTEMENT identique à avant.
+export const REFERENCES_PROMPT_MAX_CHARS = 1500;
+export const REFERENCES_PROMPT_MAX_ENTRIES = 20;
+
 /** System-prompt section listing available references ("" if none). */
 export function referencesPromptSection(workspaceDir: string): string {
   const list = listReferences(workspaceDir);
   if (list.length === 0) return "";
-  const lines = list.map((r) => {
+  const header = `\n\nMood library — saved design references (${list.length} total — reuse at cadrage):\n`;
+  const lineFor = (r: ReferenceMeta) => {
     const urlPart = r.url ? ` — ${r.url}` : "";
     const tagStr = r.tags.length ? ` [${r.tags.join(", ")}]` : "";
     const palettePart = r.palette.length ? ` — palette: ${r.palette.join(", ")}` : "";
     const notePart = r.note ? ` — ${r.note}` : "";
     return `- **${r.title}** (${r.kind})${urlPart}${tagStr}${palettePart}${notePart}`;
-  });
-  return (
-    `\n\nMood library — saved design references (${list.length} total — reuse at cadrage):\n` +
-    lines.join("\n")
-  );
+  };
+  // Au plus REFERENCES_PROMPT_MAX_ENTRIES candidates, puis on n'ajoute une ligne
+  // que si elle tient encore sous le cap dur — jamais coupée au milieu.
+  const candidates = list.slice(0, REFERENCES_PROMPT_MAX_ENTRIES);
+  const shownLines: string[] = [];
+  let bodyLen = 0;
+  for (const r of candidates) {
+    const l = lineFor(r);
+    const extra = l.length + (shownLines.length > 0 ? 1 : 0); // +1 = \n de jointure
+    if (bodyLen + extra > REFERENCES_PROMPT_MAX_CHARS) break;
+    shownLines.push(l);
+    bodyLen += extra;
+  }
+  // Ne jamais renvoyer une section vide alors que des références existent : au
+  // moins la première, tronquée si elle seule dépasse déjà le cap.
+  if (shownLines.length === 0 && candidates.length > 0) {
+    shownLines.push(lineFor(candidates[0]).slice(0, REFERENCES_PROMPT_MAX_CHARS));
+  }
+  const hidden = list.length - shownLines.length;
+  const marker = hidden > 0 ? `\n[... ${hidden} référence(s) non montrée(s)]` : "";
+  return header + shownLines.join("\n") + marker;
 }
 
 export const REFERENCES_RULES = `

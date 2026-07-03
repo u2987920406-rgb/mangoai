@@ -1323,6 +1323,18 @@ export async function runRelay(
       shouldAbort: deps.shouldAbort ?? isInterrupted,
       // (#172) Hooks projet chargés en tête de run (relayHooks) — undefined si aucun.
       hooks: relayHooks.length ? relayHooks : undefined,
+      // (B0.1 câblé en prod — revue Fable 🟠1) Le fusible de coût de la boucle,
+      // opt-in par env : absent = strictement inerte (comportement identique).
+      // ELEVE_BUDGET_PROMPT_CHARS = plafond du poids contexte cumulé ;
+      // ELEVE_BUDGET_TOOL_CALLS = plafond du nombre total d'appels d'outils.
+      loopBudget: (() => {
+        const chars = Number(process.env.ELEVE_BUDGET_PROMPT_CHARS ?? 0);
+        const calls = Number(process.env.ELEVE_BUDGET_TOOL_CALLS ?? 0);
+        if (chars > 0 || calls > 0) {
+          return { ...(chars > 0 ? { maxPromptChars: chars } : {}), ...(calls > 0 ? { maxToolCalls: calls } : {}) };
+        }
+        return undefined;
+      })(),
     };
 
     // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage

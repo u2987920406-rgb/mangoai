@@ -41,9 +41,10 @@ function fakeDeps(): { deps: LoopStateDeps; store: Map<string, string> } {
 
 function baseSnap(overrides: Partial<LoopSnapshot> = {}): LoopSnapshot {
   return {
-    version: 1,
+    version: 2,
     ts: Date.now(),
     iter: 2,
+    user: "u",
     hasWritten: true,
     messages: [{ role: "system", content: "sys" }, { role: "user", content: "u" }],
     toolTrace: [{ name: "write_file", args: '{"path":"a.js"}' }],
@@ -85,13 +86,23 @@ async function run() {
     check("renvoie null", result === null);
   }
 
-  console.log("\n[4] loadSnapshot : version future/inconnue → null");
+  console.log("\n[4] loadSnapshot : version inconnue (legacy OU future) → null");
   {
     const { deps, store } = fakeDeps();
-    const future = { ...baseSnap(), version: 2 };
+    const future = { ...baseSnap(), version: 3 };
     store.set(path.join("/proj", SNAPSHOT_FILE), JSON.stringify(future));
-    const result = loadSnapshot("/proj", 2 * 3600 * 1000, deps);
-    check("version 2 (inconnue) → null", result === null);
+    check("version 3 (future) → null", loadSnapshot("/proj", 2 * 3600 * 1000, deps) === null);
+    // v1 legacy (sans champ `user`) : ignoré aussi — on préfère perdre une reprise
+    // que d'en faire une fausse (garde « même tâche » impossible sans `user`).
+    const legacy = { ...baseSnap(), version: 1 } as Record<string, unknown>;
+    delete legacy.user;
+    store.set(path.join("/proj", SNAPSHOT_FILE), JSON.stringify(legacy));
+    check("version 1 (legacy sans user) → null", loadSnapshot("/proj", 2 * 3600 * 1000, deps) === null);
+    // v2 sans `user` (corrompu) : rejeté par la validation de forme.
+    const noUser = { ...baseSnap() } as Record<string, unknown>;
+    delete noUser.user;
+    store.set(path.join("/proj", SNAPSHOT_FILE), JSON.stringify(noUser));
+    check("v2 sans champ user → null", loadSnapshot("/proj", 2 * 3600 * 1000, deps) === null);
   }
 
   console.log("\n[5] loadSnapshot : absent → null (pas d'erreur)");
@@ -213,7 +224,7 @@ async function run() {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume-"));
     try {
       const snap: LoopSnapshot = {
-        version: 1, ts: Date.now(), iter: 5, hasWritten: true,
+        version: 2, ts: Date.now(), iter: 5, user: "construis la todo app", hasWritten: true,
         messages: [
           { role: "system", content: "sys" },
           { role: "user", content: "construis la todo app" },
@@ -253,7 +264,7 @@ async function run() {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume2-"));
     try {
       const snap: LoopSnapshot = {
-        version: 1, ts: Date.now(), iter: 3, hasWritten: true,
+        version: 2, ts: Date.now(), iter: 3, user: "ANCIENNE tâche", hasWritten: true,
         messages: [{ role: "system", content: "sys" }, { role: "user", content: "ANCIENNE tâche" }],
         toolTrace: [{ name: "write_file", args: "{}" }],
       };
@@ -281,7 +292,7 @@ async function run() {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "resume3-"));
     try {
       const snap: LoopSnapshot = {
-        version: 1, ts: Date.now(), iter: 4, hasWritten: true,
+        version: 2, ts: Date.now(), iter: 4, user: "t", hasWritten: true,
         messages: [{ role: "system", content: "sys" }, { role: "user", content: "t" }],
         toolTrace: [{ name: "write_file", args: "{}" }],
       };

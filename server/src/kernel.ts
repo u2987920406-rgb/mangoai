@@ -116,7 +116,22 @@ export function createBrain(config: BrainConfig = {}, deps: BrainDeps = {}): Man
   const timeoutMs = config.timeoutMs
   // Repli inter-providers (C2-P1) : résolu UNE fois à la construction, comme le
   // reste de la config — pas de défaut implicite (voir resolveBrainFallbackConfig).
-  const fallback = resolveBrainFallbackConfig()
+  const rawFallback = resolveBrainFallbackConfig()
+  // (Un, 2026-07-03) U3 — rideau de fer BRAIN_LOCAL_ONLY ignoré par ce repli : le
+  // flag ne gardait jusqu'ici QUE dispatch() (brain-runtime.ts), pas ce chemin
+  // Kernel direct. Sous BRAIN_LOCAL_ONLY, un repli non-ollama est IGNORÉ (jamais
+  // tenté) — dispatch() reste la garde PRINCIPALE, ceci ferme juste le trou.
+  // Résolu UNE fois ici, comme le reste : pas de re-check à chaque complete().
+  const localOnly = flag('BRAIN_LOCAL_ONLY')
+  if (localOnly && rawFallback && rawFallback.provider !== 'ollama') {
+    console.warn(`[kernel-fallback] repli ${rawFallback.provider} REFUSÉ (BRAIN_LOCAL_ONLY)`)
+  }
+  // Avertissement seul (non-bloquant) si le cerveau PRINCIPAL n'est pas non plus
+  // ollama sous ce flag — dispatch() porte la garde qui bloque réellement ce cas.
+  if (localOnly && provider !== 'ollama') {
+    console.warn(`[kernel-fallback] cerveau principal ${provider} non-ollama sous BRAIN_LOCAL_ONLY (garde principale : dispatch())`)
+  }
+  const fallback = localOnly && rawFallback && rawFallback.provider !== 'ollama' ? null : rawFallback
 
   return {
     provider,

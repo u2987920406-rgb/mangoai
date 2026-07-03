@@ -9,6 +9,8 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   REFERENCES_DIR_NAME,
+  REFERENCES_PROMPT_MAX_CHARS,
+  REFERENCES_PROMPT_MAX_ENTRIES,
   listReferences,
   loadReference,
   saveReference,
@@ -164,6 +166,47 @@ saveReference(dir5, metaMissingFile);
 check("meta.image set mais fichier absent → null", referenceImagePath(dir5, "missing-file") === null);
 
 fs.rmSync(dir5, { recursive: true, force: true });
+
+// ── 8. referencesPromptSection — cap (Un, 2026-07-03) ────────────────────────
+console.log("\n8. referencesPromptSection — cap dur");
+const dir6 = fs.mkdtempSync(path.join(os.tmpdir(), "refs-"));
+
+// 8a. Sous le cap : sortie identique au comportement "avant cap" (pas de marqueur).
+saveReference(dir6, makeMeta({ slug: "sous-cap", title: "Sous le cap" }));
+const sectionUnderCap = referencesPromptSection(dir6);
+check("sous le cap : pas de marqueur de troncature", !sectionUnderCap.includes("non montrée"));
+check("sous le cap : contient le titre entier", sectionUnderCap.includes("Sous le cap"));
+fs.rmSync(dir6, { recursive: true, force: true });
+
+// 8b. 60 références avec grosses notes → sortie plafonnée + marqueur + 20 premières seulement.
+const dir7 = fs.mkdtempSync(path.join(os.tmpdir(), "refs-"));
+const bigNote = "x".repeat(500);
+for (let i = 0; i < 60; i++) {
+  const n = String(i).padStart(2, "0");
+  saveReference(dir7, makeMeta({ slug: `ref-${n}`, title: `Ref ${n}`, note: bigNote }));
+}
+const sectionOver = referencesPromptSection(dir7);
+check("60 refs : marqueur de troncature présent", sectionOver.includes("non montrée"));
+check(
+  "60 refs : contenu (hors en-tête/marqueur) sous le cap dur",
+  (() => {
+    const withoutHeader = sectionOver.replace(/^\n\nMood library.*?:\n/, "");
+    const withoutMarker = withoutHeader.replace(/\n\[\.\.\. \d+ référence\(s\) non montrée\(s\)\]$/, "");
+    return withoutMarker.length <= REFERENCES_PROMPT_MAX_CHARS;
+  })(),
+);
+check(
+  "60 refs : seules les 20 premières (triées par title) apparaissent au plus",
+  (() => {
+    const all = listReferences(dir7);
+    const first20Titles = all.slice(0, REFERENCES_PROMPT_MAX_ENTRIES).map((r) => r.title);
+    const shownTitles = first20Titles.filter((t) => sectionOver.includes(`**${t}**`));
+    const laterTitles = all.slice(REFERENCES_PROMPT_MAX_ENTRIES).map((r) => r.title);
+    const leaked = laterTitles.some((t) => sectionOver.includes(`**${t}**`));
+    return shownTitles.length <= REFERENCES_PROMPT_MAX_ENTRIES && !leaked;
+  })(),
+);
+fs.rmSync(dir7, { recursive: true, force: true });
 
 // ── Résultat ──────────────────────────────────────────────────────────────────
 line("═");

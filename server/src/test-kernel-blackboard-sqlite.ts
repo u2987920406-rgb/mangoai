@@ -5,6 +5,7 @@
 import fs from 'node:fs'
 import os from 'node:os'
 import path from 'node:path'
+import { DatabaseSync } from 'node:sqlite'
 import { MemoryStore, cosine, rankByCosine } from './kernel-blackboard-store.js'
 import { SqliteStore } from './kernel-blackboard-sqlite.js'
 import { Blackboard } from './kernel-blackboard.js'
@@ -119,6 +120,64 @@ function check(name: string, cond: boolean): void {
   check('verrous FIFO avec store SQLite', order === '12')
 
   bb.close()
+  fs.rmSync(dir, { recursive: true, force: true })
+}
+
+// ── Migration REPORTÉE si le backup échoue (Un, 2026-07-03 — U2) ────────────
+{
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mangoos-bb-migrate-'))
+  const dbPath = path.join(dir, 'legacy.db')
+
+  // Base LEGACY v1 (sans colonnes timestamps), estampillée user_version=1 —
+  // exactement le schéma d'avant A0.3, celui qui doit passer par la migration v2.
+  {
+    const raw = new DatabaseSync(dbPath)
+    raw.exec(
+      `CREATE TABLE artifacts (scope TEXT NOT NULL, key TEXT NOT NULL, value TEXT NOT NULL, embedding TEXT, PRIMARY KEY (scope, key))`,
+    )
+    raw.exec("INSERT INTO artifacts (scope, key, value) VALUES ('p', 'k', '\"data-intacte\"')")
+    raw.exec('PRAGMA user_version = 1')
+    raw.close()
+  }
+
+  // Fait échouer copyFileSync : un DOSSIER occupe déjà le chemin `.bak-v1` attendu.
+  fs.mkdirSync(`${dbPath}.bak-v1`)
+
+  const originalWarn = console.warn
+  const warnings: string[] = []
+  console.warn = (...args: unknown[]) => {
+    warnings.push(args.map((a) => (a instanceof Error ? a.message : String(a))).join(' '))
+  }
+  let threw = false
+  let store: SqliteStore | undefined
+  try {
+    store = new SqliteStore(dbPath)
+  } catch {
+    threw = true
+  }
+  console.warn = originalWarn
+
+  check('backup impossible : le boot ne throw jamais', !threw)
+  check(
+    'backup impossible : warn explicite "migration REPORTÉE"',
+    warnings.some((w) => w.includes('migration REPORTÉE') && w.includes('backup impossible')),
+  )
+
+  // user_version reste l'ANCIENNE (migration jamais tentée sans sa copie de sûreté).
+  const verify = new DatabaseSync(dbPath)
+  const uv = (verify.prepare('PRAGMA user_version').get() as { user_version: number }).user_version
+  const cols = (verify.prepare('PRAGMA table_info(artifacts)').all() as Array<{ name: string }>).map((c) => c.name)
+  verify.close()
+  check('backup impossible : user_version reste 1 (pas migré)', uv === 1)
+  check('backup impossible : colonnes timestamps ABSENTES (migration pas jouée)', !cols.includes('updated_at'))
+
+  // Données existantes intactes, et le store reste utilisable (fail-open : put()
+  // retombe sur l'écriture historique sans colonnes timestamps).
+  check('backup impossible : donnée pré-existante intacte', JSON.stringify(store?.get('p', 'k')) === JSON.stringify('data-intacte'))
+  store?.put('p', 'k2', { v: 1 })
+  check('backup impossible : store reste utilisable (fail-open)', JSON.stringify(store?.get('p', 'k2')) === JSON.stringify({ v: 1 }))
+  store?.close()
+
   fs.rmSync(dir, { recursive: true, force: true })
 }
 

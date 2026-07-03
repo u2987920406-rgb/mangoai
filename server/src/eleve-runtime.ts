@@ -100,6 +100,12 @@ export interface AgenticOptions {
    * `maxPromptChars` = plafond du poids contexte (proxy tokens) mesuré avant
    * chaque appel modèle ; `maxToolCalls` = plafond cumulé d'appels d'outils. */
   budget?: { maxPromptChars?: number; maxToolCalls?: number };
+  /** (Revue Fable 2026-07-03, 🟠2) `false` = pas de snapshot de reprise pour CE
+   * run, même sous ELEVE_RESUME. Les sous-agents délégués partagent le même
+   * `projectDir` que le parent : sans ce verrou, chacun ÉCRASAIT le snapshot du
+   * parent (et son `finish` le supprimait) → crash pendant une délégation =
+   * aucune reprise possible. Le parent (profondeur 0) reste seul à snapshotter. */
+  snapshots?: boolean;
 }
 
 export interface AgenticBuildResult {
@@ -125,6 +131,72 @@ export interface AgenticBuildResult {
 /** Somme des longueurs de contenu (proxy du poids contexte). */
 function totalChars(messages: ChatMessage[]): number {
   return messages.reduce((n, m) => n + (m.content?.length ?? 0), 0);
+}
+
+// (Revue Fable 2026-07-03, 🟠4) Trace COMPRESSÉE pour le snapshot : sans elle,
+// `toolTrace` embarque les args COMPLETS de chaque write_file (le contenu entier
+// des fichiers) et le snapshot re-sérialisé à CHAQUE itération devient du O(n²)
+// d'I/O synchrone sur un run long. Les écritures gardent un args PARSEABLE réduit
+// au `path` seul (changedFilesFromTrace — eleve-gate.ts — continue de fonctionner
+// sur une trace restaurée) ; le reste est tronqué.
+const SNAPSHOT_ARGS_MAX = 300;
+function snapshotTrace(trace: Array<{ name: string; args: string }>): Array<{ name: string; args: string }> {
+  return trace.map((t) => {
+    if (t.name === "write_file" || t.name === "edit_file") {
+      try {
+        const a = JSON.parse(t.args) as { path?: unknown };
+        if (typeof a.path === "string") return { name: t.name, args: JSON.stringify({ path: a.path }) };
+      } catch {
+        /* args illisibles : tronqués comme les autres */
+      }
+    }
+    return t.args.length > SNAPSHOT_ARGS_MAX ? { name: t.name, args: t.args.slice(0, SNAPSHOT_ARGS_MAX) } : t;
+  });
+}
+
+/** (🟠4 suite — trouvé par test-fondations-gates-combines) Messages compressés
+ * pour le snapshot : les `tool_calls` des messages assistant portent les args
+ * COMPLETS (contenus entiers des write_file), que la compaction ne compte PAS
+ * (elle ne mesure que `content`). Sans cette compression, le snapshot re-sérialisé
+ * à chaque itération embarque tous les contenus écrits (123 Ko mesurés pour 12
+ * écritures de 10 k). Même règle que snapshotTrace ; copies, jamais de mutation
+ * des messages vivants. */
+function snapshotMessages(messages: ChatMessage[]): ChatMessage[] {
+  return messages.map((m) => {
+    if (m.role !== "assistant" || !m.tool_calls?.length) return m;
+    return {
+      ...m,
+      tool_calls: m.tool_calls.map((tc) => {
+        const name = tc.function.name;
+        const args = tc.function.arguments ?? "";
+        if (name === "write_file" || name === "edit_file") {
+          try {
+            const a = JSON.parse(args) as { path?: unknown };
+            if (typeof a.path === "string") return { ...tc, function: { name, arguments: JSON.stringify({ path: a.path }) } };
+          } catch {
+            /* illisible : tronqué ci-dessous */
+          }
+        }
+        return args.length > SNAPSHOT_ARGS_MAX ? { ...tc, function: { name, arguments: args.slice(0, SNAPSHOT_ARGS_MAX) } } : tc;
+      }),
+    };
+  });
+}
+
+/** Fichiers écrits, extraits d'une trace — miroir volontairement local de
+ * `changedFilesFromTrace` (eleve-gate.ts) pour ne pas créer de cycle d'import. */
+function filesFromTrace(trace: Array<{ name: string; args: string }>): string[] {
+  const out = new Set<string>();
+  for (const t of trace) {
+    if (t.name !== "write_file" && t.name !== "edit_file") continue;
+    try {
+      const a = JSON.parse(t.args) as { path?: unknown };
+      if (typeof a.path === "string" && a.path.trim()) out.add(a.path.trim());
+    } catch {
+      /* illisible : on saute */
+    }
+  }
+  return [...out];
 }
 
 /** Compaction : au-delà de `ctxMax`, tronque les VIEUX résultats d'outils
@@ -232,9 +304,9 @@ export async function buildAgentic(
   let reflexionsCount = 0;
   let lastReflexionIter = -2;
 
-  // (B0.3, gate ELEVE_RESUME) Snapshot de reprise — ÉCRITURE SEULE (la restauration
-  // est hors périmètre, = B1.4). Gate off OU projectDir absent → jamais écrit.
-  const eleveResumeOn = flag("ELEVE_RESUME");
+  // (B0.3, gate ELEVE_RESUME) Snapshot de reprise. Gate off OU projectDir absent
+  // OU `snapshots:false` (sous-agent délégué, 🟠2) → jamais écrit ni restauré.
+  const eleveResumeOn = flag("ELEVE_RESUME") && opts.snapshots !== false;
   const clearRunSnapshot = (): void => {
     if (eleveResumeOn && opts.projectDir) clearSnapshot(opts.projectDir);
   };
@@ -256,23 +328,37 @@ export async function buildAgentic(
   // MÊME tâche existe (le serveur a crashé/redémarré au milieu d'un run), on
   // restaure l'historique + la trace + les compteurs et on reprend là où on en
   // était, avec un nudge de RE-VÉRIFICATION (l'espace de travail a pu changer).
-  // Garde « même tâche » : le user d'origine du snapshot doit correspondre au
-  // `user` courant — sinon c'est une AUTRE tâche, on ignore (run neuf, le snapshot
-  // sera écrasé). Gate off OU projectDir absent → jamais de reprise (identique).
+  // Garde « même tâche » : le champ DÉDIÉ `snap.user` doit correspondre au `user`
+  // courant — sinon c'est une AUTRE tâche, on ignore (run neuf, le snapshot sera
+  // écrasé). (Revue Fable 🔴1 : l'ancienne garde comparait `messages[1]`, or
+  // ELEVE_ETAT splice l'état de travail en index 1 après compaction → la garde
+  // était toujours fausse sur un run long avec les deux gates allumés, et la
+  // reprise ne fonctionnait JAMAIS dans sa config nominale.)
   let startIter = 0;
   if (eleveResumeOn && opts.projectDir) {
     const snap = loadSnapshot(opts.projectDir);
-    if (snap && snap.messages.length >= 2 && snap.messages[1]?.role === "user" && snap.messages[1]?.content === user) {
+    if (snap && snap.user === user && snap.messages.length >= 2) {
       messages.length = 0;
       messages.push(...snap.messages);
       for (const t of snap.toolTrace) toolTrace.push(t);
       hasWritten = snap.hasWritten;
       startIter = Math.max(0, Math.min(snap.iter, maxIter));
+      // (🔴1 suite) Le snapshot peut déjà contenir un message d'ÉTAT DE TRAVAIL en
+      // index 1 : le prochain compact doit le REMPLACER, jamais en empiler un 2e.
+      if (eleveEtatOn && messages[1]?.role === "system" && messages[1]?.content.startsWith("ÉTAT DE TRAVAIL")) {
+        stateMsgIndex = 1;
+      }
+      // (🟠5) Réconcilier l'état de travail avec la trace restaurée : les fichiers
+      // écrits AVANT l'interruption restent visibles du prochain état compact
+      // (sinon il annoncerait « aucun fichier écrit » face à un transcript qui
+      // montre l'inverse).
+      if (eleveEtatOn) workingState = { ...workingState, fichiersEcrits: filesFromTrace(toolTrace) };
       messages.push({
         role: "user",
         content:
           "↩ REPRISE après interruption : l'espace de travail a PU changer depuis. AVANT de continuer, " +
-          "re-vérifie l'état réel (list_files / check_build), puis reprends exactement là où tu en étais.",
+          "re-vérifie l'état réel (list_files / check_build) ; si tu suivais un plan (outil planifier), " +
+          "re-pose-le d'abord — il n'a pas survécu à l'interruption. Puis reprends exactement là où tu en étais.",
       });
       opts.onLog?.(`↩ Reprise du run à l'itération ${startIter} (snapshot).`);
     }
@@ -292,12 +378,13 @@ export async function buildAgentic(
     // que le modèle l'a laissé, pas déjà tronqué).
     if (eleveResumeOn && opts.projectDir) {
       saveSnapshot(opts.projectDir, {
-        version: 1,
+        version: 2,
         ts: Date.now(),
         iter,
+        user,
         hasWritten,
-        messages,
-        toolTrace,
+        messages: snapshotMessages(messages), // (🟠4) tool_calls compressés — la compaction ne les compte pas
+        toolTrace: snapshotTrace(toolTrace), // (🟠4) borné — jamais les contenus complets
       });
     }
     const didCompact = compact(messages, ctxMax);
@@ -326,6 +413,7 @@ export async function buildAgentic(
           content: "Budget atteint. Conclus à partir de ce que tu as déjà fait, sans appeler d'outil.",
         });
         const capped = await opts.post(messages, null);
+        clearRunSnapshot(); // (🟠3) sortie TERMINALE : la reprise est pour les crashs, pas pour rejouer un run épuisé
         return { text: capped.content, toolTrace, finished: false, iterations: iter + 1, stuck: false, budgetExhausted: true };
       }
     }
@@ -394,6 +482,7 @@ export async function buildAgentic(
         });
         if (corrections >= maxCorrections) {
           opts.onLog?.("⚠ Élève bloqué (relectures répétées) — sortie contrôlée.");
+          clearRunSnapshot(); // (🟠3) ne jamais restaurer un transcript qui a fini bloqué
           return { text: "", toolTrace, finished: false, iterations: iter + 1, stuck: true };
         }
         continue;
@@ -415,6 +504,7 @@ export async function buildAgentic(
         });
         if (corrections >= maxCorrections) {
           opts.onLog?.("⚠ Élève bloqué (exploration sans action) — sortie contrôlée.");
+          clearRunSnapshot(); // (🟠3)
           return { text: "", toolTrace, finished: false, iterations: iter + 1, stuck: true };
         }
         continue;
@@ -496,6 +586,7 @@ export async function buildAgentic(
 
     if (corrections >= maxCorrections) {
       opts.onLog?.("⚠ Élève bloqué (appels répétés) — sortie contrôlée.");
+      clearRunSnapshot(); // (🟠3)
       return { text: "", toolTrace, finished: false, iterations: iter + 1, stuck: true };
     }
   }
@@ -506,6 +597,7 @@ export async function buildAgentic(
     content: "Limite d'itérations atteinte. Conclus à partir de ce que tu as fait, sans appeler d'outil.",
   });
   const final = await opts.post(messages, null);
+  clearRunSnapshot(); // (🟠3) plafond atteint = sortie terminale, comme le budget
   return { text: final.content, toolTrace, finished: false, iterations: maxIter, stuck: false };
 }
 
@@ -563,6 +655,10 @@ export interface AgenticRunCtx {
   shouldAbort?: () => boolean;
   /** (#172) Hooks résolus, hérités par la boucle et les sous-agents. Injectés par eleve.ts. */
   hooks?: HookRegistration[];
+  /** (B0.1 câblé — revue Fable 🟠1) Budget explicite de la boucle (poids contexte /
+   * appels d'outils), transmis à buildAgentic. Hérité par les sous-agents (chacun
+   * a SA boucle donc SON compteur, mais le même plafond). Absent = inerte. */
+  loopBudget?: { maxPromptChars?: number; maxToolCalls?: number };
 }
 
 /** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
@@ -582,6 +678,8 @@ export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<
       shouldAbort: ctx.shouldAbort,
       hooks: ctx.hooks,
       projectDir: ctx.projectDir,
+      budget: ctx.loopBudget, // (🟠1) le fusible de coût existe enfin en prod
+      snapshots: ctx.depth === 0, // (🟠2) seul le parent snapshotte — les sous-agents n'écrasent plus sa reprise
     });
 
   if (!ctx.tracer) return runOnce();

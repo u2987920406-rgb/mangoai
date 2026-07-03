@@ -89,9 +89,18 @@ export function planMigrations(currentVersion: number, migrations: Migration[]):
  * schéma v1 n'a rien à sauvegarder (MIGRATIONS vide), donc ce chemin n'est
  * exercé qu'à partir de la première vraie migration.
  *
- * Fail-open : si une migration échoue, ROLLBACK de CETTE migration, log, et on
- * ARRÊTE la chaîne (on ne saute pas une version — l'ordre doit rester linéaire)
- * en gardant le schéma tel qu'il était avant elle. Ne throw jamais.
+ * (Un, 2026-07-03) U2 — le backup n'est PAS optionnel : un backup raté (disque
+ * plein, verrou antivirus Windows…) DOIT arrêter la chaîne de migrations avant
+ * le moindre up() — sinon l'invariant « backup avant tout up() » est violé. On
+ * reste alors sur le schéma courant (fail-open : le runtime détecte les
+ * colonnes réelles via `tableHasColumn`, donc `put()` retombe sur l'écriture
+ * historique sans throw ni blocage au boot) et une prochaine ouverture
+ * retentera la migration (rien n'est marqué comme fait).
+ *
+ * Fail-open : si une migration échoue APRÈS un backup réussi, ROLLBACK de
+ * CETTE migration, log, et on ARRÊTE la chaîne (on ne saute pas une version —
+ * l'ordre doit rester linéaire) en gardant le schéma tel qu'il était avant
+ * elle. Ne throw jamais.
  *
  * Retourne la version finale effectivement atteinte.
  */
@@ -99,15 +108,17 @@ export function runMigrations(db: DatabaseSync, dbPath: string, currentVersion: 
   const plan = planMigrations(currentVersion, migrations)
   let version = currentVersion
   for (const migration of plan) {
-    try {
-      if (migration.to >= 2 && dbPath !== ':memory:') {
-        try {
-          fs.copyFileSync(dbPath, `${dbPath}.bak-v${version}`)
-        } catch (err) {
-          // Un backup raté ne doit pas empêcher la migration — mais on prévient.
-          console.warn('[blackboard] backup avant migration:', err)
-        }
+    if (migration.to >= 2 && dbPath !== ':memory:') {
+      try {
+        fs.copyFileSync(dbPath, `${dbPath}.bak-v${version}`)
+      } catch (err) {
+        // Backup impossible → migration REPORTÉE (pas de up() sans copie de
+        // sûreté). On arrête la chaîne ici, schéma courant conservé.
+        console.warn('[blackboard] migration REPORTÉE : backup impossible :', err)
+        break
       }
+    }
+    try {
       db.exec('BEGIN')
       migration.up(db)
       db.exec(`PRAGMA user_version = ${migration.to}`)

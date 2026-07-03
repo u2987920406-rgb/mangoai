@@ -18,11 +18,18 @@ export const SNAPSHOT_FILE = ".eleve-run.json";
 export const DEFAULT_SNAPSHOT_TTL_MS = 2 * 60 * 60 * 1000; // 2h
 
 /** Version du format — toute évolution incompatible bascule ce nombre ; un
- * snapshot d'une version inconnue (ex. future) est ignoré (`loadSnapshot` → null). */
+ * snapshot d'une version inconnue (ancienne OU future) est ignoré (`loadSnapshot`
+ * → null — fichier éphémère TTL 2h, on préfère perdre une reprise que d'en faire
+ * une fausse). v2 (revue Fable 2026-07-03, 🔴1) : champ `user` dédié — la garde
+ * « même tâche » ne peut PAS s'appuyer sur `messages[1]` (ELEVE_ETAT y splice
+ * l'état de travail après compaction, ce qui rendait la reprise impossible dès
+ * que les deux gates étaient allumés ensemble). */
 export interface LoopSnapshot {
-  version: 1;
+  version: 2;
   ts: number;
   iter: number;
+  /** Le message user d'origine du run — la clé de la garde « même tâche ». */
+  user: string;
   hasWritten: boolean;
   messages: ChatMessage[];
   toolTrace: Array<{ name: string; args: string }>;
@@ -84,9 +91,10 @@ export function loadSnapshot(
     if (!exists(f)) return null;
     const raw = read(f);
     const data = JSON.parse(raw) as Partial<LoopSnapshot>;
-    if (data.version !== 1) return null; // version inconnue/future → ignoré
+    if (data.version !== 2) return null; // version inconnue (v1 legacy incluse) → ignoré
     if (typeof data.ts !== "number") return null;
     if (typeof data.iter !== "number") return null;
+    if (typeof data.user !== "string") return null;
     if (typeof data.hasWritten !== "boolean") return null;
     if (!Array.isArray(data.messages) || !Array.isArray(data.toolTrace)) return null;
     if (now() - data.ts > ttlMs) return null; // périmé
