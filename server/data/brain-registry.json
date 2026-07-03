@@ -5,9 +5,16 @@
     "timeoutMs": 30000
   },
   "architecte": {
-    "provider": "ollama",
-    "model": "glm-5.2:cloud",
-    "timeoutMs": 45000
+    "provider": "claude",
+    "model": "claude-fable-5",
+    "timeoutMs": 180000,
+    "fallback": [
+      {
+        "provider": "ollama",
+        "model": "glm-5.2:cloud",
+        "timeoutMs": 45000
+      }
+    ]
   },
   "codeur": {
     "provider": "openai",
