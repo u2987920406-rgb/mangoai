@@ -2,8 +2,8 @@
 type: entité
 tags: [eleve, gate, qa, gout, intention, boucle-agentique]
 statut: livré
-sources: ["#161"]
-maj: 2026-07-01
+sources: ["#161", "nuit 2026-07-03"]
+maj: 2026-07-03
 ---
 
 # Gardien-clôture (gate goût/QA/intention)
@@ -52,6 +52,16 @@ Le Gardien (et les autres garde-fous) ne s'armaient QUE dans la boucle de l'Él�
 4. **Le Maître RE-CORRIGE sur RED** — `finalizeEscalation` devient une **boucle bornée** (`ELEVE_GATE_RELANCE_MAX`, défaut 2) : clôture RED → le Maître ré-escalade avec le feedback précis (« Le livrable compile mais ne passe pas la clôture qualité : … ») au lieu de juste signaler ; gates tous OFF → `issues` vide → 1 escalade → retour (comportement historique).
 
 **Prouvé LIVE 2026-07-01** (100 % via MangoOS, `ELEVE_GATE_PARCOURS=on` + MangoQA actif, sans intervention dans la boucle) : GLM `fetch failed` → `⤴ ESCALADE MAÎTRE` → build vert ($1.75) → `🛡 Gardien (après Maître) intention 0/goût 65 ✗` + `🧭 teste_parcours ✓` + `🥭 MangoQA RED ✗` → `↻ Clôture RED → le Maître RE-CORRIGE (1/1)` → 2ᵉ build vert ($1.47) → clôture encore RED → **livré INCOMPLET assumé** (coût borné $3.22). Tests : eleve-runtime 49 · eleve-gate 40 · eleve-parcours-tools 20. **Limites honnêtes révélées** : `intention 0/100` après le Maître (le juge reçoit un résumé placeholder `"résolu par le Maître"`) → [[limites|L69]] ; OOM du watcher MangoQA (disjoncteur qui re-logge les états périmés) → [[limites|L70]].
+
+## Le Gardien retrouve ses dents (nuit 2026-07-03)
+
+Trois durcissements issus de l'audit de nuit (« build-vert ≠ réussi », règle ⭐⭐⭐) :
+
+1. **Goût réarmé** — (a) `GATE_TASTE_AXIOMS_CHARS` passé de 0 → **1500** en .env : le goût appris était entièrement DROPPÉ du prompt du VL (le cap 0 datait du VL local 8b, or le rôle vision du brain-registry est **qwen3.5:cloud**) ; (b) **plancher même en observe** : `ELEVE_GATE_TASTE_FLOOR` (déf. 50) — un score FIABLE sous le plancher bloque désormais (raison « ÉCHEC GROSSIER »), l'observe ne couvre plus les échecs grossiers. Anti-thrash L28 préservé.
+2. **Garde « vraies images »** (5ᵉ volet déterministe) — `scanFilesForPlaceholders` (même mécanique que la garde d'équilibre) : une URL de placeholder aléatoire QUI CHARGE (picsum, loremflickr, via.placeholder, unsplash.it, placekitten, placehold.co, dummyimage…) passait le check 404 et toutes les clôtures. Détectée dans les fichiers écrits → raison IMAGES + consigne `chercher_image` ; `placeholdersOk`/`placeholders[]` au verdict, opt-out `ELEVE_GATE_PLACEHOLDERS=off`, signal FIABLE dans `evaluateGate`.
+3. **Parcours de clôture non-silencieux** — `ELEVE_GATE_PARCOURS=on` en .env, et le fail-open de `runClosureParcours` expose `skipped` : un saut (preview injoignable) est LOGGÉ « sauté (…) — NON vérifié ⚠ » au lieu d'être indiscernable d'un vrai ✓.
+
+Et côté boucle : les **relances du Gardien ne sont plus aveugles** — `buildEleveUser` est reconstruit à chaque relance (la liste des fichiers datait d'AVANT la 1ʳᵉ tentative) + le nudge rappelle les fichiers déjà écrits (`changedFilesFromTrace`) ; budget `ELEVE_GATE_RELANCE_MAX=3`. Tests : eleve-gate **49/0** (dont plancher observe + placeholders + opt-outs).
 
 ## État
 

@@ -381,10 +381,16 @@ function buildEleveUser(
   return parts.join("\n");
 }
 
+// Timeout réseau de chaque appel Élève : un fetch qui pend (TCP half-open, cloud
+// muet) ne déclenche AUCUN retry et gèle le tour — agentBusy jamais libéré, UI
+// morte jusqu'au redémarrage du backend. Borne dure, configurable par env.
+const ELEVE_FETCH_TIMEOUT_MS = Math.max(30_000, Number(process.env.ELEVE_FETCH_TIMEOUT_MS ?? 180_000));
+
 // ── Cerveau Élève par défaut : Gemma local via Ollama ──────────────────────────
 async function askEleveOllama(system: string, user: string, model?: string): Promise<string> {
   const res = await fetch(`${OLLAMA}/api/chat`, {
     method: "POST",
+    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: model ?? ELEVE_MODEL,
@@ -412,6 +418,7 @@ async function askEleveOpenAI(system: string, user: string, model?: string, prov
   }
   const res = await fetch(url, {
     method: "POST",
+    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
     body: JSON.stringify({
       model: model ?? ELEVE_MODEL,
@@ -481,11 +488,22 @@ async function postEleveCompletions(
   const maxRetries = eleveMaxRetries();
   let lastStatus = 0;
   for (let attempt = 0; ; attempt++) {
-    const res = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: payload,
-    });
+    let res: Response;
+    try {
+      res = await fetch(url, {
+        method: "POST",
+        signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
+        body: payload,
+      });
+    } catch (e) {
+      // Timeout/coupure réseau = transitoire : même politique de retry qu'un 503,
+      // au lieu de geler le tour (ou de le tuer à la 1ʳᵉ microcoupure cloud).
+      const delay = eleveRetryDelayMs(503, attempt, null, maxRetries);
+      if (delay === null) throw new Error(`API Élève injoignable (${(e as Error)?.name ?? "réseau"}) après ${attempt + 1} tentative(s)`);
+      await new Promise((r) => setTimeout(r, delay));
+      continue;
+    }
     if (res.ok) {
       const data = (await res.json()) as {
         choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
@@ -556,6 +574,7 @@ async function postEleveOllamaTools(
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
   const res = await fetch(`${OLLAMA}/api/chat`, {
     method: "POST",
+    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model: model ?? ELEVE_MODEL,
@@ -615,6 +634,16 @@ export const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-m
 - check_build : vérifier objectivement l'état du build
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé)
 - finish : déclarer la tâche terminée (build vert) avec un résumé
+
+⚠ ALIAS D'OUTILS (capital) : certaines règles de mission (moodboard, Sharingan, vision, cadrage) citent des
+outils du Maître que tu N'AS PAS. Traduis TOUJOURS vers TES outils au lieu de sauter l'étape :
+- WebSearch → chercher_web · WebFetch → lire_page
+- mcp__vision__clone_url / mcp__vision__sharingan_url (analyser un site de référence) → extraire_site
+- mcp__vision__snapshot / « the snapshot tool » (voir le rendu) → vois_ecran
+- mcp__vision__sharingan_image (tirer une palette d'une image) → chercher_image sur le sujet, puis dérive
+  ta palette des couleurs RÉELLES de la meilleure photo (décris-les et cite ta source en commentaire).
+N'appelle JAMAIS un outil hors de ta liste : l'appel échoue et gaspille une itération. Les ÉTAPES restent
+obligatoires (moodboard, ancrage, vérification visuelle) — seul le NOM de l'outil change.
 
 ⚠ PLANIFIE D'ABORD (capital) : pour une tâche à PLUSIEURS étapes (nouvelle page, fonctionnalité, flux,
 refonte), ton TOUT PREMIER appel d'outil est planifier(titre, etapes) — AVANT d'explorer ou d'écrire quoi
@@ -952,15 +981,17 @@ async function ensureExternalMcpLoaded(): Promise<void> {
 // erreur console n'apparaît au chargement (la vérif « ça marche vraiment » du #155,
 // appliquée en clôture — y compris quand le Maître a résolu). Ne lève JAMAIS (best-effort :
 // si la preview est injoignable, on n'invente pas d'erreur → ok:true).
-async function runClosureParcours(projectDir: string): Promise<{ ok: boolean; errors: string[] }> {
+async function runClosureParcours(projectDir: string): Promise<{ ok: boolean; errors: string[]; skipped?: string }> {
   try {
     const { url } = await startPreview(projectDir);
     const report = await runParcours(url, [
       { description: "Clôture — chargement de l'accueil sans erreur console", attendu: { aucune_erreur_console: true } },
     ]);
     return { ok: report.ok, errors: report.consoleErrors ?? [] };
-  } catch {
-    return { ok: true, errors: [] };
+  } catch (e) {
+    // Fail-open assumé (tâche non-UI, preview impossible) mais JAMAIS silencieux :
+    // « ok non vérifié » et « ok vérifié » ne doivent plus être indiscernables.
+    return { ok: true, errors: [], skipped: (e as Error).message.split("\n")[0] };
   }
 }
 
@@ -1089,7 +1120,7 @@ export async function runRelay(
       }
       if (process.env.ELEVE_GATE_PARCOURS === "on") {
         const pc = await runClosureParcours(projectDir);
-        push(`🧭 teste_parcours (après Maître) — ${pc.ok ? "aucune erreur console ✓" : `${pc.errors.length} erreur(s) console ✗`}`);
+        push(`🧭 teste_parcours (après Maître) — ${pc.skipped ? `sauté (${pc.skipped}) — NON vérifié ⚠` : pc.ok ? "aucune erreur console ✓" : `${pc.errors.length} erreur(s) console ✗`}`);
         if (!pc.ok) issues.push(`erreurs console : ${pc.errors.slice(0, 3).join(" | ") || "(voir preview)"}`);
       }
       {
@@ -1144,7 +1175,7 @@ export async function runRelay(
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
     const visionClause = process.env.ELEVE_VISION === "on" ? AGENTIC_VISION_CLAUSE : "";
     const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}`;
-    const user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
+    let user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     // Phase E3 — un sous-agent peut prendre SON cerveau via agentType (= intention),
     // seulement s'il est explicitement routé, agentique et openai-compat ; sinon il
     // hérite du cerveau du parent (Phase D). En test (transport injecté), pas de switch.
@@ -1388,6 +1419,18 @@ export async function runRelay(
     clearPlan(projectDir);
     for (;;) {
       agErr = "";
+      // Relance (nudge non vide) : reconstruit le prompt user FRAIS — sinon la liste
+      // des fichiers date d'AVANT la tentative précédente (un projet neuf y figure
+      // « vide » alors que 20 fichiers viennent d'être écrits) et l'Élève ré-explore,
+      // réécrit du déjà-bon ou dérive de sa direction. On lui rappelle aussi ce qui
+      // vient d'être écrit ce run pour qu'il reparte de l'existant.
+      if (nudge && result) {
+        user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
+        const dejaEcrits = changedFilesFromTrace(result.toolTrace);
+        if (dejaEcrits.length) {
+          nudge += `\n\nDéjà écrit pendant ce run (pars de l'EXISTANT, ne refais rien de zéro) : ${dejaEcrits.slice(0, 30).join(", ")}`;
+        }
+      }
       try {
         // runAgenticTask = la boucle + la DÉLÉGATION (Phase D/E3) : l'orchestrateur
         // confie des sous-tâches à des sous-agents bornés (profondeur + budget partagé),
@@ -1583,7 +1626,7 @@ export async function runRelay(
           nudge = `⚠ CLÔTURE — l'app se charge AVEC des erreurs console : ${pc.errors.slice(0, 3).join(" | ") || "(voir la preview)"}. Corrige-les, vérifie que la page charge proprement, puis appelle \`finish\`.`;
           continue;
         }
-        push(`🧭 teste_parcours — aucune erreur console ✓`);
+        push(pc.skipped ? `🧭 teste_parcours — sauté (${pc.skipped}) — NON vérifié ⚠` : `🧭 teste_parcours — aucune erreur console ✓`);
       }
 
       // #b incrément 3 — audit MangoQA CÔTÉ ÉLÈVE (si MangoQA tourne) : un verdict RED

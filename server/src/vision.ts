@@ -117,7 +117,7 @@ export function getPreviewUrl(): string | null {
  * isCloneableUrl (qui bloque localhost) — l'URL vient de la preview de l'app, pas
  * de l'utilisateur. Lève si le navigateur est indisponible → l'appelant catch.
  * Utilisé par la capture avant/après (#80), hors de la boucle MCP. */
-export async function capturePreview(url: string): Promise<Buffer> {
+export async function capturePreview(url: string, opts: { fullPage?: boolean } = {}): Promise<Buffer> {
   const b = await getBrowser();
   const context = await b.newContext({ viewport: VIEWPORT });
   try {
@@ -125,7 +125,9 @@ export async function capturePreview(url: string): Promise<Buffer> {
     await page.goto(url, { waitUntil: "load", timeout: 10_000 });
     await page.waitForLoadState("networkidle", { timeout: 4_000 }).catch(() => {});
     await page.waitForTimeout(300); // settle animations / HMR
-    return await page.screenshot({ type: "jpeg", quality: 80 });
+    // Nuit 2026-07-03 — fullPage optionnel : sans lui, tout ce qui vit sous la ligne
+    // de flottaison (sections basses, footer) n'était JAMAIS vu par aucun œil.
+    return await page.screenshot({ type: "jpeg", quality: 80, fullPage: opts.fullPage === true });
   } finally {
     await context.close().catch(() => {});
     touchIdleTimer();

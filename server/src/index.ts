@@ -37,6 +37,7 @@ import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js
 import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
+import { domainTemplateSection } from "./template-library.js";
 import { uxuiProfile } from "./models/uxui.js";
 import { layoutProfile } from "./models/layout.js";
 import { getBus } from "./kernel-bus.js";
@@ -573,7 +574,15 @@ app.post("/api/chat", async (req, res) => {
       // mémoire…) — mêmes blocs que Claude. Le moteur agentique (profil fort + GLM)
       // s'en sert pour piloter la coquille entière, pas un prompt nu. Sur le chemin
       // contrat (Gemma) runRelay l'ignore → zéro impact.
-      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN });
+      // Nuit 2026-07-03 — template de DOMAINE (bibliothèque locale) : squelette +
+      // contraintes design du domaine détecté sur la demande. "" si non détecté.
+      let templateSection = "";
+      try {
+        templateSection = domainTemplateSection(agentPrompt);
+      } catch {
+        templateSection = "";
+      }
+      const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN, templateSection });
       const r = await runRelay(agentPrompt, dir, {
         ...(specialistProfile
           ? { profile: specialistProfile, eleveModel: specialistModel }

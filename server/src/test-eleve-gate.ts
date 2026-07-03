@@ -8,6 +8,7 @@ import {
   evaluateGate,
   changedFilesFromTrace,
   buildGateNudge,
+  scanFilesForPlaceholders,
   type GateDeps,
   type GateVerdict,
 } from "./eleve-gate.js";
@@ -48,6 +49,7 @@ function deps(over: Partial<GateDeps> = {}): GateDeps {
     critique: over.critique ?? (async () => critique(90)),
     stopPreview: over.stopPreview ?? (async () => {}),
     scanBalance: over.scanBalance ?? (() => []), // défaut : équilibre OK (pas de finding)
+    scanPlaceholders: over.scanPlaceholders ?? (() => []), // défaut : vraies images OK
     runTests: over.runTests ?? noTests, // défaut : pas de script test → ne pénalise pas
   };
 }
@@ -98,12 +100,22 @@ async function run() {
     delete process.env.ELEVE_GATE_TASTE_OBSERVE;
   }
 
-  console.log("\n[4b] runClosureGate — mode OBSERVE (L34) : goût scoré mais ne bloque pas");
+  console.log("\n[4b] runClosureGate — mode OBSERVE (L34) : goût scoré, ne bloque pas AU-DESSUS du plancher");
   {
-    // Observe ON (défaut) : un goût bas (40) est SCORÉ et exposé, mais ne bloque pas et ne produit aucune raison.
-    const v = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 }, deps({ critique: async () => critique(40, 0, true) }));
-    check("observe : goût 40 scoré + exposé mais ok:true (ne bloque pas)", v.ok === true && v.tasteScored === true && v.tasteObserve === true && v.design?.overall === 40);
+    // Observe ON (défaut) : un goût médiocre-mais-pas-grossier (60 ≥ plancher 50) est SCORÉ
+    // et exposé, mais ne bloque pas et ne produit aucune raison.
+    const v = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 }, deps({ critique: async () => critique(60, 0, true) }));
+    check("observe : goût 60 scoré + exposé mais ok:true (ne bloque pas)", v.ok === true && v.tasteScored === true && v.tasteObserve === true && v.design?.overall === 60);
     check("observe : aucune raison GOÛT", !v.raisons.some((r) => /GOÛT/.test(r)));
+  }
+
+  console.log("\n[4c] runClosureGate — PLANCHER même en observe : échec grossier (< 50) bloque");
+  {
+    // Nuit 2026-07-03 : « build-vert ≠ réussi » — un score FIABLE sous le plancher bloque
+    // même en observe (une app laide mais couvrante ne sort plus verte sans un regard).
+    const v = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 }, deps({ critique: async () => critique(40, 0, true) }));
+    check("observe : goût 40 < plancher 50 → ok:false", v.ok === false && v.tasteOk === false);
+    check("raison ÉCHEC GROSSIER", v.raisons.some((r) => /GOÛT 40/.test(r) && /GROSSIER/.test(r)));
   }
 
   console.log("\n[5] runClosureGate — WCAG KO");
@@ -152,8 +164,8 @@ async function run() {
 
   console.log("\n[8] evaluateGate — décision pure");
   {
-    const koVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, intentOk: false, design: critique(50), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], testsRan: false, testsOk: true, raisons: ["INTENTION 40", "GOÛT 50"] };
-    const okVerdict: GateVerdict = { ok: true, intent: goodIntent, intentOk: true, tasteScored: false, tasteOk: true, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], testsRan: false, testsOk: true, raisons: [] };
+    const koVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, intentOk: false, design: critique(50), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], placeholdersOk: true, placeholders: [], testsRan: false, testsOk: true, raisons: ["INTENTION 40", "GOÛT 50"] };
+    const okVerdict: GateVerdict = { ok: true, intent: goodIntent, intentOk: true, tasteScored: false, tasteOk: true, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], placeholdersOk: true, placeholders: [], testsRan: false, testsOk: true, raisons: [] };
     check("ok → action ok", evaluateGate("/p", okVerdict, 0, 2).action === "ok");
     const d1 = evaluateGate("/p", koVerdict, 0, 2);
     check("KO + budget → corrige + nudge", d1.action === "corrige" && "nudge" in d1 && /Gardien/.test((d1 as { nudge: string }).nudge));
@@ -163,13 +175,13 @@ async function run() {
   console.log("\n[8b] evaluateGate — anti-thrash goût (L28)");
   {
     // SEUL le goût bloque (intention OK, WCAG OK), goût scoré 71.
-    const goutVerdict: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, design: critique(71), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], testsRan: false, testsOk: true, raisons: ["GOÛT 71"] };
+    const goutVerdict: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, design: critique(71), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], placeholdersOk: true, placeholders: [], testsRan: false, testsOk: true, raisons: ["GOÛT 71"] };
     check("goût 71, 1er tour (prevGout null) → corrige", evaluateGate("/p", goutVerdict, 0, 3, null).action === "corrige");
     check("goût n'a pas progressé (71 ≤ 71) → laisse-passer (pas de thrash)", evaluateGate("/p", goutVerdict, 1, 3, 71).action === "laisse-passer");
     check("goût a régressé (71 ≤ 73) → laisse-passer", evaluateGate("/p", goutVerdict, 1, 3, 73).action === "laisse-passer");
     check("goût a progressé (71 > 65) → corrige encore", evaluateGate("/p", goutVerdict, 1, 3, 65).action === "corrige");
     // L'anti-thrash ne s'applique PAS si l'intention bloque aussi (signal fiable).
-    const mixteVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, intentOk: false, design: critique(71), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], testsRan: false, testsOk: true, raisons: ["INTENTION 40", "GOÛT 71"] };
+    const mixteVerdict: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["x"], note: "" }, intentOk: false, design: critique(71), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], placeholdersOk: true, placeholders: [], testsRan: false, testsOk: true, raisons: ["INTENTION 40", "GOÛT 71"] };
     check("intention KO aussi → corrige malgré goût stagnant", evaluateGate("/p", mixteVerdict, 1, 3, 71).action === "corrige");
   }
 
@@ -186,7 +198,7 @@ async function run() {
 
   console.log("\n[9] buildGateNudge — préfixe le plan (#160) s'il existe");
   {
-    const v: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["la nav"], note: "" }, intentOk: false, tasteScored: false, tasteOk: true, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], testsRan: false, testsOk: true, raisons: ["INTENTION 40 — il manque :\n  - la nav"] };
+    const v: GateVerdict = { ok: false, intent: { couverture: 40, manques: ["la nav"], note: "" }, intentOk: false, tasteScored: false, tasteOk: true, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], placeholdersOk: true, placeholders: [], testsRan: false, testsOk: true, raisons: ["INTENTION 40 — il manque :\n  - la nav"] };
     clearPlan("/p");
     const sansPlan = buildGateNudge("/p", v, 1, 2);
     check("sans plan : pas de rappel mais le nudge Gardien", !/Rappel de TON plan/.test(sansPlan) && /Gardien/.test(sansPlan) && /la nav/.test(sansPlan));
@@ -224,7 +236,7 @@ async function run() {
 
   console.log("\n[10c] evaluateGate — ÉQUILIBRE seul KO → corrige (signal fiable, pas d'anti-thrash)");
   {
-    const balVerdict: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, tasteScored: false, tasteOk: true, tasteObserve: false, wcagOk: true, balanceOk: false, balance: [{ file: "a.jsx", line: 3, kind: "jsx-maxw-no-center", snippet: "max-w-4xl" }], testsRan: false, testsOk: true, raisons: ["STRUCTURE — 1 bloc…"] };
+    const balVerdict: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, tasteScored: false, tasteOk: true, tasteObserve: false, wcagOk: true, balanceOk: false, balance: [{ file: "a.jsx", line: 3, kind: "jsx-maxw-no-center", snippet: "max-w-4xl" }], placeholdersOk: true, placeholders: [], testsRan: false, testsOk: true, raisons: ["STRUCTURE — 1 bloc…"] };
     const d = evaluateGate("/p", balVerdict, 0, 2, 80); // prevGout fourni : ne doit PAS court-circuiter (ce n'est pas onlyGout)
     check("balance KO → corrige", d.action === "corrige");
   }
@@ -260,8 +272,41 @@ async function run() {
   console.log("\n[11b] evaluateGate — tests KO = signal fiable → corrige (pas d'anti-thrash)");
   {
     // Le goût stagne MAIS les tests sont rouges → on DOIT corriger (testsOk:false casse onlyGout).
-    const v: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, design: critique(71), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], testsRan: true, testsOk: false, raisons: ["TESTS rouges", "GOÛT 71"] };
+    const v: GateVerdict = { ok: false, intent: goodIntent, intentOk: true, design: critique(71), tasteScored: true, tasteOk: false, tasteObserve: false, wcagOk: true, balanceOk: true, balance: [], placeholdersOk: true, placeholders: [], testsRan: true, testsOk: false, raisons: ["TESTS rouges", "GOÛT 71"] };
     check("tests KO + goût stagnant → corrige", evaluateGate("/p", v, 1, 3, 71).action === "corrige");
+  }
+
+  console.log("\n[12] scanFilesForPlaceholders (PUR) — garde « vraies images »");
+  {
+    const contents: Record<string, string> = {
+      "src/Hero.jsx": `<img src="https://picsum.photos/800/600" /> et <img src="https://images.pexels.com/photos/12/tree.jpg" />`,
+      "src/Cards.jsx": `const u = 'https://loremflickr.com/320/240/dog'; const ok = "https://images.pexels.com/photos/9/x.jpg";`,
+      "src/logic.ts": `// pas d'image ici`,
+      "assets/photo.png": `binaire — extension ignorée`,
+    };
+    const found = scanFilesForPlaceholders(Object.keys(contents), (f) => contents[f] ?? null);
+    check("détecte picsum + loremflickr (2)", found.length === 2);
+    check("jamais les URLs Pexels", !found.some((p) => /pexels/.test(p.url)));
+    check("fichier + URL remontés", found.some((p) => p.file === "src/Hero.jsx" && /picsum/.test(p.url)));
+  }
+
+  console.log("\n[13] runClosureGate — placeholder vivant → ok:false, raison IMAGES");
+  {
+    const finding = { file: "src/Hero.jsx", url: "https://picsum.photos/800/600" };
+    const v = await runClosureGate(
+      "/proj", "t", result("fait"), "/ws", "vitrine",
+      { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 },
+      deps({ scanPlaceholders: () => [finding] }),
+    );
+    check("ok:false (placeholder détecté)", v.ok === false && v.placeholdersOk === false);
+    check("raison IMAGES + chercher_image", v.raisons.some((r) => /IMAGES/.test(r) && /chercher_image/.test(r)));
+    check("placeholders détaillés renvoyés", v.placeholders.length === 1);
+    // Opt-out ELEVE_GATE_PLACEHOLDERS=off → volet ignoré.
+    const prev = process.env.ELEVE_GATE_PLACEHOLDERS;
+    process.env.ELEVE_GATE_PLACEHOLDERS = "off";
+    const vOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "vitrine", { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 }, deps({ scanPlaceholders: () => [finding] }));
+    check("désactivé → placeholdersOk:true, ok:true", vOff.placeholdersOk === true && vOff.ok === true);
+    if (prev === undefined) delete process.env.ELEVE_GATE_PLACEHOLDERS; else process.env.ELEVE_GATE_PLACEHOLDERS = prev;
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-gate : ${pass} pass, ${fail} fail`);

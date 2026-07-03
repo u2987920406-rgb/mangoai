@@ -6,6 +6,7 @@ import { assembleSystemPrompt } from "./scenario.js";
 import { visionServer } from "./vision.js";
 import { relevantNotesSection } from "./notes-rag.js";
 import { constellationsSection } from "./constellations.js";
+import { domainTemplateSection } from "./template-library.js";
 import { proceduresPromptSection } from "./procedures.js";
 import { inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
@@ -168,6 +169,14 @@ export async function* runAgent(
   } catch {
     constellationsBlock = "";
   }
+  // Nuit 2026-07-03 — template de DOMAINE (bibliothèque locale server/templates/*.md) :
+  // squelette + contraintes design du domaine détecté sur la demande. "" si non détecté.
+  let templateBlock = "";
+  try {
+    templateBlock = domainTemplateSection(prompt);
+  } catch {
+    templateBlock = "";
+  }
   // Idée #75 — mémoire procédurale : récupère (sémantique + repli mots-clés) les
   // démarches de résolution passées qui matchent CETTE demande, "" si aucune.
   // Best-effort, n'embed que la requête (les procédures sont pré-indexées).
@@ -234,7 +243,7 @@ export async function* runAgent(
           // Coque Souple: the append is assembled from named blocks following
           // the scenario (= effort mode). Behavior-constant vs the old inline
           // concatenation (verified byte-for-byte).
-          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
+          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, templateSection: templateBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
         },
         ...(sessionId ? { resume: sessionId } : {}),
       },
