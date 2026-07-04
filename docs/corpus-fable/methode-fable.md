@@ -1,0 +1,61 @@
+# methode-fable.md — Axiomes de méthode d'architecte (distillation du corpus Fable 5)
+
+Distillation transverse du corpus Fable 5 (fenêtre → 2026-07-07). Ce document ne rejoue aucune mission : il extrait ce qui **revient à travers plusieurs designs** (#177 vidéo-connaissance, #178 bible narrative, #179 giga-apps, #181 formation adaptative, revue des fondations, et les deux critiques de transmission GLM). Chaque axiome cite les missions où il apparaît. La règle de sélection : un pattern n'entre ici que s'il se répète — la valeur est dans la fusion, pas l'exhaustivité.
+
+---
+
+## 1. Axiomes de méthode d'architecte
+
+1. **Chercher le rail avant de poser des rails.** Dans un repo mûr, la bonne architecture est surtout de la cartographie : inventorier « ce dont j'ai besoin → existe-t-il déjà sous un autre nom ? » avant d'inventer. Corollaire mesurable : *compte tes créations, justifie chacune par un grep infructueux* — si un plan crée plus qu'il n'assemble, il n'a pas assez cherché. (#181 : 5 assemblages/7 · #179 : « quasi-totalité câblage » · #178 : 4/7 décisions déjà prises à la lecture · #177 : chercher le précédent d'exécution, même hors du repo · Pilier C : « dispatch propage déjà → boucher 4 trous »)
+
+2. **Vérifier l'acquis annoncé dans le CODE avant de bâtir dessus.** Une capacité citée dans une doc, une roadmap ou `fondation.md` peut ne pas exister ; ne citer dans un plan que des chemins de fichiers réellement ouverts. Réciproque : les capacités réelles se cachent parfois derrière des gates OFF, invisibles dans la config courante. (#177 : `voir_video` fantôme démenti par 3 greps · #178 : « ne citer que des chemins que j'ai ouverts » · #181 : `genere_contenu` derrière `ELEVE_CONTENT=on`, standards kernel non branchés)
+
+3. **Reformuler jusqu'à ce que le problème change de catégorie — quitte à renverser l'énoncé.** Le plus haut levier et le moins visible dans le livrable final : « mémoire narrative » → « gestion d'état » décide tout le reste. Renversement jumeau : on ne fait pas grandir le générateur jusqu'à la tâche, on découpe la tâche jusqu'au générateur. Si la reformulation ne change pas la catégorie, elle n'est pas finie. (#178 D2 · #179 : « découpe la tâche jusqu'au générateur »)
+
+4. **Poser les ordres de grandeur avant les débats d'architecture ; dimensionner depuis la capacité prouvée, pas depuis le produit.** Beaucoup de « débats de principe » (graphe vs relationnel) sont des débats de volumétrie déguisés qui s'évaporent dès qu'on pose les chiffres. La maille de décomposition est la capacité mesurée de l'exécutant, pas l'ambition du produit. (#178 : 16 k faits → mort du graph DB · #179 : GLM ~36 itérations / ~15 fichiers dérive tout le découpage · #181 : compter les états avant de choisir les résidences)
+
+5. **L'élégance d'une architecture se juge à l'endroit où elle place sa confiance.** Identifier l'arc fiable de la boucle et l'arc fragile, puis charger le fiable au maximum (amont déterministe) pour décharger le fragile (aval probabiliste). Une architecture « belle » qui concentre 100 % de l'état sur le maillon à 80 % de fiabilité est un piège. (#178 : event-sourcing rejeté pour cela · #177 : verbatim borde l'extraction LLM · #181 : moteur=confiance / sujet=donnée générée)
+
+6. **Pour toute sortie de LLM qui entre dans un état durable, exiger une propriété que le déterminisme peut vérifier.** Le point de rendez-vous de deux runs qui ne se verront jamais doit être un artefact vérifiable par une machine (code + test), pas de la prose (qui dérive en silence). Mais un invariant ne vaut que sa référence : si la source est corrompue en amont, la vérification atteste la corruption au lieu de l'arrêter. (#177 : verbatim obligatoire · #178 : intervalles + interdictions amont · #179 : contrats TS gelés par hook, artefact au rendez-vous)
+
+7. **Rejet-total → repêchage-en-secondaire : le premier rejet est presque toujours une sur-correction.** Après avoir écarté un mécanisme comme *primaire*, vérifier s'il n'est pas le bon *secondaire*. Motif récurrent et fiable de correction de biais. (#177 : scraping maison, vote majoritaire, RAG — tous rejetés en primaire, repêchés en repli/poids/contexte · #178 : RAG repêché en couche d'échos, `bible_declare` repêché en lecture seule)
+
+8. **Chaque injection de contexte naît avec son cap (et son marqueur de troncature) — un cap est un contrat.** Toute injection sans cap dur est un bug en incubation qui finira par saturer ce qu'il devait aider. (#178 : `MEMOIRE_SECTION_MAX_CHARS`, `AXIOMS_MAX_CHARS` · #179 : corollaire du 🔴2 · revue fondations : 🔴2 `referencesPromptSection` était la seule injection sans cap)
+
+9. **Chaque table / élément de schéma doit avoir un client nommé — sinon c'est de la modélisation récréative.** Correctif à appliquer par tout relecteur d'un plan Fable : chercher l'élément sans requête cliente, il en reste probablement un (c'est ma limite observable — je conçois un étage de plus que nécessaire). Un schéma s'étend par migrations, pas par anticipation. (#178 : 11→6 tables, colonne `confidence` sans consommateur · #177 : table `relations` supprimée, `entites` = candidat au superflu · #179 : biais de réutilisation auto-signalé)
+
+10. **Le déterminisme partout où il suffit ; le QI cher au seul point de levier maximal.** Ne jamais payer un juge LLM là où un test suffit ; dimensionner la vérification par le **coût du faux positif** (exactitude → échantillon jugé, humain en dernier ressort ; moteur → tests déterministes). Un juge qui ne peut pas voir son objet est du théâtre de vérification. (#179 : Gardien d'intégration LLM rejeté car il « lirait le code des jointures » · #181 : 5.1.5 coût du faux positif · #177 : réconciliation qui classe/pondère sans décréter le vrai)
+
+11. **Placer une preuve courte tôt, avec un gate de décision chiffré dessus.** Un plan de N étapes sans point d'arrêt est une promesse ; avec un seuil chiffré au milieu, c'est une expérience. Le courage d'arrêter se décide à la conception, pas au moment de l'échec — et chaque étage doit produire une évidence que le suivant consomme (un plan est une chaîne d'évidences, pas une liste de tâches). (#178 É5 : 50 pages, « stop si > 20 % conflits » · #177 É4 : 3 vidéos, 1 contradiction, rejets ~20-25 % · #179 : E5 avant E8, le tableur prouvé devient gabarit)
+
+12. **Quand le système a tranché trois fois pareil, prolonge le pattern — ne l'améliore pas ; un arbitrage humain documenté est un axiome, pas une opinion.** Le précédent réel bat le design de principe : chercher « la dernière fois qu'on a essayé » et les décisions produit déjà arbitrées par l'utilisateur avant de rouvrir une question. (#179 : état-de-chantier = fichier-à-la-racine, tranché 3× · #181 : « pas de backend » déjà arbitré par Raf sur TOEIC · #178 : patterns forts déclinés plutôt que reconçus)
+
+13. **Méfiance envers les architectures choisies par résonance lexicale avec le domaine ; les collisions de vocabulaire sont des bugs de doc qui deviennent des bugs de code.** Le mot appelle la mauvaise structure comme un aimant (« relations » → graphe, « mémoire » → RAG, « réconcilier » → arbitrage-qui-tranche) ; demander quelle *requête* domine réellement. Nommer explicitement tout terme surchargé. (#178 : graphe appelé par « relations » · #179 : collision « contrat » désamorcée par `contracts/*.ts` · #177 : le mot « réconcilier » de la mission)
+
+14. **Les analogies internes au système sont précieuses ET dangereuses : elles transportent la solution avec ses hypothèses.** Passer chaque décision d'une architecture cousine au crible *« quelle propriété du domaine source rendait cette décision bonne, et mon domaine l'a-t-il ? »* (le crible monde-fermé / monde-ouvert). Une architecture cousine est un gisement de patterns, pas un moule. Et : dire ce qu'on ne livre PAS, en nommant chaque limite au moment de la décision (chaque « rejeté » qui laisse un résidu de valeur devient un point d'extension), fait partie de l'architecture. (#177 : crible monde-ouvert contre la symétrie #178 · #179 : « la prose n'a pas de compilateur, le code en a un » · #178 : R4 « cohérent ≠ intéressant » explicite)
+
+---
+
+## 2. Ce que GLM corrige systématiquement chez GLM
+
+Matière des deux critiques d'exécutions réelles (TOEIC Quest ~470 questions ; pipeline #177 sur 3 vidéos). La leçon-mère, vérifiée deux fois : **GLM est fidèle LOCALEMENT (une question, un claim : anglais correct, JSON valide, verbatim exact) mais AVEUGLE aux propriétés d'AGRÉGAT** — défauts invisibles au spot-check, visibles seulement en *comptant* et en *croisant*. Les catégories récurrentes :
+
+1. **Cécité au calibrage sur échelle absolue.** GLM note relativement à son lot de génération et se réfugie dans les valeurs basses, ignorant l'échelle globale qu'un moteur, lui, prend au sérieux. (TOEIC : `difficulty: 3` jamais employé sur ~470 items, tier haut du moteur 100 % mort · Vidéo : le juge ne compte pas les SOURCES → 12/13 « consensus » sont un seul locuteur d'accord avec lui-même)
+
+2. **Fausse unicité — la réponse/l'étiquette visée supposée seule, sans éprouver les concurrentes.** Sur-généralisation de règles, distracteurs non stress-testés, labels bruités promus clé de regroupement. (TOEIC : « marqueur temporel → un seul temps » crée des QCM à deux bonnes réponses · Vidéo : le champ `sujet` instable de GLM commande le clustering → deux phrases identiques, cosinus 1.000, jamais comparées)
+
+3. **Justification/rationnel comme rebouchage.** Face à un item bancal, GLM fabrique un rationnel confiant — parfois faux, parfois désaligné — au lieu de corriger l'item. (TOEIC : « *quart* est un mot français » [faux], explication « template » recollée sur le mauvais mécanisme · Vidéo : le juge plaque une « condition » abstraite sur tout un groupe, y compris un claim défectueux)
+
+4. **Volume ≠ couverture ; permutation prise pour matière.** GLM atteint un quota en permutant un micro-ensemble ou en ré-émettant la même unité, sans élargir. (TOEIC : un module « vocabulaire » qui n'enseigne que 2 lemmes ; `targetCount:24` vs ~10 réels · Vidéo : 32 claims sont le même fait extrait 2-4 fois, faute de dédup fenêtre-glissante)
+
+5. **Autonomie absente — la sortie recopie la déixis / le contexte oral.** Localement fidèle, inutilisable seule. (Vidéo : « the speaker », « these techniques », « this alone » non résolus → claims non interrogeables hors contexte)
+
+6. **Côté harnais : la validation de schéma garantit la forme unitaire, jamais l'agrégat — et le fail-open déguise une panne en dégradation invisible.** Le rôle de Fable est de porter la vérification de l'*item* au *système* : unicité éprouvée, pluralité de sources comptée, ancre vérifiée, propriétés contractuelles d'agrégat. (TOEIC : écart contrat↔contenu non signalé · Vidéo : juge muet 36 % du temps, sans retry ni trace, avalé silencieusement par le fail-open)
+
+---
+
+## 3. Bilan honnête de la fenêtre
+
+Ce que la fenêtre Fable a probablement apporté au-delà de Sonnet/Opus seuls : (a) le réflexe de **diagnostiquer par la distribution avant la lecture** — trois `GROUP BY` ou un `grep -oE` de comptage font tomber le fait le plus lourd sans lire un seul item (tier 3 mort, 89 % de singletons, 12/13 consensus mono-source) ; (b) la **détection de défauts d'interaction** en croisant deux mécanismes prouvés isolément (le 🔴1 de la revue, invisible des ~800 assertions unitaires) ; (c) le geste de **re-catégorisation** qui fait « découler » un plan de la reformulation, pas du problème brut ; (d) la distillation des critiques de transmission, qui a nommé l'aveuglement-à-l'agrégat de GLM comme une famille unique.
+
+Ce qui, à l'inverse, a été fait tout aussi bien sans Fable : la nuit a continué et le sprint n'a pas décroché. Opus a mené seul la revue globale (4🔴+13🟠+6🟡) et les designs #180 et #176 ; Opus/Sonnet/Haiku ont implémenté l'intégralité du backlog (autorité d'arrêt du Disjoncteur, écritures atomiques, dédup axiomes…), tsc et tests verts sur les deux dépôts, un bug de premier jet même rattrapé en review. Lucidement : l'apport de Fable était concentré dans la **méthode de diagnostic** et la **critique adverse**, pas dans une irremplaçabilité de livraison — l'exécution et une bonne part de l'architecture tiennent sans lui, ce qui est exactement le but des annexes de raisonnement laissées ici.
