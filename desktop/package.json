@@ -1,0 +1,14 @@
+{
+  "name": "mangoos-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Coque desktop Tauri de MangoOS (plan-180 E4) : fenetre native + supervision du sidecar Node (backend+UI).",
+  "scripts": {
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build": "tauri build"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2"
+  }
+}

@@ -25,6 +25,7 @@ import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { createProject, projectDir, WORKSPACE_DIR } from "./projects.js";
 import { runRelay, defaultRelayDeps, ELEVE_PROVIDER, type RelayDeps } from "./eleve.js";
+import { runAsActor } from "./perimeter-context.js";
 import { recordTurnMetrics } from "./metrics.js";
 import { inferProjectType } from "./blueprints.js";
 import { flag } from "./flags.js";
@@ -327,7 +328,8 @@ async function main(): Promise<void> {
       : undefined;
     try {
       await createProject(name);
-      const r = await runRelay(p.task, dir, { maitreModel: escalateModel }, deps);
+      // (#180 É2) Phase 0 d'entraînement nocturne → acteur AUTONOME (périmètre restreint).
+      const r = await runAsActor("autonomous", () => runRelay(p.task, dir, { maitreModel: escalateModel }, deps));
       const durationMs = Date.now() - started;
       // (action #7) succès = remise à zéro de la série ; échec = incrémente
       // (le compteur ne PÈSE que si TRAIN_LOOP_OLLAMA_BREAKER=on, cf. plus haut).

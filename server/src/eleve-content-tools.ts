@@ -9,6 +9,7 @@ import { z } from "zod";
 import fs from "node:fs";
 import path from "node:path";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
+import { confinePath } from "./perimeter-context.js";
 import { askLLM } from "./llm-engine.js";
 import { cachedComplete } from "./llm-cache.js";
 import { searchPexelsImages } from "./taste-images.js";
@@ -120,10 +121,10 @@ function realDeps(): ContentToolDeps {
 }
 
 // Empêche d'écrire/lire hors du projet.
-function resolveInside(root: string, rel: string): string {
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) throw new Error(`chemin hors du projet : ${rel}`);
-  return abs;
+// (#180 É2) `access` distingue l'écriture (genere_contenu) de la lecture
+// (verifie_coherence_images). Gate OFF = byte-identique quel que soit `access`.
+function resolveInside(root: string, rel: string, access: "read" | "write" = "write"): string {
+  return confinePath(root, rel, access);
 }
 
 // ── Les deux outils ──────────────────────────────────────────────────────────
@@ -186,7 +187,7 @@ export function buildEleveContentTools(projectDir: string, deps: ContentToolDeps
       let items: ImgItem[];
       let abs: string;
       try {
-        abs = resolveInside(projectDir, rel);
+        abs = resolveInside(projectDir, rel, "read");
         const parsed = JSON.parse(deps.readFile(abs));
         if (!Array.isArray(parsed)) return { text: `${rel} n'est pas un tableau JSON d'items.`, isError: true };
         items = parsed as ImgItem[];
@@ -201,7 +202,11 @@ export function buildEleveContentTools(projectDir: string, deps: ContentToolDeps
       const r = await checkImageCoherence(items, opts, deps.img);
       if (r.fixed > 0) {
         try {
-          deps.writeFile(abs, JSON.stringify(items, null, 2) + "\n");
+          // (#180 É2) La correction ÉCRIT → re-confine en accès `write` : un coffre
+          // en lecture seule (acteur autonome) refuse l'écriture même si la lecture
+          // ci-dessus l'a acceptée. Gate OFF → même `abs`, byte-identique.
+          const absWrite = resolveInside(projectDir, rel, "write");
+          deps.writeFile(absWrite, JSON.stringify(items, null, 2) + "\n");
         } catch {
           /* écriture best-effort : le rapport reste utile */
         }

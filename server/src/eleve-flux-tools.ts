@@ -20,6 +20,7 @@ import path from "node:path";
 import { execFile } from "node:child_process";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { freeGpuForFlux } from "./gpu-serialize.js";
+import { confinePath } from "./perimeter-context.js";
 import { generateKreaImage, kreaEnabled } from "./krea.js";
 
 function comfyUrl(): string {
@@ -195,10 +196,9 @@ export async function generateFlux(
 
 // ── Outil de l'Élève ─────────────────────────────────────────────────────────
 
+// (#180 É2) Écrit l'image générée → accès `write`. Gate OFF = byte-identique.
 function resolveInside(root: string, rel: string): string {
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) throw new Error(`chemin hors du projet : ${rel}`);
-  return abs;
+  return confinePath(root, rel, "write");
 }
 
 export function slugify(s: string): string {

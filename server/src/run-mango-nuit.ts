@@ -23,6 +23,7 @@ import { judgeProject } from "./nocturnal.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "./vision.js";
 import { MANGO_NUIT, type MangoNuitSpec } from "./mango-nuit-specs.js";
 import { flag } from "./flags.js";
+import { runAsActor } from "./perimeter-context.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 
 const STATE_FILE = path.join(WORKSPACE_DIR, ".mango-nuit.state.json");
@@ -328,7 +329,8 @@ async function main(): Promise<void> {
   log("═══════════════════════════════════════════════════════════════════");
 }
 
-main().catch((e) => {
+// (#180 É2) Phase 1 nocturne → acteur AUTONOME pour tout le run (périmètre restreint).
+runAsActor("autonomous", main).catch((e) => {
   console.error("❌", e instanceof Error ? e.stack : e);
   process.exit(1);
 });

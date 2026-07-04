@@ -14,6 +14,8 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { resolveEdit } from "./edit-match.js";
+import { confinePath, currentPerimeter } from "./perimeter-context.js";
+import { flag } from "./flags.js";
 import type { Action } from "./contract.js";
 
 export type ActionOutcome =
@@ -34,15 +36,14 @@ export interface ExecOptions {
 }
 
 /** Défense en profondeur : parseContract a déjà filtré les chemins, mais on
- * re-confirme que le chemin résolu reste DANS le projet avant toute écriture.
- * Deux barrières valent mieux qu'une quand un modèle faible est aux commandes. */
+ * re-confirme que le chemin résolu reste DANS le périmètre avant toute écriture.
+ * Deux barrières valent mieux qu'une quand un modèle faible est aux commandes.
+ * (#180 É2) Délègue à `confinePath` : gate DESKTOP_PERIMETER OFF (défaut) →
+ * BYTE-IDENTIQUE à l'ancien resolveInside (une racine = le projet, même prédicat,
+ * même message « chemin hors du projet ») ; ON → union des racines consenties du
+ * palier de l'acteur, filtrée en ÉCRITURE (les coffres `ro` sont exclus). */
 function resolveInside(projectDir: string, rel: string): string {
-  const root = path.resolve(projectDir);
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) {
-    throw new Error(`chemin hors du projet : ${rel}`);
-  }
-  return abs;
+  return confinePath(projectDir, rel, "write");
 }
 
 // Liste noire des commandes irréversibles ou hors-bac-à-sable. Le contrat sert à
@@ -180,10 +181,20 @@ export async function executeContract(
         if (FORBIDDEN_RUN.test(action.command)) {
           throw new Error(`commande interdite : ${action.command}`);
         }
+        // (#180 É2) run_command LIT le palier de périmètre courant. Ici, lecture
+        // seule (le PALIER SYSTÈME complet — allowlist système, approbation par
+        // famille, interactif-seulement — est l'étape É6, gate DESKTOP_SYSTEM_SHELL).
+        // On expose le palier résolu (workspace-only vs coffres) dans le détail
+        // d'audit quand DESKTOP_PERIMETER est ON ; OFF → détail « exit 0 » byte-identique.
+        let palier = "";
+        if (flag("DESKTOP_PERIMETER")) {
+          const p = currentPerimeter(projectDir);
+          palier = ` · périmètre ${p.actor} : ${p.reason}`;
+        }
         const { code, out, timedOut } = await runCommand(projectDir, action.command, runTimeout);
         if (timedOut) throw new Error(`délai dépassé (${runTimeout / 1000}s)`);
         if (code !== 0) throw new Error(`exit ${code} — ${out.slice(-300).trim()}`);
-        outcomes.push({ action, status: "done", detail: "exit 0" });
+        outcomes.push({ action, status: "done", detail: `exit 0${palier}` });
       }
     } catch (e) {
       outcomes.push({ action, status: "failed", error: (e as Error).message });

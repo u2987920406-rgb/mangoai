@@ -16,6 +16,7 @@ import path from "node:path";
 import { z } from "zod";
 import { ToolRegistry, type KernelTool } from "./kernel-mcp.js";
 import { inspectProject } from "./inspection.js";
+import { confinePath } from "./perimeter-context.js";
 
 const MAX_READ = 24_000; // caractères max renvoyés par read_file (cap anti-saturation)
 const MAX_LIST = 400; // fichiers max listés
@@ -24,13 +25,11 @@ const MAX_MATCHES = 60; // lignes max renvoyées par search_code
 const IGNORE = /(^|\/)(node_modules|\.git|dist|build|\.vite|\.diffs|\.gemma-snapshots)(\/|$)/;
 
 /** Confinement de chemin au projet (calqué sur executor.resolveInside) : un
- * chemin résolu hors de la racine est refusé. Défense en profondeur. */
+ * chemin résolu hors de la racine est refusé. Défense en profondeur.
+ * (#180 É2) Outils LECTURE SEULE → accès `read` : gate OFF = byte-identique ;
+ * gate ON = union des racines consenties (workspace + coffres lisibles). */
 function resolveInside(root: string, rel: string): string {
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) {
-    throw new Error(`chemin hors du projet : ${rel}`);
-  }
-  return abs;
+  return confinePath(root, rel, "read");
 }
 
 /** Liste récursive des fichiers (hors IGNORE), bornée à MAX_LIST. */

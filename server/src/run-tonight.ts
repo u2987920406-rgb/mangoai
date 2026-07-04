@@ -18,6 +18,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { createProject, projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
 import { runRelay, defaultRelayDeps } from "./eleve.js";
 import { judgeProject } from "./nocturnal.js";
+import { runAsActor } from "./perimeter-context.js";
 import { runEvolution } from "./prompt-evolution.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "./vision.js";
 import { TONIGHT, type Spec } from "./tonight-specs.js";
@@ -329,4 +330,5 @@ async function main(): Promise<void> {
   log("═══════════════════════════════════════════════════════════════════");
 }
 
-main().catch((e) => { console.error("❌", e instanceof Error ? e.stack : e); process.exit(1); });
+// (#180 É2) Phase 1 nocturne → acteur AUTONOME pour tout le run (périmètre restreint).
+runAsActor("autonomous", main).catch((e) => { console.error("❌", e instanceof Error ? e.stack : e); process.exit(1); });

@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
+import { confinePath } from "./perimeter-context.js";
 
 /** Une archive est une SOURCE → même plafond de lecture que lire_document. */
 const MAX_FILE_CHARS = 40_000;
@@ -27,13 +28,10 @@ const RAR_EXT = ".rar";
 
 export interface ArchiveEntry { name: string; size: number; dir: boolean }
 
-/** Confinement de chemin au projet (calqué sur eleve-document-tools/executor). */
+/** Confinement de chemin au projet (calqué sur eleve-document-tools/executor).
+ * (#180 É2) Lecture d'archive → accès `read`. Gate OFF = byte-identique. */
 function resolveInside(root: string, rel: string): string {
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) {
-    throw new Error(`chemin hors du projet : ${rel}`);
-  }
-  return abs;
+  return confinePath(root, rel, "read");
 }
 
 /** ArrayBuffer propre depuis un Buffer Node (copie isolée → jamais un SharedArrayBuffer,

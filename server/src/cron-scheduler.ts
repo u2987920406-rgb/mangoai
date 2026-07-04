@@ -5,6 +5,7 @@ import type { Express } from 'express'
 import { resolveProvider } from './llm-engine.js'
 import { getBrain } from './kernel.js'
 import { runRelay, defaultRelayDeps } from './eleve.js'
+import { runAsActor } from './perimeter-context.js'
 import { projectDir } from './projects.js'
 import { cronBreakerConfig, canRunCron, recordCronRun, newCronBreakerState, computeNextRunHint, extractTouchedFiles, type CronBreakerState } from './cron-breaker.js'
 
@@ -95,12 +96,14 @@ async function executeTask(task: CronTask): Promise<{ summary: string; nextRunHi
   if (!decision.allow) return { summary: `(disjoncteur cron : ${decision.reason})` }
 
   const logs: string[] = []
-  const result = await runRelay(
+  // (#180 É2) Le cron s'exécute sans Raf → acteur AUTONOME (périmètre restreint,
+  // propagé jusqu'à executeContract via AsyncLocalStorage).
+  const result = await runAsActor("autonomous", () => runRelay(
     task.prompt,
     projectDir(task.projectName),
     { maitreModel: 'sonnet', onLog: (line: string) => { logs.push(line) } },
     defaultRelayDeps,
-  )
+  ))
   // Comptabilise le RÉEL (coût renvoyé par runRelay) dans la fenêtre glissante.
   cronBreakerState = recordCronRun(cronBreakerState, now, result?.costUsd ?? 0)
   return { summary: summarizeForCronLog(result, logs), nextRunHint: computeNextRunHint(result) }

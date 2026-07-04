@@ -10,17 +10,15 @@ import { fileURLToPath } from "node:url";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import type { BricksIO } from "./backend-bricks.js";
 import { assembleBricks, listAvailableBricks, type AssembleDeps } from "./eleve-bricks.js";
+import { confinePath } from "./perimeter-context.js";
 
 // Dossier des briques, relatif à ce fichier (server/src/ → server/templates/backend/_bricks).
 const DEFAULT_BRICKS_DIR = fileURLToPath(new URL("../templates/backend/_bricks", import.meta.url));
 
-// Empêche d'écrire hors du projet. `root` est normalisé (path.resolve) pour que la comparaison
-// de séparateurs soit cohérente quel que soit le format du chemin reçu (/ vs \ sous Windows).
-function resolveInside(root: string, rel: string): string {
-  const base = path.resolve(root);
-  const abs = path.resolve(base, rel);
-  if (abs !== base && !abs.startsWith(base + path.sep)) throw new Error(`chemin hors du projet : ${rel}`);
-  return abs;
+// Empêche d'écrire hors du projet. (#180 É2) `access` distingue readProjectFile
+// (lecture) de writeProjectFile (écriture). Gate OFF = byte-identique.
+function resolveInside(root: string, rel: string, access: "read" | "write"): string {
+  return confinePath(root, rel, access);
 }
 
 export interface BricksToolDeps {
@@ -40,11 +38,11 @@ function realDeps(projectDir: string): BricksToolDeps {
       bricksIO,
       readBrickFile: (rel) => fs.readFileSync(path.join(bricksDir, rel), "utf8"),
       readProjectFile: (rel) => {
-        const abs = resolveInside(projectDir, rel);
+        const abs = resolveInside(projectDir, rel, "read");
         return fs.existsSync(abs) ? fs.readFileSync(abs, "utf8") : null;
       },
       writeProjectFile: (rel, data) => {
-        const abs = resolveInside(projectDir, rel);
+        const abs = resolveInside(projectDir, rel, "write");
         fs.mkdirSync(path.dirname(abs), { recursive: true });
         fs.writeFileSync(abs, data);
       },

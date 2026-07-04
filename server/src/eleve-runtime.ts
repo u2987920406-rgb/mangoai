@@ -17,6 +17,7 @@ import { runHooks, type HookRegistration } from "./mango-hooks.js";
 import { flag } from "./flags.js";
 import { emptyWorkingState, updateWorkingState, formatWorkingState, type WorkingState } from "./working-memory.js";
 import { saveSnapshot, clearSnapshot, loadSnapshot } from "./loop-state.js";
+import { runAsActor, currentActor, type Actor } from "./perimeter-context.js";
 
 // ── Types du dialogue OpenAI-compat ──────────────────────────────────────────
 
@@ -106,6 +107,12 @@ export interface AgenticOptions {
    * parent (et son `finish` le supprimait) → crash pendant une délégation =
    * aucune reprise possible. Le parent (profondeur 0) reste seul à snapshotter. */
   snapshots?: boolean;
+  /** (#180 E2) Acteur qui pilote ce run — decide le palier de PERIMETRE quand
+   * DESKTOP_PERIMETER est ON (D4). `interactive` = chat/Raf present (defaut,
+   * comportement historique) ; `autonomous` = nuit/cron/Stratege/tuteur. Absent
+   * = on herite du contexte d'acteur ambiant (`currentActor()`, pose par un
+   * runner nocturne) puis, a defaut, `interactive`. Gate OFF = sans effet. */
+  actor?: Actor;
 }
 
 export interface AgenticBuildResult {
@@ -287,6 +294,21 @@ export async function runGatedInvoke(
  * À blocage/plafond → `finished:false` (l'appelant escaladera vers le Maître).
  */
 export async function buildAgentic(
+  system: string,
+  user: string,
+  registry: ToolRegistry,
+  opts: AgenticOptions,
+): Promise<AgenticBuildResult> {
+  // (#180 É2) Établit l'ACTEUR pour toute la durée du run : `opts.actor` explicite,
+  // sinon le contexte ambiant hérité d'un runner nocturne, sinon `interactive`.
+  // AsyncLocalStorage propage l'acteur à TOUS les handlers d'outils appelés dans
+  // la boucle (sous-agents délégués compris — ce wrapper re-établit le même acteur,
+  // idempotent). Gate DESKTOP_PERIMETER OFF → aucun effet observable.
+  const actor: Actor = opts.actor ?? currentActor();
+  return runAsActor(actor, () => buildAgenticImpl(system, user, registry, opts));
+}
+
+async function buildAgenticImpl(
   system: string,
   user: string,
   registry: ToolRegistry,
@@ -698,6 +720,9 @@ export interface AgenticRunCtx {
    * appels d'outils), transmis à buildAgentic. Hérité par les sous-agents (chacun
    * a SA boucle donc SON compteur, mais le même plafond). Absent = inerte. */
   loopBudget?: { maxPromptChars?: number; maxToolCalls?: number };
+  /** (#180 É2) Acteur pilotant ce run, transmis à buildAgentic et hérité par les
+   * sous-agents délégués. Absent → contexte ambiant / `interactive`. */
+  actor?: Actor;
 }
 
 /** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
@@ -719,6 +744,7 @@ export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<
       projectDir: ctx.projectDir,
       budget: ctx.loopBudget, // (🟠1) le fusible de coût existe enfin en prod
       snapshots: ctx.depth === 0, // (🟠2) seul le parent snapshotte — les sous-agents n'écrasent plus sa reprise
+      actor: ctx.actor, // (#180 É2) palier de périmètre — hérité par les sous-agents
     });
 
   if (!ctx.tracer) return runOnce();

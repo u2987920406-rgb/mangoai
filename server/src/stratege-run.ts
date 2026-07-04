@@ -39,6 +39,7 @@ import {
 } from "./stratege-collecteurs.js"
 import { collectDemandesGated } from "./stratege-demandes.js"
 import { synthesize, advanceState, type SynthOptions } from "./stratege-global.js"
+import { runAsActor } from "./perimeter-context.js"
 import { loadStrategistState, saveStrategistState } from "./stratege-store.js"
 import type { Briefing, Signal, StrategistState } from "./stratege-global-model.js"
 
@@ -199,7 +200,9 @@ async function main(): Promise<void> {
 // Lancé en CLI seulement (pas à l'import — les tests importent les fonctions).
 const isDirect = process.argv[1] && /[\\/]stratege-run\.(ts|js)$/.test(process.argv[1].replace(/\\/g, "/"))
 if (isDirect) {
-  main().catch((e) => {
+  // (#180 É2) Le Stratège tourne sans Raf → acteur AUTONOME (cohérence D4 ;
+  // le spine est déterministe/$0, mais l'intention de palier reste explicite).
+  runAsActor("autonomous", main).catch((e) => {
     console.error("[stratege-run] erreur inattendue :", e)
     process.exit(1)
   })

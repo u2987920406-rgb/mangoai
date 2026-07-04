@@ -103,6 +103,12 @@ export const FLAGS = {
     default: false,
     description: "Autorité d'arrêt réelle du Disjoncteur MangoQA : la boucle nocturne LIT breaker-verdict.json entre deux projets et s'arrête elle-même si safe:false (jamais MangoQA qui agit). OFF → verdict ignoré (comportement historique, byte-identique).",
   },
+  // ── #180 É2 — périmètre d'action (interface de bureau autonome) ──────────
+  DESKTOP_PERIMETER: {
+    env: "DESKTOP_PERIMETER",
+    default: false,
+    description: "Périmètre d'action élargi CONTRÔLÉ (#180 D3/D4) : branche perimeter.ts dans les outils fichiers/commandes. ON → un chemin est confiné à l'UNION des racines consenties (workspace + coffres grantés data/desktop-grants.json), filtrée par acteur (interactif = coffres au mode granté ; autonome = workspace-only, coffres en ro SEULEMENT si les 3 garde-fous MANGOQA_STOP_AUTHORITY+NOCTURNAL_BUDGET_HARD+NOCTURNAL_QA_BUS sont armés, fail-safe sinon). OFF (défaut) → une seule racine = le projet, byte-identique au resolveInside historique (aucun chargement de grants, aucune I/O).",
+  },
   // ── Pilier D — finition (clôture) ───────────────────────────────────────
   ELEVE_CLOSURE_GATE: {
     env: "ELEVE_CLOSURE_GATE",

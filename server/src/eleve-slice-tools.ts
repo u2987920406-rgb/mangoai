@@ -12,11 +12,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { execFile } from "node:child_process";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
+import { confinePath } from "./perimeter-context.js";
 
-function resolveInside(root: string, rel: string): string {
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) throw new Error(`chemin hors du projet : ${rel}`);
-  return abs;
+// (#180 É2) `access` distingue la lecture du PNG source de l'écriture du dossier
+// de découpes. Gate OFF = byte-identique quel que soit `access`.
+function resolveInside(root: string, rel: string, access: "read" | "write" = "read"): string {
+  return confinePath(root, rel, access);
 }
 
 function fluxPython(): string | null {
@@ -115,7 +116,7 @@ export function buildEleveSliceTools(projectDir: string, deps: SliceDeps = realS
         if (!fs.existsSync(absPng)) return { text: `Fichier introuvable : ${chemin}`, isError: true };
         const base = path.basename(rel).replace(/\.[^.]+$/, "");
         const outRel = path.join(path.dirname(rel), `${base}_slices`);
-        const absOut = resolveInside(projectDir, outRel);
+        const absOut = resolveInside(projectDir, outRel, "write");
         const res = await deps.runSlicer(absPng, absOut, pad, minSize);
         if (res.count === 0) {
           return { text: `Aucun objet détecté dans ${chemin} (l'image est-elle bien TRANSPARENTE et contient-elle des objets séparés ?).`, isError: true };

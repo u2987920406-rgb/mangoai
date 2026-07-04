@@ -16,6 +16,7 @@ import path from "node:path";
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { extractPdfText } from "./pdf-pipeline.js";
+import { confinePath } from "./perimeter-context.js";
 
 /** Un document est une SOURCE de travail → plafond plus large que read_file (24k). */
 const MAX_DOC_CHARS = 40_000;
@@ -36,13 +37,10 @@ function officeLabel(ext: string): string {
   return ext;
 }
 
-/** Confinement de chemin au projet (calqué sur eleve-tools/executor.resolveInside). */
+/** Confinement de chemin au projet (calqué sur eleve-tools/executor.resolveInside).
+ * (#180 É2) Lecture de document → accès `read`. Gate OFF = byte-identique. */
 function resolveInside(root: string, rel: string): string {
-  const abs = path.resolve(root, rel);
-  if (abs !== root && !abs.startsWith(root + path.sep)) {
-    throw new Error(`chemin hors du projet : ${rel}`);
-  }
-  return abs;
+  return confinePath(root, rel, "read");
 }
 
 /** Tronque proprement avec un indice pour aller chercher la suite. */

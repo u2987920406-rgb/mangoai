@@ -31,6 +31,7 @@ import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVer
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel-chat-bridge.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { maybeRunStrategistCycle } from "./stratege-run.js";
+import { runAsActor } from "./perimeter-context.js";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const FILE = path.join(DATA_DIR, "nocturnal.json");
@@ -802,7 +803,10 @@ function startNocturnalScheduler(): void {
       if (new Date().getHours() !== cfg.hour) return;
       if (cfg.lastAutoRun === localDate()) return; // déjà tourné cette nuit
       saveConfig({ ...cfg, lastAutoRun: localDate() });
-      void runNocturnalBatch(cfg.count);
+      // (#180 É2) Acteur AUTONOME : la nuit tourne sans Raf → périmètre restreint
+      // (workspace-only en écriture, coffres en ro et SEULEMENT si les garde-fous
+      // sont armés). AsyncLocalStorage propage l'acteur jusqu'à executeContract.
+      void runAsActor("autonomous", () => runNocturnalBatch(cfg.count));
     } catch {
       /* ignore */
     }
@@ -825,7 +829,8 @@ export function registerNocturnalRoutes(app: Express): void {
     const body = req.body as { count?: unknown; freeStyle?: unknown };
     const count = Number(body?.count) || 3;
     const freeStyle = Boolean(body?.freeStyle);
-    void runNocturnalBatch(count, { freeStyle }); // fire-and-forget : on poll via GET
+    // (#180 É2) La route /api/nocturnal/run lance aussi un lot AUTONOME.
+    void runAsActor("autonomous", () => runNocturnalBatch(count, { freeStyle })); // fire-and-forget : on poll via GET
     res.json({ started: true, count: Math.max(1, Math.min(count, 10)), freeStyle });
   });
 

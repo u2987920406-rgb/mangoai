@@ -15,6 +15,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { z } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
+import { confinePath } from "./perimeter-context.js";
 
 /** Extensions image acceptées (alignées sur uploads.ts). */
 const IMAGE_EXTENSIONS = new Set([".png", ".jpg", ".jpeg", ".webp", ".gif"]);
@@ -80,11 +81,13 @@ export function buildEleveImageTools(projectDir: string, deps: ImageDeps = realD
         return { text: "Précise le `path` de l'image (ex. .assets/maquette.png).", isError: true };
       }
 
-      // Confinement au projet (calqué sur eleve-tools.resolveInside).
-      const root = path.resolve(projectDir);
-      const abs = path.resolve(root, rel);
-      if (abs !== root && !abs.startsWith(root + path.sep)) {
-        return { text: `chemin hors du projet : ${rel}`, isError: true };
+      // Confinement au projet (#180 É2 : lecture d'image → accès `read`).
+      // Gate OFF = byte-identique (même message « chemin hors du projet »).
+      let abs: string;
+      try {
+        abs = confinePath(projectDir, rel, "read");
+      } catch (e) {
+        return { text: (e as Error).message, isError: true };
       }
 
       const ext = path.extname(abs).toLowerCase();

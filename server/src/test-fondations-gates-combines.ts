@@ -30,6 +30,9 @@ import { flag } from "./flags.js";
 import { runStrategistCycle, maybeRunStrategistCycle } from "./stratege-run.js";
 import { emptyStrategistState, type Signal, type StrategistState } from "./stratege-global-model.js";
 import { readGlobalBudgetState, spendGlobalBudget } from "./nocturnal-budget.js";
+// ── #180 É2 — interaction du gate DESKTOP_PERIMETER avec reprise + garde-fous ──
+import { executeContract } from "./executor.js";
+import { GRANTS_FILE, saveGrants } from "./perimeter.js";
 
 let pass = 0;
 let fail = 0;
@@ -606,6 +609,81 @@ async function run() {
       check("gate OFF → le cycle n'est jamais invoqué, même avec les 9 autres gates ON", !ran && didRun === false);
     } finally {
       restore176(prev);
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  #180 É2 — PÉRIMÈTRE × REPRISE × garde-fous nocturnes. Le gate DESKTOP_PERIMETER
+  //  n'a JAMAIS coexisté avec ELEVE_RESUME ni les 3 garde-fous (risque #8 du plan
+  //  #180 : « interaction des gates jamais tournés ensemble »). On CHERCHE la
+  //  cassure : un périmètre autonome tenu À TRAVERS un crash+reprise, une écriture
+  //  hors-workspace refusée SANS casser la boucle, et la contre-preuve interactive.
+  // ════════════════════════════════════════════════════════════════════════════
+  console.log("\n[20] PÉRIMÈTRE(autonome) × REPRISE × 3 garde-fous : le coffre reste interdit à travers le crash");
+  {
+    const P = {
+      DESKTOP_PERIMETER: "on", ELEVE_RESUME: "on", ELEVE_ETAT: "on",
+      MANGOQA_STOP_AUTHORITY: "on", NOCTURNAL_BUDGET_HARD: "on", NOCTURNAL_QA_BUS: "on",
+    } as const;
+    const prev: Record<string, string | undefined> = {};
+    for (const [k, v] of Object.entries(P)) { prev[k] = process.env[k]; process.env[k] = v; }
+    const grantsPrev = fs.existsSync(GRANTS_FILE) ? fs.readFileSync(GRANTS_FILE) : null;
+    const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "perim20-"));
+    const vault = fs.mkdtempSync(path.join(os.tmpdir(), "perim20-vault-"));
+    const coffreAbs = path.join(vault, "leak.txt");
+    // write_file DÉLÈGUE au vrai executeContract → périmètre réel (perimeter-context).
+    const makeReg = (proj: string): ToolRegistry => {
+      const r = new ToolRegistry();
+      r.register({
+        name: "write_file", description: "", inputSchema: { path: z.string(), content: z.string() },
+        handler: async (a) => {
+          const res = await executeContract([{ kind: "write", path: String(a.path), content: String(a.content) }], proj, { allowRun: false });
+          return res.ok ? { text: "écrit " + String(a.path) } : { text: res.outcomes[0].status === "failed" ? res.outcomes[0].error : "échec", isError: true };
+        },
+      });
+      r.register({ name: "finish", description: "", inputSchema: { summary: z.string() }, handler: (a) => ({ text: String(a.summary) }) });
+      return r;
+    };
+    try {
+      saveGrants([{ path: vault, mode: "rw", ts: Date.now() }], GRANTS_FILE);
+
+      // Run 1 (AUTONOME) : écrit dans le workspace, TENTE le coffre (doit échouer), puis CRASH.
+      let it = 0;
+      const post1: PostFn = async (_m, tools) => {
+        if (!tools) return { content: "point", toolCalls: undefined };
+        const i = it++;
+        if (i === 0) return { content: "", toolCalls: [call("write_file", { path: "src/app.js", content: "x" })] };
+        if (i === 1) return { content: "", toolCalls: [call("write_file", { path: coffreAbs, content: "SECRET" })] };
+        throw new Error("CRASH SIMULÉ");
+      };
+      await buildAgentic("sys", "tâche périmètre", makeReg(tmp), { post: post1, projectDir: tmp, maxIterations: 30, actor: "autonomous" }).catch(() => null);
+      check("run1 autonome : fichier WORKSPACE écrit (le workspace reste inscriptible)", fs.existsSync(path.join(tmp, "src/app.js")));
+      check("run1 autonome : écriture COFFRE refusée (fail-safe — rien n'a fuité hors workspace)", !fs.existsSync(coffreAbs));
+      check("run1 : le snapshot de reprise a survécu au crash (périmètre n'a pas cassé le resume)", fs.existsSync(path.join(tmp, SNAPSHOT_FILE)));
+
+      // Run 2 (AUTONOME, même tâche) : la reprise conclut, le coffre reste interdit APRÈS reprise.
+      const post2: PostFn = async (_m, tools) => tools ? { content: "", toolCalls: [call("finish", { summary: "fini" })] } : { content: "point", toolCalls: undefined };
+      const res2 = await buildAgentic("sys", "tâche périmètre", makeReg(tmp), { post: post2, projectDir: tmp, maxIterations: 30, actor: "autonomous" });
+      check("run2 : reprise CONCLUT malgré périmètre+resume+3 garde-fous combinés", res2.finished || res2.text.length > 0);
+      check("run2 : le coffre n'a TOUJOURS pas été écrit après reprise (périmètre tenu de bout en bout)", !fs.existsSync(coffreAbs));
+
+      // Contre-preuve INTERACTIF : le MÊME coffre EST écrit quand l'acteur est interactif —
+      // le refus vient donc bien du PALIER (D4), pas d'un bug de branchement.
+      const tmpI = fs.mkdtempSync(path.join(os.tmpdir(), "perim20-inter-"));
+      let itI = 0;
+      const postI: PostFn = async (_m, tools) => {
+        if (!tools) return { content: "point", toolCalls: undefined };
+        if (itI++ === 0) return { content: "", toolCalls: [call("write_file", { path: coffreAbs, content: "OK-INTERACTIF" })] };
+        return { content: "", toolCalls: [call("finish", { summary: "fini" })] };
+      };
+      await buildAgentic("sys", "écris dans le coffre", makeReg(tmpI), { post: postI, projectDir: tmpI, maxIterations: 10, actor: "interactive" });
+      check("contre-preuve interactif : le MÊME coffre EST écrit (le refus autonome est bien le palier, pas un bug)", fs.readFileSync(coffreAbs, "utf8") === "OK-INTERACTIF");
+      fs.rmSync(tmpI, { recursive: true, force: true });
+    } finally {
+      for (const [k, v] of Object.entries(prev)) { if (v === undefined) delete process.env[k]; else process.env[k] = v; }
+      if (grantsPrev === null) { try { fs.unlinkSync(GRANTS_FILE); } catch { /**/ } } else fs.writeFileSync(GRANTS_FILE, grantsPrev);
+      fs.rmSync(tmp, { recursive: true, force: true });
+      fs.rmSync(vault, { recursive: true, force: true });
     }
   }
 
