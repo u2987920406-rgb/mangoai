@@ -589,7 +589,16 @@ export async function buildAgentic(
         readsSinceWrite++; // … et compte vers le budget d'exploration
       }
       if (writeTools.has(name) && !isErr) {
-        readsSinceWrite = 0; // une action remet le budget à zéro
+        // 🟡 (revue #13.3) Anti-exploration : ne réinitialiser que si l'écriture est
+        // substantielle (delta minimal). Sinon un write_file trivial (1 char) rouvre le budget.
+        // NB : mesurer sur `rawArgs` (les arguments d'APPEL, ex. le `content` de write_file),
+        // PAS sur `resultText` (le message de confirmation de l'outil, dont la longueur est
+        // quasi constante quelle que soit la taille réelle écrite — ça aurait rendu le seuil
+        // inopérant, un write d'1 caractère produisant déjà >10 caractères de confirmation).
+        const writtenBytes = rawArgs.length;
+        if (writtenBytes >= 40) {
+          readsSinceWrite = 0; // une action sérieuse remet le budget à zéro
+        }
         hasWritten = true; // (L17) on a produit du concret → le cue « appelle finish » s'active
       }
       // (B0.2) Accumule cet appel dans l'état de travail (gate off → jamais calculé).

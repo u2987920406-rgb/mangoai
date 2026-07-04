@@ -71,16 +71,16 @@ Modèle optimal : ⚡ Haiku 4.5 (1-3 fichiers/trivial) · ⚖️ Sonnet 4.6 (fea
 | 3 | **Budget-$ dur global** partagé Phase 0/1/2 (généraliser `FINISH_BUDGET_USD`), arrêt net au dépassement + mesure du coût Élève cloud. | 🔴🟡 | ⚖️ Sonnet 4.6 | M | ✅ FAIT (`NOCTURNAL_BUDGET_HARD`, ledger `data/global-budget.json`) — mesure du coût Élève cloud restant en 🟡 non traitée |
 | 4 | **Gates jamais silencieusement OFF** : `import "dotenv/config"` dans chaque runner + forcer `ELEVE_CLOSURE_GATE=on` au boot (ou assert). | 🔴 | ⚡ Haiku 4.5 | S | ✅ FAIT (dotenv + avertissement clair si OFF, défaut inchangé) |
 | 5 | **Fusible budget honnête** : compter `tool_calls.arguments` dans `totalChars` + les compacter dans la boucle vivante (aligner sur le snapshot). | 🔴 | ⚖️ Sonnet 4.6 | S | ✅ FAIT (`reduceToolArgs` partagé avec le snapshot) |
-| 6 | **Fail-open = non-vérifié, pas vert** : logger `runClosureMangoQA` ; bloquer la clôture si intention ET critique KO ensemble. | 🟠 | ⚖️ Sonnet 4.6 | S |
-| 7 | **Circuit breaker Ollama/réseau** : N échecs consécutifs → pause + alerte, dans train-loop et nocturnal. | 🟠 | ⚖️ Sonnet 4.6 | S |
-| 8 | **Écritures atomiques** : axiomes (`nocturnal.ts`) + verdicts MangoQA → tmp+rename. | 🟠 | ⚡ Haiku 4.5 | XS |
-| 9 | **Validation mécanique des axiomes** : dédup sémantique + quarantaine avant promotion en mémoire durable. | 🟠 | 🧠 Opus 4.8 | M |
-| 10 | **Couverture d'audit MangoQA** : échantillonnage priorisé (routes/handlers) au lieu de la troncature 24 k ; branche Tests scanne le projet, pas le delta. | 🟠 | ⚖️ Sonnet 4.6 | M |
-| 11 | **Réflexes Disjoncteur** : clé par projet pour #1 ; émettre un score d'audit (ou retirer #3) ; watchdog liveness du Bus. | 🟠 | ⚖️ Sonnet 4.6 | S |
-| 12 | **Watchdog mural par tâche** généralisé aux runners (modèle N17). | 🟠 | ⚡ Haiku 4.5 | S |
-| 13 | Nettoyages : retirer/câbler `NOCTURNAL_PROVIDER` ; unifier compteurs de relance ; anti-exploration sur écriture substantielle ; MAJ README MangoQA ; vérifier teardown `startPreview`. | 🟡 | ⚡ Haiku 4.5 | S |
+| 6 | **Fail-open = non-vérifié, pas vert** : logger `runClosureMangoQA` ; bloquer la clôture si intention ET critique KO ensemble. | 🟠 | ⚖️ Sonnet 4.6 | S | ✅ FAIT (`ELEVE_GATE_DUAL_SKIP_BLOCK`, champ `dualSkip`) |
+| 7 | **Circuit breaker Ollama/réseau** : N échecs consécutifs → pause + alerte, dans train-loop et nocturnal. | 🟠 | ⚖️ Sonnet 4.6 | S | ✅ FAIT (`TRAIN_LOOP_OLLAMA_BREAKER`, `decideOllamaCircuitStop`) — nocturnal.ts n'appelle jamais Ollama, non concerné |
+| 8 | **Écritures atomiques** : axiomes (`nocturnal.ts`) + verdicts MangoQA → tmp+rename. | 🟠 | ⚡ Haiku 4.5 | XS | ✅ FAIT (les deux dépôts) |
+| 9 | **Validation mécanique des axiomes** : dédup sémantique + quarantaine avant promotion en mémoire durable. | 🟠 | 🧠 Opus 4.8 | M | ✅ FAIT (`AXIOMS_VALIDATION`, dédup cosinus + quarantaine 2 cycles, fail-open) |
+| 10 | **Couverture d'audit MangoQA** : échantillonnage priorisé (routes/handlers) au lieu de la troncature 24 k ; branche Tests scanne le projet, pas le delta. | 🟠 | ⚖️ Sonnet 4.6 | M | ✅ FAIT (`priority.ts`, `projectHasTests()`) |
+| 11 | **Réflexes Disjoncteur** : clé par projet pour #1 ; émettre un score d'audit (ou retirer #3) ; watchdog liveness du Bus. | 🟠 | ⚖️ Sonnet 4.6 | S | ✅ FAIT — #1 par sender, #3 gaté OFF (`regressionLockEnabled:false`, documenté inerte) plutôt que retiré, watchdog liveness Bus ajouté |
+| 12 | **Watchdog mural par tâche** généralisé aux runners (modèle N17). | 🟠 | ⚡ Haiku 4.5 | S | ✅ FAIT (train-loop/run-tonight/run-finish, réutilise `interruptAgent`) |
+| 13 | Nettoyages : retirer/câbler `NOCTURNAL_PROVIDER` ; unifier compteurs de relance ; anti-exploration sur écriture substantielle ; MAJ README MangoQA ; vérifier teardown `startPreview`. | 🟡 | ⚡ Haiku 4.5 | S | ✅ FAIT — `NOCTURNAL_PROVIDER` retiré, anti-exploration corrigé (seuil sur `rawArgs`, pas le message de confirmation — bug de premier jet corrigé en review), README MangoQA à jour ; compteurs de relance dupliqués + teardown preview **documentés en dette** (pas corrigés, cross-cutting/pool LRU existant jugé suffisant) |
 
-**État au 2026-07-03/04** : les 4 🔴 (actions 1-2-4-5 ci-dessus, plus l'action 1 qui referme aussi le 🟠 "MangoQA signale sans arrêter") sont **corrigés**, gatés OFF par défaut, tests + non-régression verts, `tsc` propre. Les 9 🟠 et 1 🟡 restants (actions 6-13, plus la mesure du coût Élève cloud dans l'action 3) restent en backlog ouvert.
+**État au 2026-07-04** : les 4 🔴 ET les 9 🟠 + 1 🟡 du backlog (actions 1-13) sont **tous corrigés**, gatés OFF par défaut, tests + non-régression verts sur les deux dépôts (MangoOS + MangoQA), `tsc` propre partout. Dette assumée restante (documentée, pas bloquante) : mesure du coût Élève cloud (action 3), unification des doubles compteurs de relance et vraie trace d'outils post-Maître (action 2/6), teardown explicite de preview (action 13 — pool LRU jugé suffisant pour l'instant).
 
 ---
 

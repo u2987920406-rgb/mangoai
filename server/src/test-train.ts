@@ -5,7 +5,7 @@
 //
 // Lancer :  npx tsx src/test-train.ts
 
-import { DOMAINS, STYLES, TASK_KINDS, composeTask, generateUniquePrompts } from "./train-loop.js";
+import { DOMAINS, STYLES, TASK_KINDS, composeTask, generateUniquePrompts, decideOllamaCircuitStop } from "./train-loop.js";
 
 const line = (c = "─") => console.log(c.repeat(64));
 let failures = 0;
@@ -40,6 +40,16 @@ const keys = new Set(gen.map((p) => `${p.kind}|${p.domain}|${p.style}`));
 check("tous uniques (fond × forme × UX)", keys.size === 300);
 check("chaque prompt a un projectType", gen.every((p) => typeof p.projectType === "string" && p.projectType.length > 0));
 check("plafonné au nb de combos si on demande trop", generateUniquePrompts(combos + 500).length === combos);
+
+// decideOllamaCircuitStop (revue globale 2026-07-03, action #7) : circuit
+// breaker Ollama, PUR, testable sans réseau.
+console.log("\n  [4] decideOllamaCircuitStop :");
+check("gate OFF → jamais, même à 999 échecs", !decideOllamaCircuitStop(false, 999, 3).stop);
+check("gate ON, sous le seuil → continue", !decideOllamaCircuitStop(true, 2, 3).stop);
+check("gate ON, au seuil → stop", decideOllamaCircuitStop(true, 3, 3).stop);
+check("gate ON, au-delà du seuil → stop", decideOllamaCircuitStop(true, 10, 3).stop);
+check("raison lisible fournie quand stop", /échec/i.test(decideOllamaCircuitStop(true, 3, 3).reason ?? ""));
+check("pas de raison quand stop:false", decideOllamaCircuitStop(true, 1, 3).reason === undefined);
 
 line("═");
 console.log(failures === 0 ? "✅ Moteur de diversité prouvé (unique, large, fond+forme)." : `❌ ${failures} échec(s)`);

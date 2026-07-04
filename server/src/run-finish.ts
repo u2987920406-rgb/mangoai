@@ -210,8 +210,19 @@ async function main(): Promise<void> {
   // l'état Gemma — toujours exploitables en Phase 2 via leur snapshot). $0 / absent = illimité.
   const budgetUsd = Number(process.env.FINISH_BUDGET_USD ?? 0);
   const spent = () => results.reduce((s, r) => s + r.costUsd, 0);
+  // (N17, watchdog mural par run) Deadline du run entier, regarde nocturnal.ts ligne 558.
+  // Défaut 480 min (8 h), configurable via FINISH_BUDGET_MIN.
+  const finishBudgetMs = Math.max(60 * 60_000, Number(process.env.FINISH_BUDGET_MIN ?? 480) * 60_000);
+  const finishDeadline = Date.now() + finishBudgetMs;
 
   for (const name of Object.keys(SPECS)) {
+    // (N17) Vérification à la frontière d'itération : si la deadline du run est
+    // dépassée, arrête proprement (les résultats jusqu'ici sont conservés).
+    // Même pattern que nocturnal.ts ligne 585.
+    if (Date.now() >= finishDeadline) {
+      log(`⏱ Deadline du run atteinte — ${results.length}/${Object.keys(SPECS).length} projet(s) traité(s), arrêt propre.`);
+      break;
+    }
     if (budgetUsd > 0 && spent() >= budgetUsd) {
       log(`\n💰 Budget $${budgetUsd} atteint (dépensé $${spent().toFixed(2)}) — arrêt propre. Apps restantes laissées en l'état Gemma.`);
       break;

@@ -55,6 +55,11 @@ export const FLAGS = {
     default: false,
     description: "Détecteur de contradiction/dérive à l'écriture d'un axiome (consigne les paires suspectes pour le reviewer nocturne, ne supprime jamais).",
   },
+  AXIOMS_VALIDATION: {
+    env: "AXIOMS_VALIDATION",
+    default: false,
+    description: "Validation MÉCANIQUE avant promotion d'un axiome (reviewToAxioms) en mémoire durable : dédup sémantique (embeddings + cosinus, seuil DRIFT_THRESHOLD) contre le registre confirmé → un quasi-doublon n'est pas injecté (consigné dans .axioms-conflicts.md) + quarantaine (.axioms-quarantine.json, compteur de confirmations) avant promotion dans .axioms.md. OFF → append historique byte-identique (0 embedding, 0 I/O de quarantaine).",
+  },
   // ── Pilier B — boucle cognitive ─────────────────────────────────────────
   ELEVE_ETAT: {
     env: "ELEVE_ETAT",
@@ -114,6 +119,17 @@ export const FLAGS = {
     env: "NOCTURNAL_BUDGET_HARD",
     default: false,
     description: "Budget-$ DUR partagé entre Phase 0 (train-loop), Phase 1 (run-tonight/run-mango-nuit) et Phase 2 (nocturnal) : arrêt NET à la frontière d'itération (jamais en cours de génération) si le cumul dépensé (ledger partagé data/global-budget.json, fenêtre = la nuit courante) dépasse NOCTURNAL_GLOBAL_BUDGET_USD ($0/absent = illimité, mêmes conventions que FINISH_BUDGET_USD). OFF → l'état n'est jamais lu, 0 I/O, comportement historique.",
+  },
+  // ── Robustesse boucle nocturne (revue globale 2026-07-03, actions #6/#7 backlog) ─
+  ELEVE_GATE_DUAL_SKIP_BLOCK: {
+    env: "ELEVE_GATE_DUAL_SKIP_BLOCK",
+    default: false,
+    description: "Durcit le Gardien de clôture (eleve-gate.ts) : si le juge d'intention ET la critique visuelle échouent TOUS LES DEUX sur le même tour (même infra Ollama/preview indisponible), « intention+goût+QA » se réduirait silencieusement à 2 regex triviales tout en restant vert — ce gate BLOQUE alors la clôture (comptée non-vérifiée) au lieu de la laisser passer. OFF → comportement historique : judgeSkipped/critiqueSkipped restent surfacés (logs) mais ne bloquent jamais, même simultanés.",
+  },
+  TRAIN_LOOP_OLLAMA_BREAKER: {
+    env: "TRAIN_LOOP_OLLAMA_BREAKER",
+    default: false,
+    description: "Circuit breaker Ollama dans train-loop.ts : au-delà de TRAIN_LOOP_OLLAMA_MAX_FAILS (défaut 3) échecs d'itération CONSÉCUTIFS (Ollama mort en pleine nuit), arrête le lot proprement + alerte au lieu de scaffolder un projet PUIS échouer en boucle serrée jusqu'au matin. OFF → comportement historique (la boucle continue malgré des échecs répétés, aucun compteur tenu).",
   },
 } as const satisfies Record<string, FlagSpec>;
 

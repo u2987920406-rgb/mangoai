@@ -72,8 +72,10 @@ export function detectConflicts(
 }
 
 /** Similarité cosinus locale (évite de dépendre de kernel-blackboard-store.ts,
- *  hors-scope de modification — même formule, testée indépendamment). */
-function cosine(a: number[], b: number[]): number {
+ *  hors-scope de modification — même formule, testée indépendamment). Exportée
+ *  pour être RÉUTILISÉE par axioms-validation.ts (dédup avant promotion) : une
+ *  seule implémentation cosinus pour tout le magasin d'axiomes. */
+export function cosine(a: number[], b: number[]): number {
   const n = Math.min(a.length, b.length);
   let dot = 0, na = 0, nb = 0;
   for (let i = 0; i < n; i++) {

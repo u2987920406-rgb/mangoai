@@ -23,7 +23,8 @@ import { capturePreview } from "./vision.js";
 import { startPreview } from "./preview.js";
 import { loadPreferences } from "./preferences.js";
 import { atomicWriteFileSync } from "./safe-io.js";
-import { AXIOMS_FILE_NAME } from "./axioms.js";
+import { runAxiomValidation, appendConfirmedAxiom } from "./axioms-validation.js";
+import { safeEmbed } from "./notes-rag.js";
 import { recordCurationSample, getTunedCurationPriority } from "./kernel-curation-effect.js";
 import { flag } from "./flags.js";
 import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
@@ -185,6 +186,10 @@ export async function judgeProject(dir: string, task: string): Promise<{ score: 
   // DERNIER tour de chat, jamais par la génération nocturne → le juge screenshotait
   // soit rien, soit l'app d'un AUTRE projet — toute la boucle de goût (tri matinal,
   // axiomes) était polluée. Et un échec de capture est désormais LOGGÉ, plus avalé.
+  // 🟡 (revue #13.5) Preview non arrêtée après capture. startPreview() lance un Vite
+  // et le garde dans un pool LRU (MAX_PREVIEWS, défaut 3) — pas d'arrêt forcé ici.
+  // Sur un lot de N>MAX_PREVIEWS projets, l'éviction LRU gère le nettoyage automatique.
+  // Acceptable si MAX_PREVIEWS ≥ 1. Teardown explicite différé si vraiment needed.
   let imageBase64: string | undefined;
   try {
     const { url } = await startPreview(dir);
@@ -333,7 +338,9 @@ async function buildOne(
 ): Promise<NocturnalEntry> {
   const name = `nuit-${batchId}-${index}`;
   const dir = projectDir(name);
-  const provider = resolveProvider(process.env.NOCTURNAL_PROVIDER, "claude");
+  // 🟡 (revue #13.1) NOCTURNAL_PROVIDER était décoratif (calc → void).
+  // Cerveau fixe à "sonnet" (ligne 369: runAgent(..., "sonnet", ...)).
+  // Câblage complet différé vague 2 — suppression pour honnêteté.
   let costUsd = 0;
   let numTurns = 0;
   let success = false;
@@ -387,9 +394,6 @@ async function buildOne(
   const outOfBudget = () => Date.now() >= deadlineAt;
   try {
     await createProject(name);
-    // provider claude → runAgent (Claude/abonnement). (Un provider non-claude
-    // resterait à câbler en vague 2 ; aujourd'hui défaut = claude.)
-    void provider;
     // 1) Génération initiale. La directive de curation (#125) oriente la récolte
     //    d'artefacts vers les familles au meilleur rendement mesuré (#124). Elle
     //    n'est posée qu'au tour initial — les tours de réparation ne récoltent rien.
@@ -729,10 +733,19 @@ AXIOME-UX-XX [candidat] [validé-utilisateur] [review-nocturne]
       return;
     }
     if (!text.startsWith("AXIOME-")) return;
-    const axiomsPath = path.join(WORKSPACE_DIR, AXIOMS_FILE_NAME);
-    fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
-    const existing = fs.existsSync(axiomsPath) ? fs.readFileSync(axiomsPath, "utf8").trim() : "";
-    fs.writeFileSync(axiomsPath, (existing ? `${existing}\n\n${text}` : text) + "\n", "utf8");
+    // (A1.4, 2026-07-04, revue globale #9) Validation MÉCANIQUE avant promotion en
+    // mémoire durable, gatée AXIOMS_VALIDATION (défaut off → append historique
+    // byte-identique via appendConfirmedAxiom, EXACTEMENT le même code qu'avant).
+    // ON : dédup sémantique (embeddings + cosinus) contre le registre confirmé —
+    // un quasi-doublon est consigné dans .axioms-conflicts.md au lieu d'être
+    // injecté à vie — puis QUARANTAINE (.axioms-quarantine.json, compteur de
+    // confirmations) avant promotion. runAxiomValidation est fail-open TOTAL
+    // (embed KO → promotion directe) et ne lève jamais.
+    if (flag("AXIOMS_VALIDATION")) {
+      await runAxiomValidation(WORKSPACE_DIR, text, { embed: safeEmbed });
+    } else {
+      appendConfirmedAxiom(WORKSPACE_DIR, text);
+    }
 
     // #55a — si la charte graphique ET l'ergonomie sont validées, baliser comme
     // candidat LoRA dans .train.jsonl. On capture le code source MAINTENANT

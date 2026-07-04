@@ -1067,7 +1067,7 @@ async function runClosureParcours(projectDir: string): Promise<{ ok: boolean; er
 // #b incrément 3 — audit MangoQA de CLÔTURE : si MangoQA tourne (sentinelle), on émet le
 // signal de phase et on attend son verdict ; un RED devient un critère de re-correction
 // (comme le Gardien/parcours). Fail-open : MangoQA absent/timeout → ok:true (ne bloque jamais).
-async function runClosureMangoQA(projectDir: string): Promise<{ ok: boolean; action: string }> {
+async function runClosureMangoQA(projectDir: string): Promise<{ ok: boolean; action: string; skipped?: string }> {
   try {
     if (!isMangoQaActive()) return { ok: true, action: "" };
     const name = path.basename(projectDir);
@@ -1079,8 +1079,14 @@ async function runClosureMangoQA(projectDir: string): Promise<{ ok: boolean; act
       return { ok: false, action: verdict.rejection?.corrective_action || "revois l'architecture (verdict MangoQA RED)" };
     }
     return { ok: true, action: "" };
-  } catch {
-    return { ok: true, action: "" };
+  } catch (e) {
+    // (revue 2026-07-03, action #6, constat A) Fail-open ASSUMÉ (une panne MangoQA
+    // ne doit jamais bloquer la livraison) mais plus JAMAIS silencieux : le tour
+    // reste utilisable (ok:true) mais est désormais discernable comme NON-VÉRIFIÉ
+    // (champ `skipped`) au lieu d'un simple "vert" indistinguable d'une vraie passe.
+    const reason = (e as Error).message.split("\n")[0];
+    console.warn(`[mangoqa] ⚠ clôture MangoQA indisponible (${reason}) — tour compté NON-VÉRIFIÉ (fail-open, pas "vert").`);
+    return { ok: true, action: "", skipped: reason };
   }
 }
 
@@ -1188,6 +1194,9 @@ export async function runRelay(
           // (N9) un volet SAUTÉ pour cause d'incident n'est plus silencieux.
           if (verdict.judgeSkipped) push(`  ⚠ juge d'intention KO (${verdict.judgeSkipped}) — couverture NEUTRE (100), NON vérifiée`);
           if (verdict.critiqueSkipped) push(`  ⚠ critique visuelle KO (${verdict.critiqueSkipped}) — goût + WCAG NON vérifiés ce tour`);
+          // (revue 2026-07-03, action #6, constat B) juge ET critique KO ensemble → Gardien
+          // dégradé à 2 regex triviales ; toujours visible, bloquant seulement si le gate est ON.
+          if (verdict.dualSkip) push(`  ⚠ juge ET critique KO SIMULTANÉMENT — Gardien dégradé (2 regex triviales)${verdict.ok ? " — non bloquant, ELEVE_GATE_DUAL_SKIP_BLOCK=off" : ""}`);
           if (!verdict.ok) issues.push(...(verdict.raisons.length ? verdict.raisons : ["clôture qualité non atteinte"]));
         } catch (e) {
           push(`⚠ Gardien (après Maître) indisponible (${(e as Error).message.split("\n")[0]}) — on laisse passer`);
@@ -1201,6 +1210,7 @@ export async function runRelay(
       {
         const qa = await runClosureMangoQA(projectDir);
         if (qa.action || !qa.ok) push(`🥭 MangoQA (après Maître) — ${qa.ok ? "GREEN ✓" : "RED ✗"}`);
+        if (qa.skipped) push(`  ⚠ MangoQA KO (${qa.skipped}) — clôture NON vérifiée ce tour`);
         if (!qa.ok) issues.push(`MangoQA : ${qa.action}`);
       }
 
@@ -1354,6 +1364,10 @@ export async function runRelay(
     let nudge = "";
     // #161 — Gardien de clôture : compteur de corrections SÉPARÉ de selfRelanceMax
     // (les tours du Gardien ne consomment pas le budget anti-blocage). Gaté + non-bloquant.
+    // 🟡 (revue #13.2) DOUBLES COMPTEURS : relances/selfRelanceMax ET gateRelances/gateRelanceMax
+    // font la même chose en parallèle. Balance scannée 2× (garde autonome + gate post-Maître).
+    // Trace réelle passée au gate post-Maître (ligne 1186) : toolTrace:[] (vide, vs trace réelle).
+    // Unification en UN SEUL budget + passe vraie trace → backlog futur (cross-cutting complexe).
     let gateRelances = 0;
     const gateRelanceMax = Number(process.env.ELEVE_GATE_RELANCE_MAX ?? 2);
     // (L28) Anti-thrash : mémoire du goût du tour Gardien précédent pour ne pas relancer
@@ -1741,6 +1755,7 @@ export async function runRelay(
       // devient un critère de re-correction (renvoie l'Élève corriger). Fail-open.
       if (result?.finished && relances < selfRelanceMax) {
         const qa = await runClosureMangoQA(projectDir);
+        if (qa.skipped) push(`🥭 MangoQA KO (${qa.skipped}) — clôture NON vérifiée ce tour (fail-open, coût 0)`);
         if (!qa.ok) {
           relances++;
           push(`🥭 MangoQA RED → renvoie l'Élève corriger (${relances}/${selfRelanceMax}, coût 0)`);

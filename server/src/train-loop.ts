@@ -29,6 +29,7 @@ import { recordTurnMetrics } from "./metrics.js";
 import { inferProjectType } from "./blueprints.js";
 import { flag } from "./flags.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
+import { interruptAgent } from "./agent.js";
 
 const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const TRAIN_LOG = path.join(WORKSPACE_DIR, ".train.jsonl");
@@ -179,6 +180,34 @@ async function ollamaUp(): Promise<boolean> {
   }
 }
 
+// ── Circuit breaker Ollama (revue globale 2026-07-03, action #7) ────────────
+// `ollamaUp()` n'est testé QU'UNE FOIS au boot (ligne ci-dessus, dans main()).
+// Si Ollama meurt à 2h du matin en pleine boucle, chaque itération restante
+// scaffoldait un projet sur disque PUIS échouait, en boucle serrée, jusqu'au
+// matin — sans détection « N échecs consécutifs → stop ». Ce compteur PUR
+// (comme decideBreakerStop/decideBudgetStop de nocturnal.ts) ferme la boucle :
+// gate OFF → jamais (comportement historique, byte-identique).
+export interface OllamaCircuitDecision {
+  stop: boolean;
+  /** Raison lisible (loguée) quand stop=true. */
+  reason?: string;
+}
+
+/** Décide si le lot doit s'arrêter AVANT l'itération suivante après N échecs
+ * CONSÉCUTIFS. PUR, testable (aucun accès réseau/horloge). */
+export function decideOllamaCircuitStop(
+  gateOn: boolean,
+  consecutiveFailures: number,
+  maxConsecutiveFailures: number,
+): OllamaCircuitDecision {
+  if (!gateOn) return { stop: false };
+  if (consecutiveFailures < maxConsecutiveFailures) return { stop: false };
+  return {
+    stop: true,
+    reason: `${consecutiveFailures} échec(s) CONSÉCUTIF(S) — Ollama semble injoignable/mort en pleine nuit (relance « ollama serve » puis relance le run).`,
+  };
+}
+
 function rmProject(dir: string): void {
   for (let i = 0; i < 3; i++) {
     try {
@@ -221,6 +250,9 @@ async function main(): Promise<void> {
   // run soit isolable (bilan par run, jamais le cumul de tout le fichier).
   const runId = new Date().toISOString();
   const deadline = Date.now() + minutes * 60_000;
+  // (N17, watchdog mural par itération) Temps alloué par projet, défaut 45 min.
+  // Regarde nocturnal.ts ligne 557 pour la même logique.
+  const projectBudgetMs = Math.max(10 * 60_000, Number(process.env.TRAIN_LOOP_PROJECT_BUDGET_MIN ?? 45) * 60_000);
   // Escalade plafonnée : au-delà du cap, on neutralise l'escalade (coût borné).
   let escalations = 0;
   const deps: RelayDeps = {
@@ -248,6 +280,10 @@ async function main(): Promise<void> {
   // (run-tonight.ts/run-mango-nuit.ts) et Phase 2 (nocturnal.ts) via le ledger
   // data/global-budget.json (nocturnal-budget.ts). $0/absent = illimité.
   const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
+  // Circuit breaker Ollama (gaté TRAIN_LOOP_OLLAMA_BREAKER) : compteur d'échecs
+  // CONSÉCUTIFS, remis à zéro à la première réussite. Seuil configurable, défaut 3.
+  let consecutiveFailures = 0;
+  const maxConsecutiveFailures = Number(process.env.TRAIN_LOOP_OLLAMA_MAX_FAILS ?? 3);
 
   for (const p of queue) {
     if (Date.now() >= deadline || stats.done >= count) break;
@@ -264,17 +300,38 @@ async function main(): Promise<void> {
       console.warn(`[train] 💰 ${budgetStop.reason} — arrêt propre (${stats.done}/${i} itération(s) faite(s)).`);
       break;
     }
+    // (revue 2026-07-03, action #7) même frontière : N échecs CONSÉCUTIFS →
+    // stop propre au lieu de scaffolder-puis-échouer en boucle serrée jusqu'au
+    // matin (Ollama mort). Gate OFF → jamais, comportement historique.
+    const circuitStop = decideOllamaCircuitStop(flag("TRAIN_LOOP_OLLAMA_BREAKER"), consecutiveFailures, maxConsecutiveFailures);
+    if (circuitStop.stop) {
+      console.warn(`[train] ⚡ ${circuitStop.reason} — arrêt propre (${stats.done}/${i} itération(s) faite(s)).`);
+      break;
+    }
     i++;
     const name = `train-${i}`;
     const dir = projectDir(name);
     const started = Date.now();
     console.log(`\n[${i}] ${p.task}`);
 
+    rmProject(dir); // au cas où un run précédent aurait laissé le dossier
+    // (N17) Watchdog mural par itération : calcule la deadline du projet et
+    // lance un timeout qui interrompt si elle est dépassée. Même pattern que
+    // nocturnal.ts ligne 362-366 (interruptAgent).
+    const projectDeadline = Date.now() + projectBudgetMs;
+    const watchdog = Number.isFinite(projectDeadline)
+      ? setTimeout(() => {
+          console.log(`⏱ Budget mural du projet [${i}] dépassé — tour interrompu.`);
+          void interruptAgent().catch(() => undefined);
+        }, Math.max(1_000, projectDeadline - Date.now()))
+      : undefined;
     try {
-      rmProject(dir); // au cas où un run précédent aurait laissé le dossier
       await createProject(name);
       const r = await runRelay(p.task, dir, { maitreModel: escalateModel }, deps);
       const durationMs = Date.now() - started;
+      // (action #7) succès = remise à zéro de la série ; échec = incrémente
+      // (le compteur ne PÈSE que si TRAIN_LOOP_OLLAMA_BREAKER=on, cf. plus haut).
+      consecutiveFailures = r.success ? 0 : consecutiveFailures + 1;
 
       recordTurnMetrics({
         ts: new Date().toISOString(),
@@ -320,8 +377,11 @@ async function main(): Promise<void> {
       }
     } catch (e) {
       stats.failed++;
+      consecutiveFailures++; // (action #7) une itération qui LÈVE est aussi un échec de la série.
       console.error(`[${i}] itération en erreur : ${(e as Error).message}`);
       rmProject(dir);
+    } finally {
+      if (watchdog) clearTimeout(watchdog);
     }
   }
 

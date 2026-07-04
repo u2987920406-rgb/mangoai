@@ -275,8 +275,19 @@ async function main(): Promise<void> {
   // (train-loop.ts) et Phase 2 (nocturnal.ts) via le ledger data/global-budget.json
   // (nocturnal-budget.ts). $0/absent = illimité.
   const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
+  // (N17, watchdog mural par run) Deadline du run entier, regarde nocturnal.ts ligne 558.
+  // Défaut 480 min (8 h), configurable via TONIGHT_BUDGET_MIN.
+  const tonightBudgetMs = Math.max(60 * 60_000, Number(process.env.TONIGHT_BUDGET_MIN ?? 480) * 60_000);
+  const tonightDeadline = Date.now() + tonightBudgetMs;
 
   for (const spec of SPECS) {
+    // (N17) Vérification à la frontière d'itération : si la deadline du run est
+    // dépassée, arrête proprement (les résultats jusqu'ici sont conservés).
+    // Même pattern que nocturnal.ts ligne 585.
+    if (Date.now() >= tonightDeadline) {
+      log(`⏱ Deadline du run atteinte — ${results.length}/${SPECS.length} projet(s) traité(s), arrêt propre.`);
+      break;
+    }
     // Frontière d'itération — jamais en cours de génération. Gate OFF → 0 I/O.
     const budgetStop = decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd, globalBudgetToday(), () => readGlobalBudgetState());
     if (budgetStop.stop) {

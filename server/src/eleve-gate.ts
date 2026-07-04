@@ -21,6 +21,7 @@ import { judgeIntention, type IntentVerdict } from "./eleve-judge.js";
 import { getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from "./layout-balance.js";
 import { runProjectTests, type TestRun } from "./inspection.js";
+import { flag } from "./flags.js";
 
 export interface GateVerdict {
   ok: boolean;
@@ -37,6 +38,9 @@ export interface GateVerdict {
   placeholders: PlaceholderFinding[]; // URLs de placeholder trouvées (vide si ok)
   judgeSkipped?: string; // (N9) le juge d'intention a ÉCHOUÉ (verdict neutre 100) — raison
   critiqueSkipped?: string; // (N9) la critique visuelle a ÉCHOUÉ (goût/WCAG sautés) — raison
+  dualSkip: boolean; // (revue 2026-07-03, action #6) juge ET critique KO SIMULTANÉMENT ce tour —
+  // « intention+goût+QA » se réduit alors à 2 regex triviales. Toujours calculé (observabilité),
+  // ne BLOQUE la clôture que si ELEVE_GATE_DUAL_SKIP_BLOCK=on (voir `ok`).
   testsRan: boolean; // (L55) la suite de tests a-t-elle vraiment tourné ? (script présent + gate on)
   testsOk: boolean; // (L55) tests verts OU non lancés (sauté → ne pénalise pas)
   tests?: TestRun; // détail de la suite de tests (absent si non lancée)
@@ -290,7 +294,25 @@ export async function runClosureGate(
     }
   }
 
-  return { ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk, intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance, placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, testsRan, testsOk, tests, raisons };
+  // (revue 2026-07-03, action #6, constat B) Si le juge d'intention ET la critique
+  // visuelle échouent TOUS LES DEUX sur le même tour (même infra Ollama/preview
+  // indisponible), le Gardien "intention+goût+QA" se réduit silencieusement à 2
+  // regex triviales — tout en restant marqué VERT. `dualSkip` le rend TOUJOURS
+  // visible ; ELEVE_GATE_DUAL_SKIP_BLOCK=on (défaut OFF) le fait aussi BLOQUER
+  // (compté non-vérifié plutôt que vert) au lieu de se contenter du log N9.
+  const dualSkip = Boolean(judgeSkipped && critiqueSkipped);
+  const dualSkipBlocks = dualSkip && flag("ELEVE_GATE_DUAL_SKIP_BLOCK");
+  if (dualSkipBlocks) {
+    raisons.push(
+      `GARDIEN DÉGRADÉ — juge d'intention (${judgeSkipped}) ET critique visuelle (${critiqueSkipped}) ont échoué SIMULTANÉMENT : ` +
+        `rien n'a été réellement vérifié ce tour (intention+goût+QA réduits à 2 regex triviales). Relance quand l'infra (Ollama/preview) est disponible.`,
+    );
+  }
+  return {
+    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks,
+    intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance,
+    placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, dualSkip, testsRan, testsOk, tests, raisons,
+  };
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */
