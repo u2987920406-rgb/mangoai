@@ -1,6 +1,9 @@
+mod breaker_watch;
+mod mangoqa_watch;
 mod sidecar;
 
 use std::sync::Mutex;
+use std::time::Duration;
 
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::TrayIconBuilder;
@@ -9,14 +12,27 @@ use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;
 use tauri_plugin_opener::OpenerExt;
 
+/// Identifiant du tray, pour le retrouver depuis les threads de fond
+/// (`app.tray_by_id(MAIN_TRAY_ID)`) sans avoir à faire voyager le handle lui-même.
+const MAIN_TRAY_ID: &str = "main-tray";
+
 /// PID du process racine du sidecar (node scripts/start.mjs), pour l'arrêter à la fermeture.
 struct SidecarState(Mutex<Option<u32>>);
+
+/// PID courant du process MangoQA supervisé (#180 É7, D7) — mis à jour par le watchdog
+/// à chaque (re)spawn, lu à l'arrêt de l'app pour tuer proprement l'arbre de process.
+struct MangoQaState(Mutex<Option<u32>>);
 
 fn do_shutdown(app: &AppHandle) {
     let state = app.state::<SidecarState>();
     let pid = state.0.lock().unwrap().take();
     if let Some(pid) = pid {
         sidecar::shutdown_sidecar(pid);
+    }
+    let qa_state = app.state::<MangoQaState>();
+    let qa_pid = qa_state.0.lock().unwrap().take();
+    if let Some(qa_pid) = qa_pid {
+        mangoqa_watch::shutdown_mangoqa(qa_pid);
     }
 }
 
@@ -84,6 +100,7 @@ pub fn run() {
         .plugin(tauri_plugin_notification::init())
         .plugin(tauri_plugin_opener::init())
         .manage(SidecarState(Mutex::new(None)))
+        .manage(MangoQaState(Mutex::new(None)))
         .invoke_handler(tauri::generate_handler![
             pick_folder,
             send_test_notification,
@@ -104,7 +121,7 @@ pub fn run() {
             // fermeture de fenêtre, arrêter proprement le sidecar (zéro orphelin port 3000).
             let quit_item = MenuItem::with_id(app, "quit", "Quitter MangoOS", true, None::<&str>)?;
             let tray_menu = Menu::with_items(app, &[&quit_item])?;
-            let _tray = TrayIconBuilder::new()
+            let _tray = TrayIconBuilder::with_id(MAIN_TRAY_ID)
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&tray_menu)
                 .tooltip("MangoOS")
@@ -159,6 +176,28 @@ pub fn run() {
                         log::error!("échec du démarrage du sidecar : {e}");
                     }
                 }
+            });
+
+            // Supervision MangoQA (#180 É7, D7) : démarre AVEC l'app, watchdog qui
+            // RESPAWN s'il meurt — patron IDENTIQUE à la supervision du sidecar
+            // ci-dessus, jamais d'ordre métier (fantôme, cf. mangoqa_watch.rs). Le PID
+            // courant est tenu à jour dans MangoQaState pour l'arrêt propre à la fermeture.
+            let qa_app_handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let dir = mangoqa_watch::mangoqa_dir();
+                mangoqa_watch::supervise(dir, move |pid| {
+                    let state = qa_app_handle.state::<MangoQaState>();
+                    *state.0.lock().unwrap() = pid;
+                });
+            });
+
+            // Notification OS + badge tray sur verdict rouge (#180 É7, D7) : poll
+            // <repo>/workspace/.mangoqa/breaker-verdict.json (même fichier, même cadence
+            // ~5s que le Disjoncteur MangoQA côté serveur, readBreakerVerdict/mangoqa.ts).
+            let breaker_app_handle = app.handle().clone();
+            let workspace_dir = sidecar::repo_root().join("workspace");
+            std::thread::spawn(move || {
+                breaker_watch::supervise(breaker_app_handle, workspace_dir, MAIN_TRAY_ID, Duration::from_secs(5));
             });
 
             Ok(())

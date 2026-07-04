@@ -115,6 +115,15 @@ export const FLAGS = {
     default: false,
     description: "Palier système (#180 D5/É6, eleve-system-tools.ts) : commandes système élargies (familles nommées, approuvées une fois par session) + outils déterministes open_folder/reveal_in_explorer/open_url. INTERACTIF SEULEMENT — refus INCONDITIONNEL si l'acteur courant (currentActor()) est 'autonomous', quel que soit ce gate (fail-safe D4/D7, pas une option). Au-dessus du plancher inviolable FORBIDDEN_RUN (executor.ts), jamais affaibli. OFF (défaut) → aucun de ces outils n'est enregistré dans le registre Élève, comportement byte-identique.",
   },
+  // ── #180 É7 — scheduler borné multi-projets (note : pas un booléen ────────
+  // ici, contrairement aux autres entrées de ce registre — voir agent-scheduler.ts).
+  // DESKTOP_MAX_CONCURRENT_RUNS (numérique, défaut 1) : taille du pool de runs
+  // agentiques autorisés EN VOL simultanément (schedulerConfig()). Défaut 1 =
+  // comportement équivalent au verrou global historique (agent-lock.ts, non
+  // modifié). Même patron que NOCTURNAL_GLOBAL_BUDGET_USD/CRON_MAX_RUNS_PER_HOUR :
+  // lu directement via process.env dans agent-scheduler.ts (pas un FlagSpec
+  // booléen), documenté ICI pour rester repérable au même endroit que le reste
+  // des gates DESKTOP_*.
   // ── Pilier D — finition (clôture) ───────────────────────────────────────
   ELEVE_CLOSURE_GATE: {
     env: "ELEVE_CLOSURE_GATE",
