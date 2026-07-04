@@ -131,6 +131,27 @@ export const FLAGS = {
     default: false,
     description: "Circuit breaker Ollama dans train-loop.ts : au-delà de TRAIN_LOOP_OLLAMA_MAX_FAILS (défaut 3) échecs d'itération CONSÉCUTIFS (Ollama mort en pleine nuit), arrête le lot proprement + alerte au lieu de scaffolder un projet PUIS échouer en boucle serrée jusqu'au matin. OFF → comportement historique (la boucle continue malgré des échecs répétés, aucun compteur tenu).",
   },
+  // ── #177 — base de connaissance cross-vidéos YouTube (savoir-*) ─────────────
+  SAVOIR_TRANSCRIPT: {
+    env: "SAVOIR_TRANSCRIPT",
+    default: false,
+    description: "Base de connaissance vidéo (#177) : ingestion de transcripts YouTube (yt-dlp → repli scraping maison → métadonnées-seules, cache disque à vie) et les surfaces qui l'exposent (outil Élève, route). OFF → aucune surface exposée ; le module savoir-transcript.ts reste appelable directement par les runners/tests (utile en développement) mais aucun chemin utilisateur n'y touche.",
+  },
+  SAVOIR_EXTRACTION: {
+    env: "SAVOIR_EXTRACTION",
+    default: false,
+    description: "Base de connaissance vidéo (#177 É3) : extraction de claims candidats depuis les segments d'un transcript (fenêtrage → prompt LLM avec type contrôlé + entités connues → validation VERBATIM déterministe : un extrait introuvable dans le segment source est rejeté mécaniquement, jamais inséré). OFF → aucune surface (runner/route) n'appelle l'extraction ; le module savoir-extraction.ts reste appelable directement par les runners/tests (deps injectées).",
+  },
+  SAVOIR_RECONCILE: {
+    env: "SAVOIR_RECONCILE",
+    default: false,
+    description: "Base de connaissance vidéo (#177 É4/D3) : réconciliation des claims candidats en groupes (clustering déterministe par sujet normalisé + similarité d'embedding, seuil SAVOIR_CLUSTER_MIN=0.78) puis arbitrage par le JUGE souverain (cerveau `juge` distinct, JSON borné, fail-open → verdict `isole` si le juge est muet) qui classe chaque groupe en consensus|conditionnel|desaccord|isole. Application journalisée (savoir_journal, jamais de suppression d'un côté d'un désaccord). OFF → aucune surface n'appelle la réconciliation ; le module savoir-reconcile.ts reste appelable par runners/tests (deps injectées).",
+  },
+  SAVOIR_RUNNER: {
+    env: "SAVOIR_RUNNER",
+    default: false,
+    description: "Base de connaissance vidéo (#177 É4/D4) : le runner d'ingestion resumable par manifest (run-savoir.ts) — fetch transcript (cache) → re-segmentation ~400-700 car → embeddings → extraction claims → passe de réconciliation globale une fois toutes les vidéos extraites. OFF → aucune surface auto ne lance le runner ; il reste lançable explicitement en CLI (npx tsx src/run-savoir.ts) par un opérateur/test.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;
