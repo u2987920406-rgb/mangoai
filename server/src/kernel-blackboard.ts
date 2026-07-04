@@ -112,6 +112,13 @@ export class Blackboard {
   close(): void {
     this.store.close()
   }
+
+  /** Purge (TTL et/ou volume) d'un scope — délègue au backend. No-op (retourne 0)
+   *  si le backend ne supporte pas `prune` (ex. MemoryStore) : fail-open, jamais
+   *  bloquant. Réservé aux jobs de maintenance (cf. BLACKBOARD_TTL, llm-cache.ts). */
+  prune(scope: string, opts: { olderThanMs?: number; maxEntries?: number }): number {
+    return this.store.prune?.(scope, opts) ?? 0
+  }
 }
 
 // ── Blackboard par défaut du Kernel (singleton) ──────────────────────────────

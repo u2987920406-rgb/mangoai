@@ -7,7 +7,9 @@
 // robuste. Ne throw JAMAIS : toute erreur devient un AgentResult dégradé.
 import { askLLM, type AskLLMOptions, type LLMProvider } from "./llm-engine.js"
 import { getBrain, type AgentId, type BrainConfig } from "./brain-registry.js"
+export type { BrainConfig } from "./brain-registry.js"
 import { flag } from "./flags.js"
+import { temporalContext } from "./temporal-context.js"
 import {
   MANGO_CONTRACT_PROMPT,
   parseAgentResponse,
@@ -30,6 +32,11 @@ export interface DispatchOpts {
    *  JSON ; renvoie le texte brut du modèle dans `summary` (status 'ok'). Pour les
    *  cerveaux qui répondent en prose (ex. lecteur d'images VL — #vision/Sharingan). */
   freeform?: boolean
+  /** (#182 D3) Override EXPLICITE du cerveau : ignore le registre `getBrain(agentId)` et
+   *  route la tentative vers ce cerveau précis. Sert à l'orchestration de l'Accueil, où le
+   *  cerveau raisonneur est le MODÈLE choisi par Raf (Fable/Opus/Sonnet…), pas un rôle du
+   *  registre. Absent (défaut) → résolution normale par rôle, byte-identique. */
+  brainOverride?: BrainConfig
   /** Transport injectable (tests). Défaut : askLLM. */
   ask?: AskFn
   /** Sleep injectable (tests du rate limiter / backoff). Défaut : vrai setTimeout. */
@@ -164,8 +171,8 @@ export async function dispatch(
     return degraded(agentId, `budget de tours dépassé (${session.turns}/${session.maxTurns})`, Date.now() - started)
   }
 
-  // 2. Résolution du cerveau.
-  const brain = getBrain(agentId)
+  // 2. Résolution du cerveau (override explicite #182 D3 prioritaire sur le registre).
+  const brain = opts.brainOverride ?? getBrain(agentId)
 
   // 3. Garde de souveraineté — un agent localOnly ne sort jamais vers un cloud.
   if (brain.localOnly && brain.provider !== "ollama") {
@@ -176,7 +183,12 @@ export async function dispatch(
 
   // 4 & 5. Injection du contrat + encadrement anti-injection de l'entrée externe.
   // En mode freeform, on n'impose PAS le contrat Mango (le cerveau répond en prose).
-  const fullSystem = freeform ? system : `${MANGO_CONTRACT_PROMPT}\n\n${system}`
+  // D4 — Conscience temporelle : injection en TÊTE du system prompt si gate ON.
+  let systemWithTemporal = system
+  if (flag("TEMPORAL_AWARENESS")) {
+    systemWithTemporal = `${temporalContext()}\n\n${system}`
+  }
+  const fullSystem = freeform ? systemWithTemporal : `${MANGO_CONTRACT_PROMPT}\n\n${systemWithTemporal}`
   const safeUser = trustExternal ? user : sanitizeExternal(user)
 
   // 6. Rate limiting (avec retry exponentiel interne).

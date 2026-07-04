@@ -37,7 +37,7 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("13 agents présents (dont stratege #164 P3 + forgeron La Forge)", AGENT_IDS.length === 13 && Object.keys(def).length === 13);
+    check("14 agents présents (dont stratege #164 P3 + forgeron La Forge + routeur #182 D2)", AGENT_IDS.length === 14 && Object.keys(def).length === 14);
     check("défaut stratege = gemma4:12b LOCAL ($0, barreau 1)", def.stratege.provider === "ollama" && def.stratege.model === "gemma4:12b");
     check("défaut forgeron = claude/opus (le meilleur raisonneur, acte rare)", def.forgeron.provider === "claude" && def.forgeron.model === "opus");
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
@@ -153,7 +153,13 @@ async function run() {
       freeform: true, trustExternal: true, sleep: noSleep,
       ask: async (system) => { ffSystem = system; return "Charte cohérente, rien à signaler."; },
     });
-    check("freeform → contrat Mango NON injecté", ffSystem === "Tu es l'œil." && !ffSystem.includes("RÈGLE ABSOLUE"));
+    // Note (#182 D4) : TEMPORAL_AWARENESS (défaut ON) préfixe désormais CHAQUE
+    // system, freeform inclus — délibéré (le cerveau vision profite aussi de la
+    // date/heure). Seul le contrat Mango reste exclu du freeform : on vérifie que
+    // le system SE TERMINE par le prompt d'origine (pas d'égalité stricte, qui
+    // interdirait toute injection légitime en tête) et que le marqueur du contrat
+    // Mango est absent.
+    check("freeform → contrat Mango NON injecté", ffSystem.endsWith("Tu es l'œil.") && !ffSystem.includes("RÈGLE ABSOLUE"));
     check("freeform → prose brute dans summary (status ok)", rFf.status === "ok" && rFf.summary === "Charte cohérente, rien à signaler.");
   }
 

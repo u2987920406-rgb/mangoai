@@ -10,6 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
 import { askLLM } from "./llm-engine.js";
+import { cachedComplete } from "./llm-cache.js";
 import { searchPexelsImages } from "./taste-images.js";
 import {
   generateContentItems,
@@ -21,16 +22,32 @@ import {
 
 // ── Dépendances réelles ──────────────────────────────────────────────────────
 
-/** Réglages du cerveau rédacteur = l'Élève (GLM via OpenAI-compat), surchargés par env. */
+// Version du PROMPT de génération de contenu (buildContentPrompt, eleve-content.ts) —
+// namespace le cache sémantique (#182 D5/É4) : un changement de forme de prompt
+// busTe le cache au lieu de servir une réponse valide pour un autre gabarit.
+const GENERE_CONTENU_PROMPT_VERSION = "genere-contenu-v1";
+
+/** Réglages du cerveau rédacteur = l'Élève (GLM via OpenAI-compat), surchargés par env.
+ * Appel PUR/sans effet de bord/idempotent (rédaction déterministe d'un lot JSON validé,
+ * jamais un tour agentique outillé) → enveloppé du cache sémantique OPT-IN (#182 É4,
+ * gate LLM_SEMANTIC_CACHE, défaut OFF = appel direct byte-identique). */
 function glmAsk(): GenContentDeps["ask"] {
-  return (system, user) =>
+  const model = process.env.ELEVE_MODEL || "glm-5.2:cloud";
+  const real = (system: string, user: string) =>
     askLLM(system, user, {
       provider: "openai",
-      model: process.env.ELEVE_MODEL || "glm-5.2:cloud",
+      model,
       baseUrl: process.env.ELEVE_API_URL,
       apiKeyEnv: "ELEVE_API_KEY",
       maxTokens: 6000,
       timeoutMs: 180_000,
+    });
+  return (system, user) =>
+    cachedComplete(system, user, {
+      role: "genere-contenu",
+      providerModel: `openai:${model}`,
+      promptVersion: GENERE_CONTENU_PROMPT_VERSION,
+      ask: real,
     });
 }
 

@@ -43,7 +43,7 @@ export const MAX_FALLBACK_CHAIN = 2
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "extracteur" | "testeur" | "auditeur"
-  | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron"
+  | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron" | "routeur"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -75,6 +75,10 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // raisonneur, Opus, via l'abonnement Claude ($0). Distinct du `codeur` (GLM) qui,
   // lui, EXÉCUTE. Réassignable à chaud dans l'Atelier comme tout cerveau.
   forgeron:      { provider: "claude", model: "opus", timeoutMs: 120_000 },
+  // #182 D2 — le ROUTEUR de capacités (étage 3, gaté INTENT_ROUTER_LLM=off par défaut) :
+  // repli d'AMBIGUÏTÉ SEULE quand le signal déterministe (URL/mots-clés/pièce jointe) est
+  // muet. Léger et rapide : GLM cloud, repli C2 (BRAIN_FALLBACK) déjà disponible pour ce rôle.
+  routeur:       { provider: "ollama", model: "glm-5.2:cloud", timeoutMs: 20_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]

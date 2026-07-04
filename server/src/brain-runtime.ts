@@ -9,6 +9,8 @@ import { resolveBrainForIntention, type Intention, type BrainCard } from "./brai
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
 import { getBrain } from "./brain-registry.js";
 import type { LLMProvider } from "./llm-engine.js";
+import { requiredCapabilities, type TaskContext } from "./intent-capabilities.js";
+import type { Capability } from "./eleve-tool-capabilities.js";
 
 // Repli profond (.env) — utilisé seulement si l'agent `codeur` du registre ne donne
 // rien d'exploitable. Depuis #162, l'Élève (les « mains ») EST l'agent `codeur` du
@@ -98,8 +100,34 @@ export function policyForBinding(b: EleveBinding): BrainPolicy {
   return { allowRun: tool >= 0.7, allowDelegate: tool >= 0.9 };
 }
 
-/** Dérive l'intention d'un tour : explicite (bouton) si valide, sinon depuis le mode. */
-export function deriveIntention(modeIsDiscuss: boolean, raw: unknown): Intention {
-  if (raw === "construire" || raw === "planifier" || raw === "discuter") return raw;
-  return modeIsDiscuss ? "discuter" : "construire";
+/** Sortie de `deriveIntention` (#182 É2) — l'intention (→ le CERVEAU, E2) ET les
+ *  capacités requises (→ les OUTILS, D2), calculées au MÊME joint pour ne jamais diverger. */
+export interface IntentionResult {
+  intention: Intention;
+  requiredCaps: Set<Capability>;
+}
+
+/**
+ * Dérive l'intention d'un tour (explicite via bouton si valide, sinon depuis le mode) ET,
+ * au même endroit, les capacités que la TÂCHE réclame (#182 É2 — `requiredCapabilities`,
+ * `intent-capabilities.ts`). UN SEUL joint : on n'ajoute pas un `deriveCapabilities`
+ * parallèle qui pourrait diverger de celui-ci (c'est exactement la cause-racine du
+ * « trou » de vision d'hier — deux chemins qui ne se synchronisent pas).
+ *
+ * `task`/`context` sont optionnels (défaut `""`/`{}`) : un appelant qui ne les fournit
+ * pas obtient `requiredCaps` = `DISCUSS_DEFAULT_CAPS` (sur-provisionnement read-safe
+ * seul, étage 1 de D2) — jamais un throw, jamais un appel LLM implicite.
+ */
+export async function deriveIntention(
+  modeIsDiscuss: boolean,
+  raw: unknown,
+  task: string = "",
+  context: TaskContext = {},
+): Promise<IntentionResult> {
+  const intention: Intention =
+    raw === "construire" || raw === "planifier" || raw === "discuter"
+      ? raw
+      : modeIsDiscuss ? "discuter" : "construire";
+  const requiredCaps = await requiredCapabilities(task, context);
+  return { intention, requiredCaps };
 }

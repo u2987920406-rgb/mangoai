@@ -64,12 +64,18 @@ async function run() {
     check("planifier non affecté → repli global", p.card === null);
   }
 
-  console.log("\n[4] deriveIntention : explicite valide sinon depuis le mode");
+  console.log("\n[4] deriveIntention : explicite valide sinon depuis le mode (+ requiredCaps #182 É2)");
   {
-    check("bouton construire respecté", deriveIntention(true, "construire") === "construire");
-    check("bouton planifier respecté", deriveIntention(false, "planifier") === "planifier");
-    check("valeur inconnue + discuss → discuter", deriveIntention(true, "n'importe") === "discuter");
-    check("valeur absente + build → construire", deriveIntention(false, undefined) === "construire");
+    check("bouton construire respecté", (await deriveIntention(true, "construire")).intention === "construire");
+    check("bouton planifier respecté", (await deriveIntention(false, "planifier")).intention === "planifier");
+    check("valeur inconnue + discuss → discuter", (await deriveIntention(true, "n'importe")).intention === "discuter");
+    check("valeur absente + build → construire", (await deriveIntention(false, undefined)).intention === "construire");
+    // Sans task/context : sur-provisionnement read-safe seul (étage 1 de D2), rien de plus.
+    const base = await deriveIntention(true, "discuter");
+    check("sans tâche → requiredCaps = {read-local, read-web} seulement", base.requiredCaps.size === 2 && base.requiredCaps.has("read-local") && base.requiredCaps.has("read-web"));
+    // Tâche avec signal vision → capacité ajoutée AU MÊME joint.
+    const withVision = await deriveIntention(true, "discuter", "regarde le rendu de la page d'accueil");
+    check("tâche « regarde le rendu » → requiredCaps contient vision", withVision.requiredCaps.has("vision"));
   }
 
   console.log("\n[5] Phase E3 — policyForBinding : outils gatés par la force mesurée");

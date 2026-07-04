@@ -43,6 +43,7 @@ import { buildEleveSiteTools } from "./eleve-site-tools.js";
 import { buildEleveImageTools } from "./eleve-image-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured } from "./taste-images.js";
+import { policyFromCaps, mergePolicies, DISCUSS_DEFAULT_CAPS, type RequiredCaps } from "./eleve-tool-capabilities.js";
 
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
 const RUN_TIMEOUT_MS = Number(process.env.ELEVE_RUN_TIMEOUT_MS ?? 120_000);
@@ -196,8 +197,34 @@ export function applyToolPolicy(reg: ToolRegistry, policy: ToolPolicy): ToolRegi
   return filtered;
 }
 
-export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {}): ToolRegistry {
-  const allowRun = policy.allowRun ?? true;
+/** Options de CONSTRUCTION du registre unifié (D1). Ces options ne portent QUE sur des
+ *  variantes STRUCTURELLES d'un outil (présence de la sentinelle, variante GET-only de
+ *  requete_web, run_command gaté « cerveau faible ») — le FILTRAGE par posture/capacité,
+ *  lui, se fait APRÈS via `applyToolPolicy(reg, policyFromCaps(...))`. */
+export interface EleveRegistryOpts {
+  /** false → `run_command` n'est pas enregistré (Phase E3, cerveau au function-calling faible). */
+  allowRun?: boolean;
+  /** true → `requete_web` en GET seul (aucun POST). Utilisé sous un plafond lecture (Discuter). */
+  httpGetOnly?: boolean;
+  /** false → pas de sentinelle `finish` (une posture lecture seule ne termine pas de build). */
+  withFinish?: boolean;
+}
+
+/**
+ * LE registre unifié de l'Élève (#182 D1) — SOURCE UNIQUE de tous les outils, dans l'ordre
+ * canonique. Il remplace les deux inventaires divergents d'hier (action vs discuter) : on
+ * construit ici l'UNION complète (gatée par les mêmes `ELEVE_*`), puis les préréglages
+ * `buildEleveActionTools`/`buildEleveDiscussTools` la FILTRENT via `applyToolPolicy` +
+ * `policyFromCaps`. Ainsi une capacité read-safe (vision, web, extraction) n'est plus otage
+ * d'une posture : elle est offrable partout dès que la tâche la réclame.
+ *
+ * Les gates `ELEVE_*` restent la coupure d'urgence PAR CAPACITÉ (une panne Sharingan ne coupe
+ * pas le web) : le registre les LIT toujours ; seul le filtre posé PAR-DESSUS change.
+ */
+export function buildEleveToolRegistry(projectDir: string, opts: EleveRegistryOpts = {}): ToolRegistry {
+  const allowRun = opts.allowRun ?? true;
+  const withFinish = opts.withFinish ?? true;
+  const httpGetOnly = opts.httpGetOnly ?? false;
   // On réutilise et on ÉTEND le registre lecture seule (même instance).
   const reg = buildEleveTools(projectDir);
 
@@ -324,6 +351,7 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
 
   for (const t of actionTools) {
     if (t.name === "run_command" && !allowRun) continue; // gaté pour cerveau faible
+    if (t.name === "finish" && !withFinish) continue; // pas de sentinelle en lecture seule
     reg.register(t);
   }
 
@@ -347,7 +375,7 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
   // Complète chercher_web/lire_page (qui LISENT) par TAPER une API. Mêmes garde-fous
   // (anti-SSRF isCloneableUrl + sanitizeExternal + bornes) ; coupure ELEVE_HTTP=off.
   if (process.env.ELEVE_HTTP !== "off") {
-    for (const t of buildEleveHttpTools(projectDir)) reg.register(t);
+    for (const t of buildEleveHttpTools(projectDir, undefined, { getOnly: httpGetOnly })) reg.register(t);
   }
 
   // Outil PARCOURS (#155) — « vérifie que ça MARCHE, pas juste que ça compile ».
@@ -448,41 +476,39 @@ export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {
     }
   }
 
-  // #175 — scelle le registre si la policy porte une allowlist/denylist (sous-agent
-  // action). Sans elles, `reg` est renvoyé inchangé (l'Élève principal, rétrocompatible).
-  return applyToolPolicy(reg, policy);
+  return reg;
 }
 
 /**
- * Registre du mode DISCUTER (2026-06-27) — LECTURE locale + LECTURE WEB, JAMAIS d'écriture.
- *
- * Avant ce câblage, Discuter n'avait que `buildEleveTools` (read/list/search/check_build
- * locaux) → l'Élève disait honnêtement « je n'ai pas accès à internet » face à une URL.
- * On lui donne donc les outils web EN LECTURE, cohérents avec la règle « lecture seule »
- * (ils récupèrent/lisent, n'écrivent rien) : `chercher_web`/`lire_page` (#154),
- * `extraire_site` (#159), et `requete_web` en GET seul (#166, `getOnly` → pas de POST).
- * AUCUN write_file/edit_file/run_command (réservés à Construire). Mêmes gates que Construire
- * (ELEVE_WEB/ELEVE_SITE/ELEVE_HTTP) → une coupure d'urgence vaut pour les deux modes.
+ * Préréglage CONSTRUIRE (#182 D1) — plafond de mutation LEVÉ + toutes capacités. C'est
+ * l'ancienne `buildEleveActionTools` rendue comme un FILTRE au-dessus du registre unifié :
+ * `policyFromCaps("mutation", "all")` est l'identité `{}` (aucune restriction de capacité) ;
+ * on lui compose la `ToolPolicy` de l'appelant (l'allowlist scellée d'un sous-agent #175,
+ * le `allowRun` d'un cerveau faible). Sortie BYTE-IDENTIQUE à l'ancienne fonction pour les
+ * mêmes entrées (prouvé par test-eleve-tool-capabilities.ts).
  */
-export function buildEleveDiscussTools(projectDir: string): ToolRegistry {
-  const reg = buildEleveTools(projectDir);
-  if (process.env.ELEVE_WEB !== "off") {
-    for (const t of buildEleveWebTools(projectDir)) reg.register(t);
-  }
-  if (process.env.ELEVE_SITE !== "off") {
-    for (const t of buildEleveSiteTools(projectDir)) reg.register(t);
-  }
-  if (process.env.ELEVE_HTTP !== "off") {
-    for (const t of buildEleveHttpTools(projectDir, undefined, { getOnly: true })) reg.register(t);
-  }
-  // Lecture de documents/archives : SOURCES read-only → cohérentes avec « lecture seule ».
-  if (process.env.ELEVE_DOCUMENT !== "off") {
-    for (const t of buildEleveDocumentTools(projectDir)) reg.register(t);
-  }
-  if (process.env.ELEVE_ARCHIVE !== "off") {
-    for (const t of buildEleveArchiveTools(projectDir)) reg.register(t);
-  }
-  return reg;
+export function buildEleveActionTools(projectDir: string, policy: ToolPolicy = {}): ToolRegistry {
+  const allowRun = policy.allowRun ?? true;
+  const reg = buildEleveToolRegistry(projectDir, { allowRun, withFinish: true, httpGetOnly: false });
+  return applyToolPolicy(reg, mergePolicies(policyFromCaps("mutation", "all"), policy));
+}
+
+/**
+ * Préréglage DISCUTER (#182 D1) — plafond de mutation `read-only` + capacités de LECTURE
+ * (locale + web) par défaut. Remplace l'ancienne `buildEleveDiscussTools` : au lieu d'un
+ * second inventaire, on FILTRE le registre unifié. La sentinelle `finish` n'est pas
+ * construite (`withFinish:false`) et `requete_web` est en GET seul (`httpGetOnly:true`) —
+ * cohérent avec « lecture seule, jamais d'écriture ». Les capacités read-safe absentes par
+ * défaut (vision, artefacts, plan, tests…) DEVIENNENT offrables ici dès qu'É2 les ajoute à
+ * `requiredCaps` : c'est exactement la fin du « trou » où `vois_ecran` n'existait qu'en
+ * Construire (cf. la preuve dédiée du test).
+ *
+ * `requiredCaps` (É2, intent-capabilities.ts) : les capacités que la TÂCHE réclame. Défaut
+ * `DISCUSS_DEFAULT_CAPS` → sans appelant qui le renseigne, comportement BYTE-IDENTIQUE à avant É2.
+ */
+export function buildEleveDiscussTools(projectDir: string, requiredCaps: RequiredCaps = DISCUSS_DEFAULT_CAPS): ToolRegistry {
+  const reg = buildEleveToolRegistry(projectDir, { withFinish: false, httpGetOnly: true });
+  return applyToolPolicy(reg, policyFromCaps("read-only", requiredCaps));
 }
 
 /** Vrai si l'outil nommé est la sentinelle de fin (utilisé par le runtime). */

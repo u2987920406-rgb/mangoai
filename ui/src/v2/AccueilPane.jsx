@@ -187,6 +187,15 @@ export default function AccueilPane() {
           title="Envoyer (Entrée)" aria-label="Envoyer" disabled={!input.trim() || thinking} onClick={send}
         />
       </div>
+      {/* #182 D3 — divulgation honnête : un cerveau non-Élève (Fable/Opus/Sonnet/Haiku)
+          conseille SANS piloter les outils (web/vision/média) à l'Accueil. On le DIT au
+          lieu de laisser croire à une incapacité de MangoOS. */}
+      {model !== "eleve" && (
+        <p className="px-1.5 pt-1.5 text-[10.5px] leading-snug text-faint">
+          {activeModel.label} conseille sans piloter les outils (web, vision, images). Pour une
+          réponse outillée, choisis GLM 5.2 (l'Élève).
+        </p>
+      )}
     </div>
   );
 

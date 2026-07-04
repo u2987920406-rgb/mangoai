@@ -36,7 +36,12 @@ import { sovereigntyReport, formatSovereignty } from "./sovereignty-metrics.js";
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js";
 import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
+import { requiredCapabilities, toolDemandSignal } from "./intent-capabilities.js";
+import { runFrontierOrchestration } from "./frontier-orchestration.js";
+import { dispatch } from "./brain-dispatch.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
+import { flag } from "./flags.js";
+import { temporalContext } from "./temporal-context.js";
 import { domainTemplateSection } from "./template-library.js";
 import { isAgentBusy, tryAcquireAgent, releaseAgent } from "./agent-lock.js";
 import { uxuiProfile } from "./models/uxui.js";
@@ -82,6 +87,7 @@ import { registerPdfRoutes } from "./pdf-routes.js";
 import { registerTutorialRoutes } from "./tutorial.js";
 import { registerNocturnalRoutes } from "./nocturnal.js";
 import { registerPromptEvolutionRoutes } from "./prompt-evolution.js";
+import { registerAbHarnessRoutes } from "./ab-harness.js";
 import { registerRadarRoutes } from "./radar.js";
 import { registerBuildReviewRoutes } from "./build-review-routes.js";
 import { loadReview } from "./build-review.js";
@@ -211,6 +217,11 @@ app.put("/api/projects/:name/plan", (req, res) => {
   res.json({ plan });
 });
 
+// Noms HUMAINS des cerveaux non-Élève sélectionnables à l'Accueil (#182 D3 — divulgation).
+const HOME_BRAIN_NAMES: Record<string, string> = {
+  fable: "Fable", sonnet: "Sonnet", opus: "Opus", haiku: "Haiku",
+};
+
 // ── Chat d'accueil — conversation directe avec MangoOS (sans projectName) ──
 app.post("/api/home-chat", async (req, res) => {
   const { messages, model, convId } = req.body as {
@@ -251,6 +262,7 @@ app.post("/api/home-chat", async (req, res) => {
     if (model === "eleve" && ELEVE_PROVIDER === "openai" && convId) {
       const scratch = ensureHomeScratch(convId);
       const sys = [
+        flag("TEMPORAL_AWARENESS") ? temporalContext() : "",
         "Tu es MangoOS, l'assistant IA personnel de Raf — chaleureux, direct, concis. Réponds en français sauf si on te parle en anglais.",
         "Tu es une application AUTONOME sur la machine de Raf — NI Claude Code, NI un terminal, NI un outil externe. Ne renvoie jamais vers un terminal/des réglages d'un autre logiciel : tout se fait DANS MangoOS.",
         "TU AS DES OUTILS, sers-t'en SANS demander la permission : LIS les fichiers joints et le brouillon (read_file/list_files/search_code), OUVRE une archive (.zip/.rar → lire_archive), lis un PDF/Word/Excel (lire_document), lis le WEB (lire_page/chercher_web/extraire_site) et interroge une API en GET (requete_web). Les pièces jointes de Raf sont dans .assets/. Ne dis JAMAIS « je n'ai pas accès au disque/à internet » ni « colle le contenu » : ouvre-les toi-même.",
@@ -258,7 +270,16 @@ app.post("/api/home-chat", async (req, res) => {
         "Tu es ici en posture DISCUTER (lire, analyser, conseiller) — tu n'écris pas de fichiers et ne construis pas d'app ICI. Quand Raf veut CONSTRUIRE ou PLANIFIER, propose-lui de passer dans l'ATELIER (workspace) : « on ouvre l'atelier ? j'y emporte nos fichiers et le contexte » — c'est LUI qui valide.",
         history ? `\n— Historique —\n${history}` : "",
       ].filter(Boolean).join("\n");
-      const r = await askEleveAgentic(sys, last.content, buildEleveDiscussTools(scratch), {
+      // #182 É2 — le registre offert suit le BESOIN de la tâche, pas la posture : une
+      // pièce jointe dans .assets/ ou un mot-clé « regarde/rends » ÉLARGIT les capacités
+      // read-safe (vision incluse) au-delà du défaut (read-local + read-web).
+      let hasAttachment = false;
+      try {
+        const assetsDir = path.join(scratch, ".assets");
+        hasAttachment = fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length > 0;
+      } catch { /* best-effort */ }
+      const homeCaps = await requiredCapabilities(last.content, { hasAttachment });
+      const r = await askEleveAgentic(sys, last.content, buildEleveDiscussTools(scratch, homeCaps), {
         model: process.env.ELEVE_MODEL,
       });
       res.json({ text: (r.text ?? "").trim() || "(réponse vide de l'Élève)", suggestGraduate });
@@ -267,6 +288,7 @@ app.post("/api/home-chat", async (req, res) => {
 
     // ── Repli : conversation TEXTE (Claude, ou Élève sans brouillon/endpoint cloud) ──
     const system = [
+      flag("TEMPORAL_AWARENESS") ? temporalContext() : "",
       "Tu es MangoOS, l'assistant IA personnel de Raf. Tu es chaleureux, direct et concis.",
       "Réponds en français sauf si on te parle en anglais.",
       "Tu es une application autonome qui tourne sur la machine de Raf — tu n'es NI Claude Code, NI un terminal, NI un outil externe. Ne mentionne jamais « Claude Code », ne renvoie jamais vers un terminal, une commande slash, ou des réglages d'un autre logiciel : tout (permissions, actions, génération) se fait à l'intérieur de MangoOS.",
@@ -281,8 +303,51 @@ app.post("/api/home-chat", async (req, res) => {
       const { askLLM } = await import("./llm-engine.js");
       text = await askLLM(system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
     } else {
-      const { askLLM } = await import("./llm-engine.js");
-      text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+      // ── Cerveau NON-ÉLÈVE (Fable/Opus/Sonnet/Haiku) — chemin TEXTE PUR (askLLM sans
+      // outils). #182 D3/É5 : ne plus rester SILENCIEUX quand la tâche réclame des outils.
+      let hasAttachment = false;
+      if (convId) {
+        try {
+          const a = path.join(ensureHomeScratch(convId), ".assets");
+          hasAttachment = fs.existsSync(a) && fs.readdirSync(a).length > 0;
+        } catch { /* best-effort */ }
+      }
+      const demanded = toolDemandSignal(last.content, { hasAttachment });
+      const brainName = HOME_BRAIN_NAMES[model ?? "sonnet"] ?? "Ce cerveau";
+
+      if (demanded.size > 0 && flag("FRONTIER_TOOLS_ANY_BRAIN") && convId && ELEVE_PROVIDER === "openai") {
+        // ── Mode ON — ORCHESTRATION : l'Élève outille, le cerveau choisi raisonne. ──
+        const scratch = ensureHomeScratch(convId);
+        const caps = await requiredCapabilities(last.content, { hasAttachment });
+        const fr = await runFrontierOrchestration(
+          {
+            task: last.content,
+            scratchDir: scratch,
+            requiredCaps: caps,
+            brainLabel: model ?? "sonnet",
+            brainName,
+            brainOverride: { provider: "claude", model: resolvedModel },
+            system,
+          },
+          {
+            runEleveTools: (sys, task, tools) =>
+              askEleveAgentic(sys, task, tools, { model: process.env.ELEVE_MODEL }),
+            dispatch,
+          },
+        );
+        text = fr.text;
+      } else {
+        // ── Mode OFF (défaut) — repli TEXTE, mais HONNÊTE : si la tâche réclamait des
+        // outils, on le DIT (plus de repli muet) ; sinon comportement byte-identique. ──
+        const { askLLM } = await import("./llm-engine.js");
+        text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+        if (demanded.size > 0) {
+          const disclosure =
+            `${brainName} ne pilote pas les outils ici ; sélectionne l'Élève (GLM 5.2) ` +
+            `pour une réponse outillée, ou je te réponds au mieux sans outils.`;
+          text = `${disclosure}\n\n${text}`;
+        }
+      }
     }
     res.json({ text, suggestGraduate });
   } catch (err) {
@@ -522,7 +587,17 @@ app.post("/api/chat", async (req, res) => {
       // l'Élève » vaut pour les 3 actions, pas seulement Construire.
       // Phase E2 — multi-cerveaux : Planifier et Discuter routent vers LEUR cerveau
       // (registre .brains). Sans affectation → repli global (.env), inchangé.
-      const binding = resolveBinding(deriveIntention(true, intention));
+      // #182 É2 — LE MÊME joint calcule aussi les capacités que la tâche réclame
+      // (requiredCaps) : le registre d'outils de la ligne 562 suit le BESOIN, pas la posture.
+      let hasProjectAttachment = false;
+      try {
+        const assetsDir = path.join(dir, ".assets");
+        hasProjectAttachment = fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length > 0;
+      } catch { /* best-effort */ }
+      const { intention: derivedIntention, requiredCaps } = await deriveIntention(true, intention, prompt, {
+        hasAttachment: hasProjectAttachment,
+      });
+      const binding = resolveBinding(derivedIntention);
       const agentTier = binding.provider === "ollama" ? "local" : "cloud";
       const eleveName = binding.card?.label ?? process.env.ELEVE_MODEL ?? "Élève";
       send({ type: "status", text: `💬 L'agent ${eleveName} (${agentTier}) réfléchit…` });
@@ -544,7 +619,7 @@ app.post("/api/chat", async (req, res) => {
       let answer: string;
       if (ELEVE_PROVIDER === "openai") {
         try {
-          const r = await askEleveAgentic(system, userMsg, buildEleveDiscussTools(dir), {
+          const r = await askEleveAgentic(system, userMsg, buildEleveDiscussTools(dir, requiredCaps), {
             model: binding.model,
             onTool: (name, args) => send({ type: "tool", name, detail: args }),
           });
@@ -575,7 +650,12 @@ app.post("/api/chat", async (req, res) => {
       // Phase E2 — Construire route vers SON cerveau (registre .brains) : modèle,
       // provider et profil (caps/agentic mesurés) viennent du binding. Spécialistes
       // (uxui/layout) gardent leur profil explicite. Sans affectation → repli global.
-      const buildBinding = !specialistProfile && model === "eleve" ? resolveBinding(deriveIntention(false, intention)) : null;
+      // Construire lève déjà le plafond de mutation ET n'est pas filtré par capacité
+      // (buildEleveActionTools = policyFromCaps("mutation","all"), D1) — on ne passe
+      // ici que l'INTENTION (le cerveau), requiredCaps n'a aucun effet à filtrer côté outils.
+      const buildBinding = !specialistProfile && model === "eleve"
+        ? resolveBinding((await deriveIntention(false, intention, agentPrompt)).intention)
+        : null;
       const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : (buildBinding?.card?.label ?? process.env.ELEVE_MODEL ?? "Élève");
       // « local » pour Ollama local, « cloud » pour un endpoint distant (Ollama Cloud, etc.).
       const provForTier = buildBinding?.provider ?? (ELEVE_PROVIDER === "openai" ? "openai" : "ollama");
@@ -1303,6 +1383,7 @@ registerTutorialRoutes(app);
 registerNocturnalRoutes(app);
 registerRadarRoutes(app);
 registerPromptEvolutionRoutes(app);
+registerAbHarnessRoutes(app);
 registerBuildReviewRoutes(app);
 registerPerfectPlanRoutes(app);
 registerAgentFactoryRoutes(app);

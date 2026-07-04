@@ -63,6 +63,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[agents-specialises]] | Constellation UX/UI · Layout · PDF — spécialistes Gemma locaux, `ModelProfile`, relay paramétrable — #145 | ✅ écrite |
 | [[audit-general]] | Super audit rétrospectif + empirique : évolution, validé vs manquant, 3 écarts honnêtes (souveraineté minoritaire · coût cloud non tracé · promesses de périphérie) — 2026-06 | ✅ écrite |
 | [[audit-2-0]] | Audit complet préparant la refonte 2.0 : moteur mature à consolider, UI = vrai chantier (design system, état, monolithes, a11y) — feuille de route A→E, rapport `docs/audit-mango-2.0.md` — 2026-07-02 | ✅ écrite |
+| [[intention-dispatch]] | La capacité suit le BESOIN de la tâche, pas la POSTURE : registre unifié gardé par capacité + conscience temporelle + cache sémantique + dry-run + A/B — #182, 7 étapes, 6 gates éprouvés ENSEMBLE (45/45) | ✅ écrite |
 
 ## Veille externe
 

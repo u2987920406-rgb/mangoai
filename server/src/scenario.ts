@@ -35,6 +35,8 @@ import { SELF_CRITIQUE_RULES } from "./self-critique.js";
 import { perfectPlanSection } from "./perfect-plan.js";
 import { projectPlanSection, skeletonDone, SCAFFOLD_RULES, PROJET_MODE_RULES } from "./project-plan.js";
 import { mangoAppContractSection } from "./mango-app-contract.js";
+import { flag } from "./flags.js";
+import { temporalContext } from "./temporal-context.js";
 
 export type PromptContext = {
   mode: "mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout";
@@ -624,5 +626,11 @@ const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique"
 /** Assembles the system-prompt append for a turn by running the scenario's
  * block pipeline. Behavior-constant vs the old concatenation. */
 export function assembleSystemPrompt(ctx: PromptContext): string {
-  return SCENARIOS[ctx.mode].map((name) => BLOCKS[name](ctx)).join("");
+  const blocksPrompt = SCENARIOS[ctx.mode].map((name) => BLOCKS[name](ctx)).join("");
+  // D4 — Conscience temporelle (#182) : injection en TÊTE du system prompt
+  // si le gate est ON. Gate défaut ON (rare exception de Raf).
+  if (flag("TEMPORAL_AWARENESS")) {
+    return `${temporalContext()}\n\n${blocksPrompt}`;
+  }
+  return blocksPrompt;
 }

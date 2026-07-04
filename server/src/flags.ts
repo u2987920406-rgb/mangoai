@@ -152,6 +152,41 @@ export const FLAGS = {
     default: false,
     description: "Base de connaissance vidéo (#177 É4/D4) : le runner d'ingestion resumable par manifest (run-savoir.ts) — fetch transcript (cache) → re-segmentation ~400-700 car → embeddings → extraction claims → passe de réconciliation globale une fois toutes les vidéos extraites. OFF → aucune surface auto ne lance le runner ; il reste lançable explicitement en CLI (npx tsx src/run-savoir.ts) par un opérateur/test.",
   },
+  // ── #182 — Intention/dispatch + conscience temporelle ─────────────────────
+  TEMPORAL_AWARENESS: {
+    env: "TEMPORAL_AWARENESS",
+    default: true,
+    description: "Conscience temporelle (#182 D4) : injection d'un bloc TEMPS en tête du system prompt à chaque tour (date+heure+fuseau réel). Recalculé systématiquement. Défaut ON — rare exception à « off = byte-identique », demande explicite de Raf (2026-07-03). OFF pour désactiver d'urgence.",
+  },
+  LLM_SEMANTIC_CACHE: {
+    env: "LLM_SEMANTIC_CACHE",
+    default: false,
+    description: "Cache exact→sémantique (#182 D5/É4, llm-cache.ts) pour les appels LLM PURS/sans effet de bord (juges, classifications, extractions déterministes) : hash exact puis cosinus (safeEmbed, seuil 0.97) sur le scope Blackboard `llm-cache:<role>`, clé namespacée par providerModel+promptVersion. OFF → cachedComplete appelle directement `ask`, aucune écriture Blackboard, comportement historique byte-identique.",
+  },
+  // ── #182 D2/É2 — classificateur intention→capacités ─────────────────────
+  INTENT_ROUTER_LLM: {
+    env: "INTENT_ROUTER_LLM",
+    default: false,
+    description: "Routeur LLM de capacités (#182 D2 étage 3, intent-capabilities.ts) : REPLI d'ambiguïté seulement — si le signal déterministe (URL/mots-clés/pièce jointe) est muet ET la tâche manifestement multi-capacités, un one-shot dispatch(\"routeur\", …) renvoie une liste de capacités. OFF → on s'arrête au sur-provisionnement read-safe + aux heuristiques déterministes (étages 1+2), ZÉRO appel modèle.",
+  },
+  // ── #182 D3/É5 — cerveaux non-Élève à l'Accueil : divulgation + orchestration ─
+  FRONTIER_TOOLS_ANY_BRAIN: {
+    env: "FRONTIER_TOOLS_ANY_BRAIN",
+    default: false,
+    description: "Orchestration outillée pour les cerveaux non-Élève à l'Accueil (#182 D3, frontier-orchestration.ts). ON → quand un cerveau non-Élève (Fable/Opus/Sonnet/Haiku) est sélectionné ET que la tâche réclame des outils (URL/vision/média), l'ÉLÈVE exécute les outils (read-only) et remet ses artefacts — encadrés par sanitizeExternal (données non fiables) — au cerveau choisi qui RAISONNE/RÉDIGE par-dessus, via dispatch. OFF (défaut, byte-identique) → pas d'orchestration ; à la place une LIGNE DE DIVULGATION honnête est ajoutée à la réponse texte (« {cerveau} ne pilote pas les outils ici… ») au lieu du repli muet historique.",
+  },
+  // ── #182 D6/É6 — dry-run / mode simulation (généralisation du worktree jetable #167/#171) ─
+  DRY_RUN: {
+    env: "DRY_RUN",
+    default: false,
+    description: "Mode SIMULATION (#182 D6, dry-run.ts) : une décision d'agent (plan mutant fichier/code) est d'abord exécutée contre un git worktree JETABLE (createSelfWorktree #167), vérifiée par le vrai type-check (runTscInWorktree) et, si fourni, le Gardien #161 joué sur le build simulé → produit un DIFF + verdict SANS jamais toucher le projet réel ; l'application n'a lieu que sur appel EXPLICITE d'apply() (mergeSelfFiles). OFF → l'exécuteur direct existant est inchangé (dry-run.ts hors du chemin, byte-identique). LIMITE V1 : seules les actions fichier/code sont simulables ; les actions à conséquence externe (réseau/ordre de marché/POST irréversible) sont un point d'extension déclaré non résolu (limites.md).",
+  },
+  // ── #182 D7/É7 — harnais A/B (ab-harness.ts) → proposition #76 ───────────
+  AB_HARNESS: {
+    env: "AB_HARNESS",
+    default: false,
+    description: "Harnais A/B (#182 D7, ab-harness.ts) : compare deux variantes {promptRef|brainId} sur le MÊME jeu de tâches via `dispatch`, note chaque sortie par le juge d'intention (#161), enregistre un run versionné (data/ab-runs.json) et — sur gagnant net — crée une proposition `promote` PENDANTE dans le pipeline #76 (prompt-evolution.ts), jamais auto-appliquée. Porte sur la ROUTE HTTP (POST /api/ab/run) ; `abCompare` reste une fonction pure toujours appelable en test/CLI. OFF → la route ne répond rien (404), aucune écriture.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

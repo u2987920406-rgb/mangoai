@@ -55,7 +55,12 @@ check("bloc tutorial absent hors tutoriel (Élite)", !elite.includes(TUTORIAL));
 check("bloc tutorial absent hors tutoriel (MVP)", !mvp.includes(TUTORIAL));
 check("bloc tutorial présent quand ctx.tutorial fourni (Élite)", eliteTut.includes(TUTORIAL) && eliteTut.includes("tutoriel 2"));
 check("bloc tutorial présent quand ctx.tutorial fourni (MVP)", mvpTut.includes(TUTORIAL));
-check("bloc tutorial en TÊTE du prompt", eliteTut.trimStart().startsWith("MODE TUTORIEL actif"));
+// D4 — Conscience temporelle : le prompt commence maintenant par "Contexte temporel"
+// si TEMPORAL_AWARENESS=on (défaut). Le tutorial vient APRÈS la ligne temporelle.
+const tutorialAfterTemporal = eliteTut.includes("Contexte temporel")
+  ? eliteTut.split("\n").slice(2).join("\n").trimStart().startsWith("MODE TUTORIEL actif")
+  : eliteTut.trimStart().startsWith("MODE TUTORIEL actif");
+check("bloc tutorial en TÊTE du prompt (après contexte temporel)", tutorialAfterTemporal);
 
 // Idée 7 — arborescence contextuelle (moodboard), Élite-only (bloc plan)
 check("arborescence contextuelle présente en Élite", elite.includes("CONTEXTUAL INFORMATION ARCHITECTURE"));
