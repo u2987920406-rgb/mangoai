@@ -68,6 +68,7 @@ import { registerDocGeneratorRoutes } from "./docgenerator.js";
 import { registerVersionGraphRoutes } from "./version-graph.js";
 import { registerControleurRoutes } from "./qa-temporal.js";
 import { emitPhaseComplete, spawnVerdictWatcher, isMangoQaActive, registerMangoQaRoutes } from "./mangoqa.js";
+import { registerStrategeRoutes, maybeInjectStrategeBriefing } from "./stratege-routes.js";
 import { loadPlan, replaceIncrements, markIncrementDone, loadFluxCounts } from "./project-plan.js";
 import { registerStripeRoutes } from "./stripe.js";
 import { registerCronRoutes } from "./cron-scheduler.js";
@@ -460,10 +461,11 @@ app.post("/api/chat", async (req, res) => {
     const isMirror = projectName === MIRROR_PROJECT;
 
     let dir: string;
+    const isNewProject = !isMirror && !projectExists(projectName);
     if (isMirror) {
       dir = MANGO_UI_DIR;
       send({ type: "status", text: "🪞 Mode Miroir — l'agent édite l'interface de Mango." });
-    } else if (!projectExists(projectName)) {
+    } else if (isNewProject) {
       send({ type: "status", text: "Création du projet (template + npm install)…" });
       dir = await createProject(projectName, template || undefined);
     } else {
@@ -478,6 +480,12 @@ app.post("/api/chat", async (req, res) => {
       // Snapshot the pre-agent state so the first rollback point always exists
       await ensureRepo(dir);
       historyDir = dir;
+      // #176-global É5 — Stratège : surfaçage PUSH d'un briefing court au
+      // DÉMARRAGE de session (jumeau spawnVerdictWatcher). Ancre = la création
+      // du projet (première conversation), jamais un tour suivant → aucune
+      // duplication. Gate STRATEGE_GLOBAL off / briefing vide ⇒ aucune écriture
+      // (fire-and-forget, ne bloque jamais ce tour).
+      if (isNewProject) maybeInjectStrategeBriefing(historyDir);
     }
     record("user", prompt);
 
@@ -1371,6 +1379,7 @@ registerDocGeneratorRoutes(app);
 registerVersionGraphRoutes(app);
 registerControleurRoutes(app);
 registerMangoQaRoutes(app);
+registerStrategeRoutes(app);
 registerStripeRoutes(app);
 registerCronRoutes(app);
 registerMetricsDashboardRoutes(app);

@@ -30,6 +30,7 @@ import { flag } from "./flags.js";
 import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel-chat-bridge.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
+import { maybeRunStrategistCycle } from "./stratege-run.js";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const FILE = path.join(DATA_DIR, "nocturnal.json");
@@ -634,6 +635,15 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
     releaseAgent(); // (N18) symétrique de l'acquisition — jamais un verrou zombie
     progress = { current: 0, total: 0, label: "" };
   }
+
+  // (#176-global É4, D6 = PUSH) Stratège global proactif : APRÈS le lot (verrou
+  // relâché, hors du try : le lot est DÉJÀ terminé et persisté quand on arrive
+  // ici). Gaté STRATEGE_GLOBAL, défaut OFF → maybeRunStrategistCycle retourne
+  // false sans le moindre I/O (lot nocturne byte-identique). ON → un cycle de
+  // synthèse déterministe agrège les signaux cross-projet/cross-session en un
+  // briefing conseil (data/strategist-state.json). FAIL-OPEN TOTAL : un échec du
+  // Stratège est loggé et avalé — il ne peut JAMAIS faire échouer le lot nocturne.
+  await maybeRunStrategistCycle(flag("STRATEGE_GLOBAL"));
 }
 
 // ── Review matinale → axiomes (vague 2, RLHF amplifié #41) ───────────────────

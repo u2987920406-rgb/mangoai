@@ -26,6 +26,10 @@ import { loadRuns as loadEvolutionRuns } from "./prompt-evolution.js";
 import { buildEleveActionTools } from "./eleve-action-tools.js";
 import { policyFromCaps, mutationToolNames } from "./eleve-tool-capabilities.js";
 import { flag } from "./flags.js";
+// ── #176 É7 — interaction du Stratège global avec les gates éprouvés cette nuit ──
+import { runStrategistCycle, maybeRunStrategistCycle } from "./stratege-run.js";
+import { emptyStrategistState, type Signal, type StrategistState } from "./stratege-global-model.js";
+import { readGlobalBudgetState, spendGlobalBudget } from "./nocturnal-budget.js";
 
 let pass = 0;
 let fail = 0;
@@ -476,6 +480,133 @@ async function run() {
   } finally {
     restore182(prev182);
     resetBlackboard(); // le Blackboard mémoire dédié au bloc #182 ne fuite pas
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  #176 É7 — INTERACTION du Stratège global (STRATEGE_GLOBAL + STRATEGE_
+  //  QUESTION_DEMANDE) avec TOUS les gates éprouvés cette nuit (#182 + les
+  //  gates nocturnes/QA) EN MÊME TEMPS. Le précédent 🔴1 du sprint dit : ne
+  //  jamais supposer que des gates cohabitent sans friction — on CHERCHE ici
+  //  en particulier : le Stratège consomme-t-il du budget par erreur (greffé
+  //  en fin de lot, à côté du budget-$ dur) ? le cache sémantique pollue-t-il
+  //  une lecture du Stratège (synthèse censée être 100% déterministe/$0) ?
+  // ════════════════════════════════════════════════════════════════════════════
+  const G176 = [
+    "STRATEGE_GLOBAL", "STRATEGE_QUESTION_DEMANDE",
+    "MANGOQA_STOP_AUTHORITY", "NOCTURNAL_QA_BUS", "NOCTURNAL_BUDGET_HARD",
+    "TEMPORAL_AWARENESS", "LLM_SEMANTIC_CACHE", "DRY_RUN",
+    "FRONTIER_TOOLS_ANY_BRAIN", "AB_HARNESS",
+  ] as const;
+  function set176(mode: "on" | "off"): Record<string, string | undefined> {
+    const prev: Record<string, string | undefined> = {};
+    for (const g of G176) { prev[g] = process.env[g]; process.env[g] = mode; }
+    return prev;
+  }
+  function restore176(prev: Record<string, string | undefined>): void {
+    for (const g of G176) { if (prev[g] === undefined) delete process.env[g]; else process.env[g] = prev[g]!; }
+  }
+
+  console.log("\n[15] STRATEGE × 8 gates nocturnes/#182 : préambule — les 10 gates sont TOUS actifs ensemble");
+  {
+    const prev = set176("on");
+    try {
+      check("préambule : les 10 gates #176+#182+nocturne sont TOUS actifs ensemble",
+        G176.every((g) => flag(g as Parameters<typeof flag>[0])));
+    } finally {
+      restore176(prev);
+    }
+  }
+
+  console.log("\n[16] STRATEGE × NOCTURNAL_BUDGET_HARD : le cycle du Stratège NE CONSOMME AUCUN budget");
+  console.log("     (la synthèse est déterministe/$0 — greffée APRÈS le lot, hors du ledger de dépense)");
+  {
+    const prev = set176("on");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stratege-budget-"));
+    const stateFile = path.join(tmpDir, "strategist-state.json");
+    const budgetFile = path.join(tmpDir, "global-budget.json");
+    try {
+      // Ledger de budget PARTAGÉ : on y consigne une dépense-témoin (comme le
+      // ferait `spendGlobalBudget` pour un vrai projet du lot), PUIS on fait
+      // tourner un cycle Stratège complet — le ledger ne doit PAS bouger.
+      spendGlobalBudget(1.23, budgetFile, new Date("2026-07-04T02:00:00Z"));
+      const before = readGlobalBudgetState(budgetFile);
+      check("précondition : ledger de budget peuplé (1.23$ consignés)", before?.spentUsd === 1.23);
+
+      const fakeSignal: Signal = { sig: "test:budget-interaction", source: "bus", poids: 0.9, ts: Date.now(), type: "cout-eleve" };
+      await runStrategistCycle({
+        collectors: [() => [fakeSignal]],
+        load: () => emptyStrategistState(),
+        save: (s) => fs.writeFileSync(stateFile, JSON.stringify(s)),
+      });
+
+      const after = readGlobalBudgetState(budgetFile);
+      check("le cycle du Stratège N'A RIEN dépensé sur le ledger partagé (aucune interaction budget)", after?.spentUsd === before?.spentUsd);
+      check("le ledger n'a pas changé de date/forme (byte-identique modulo l'horodatage de spendGlobalBudget témoin)", JSON.stringify(after) === JSON.stringify(before));
+    } finally {
+      restore176(prev);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  console.log("\n[17] STRATEGE × LLM_SEMANTIC_CACHE : la synthèse ne lit/n'écrit AUCUNE entrée du cache LLM");
+  console.log("     (le spine est PUR/$0, D4 — un juge/rédacteur LLM n'est jamais invoqué ici)");
+  {
+    const prev = set176("on");
+    const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "stratege-cache-"));
+    try {
+      setBlackboard(new Blackboard(new MemoryStore()));
+      // On peuple le cache LLM comme le ferait un vrai juge #161 ailleurs dans le système.
+      await cachedComplete("sys-juge", "user-juge", { role: "juge", providerModel: "m", promptVersion: "v", ask: async () => "verdict", embed: async () => null });
+      const scope = "llm-cache:juge";
+      const before = getBlackboardKeys(scope);
+      check("précondition : le cache LLM contient 1 entrée avant le cycle Stratège", before === 1);
+
+      const fakeSignal: Signal = { sig: "test:cache-interaction", source: "qa", poids: 0.9, ts: Date.now() };
+      let state: StrategistState = emptyStrategistState();
+      await runStrategistCycle({
+        collectors: [() => [fakeSignal]],
+        load: () => emptyStrategistState(),
+        save: (s) => { state = s; },
+      });
+
+      check("après le cycle Stratège : le scope du cache LLM est INCHANGÉ (aucune lecture/écriture croisée)", getBlackboardKeys(scope) === before);
+      check("le briefing du Stratège a bien produit un item (le cycle a réellement tourné, pas un no-op)", state.items.length === 1);
+      resetBlackboard();
+    } finally {
+      restore176(prev);
+      fs.rmSync(tmpDir, { recursive: true, force: true });
+    }
+  }
+
+  console.log("\n[18] STRATEGE × tous les gates ON : non-radotage sur 2 cycles consécutifs (pas de doublon, hits++)");
+  {
+    const prev = set176("on");
+    try {
+      const sig: Signal = { sig: "test:non-radotage", source: "qa", poids: 0.9, ts: Date.now() };
+      let persisted: StrategistState = emptyStrategistState();
+      const load = () => persisted;
+      const save = (s: StrategistState) => { persisted = s; };
+      const r1 = await runStrategistCycle({ collectors: [() => [sig]], load, save });
+      const r2 = await runStrategistCycle({ collectors: [() => [sig]], load, save });
+      check("1er cycle : 1 item créé", r1.state.items.length === 1);
+      check("2e cycle : TOUJOURS 1 seul item (pas de doublon, dédup par sig sous les 10 gates)", r2.state.items.length === 1);
+      check("2e cycle : hits incrémenté (ré-observation comptée, pas ignorée)", r2.state.items[0]?.hits === 2);
+    } finally {
+      restore176(prev);
+    }
+  }
+
+  console.log("\n[19] STRATEGE_GLOBAL OFF, les 9 autres gates ON : maybeRunStrategistCycle byte-identique (0 I/O)");
+  {
+    const prev = set176("on");
+    process.env.STRATEGE_GLOBAL = "off"; // le seul gate qu'on repasse OFF
+    try {
+      let ran = false;
+      const didRun = await maybeRunStrategistCycle(flag("STRATEGE_GLOBAL"), async () => { ran = true; });
+      check("gate OFF → le cycle n'est jamais invoqué, même avec les 9 autres gates ON", !ran && didRun === false);
+    } finally {
+      restore176(prev);
+    }
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} fondations-gates-combines : ${pass} pass, ${fail} fail`);

@@ -64,6 +64,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[audit-general]] | Super audit rétrospectif + empirique : évolution, validé vs manquant, 3 écarts honnêtes (souveraineté minoritaire · coût cloud non tracé · promesses de périphérie) — 2026-06 | ✅ écrite |
 | [[audit-2-0]] | Audit complet préparant la refonte 2.0 : moteur mature à consolider, UI = vrai chantier (design system, état, monolithes, a11y) — feuille de route A→E, rapport `docs/audit-mango-2.0.md` — 2026-07-02 | ✅ écrite |
 | [[intention-dispatch]] | La capacité suit le BESOIN de la tâche, pas la POSTURE : registre unifié gardé par capacité + conscience temporelle + cache sémantique + dry-run + A/B — #182, 7 étapes, 6 gates éprouvés ENSEMBLE (45/45) | ✅ écrite |
+| [[stratege-global]] | Stratège GLOBAL proactif cross-projet ET cross-session : agrège 8 capteurs (dont l'Observateur-Conseil lu, jamais recalculé), persiste, PUSH un briefing conseil, questionne la demande de Raf — #176, 6 étapes + preuve bornée É7 (10 gates ensemble, aucune interaction cassée) | ✅ écrite |
 
 ## Veille externe
 

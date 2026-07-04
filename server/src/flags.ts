@@ -181,6 +181,17 @@ export const FLAGS = {
     default: false,
     description: "Mode SIMULATION (#182 D6, dry-run.ts) : une décision d'agent (plan mutant fichier/code) est d'abord exécutée contre un git worktree JETABLE (createSelfWorktree #167), vérifiée par le vrai type-check (runTscInWorktree) et, si fourni, le Gardien #161 joué sur le build simulé → produit un DIFF + verdict SANS jamais toucher le projet réel ; l'application n'a lieu que sur appel EXPLICITE d'apply() (mergeSelfFiles). OFF → l'exécuteur direct existant est inchangé (dry-run.ts hors du chemin, byte-identique). LIMITE V1 : seules les actions fichier/code sont simulables ; les actions à conséquence externe (réseau/ordre de marché/POST irréversible) sont un point d'extension déclaré non résolu (limites.md).",
   },
+  // ── #176-global — Stratège GLOBAL proactif (cross-projet + cross-session) ──
+  STRATEGE_GLOBAL: {
+    env: "STRATEGE_GLOBAL",
+    default: false,
+    description: "Stratège global proactif (#176 É4, stratege-run.ts) : en FIN de lot nocturne (nocturnal.ts), lance UN cycle déterministe collecteurs (É2) → synthesize (É1) → advanceState → prune+save (data/strategist-state.json, É3) qui agrège les signaux cross-projet/cross-session (QA, Bus, traces, réutilisation, blocages, lacunes, hygiène mémoire) en un briefing conseil borné. PUSH, jamais bloquant, jamais d'action auto (Raf décide). Fail-open TOTAL : un échec du Stratège n'affecte JAMAIS le lot nocturne (déjà terminé). OFF → le cycle n'est jamais lancé (maybeRunStrategistCycle retourne false avant tout I/O), lot nocturne byte-identique. Lançable aussi en CLI : npx tsx src/stratege-run.ts.",
+  },
+  STRATEGE_QUESTION_DEMANDE: {
+    env: "STRATEGE_QUESTION_DEMANDE",
+    default: false,
+    description: "Remise en question de la DEMANDE de Raf (#176 É6, stratege-demandes.ts) : ajoute le 8ᵉ collecteur `demandes` au cycle du Stratège — détection 100% DÉTERMINISTE (zéro LLM) d'une corrélation cross-session demande↔issue depuis les .chat-history.json des projets (+ contradiction avec .preferences.md) ; un TYPE de demande qui a échoué/contredit une préférence au moins N≥2 fois → 1 question SOURCÉE (cite les runs), patron Œil Design (observation en question ouverte, jamais un verdict/blocage), bornée à maxQuestions (2) par briefing. DÉPEND DE STRATEGE_GLOBAL : le capteur n'est atteint que depuis le cycle du Stratège, lequel ne tourne que si STRATEGE_GLOBAL est ON — donc si STRATEGE_GLOBAL est OFF ce gate n'a AUCUN effet, même activé seul. Respecte le verdict de Raf : un `sig` déjà `rejete`/`accepte` n'est JAMAIS re-questionné (double verrou capteur + spine). OFF → collectDemandesGated renvoie [], aucune question émise, briefing inchangé.",
+  },
   // ── #182 D7/É7 — harnais A/B (ab-harness.ts) → proposition #76 ───────────
   AB_HARNESS: {
     env: "AB_HARNESS",

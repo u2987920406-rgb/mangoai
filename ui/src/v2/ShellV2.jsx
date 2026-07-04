@@ -31,6 +31,8 @@ const GuidePane = lazy(() => import("../components/Guide.jsx"));
 const QADetailPane = lazy(() => import("../components/QAPanel.jsx"));
 // Observateur-Conseil (D2b) — Visage 2 de MangoQA, rapport global cross-projets.
 const ObserverConseil = lazy(() => import("../components/ObserverConseil.jsx"));
+// Stratège (#176-global É5) — cerveau agrégateur cross-projet/cross-session.
+const StrategeGlobal = lazy(() => import("../components/StrategeGlobal.jsx"));
 // L'Esthète (2026-07-02) : agent conversationnel qui voit la preview live et
 // retouche à la demande, en remplacement du palier de build « Esthétique ».
 const EstheteChat = lazy(() => import("../components/EstheteChat.jsx"));
@@ -526,6 +528,7 @@ function ShellV2Inner() {
             {[
               { id: "controleur", label: "Contrôleur" },
               { id: "observateur", label: "Observateur-Conseil" },
+              { id: "stratege", label: "Stratège" },
             ].map((t) => (
               <button
                 key={t.id}
@@ -543,7 +546,9 @@ function ShellV2Inner() {
             <Suspense fallback={<div className="py-10 text-center text-[13px] text-faint">Chargement…</div>}>
               {qaTab === "controleur"
                 ? <QADetailPane projectName={localStorage.getItem("mangoos.v2.project") || ""} />
-                : <ObserverConseil />}
+                : qaTab === "observateur"
+                ? <ObserverConseil />
+                : <StrategeGlobal />}
             </Suspense>
           </div>
         </div>
