@@ -7,6 +7,7 @@ use tauri::tray::TrayIconBuilder;
 use tauri::{AppHandle, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent};
 use tauri_plugin_dialog::DialogExt;
 use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_opener::OpenerExt;
 
 /// PID du process racine du sidecar (node scripts/start.mjs), pour l'arrêter à la fermeture.
 struct SidecarState(Mutex<Option<u32>>);
@@ -42,6 +43,30 @@ fn send_test_notification(app: AppHandle) -> Result<(), String> {
         .map_err(|e| e.to_string())
 }
 
+/// Commande native (#180 É6, D5) : ouvre un dossier dans l'explorateur de fichiers natif.
+/// Même patron que `pick_folder`. Le chemin fourni vient d'un outil serveur déjà confiné
+/// par le périmètre (perimeter-context.ts) — cette commande ne fait qu'ouvrir, elle ne
+/// résout ni ne valide de chemin elle-même (ce n'est pas son rôle de sûreté).
+#[tauri::command]
+fn open_folder(app: AppHandle, path: String) -> Result<(), String> {
+    app.opener().open_path(path, None::<&str>).map_err(|e| e.to_string())
+}
+
+/// Commande native (#180 É6, D5) : révèle/sélectionne un fichier dans l'explorateur natif
+/// (Explorer/Finder/gestionnaire de fichiers Linux selon l'OS).
+#[tauri::command]
+fn reveal_in_explorer(app: AppHandle, path: String) -> Result<(), String> {
+    app.opener().reveal_item_in_dir(path).map_err(|e| e.to_string())
+}
+
+/// Commande native (#180 É6, D5) : ouvre une URL dans le navigateur par défaut du système.
+/// Le repli hors coque (mode navigateur classique) vit côté serveur (eleve-system-tools.ts,
+/// via child_process) — cette commande est le chemin natif quand la coque est active.
+#[tauri::command]
+fn open_url(app: AppHandle, url: String) -> Result<(), String> {
+    app.opener().open_url(url, None::<&str>).map_err(|e| e.to_string())
+}
+
 pub fn run() {
     tauri::Builder::default()
         // Le plugin single-instance DOIT être enregistré en premier (doc officielle Tauri) :
@@ -57,8 +82,15 @@ pub fn run() {
         .plugin(tauri_plugin_window_state::Builder::default().build())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_opener::init())
         .manage(SidecarState(Mutex::new(None)))
-        .invoke_handler(tauri::generate_handler![pick_folder, send_test_notification])
+        .invoke_handler(tauri::generate_handler![
+            pick_folder,
+            send_test_notification,
+            open_folder,
+            reveal_in_explorer,
+            open_url
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(

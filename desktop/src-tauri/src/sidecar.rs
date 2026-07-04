@@ -115,7 +115,15 @@ pub fn spawn_sidecar() -> std::io::Result<Child> {
     let script = root.join("scripts").join("start.mjs");
     log::info!("spawn sidecar : node {}", script.display());
 
-    let child = Command::new("node").arg(&script).current_dir(&root).spawn()?;
+    let child = Command::new("node")
+        .arg(&script)
+        .current_dir(&root)
+        // (#180 É6) seul signal fiable, côté process Node, que MangoOS tourne DANS la
+        // coque desktop Tauri (par opposition à `npm run start` / onglet navigateur).
+        // Lu par eleve-system-tools.ts pour n'activer open_folder/reveal_in_explorer
+        // QUE quand la coque est réellement là — sans échec silencieux hors coque.
+        .env("MANGOOS_DESKTOP_SHELL", "1")
+        .spawn()?;
 
     let backend_up = wait_for_port_listening(BACKEND_PORT, Duration::from_secs(30));
     log::info!("backend prêt sur :3000 = {backend_up}");

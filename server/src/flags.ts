@@ -109,6 +109,12 @@ export const FLAGS = {
     default: false,
     description: "Périmètre d'action élargi CONTRÔLÉ (#180 D3/D4) : branche perimeter.ts dans les outils fichiers/commandes. ON → un chemin est confiné à l'UNION des racines consenties (workspace + coffres grantés data/desktop-grants.json), filtrée par acteur (interactif = coffres au mode granté ; autonome = workspace-only, coffres en ro SEULEMENT si les 3 garde-fous MANGOQA_STOP_AUTHORITY+NOCTURNAL_BUDGET_HARD+NOCTURNAL_QA_BUS sont armés, fail-safe sinon). OFF (défaut) → une seule racine = le projet, byte-identique au resolveInside historique (aucun chargement de grants, aucune I/O).",
   },
+  // ── #180 É6 — palier système gaté (interface de bureau autonome) ────────
+  DESKTOP_SYSTEM_SHELL: {
+    env: "DESKTOP_SYSTEM_SHELL",
+    default: false,
+    description: "Palier système (#180 D5/É6, eleve-system-tools.ts) : commandes système élargies (familles nommées, approuvées une fois par session) + outils déterministes open_folder/reveal_in_explorer/open_url. INTERACTIF SEULEMENT — refus INCONDITIONNEL si l'acteur courant (currentActor()) est 'autonomous', quel que soit ce gate (fail-safe D4/D7, pas une option). Au-dessus du plancher inviolable FORBIDDEN_RUN (executor.ts), jamais affaibli. OFF (défaut) → aucun de ces outils n'est enregistré dans le registre Élève, comportement byte-identique.",
+  },
   // ── Pilier D — finition (clôture) ───────────────────────────────────────
   ELEVE_CLOSURE_GATE: {
     env: "ELEVE_CLOSURE_GATE",

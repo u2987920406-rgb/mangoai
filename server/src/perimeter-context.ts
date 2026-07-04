@@ -22,6 +22,7 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import path from "node:path";
 import { flag } from "./flags.js";
+import { recordPerimeterIncident } from "./perimeter-incidents.js";
 import {
   resolveInsideAny,
   resolvePerimeter,
@@ -105,6 +106,10 @@ export function confinePath(
   try {
     return resolveInsideAny(roots, rel);
   } catch {
+    // (#180 É6/D7) une tentative hors-périmètre est un signal de sûreté — enregistré
+    // ici pour que decideBreakerStop (nocturnal.ts) puisse s'arrêter à la frontière
+    // suivante. Best-effort, jamais bloquant : n'affecte pas le refus déjà décidé.
+    recordPerimeterIncident("out-of-perimeter", `${access} ${rel} (acteur ${p.actor})`);
     const verbe = access === "write" ? "en écriture" : "en lecture";
     const detail =
       p.actor === "autonomous"

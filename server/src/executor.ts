@@ -14,8 +14,9 @@ import path from "node:path";
 import { spawn } from "node:child_process";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { resolveEdit } from "./edit-match.js";
-import { confinePath, currentPerimeter } from "./perimeter-context.js";
+import { confinePath, currentPerimeter, currentActor } from "./perimeter-context.js";
 import { flag } from "./flags.js";
+import { recordPerimeterIncident } from "./perimeter-incidents.js";
 import type { Action } from "./contract.js";
 
 export type ActionOutcome =
@@ -49,7 +50,9 @@ function resolveInside(projectDir: string, rel: string): string {
 // Liste noire des commandes irréversibles ou hors-bac-à-sable. Le contrat sert à
 // rendre un modèle FAIBLE sûr : une commande destructrice ne doit jamais passer,
 // même si le modèle l'a « bien formatée ». git est exclu (le backend versionne).
-const FORBIDDEN_RUN =
+// Exportée (#180 É6) : le palier système (eleve-system-tools.ts) la réutilise
+// TELLE QUELLE — plancher inviolable, jamais dupliqué ni affaibli.
+export const FORBIDDEN_RUN =
   /\b(rm\s+-rf\s+[~/]|del\s+\/|rd\s+\/s|format|mkfs|shutdown|reboot|git|npm\s+publish|curl[^\n]*\|\s*(sh|bash)|:\(\)\s*\{)/i;
 
 // (Un, 2026-07-03) U2 — anti-fuite de secrets : le spawn de <run> héritait de TOUT
@@ -179,6 +182,13 @@ export async function executeContract(
       } else {
         if (!allowRun) throw new Error("commandes <run> désactivées");
         if (FORBIDDEN_RUN.test(action.command)) {
+          // (#180 É6/D7) une commande interdite tentée en contexte AUTONOME est un
+          // signal de sûreté — enregistré ici pour que le Disjoncteur (nocturnal.ts,
+          // decideBreakerStop) puisse s'arrêter à la frontière d'itération suivante.
+          // Zéro effet en interactif (comportement historique inchangé).
+          if (currentActor() === "autonomous") {
+            recordPerimeterIncident("forbidden-command-autonomous", `commande interdite tentée en autonome : ${action.command}`);
+          }
           throw new Error(`commande interdite : ${action.command}`);
         }
         // (#180 É2) run_command LIT le palier de périmètre courant. Ici, lecture

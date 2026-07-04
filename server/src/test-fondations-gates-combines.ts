@@ -33,6 +33,11 @@ import { readGlobalBudgetState, spendGlobalBudget } from "./nocturnal-budget.js"
 // ── #180 É2 — interaction du gate DESKTOP_PERIMETER avec reprise + garde-fous ──
 import { executeContract } from "./executor.js";
 import { GRANTS_FILE, saveGrants } from "./perimeter.js";
+// (#180 É6) interaction DESKTOP_SYSTEM_SHELL × acteur autonome (risque #8 du plan) ──
+import { runSystemPaletteCommand, approveFamily, resetApprovedFamilies } from "./eleve-system-tools.js";
+import { listPerimeterIncidents, clearPerimeterIncidents, combineBreakerVerdict } from "./perimeter-incidents.js";
+import { decideBreakerStop } from "./nocturnal.js";
+import { runAsActor } from "./perimeter-context.js";
 
 let pass = 0;
 let fail = 0;
@@ -684,6 +689,47 @@ async function run() {
       if (grantsPrev === null) { try { fs.unlinkSync(GRANTS_FILE); } catch { /**/ } } else fs.writeFileSync(GRANTS_FILE, grantsPrev);
       fs.rmSync(tmp, { recursive: true, force: true });
       fs.rmSync(vault, { recursive: true, force: true });
+    }
+  }
+
+  // ════════════════════════════════════════════════════════════════════════════
+  //  #180 É6 — DESKTOP_SYSTEM_SHELL × acteur AUTONOME (risque #8 du plan #180,
+  //  §4 : « interaction des gates jamais tournés ensemble »). Ce gate n'a JAMAIS
+  //  coexisté avec un acteur autonome dans un test — on prouve ici que le fail-safe
+  //  D4/D7 tient MÊME quand le gate est ON et qu'une famille est déjà approuvée
+  //  (le fail-safe acteur précède TOUT le reste, y compris une approbation valide),
+  //  et que la tentative produit bien le signal breaker lu par decideBreakerStop.
+  // ════════════════════════════════════════════════════════════════════════════
+  console.log("\n[21] DESKTOP_SYSTEM_SHELL × acteur AUTONOME : refus INCONDITIONNEL + signal breaker");
+  {
+    const prevGate = process.env.DESKTOP_SYSTEM_SHELL;
+    process.env.DESKTOP_SYSTEM_SHELL = "on";
+    resetApprovedFamilies();
+    clearPerimeterIncidents();
+    try {
+      // Précondition : la famille EST approuvée (le cas le plus favorable au passage).
+      approveFamily("node-info");
+      const r = await runAsActor("autonomous", () => runSystemPaletteCommand("node --version"));
+      check("gate ON + famille approuvée + acteur AUTONOME → refus quand même (fail-safe D4)", !r.ok && r.isError === true);
+      check("le message cite explicitement le fail-safe autonome", /AUTONOME/.test(r.text));
+
+      const incidents = listPerimeterIncidents();
+      check("un incident 'forbidden-command-autonomous' a été enregistré", incidents.some((i) => i.kind === "forbidden-command-autonomous"));
+
+      const combined = combineBreakerVerdict({ available: false, reason: "absent" }, incidents);
+      check("le verdict COMBINÉ (même sans fichier MangoQA) est safe:false", combined.available === true && combined.safe === false);
+
+      const stop = decideBreakerStop(true, () => combined);
+      check("decideBreakerStop LIT ce signal et déclenche l'arrêt à la frontière", stop.stop === true);
+
+      // Contre-preuve : le MÊME appel en INTERACTIF passe (même famille approuvée) —
+      // le refus vient bien du PALIER acteur, pas d'un bug de la famille/gate.
+      const r2 = await runAsActor("interactive", () => runSystemPaletteCommand("node --version"));
+      check("contre-preuve interactif : une famille approuvée s'exécute normalement", r2.ok === true);
+    } finally {
+      if (prevGate === undefined) delete process.env.DESKTOP_SYSTEM_SHELL; else process.env.DESKTOP_SYSTEM_SHELL = prevGate;
+      resetApprovedFamilies();
+      clearPerimeterIncidents();
     }
   }
 

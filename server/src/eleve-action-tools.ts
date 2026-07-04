@@ -44,6 +44,8 @@ import { buildEleveImageTools } from "./eleve-image-tools.js";
 import { applyWrite, applyEdit, applyRun } from "./executor.js";
 import { searchPexelsImages, pexelsConfigured } from "./taste-images.js";
 import { policyFromCaps, mergePolicies, DISCUSS_DEFAULT_CAPS, type RequiredCaps } from "./eleve-tool-capabilities.js";
+import { buildEleveSystemTools } from "./eleve-system-tools.js";
+import { flag } from "./flags.js";
 
 /** Timeout d'une commande lancée par l'Élève (défaut 120 s, surchargeable). */
 const RUN_TIMEOUT_MS = Number(process.env.ELEVE_RUN_TIMEOUT_MS ?? 120_000);
@@ -465,6 +467,15 @@ export function buildEleveToolRegistry(projectDir: string, opts: EleveRegistryOp
   // jamais la couche LLM (rédigée). Coffre configuré par MANGO_VAULT_FILE/MANGO_VAULT_KEY.
   if (process.env.ELEVE_VAULT === "on") {
     for (const t of buildEleveVaultTools(projectDir)) reg.register(t);
+  }
+
+  // Palier système (#180 É6, gate DESKTOP_SYSTEM_SHELL, défaut OFF) : run_system_command
+  // (familles nommées approuvées par session) + open_folder/reveal_in_explorer/open_url.
+  // INTERACTIF-seulement — le fail-safe acteur='autonomous' est appliqué DANS chaque
+  // handler (D4/D7), indépendamment de ce gate d'enregistrement. OFF (défaut) → ces
+  // outils ne sont PAS enregistrés, registre byte-identique à avant É6.
+  if (flag("DESKTOP_SYSTEM_SHELL")) {
+    for (const t of buildEleveSystemTools()) reg.register(t);
   }
 
   // Outils MCP EXTERNES pré-chargés (Phase 3b, opt-in ELEVE_MCP_EXTERNAL=on, défaut OFF) :

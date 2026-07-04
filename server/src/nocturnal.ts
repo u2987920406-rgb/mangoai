@@ -32,6 +32,7 @@ import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel-ch
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { maybeRunStrategistCycle } from "./stratege-run.js";
 import { runAsActor } from "./perimeter-context.js";
+import { combineBreakerVerdict, listPerimeterIncidents, clearPerimeterIncidents } from "./perimeter-incidents.js";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const FILE = path.join(DATA_DIR, "nocturnal.json");
@@ -552,6 +553,9 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
     return;
   }
   running = true;
+  // (#180 É6/D7) frontière de lot : incidents de périmètre d'un run précédent (même
+  // process) ne doivent pas polluer CE lot — repartir propre à chaque nouveau batch.
+  clearPerimeterIncidents();
   const batchId = genId();
   const n = Math.max(1, Math.min(count || 5, 10));
   progress = { current: 0, total: n, label: "Préparation…" };
@@ -595,9 +599,13 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
       // la FRONTIÈRE d'itération seulement, on lit le verdict du Disjoncteur et on
       // s'arrête NOUS-MÊMES s'il est non-sûr — jamais MangoQA qui agit (fondation §V).
       // Gate OFF ou verdict absent (MangoQA non lancé) → 0 I/O, comportement inchangé.
+      // (#180 É6/D7) le thunk lu par decideBreakerStop est désormais le verdict
+      // MangoQA COMBINÉ aux incidents de périmètre locaux (tentative hors-périmètre
+      // ou commande interdite tentée en autonome) — decideBreakerStop lui-même n'est
+      // PAS modifié, il continue de recevoir un simple `() => BreakerVerdictResult`.
       const breakerStop = decideBreakerStop(
         flag("MANGOQA_STOP_AUTHORITY"),
-        () => readBreakerVerdict(WORKSPACE_DIR),
+        () => combineBreakerVerdict(readBreakerVerdict(WORKSPACE_DIR), listPerimeterIncidents()),
       );
       if (breakerStop.stop) {
         console.warn(`[nocturnal] ⚡ ${breakerStop.reason} — arrêt propre du lot (${i}/${prompts.length} projet(s) générés).`);

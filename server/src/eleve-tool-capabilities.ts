@@ -88,6 +88,13 @@ export const TOOL_CAPABILITIES: ReadonlyMap<string, ToolCapability> = new Map<st
   ["edit_file", { capability: "write-fs", mutation: true }],
   ["run_command", { capability: "run-cmd", mutation: true }],
   ["add_dependency", { capability: "deps", mutation: true }],
+  // Palier système (#180 É6, gate DESKTOP_SYSTEM_SHELL) — effets de bord SYSTÈME
+  // (spawn OS, ouverture de fenêtre/navigateur) : classés run-cmd/mutants comme
+  // run_command, pour qu'un futur plafond read-only les exclue par défaut.
+  ["run_system_command", { capability: "run-cmd", mutation: true }],
+  ["open_url", { capability: "run-cmd", mutation: true }],
+  ["open_folder", { capability: "run-cmd", mutation: true }],
+  ["reveal_in_explorer", { capability: "run-cmd", mutation: true }],
   // Tests — lance_tests rejoue (lecture) ; ecris_test écrit un fichier de test.
   ["teste_parcours", { capability: "test", mutation: false }],
   ["lance_tests", { capability: "test", mutation: false }],
