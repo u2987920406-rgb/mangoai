@@ -41,6 +41,7 @@ import { runFrontierOrchestration } from "./frontier-orchestration.js";
 import { dispatch } from "./brain-dispatch.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
 import { flag } from "./flags.js";
+import { getBrain } from "./brain-registry.js";
 import { temporalContext } from "./temporal-context.js";
 import { domainTemplateSection } from "./template-library.js";
 import { isAgentBusy, tryAcquireAgent, releaseAgent } from "./agent-lock.js";
@@ -224,6 +225,12 @@ const HOME_BRAIN_NAMES: Record<string, string> = {
   fable: "Fable", sonnet: "Sonnet", opus: "Opus", haiku: "Haiku",
 };
 
+// #182 D3/É5 suite — expose le gate HOME_QUICK_MODEL au client (aucune route
+// générique /api/flags n'existe déjà ; on en ajoute une isolée, minimale).
+app.get("/api/flags/home-quick-model", (_req, res) => {
+  res.json({ enabled: flag("HOME_QUICK_MODEL") });
+});
+
 // ── Chat d'accueil — conversation directe avec MangoOS (sans projectName) ──
 app.post("/api/home-chat", async (req, res) => {
   const { messages, model, convId } = req.body as {
@@ -315,7 +322,14 @@ app.post("/api/home-chat", async (req, res) => {
         } catch { /* best-effort */ }
       }
       const demanded = toolDemandSignal(last.content, { hasAttachment });
-      const brainName = HOME_BRAIN_NAMES[model ?? "sonnet"] ?? "Ce cerveau";
+      // #182 D3/É5 suite — sous le gate, le registre `accueil` (popup rapide, n'importe
+      // quel modèle Ollama installé) REMPLACE le MODEL_MAP figé comme source du
+      // brainOverride. OFF (défaut) → accueilBrain reste null, comportement byte-identique.
+      const accueilBrain = flag("HOME_QUICK_MODEL") ? getBrain("accueil") : null;
+      const brainOverride = accueilBrain ?? { provider: "claude" as const, model: resolvedModel };
+      const brainName = accueilBrain && accueilBrain.provider !== "claude"
+        ? (accueilBrain.model ?? "Ce cerveau")
+        : HOME_BRAIN_NAMES[model ?? "sonnet"] ?? "Ce cerveau";
 
       if (demanded.size > 0 && flag("FRONTIER_TOOLS_ANY_BRAIN") && convId && ELEVE_PROVIDER === "openai") {
         // ── Mode ON — ORCHESTRATION : l'Élève outille, le cerveau choisi raisonne. ──
@@ -328,7 +342,7 @@ app.post("/api/home-chat", async (req, res) => {
             requiredCaps: caps,
             brainLabel: model ?? "sonnet",
             brainName,
-            brainOverride: { provider: "claude", model: resolvedModel },
+            brainOverride,
             system,
           },
           {
@@ -342,7 +356,12 @@ app.post("/api/home-chat", async (req, res) => {
         // ── Mode OFF (défaut) — repli TEXTE, mais HONNÊTE : si la tâche réclamait des
         // outils, on le DIT (plus de repli muet) ; sinon comportement byte-identique. ──
         const { askLLM } = await import("./llm-engine.js");
-        text = await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+        // Gate OFF (accueilBrain null) : appel STRICTEMENT identique à avant ce
+        // chantier (aucun `provider` explicite — laisse askLLM/resolveProvider()
+        // décider comme aujourd'hui). Gate ON : provider/model du registre `accueil`.
+        text = accueilBrain
+          ? await askLLM(system, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
+          : await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
         if (demanded.size > 0) {
           const disclosure =
             `${brainName} ne pilote pas les outils ici ; sélectionne l'Élève (GLM 5.2) ` +

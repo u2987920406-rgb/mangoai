@@ -76,5 +76,10 @@
     "provider": "ollama",
     "model": "glm-5.2:cloud",
     "timeoutMs": 20000
+  },
+  "accueil": {
+    "provider": "claude",
+    "model": "sonnet",
+    "timeoutMs": 60000
   }
 }

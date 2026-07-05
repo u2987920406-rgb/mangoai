@@ -407,6 +407,7 @@ export default function App() {
             onOpenWindow={openWindow}
             onOpenAppBuilder={openProjectsWindow}
             onOpenLauncher={openLauncher}
+            onOpenSettings={() => setScreen(SCREENS.REGLAGES)}
             model={model}
             onModel={(m) => { setModel(m); localStorage.setItem("mangoos.model", m); }}
           />

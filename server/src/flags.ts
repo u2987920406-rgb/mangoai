@@ -196,6 +196,12 @@ export const FLAGS = {
     default: false,
     description: "Orchestration outillée pour les cerveaux non-Élève à l'Accueil (#182 D3, frontier-orchestration.ts). ON → quand un cerveau non-Élève (Fable/Opus/Sonnet/Haiku) est sélectionné ET que la tâche réclame des outils (URL/vision/média), l'ÉLÈVE exécute les outils (read-only) et remet ses artefacts — encadrés par sanitizeExternal (données non fiables) — au cerveau choisi qui RAISONNE/RÉDIGE par-dessus, via dispatch. OFF (défaut, byte-identique) → pas d'orchestration ; à la place une LIGNE DE DIVULGATION honnête est ajoutée à la réponse texte (« {cerveau} ne pilote pas les outils ici… ») au lieu du repli muet historique.",
   },
+  // ── #182 D3/É5 suite — sélection rapide du cerveau à l'Accueil (registre) ──
+  HOME_QUICK_MODEL: {
+    env: "HOME_QUICK_MODEL",
+    default: false,
+    description: "Sélection rapide de modèle à l'Accueil (#182 D3 suite) : la popup « + Connecter un autre modèle… » lit/écrit le rôle `accueil` du registre brain-registry.ts (n'importe quel modèle Ollama installé, en plus des 3 tiers Claude fixes) et /api/home-chat l'utilise comme brainOverride au lieu du MODEL_MAP figé. OFF (défaut) → getBrain(\"accueil\") jamais appelé, comportement byte-identique au MODEL_MAP historique.",
+  },
   // ── #182 D6/É6 — dry-run / mode simulation (généralisation du worktree jetable #167/#171) ─
   DRY_RUN: {
     env: "DRY_RUN",

@@ -3,6 +3,7 @@ import { ArrowLeft, ChevronDown, ChevronRight, Copy, Download, FolderOpen, GitBr
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import ConfirmDelete from "./ConfirmDelete.jsx";
+import QuickModelPicker from "./QuickModelPicker.jsx";
 import { WINDOWS } from "../nav.js";
 
 /* ── Pièces jointes du chat d'accueil ────────────────────────────────────────
@@ -33,7 +34,7 @@ const MODELS = [
   { id: "eleve",  label: "Élève · GLM-5.2"   },
 ];
 
-function ModelBadge({ model, onModel, openUp = false }) {
+function ModelBadge({ model, onModel, openUp = false, onOpenSettings, overrideLabel }) {
   const [open, setOpen] = useState(false);
   const current = MODELS.find((m) => m.id === model) ?? MODELS[0];
   return (
@@ -43,7 +44,7 @@ function ModelBadge({ model, onModel, openUp = false }) {
         className="flex items-center gap-1.5 rounded-full border border-ok/30 bg-ok/10
                    px-2.5 py-0.5 text-[11px] font-semibold text-ok hover:bg-ok/20 transition-colors"
       >
-        {current.label}
+        {overrideLabel || current.label}
         <ChevronDown size={10} />
       </button>
       {open && (
@@ -66,8 +67,11 @@ function ModelBadge({ model, onModel, openUp = false }) {
               </button>
             ))}
             <div className="border-t border-edge">
-              <button className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left
-                                 text-[12px] text-faint hover:bg-edge-soft transition-colors">
+              <button
+                onClick={() => { onOpenSettings?.(); setOpen(false); }}
+                className="flex w-full items-center gap-2.5 px-3 py-2.5 text-left
+                                 text-[12px] text-faint hover:bg-edge-soft transition-colors"
+              >
                 <Plus size={12} />
                 Connecter un autre modèle…
               </button>
@@ -423,7 +427,7 @@ function ThinkingIndicator({ label = "MangoOS" }) {
 }
 
 /* ── Barre de saisie (mode chat) ─────────────────────────────────────────── */
-function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, onMode, template, onTemplate, inputRef, attachments = [], onAddFiles = () => {}, onRemoveAttachment = () => {}, attachNote = "", onClearNote = () => {} }) {
+function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, onMode, template, onTemplate, inputRef, attachments = [], onAddFiles = () => {}, onRemoveAttachment = () => {}, attachNote = "", onClearNote = () => {}, onOpenSettings, overrideLabel }) {
   const fileRef = useRef(null);
   function handleKey(e) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -490,7 +494,7 @@ function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, 
             className="hidden"
             onChange={(e) => { onAddFiles(e.target.files); e.target.value = ""; }}
           />
-          <ModelBadge model={model} onModel={onModel} openUp />
+          <ModelBadge model={model} onModel={onModel} openUp onOpenSettings={onOpenSettings} overrideLabel={overrideLabel} />
         </div>
         <div className="flex items-center gap-2">
           <div className="flex items-center">
@@ -519,7 +523,7 @@ function BottomBar({ input, setInput, onSubmit, thinking, model, onModel, mode, 
 }
 
 /* ── Page d'accueil ──────────────────────────────────────────────────────── */
-export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLauncher, model = "sonnet", onModel }) {
+export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLauncher, onOpenSettings, model = "sonnet", onModel }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [thinking, setThinking] = useState(false);
@@ -542,6 +546,33 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
   const welcomeFileRef = useRef(null);
   const hasChat = messages.length > 0;
   const modelLabel = MODELS.find((m) => m.id === model)?.label ?? "MangoOS";
+
+  // #182 D3/É5 suite — sélection rapide d'un cerveau (registre `accueil`, popup
+  // QuickModelPicker) STRICTEMENT locale à l'Accueil : jamais écrite dans `model`/
+  // `onModel` (partagé avec App.jsx → fuiterait dans l'Atelier, non demandé).
+  const [quickBrain, setQuickBrain] = useState(null); // { provider, model, label } | null
+  const [quickModelGateOn, setQuickModelGateOn] = useState(false);
+  const [quickPickerOpen, setQuickPickerOpen] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/flags/home-quick-model")
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((d) => setQuickModelGateOn(!!d.enabled))
+      .catch(() => setQuickModelGateOn(false)); // fail-open → ancien comportement (bouton Réglages)
+  }, []);
+
+  // Choisir un des 4 modèles figés du dropdown existant repasse en mode historique.
+  function handleFixedModel(id) {
+    setQuickBrain(null);
+    onModel?.(id);
+  }
+
+  // Bouton « + Connecter un autre modèle… » : ouvre la popup si le gate est actif,
+  // sinon comportement d'avant (Réglages).
+  function handleOpenModelExtra() {
+    if (quickModelGateOn) setQuickPickerOpen(true);
+    else onOpenSettings?.();
+  }
 
   // Un id de conversation existe AVANT le 1er upload (le brouillon disque en a besoin).
   function ensureConvId() {
@@ -650,7 +681,7 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       const res = await fetch("/api/home-chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history, model, convId: id }),
+        body: JSON.stringify({ messages: history, model: quickBrain ? "accueil" : model, convId: id }),
       });
       if (!res.ok) {
         const why = res.status === 413 ? "pièce(s) jointe(s) trop volumineuse(s)" : `erreur serveur (HTTP ${res.status})`;
@@ -832,7 +863,13 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
                   onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
                 />
                 <span className="h-2 w-2 animate-pulse rounded-full bg-ok" />
-                <ModelBadge model={model} onModel={onModel} openUp />
+                <ModelBadge
+                  model={model}
+                  onModel={handleFixedModel}
+                  openUp
+                  onOpenSettings={handleOpenModelExtra}
+                  overrideLabel={quickBrain?.label}
+                />
               </div>
               <div className="flex items-center">
                 <button
@@ -864,6 +901,11 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
             Entrée pour envoyer · <span className="opacity-60">Shift+Entrée pour sauter une ligne</span>
           </p>
         </div>
+        <QuickModelPicker
+          open={quickPickerOpen}
+          onClose={() => setQuickPickerOpen(false)}
+          onPicked={setQuickBrain}
+        />
       </div>
     );
   }
@@ -959,7 +1001,7 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
             onSubmit={sendMessage}
             thinking={thinking}
             model={model}
-            onModel={onModel}
+            onModel={handleFixedModel}
             mode={mode}
             onMode={setMode}
             template={template}
@@ -970,6 +1012,13 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
             onRemoveAttachment={removeAttachment}
             attachNote={attachNote}
             onClearNote={() => setAttachNote("")}
+            onOpenSettings={handleOpenModelExtra}
+            overrideLabel={quickBrain?.label}
+          />
+          <QuickModelPicker
+            open={quickPickerOpen}
+            onClose={() => setQuickPickerOpen(false)}
+            onPicked={setQuickBrain}
           />
         </div>
       </div>

@@ -44,6 +44,7 @@ export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "extracteur" | "testeur" | "auditeur"
   | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron" | "routeur"
+  | "accueil"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -79,6 +80,12 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // repli d'AMBIGUÏTÉ SEULE quand le signal déterministe (URL/mots-clés/pièce jointe) est
   // muet. Léger et rapide : GLM cloud, repli C2 (BRAIN_FALLBACK) déjà disponible pour ce rôle.
   routeur:       { provider: "ollama", model: "glm-5.2:cloud", timeoutMs: 20_000 },
+  // #182 D3/É5 suite — le cerveau CHOISI PAR RAF à l'Accueil (popup rapide, gate
+  // HOME_QUICK_MODEL). Défaut = "sonnet" (alias court accepté tel quel par askClaude,
+  // vérifié dans llm-engine.ts : query({model}) prend l'alias directement, aucun
+  // MODEL_MAP nécessaire) → comportement identique au repli historique tant que Raf
+  // n'a rien choisi dans la popup. Pas d'EXPECTED_CAPS : choix libre assumé (limites.md).
+  accueil:       { provider: "claude", model: "sonnet", timeoutMs: 60_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]
