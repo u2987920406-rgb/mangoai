@@ -225,6 +225,12 @@ export const FLAGS = {
     default: false,
     description: "Harnais A/B (#182 D7, ab-harness.ts) : compare deux variantes {promptRef|brainId} sur le MÊME jeu de tâches via `dispatch`, note chaque sortie par le juge d'intention (#161), enregistre un run versionné (data/ab-runs.json) et — sur gagnant net — crée une proposition `promote` PENDANTE dans le pipeline #76 (prompt-evolution.ts), jamais auto-appliquée. Porte sur la ROUTE HTTP (POST /api/ab/run) ; `abCompare` reste une fonction pure toujours appelable en test/CLI. OFF → la route ne répond rien (404), aucune écriture.",
   },
+  // ── #181 É4 — volet PÉDAGO du Gardien de clôture (formation adaptative) ───
+  ELEVE_GATE_PEDAGO: {
+    env: "ELEVE_GATE_PEDAGO",
+    default: false,
+    description: "Volet PÉDAGO du Gardien de clôture (#181 É4, eleve-gate-pedago.ts) : pour un projet de formation (formation.json présent), vérifie couverture curriculum↔banques (chaque module a ses items, chaque compétence déclarée est exercée), leçon-avant-exercice (risque « quiz déguisé »), sources déclarées non vides par leçon, lisibilité mesurable, et un échantillon d'exactitude jugé (N affirmations relues via leur source déclarée + juge LLM, seuil de support). Fail-open comme tout le Gardien : ajoute des raisons au nudge de relance, ne bloque jamais en soi. OFF (défaut) → deps.checkPedago jamais appelé, aucun champ pedago/pedagoOk dans le verdict, comportement byte-identique.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

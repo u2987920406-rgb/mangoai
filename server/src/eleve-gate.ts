@@ -21,6 +21,7 @@ import { judgeIntention, type IntentVerdict } from "./eleve-judge.js";
 import { getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from "./layout-balance.js";
 import { runProjectTests, type TestRun } from "./inspection.js";
+import { checkPedagoReel, type PedagoVerdict } from "./eleve-gate-pedago.js";
 import { flag } from "./flags.js";
 
 export interface GateVerdict {
@@ -44,6 +45,10 @@ export interface GateVerdict {
   testsRan: boolean; // (L55) la suite de tests a-t-elle vraiment tourné ? (script présent + gate on)
   testsOk: boolean; // (L55) tests verts OU non lancés (sauté → ne pénalise pas)
   tests?: TestRun; // détail de la suite de tests (absent si non lancée)
+  // (#181 É4) Volet PÉDAGO — présent SEULEMENT si ELEVE_GATE_PEDAGO=on ET applicable
+  // (projet de formation). Absent en gate OFF → verdict byte-identique à avant ce volet.
+  pedago?: PedagoVerdict;
+  pedagoOk?: boolean;
   raisons: string[]; // ce qu'il faut corriger (vide si ok)
 }
 
@@ -71,6 +76,9 @@ export interface GateDeps {
   scanPlaceholders: (projectDir: string, files: string[]) => PlaceholderFinding[];
   /** (L55) Lance la suite de tests du projet (gated ELEVE_GATE_TESTS). Ne lève jamais. */
   runTests: (projectDir: string) => Promise<TestRun>;
+  /** (#181 É4) Volet PÉDAGO (gated ELEVE_GATE_PEDAGO). Optionnel : absent → volet sauté
+   *  (comportement historique). Ne lève jamais côté implémentation réelle. */
+  checkPedago?: (projectDir: string) => Promise<PedagoVerdict>;
 }
 
 /** Lecteur réel : lit chaque fichier sous projectDir et délègue au détecteur pur. */
@@ -132,6 +140,7 @@ const realGateDeps: GateDeps = {
   scanBalance: realScanBalance,
   scanPlaceholders: realScanPlaceholders,
   runTests: (dir) => runProjectTests(dir),
+  checkPedago: (dir) => checkPedagoReel(dir),
 };
 
 /** Fichiers écrits par l'agent, dérivés de la trace d'outils. PUR. */
@@ -260,6 +269,21 @@ export async function runClosureGate(
     }
   }
 
+  // 6. PÉDAGO (#181 É4, opt-in ELEVE_GATE_PEDAGO, défaut OFF) — couverture curriculum↔
+  // banques, leçon-avant-exercice, sources déclarées, lisibilité, échantillon d'exactitude
+  // sourcé (D5 étages 2+3). Applicable SEULEMENT aux projets de formation (manifest
+  // formation.json présent) — neutre sinon. Gate OFF ou deps.checkPedago absent → jamais
+  // appelé, verdict byte-identique (pas de champ `pedago`/`pedagoOk` dans le retour).
+  let pedago: PedagoVerdict | undefined;
+  if (flag("ELEVE_GATE_PEDAGO") && deps.checkPedago) {
+    try {
+      pedago = await deps.checkPedago(projectDir);
+    } catch {
+      pedago = undefined;
+    }
+  }
+  const pedagoOk = !pedago || pedago.ok;
+
   const raisons: string[] = [];
   if (!intentOk) {
     const m = intent.manques.length ? intent.manques.map((x) => `  - ${x}`).join("\n") : "  - la demande n'est pas couverte";
@@ -276,6 +300,9 @@ export async function runClosureGate(
       `TESTS rouges — la suite \`npm test\` échoue (build vert ≠ tests verts). ` +
         `Corrige le code jusqu'à ce que les tests passent :\n${tests.detail.slice(-1000)}`,
     );
+  }
+  if (pedago && !pedago.ok) {
+    raisons.push(...pedago.raisons);
   }
   if (design) {
     // Goût : seulement si FIABLE (L28) ET hors mode observe (L34). Un goût observé/non-scoré
@@ -309,9 +336,10 @@ export async function runClosureGate(
     );
   }
   return {
-    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks,
+    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks && pedagoOk,
     intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance,
     placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, dualSkip, testsRan, testsOk, tests, raisons,
+    ...(pedago ? { pedago, pedagoOk } : {}),
   };
 }
 
@@ -348,7 +376,7 @@ export function evaluateGate(
   if (verdict.ok) return { action: "ok" };
   if (gateRelances >= max) return { action: "laisse-passer" };
 
-  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && verdict.tasteScored && !verdict.tasteOk;
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && (verdict.pedagoOk ?? true) && verdict.tasteScored && !verdict.tasteOk;
   const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
   if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
     return { action: "laisse-passer" };
