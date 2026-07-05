@@ -1,0 +1,15 @@
+{
+  "name": "mango-app",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5174 --host 127.0.0.1",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "zod": "^4.4.3",
+    "ts-fsrs": "^5.4.1"
+  }
+}

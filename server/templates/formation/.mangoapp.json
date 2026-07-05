@@ -1,0 +1,15 @@
+{
+  "id": "formation-demo",
+  "name": "Formation — Les bases du café",
+  "icon": "📚",
+  "color": "#b45309",
+  "navEntry": { "label": "Formation", "route": "/" },
+  "collections": [
+    {
+      "name": "formation-demo",
+      "access": "readwrite",
+      "schema": { "value": "any" }
+    }
+  ],
+  "createdAt": "2026-07-05T00:00:00.000Z"
+}

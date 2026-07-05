@@ -1,0 +1,20 @@
+@import "tailwindcss";
+
+/* palette anchor: café torréfié (ambre chaud + brun profond) — starter formation #181 */
+:root {
+  --formation-bg: #fbf6ef;
+  --formation-ink: #2a1a12;
+  --formation-accent: #b45309;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: "Inter", system-ui, sans-serif;
+  background: var(--formation-bg);
+  color: var(--formation-ink);
+}

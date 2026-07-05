@@ -80,6 +80,8 @@ export const SAFE_DEPENDENCIES = new Set<string>([
   "pixi.js", "three", "@react-three/fiber", "@react-three/drei",
   // dataviz bas niveau
   "d3", "cytoscape",
+  // répétition espacée (#181 formation adaptative — starter formation/)
+  "ts-fsrs",
 ]);
 
 /** Nom de paquet acceptable ET dans l'allowlist (double garde : pas d'injection shell). */
