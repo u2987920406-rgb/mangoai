@@ -231,6 +231,12 @@ export const FLAGS = {
     default: false,
     description: "Volet PÉDAGO du Gardien de clôture (#181 É4, eleve-gate-pedago.ts) : pour un projet de formation (formation.json présent), vérifie couverture curriculum↔banques (chaque module a ses items, chaque compétence déclarée est exercée), leçon-avant-exercice (risque « quiz déguisé »), sources déclarées non vides par leçon, lisibilité mesurable, et un échantillon d'exactitude jugé (N affirmations relues via leur source déclarée + juge LLM, seuil de support). Fail-open comme tout le Gardien : ajoute des raisons au nudge de relance, ne bloque jamais en soi. OFF (défaut) → deps.checkPedago jamais appelé, aucun champ pedago/pedagoOk dans le verdict, comportement byte-identique.",
   },
+  // ── #181 É5 — le Tuteur (boucle adaptative LENTE, formation adaptative) ───
+  FORMATION_TUTEUR: {
+    env: "FORMATION_TUTEUR",
+    default: false,
+    description: "Le Tuteur (#181 É5, formation-tuteur.ts) : boucle adaptative LENTE côté serveur. Lit le modèle apprenant miroité dans `shared:formation-<slug>` (D2), diagnostique les faiblesses PERSISTANTES via `diagnoseWeaknesses` (É1, formation-adaptive.ts), et — seulement si des faiblesses sont trouvées — génère un lot d'exercices CIBLÉS (le sujet du lot cite les compétences faibles et le pattern d'erreur observé) via la même mécanique que la Fabrique (É3, generateContentItems), le valide (schéma É1 + images) et l'écrit en `bank-ext:<module>` dans la collection partagée (absorbé par l'app cliente via SSE, cf. `learner-store.ts` subscribeBankExt). Câblé en fin de lot nocturne (nocturnal.ts), UNE entrée par formation active (scan `workspace/*/formation.json`), fail-open par formation (un échec n'arrête ni les autres formations ni le reste du nocturne). OFF (défaut) → aucune lecture/écriture, `maybeRunTuteurCycle` retourne immédiatement, comportement byte-identique.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

@@ -268,7 +268,7 @@ export async function genererCurriculum(
 // ③ Boucle PAR MODULE — génération de la banque + vérification
 // ---------------------------------------------------------------------------
 
-const SCHEMA_BY_TYPE: Record<ItemType, string> = {
+export const SCHEMA_BY_TYPE: Record<ItemType, string> = {
   lecon: `{"titre": string, "contenu": string (PLUSIEURS paragraphes structurés, un vrai corps de texte — jamais 2-3 phrases), "sources": string[] (1 à 3 URLs RÉELLES et précises qui traitent VRAIMENT ce sujet)}`,
   qcm: `{"question": string, "choix": string[] (EXACTEMENT 4 options, toutes différentes), "reponse": number (index 0-3 de la bonne réponse), "explication": string}`,
   flashcard: `{"recto": string (terme/question courte), "verso": string (réponse/définition)}`,
@@ -276,7 +276,7 @@ const SCHEMA_BY_TYPE: Record<ItemType, string> = {
   appariement: `{"paires": [{"gauche": string, "droite": string}] (au moins 2 paires cohérentes)}`,
 };
 
-const CLES_BY_TYPE: Record<ItemType, string[]> = {
+export const CLES_BY_TYPE: Record<ItemType, string[]> = {
   lecon: ["titre", "contenu", "sources"],
   qcm: ["question", "choix", "reponse", "explication"],
   flashcard: ["recto", "verso"],

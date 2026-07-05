@@ -31,6 +31,7 @@ import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVer
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel-chat-bridge.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { maybeRunStrategistCycle } from "./stratege-run.js";
+import { maybeRunTuteurCycle } from "./formation-tuteur.js";
 import { runAsActor } from "./perimeter-context.js";
 import { combineBreakerVerdict, listPerimeterIncidents, clearPerimeterIncidents } from "./perimeter-incidents.js";
 
@@ -653,6 +654,15 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
   // briefing conseil (data/strategist-state.json). FAIL-OPEN TOTAL : un échec du
   // Stratège est loggé et avalé — il ne peut JAMAIS faire échouer le lot nocturne.
   await maybeRunStrategistCycle(flag("STRATEGE_GLOBAL"));
+
+  // (#181 É5, D4 = boucle LENTE) Le Tuteur : APRÈS le lot, même patron que le
+  // Stratège ci-dessus (verrou relâché, hors du try). Gaté FORMATION_TUTEUR,
+  // défaut OFF → maybeRunTuteurCycle retourne false sans le moindre I/O (lot
+  // nocturne byte-identique). ON → une entrée par formation active
+  // (workspace/*/formation.json) : diagnostic + lot ciblé + écriture
+  // bank-ext:<module>. FAIL-OPEN TOTAL — un échec du Tuteur (sur une formation
+  // ou globalement) n'affecte JAMAIS le lot nocturne, déjà terminé.
+  await maybeRunTuteurCycle(flag("FORMATION_TUTEUR"));
 }
 
 // ── Review matinale → axiomes (vague 2, RLHF amplifié #41) ───────────────────
