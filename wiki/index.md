@@ -66,6 +66,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[intention-dispatch]] | La capacité suit le BESOIN de la tâche, pas la POSTURE : registre unifié gardé par capacité + conscience temporelle + cache sémantique + dry-run + A/B — #182, 7 étapes, 6 gates éprouvés ENSEMBLE (45/45) | ✅ écrite |
 | [[stratege-global]] | Stratège GLOBAL proactif cross-projet ET cross-session : agrège 8 capteurs (dont l'Observateur-Conseil lu, jamais recalculé), persiste, PUSH un briefing conseil, questionne la demande de Raf — #176, 6 étapes + preuve bornée É7 (10 gates ensemble, aucune interaction cassée) | ✅ écrite |
 | [[interface-bureau-autonome]] | MangoOS = vraie app de bureau (coque Tauri + sidecar Node supervisé) + périmètre d'action élargi CONTRÔLÉ : coffres consentis, le pouvoir suit le pilote (interactif large / autonome restreint sous précondition dure), scheduler borné partageant le budget-$ dur, MangoQA supervisé avec canal d'alerte natif — #180 COMPLET (É1-É7) | ✅ écrite |
+| [[formation-adaptative]] | Mango fabrique une FORMATION personnalisée sur n'importe quel sujet : curriculum+banque d'items, boucle RAPIDE client (FSRS+repli Leitner) et boucle LENTE serveur (le Tuteur, remédiation ciblée sur faiblesse persistante) — #181 COMPLET (6/6 étapes), Tuteur réel prouvé bout-en-bout (vrai GLM, vrai Blackboard) | ✅ écrite |
 
 ## Veille externe
 

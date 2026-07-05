@@ -150,7 +150,7 @@ async function run(): Promise<void> {
     check("fusion avec existant : concatène sans perdre l'ancien", merged2.length === 2);
     const merged3 = mergeBankExt(merged2, [{ ...itemA, verso: "v1-corrige" } as Item]);
     check("fusion : id dupliqué → le plus récent écrase l'ancien", merged3.length === 2 && (merged3.find((i) => i.id === "x-1") as { verso?: string } | undefined)?.verso === "v1-corrige");
-    check("nom de collection : reproduit exactement COLLECTION du client (learner-store.ts)", sharedCollectionForMangoAppId("formation-photo-abc") === "formation-formation-photo-abc");
+    check("nom de collection : reproduit exactement COLLECTION du client (learner-store.ts), sans double préfixe (bug #181 É6 corrigé)", sharedCollectionForMangoAppId("formation-photo-abc") === "formation-photo-abc");
   }
 
   // ---------------------------------------------------------------------------

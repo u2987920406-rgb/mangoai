@@ -23,10 +23,15 @@ import {
 
 // L'id déclaré dans .mangoapp.json — la Fabrique (É3) le personnalise par
 // formation (slug unique, cf. risque §4.7 du plan : collision de scope).
+// MANGOAPP_ID porte DÉJÀ le préfixe complet ("formation-<slugUnique>", posé
+// par personnaliserMangoapp() dans formation-fabrique.ts) — la collection
+// partagée est cet id TEL QUEL, sans le re-préfixer (bug #181 É6 corrigé :
+// un ancien `formation-${MANGOAPP_ID}` doublait le préfixe et désynchronisait
+// le client de `.mangoapp.json` / du Tuteur).
 export const MANGOAPP_ID = "formation-demo";
 
 const BASE = (import.meta as unknown as { env?: Record<string, string> }).env?.VITE_API_URL ?? "http://localhost:3000";
-const COLLECTION = `formation-${MANGOAPP_ID}`;
+const COLLECTION = MANGOAPP_ID;
 
 const LOCAL_KEY = `formation:${MANGOAPP_ID}:learner`;
 const QUEUE_KEY = `formation:${MANGOAPP_ID}:sync-queue`;

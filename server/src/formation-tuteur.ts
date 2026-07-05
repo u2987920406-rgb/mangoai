@@ -94,13 +94,13 @@ export function mergeBankExt(existing: unknown, added: Item[], max = 200): Item[
 }
 
 /** Nom exact de la collection partagée que lit l'app cliente (learner-store.ts :
- * `COLLECTION = \`formation-${MANGOAPP_ID}\``, où MANGOAPP_ID est déjà lui-même
- * "formation-<slug>" — cf. personnaliserMangoapp dans formation-fabrique.ts).
- * On reproduit EXACTEMENT cette formule plutôt que de la "corriger" ici : le
- * contrat du Tuteur est de matcher ce que le client lit réellement, pas ce
- * qu'on pense qu'il devrait lire (limite honnête notée dans le rendu final). */
+ * `COLLECTION = MANGOAPP_ID`, où MANGOAPP_ID est déjà lui-même "formation-<slug>"
+ * — cf. personnaliserMangoapp dans formation-fabrique.ts). Corrigé #181 É6 : un
+ * ancien double-préfixe (`formation-${mangoAppId}`) désynchronisait le Tuteur du
+ * client et de `.mangoapp.json` (qui déclare la collection en préfixe simple).
+ * Le contrat du Tuteur est de matcher ce que le client lit réellement. */
 export function sharedCollectionForMangoAppId(mangoAppId: string): string {
-  return `formation-${mangoAppId}`;
+  return mangoAppId;
 }
 
 // ---------------------------------------------------------------------------
