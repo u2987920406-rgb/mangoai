@@ -70,6 +70,7 @@ import { registerVersionGraphRoutes } from "./version-graph.js";
 import { registerControleurRoutes } from "./qa-temporal.js";
 import { emitPhaseComplete, spawnVerdictWatcher, isMangoQaActive, registerMangoQaRoutes } from "./mangoqa.js";
 import { registerStrategeRoutes, maybeInjectStrategeBriefing } from "./stratege-routes.js";
+import { registerFormationRoutes } from "./formation-routes.js";
 import { registerPerimeterRoutes } from "./perimeter-routes.js";
 import { loadPlan, replaceIncrements, markIncrementDone, loadFluxCounts } from "./project-plan.js";
 import { registerStripeRoutes } from "./stripe.js";
@@ -1408,6 +1409,7 @@ registerVersionGraphRoutes(app);
 registerControleurRoutes(app);
 registerMangoQaRoutes(app);
 registerStrategeRoutes(app);
+registerFormationRoutes(app); // #181 É3 — POST /api/formation { sujet } (fire-and-forget, verrou agent-lock)
 registerPerimeterRoutes(app);
 registerStripeRoutes(app);
 registerCronRoutes(app);
