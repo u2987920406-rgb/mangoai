@@ -330,6 +330,14 @@ app.post("/api/home-chat", async (req, res) => {
       const brainName = accueilBrain && accueilBrain.provider !== "claude"
         ? (accueilBrain.model ?? "Ce cerveau")
         : HOME_BRAIN_NAMES[model ?? "sonnet"] ?? "Ce cerveau";
+      // Sans ça, le modèle n'a AUCUN moyen de savoir quel cerveau il est réellement
+      // (le prompt partagé `system` ne le dit jamais) — il ne peut donc que rester
+      // vague quand Raf demande « quel modèle es-tu ? ». On ne l'ajoute QUE quand
+      // Raf a choisi un cerveau via la popup rapide (`accueilBrain`), pour garder
+      // le repli Claude par défaut byte-identique (gate OFF ou choix jamais fait).
+      const systemForBrain = accueilBrain
+        ? `${system}\nIdentité : le cerveau qui te fait fonctionner en ce moment est « ${brainName} » (choisi par Raf via la popup rapide de l'accueil). Si Raf demande quel modèle/cerveau tu utilises, réponds-le honnêtement et précisément (ex. « J'utilise ${brainName} en ce moment »), ne reste jamais vague.`
+        : system;
 
       if (demanded.size > 0 && flag("FRONTIER_TOOLS_ANY_BRAIN") && convId && ELEVE_PROVIDER === "openai") {
         // ── Mode ON — ORCHESTRATION : l'Élève outille, le cerveau choisi raisonne. ──
@@ -343,7 +351,7 @@ app.post("/api/home-chat", async (req, res) => {
             brainLabel: model ?? "sonnet",
             brainName,
             brainOverride,
-            system,
+            system: systemForBrain,
           },
           {
             runEleveTools: (sys, task, tools) =>
@@ -360,7 +368,7 @@ app.post("/api/home-chat", async (req, res) => {
         // chantier (aucun `provider` explicite — laisse askLLM/resolveProvider()
         // décider comme aujourd'hui). Gate ON : provider/model du registre `accueil`.
         text = accueilBrain
-          ? await askLLM(system, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
+          ? await askLLM(systemForBrain, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
           : await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
         if (demanded.size > 0) {
           const disclosure =

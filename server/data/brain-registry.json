@@ -78,8 +78,8 @@
     "timeoutMs": 20000
   },
   "accueil": {
-    "provider": "claude",
-    "model": "sonnet",
+    "provider": "ollama",
+    "model": "gemma4:12b",
     "timeoutMs": 60000
   }
 }

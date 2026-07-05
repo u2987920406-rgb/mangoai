@@ -545,12 +545,14 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
   const bottomRef = useRef(null);
   const welcomeFileRef = useRef(null);
   const hasChat = messages.length > 0;
-  const modelLabel = MODELS.find((m) => m.id === model)?.label ?? "MangoOS";
-
   // #182 D3/É5 suite — sélection rapide d'un cerveau (registre `accueil`, popup
   // QuickModelPicker) STRICTEMENT locale à l'Accueil : jamais écrite dans `model`/
   // `onModel` (partagé avec App.jsx → fuiterait dans l'Atelier, non demandé).
   const [quickBrain, setQuickBrain] = useState(null); // { provider, model, label } | null
+  // Priorité au choix rapide pour TOUS les affichages du modèle actif (badge ET
+  // indicateur "… réfléchit") — sinon l'indicateur retombe sur l'ancien `model`
+  // figé pendant qu'une réponse d'un autre cerveau (ex. Ollama local) est en cours.
+  const modelLabel = quickBrain?.label ?? MODELS.find((m) => m.id === model)?.label ?? "MangoOS";
   const [quickModelGateOn, setQuickModelGateOn] = useState(false);
   const [quickPickerOpen, setQuickPickerOpen] = useState(false);
 
