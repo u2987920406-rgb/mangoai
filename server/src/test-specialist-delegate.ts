@@ -1,6 +1,6 @@
 // Tests de la délégation (specialist-delegate.ts) — matching pur + consultation injectée.
 import {
-  tokenize, pickSpecialist, consultSpecialist, buildDelegateNudge, buildForgedResumeNudge,
+  tokenize, pickSpecialist, consultSpecialist, buildDelegateNudge, buildForgedResumeNudge, isUsableAdvice,
 } from "./specialist-delegate.js"
 import type { SpecialistAgent } from "./specialist-agents.js"
 
@@ -54,6 +54,64 @@ console.log("\n[3] consultSpecialist (injecté)")
   check("run ok:false → null", ko === null)
   const thrown = await consultSpecialist({ task: "PDF scanné OCR", blockage: "x" }, { load, run: async () => { throw new Error("net") } })
   check("run qui lève → null (ne propage pas)", thrown === null)
+  // (revue Fable #4) réponse hors-format en mode conseil → jamais injectée verbatim
+  const jsonBlob = await consultSpecialist({ task: "PDF scanné OCR", blockage: "x" }, { load, run: async () => ({ ok: true, text: '{"score": 80, "note": "ras"}' }) })
+  check("réponse JSON pure (mode conseil) → null, pas injectée", jsonBlob === null)
+  const refus = await consultSpecialist({ task: "PDF scanné OCR", blockage: "x" }, { load, run: async () => ({ ok: true, text: "Désolé, je ne peux pas t'aider avec ça." }) })
+  check("réponse de refus → null", refus === null)
+  const tropCourt = await consultSpecialist({ task: "PDF scanné OCR", blockage: "x" }, { load, run: async () => ({ ok: true, text: "ok." }) })
+  check("réponse trop courte → null", tropCourt === null)
+}
+
+console.log("\n[2b] pickSpecialist — filtre par winrate (revue Fable #3)")
+{
+  const mauvais = mk({ id: "sa_mauvais", name: "Mauvais agent PDF", role: "expert PDF scanné", tags: ["pdf", "ocr"], triggers: "pdf" })
+  ;(mauvais as { stats?: { consulted: number; wins: number } }).stats = { consulted: 5, wins: 0 } // 0% winrate, échantillon significatif
+  const bon = mk({ id: "sa_bon", name: "Bon agent PDF", role: "expert PDF scanné fiable", tags: ["pdf", "ocr"], triggers: "pdf" })
+  ;(bon as { stats?: { consulted: number; wins: number } }).stats = { consulted: 5, wins: 4 } // 80% winrate
+  const pool = [mauvais, bon]
+  const withoutFilter = pickSpecialist(pool, "il faut lire un pdf scanné ocr", { min: 1 })
+  check("sans filtre : le premier au score max gagne (comportement historique)", withoutFilter?.agent.id === "sa_mauvais")
+  const withFilter = pickSpecialist(pool, "il faut lire un pdf scanné ocr", { min: 1, minWinrate: 0.25, minUsesForFilter: 4 })
+  check("avec filtre winrate : l'agent à 0% (≥4 usages) est ignoré, le bon matche", withFilter?.agent.id === "sa_bon")
+  const jeune = mk({ id: "sa_jeune", name: "Agent PDF tout juste forgé", role: "expert PDF scanné", tags: ["pdf", "ocr"], triggers: "pdf" })
+  ;(jeune as { stats?: { consulted: number; wins: number } }).stats = { consulted: 1, wins: 0 } // 0% mais SOUS le seuil d'échantillon
+  const withFilterJeune = pickSpecialist([jeune], "il faut lire un pdf scanné ocr", { min: 1, minWinrate: 0.25, minUsesForFilter: 4 })
+  check("agent tout juste forgé (sous minUsesForFilter) → PAS filtré malgré 0%", withFilterJeune?.agent.id === "sa_jeune")
+}
+
+console.log("\n[3c] consultSpecialist — comptabilise la consultation (revue Fable #3)")
+{
+  const load = () => specs
+  const seen: string[] = []
+  const ok = await consultSpecialist(
+    { task: "lire un PDF scanné et résumer", blockage: "plafond" },
+    { load, run: async (id, t) => ({ ok: true, text: `conseils de ${id} sur: ${t.slice(0, 20)}` }), recordConsulted: (id) => { seen.push(id) } },
+  )
+  check("consulte + comptabilise (recordConsulted appelé)", !!ok && seen.includes("sa_pdf"))
+  const seen2: string[] = []
+  const rejete = await consultSpecialist(
+    { task: "lire un PDF scanné et résumer", blockage: "plafond" },
+    { load, run: async () => ({ ok: true, text: "ok." /* trop court, rejeté par isUsableAdvice */ }), recordConsulted: (id) => { seen2.push(id) } },
+  )
+  check("même une réponse rejetée (hors-format) est comptabilisée", rejete === null && seen2.includes("sa_pdf"))
+  const seen3: string[] = []
+  await consultSpecialist(
+    { task: "lire un PDF scanné et résumer", blockage: "plafond" },
+    { load, run: async () => ({ ok: false, text: "" }), recordConsulted: (id) => { seen3.push(id) } },
+  )
+  check("un échec de transport (ok:false) n'est PAS comptabilisé", seen3.length === 0)
+}
+
+console.log("\n[3d] isUsableAdvice — (revue Fable #4)")
+{
+  check("prose normale (mode conseil) → utilisable", isUsableAdvice("1. Vérifie le fichier X.\n2. Corrige l'import.", "conseil").usable)
+  check("JSON pur (mode conseil) → rejeté", !isUsableAdvice('{"a":1}', "conseil").usable)
+  check("JSON pur (mode ACTION) → toléré (pas de check JSON en action)", isUsableAdvice('{"a":1,"b":"assez long pour passer le seuil"}', "action").usable)
+  check("refus → rejeté", !isUsableAdvice("Je ne suis pas en mesure de répondre à cela.", "conseil").usable)
+  check("vide → rejeté", !isUsableAdvice("", "conseil").usable)
+  check("trop court → rejeté", !isUsableAdvice("oui", "conseil").usable)
+  check("JSON malformé (accolades sans être du vrai JSON) → laisse passer aux autres checks", isUsableAdvice("{ceci n'est pas du json mais du texte suffisamment long}", "conseil").usable)
 }
 
 console.log("\n[4] buildDelegateNudge")

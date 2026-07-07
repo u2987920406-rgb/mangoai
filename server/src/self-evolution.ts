@@ -32,6 +32,14 @@ export interface OpenGap {
   hits: number
   /** Agent forgé qui l'a comblée (quand status = forged). */
   agentId?: string
+  /** (2026-07-07, revue Fable — recommandation #1) Nombre de tentatives d'auto-forge
+   *  déjà effectuées sur cette lacune (échouées, sinon elle serait "forged"). Plafonné
+   *  par SELF_EVOLVE_MAX_FORGE_ATTEMPTS — au-delà, l'auto-forge n'y retouche plus (la
+   *  lacune reste "proposed" mais attend une validation manuelle dans l'Atelier au lieu
+   *  de re-dépenser de l'Opus à chaque run). Absent = 0 (gaps persistées avant ce champ,
+   *  ou construites à la main dans un test/appelant existant — rétrocompatible). */
+  forgeAttempts?: number
+  lastForgeAttemptAt?: string
   createdAt: string
   updatedAt: string
 }
@@ -109,9 +117,35 @@ export function loadGaps(): OpenGap[] {
   }
 }
 
+/**
+ * (2026-07-07, revue Fable — correctif #8) Sélectionne, au-delà de MAX_GAPS, LESQUELLES
+ * évincer. L'ancien `slice(0, MAX_GAPS)` gardait les 200 plus ANCIENNES et jetait
+ * silencieusement toute lacune NOUVELLE (éviction inversée — bug trouvé en revue, jamais
+ * constaté en pratique car le registre n'a jamais atteint 200). Ordre d'éviction : les
+ * lacunes CLOSES (dismissed/forged) les plus anciennes d'abord ; si ça ne suffit pas
+ * (registre saturé de lacunes encore actives), les actives les plus anciennes en dernier
+ * recours — jamais les plus récentes. PUR, testable indépendamment de l'I/O.
+ */
+export function evictOverflow(list: OpenGap[], max: number): OpenGap[] {
+  if (list.length <= max) return list
+  const isClosed = (g: OpenGap) => g.status === "dismissed" || g.status === "forged"
+  const byAgeAsc = (a: OpenGap, b: OpenGap) => a.updatedAt.localeCompare(b.updatedAt)
+  let overflow = list.length - max
+  const closedOldestFirst = list.filter(isClosed).sort(byAgeAsc)
+  const dropIds = new Set(closedOldestFirst.slice(0, overflow).map((g) => g.id))
+  let out = list.filter((g) => !dropIds.has(g.id))
+  overflow = out.length - max
+  if (overflow > 0) {
+    const activeOldestFirst = out.filter((g) => !isClosed(g)).sort(byAgeAsc)
+    const dropIds2 = new Set(activeOldestFirst.slice(0, overflow).map((g) => g.id))
+    out = out.filter((g) => !dropIds2.has(g.id))
+  }
+  return out
+}
+
 /** Persiste le store (atomique, plafonné). Ne lève jamais sur des entrées vides. */
 export function saveGaps(list: OpenGap[]): void {
-  const clean = (Array.isArray(list) ? list : []).filter(isGap).slice(0, MAX_GAPS)
+  const clean = evictOverflow((Array.isArray(list) ? list : []).filter(isGap), MAX_GAPS)
   const f = gapsFile()
   fs.mkdirSync(path.dirname(f), { recursive: true })
   atomicWriteFileSync(f, JSON.stringify(clean, null, 2))
@@ -165,6 +199,7 @@ export function recordUncoveredGap(
       task,
       status: "proposed",
       hits: 1,
+      forgeAttempts: 0,
       createdAt: iso,
       updatedAt: iso,
     }
@@ -206,4 +241,27 @@ export function markGap(
   }
   saveGaps(list)
   return list[i]!
+}
+
+/** (2026-07-07, revue Fable — recommandation #1) Comptabilise une TENTATIVE d'auto-forge
+ *  sur une lacune (avant d'appeler forgeForGap — succès ou échec, l'essai est compté).
+ *  Renvoie la lacune mise à jour ou null si id inconnu. Ne lève jamais. */
+export function recordForgeAttempt(id: string, now: number = Date.now()): OpenGap | null {
+  const list = loadGaps()
+  const i = list.findIndex((g) => g.id === id)
+  if (i < 0) return null
+  const iso = new Date(now).toISOString()
+  list[i] = {
+    ...list[i]!,
+    forgeAttempts: (list[i]!.forgeAttempts ?? 0) + 1,
+    lastForgeAttemptAt: iso,
+    updatedAt: iso,
+  }
+  saveGaps(list)
+  return list[i]!
+}
+
+/** Le plafond de tentatives d'auto-forge est-il atteint pour cette lacune ? PUR. */
+export function forgeAttemptsExhausted(gap: OpenGap, maxAttempts: number): boolean {
+  return (gap.forgeAttempts ?? 0) >= maxAttempts
 }

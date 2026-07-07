@@ -13,7 +13,7 @@ function check(label: string, cond: boolean) {
 }
 
 const cfg = (o: Partial<AutoForgeConfig> = {}): AutoForgeConfig => ({
-  enabled: true, maxForgesPerRun: 1, opusBudgetUsd: 0.5, ...o,
+  enabled: true, maxForgesPerRun: 1, opusBudgetUsd: 0.5, maxAgentsTotal: 24, ...o,
 });
 
 console.log("[1] autoForgeConfig — défauts sûrs (OFF) + parsing env");
@@ -23,10 +23,13 @@ console.log("[1] autoForgeConfig — défauts sûrs (OFF) + parsing env");
   check("plafond forges défaut = 1", def.maxForgesPerRun === 1);
   check("budget Opus défaut = 0.5", def.opusBudgetUsd === 0.5);
 
-  const on = autoForgeConfig({ SELF_EVOLVE_AUTO: "on", SELF_EVOLVE_MAX_FORGES: "3", SELF_EVOLVE_OPUS_BUDGET_USD: "1.25" });
+  check("plafond global agents défaut = 24", def.maxAgentsTotal === 24);
+
+  const on = autoForgeConfig({ SELF_EVOLVE_AUTO: "on", SELF_EVOLVE_MAX_FORGES: "3", SELF_EVOLVE_OPUS_BUDGET_USD: "1.25", SELF_EVOLVE_MAX_AGENTS_TOTAL: "40" });
   check("SELF_EVOLVE_AUTO=on → enabled", on.enabled === true);
   check("max forges lu", on.maxForgesPerRun === 3);
   check("budget lu", on.opusBudgetUsd === 1.25);
+  check("plafond global agents lu", on.maxAgentsTotal === 40);
 
   const bad = autoForgeConfig({ SELF_EVOLVE_AUTO: "on", SELF_EVOLVE_MAX_FORGES: "-9", SELF_EVOLVE_OPUS_BUDGET_USD: "abc" });
   check("valeurs invalides → repli défaut", bad.maxForgesPerRun === 1 && bad.opusBudgetUsd === 0.5);
@@ -77,6 +80,16 @@ console.log("\n[6] scénario complet — 2 forges autorisées puis disjoncteur")
   check("forge #2 autorisée", canAutoForge(c, s).allow);
   s = recordAutoForge(s, 0.12);
   check("forge #3 refusée (plafond)", !canAutoForge(c, s).allow);
+}
+
+console.log("\n[6b] canAutoForge — plafond GLOBAL cross-run du nombre d'agents (revue Fable #2)");
+{
+  const c = cfg({ maxAgentsTotal: 24 });
+  check("23 agents existants → encore autorisé", canAutoForge(c, newAutoForgeState(), OPUS_FORGE_EST_USD, 23).allow);
+  const d = canAutoForge(c, newAutoForgeState(), OPUS_FORGE_EST_USD, 24);
+  check("24 agents existants (=plafond) → refus + raison plafond global", !d.allow && /plafond GLOBAL/.test(d.reason));
+  check("plafond global à 0 → désactivé (pas de refus sur ce critère)", canAutoForge(cfg({ maxAgentsTotal: 0 }), newAutoForgeState(), OPUS_FORGE_EST_USD, 999).allow);
+  check("sans argument (défaut 0 existants) → autorisé", canAutoForge(c, newAutoForgeState()).allow);
 }
 
 console.log("\n[7] resolveGapBlockers — trigger pilotable (#168 tranche 3)");

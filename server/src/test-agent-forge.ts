@@ -18,7 +18,7 @@ const LIMITES_MD = `# Registre
 `
 fs.writeFileSync(LIM, LIMITES_MD)
 
-const { parseLacunes, parseForgedAgent, parseForgedAgents, pickFocusLacunes, forgeAgents, assignBrain, forgeForGap } = await import("./agent-forge.js")
+const { parseLacunes, parseForgedAgent, parseForgedAgents, pickFocusLacunes, forgeAgents, assignBrain, assignMode, forgeForGap, smokeTestSpec } = await import("./agent-forge.js")
 const { loadSpecialists } = await import("./specialist-agents.js")
 
 // Mini-fabrique de spec pour tester assignBrain (champs minimaux).
@@ -66,10 +66,20 @@ console.log("\n[4] forgeAgents (transport injecté)")
 {
   reset()
   let i = 0
+  // Rôle/lacune VRAIMENT distincts par agent (AUCUN mot ≥4 lettres partagé, même de
+  // remplissage type "expert"/"lacune") — #5 dédup sémantique : coversGap tokenise en
+  // ignorant les mots courts, donc le moindre mot-outil commun de ≥4 lettres suffit à
+  // faire déborder le seuil ≥2 entre deux specs qui ne devraient pas se couvrir.
+  const DOMAINES = [
+    "cartographie xlsx tableur fusionne",
+    "traduction images pexels bilingue",
+    "orchestration websocket collaboratif",
+  ]
   const ask = async () => {
+    const idx = i
     i++
     return JSON.stringify({
-      name: `Agent ${i}`, role: "un rôle spécialisé et précis", lacune: "L1",
+      name: `Agent ${idx + 1}`, role: DOMAINES[idx], lacune: DOMAINES[idx],
       systemPrompt: "Tu es un expert pointu qui applique une méthode rigoureuse et rend un format clair.",
       tools: [{ name: "outil", desc: "fait un truc" }], triggers: "quand X",
       provider: "ollama", model: "gemma4:12b",
@@ -124,6 +134,64 @@ console.log("\n[6] forgeForGap (#168 — forge ciblée sur une lacune live)")
   const bad = await forgeForGap(gap, { ask: async () => "pas du json" })
   check("forge ratée → agent null + error, ne lève pas", bad.agent === null && typeof bad.error === "string")
   reset()
+}
+
+console.log("\n[7] assignMode — un juge ne reçoit JAMAIS write_file (revue Fable #6)")
+{
+  const arbitre = mkSpec({ name: "Arbitre du Score Design", role: "Juge design VISION déterministe qui convertit une capture en score", tags: ["vision", "juge-design", "score-numerique"] })
+  check("Arbitre du Score Design → conseil (mot 'juge'/'score')", assignMode(arbitre as never).mode === "conseil")
+  const jugeAdequation = mkSpec({ name: "Juge d'Adéquation", role: "Vérificateur qui statue, preuve à l'appui, rend un verdict", tags: ["verdict", "qa"] })
+  check("Juge d'Adéquation → conseil (mot 'verdict'/'qa')", assignMode(jugeAdequation as never).mode === "conseil")
+  const contremaitre = mkSpec({ name: "Contremaître local", role: "Orchestrateur qui génère des micro-tâches et les exécute pour réparer la boucle agentique", tags: ["orchestration", "local"] })
+  check("Contremaître local (pas un juge) → reste action", assignMode(contremaitre as never).mode === "action")
+  const conseilPur = mkSpec({ name: "Iconographe", role: "trouve des images pertinentes", tags: ["images"] })
+  check("agent sans verbe d'action ni mot juge → conseil", assignMode(conseilPur as never).mode === "conseil")
+}
+
+console.log("\n[8] forgeForGap — dédup SÉMANTIQUE (revue Fable #5), pas seulement le nom")
+{
+  reset()
+  const gap = {
+    id: "gap_2", sig: "sync", title: "sync temps réel", blocker: "sync",
+    detail: "synchronisation temps réel", task: "app collab", status: "proposed" as const,
+    hits: 1, createdAt: "", updatedAt: "",
+  }
+  // Une première forge légitime.
+  const r1 = await forgeForGap(gap, {
+    ask: async () => JSON.stringify({
+      name: "Synchroniseur", role: "expert synchronisation temps réel websocket",
+      lacune: "synchronisation temps reel websocket", systemPrompt: "Tu es un expert du temps réel, méthode rigoureuse.",
+      tools: [], triggers: "sync", provider: "ollama", model: "gemma4:12b",
+    }),
+  })
+  check("1re forge légitime réussit", r1.agent?.name === "Synchroniseur")
+  // Une 2e forge sous un NOM différent mais qui cible la MÊME lacune (recouvrement de tokens).
+  const r2 = await forgeForGap(gap, {
+    ask: async () => JSON.stringify({
+      name: "Agent Bis", role: "expert synchronisation temps réel websocket",
+      lacune: "synchronisation temps reel websocket", systemPrompt: "Tu es un autre expert du temps réel, méthode rigoureuse.",
+      tools: [], triggers: "sync", provider: "ollama", model: "gemma4:12b",
+    }),
+  })
+  check("doublon FONCTIONNEL (nom différent) → rejeté", r2.agent === null && (r2.error ?? "").includes("doublon fonctionnel"))
+  check("le registre garde 1 seul agent pour cette lacune", loadSpecialists().filter((a) => a.name === "Synchroniseur" || a.name === "Agent Bis").length === 1)
+  reset()
+}
+
+console.log("\n[9] smokeTestSpec — la spec doit répondre correctement à SON PROPRE exemple (revue Fable #7)")
+{
+  const specJson = mkSpec({ name: "X" })
+  specJson.systemPrompt = "Réponds STRICTEMENT en JSON : {\"score\": <0-100>}."
+  const specWithExample = { ...specJson, examples: ["Note ceci."] }
+  const r1 = await smokeTestSpec(specWithExample as never, { ask: async () => '{"score": 80}' })
+  check("réponse JSON conforme → ok", r1.ok === true)
+  const r2 = await smokeTestSpec(specWithExample as never, { ask: async () => "Je ne peux pas répondre." })
+  check("format JSON annoncé mais absent → échec", r2.ok === false && (r2.reason ?? "").includes("JSON"))
+  const r3 = await smokeTestSpec(specWithExample as never, { ask: async () => "" })
+  check("réponse vide → échec", r3.ok === false && (r3.reason ?? "").includes("vide"))
+  const specSansExemple = { ...specJson, examples: [] }
+  const r4 = await smokeTestSpec(specSansExemple as never, { ask: async () => { throw new Error("ne devrait jamais être appelé") } })
+  check("aucun exemple → laisse passer sans appeler le cerveau", r4.ok === true)
 }
 
 try { fs.rmSync(LIM, { force: true }) } catch { /* */ }

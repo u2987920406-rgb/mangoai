@@ -60,6 +60,11 @@ export interface SpecialistAgent {
   mode?: "conseil" | "action"
   /** #175 — Policy d'outils scellée à la forge (uniquement si `mode === "action"`). */
   toolPolicy?: ToolPolicy
+  /** (2026-07-07, revue Fable — recommandation #3, axiome 11) Scorecard de valeur RÉELLE :
+   *  un agent forgé n'est plus cru à vie sur sa seule existence. `consulted` s'incrémente à
+   *  chaque consultation via `consultSpecialist` ; `wins` seulement quand cette consultation
+   *  a mené à un `finish` réussi AVANT tout autre remède. Absent = jamais consulté. */
+  stats?: { consulted: number; wins: number }
 }
 
 const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
@@ -174,6 +179,16 @@ export function validateSpec(
       if (Object.keys(policy).length) out.toolPolicy = policy
     }
   }
+
+  // (revue Fable #3) `stats` doit SURVIVRE aux re-validations (upsertSpecialists/saveSpecialists
+  // re-valident TOUT le registre à chaque écriture) — sinon la scorecard repart de zéro à
+  // chaque forge ou mise à jour d'un AUTRE agent.
+  if (r.stats && typeof r.stats === "object") {
+    const st = r.stats as Record<string, unknown>
+    const consulted = typeof st.consulted === "number" && Number.isFinite(st.consulted) && st.consulted >= 0 ? st.consulted : 0
+    const wins = typeof st.wins === "number" && Number.isFinite(st.wins) && st.wins >= 0 ? Math.min(st.wins, consulted) : 0
+    if (consulted > 0) out.stats = { consulted, wins }
+  }
   return out
 }
 
@@ -235,6 +250,34 @@ export function updateSpecialistBrain(
   list[i] = next
   saveSpecialists(list)
   return next
+}
+
+/** (revue Fable #3) Comptabilise une CONSULTATION (appelé dès que `consultSpecialist` obtient
+ *  un avis exploitable de cet agent — succès ou échec de la tâche encore inconnu à ce stade).
+ *  Renvoie l'agent màj ou null si id inconnu. Ne lève jamais. */
+export function recordSpecialistConsulted(id: string): SpecialistAgent | null {
+  const list = loadSpecialists()
+  const i = list.findIndex((s) => s.id === id)
+  if (i < 0) return null
+  const cur = list[i]!
+  const stats = cur.stats ?? { consulted: 0, wins: 0 }
+  list[i] = { ...cur, stats: { consulted: stats.consulted + 1, wins: stats.wins } }
+  saveSpecialists(list)
+  return list[i]!
+}
+
+/** Comptabilise un SUCCÈS attribuable à cet agent (appelé UNIQUEMENT quand un `finish` réussi
+ *  suit directement sa consultation, avant tout autre remède). Suppose `recordSpecialistConsulted`
+ *  déjà appelé pour cet épisode — n'incrémente que `wins`, jamais `consulted` une 2ᵉ fois. */
+export function recordSpecialistWin(id: string): SpecialistAgent | null {
+  const list = loadSpecialists()
+  const i = list.findIndex((s) => s.id === id)
+  if (i < 0) return null
+  const cur = list[i]!
+  const stats = cur.stats ?? { consulted: 1, wins: 0 } // garde-fou : gagne implique au moins 1 consultation
+  list[i] = { ...cur, stats: { consulted: Math.max(stats.consulted, 1), wins: stats.wins + 1 } }
+  saveSpecialists(list)
+  return list[i]!
 }
 
 export function removeSpecialist(id: string): boolean {

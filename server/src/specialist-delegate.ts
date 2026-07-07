@@ -10,6 +10,7 @@
 import {
   loadSpecialists as defaultLoad,
   runSpecialist as defaultRun,
+  recordSpecialistConsulted as defaultRecordConsulted,
   type SpecialistAgent,
 } from "./specialist-agents.js"
 
@@ -58,21 +59,39 @@ export interface SpecialistMatch {
   score: number
 }
 
+export interface PickSpecialistOptions {
+  min?: number
+  /** (2026-07-07, revue Fable — recommandation #3, axiome 11) Winrate minimal en dessous
+   *  duquel un agent est IGNORÉ par le matching — mais seulement après `minUsesForFilter`
+   *  consultations (sinon un agent tout juste forgé, avec 0 ou 1 essai malchanceux, serait
+   *  blacklisté à tort sur un échantillon non significatif). 0/absent = filtre désactivé. */
+  minWinrate?: number
+  minUsesForFilter?: number
+}
+
 /**
  * Choisit le spécialiste le plus pertinent pour un texte (tâche + blocage). PUR.
  * Score = nb de mots-clés partagés (tags comptés double via agentText). Renvoie le meilleur
- * au-dessus de `min` (défaut 2), sinon null. Ne lève jamais.
+ * au-dessus de `min` (défaut 2), sinon null. Ignore les agents sous le winrate minimal (#3)
+ * une fois qu'ils ont assez d'usages pour que ce chiffre soit significatif. Ne lève jamais.
  */
 export function pickSpecialist(
   specs: SpecialistAgent[],
   text: string,
-  opts: { min?: number } = {},
+  opts: PickSpecialistOptions = {},
 ): SpecialistMatch | null {
   const min = opts.min ?? 2
+  const minWinrate = opts.minWinrate ?? 0
+  const minUsesForFilter = opts.minUsesForFilter ?? 4
   const q = tokenize(text)
   if (q.size === 0) return null
   let best: SpecialistMatch | null = null
   for (const agent of specs ?? []) {
+    const stats = agent.stats
+    if (minWinrate > 0 && stats && stats.consulted >= minUsesForFilter) {
+      const winrate = stats.consulted > 0 ? stats.wins / stats.consulted : 1
+      if (winrate < minWinrate) continue // agent mesuré peu utile → ignoré par le matching
+    }
     const at = tokenize(agentText(agent))
     // Score = nb de mots-clés de la TÂCHE qui matchent (tolérant) ≥1 mot-clé de l'agent.
     let score = 0
@@ -90,19 +109,54 @@ export interface ConsultResult {
   score: number
 }
 
+// (2026-07-07, revue Fable — recommandation #4, 4ᵉ instance du motif « le juge répond
+// mais hors-format, jamais marqué, compté comme un vrai résultat » trouvé cette même
+// session (taste-judge.ts/eleve-judge.ts/savoir-reconcile.ts). La plupart des systemPrompts
+// forgés se terminent par « réponds STRICTEMENT en JSON » — mais consultSpecialist demande
+// une PROSE de conseil (« ~8 points actionnables »). Conflit d'instructions non détecté
+// jusqu'ici : un blob JSON, un refus, ou une réponse trop courte étaient tous injectés
+// verbatim dans le nudge de l'Élève comme si c'était un avis exploitable.
+const REFUSAL_HINTS = [/je ne peux pas/i, /désolé/i, /\bdesole\b/i, /in order to/i, /as an ai/i, /je ne suis pas en mesure/i]
+const MIN_ADVICE_CHARS = 20
+
+/** Une réponse de spécialiste est-elle EXPLOITABLE comme conseil ? PUR. En mode "action"
+ *  (le spécialiste résume une exécution, pas un avis de conseil), seuls le refus et la
+ *  longueur minimale sont vérifiés — le format JSON n'a pas de sens à y interdire. */
+export function isUsableAdvice(
+  text: string,
+  mode: "conseil" | "action" = "conseil",
+): { usable: boolean; reason?: string } {
+  const t = (text ?? "").trim()
+  if (!t) return { usable: false, reason: "réponse vide" }
+  if (mode === "conseil" && /^[{[][\s\S]*[}\]]$/.test(t)) {
+    try {
+      JSON.parse(t)
+      return { usable: false, reason: "réponse JSON pure en mode conseil (hors-format, probablement son format habituel plutôt qu'un conseil)" }
+    } catch {
+      // pas du JSON valide malgré l'allure — laisse passer aux vérifications suivantes
+    }
+  }
+  if (REFUSAL_HINTS.some((re) => re.test(t))) return { usable: false, reason: "refus détecté dans la réponse" }
+  if (t.length < MIN_ADVICE_CHARS) return { usable: false, reason: "réponse trop courte pour être un conseil exploitable" }
+  return { usable: true }
+}
+
 /**
  * Consulte le spécialiste pertinent pour un blocage. Charge les agents, matche sur tâche+blocage,
  * et si un agent correspond, l'invoque pour obtenir une analyse CONCRÈTE. Renvoie null si aucun
  * match ou si l'invocation échoue/vide. Ne lève jamais. Dépendances injectables (tests).
  */
 export async function consultSpecialist(
-  args: { task: string; blockage: string; min?: number },
+  args: { task: string; blockage: string; min?: number; minWinrate?: number; minUsesForFilter?: number },
   deps: {
     load?: () => SpecialistAgent[]
     run?: (id: string, task: string) => Promise<{ ok: boolean; text: string }>
     // #175 — runner AGENTIQUE (le spécialiste AGIT au lieu de conseiller). Fourni/câblé
     // seulement quand ELEVE_DELEGATE_AGENTIC=on ; absent → on reste sur le conseil (`run`).
     runAgentic?: (id: string, task: string) => Promise<{ ok: boolean; text: string }>
+    /** (revue Fable #3) Comptabilise la consultation dans la scorecard de l'agent — appelé
+     *  dès qu'une réponse EXPLOITABLE en sort (pas sur muet/erreur). Injectable pour les tests. */
+    recordConsulted?: (id: string) => void
   } = {},
 ): Promise<ConsultResult | null> {
   const load = deps.load ?? defaultLoad
@@ -113,7 +167,9 @@ export async function consultSpecialist(
   } catch {
     return null
   }
-  const match = pickSpecialist(specs, `${args.task} ${args.blockage}`, { min: args.min })
+  const match = pickSpecialist(specs, `${args.task} ${args.blockage}`, {
+    min: args.min, minWinrate: args.minWinrate, minUsesForFilter: args.minUsesForFilter,
+  })
   if (!match) return null
   // #175 — un agent forgé en mode "action" EXÉCUTE le sous-problème (boucle agentique scellée)
   // quand le câblage agentique est fourni ; sinon il CONSEILLE (avis texte), comportement
@@ -135,6 +191,14 @@ export async function consultSpecialist(
     return null
   }
   if (!res.ok || !res.text.trim()) return null
+  // (revue Fable #3) La consultation a produit UNE réponse (pas un muet/erreur, déjà écarté
+  // ci-dessus) → elle compte dans la scorecard, exploitable ou non — un agent qui répond
+  // hors-format à répétition doit voir son winrate baisser, pas être traité comme "jamais
+  // essayé". `wins` (lui) n'est incrémenté qu'en cas de succès réel, ailleurs (eleve.ts).
+  const recordConsulted = deps.recordConsulted ?? defaultRecordConsulted
+  try { recordConsulted(match.agent.id) } catch { /* la scorecard ne casse jamais une délégation */ }
+  const usability = isUsableAdvice(res.text, match.agent.mode ?? "conseil")
+  if (!usability.usable) return null
   return { agent: match.agent, advice: res.text.trim(), score: match.score }
 }
 

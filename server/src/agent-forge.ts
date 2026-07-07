@@ -19,7 +19,7 @@ import {
   loadSpecialists,
   type SpecialistAgent,
 } from "./specialist-agents.js"
-import type { OpenGap } from "./self-evolution.js"
+import { coversGap, type OpenGap } from "./self-evolution.js"
 // Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
 import type { ToolPolicy } from "./eleve-action-tools.js"
 
@@ -177,6 +177,13 @@ const ACTION_HINTS: RegExp[] = [
   /corrig/, /repar/, /ecri/, /gener/, /redig/, /implement/, /refactor/, /cree/,
   /ajoute/, /modifi/, /produi/, /transform/, /nettoie/, /migr/, /fabriqu/, /assembl/,
 ]
+// (2026-07-07, revue Fable — recommandation #6) Un agent qui JUGE (verdict, score, arbitrage,
+// QA) ne doit JAMAIS recevoir write_file/edit_file, même si son prompt contient des verbes
+// d'action au sens propre (« produis un verdict », « génère le score » matchent ACTION_HINTS
+// par accident). Vérifié en incident réel : « Arbitre du Score Design » et « Juge d'Adéquation »
+// étaient passés en mode "action" avec accès écriture avant ce correctif. Priorité ABSOLUE sur
+// ACTION_HINTS (testé en premier, retour immédiat).
+const JUDGE_HINTS: RegExp[] = [/\bjuge/, /verdict/, /arbitre/, /\bscore\b/, /\bqa\b/]
 const PDF_HINTS: RegExp[] = [/\bpdf\b/, /scan/, /\bocr\b/, /document/, /archive/]
 const CONTENT_HINTS: RegExp[] = [/image/, /photo/, /visuel/, /contenu/, /illustrat/]
 // Base sûre d'un sous-agent action : JAMAIS run_command / add_dependency / réseau.
@@ -189,6 +196,7 @@ export function assignMode(spec: SpecialistAgent): { mode: "conseil" | "action";
     spec.name, spec.role, spec.lacune, (spec.tags ?? []).join(" "),
     (spec.tools ?? []).map((t) => `${t.name} ${t.desc}`).join(" "),
   ].join(" ").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
+  if (JUDGE_HINTS.some((re) => re.test(hay))) return { mode: "conseil" } // un juge ne reçoit jamais write_file
   if (!ACTION_HINTS.some((re) => re.test(hay))) return { mode: "conseil" }
   const allowed = [...BASE_ACTION_TOOLS]
   if (PDF_HINTS.some((re) => re.test(hay))) allowed.push("lire_document", "lire_archive")
@@ -277,6 +285,7 @@ export async function forgeAgents(
   const focuses = pickFocusLacunes(lacunes, count)
   const created: SpecialistAgent[] = []
   const usedNames: string[] = []
+  const existing = loadSpecialists()
   let failures = 0
   for (let i = 0; i < count; i++) {
     const focus = focuses[i] ?? null
@@ -290,7 +299,12 @@ export async function forgeAgents(
       continue
     }
     const spec = parseForgedAgent(raw, { seq: i })
-    if (spec && !usedNames.includes(spec.name.toLowerCase())) {
+    // (#5) Dédup sémantique contre le registre ET contre ce qui vient d'être créé DANS ce lot.
+    const dup = spec ? coversGap(spec.lacune, spec.role, [...existing, ...created]) : null
+    if (spec && dup) {
+      failures++
+      deps.onProgress?.(`✗ agent ${i + 1}/${count} : doublon fonctionnel (déjà couvert par « ${dup.name} »)`)
+    } else if (spec && !usedNames.includes(spec.name.toLowerCase())) {
       // Cerveau adapté à la compétence (vision vs raisonnement), jamais gemma seul.
       const brain = assignBrain(spec)
       spec.provider = brain.provider
@@ -311,15 +325,57 @@ export async function forgeAgents(
   return { created, persisted, lacunesCount: lacunes.length, failures }
 }
 
+/** Transport injectable (tests) du smoke-test — même forme que `ForgeAsk`. */
+export type SmokeAsk = (system: string, user: string) => Promise<string>
+
+/**
+ * (2026-07-07, revue Fable — recommandation #7, axiome 6/11) Une spec fraîchement forgée
+ * n'est crue sur parole : on l'invoque UNE fois sur SON PROPRE premier exemple ($0, cerveau
+ * déjà assigné) et on vérifie déterministiquement une propriété de sa sortie — réponse non
+ * vide, et si son propre systemPrompt annonce un format JSON, que la réponse EST un JSON
+ * parsable. Pas de smoke-test possible (aucun exemple fourni) → laisse passer (ne bloque pas
+ * un agent par manque de matière, ce serait un faux négatif). Ne lève jamais.
+ */
+export async function smokeTestSpec(
+  spec: SpecialistAgent,
+  deps: { ask?: SmokeAsk } = {},
+): Promise<{ ok: boolean; reason?: string }> {
+  const example = spec.examples?.[0]
+  if (!example) return { ok: true }
+  const ask: SmokeAsk = deps.ask
+    ?? ((system, user) => askLLM(system, user, { provider: spec.provider, model: spec.model, timeoutMs: spec.timeoutMs }))
+  let raw = ""
+  try {
+    raw = await ask(spec.systemPrompt, example)
+  } catch (err) {
+    return { ok: false, reason: `smoke-test injoignable : ${(err as Error).message}` }
+  }
+  const textOut = (raw ?? "").trim()
+  if (!textOut) return { ok: false, reason: "smoke-test : réponse vide" }
+  const wantsJson = /\bjson\b/i.test(spec.systemPrompt)
+  if (wantsJson) {
+    const start = textOut.indexOf("{")
+    const end = textOut.lastIndexOf("}")
+    if (start === -1 || end === -1 || end <= start) return { ok: false, reason: "smoke-test : format JSON annoncé, absent de la réponse" }
+    try {
+      JSON.parse(textOut.slice(start, end + 1))
+    } catch {
+      return { ok: false, reason: "smoke-test : format JSON annoncé, invalide dans la réponse" }
+    }
+  }
+  return { ok: true }
+}
+
 /**
  * #168 — Forge UN agent CIBLÉ sur une lacune ouverte rencontrée en live (boucle d'auto-
  * évolution, semi-auto : appelée APRÈS validation de Raf). Réutilise le forgeron (Opus) +
  * `assignBrain` ; le contexte de la tâche bloquée est injecté pour un agent vraiment adapté.
- * Persiste l'agent (dédup par nom). NE LÈVE JAMAIS → `{ agent, error? }`.
+ * Persiste l'agent (dédup par nom ET par fonction — #5 — puis smoke-testé — #7). NE LÈVE
+ * JAMAIS → `{ agent, error? }`.
  */
 export async function forgeForGap(
   gap: OpenGap,
-  deps: { ask?: ForgeAsk } = {},
+  deps: { ask?: ForgeAsk; smokeAsk?: SmokeAsk } = {},
 ): Promise<{ agent: SpecialistAgent | null; error?: string }> {
   const ask = deps.ask ?? realForgeAsk
   const focus: Lacune = {
@@ -331,7 +387,8 @@ export async function forgeForGap(
   const context = gap.task
     ? `${text}\n\nCONTEXTE DE LA LACUNE RENCONTRÉE EN LIVE (tâche bloquée) : ${gap.task}`
     : text
-  const exclude = loadSpecialists().map((s) => s.name.toLowerCase())
+  const existing = loadSpecialists()
+  const exclude = existing.map((s) => s.name.toLowerCase())
   const prompt = buildForgeOnePrompt(context, focus, exclude)
   let raw = ""
   try {
@@ -342,6 +399,12 @@ export async function forgeForGap(
   const spec = parseForgedAgent(raw)
   if (!spec) return { agent: null, error: "spec invalide (forge)" }
   if (exclude.includes(spec.name.toLowerCase())) return { agent: null, error: "doublon de nom" }
+  // (2026-07-07, revue Fable — recommandation #5) Dédup SÉMANTIQUE, pas seulement le nom :
+  // le forgeron rebaptise parfois la même lacune sous un nom différent (2 doublons stricts
+  // trouvés dans le registre existant, L1 et L19). coversGap réutilise le même recouvrement
+  // de tokens que la notation de lacune, appliqué ici à la spec candidate elle-même.
+  const dup = coversGap(spec.lacune, spec.role, existing)
+  if (dup) return { agent: null, error: `doublon fonctionnel (déjà couvert par « ${dup.name} »)` }
   const brain = assignBrain(spec)
   spec.provider = brain.provider
   spec.model = brain.model
@@ -349,6 +412,8 @@ export async function forgeForGap(
   // #175 — mode + toolPolicy scellés à la forge (action si le rôle décrit un agent qui agit).
   const md = assignMode(spec)
   if (md.mode === "action") { spec.mode = "action"; if (md.toolPolicy) spec.toolPolicy = md.toolPolicy }
+  const smoke = await smokeTestSpec(spec, { ask: deps.smokeAsk })
+  if (!smoke.ok) return { agent: null, error: smoke.reason ?? "smoke-test échoué" }
   upsertSpecialists([spec])
   return { agent: spec }
 }

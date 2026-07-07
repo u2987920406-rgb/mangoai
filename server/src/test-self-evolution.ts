@@ -8,6 +8,7 @@ process.env.OPEN_GAPS_FILE = TMP
 
 const {
   gapSignature, coversGap, recordUncoveredGap, loadGaps, listOpenGaps, markGap, getGap,
+  evictOverflow, recordForgeAttempt, forgeAttemptsExhausted,
 } = await import("./self-evolution.js")
 
 let pass = 0, fail = 0
@@ -72,6 +73,61 @@ console.log("\n[4] listOpenGaps + markGap")
   check("getGap reflète le statut", getGap(bId)?.agentId === "sa_new")
   check("forged sort de la liste ouverte", listOpenGaps().length === 1)
   check("markGap id inconnu → null", markGap("nope", "dismissed") === null)
+  reset()
+}
+
+interface OpenGapLike {
+  id: string; sig: string; title: string; blocker: string; detail: string; task: string
+  status: "proposed" | "forging" | "forged" | "dismissed"; hits: number; forgeAttempts?: number
+  createdAt: string; updatedAt: string
+}
+
+console.log("\n[5] evictOverflow — évince les CLOSES anciennes, jamais les nouvelles (revue Fable #8)")
+{
+  const mkGap = (over: Partial<OpenGapLike>): OpenGapLike => ({
+    id: over.id ?? "g", sig: over.sig ?? over.id ?? "g", title: "t", blocker: "b", detail: "d", task: "",
+    status: over.status ?? "proposed", hits: 1, forgeAttempts: 0,
+    createdAt: over.updatedAt ?? "2026-01-01", updatedAt: over.updatedAt ?? "2026-01-01",
+  })
+  const list = [
+    mkGap({ id: "old-closed", status: "forged", updatedAt: "2026-01-01" }),
+    mkGap({ id: "mid-closed", status: "dismissed", updatedAt: "2026-01-02" }),
+    mkGap({ id: "active-old", status: "proposed", updatedAt: "2026-01-03" }),
+    mkGap({ id: "newest", status: "proposed", updatedAt: "2026-01-04" }),
+  ]
+  const kept = evictOverflow(list, 2)
+  const keptIds = kept.map((g: OpenGapLike) => g.id)
+  check("évince les CLOSED les plus anciennes d'abord (old-closed, mid-closed)", !keptIds.includes("old-closed") && !keptIds.includes("mid-closed"))
+  check("garde les actives, y compris la plus récente", keptIds.includes("active-old") && keptIds.includes("newest"))
+  check("sous le plafond → inchangé", evictOverflow(list, 10).length === 4)
+  // Ancien bug (slice(0, max)) : si TOUT est actif, l'ancien code aurait jeté "newest" (la
+  // plus récente). Le nouveau doit toujours garder la plus récente en dernier recours.
+  const allActive = [
+    mkGap({ id: "a1", updatedAt: "2026-01-01" }),
+    mkGap({ id: "a2", updatedAt: "2026-01-02" }),
+    mkGap({ id: "a3-newest", updatedAt: "2026-01-03" }),
+  ]
+  const keptActive = evictOverflow(allActive, 1).map((g: OpenGapLike) => g.id)
+  check("tout actif, éviction forcée → garde la PLUS RÉCENTE (pas l'ancien bug inversé)", keptActive.includes("a3-newest"))
+}
+
+console.log("\n[6] recordForgeAttempt + forgeAttemptsExhausted (revue Fable #1)")
+{
+  reset()
+  const r = recordUncoveredGap({ blocker: "x-bloc", detail: "detail x", task: "t" }, { agents: [] })
+  const id = r.gap!.id
+  check("forgeAttempts démarre à 0", r.gap!.forgeAttempts === 0)
+  check("pas encore épuisé (0 < 3)", forgeAttemptsExhausted(r.gap!, 3) === false)
+  recordForgeAttempt(id)
+  recordForgeAttempt(id)
+  const g2 = getGap(id)!
+  check("2 tentatives comptabilisées", g2.forgeAttempts === 2)
+  check("lastForgeAttemptAt renseigné", typeof g2.lastForgeAttemptAt === "string")
+  check("toujours pas épuisé (2 < 3)", forgeAttemptsExhausted(g2, 3) === false)
+  recordForgeAttempt(id)
+  const g3 = getGap(id)!
+  check("plafond atteint (3 >= 3) → épuisé", forgeAttemptsExhausted(g3, 3) === true)
+  check("recordForgeAttempt id inconnu → null, ne lève pas", recordForgeAttempt("inconnu") === null)
   reset()
 }
 

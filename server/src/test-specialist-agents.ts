@@ -9,6 +9,7 @@ process.env.SPECIALIST_AGENTS_FILE = TMP
 const {
   validateSpec, saveSpecialists, loadSpecialists, upsertSpecialists,
   getSpecialist, removeSpecialist, runSpecialist,
+  recordSpecialistConsulted, recordSpecialistWin,
 } = await import("./specialist-agents.js")
 
 let pass = 0, fail = 0
@@ -73,6 +74,27 @@ console.log("\n[3] runSpecialist")
   check("id inconnu → ok:false", r2.ok === false)
   const r3 = await runSpecialist(a.id, "x", { ask: async () => { throw new Error("boom") } })
   check("transport qui lève → ok:false, ne propage pas", r3.ok === false && r3.text.includes("boom"))
+  reset()
+}
+
+console.log("\n[4] scorecard — recordSpecialistConsulted / recordSpecialistWin (revue Fable #3)")
+{
+  reset()
+  const a = validateSpec(baseRaw)!
+  saveSpecialists([a])
+  check("pas encore consulté → stats absentes", loadSpecialists()[0]!.stats === undefined)
+  recordSpecialistConsulted(a.id)
+  check("1re consultation : consulted=1, wins=0", loadSpecialists()[0]!.stats?.consulted === 1 && loadSpecialists()[0]!.stats?.wins === 0)
+  recordSpecialistWin(a.id)
+  check("win après consultation : consulted=1, wins=1", loadSpecialists()[0]!.stats?.consulted === 1 && loadSpecialists()[0]!.stats?.wins === 1)
+  recordSpecialistConsulted(a.id)
+  check("2e consultation sans win : consulted=2, wins=1", loadSpecialists()[0]!.stats?.consulted === 2 && loadSpecialists()[0]!.stats?.wins === 1)
+  check("id inconnu → null, ne lève pas", recordSpecialistConsulted("inconnu") === null && recordSpecialistWin("inconnu") === null)
+  // stats DOIT survivre à une re-validation (upsertSpecialists ré-écrit TOUT le registre).
+  const other = validateSpec({ ...baseRaw, name: "Un autre agent", role: "un autre rôle assez long" })!
+  upsertSpecialists([other])
+  const survived = loadSpecialists().find((s) => s.id === a.id)
+  check("stats survit à l'upsert d'un AUTRE agent", survived?.stats?.consulted === 2 && survived?.stats?.wins === 1)
   reset()
 }
 

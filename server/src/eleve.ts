@@ -48,7 +48,8 @@ import { recallProcedure, distillProcedure, learnedHint } from "./stratege-learn
 import { reclassifyAmbiguous, formatReclassify } from "./stratege-brain.js";
 import { consultSpecialist, buildDelegateNudge, buildForgedResumeNudge } from "./specialist-delegate.js";
 import { runSpecialistAgentic } from "./specialist-agentic.js";
-import { recordUncoveredGap, markGap } from "./self-evolution.js";
+import { recordUncoveredGap, markGap, getGap, recordForgeAttempt, forgeAttemptsExhausted } from "./self-evolution.js";
+import { loadSpecialists, recordSpecialistWin } from "./specialist-agents.js";
 import { forgeForGap } from "./agent-forge.js";
 import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, resolveGapBlockers, isTransientBlocker, type AutoForgeState } from "./self-evolution-autoforge.js";
 import {
@@ -1415,6 +1416,10 @@ export async function runRelay(
     // OFF → comportement tranche 1 inchangé (Mango propose, Raf valide). État par run.
     const autoForgeCfg = autoForgeConfig();
     let autoForgeState: AutoForgeState = newAutoForgeState();
+    // (2026-07-07, revue Fable — recommandation #1) Plafond de TENTATIVES d'auto-forge par
+    // lacune, cross-run — sans lui, une lacune dont la forge échoue re-dépense de l'Opus à
+    // CHAQUE run, indéfiniment (autoForgeState est neuf à chaque run, rien d'autre ne freine).
+    const maxForgeAttempts = Math.max(0, Math.floor(Number(process.env.SELF_EVOLVE_MAX_FORGE_ATTEMPTS ?? 3)) || 3);
     const strategeState: StrategeState = newStrategeState();
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
@@ -1438,7 +1443,13 @@ export async function runRelay(
     const projectLabel = path.basename(projectDir);
     // Remède appliqué EN ATTENTE d'apprentissage : on ne distille QUE s'il mène au succès.
     // Object-ref (pas un `let`) : assigné dans une closure → TS ne le narrow pas à null.
-    const pendingLearn: { current: { d: Diagnosis; label: string } | null } = { current: null };
+    // (revue Fable #3) `agentId` optionnel : quand le remède en attente vient d'une délégation
+    // à un spécialiste forgé, un succès qui suit attribue un WIN à CET agent précis (scorecard).
+    const pendingLearn: { current: { d: Diagnosis; label: string; agentId?: string } | null } = { current: null };
+    // (revue Fable #3) Winrate minimal + seuil d'échantillon avant de filtrer un agent forgé
+    // du matching — un agent tout juste forgé (0-3 usages) n'est jamais jugé sur du bruit.
+    const delegateMinWinrate = Number(process.env.ELEVE_DELEGATE_MIN_WINRATE ?? 0.25);
+    const delegateMinUses = Math.max(1, Math.floor(Number(process.env.ELEVE_DELEGATE_MIN_USES ?? 4)) || 4);
     // Applique un remède : mémorise pour l'apprentissage + (Phase 2) préfixe la procédure
     // déjà apprise pour ce blocage si elle existe ("déjà vu ?"). Renvoie le nudge enrichi.
     const applyRemedyNudge = async (d: Diagnosis, label: string, baseNudge: string): Promise<string> => {
@@ -1595,12 +1606,15 @@ export async function runRelay(
             void fireObservationHook("OnGapRecorded", projectDir, g.gap.title, relayHooks);
             if (g.isNew) push(`  🧬 Auto-évolution : lacune « ${g.gap.title} » notée`);
             // #168 tranche 2 — FORGE AUTO sous DISJONCTEUR. Le moteur (créer un agent sans clic)
-            // ne s'arme JAMAIS sans le frein : plafond de forges/run + garde-coût Opus, gate OFF
+            // ne s'arme JAMAIS sans le frein : plafond de forges/run + garde-coût Opus + plafond
+            // GLOBAL cross-run du registre (#2) + plafond de TENTATIVES par lacune (#1), gate OFF
             // par défaut. Refus → on reste en tranche 1 (la lacune attend la validation de Raf).
-            const decision = canAutoForge(autoForgeCfg, autoForgeState);
-            if (decision.allow && g.gap.status === "proposed") {
+            const decision = canAutoForge(autoForgeCfg, autoForgeState, undefined, loadSpecialists().length);
+            const attemptsLeft = !forgeAttemptsExhausted(g.gap, maxForgeAttempts);
+            if (decision.allow && g.gap.status === "proposed" && attemptsLeft) {
               push(`  🛡️ Disjoncteur : ${decision.reason} → forge auto…`);
               markGap(g.gap.id, "forging");
+              recordForgeAttempt(g.gap.id);
               const fr = await forgeForGap(g.gap);
               if (fr.agent) {
                 markGap(g.gap.id, "forged", { agentId: fr.agent.id });
@@ -1615,10 +1629,15 @@ export async function runRelay(
                 // plafond forges/run (1) + seenGapBlockers (pas de 2ᵉ forge du même type) + budget.
                 if (relances < selfRelanceMax) {
                   relances++;
-                  const resume = await consultSpecialist({ task, blockage: d.detail ?? d.cause ?? d.blocker }, { runAgentic: delegateAgenticRunner });
+                  const resume = await consultSpecialist(
+                    { task, blockage: d.detail ?? d.cause ?? d.blocker, minWinrate: delegateMinWinrate, minUsesForFilter: delegateMinUses },
+                    { runAgentic: delegateAgenticRunner },
+                  );
                   if (resume) {
                     push(`  ↻ Reprise auto : délègue au nouvel agent « ${resume.agent.name} » (score ${resume.score}) — relance (${relances}/${selfRelanceMax}, coût 0)`);
                     nudge = buildDelegateNudge(resume.agent.name, resume.advice);
+                    // (revue Fable #3) attribue un WIN à CET agent si le prochain finish réussit.
+                    pendingLearn.current = { d, label: `délégation → ${resume.agent.name}`, agentId: resume.agent.id };
                   } else {
                     push(`  ↻ Reprise auto : nouvel agent « ${fr.agent.name} » créé (consultation indisponible) — relance avec le remède (${relances}/${selfRelanceMax}, coût 0)`);
                     nudge = buildForgedResumeNudge(fr.agent.name, d.blocker, d.remedy);
@@ -1628,8 +1647,16 @@ export async function runRelay(
                 push(`  🧬 agent « ${fr.agent.name} » prêt — disponible au prochain blocage de ce type`);
               } else {
                 markGap(g.gap.id, "proposed"); // échec → reste à valider
-                push(`  🧬 Forge auto échouée (${fr.error ?? "?"}) → lacune à valider dans l'Atelier`);
+                const updated = getGap(g.gap.id);
+                const attempts = updated?.forgeAttempts ?? 0;
+                if (updated && forgeAttemptsExhausted(updated, maxForgeAttempts)) {
+                  push(`  🧬 Forge auto échouée (${fr.error ?? "?"}) — plafond de ${maxForgeAttempts} tentative(s) atteint → validation manuelle requise dans l'Atelier`);
+                } else {
+                  push(`  🧬 Forge auto échouée (${fr.error ?? "?"}) → lacune à valider dans l'Atelier (tentative ${attempts}/${maxForgeAttempts})`);
+                }
               }
+            } else if (decision.allow && g.gap.status === "proposed" && !attemptsLeft) {
+              push(`  🧬 Plafond de ${maxForgeAttempts} tentative(s) de forge atteint pour cette lacune → validation manuelle requise dans l'Atelier`);
             } else if (g.isNew) {
               push(`  🧬 Forge à valider dans l'Atelier (${decision.reason})`);
             }
@@ -1659,13 +1686,18 @@ export async function runRelay(
             // forgé pertinent (match tâche↔agent) et on l'invoque pour une analyse experte, qui
             // remplace le nudge « décompose ». Aucun match → repli sur le nudge (inchangé).
             let remedyNudge = r.nudge;
+            let delegatedAgentId: string | undefined;
             if (d.blocker === "plateau-iterations") {
               const consult = delegateOn
-                ? await consultSpecialist({ task, blockage: d.detail ?? "plafond d'itérations atteint" }, { runAgentic: delegateAgenticRunner })
+                ? await consultSpecialist(
+                    { task, blockage: d.detail ?? "plafond d'itérations atteint", minWinrate: delegateMinWinrate, minUsesForFilter: delegateMinUses },
+                    { runAgentic: delegateAgenticRunner },
+                  )
                 : null;
               if (consult) {
                 push(`  🤝 Stratège délègue à « ${consult.agent.name} » (cible ${consult.agent.lacune || "—"}, score ${consult.score})`);
                 remedyNudge = buildDelegateNudge(consult.agent.name, consult.advice);
+                delegatedAgentId = consult.agent.id;
                 // (la lacune éventuelle a déjà été inscrite par le hook large post-diagnostic #168)
               } else if (delegateOn) {
                 push(`  ℹ Stratège : aucun spécialiste forgé pertinent → décomposition`);
@@ -1673,6 +1705,8 @@ export async function runRelay(
             }
             push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
             nudge = await applyRemedyNudge(d, r.label, remedyNudge);
+            // (revue Fable #3) attribue un WIN à l'agent délégué si le prochain finish réussit.
+            if (delegatedAgentId && pendingLearn.current) pendingLearn.current.agentId = delegatedAgentId;
             continue;
           }
           // r.kind === "escalate" → on tente une MONTÉE de cerveau (P4) avant le break.
@@ -1829,13 +1863,21 @@ export async function runRelay(
       if (result?.finished) {
         // #164 Phase 2 — si un remède du Stratège a précédé CE succès, distille-le en
         // procédure #75 (situation→remède) → le prochain blocage du même type sera rappelé.
-        if (strategeLearns && pendingLearn.current) {
+        if (pendingLearn.current) {
           const pl = pendingLearn.current;
-          try {
-            const res = await distillProcedure(WORKSPACE_DIR, pl.d, pl.label, projectLabel, new Date().toISOString());
-            if (res.saved) push(`  📚 Stratège APPREND : procédure « débloquer ${pl.d.blocker} » distillée (réutilisable)`);
-          } catch {
-            /* l'apprentissage ne casse jamais une livraison */
+          if (strategeLearns) {
+            try {
+              const res = await distillProcedure(WORKSPACE_DIR, pl.d, pl.label, projectLabel, new Date().toISOString());
+              if (res.saved) push(`  📚 Stratège APPREND : procédure « débloquer ${pl.d.blocker} » distillée (réutilisable)`);
+            } catch {
+              /* l'apprentissage ne casse jamais une livraison */
+            }
+          }
+          // (revue Fable #3) attribution du WIN — INDÉPENDANTE de strategeLearns (gouvernée
+          // par ELEVE_DELEGATE, une autre gate) : le succès qui suit une délégation est
+          // attribué à l'agent forgé consulté, jamais à un remède générique.
+          if (pl.agentId) {
+            try { recordSpecialistWin(pl.agentId); } catch { /* la scorecard ne casse jamais une livraison */ }
           }
           pendingLearn.current = null;
         }

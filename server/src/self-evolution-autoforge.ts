@@ -18,6 +18,12 @@ export interface AutoForgeConfig {
   maxForgesPerRun: number;
   /** SELF_EVOLVE_OPUS_BUDGET_USD : plafond de dépense Opus des forges auto par run (défaut 0.50). */
   opusBudgetUsd: number;
+  /** (2026-07-07, revue Fable — recommandation #2) SELF_EVOLVE_MAX_AGENTS_TOTAL : plafond
+   *  GLOBAL, CROSS-RUN, sur la taille du registre de spécialistes (défaut 24). Le plafond
+   *  par-run borne la dépense d'UN run ; celui-ci borne la dérive lente sur plusieurs jours
+   *  (un registre qui grossit sans fin dégrade le matching de pickSpecialist — plus d'agents
+   *  = plus de faux matchs à score 2). */
+  maxAgentsTotal: number;
 }
 
 /** Lit la config du disjoncteur depuis l'environnement. PUR (env injectable). */
@@ -30,6 +36,7 @@ export function autoForgeConfig(env: NodeJS.ProcessEnv = process.env): AutoForge
     enabled: (env.SELF_EVOLVE_AUTO ?? "off").toLowerCase() === "on",
     maxForgesPerRun: Math.floor(num(env.SELF_EVOLVE_MAX_FORGES, 1)),
     opusBudgetUsd: num(env.SELF_EVOLVE_OPUS_BUDGET_USD, 0.5),
+    maxAgentsTotal: Math.floor(num(env.SELF_EVOLVE_MAX_AGENTS_TOTAL, 24)),
   };
 }
 
@@ -50,13 +57,15 @@ export interface ForgeDecision {
 
 /**
  * LE DISJONCTEUR : une forge automatique est-elle permise MAINTENANT ? PUR, ne dépense rien,
- * ne lève jamais. Refuse si le gate est OFF, si le plafond de forges est atteint, ou si le
- * garde-coût Opus serait dépassé. Sinon autorise.
+ * ne lève jamais. Refuse si le gate est OFF, si le plafond de forges est atteint, si le
+ * garde-coût Opus serait dépassé, ou si le registre a déjà atteint son plafond GLOBAL
+ * (`currentAgentsTotal`, cross-run — #2). Sinon autorise.
  */
 export function canAutoForge(
   config: AutoForgeConfig,
   state: AutoForgeState,
   estCostUsd: number = OPUS_FORGE_EST_USD,
+  currentAgentsTotal: number = 0,
 ): ForgeDecision {
   if (!config.enabled) {
     return { allow: false, reason: "forge auto désactivée (SELF_EVOLVE_AUTO=off) → validation humaine" };
@@ -66,6 +75,12 @@ export function canAutoForge(
   }
   if (state.forges >= config.maxForgesPerRun) {
     return { allow: false, reason: `plafond de ${config.maxForgesPerRun} forge(s)/run atteint` };
+  }
+  if (config.maxAgentsTotal > 0 && currentAgentsTotal >= config.maxAgentsTotal) {
+    return {
+      allow: false,
+      reason: `plafond GLOBAL de ${config.maxAgentsTotal} agent(s) forgé(s) atteint (${currentAgentsTotal} existants) → validation manuelle dans l'Atelier`,
+    };
   }
   const est = Number.isFinite(estCostUsd) && estCostUsd >= 0 ? estCostUsd : OPUS_FORGE_EST_USD;
   if (state.spentUsd + est > config.opusBudgetUsd) {
