@@ -1,0 +1,79 @@
+{
+  "version": 1,
+  "items": [
+    {
+      "id": "strat_trend:bus:chat.turn",
+      "sig": "trend:bus:chat.turn",
+      "titre": "Tendance bus — chat.turn",
+      "corps": "54 signaux « chat.turn » sur la fenêtre (ex. clockwork-pilgrim, hex-dominion, glyph-go) — tendance montante à surveiller.",
+      "sources": [
+        "bus:chat.turn:env-270",
+        "bus:chat.turn:env-278",
+        "bus:chat.turn:env-286",
+        "bus:chat.turn:env-294",
+        "bus:chat.turn:env-304",
+        "bus:chat.turn:env-314",
+        "bus:chat.turn:env-324",
+        "bus:chat.turn:env-327"
+      ],
+      "status": "pending",
+      "hits": 3,
+      "saillance": 1.4476501851851846,
+      "createdAt": "2026-07-04T18:23:43.955Z",
+      "updatedAt": "2026-07-04T18:53:10.905Z",
+      "kind": "alerte"
+    },
+    {
+      "id": "strat_blocages:wrong-tool",
+      "sig": "blocages:wrong-tool",
+      "titre": "blocages — wrong-tool",
+      "corps": "1 observation(s) sur « wrong-tool » (1).",
+      "sources": [
+        "blocages:wrong-tool"
+      ],
+      "status": "pending",
+      "hits": 3,
+      "saillance": 0.6,
+      "createdAt": "2026-07-04T18:53:10.905Z",
+      "updatedAt": "2026-07-04T18:53:10.905Z",
+      "kind": "alerte"
+    }
+  ],
+  "seen": {
+    "trend:bus:chat.turn": {
+      "hits": 3,
+      "firstSeen": "2026-07-04T18:23:43.955Z",
+      "lastSeen": "2026-07-04T18:53:10.905Z"
+    },
+    "blocages:wrong-tool": {
+      "hits": 3,
+      "firstSeen": "2026-07-04T18:23:43.955Z",
+      "lastSeen": "2026-07-04T18:53:10.905Z"
+    }
+  },
+  "lastRunAt": "2026-07-04T18:53:10.905Z",
+  "windowFrom": "2026-06-27T18:53:10.905Z",
+  "journal": [
+    {
+      "at": "2026-07-04T18:23:43.955Z",
+      "propositions": 0,
+      "alertes": 1,
+      "questions": 0,
+      "resume": "Depuis la dernière synthèse : 1 alerte(s), 0 proposition(s), 0 question(s)."
+    },
+    {
+      "at": "2026-07-04T18:52:57.949Z",
+      "propositions": 0,
+      "alertes": 1,
+      "questions": 0,
+      "resume": "Depuis la dernière synthèse : 1 alerte(s), 0 proposition(s), 0 question(s)."
+    },
+    {
+      "at": "2026-07-04T18:53:10.905Z",
+      "propositions": 0,
+      "alertes": 2,
+      "questions": 0,
+      "resume": "Depuis la dernière synthèse : 2 alerte(s), 0 proposition(s), 0 question(s)."
+    }
+  ]
+}

@@ -1,0 +1,3674 @@
+{
+  "videoId": "c8bE0cj7vHY",
+  "meta": {
+    "titre": "Ryan Lopopolo - Harness Engineering: How to Build Software When Humans Steer and Agents Execute",
+    "chaine": "AI Native Dev",
+    "dureeS": 1787,
+    "publieeLe": "2026-06-19",
+    "description": "Hear more from Ryan on the AI Native Dev Podcast: https://youtu.be/MFQIKbr1IEo\n\nReasoning models and coding agents have changed what is possible in software development, but most teams are still using workflows built for a world where humans write nearly all the code directly. That mismatch is where much of the disappointment around AI coding comes from.\n\nThis talk introduces Harness Engineering: an agent-first approach to building software where the key engineering task shifts from manually producing every implementation detail to designing the harnesses that let agents do useful work safely, repeatedly, and at high quality.\n\nRyan shares practical patterns for making AI coding actually work in production: how to scope autonomy, shape context, design eval and verification loops, structure tool access, and build feedback systems that keep agents effective without making them useless. This talk also covers where agents are already strong, where they still fail, and why 'just give the model the repo' is not a serious deployment strategy.\n\nIf you are trying to move from demos to real delivery, this talk offers a concrete framework for how agent-first engineering actually works."
+  },
+  "source": "subs-manuels",
+  "langue": "en",
+  "segments": [
+    {
+      "tStartS": 0.16,
+      "tEndS": 2.8689999999999998,
+      "texte": "Thank you kindly. Uh we've only got a"
+    },
+    {
+      "tStartS": 2.879,
+      "tEndS": 5.11,
+      "texte": "few sessions left this afternoon and"
+    },
+    {
+      "tStartS": 5.12,
+      "tEndS": 7.67,
+      "texte": "then it's uh"
+    },
+    {
+      "tStartS": 7.68,
+      "tEndS": 10.15,
+      "texte": "party time, I've been told. Uh and for"
+    },
+    {
+      "tStartS": 10.16,
+      "tEndS": 12.07,
+      "texte": "you at home watching on the live stream,"
+    },
+    {
+      "tStartS": 12.08,
+      "tEndS": 14.95,
+      "texte": "you can have your own party. Uh whatever"
+    },
+    {
+      "tStartS": 14.96,
+      "tEndS": 16.55,
+      "texte": "kind of party you want to have. I'm not"
+    },
+    {
+      "tStartS": 16.56,
+      "tEndS": 20.79,
+      "texte": "going to judge. Uh so next up we've got"
+    },
+    {
+      "tStartS": 20.8,
+      "tEndS": 23.99,
+      "texte": "Ri Ryan Leolo."
+    },
+    {
+      "tStartS": 24,
+      "tEndS": 27.029,
+      "texte": "Close. Sorry."
+    },
+    {
+      "tStartS": 27.039,
+      "tEndS": 29.99,
+      "texte": "I'm so sorry. right from Open AI. I'll"
+    },
+    {
+      "tStartS": 30,
+      "tEndS": 31.669,
+      "texte": "just get off stage cuz this guy give him"
+    },
+    {
+      "tStartS": 31.679,
+      "tEndS": 33.51,
+      "texte": "a big round of applause. Thank you very"
+    },
+    {
+      "tStartS": 33.52,
+      "tEndS": 39.29,
+      "texte": "much. [applause]"
+    },
+    {
+      "tStartS": 40.48,
+      "tEndS": 45.35,
+      "texte": "Hello, AI Native DevCon. Uh, woo. Uh,"
+    },
+    {
+      "tStartS": 45.36,
+      "tEndS": 47.19,
+      "texte": "I'm excited to kind of be in the home"
+    },
+    {
+      "tStartS": 47.2,
+      "tEndS": 49.27,
+      "texte": "stretch here on this first day, which"
+    },
+    {
+      "tStartS": 49.28,
+      "tEndS": 51.11,
+      "texte": "has been jam-packed and super fun. It"
+    },
+    {
+      "tStartS": 51.12,
+      "tEndS": 53.35,
+      "texte": "has been super fun to be here. And I'm"
+    },
+    {
+      "tStartS": 53.36,
+      "tEndS": 55.189,
+      "texte": "kind of excited today to talk to you"
+    },
+    {
+      "tStartS": 55.199,
+      "tEndS": 57.029,
+      "texte": "about harness engineering, which is a"
+    },
+    {
+      "tStartS": 57.039,
+      "tEndS": 59.11,
+      "texte": "thing that is kind of near and dear to"
+    },
+    {
+      "tStartS": 59.12,
+      "tEndS": 60.709,
+      "texte": "my heart, kind of having invented the"
+    },
+    {
+      "tStartS": 60.719,
+      "tEndS": 63.59,
+      "texte": "term here. Uh, and"
+    },
+    {
+      "tStartS": 63.6,
+      "tEndS": 65.509,
+      "texte": "to me,"
+    },
+    {
+      "tStartS": 65.519,
+      "tEndS": 67.51,
+      "texte": "the way that we go about working with"
+    },
+    {
+      "tStartS": 67.52,
+      "tEndS": 69.109,
+      "texte": "these agents is something that"
+    },
+    {
+      "tStartS": 69.119,
+      "tEndS": 71.03,
+      "texte": "fundamentally is brand new, and we don't"
+    },
+    {
+      "tStartS": 71.04,
+      "tEndS": 73.35,
+      "texte": "really know all the good parts yet. Uh,"
+    },
+    {
+      "tStartS": 73.36,
+      "tEndS": 75.51,
+      "texte": "but hopefully today I can walk you"
+    },
+    {
+      "tStartS": 75.52,
+      "tEndS": 77.35,
+      "texte": "through some of what I believe the good"
+    },
+    {
+      "tStartS": 77.36,
+      "tEndS": 79.109,
+      "texte": "parts of working with these agents are"
+    },
+    {
+      "tStartS": 79.119,
+      "tEndS": 80.87,
+      "texte": "and how to be effective in your own code"
+    },
+    {
+      "tStartS": 80.88,
+      "tEndS": 83.03,
+      "texte": "bases. uh to give a little bit of"
+    },
+    {
+      "tStartS": 83.04,
+      "tEndS": 85.27,
+      "texte": "context on why you should listen to me"
+    },
+    {
+      "tStartS": 85.28,
+      "tEndS": 88.469,
+      "texte": "about this. Uh back in June of last"
+    },
+    {
+      "tStartS": 88.479,
+      "tEndS": 91.109,
+      "texte": "year, uh when we had just had the"
+    },
+    {
+      "tStartS": 91.119,
+      "tEndS": 93.35,
+      "texte": "earliest reasoning models around 03 and"
+    },
+    {
+      "tStartS": 93.36,
+      "tEndS": 96.31,
+      "texte": "the very earliest versions of codec cli,"
+    },
+    {
+      "tStartS": 96.32,
+      "tEndS": 100.149,
+      "texte": "which is open coding agent, um I had an"
+    },
+    {
+      "tStartS": 100.159,
+      "tEndS": 102.63,
+      "texte": "insane idea that I would try and get"
+    },
+    {
+      "tStartS": 102.64,
+      "tEndS": 105.91,
+      "texte": "this tool to do my job. And at the time"
+    },
+    {
+      "tStartS": 105.92,
+      "tEndS": 108.149,
+      "texte": "with less capable models, that wasn't"
+    },
+    {
+      "tStartS": 108.159,
+      "tEndS": 110.31,
+      "texte": "true. I asked the agent to read my"
+    },
+    {
+      "tStartS": 110.32,
+      "tEndS": 112.789,
+      "texte": "alerts channel in Slack and triage a"
+    },
+    {
+      "tStartS": 112.799,
+      "tEndS": 115.19,
+      "texte": "page. It would not do that and kind of"
+    },
+    {
+      "tStartS": 115.2,
+      "tEndS": 117.27,
+      "texte": "got myself into this operating mode of"
+    },
+    {
+      "tStartS": 117.28,
+      "tEndS": 119.91,
+      "texte": "presenting myself as a tool to the model"
+    },
+    {
+      "tStartS": 119.92,
+      "tEndS": 122.709,
+      "texte": "in order to empower it to solve"
+    },
+    {
+      "tStartS": 122.719,
+      "tEndS": 124.709,
+      "texte": "problems, issues, and write code on my"
+    },
+    {
+      "tStartS": 124.719,
+      "tEndS": 127.83,
+      "texte": "behalf and ended up in this very quickly"
+    },
+    {
+      "tStartS": 127.84,
+      "tEndS": 130.63,
+      "texte": "accumulating snowball of effective use"
+    },
+    {
+      "tStartS": 130.64,
+      "tEndS": 133.19,
+      "texte": "of this tool by giving it more and more"
+    },
+    {
+      "tStartS": 133.2,
+      "tEndS": 135.83,
+      "texte": "powerful tools and more and more context"
+    },
+    {
+      "tStartS": 135.84,
+      "tEndS": 138.39,
+      "texte": "around what it means to do the job. Uh,"
+    },
+    {
+      "tStartS": 138.4,
+      "tEndS": 139.99,
+      "texte": "there's a bunch of patterns here that"
+    },
+    {
+      "tStartS": 140,
+      "tEndS": 142.39,
+      "texte": "make that effective and stack really,"
+    },
+    {
+      "tStartS": 142.4,
+      "tEndS": 143.83,
+      "texte": "really well for your teams that I'm"
+    },
+    {
+      "tStartS": 143.84,
+      "tEndS": 146.79,
+      "texte": "going to go through today."
+    },
+    {
+      "tStartS": 146.8,
+      "tEndS": 148.55,
+      "texte": "I know I'm preaching to the choir here."
+    },
+    {
+      "tStartS": 148.56,
+      "tEndS": 150.229,
+      "texte": "Everybody's AI native. That's why we're"
+    },
+    {
+      "tStartS": 150.239,
+      "tEndS": 153.83,
+      "texte": "at the con here. Uh, but the way we"
+    },
+    {
+      "tStartS": 153.84,
+      "tEndS": 155.99,
+      "texte": "build software has changed pretty"
+    },
+    {
+      "tStartS": 156,
+      "tEndS": 158.39,
+      "texte": "significantly in the last 6 months. I"
+    },
+    {
+      "tStartS": 158.4,
+      "tEndS": 160.15,
+      "texte": "would say in December with the"
+    },
+    {
+      "tStartS": 160.16,
+      "tEndS": 163.589,
+      "texte": "introduction of GPT 5.2, to Opus 4.5, we"
+    },
+    {
+      "tStartS": 163.599,
+      "tEndS": 165.589,
+      "texte": "really reach singularity levels of"
+    },
+    {
+      "tStartS": 165.599,
+      "tEndS": 168.07,
+      "texte": "software engineering and code production"
+    },
+    {
+      "tStartS": 168.08,
+      "tEndS": 169.99,
+      "texte": "being something that these tools do"
+    },
+    {
+      "tStartS": 170,
+      "tEndS": 172.869,
+      "texte": "insanely well. And"
+    },
+    {
+      "tStartS": 172.879,
+      "tEndS": 174.71,
+      "texte": "this is a level of disruption that I"
+    },
+    {
+      "tStartS": 174.72,
+      "tEndS": 176.229,
+      "texte": "think we have typically only seen once"
+    },
+    {
+      "tStartS": 176.239,
+      "tEndS": 177.83,
+      "texte": "every decade here. The last one that I"
+    },
+    {
+      "tStartS": 177.84,
+      "tEndS": 179.35,
+      "texte": "can think of is probably like the"
+    },
+    {
+      "tStartS": 179.36,
+      "tEndS": 181.19,
+      "texte": "existence of the cloud as a tool to"
+    },
+    {
+      "tStartS": 181.2,
+      "tEndS": 184.47,
+      "texte": "accelerate ourselves. And with that sort"
+    },
+    {
+      "tStartS": 184.48,
+      "tEndS": 186.63,
+      "texte": "of like cadence of disruptive"
+    },
+    {
+      "tStartS": 186.64,
+      "tEndS": 189.03,
+      "texte": "innovation, we have had a lot of time to"
+    },
+    {
+      "tStartS": 189.04,
+      "tEndS": 191.75,
+      "texte": "internalize changes to our workflows and"
+    },
+    {
+      "tStartS": 191.76,
+      "tEndS": 196.07,
+      "texte": "the way we go about building. But here"
+    },
+    {
+      "tStartS": 196.08,
+      "tEndS": 199.03,
+      "texte": "the technology keeps in changing so"
+    },
+    {
+      "tStartS": 199.04,
+      "tEndS": 200.949,
+      "texte": "rapidly with every point release of"
+    },
+    {
+      "tStartS": 200.959,
+      "tEndS": 203.67,
+      "texte": "these models where I find myself very"
+    },
+    {
+      "tStartS": 203.68,
+      "tEndS": 205.99,
+      "texte": "often having to re-evaluate my priors of"
+    },
+    {
+      "tStartS": 206,
+      "tEndS": 208.229,
+      "texte": "what even is possible to achieve with"
+    },
+    {
+      "tStartS": 208.239,
+      "tEndS": 211.589,
+      "texte": "these tools. And I think if you're not"
+    },
+    {
+      "tStartS": 211.599,
+      "tEndS": 214.229,
+      "texte": "in the habit of kind of completely"
+    },
+    {
+      "tStartS": 214.239,
+      "tEndS": 215.99,
+      "texte": "retooling your stack and the way you"
+    },
+    {
+      "tStartS": 216,
+      "tEndS": 217.75,
+      "texte": "work with every point release of the"
+    },
+    {
+      "tStartS": 217.76,
+      "tEndS": 220.869,
+      "texte": "model, you are in a way missing out on"
+    },
+    {
+      "tStartS": 220.879,
+      "tEndS": 222.39,
+      "texte": "what it is that you can achieve with"
+    },
+    {
+      "tStartS": 222.4,
+      "tEndS": 225.99,
+      "texte": "these tools."
+    },
+    {
+      "tStartS": 226,
+      "tEndS": 228.47,
+      "texte": "The reasons that the way we have built"
+    },
+    {
+      "tStartS": 228.48,
+      "tEndS": 231.589,
+      "texte": "software has changed and continues"
+    },
+    {
+      "tStartS": 231.599,
+      "tEndS": 233.83,
+      "texte": "changing at an increasingly rapid pace"
+    },
+    {
+      "tStartS": 233.84,
+      "tEndS": 236.07,
+      "texte": "is because we have kind of upended some"
+    },
+    {
+      "tStartS": 236.08,
+      "tEndS": 238.789,
+      "texte": "of the core axioms of what it means to"
+    },
+    {
+      "tStartS": 238.799,
+      "tEndS": 240.869,
+      "texte": "build software."
+    },
+    {
+      "tStartS": 240.879,
+      "tEndS": 242.55,
+      "texte": "Right now I'm telling you that models"
+    },
+    {
+      "tStartS": 242.56,
+      "tEndS": 244.149,
+      "texte": "are good enough in order to do"
+    },
+    {
+      "tStartS": 244.159,
+      "tEndS": 245.75,
+      "texte": "significant parts of the software"
+    },
+    {
+      "tStartS": 245.76,
+      "tEndS": 247.91,
+      "texte": "engineering life cycle. Not just writing"
+    },
+    {
+      "tStartS": 247.92,
+      "tEndS": 251.11,
+      "texte": "code but debugging, triaging, responding"
+    },
+    {
+      "tStartS": 251.12,
+      "tEndS": 253.75,
+      "texte": "to customers, planning, scheduling work,"
+    },
+    {
+      "tStartS": 253.76,
+      "tEndS": 255.75,
+      "texte": "all these other bits that are outside of"
+    },
+    {
+      "tStartS": 255.76,
+      "tEndS": 258.15,
+      "texte": "the core, would you say production"
+    },
+    {
+      "tStartS": 258.16,
+      "tEndS": 261.749,
+      "texte": "function of a software engineer."
+    },
+    {
+      "tStartS": 261.759,
+      "tEndS": 264.55,
+      "texte": "A lot of the way we have toolled teams"
+    },
+    {
+      "tStartS": 264.56,
+      "tEndS": 266.469,
+      "texte": "and organizations and road maps have"
+    },
+    {
+      "tStartS": 266.479,
+      "tEndS": 268.15,
+      "texte": "been built around this idea that the"
+    },
+    {
+      "tStartS": 268.16,
+      "tEndS": 269.909,
+      "texte": "production of code is this very very"
+    },
+    {
+      "tStartS": 269.919,
+      "tEndS": 271.67,
+      "texte": "expensive thing that is going to"
+    },
+    {
+      "tStartS": 271.68,
+      "tEndS": 273.749,
+      "texte": "dominate most of our headcount resources"
+    },
+    {
+      "tStartS": 273.759,
+      "tEndS": 277.59,
+      "texte": "and is slow. And in this world where we"
+    },
+    {
+      "tStartS": 277.6,
+      "tEndS": 279.35,
+      "texte": "can give a prompt to a coding agent and"
+    },
+    {
+      "tStartS": 279.36,
+      "tEndS": 281.99,
+      "texte": "get a PR or six out of it, that"
+    },
+    {
+      "tStartS": 282,
+      "tEndS": 285.43,
+      "texte": "constraint is no longer true. And we"
+    },
+    {
+      "tStartS": 285.44,
+      "tEndS": 288.39,
+      "texte": "kind of have these teams who were doing"
+    },
+    {
+      "tStartS": 288.4,
+      "tEndS": 290.55,
+      "texte": "the bulk of the production for software"
+    },
+    {
+      "tStartS": 290.56,
+      "tEndS": 293.11,
+      "texte": "that need to figure out ways to increase"
+    },
+    {
+      "tStartS": 293.12,
+      "tEndS": 295.189,
+      "texte": "their leverage by delegating increasing"
+    },
+    {
+      "tStartS": 295.199,
+      "tEndS": 297.27,
+      "texte": "parts of that responsibility to these"
+    },
+    {
+      "tStartS": 297.28,
+      "tEndS": 298.87,
+      "texte": "machines."
+    },
+    {
+      "tStartS": 298.88,
+      "tEndS": 301.189,
+      "texte": "So for all the software engineers and"
+    },
+    {
+      "tStartS": 301.199,
+      "tEndS": 303.03,
+      "texte": "engineering managers and product"
+    },
+    {
+      "tStartS": 303.04,
+      "tEndS": 305.35,
+      "texte": "managers and designers who are trying to"
+    },
+    {
+      "tStartS": 305.36,
+      "tEndS": 307.189,
+      "texte": "incorporate this technology into the"
+    },
+    {
+      "tStartS": 307.199,
+      "tEndS": 310.71,
+      "texte": "your work, all of your goals are to be"
+    },
+    {
+      "tStartS": 310.72,
+      "tEndS": 312.79,
+      "texte": "how to unblock your execution team,"
+    },
+    {
+      "tStartS": 312.8,
+      "tEndS": 315.83,
+      "texte": "these coding agents from being able to"
+    },
+    {
+      "tStartS": 315.84,
+      "tEndS": 317.909,
+      "texte": "make your ideas, your vision, and your"
+    },
+    {
+      "tStartS": 317.919,
+      "tEndS": 321.83,
+      "texte": "products a reality."
+    },
+    {
+      "tStartS": 321.84,
+      "tEndS": 323.51,
+      "texte": "So"
+    },
+    {
+      "tStartS": 323.52,
+      "tEndS": 326.39,
+      "texte": "having just told everybody here that the"
+    },
+    {
+      "tStartS": 326.4,
+      "tEndS": 328.629,
+      "texte": "core constraints on software engineering"
+    },
+    {
+      "tStartS": 328.639,
+      "tEndS": 330.71,
+      "texte": "no longer apply. What are those core"
+    },
+    {
+      "tStartS": 330.72,
+      "tEndS": 332.629,
+      "texte": "constraints? Right? We have kind of a"
+    },
+    {
+      "tStartS": 332.639,
+      "tEndS": 334.31,
+      "texte": "new set of problems to contend with"
+    },
+    {
+      "tStartS": 334.32,
+      "tEndS": 336.15,
+      "texte": "using agents in order to produce our"
+    },
+    {
+      "tStartS": 336.16,
+      "tEndS": 339.59,
+      "texte": "software. And to me these three things"
+    },
+    {
+      "tStartS": 339.6,
+      "tEndS": 341.909,
+      "texte": "are the foundational limits that remain"
+    },
+    {
+      "tStartS": 341.919,
+      "tEndS": 344.469,
+      "texte": "in a world where we are as a team of"
+    },
+    {
+      "tStartS": 344.479,
+      "tEndS": 346.87,
+      "texte": "humans and agents producing software."
+    },
+    {
+      "tStartS": 346.88,
+      "tEndS": 349.59,
+      "texte": "Human time is the fundamentally scarce"
+    },
+    {
+      "tStartS": 349.6,
+      "tEndS": 352.71,
+      "texte": "resource that we have. You know, I know"
+    },
+    {
+      "tStartS": 352.72,
+      "tEndS": 355.35,
+      "texte": "I max out probably at three concurrent"
+    },
+    {
+      "tStartS": 355.36,
+      "tEndS": 357.909,
+      "texte": "sessions on my laptop. If I want to be"
+    },
+    {
+      "tStartS": 357.919,
+      "tEndS": 359.43,
+      "texte": "more parallel and have higher"
+    },
+    {
+      "tStartS": 359.44,
+      "tEndS": 362.39,
+      "texte": "throughput, I must find ways to remove"
+    },
+    {
+      "tStartS": 362.4,
+      "tEndS": 364.309,
+      "texte": "my own synchronous attention from the"
+    },
+    {
+      "tStartS": 364.319,
+      "tEndS": 366.39,
+      "texte": "process."
+    },
+    {
+      "tStartS": 366.4,
+      "tEndS": 367.99,
+      "texte": "Human and model attention are these"
+    },
+    {
+      "tStartS": 368,
+      "tEndS": 370.07,
+      "texte": "foundational limits, right? In the"
+    },
+    {
+      "tStartS": 370.08,
+      "tEndS": 372.23,
+      "texte": "architecture of these LLMs, attention"
+    },
+    {
+      "tStartS": 372.24,
+      "tEndS": 375.51,
+      "texte": "must sum to one. uh thrashing the agents"
+    },
+    {
+      "tStartS": 375.52,
+      "tEndS": 377.27,
+      "texte": "by having them do more and more work"
+    },
+    {
+      "tStartS": 377.28,
+      "tEndS": 378.79,
+      "texte": "with conflicting and overbearing"
+    },
+    {
+      "tStartS": 378.8,
+      "tEndS": 380.87,
+      "texte": "requirements in the course of a task is"
+    },
+    {
+      "tStartS": 380.88,
+      "tEndS": 382.309,
+      "texte": "something that is always going to"
+    },
+    {
+      "tStartS": 382.319,
+      "tEndS": 384.71,
+      "texte": "degrade performance less and less over"
+    },
+    {
+      "tStartS": 384.72,
+      "tEndS": 386.71,
+      "texte": "time but it is one of those core limits"
+    },
+    {
+      "tStartS": 386.72,
+      "tEndS": 389.11,
+      "texte": "of the models. So, we need to retool the"
+    },
+    {
+      "tStartS": 389.12,
+      "tEndS": 391.189,
+      "texte": "way we work in order to be more"
+    },
+    {
+      "tStartS": 391.199,
+      "tEndS": 393.99,
+      "texte": "parallel, fork off a bunch more tasks,"
+    },
+    {
+      "tStartS": 394,
+      "tEndS": 396.55,
+      "texte": "be willing to accept smaller or larger"
+    },
+    {
+      "tStartS": 396.56,
+      "tEndS": 399.029,
+      "texte": "or many more PRs in order to let the"
+    },
+    {
+      "tStartS": 399.039,
+      "tEndS": 401.51,
+      "texte": "agents explore what it means to do the"
+    },
+    {
+      "tStartS": 401.52,
+      "tEndS": 403.51,
+      "texte": "job that we need them to do. And"
+    },
+    {
+      "tStartS": 403.52,
+      "tEndS": 405.909,
+      "texte": "finally, you all probably deeply live"
+    },
+    {
+      "tStartS": 405.919,
+      "tEndS": 408.87,
+      "texte": "this uh model context window."
+    },
+    {
+      "tStartS": 408.88,
+      "tEndS": 410.71,
+      "texte": "Things that get bigger over time, still"
+    },
+    {
+      "tStartS": 410.72,
+      "tEndS": 412.469,
+      "texte": "a scarce resource, something we need to"
+    },
+    {
+      "tStartS": 412.479,
+      "tEndS": 415.27,
+      "texte": "protect. I will say in my own experience"
+    },
+    {
+      "tStartS": 415.28,
+      "tEndS": 417.27,
+      "texte": "with the GPT series of models, autoco"
+    },
+    {
+      "tStartS": 417.28,
+      "tEndS": 419.27,
+      "texte": "compaction is fantastic. I never think"
+    },
+    {
+      "tStartS": 419.28,
+      "tEndS": 421.189,
+      "texte": "about a context window anymore. I can"
+    },
+    {
+      "tStartS": 421.199,
+      "tEndS": 424.55,
+      "texte": "let a task go for 6, 12, 36 hours and"
+    },
+    {
+      "tStartS": 424.56,
+      "tEndS": 427.909,
+      "texte": "still get good results. But the context"
+    },
+    {
+      "tStartS": 427.919,
+      "tEndS": 429.589,
+      "texte": "window being obliterated and rebuilt"
+    },
+    {
+      "tStartS": 429.599,
+      "tEndS": 431.35,
+      "texte": "over the course of these autocompactions"
+    },
+    {
+      "tStartS": 431.36,
+      "tEndS": 434.07,
+      "texte": "is something you must contend with. And"
+    },
+    {
+      "tStartS": 434.08,
+      "tEndS": 436.309,
+      "texte": "there are ways that we structure the"
+    },
+    {
+      "tStartS": 436.319,
+      "tEndS": 438.309,
+      "texte": "context we give the model or continually"
+    },
+    {
+      "tStartS": 438.319,
+      "tEndS": 440.71,
+      "texte": "resurface context to the model to deal"
+    },
+    {
+      "tStartS": 440.72,
+      "tEndS": 442.07,
+      "texte": "with this constraint that context"
+    },
+    {
+      "tStartS": 442.08,
+      "tEndS": 443.589,
+      "texte": "windows are continually being emptied"
+    },
+    {
+      "tStartS": 443.599,
+      "tEndS": 446.87,
+      "texte": "and filled. [snorts]"
+    },
+    {
+      "tStartS": 446.88,
+      "tEndS": 449.35,
+      "texte": "Okay, so we've got these agents that we"
+    },
+    {
+      "tStartS": 449.36,
+      "tEndS": 451.189,
+      "texte": "hope can produce more and more of our"
+    },
+    {
+      "tStartS": 451.199,
+      "tEndS": 453.27,
+      "texte": "software that we can remove humans more"
+    },
+    {
+      "tStartS": 453.28,
+      "tEndS": 454.71,
+      "texte": "and more from the loop in order to"
+    },
+    {
+      "tStartS": 454.72,
+      "tEndS": 457.11,
+      "texte": "produce more code, more features, solve"
+    },
+    {
+      "tStartS": 457.12,
+      "tEndS": 459.51,
+      "texte": "more user needs, address more critical"
+    },
+    {
+      "tStartS": 459.52,
+      "tEndS": 461.11,
+      "texte": "user journeys with higher quality and"
+    },
+    {
+      "tStartS": 461.12,
+      "tEndS": 463.11,
+      "texte": "fidelity."
+    },
+    {
+      "tStartS": 463.12,
+      "tEndS": 465.83,
+      "texte": "How do we make sure that we as a team"
+    },
+    {
+      "tStartS": 465.84,
+      "tEndS": 469.589,
+      "texte": "with our agents do a good job? And I"
+    },
+    {
+      "tStartS": 469.599,
+      "tEndS": 471.67,
+      "texte": "think"
+    },
+    {
+      "tStartS": 471.68,
+      "tEndS": 473.51,
+      "texte": "a newish thing here is we have to"
+    },
+    {
+      "tStartS": 473.52,
+      "tEndS": 475.029,
+      "texte": "actually articulate that. We have to"
+    },
+    {
+      "tStartS": 475.039,
+      "tEndS": 478.95,
+      "texte": "write it down. Uh I know like it used to"
+    },
+    {
+      "tStartS": 478.96,
+      "tEndS": 480.309,
+      "texte": "be the case, oh, you know, we'll have"
+    },
+    {
+      "tStartS": 480.319,
+      "tEndS": 482.15,
+      "texte": "people, we'll have meetings through"
+    },
+    {
+      "tStartS": 482.16,
+      "tEndS": 484.07,
+      "texte": "osmosis. Like people will understand"
+    },
+    {
+      "tStartS": 484.08,
+      "tEndS": 485.83,
+      "texte": "what it means for us as a team to write"
+    },
+    {
+      "tStartS": 485.84,
+      "tEndS": 488.23,
+      "texte": "highquality software to work effectively"
+    },
+    {
+      "tStartS": 488.24,
+      "tEndS": 491.27,
+      "texte": "together. And agents just do not have"
+    },
+    {
+      "tStartS": 491.28,
+      "tEndS": 492.71,
+      "texte": "that capability. They don't have"
+    },
+    {
+      "tStartS": 492.72,
+      "tEndS": 495.35,
+      "texte": "presence in our standup. Uh they don't"
+    },
+    {
+      "tStartS": 495.36,
+      "tEndS": 497.11,
+      "texte": "have this durable memory that"
+    },
+    {
+      "tStartS": 497.12,
+      "tEndS": 498.95,
+      "texte": "accumulates context and battle scars"
+    },
+    {
+      "tStartS": 498.96,
+      "tEndS": 501.43,
+      "texte": "over time. So we have to find ways to"
+    },
+    {
+      "tStartS": 501.44,
+      "tEndS": 503.749,
+      "texte": "make all these nonfunctional"
+    },
+    {
+      "tStartS": 503.759,
+      "tEndS": 505.909,
+      "texte": "requirements of writing good software"
+    },
+    {
+      "tStartS": 505.919,
+      "tEndS": 509.189,
+      "texte": "legible to the agent. And as an LLM, the"
+    },
+    {
+      "tStartS": 509.199,
+      "tEndS": 511.27,
+      "texte": "thing that it craves, the thing that"
+    },
+    {
+      "tStartS": 511.28,
+      "tEndS": 514.31,
+      "texte": "drives it is text. So figuring out ways"
+    },
+    {
+      "tStartS": 514.32,
+      "tEndS": 516.79,
+      "texte": "to take the definition of what it means"
+    },
+    {
+      "tStartS": 516.8,
+      "tEndS": 520.79,
+      "texte": "to do a good job and write it down is a"
+    },
+    {
+      "tStartS": 520.8,
+      "tEndS": 522.149,
+      "texte": "net new function for a software"
+    },
+    {
+      "tStartS": 522.159,
+      "tEndS": 525.829,
+      "texte": "engineering team in 2026."
+    },
+    {
+      "tStartS": 525.839,
+      "tEndS": 527.59,
+      "texte": "But it's not enough to just write things"
+    },
+    {
+      "tStartS": 527.6,
+      "tEndS": 530.31,
+      "texte": "down. We need to make sure that this"
+    },
+    {
+      "tStartS": 530.32,
+      "tEndS": 532.47,
+      "texte": "text is a thing that the agent will look"
+    },
+    {
+      "tStartS": 532.48,
+      "tEndS": 535.509,
+      "texte": "at because it it doesn't do much to say"
+    },
+    {
+      "tStartS": 535.519,
+      "tEndS": 537.43,
+      "texte": "you will write reliable network code by"
+    },
+    {
+      "tStartS": 537.44,
+      "tEndS": 539.19,
+      "texte": "making sure that retries and timeouts"
+    },
+    {
+      "tStartS": 539.2,
+      "tEndS": 541.43,
+      "texte": "are consistently applied if that text"
+    },
+    {
+      "tStartS": 541.44,
+      "tEndS": 544.71,
+      "texte": "never makes it to the agent. So figuring"
+    },
+    {
+      "tStartS": 544.72,
+      "tEndS": 546.63,
+      "texte": "out ways that not only we can write"
+    },
+    {
+      "tStartS": 546.64,
+      "tEndS": 548.389,
+      "texte": "things down but also have them pulled"
+    },
+    {
+      "tStartS": 548.399,
+      "tEndS": 551.509,
+      "texte": "into context at the right time in ways"
+    },
+    {
+      "tStartS": 551.519,
+      "tEndS": 554.07,
+      "texte": "that don't thrash the agent and still"
+    },
+    {
+      "tStartS": 554.08,
+      "tEndS": 556.389,
+      "texte": "lead it to be creative and reason which"
+    },
+    {
+      "tStartS": 556.399,
+      "tEndS": 558.79,
+      "texte": "are the power of these models is the"
+    },
+    {
+      "tStartS": 558.8,
+      "tEndS": 562.07,
+      "texte": "important thing."
+    },
+    {
+      "tStartS": 562.08,
+      "tEndS": 564.389,
+      "texte": "So to kind of take a step back and look"
+    },
+    {
+      "tStartS": 564.399,
+      "tEndS": 566.47,
+      "texte": "at some"
+    },
+    {
+      "tStartS": 566.48,
+      "tEndS": 569.19,
+      "texte": "in the small instances of context and"
+    },
+    {
+      "tStartS": 569.2,
+      "tEndS": 571.269,
+      "texte": "what it means to kind of like think"
+    },
+    {
+      "tStartS": 571.279,
+      "tEndS": 573.59,
+      "texte": "systematically and close loops for the"
+    },
+    {
+      "tStartS": 573.6,
+      "tEndS": 576.389,
+      "texte": "models and for your team."
+    },
+    {
+      "tStartS": 576.399,
+      "tEndS": 578.07,
+      "texte": "If I were onboarding a new engineer to"
+    },
+    {
+      "tStartS": 578.08,
+      "tEndS": 581.43,
+      "texte": "my team and we were I was reviewing some"
+    },
+    {
+      "tStartS": 581.44,
+      "tEndS": 584.23,
+      "texte": "React code that they had written uh and"
+    },
+    {
+      "tStartS": 584.24,
+      "tEndS": 586.15,
+      "texte": "I knew for this particular set of"
+    },
+    {
+      "tStartS": 586.16,
+      "tEndS": 590.389,
+      "texte": "components uh we use uh suspense because"
+    },
+    {
+      "tStartS": 590.399,
+      "tEndS": 591.91,
+      "texte": "that leads to better performance in the"
+    },
+    {
+      "tStartS": 591.92,
+      "tEndS": 594.31,
+      "texte": "front end. I would be able to give that"
+    },
+    {
+      "tStartS": 594.32,
+      "tEndS": 597.43,
+      "texte": "feedback once to the human and they"
+    },
+    {
+      "tStartS": 597.44,
+      "tEndS": 599.11,
+      "texte": "would incorporate it into their mental"
+    },
+    {
+      "tStartS": 599.12,
+      "tEndS": 601.269,
+      "texte": "model of the codebase what it means for"
+    },
+    {
+      "tStartS": 601.279,
+      "tEndS": 602.949,
+      "texte": "these different screens to relate to"
+    },
+    {
+      "tStartS": 602.959,
+      "tEndS": 604.71,
+      "texte": "each other well and I would largely"
+    },
+    {
+      "tStartS": 604.72,
+      "tEndS": 607.11,
+      "texte": "solve that problem going forward by"
+    },
+    {
+      "tStartS": 607.12,
+      "tEndS": 609.35,
+      "texte": "empowering my teammate to know more"
+    },
+    {
+      "tStartS": 609.36,
+      "tEndS": 612.389,
+      "texte": "about what it means to do a good job"
+    },
+    {
+      "tStartS": 612.399,
+      "tEndS": 614.55,
+      "texte": "but I can't really do that with an agent"
+    },
+    {
+      "tStartS": 614.56,
+      "tEndS": 616.55,
+      "texte": "in the same way so I kind of have to"
+    },
+    {
+      "tStartS": 616.56,
+      "tEndS": 618.55,
+      "texte": "step back"
+    },
+    {
+      "tStartS": 618.56,
+      "tEndS": 621.43,
+      "texte": "feedback on an agent produced PR and"
+    },
+    {
+      "tStartS": 621.44,
+      "tEndS": 622.55,
+      "texte": "then"
+    },
+    {
+      "tStartS": 622.56,
+      "tEndS": 625.91,
+      "texte": "figure out a way to make these mistakes"
+    },
+    {
+      "tStartS": 625.92,
+      "tEndS": 633.99,
+      "texte": "going"
+    },
+    {
+      "tStartS": 634,
+      "tEndS": 637.829,
+      "texte": "agro"
+    },
+    {
+      "tStartS": 637.839,
+      "tEndS": 640.55,
+      "texte": "was misaligned. How do I figure out"
+    },
+    {
+      "tStartS": 640.56,
+      "tEndS": 642.87,
+      "texte": "where I can write it down? What lints I"
+    },
+    {
+      "tStartS": 642.88,
+      "tEndS": 646.23,
+      "texte": "can have fail? What tests need to exist?"
+    },
+    {
+      "tStartS": 646.24,
+      "tEndS": 647.99,
+      "texte": "whether or not I can empower a reviewer"
+    },
+    {
+      "tStartS": 648,
+      "tEndS": 649.99,
+      "texte": "agent to look at all the proposed diffs"
+    },
+    {
+      "tStartS": 650,
+      "tEndS": 651.99,
+      "texte": "through the lens of these guardrails to"
+    },
+    {
+      "tStartS": 652,
+      "tEndS": 654.069,
+      "texte": "make it so that this feedback is"
+    },
+    {
+      "tStartS": 654.079,
+      "tEndS": 656.31,
+      "texte": "actually durably encoded as a static"
+    },
+    {
+      "tStartS": 656.32,
+      "tEndS": 659.03,
+      "texte": "guard rail that we apply to every PR"
+    },
+    {
+      "tStartS": 659.04,
+      "tEndS": 661.43,
+      "texte": "going forward. It's not enough to do"
+    },
+    {
+      "tStartS": 661.44,
+      "tEndS": 663.829,
+      "texte": "point in time fixes with these models."
+    },
+    {
+      "tStartS": 663.839,
+      "tEndS": 666.31,
+      "texte": "We want to make every mistake something"
+    },
+    {
+      "tStartS": 666.32,
+      "tEndS": 668.23,
+      "texte": "that is just not possible. I never want"
+    },
+    {
+      "tStartS": 668.24,
+      "tEndS": 671.99,
+      "texte": "to give the same review feedback twice."
+    },
+    {
+      "tStartS": 672,
+      "tEndS": 673.99,
+      "texte": "And this is really the core of what"
+    },
+    {
+      "tStartS": 674,
+      "tEndS": 675.91,
+      "texte": "harness engineering is. Harness"
+    },
+    {
+      "tStartS": 675.92,
+      "tEndS": 678.949,
+      "texte": "engineering is making context around"
+    },
+    {
+      "tStartS": 678.959,
+      "tEndS": 681.35,
+      "texte": "what it means to do a good job legible"
+    },
+    {
+      "tStartS": 681.36,
+      "tEndS": 683.43,
+      "texte": "and then just in time surface to the"
+    },
+    {
+      "tStartS": 683.44,
+      "tEndS": 684.79,
+      "texte": "agent over the course of its"
+    },
+    {
+      "tStartS": 684.8,
+      "tEndS": 687.19,
+      "texte": "trajectories in order to steer and"
+    },
+    {
+      "tStartS": 687.2,
+      "tEndS": 689.35,
+      "texte": "refine its output to make sure that"
+    },
+    {
+      "tStartS": 689.36,
+      "tEndS": 691.99,
+      "texte": "every PR we get adheres to the golden"
+    },
+    {
+      "tStartS": 692,
+      "tEndS": 693.99,
+      "texte": "thread of what we consider to be"
+    },
+    {
+      "tStartS": 694,
+      "tEndS": 704.069,
+      "texte": "acceptable highquality aligned software"
+    },
+    {
+      "tStartS": 704.079,
+      "tEndS": 705.269,
+      "texte": "agents"
+    },
+    {
+      "tStartS": 705.279,
+      "tEndS": 708.87,
+      "texte": "that I would normally consider to be"
+    },
+    {
+      "tStartS": 708.88,
+      "tEndS": 711.11,
+      "texte": "like good practice around DevOps and"
+    },
+    {
+      "tStartS": 711.12,
+      "tEndS": 712.949,
+      "texte": "shifting left as far as possible in"
+    },
+    {
+      "tStartS": 712.959,
+      "tEndS": 714.79,
+      "texte": "order to make things cheaper earlier in"
+    },
+    {
+      "tStartS": 714.8,
+      "tEndS": 717.59,
+      "texte": "the process. I don't do that at all when"
+    },
+    {
+      "tStartS": 717.6,
+      "tEndS": 720.23,
+      "texte": "working with agents. In fact, I try and"
+    },
+    {
+      "tStartS": 720.24,
+      "tEndS": 722.63,
+      "texte": "put my interventions as far right in the"
+    },
+    {
+      "tStartS": 722.64,
+      "tEndS": 725.43,
+      "texte": "process as I can in order to minimize my"
+    },
+    {
+      "tStartS": 725.44,
+      "tEndS": 727.19,
+      "texte": "own synchronous time having to engage"
+    },
+    {
+      "tStartS": 727.2,
+      "tEndS": 728.949,
+      "texte": "with these issues."
+    },
+    {
+      "tStartS": 728.959,
+      "tEndS": 731.35,
+      "texte": "For example, if I'm working on a PR and"
+    },
+    {
+      "tStartS": 731.36,
+      "tEndS": 734.23,
+      "texte": "I realize I get a bad result,"
+    },
+    {
+      "tStartS": 734.24,
+      "tEndS": 735.59,
+      "texte": "it might just be the case that I'll"
+    },
+    {
+      "tStartS": 735.6,
+      "tEndS": 737.19,
+      "texte": "trash it, change my prompt, and probably"
+    },
+    {
+      "tStartS": 737.2,
+      "tEndS": 739.91,
+      "texte": "get something good out of it. But that's"
+    },
+    {
+      "tStartS": 739.92,
+      "tEndS": 741.59,
+      "texte": "not really a durable thing. It's not"
+    },
+    {
+      "tStartS": 741.6,
+      "tEndS": 743.269,
+      "texte": "reliable. I don't socialize those"
+    },
+    {
+      "tStartS": 743.279,
+      "tEndS": 745.75,
+      "texte": "improvements to my team. So, sort of the"
+    },
+    {
+      "tStartS": 745.76,
+      "tEndS": 748.23,
+      "texte": "next level of shifting that left is to"
+    },
+    {
+      "tStartS": 748.24,
+      "tEndS": 750.79,
+      "texte": "write it down. And if writing it down is"
+    },
+    {
+      "tStartS": 750.8,
+      "tEndS": 753.67,
+      "texte": "not enough, writing down and then"
+    },
+    {
+      "tStartS": 753.68,
+      "tEndS": 756.389,
+      "texte": "empowering a review agent to prop judge"
+    },
+    {
+      "tStartS": 756.399,
+      "tEndS": 758.389,
+      "texte": "every diff is another way I can shift"
+    },
+    {
+      "tStartS": 758.399,
+      "tEndS": 760.15,
+      "texte": "that left. And then I can shift it left"
+    },
+    {
+      "tStartS": 760.16,
+      "tEndS": 762.389,
+      "texte": "further into statically verifiable lints"
+    },
+    {
+      "tStartS": 762.399,
+      "tEndS": 764.629,
+      "texte": "and guard rails and tests and on and on"
+    },
+    {
+      "tStartS": 764.639,
+      "tEndS": 768.389,
+      "texte": "and on earlier in the process. And we"
+    },
+    {
+      "tStartS": 768.399,
+      "tEndS": 771.43,
+      "texte": "think about this as needing to surface"
+    },
+    {
+      "tStartS": 771.44,
+      "tEndS": 774.069,
+      "texte": "to the agent all those sets of"
+    },
+    {
+      "tStartS": 774.079,
+      "tEndS": 777.509,
+      "texte": "non-functional requirements."
+    },
+    {
+      "tStartS": 777.519,
+      "tEndS": 779.43,
+      "texte": "It is not the case that these agents"
+    },
+    {
+      "tStartS": 779.44,
+      "tEndS": 780.55,
+      "texte": "don't know how to write high-quality"
+    },
+    {
+      "tStartS": 780.56,
+      "tEndS": 783.269,
+      "texte": "software. They absolutely do. But as"
+    },
+    {
+      "tStartS": 783.279,
+      "tEndS": 785.19,
+      "texte": "artifacts of their training, they have"
+    },
+    {
+      "tStartS": 785.2,
+      "tEndS": 788.79,
+      "texte": "seen every possible permutation of every"
+    },
+    {
+      "tStartS": 788.8,
+      "tEndS": 790.87,
+      "texte": "possible choice that goes into producing"
+    },
+    {
+      "tStartS": 790.88,
+      "tEndS": 793.75,
+      "texte": "software. And it's up to us to prune"
+    },
+    {
+      "tStartS": 793.76,
+      "tEndS": 796.389,
+      "texte": "latent space to tell it which choices we"
+    },
+    {
+      "tStartS": 796.399,
+      "tEndS": 800.79,
+      "texte": "want to make. Um, you know, if I am"
+    },
+    {
+      "tStartS": 800.8,
+      "tEndS": 803.43,
+      "texte": "using these things to prototype a new"
+    },
+    {
+      "tStartS": 803.44,
+      "tEndS": 805.03,
+      "texte": "data science model in a Jupyter"
+    },
+    {
+      "tStartS": 805.04,
+      "tEndS": 807.03,
+      "texte": "notebook, I have a very different set of"
+    },
+    {
+      "tStartS": 807.04,
+      "tEndS": 808.55,
+      "texte": "choices I make in the production of"
+    },
+    {
+      "tStartS": 808.56,
+      "tEndS": 811.509,
+      "texte": "those diffs than I do if I am working on"
+    },
+    {
+      "tStartS": 811.519,
+      "tEndS": 814.47,
+      "texte": "adding a new index type to a database."
+    },
+    {
+      "tStartS": 814.48,
+      "tEndS": 815.829,
+      "texte": "They're just fundamentally different"
+    },
+    {
+      "tStartS": 815.839,
+      "tEndS": 818.79,
+      "texte": "tasks. So, it's up to us as owners of"
+    },
+    {
+      "tStartS": 818.8,
+      "tEndS": 821.67,
+      "texte": "our code bases to make legible the sets"
+    },
+    {
+      "tStartS": 821.68,
+      "tEndS": 823.269,
+      "texte": "of decisions that we make in order to"
+    },
+    {
+      "tStartS": 823.279,
+      "tEndS": 825.43,
+      "texte": "produce our code. what it means for"
+    },
+    {
+      "tStartS": 825.44,
+      "tEndS": 827.829,
+      "texte": "something to be a prototype versus"
+    },
+    {
+      "tStartS": 827.839,
+      "tEndS": 830.069,
+      "texte": "production feature that requires a stage"
+    },
+    {
+      "tStartS": 830.079,
+      "tEndS": 831.67,
+      "texte": "roll out with AB tests and feature"
+    },
+    {
+      "tStartS": 831.68,
+      "tEndS": 834.87,
+      "texte": "flags. And if we write this down and"
+    },
+    {
+      "tStartS": 834.88,
+      "tEndS": 837.829,
+      "texte": "give the agent some tools to reason"
+    },
+    {
+      "tStartS": 837.839,
+      "tEndS": 840.15,
+      "texte": "about what type of changes being made to"
+    },
+    {
+      "tStartS": 840.16,
+      "tEndS": 843.43,
+      "texte": "find runbooks that are appropriate to"
+    },
+    {
+      "tStartS": 843.44,
+      "tEndS": 845.67,
+      "texte": "refining its output over the course of"
+    },
+    {
+      "tStartS": 845.68,
+      "tEndS": 849.59,
+      "texte": "its PRs and epics, we can give it bounds"
+    },
+    {
+      "tStartS": 849.6,
+      "tEndS": 851.67,
+      "texte": "and context, but still give it the space"
+    },
+    {
+      "tStartS": 851.68,
+      "tEndS": 856.629,
+      "texte": "to reason, be creative, and cook."
+    },
+    {
+      "tStartS": 856.639,
+      "tEndS": 860.15,
+      "texte": "One maybe non-obvious thing is that"
+    },
+    {
+      "tStartS": 860.16,
+      "tEndS": 862.87,
+      "texte": "because the agents crave text, every bit"
+    },
+    {
+      "tStartS": 862.88,
+      "tEndS": 866.15,
+      "texte": "of text that we feed them is in some"
+    },
+    {
+      "tStartS": 866.16,
+      "tEndS": 868.47,
+      "texte": "sense prompting. It's going to inform"
+    },
+    {
+      "tStartS": 868.48,
+      "tEndS": 870.47,
+      "texte": "what tokens get predicted, which means"
+    },
+    {
+      "tStartS": 870.48,
+      "tEndS": 871.829,
+      "texte": "it's going to inform the code and the"
+    },
+    {
+      "tStartS": 871.839,
+      "tEndS": 874.31,
+      "texte": "diffs that we produce. This means all"
+    },
+    {
+      "tStartS": 874.32,
+      "tEndS": 876.389,
+      "texte": "the code in the repository of itself"
+    },
+    {
+      "tStartS": 876.399,
+      "tEndS": 878.23,
+      "texte": "outside of the documentation knowledge"
+    },
+    {
+      "tStartS": 878.24,
+      "tEndS": 881.91,
+      "texte": "base is also prompts. So"
+    },
+    {
+      "tStartS": 881.92,
+      "tEndS": 884.31,
+      "texte": "if we think about aligning the codebase"
+    },
+    {
+      "tStartS": 884.32,
+      "tEndS": 887.11,
+      "texte": "or unifying it all on the same patterns,"
+    },
+    {
+      "tStartS": 887.12,
+      "tEndS": 889.189,
+      "texte": "we kind of limit the amount of attention"
+    },
+    {
+      "tStartS": 889.199,
+      "tEndS": 891.75,
+      "texte": "the model needs in order to do a good"
+    },
+    {
+      "tStartS": 891.76,
+      "tEndS": 894.47,
+      "texte": "job. If I am able to standardize on"
+    },
+    {
+      "tStartS": 894.48,
+      "tEndS": 896.31,
+      "texte": "hotel across my entire stack, for"
+    },
+    {
+      "tStartS": 896.32,
+      "tEndS": 898.47,
+      "texte": "example, when the model thinks"
+    },
+    {
+      "tStartS": 898.48,
+      "tEndS": 900.629,
+      "texte": "observability, it's able to translate"
+    },
+    {
+      "tStartS": 900.639,
+      "tEndS": 902.31,
+      "texte": "context that it sees in one part of the"
+    },
+    {
+      "tStartS": 902.32,
+      "tEndS": 904.389,
+      "texte": "repository over to something halfway"
+    },
+    {
+      "tStartS": 904.399,
+      "tEndS": 906.55,
+      "texte": "across the codebase without any loss of"
+    },
+    {
+      "tStartS": 906.56,
+      "tEndS": 909.75,
+      "texte": "quality or intelligence. But if I have"
+    },
+    {
+      "tStartS": 909.76,
+      "tEndS": 911.67,
+      "texte": "six of observability stacks in the"
+    },
+    {
+      "tStartS": 911.68,
+      "tEndS": 912.87,
+      "texte": "codebase, the model's going to have to"
+    },
+    {
+      "tStartS": 912.88,
+      "tEndS": 915.43,
+      "texte": "spend a lot more time figuring out which"
+    },
+    {
+      "tStartS": 915.44,
+      "tEndS": 918.069,
+      "texte": "one do I use here. Is this migrated or"
+    },
+    {
+      "tStartS": 918.079,
+      "tEndS": 922.71,
+      "texte": "not? What is canonically good? [snorts]"
+    },
+    {
+      "tStartS": 922.72,
+      "tEndS": 924.47,
+      "texte": "So over the course of the PR, there's"
+    },
+    {
+      "tStartS": 924.48,
+      "tEndS": 926.87,
+      "texte": "sort of three phases I think about when"
+    },
+    {
+      "tStartS": 926.88,
+      "tEndS": 929.35,
+      "texte": "we're talking about context delivery."
+    },
+    {
+      "tStartS": 929.36,
+      "tEndS": 933.11,
+      "texte": "And because we are curating the codebase"
+    },
+    {
+      "tStartS": 933.12,
+      "tEndS": 934.629,
+      "texte": "in order to make it efficient to deliver"
+    },
+    {
+      "tStartS": 934.639,
+      "tEndS": 936.55,
+      "texte": "context to these agents, we also want to"
+    },
+    {
+      "tStartS": 936.56,
+      "tEndS": 938.23,
+      "texte": "encode that in the operating loop we"
+    },
+    {
+      "tStartS": 938.24,
+      "tEndS": 940.31,
+      "texte": "give the model. To me, the most"
+    },
+    {
+      "tStartS": 940.32,
+      "tEndS": 941.67,
+      "texte": "important thing that ends up in that"
+    },
+    {
+      "tStartS": 941.68,
+      "tEndS": 944.87,
+      "texte": "agents.mmd file is a numbered set of"
+    },
+    {
+      "tStartS": 944.88,
+      "tEndS": 947.03,
+      "texte": "steps that we expect the model to go"
+    },
+    {
+      "tStartS": 947.04,
+      "tEndS": 949.03,
+      "texte": "through over every roll out that we do"
+    },
+    {
+      "tStartS": 949.04,
+      "tEndS": 951.67,
+      "texte": "over every session. You know, we first"
+    },
+    {
+      "tStartS": 951.68,
+      "tEndS": 953.67,
+      "texte": "want it to ground itself in the"
+    },
+    {
+      "tStartS": 953.68,
+      "tEndS": 955.43,
+      "texte": "documentation knowledge base in the"
+    },
+    {
+      "tStartS": 955.44,
+      "tEndS": 957.67,
+      "texte": "ticket that is proposed."
+    },
+    {
+      "tStartS": 957.68,
+      "tEndS": 959.91,
+      "texte": "We want it to spider through our history"
+    },
+    {
+      "tStartS": 959.92,
+      "tEndS": 962.15,
+      "texte": "of ADRs and design docs to figure out"
+    },
+    {
+      "tStartS": 962.16,
+      "tEndS": 964.31,
+      "texte": "how this might impact other features of"
+    },
+    {
+      "tStartS": 964.32,
+      "tEndS": 966.79,
+      "texte": "our codebase. We want it to look at the"
+    },
+    {
+      "tStartS": 966.8,
+      "tEndS": 968.79,
+      "texte": "critical user journeys to inform itself"
+    },
+    {
+      "tStartS": 968.8,
+      "tEndS": 971.59,
+      "texte": "around what screens and user surfaces"
+    },
+    {
+      "tStartS": 971.6,
+      "tEndS": 973.749,
+      "texte": "are impacted so it can keep the QA plan"
+    },
+    {
+      "tStartS": 973.759,
+      "tEndS": 975.03,
+      "texte": "in mind over the course of its"
+    },
+    {
+      "tStartS": 975.04,
+      "tEndS": 977.91,
+      "texte": "execution. We expect some amount of"
+    },
+    {
+      "tStartS": 977.92,
+      "tEndS": 979.749,
+      "texte": "slowness during this process because we"
+    },
+    {
+      "tStartS": 979.759,
+      "tEndS": 982.71,
+      "texte": "want to page in all the context around"
+    },
+    {
+      "tStartS": 982.72,
+      "tEndS": 984.55,
+      "texte": "what it means for this feature to slot"
+    },
+    {
+      "tStartS": 984.56,
+      "tEndS": 988.389,
+      "texte": "in globally. Uh then there's sort of the"
+    },
+    {
+      "tStartS": 988.399,
+      "tEndS": 990.629,
+      "texte": "messy middle part of the run where the"
+    },
+    {
+      "tStartS": 990.639,
+      "tEndS": 993.189,
+      "texte": "agent is writing code, running tests,"
+    },
+    {
+      "tStartS": 993.199,
+      "tEndS": 997.269,
+      "texte": "exploring the codebase and for that we"
+    },
+    {
+      "tStartS": 997.279,
+      "tEndS": 999.11,
+      "texte": "exploit the fact that these agents are"
+    },
+    {
+      "tStartS": 999.12,
+      "tEndS": 1001.829,
+      "texte": "going to call a bunch of tools, run a"
+    },
+    {
+      "tStartS": 1001.839,
+      "tEndS": 1004.389,
+      "texte": "bunch of tests in order to use them to"
+    },
+    {
+      "tStartS": 1004.399,
+      "tEndS": 1006.47,
+      "texte": "just in time prompt inject the agent to"
+    },
+    {
+      "tStartS": 1006.48,
+      "tEndS": 1009.59,
+      "texte": "steer its output back to baseline."
+    },
+    {
+      "tStartS": 1009.6,
+      "tEndS": 1011.99,
+      "texte": "The tests we write, the lints we write"
+    },
+    {
+      "tStartS": 1012,
+      "tEndS": 1013.829,
+      "texte": "for agents are very different than the"
+    },
+    {
+      "tStartS": 1013.839,
+      "tEndS": 1017.189,
+      "texte": "ones that we write for humans. They by"
+    },
+    {
+      "tStartS": 1017.199,
+      "tEndS": 1020.15,
+      "texte": "default recognize that agents are going"
+    },
+    {
+      "tStartS": 1020.16,
+      "tEndS": 1021.99,
+      "texte": "to truncate tool call outputs that they"
+    },
+    {
+      "tStartS": 1022,
+      "tEndS": 1023.829,
+      "texte": "respond really well to descriptive error"
+    },
+    {
+      "tStartS": 1023.839,
+      "tEndS": 1026.15,
+      "texte": "messages that point them to runbooks for"
+    },
+    {
+      "tStartS": 1026.16,
+      "tEndS": 1030.069,
+      "texte": "remediation steps. And we are willing to"
+    },
+    {
+      "tStartS": 1030.079,
+      "tEndS": 1032.069,
+      "texte": "have very many of these things that are"
+    },
+    {
+      "tStartS": 1032.079,
+      "tEndS": 1033.51,
+      "texte": "kind of fiddly to write and I wouldn't"
+    },
+    {
+      "tStartS": 1033.52,
+      "tEndS": 1035.99,
+      "texte": "normally think about to go back to this"
+    },
+    {
+      "tStartS": 1036,
+      "tEndS": 1038.949,
+      "texte": "sort of network code example. Uh I am"
+    },
+    {
+      "tStartS": 1038.959,
+      "tEndS": 1040.71,
+      "texte": "sure all of you have been paged at some"
+    },
+    {
+      "tStartS": 1040.72,
+      "tEndS": 1043.59,
+      "texte": "point in your careers around an outage"
+    },
+    {
+      "tStartS": 1043.6,
+      "tEndS": 1045.51,
+      "texte": "that boiled down to a missing timeout"
+    },
+    {
+      "tStartS": 1045.52,
+      "tEndS": 1047.51,
+      "texte": "and a retry on a cross- service network"
+    },
+    {
+      "tStartS": 1047.52,
+      "tEndS": 1050.07,
+      "texte": "call and the collective amount of"
+    },
+    {
+      "tStartS": 1050.08,
+      "tEndS": 1051.909,
+      "texte": "engineering time that has been spent on"
+    },
+    {
+      "tStartS": 1051.919,
+      "tEndS": 1053.99,
+      "texte": "this very common failure mode is"
+    },
+    {
+      "tStartS": 1054,
+      "tEndS": 1056.87,
+      "texte": "astounding. But still today like there's"
+    },
+    {
+      "tStartS": 1056.88,
+      "tEndS": 1058.87,
+      "texte": "there's there's no code that asserts"
+    },
+    {
+      "tStartS": 1058.88,
+      "tEndS": 1061.35,
+      "texte": "that we pass retries around. There's no"
+    },
+    {
+      "tStartS": 1061.36,
+      "tEndS": 1063.83,
+      "texte": "like ESLint plugin that I can slot into"
+    },
+    {
+      "tStartS": 1063.84,
+      "tEndS": 1066.15,
+      "texte": "my codebase is going to do this for me."
+    },
+    {
+      "tStartS": 1066.16,
+      "tEndS": 1067.83,
+      "texte": "But because the production of code is"
+    },
+    {
+      "tStartS": 1067.84,
+      "tEndS": 1070.07,
+      "texte": "very very cheap now, we can absolutely"
+    },
+    {
+      "tStartS": 1070.08,
+      "tEndS": 1072.549,
+      "texte": "vibe a set of guard rails into place"
+    },
+    {
+      "tStartS": 1072.559,
+      "tEndS": 1075.11,
+      "texte": "with 100% code coverage and exhaustive"
+    },
+    {
+      "tStartS": 1075.12,
+      "tEndS": 1077.35,
+      "texte": "table driven tests and migrate the"
+    },
+    {
+      "tStartS": 1077.36,
+      "tEndS": 1080.39,
+      "texte": "codebase all in one go and just in time"
+    },
+    {
+      "tStartS": 1080.4,
+      "tEndS": 1082.15,
+      "texte": "surface this failure to the model every"
+    },
+    {
+      "tStartS": 1082.16,
+      "tEndS": 1083.99,
+      "texte": "time it writes another fetch call and"
+    },
+    {
+      "tStartS": 1084,
+      "tEndS": 1086.15,
+      "texte": "never have to worry about this again."
+    },
+    {
+      "tStartS": 1086.16,
+      "tEndS": 1089.11,
+      "texte": "And because we don't have to pollute"
+    },
+    {
+      "tStartS": 1089.12,
+      "tEndS": 1091.43,
+      "texte": "context window upfront and we can"
+    },
+    {
+      "tStartS": 1091.44,
+      "tEndS": 1093.35,
+      "texte": "exploit the fact that a tool call output"
+    },
+    {
+      "tStartS": 1093.36,
+      "tEndS": 1094.87,
+      "texte": "is going to be given less weight during"
+    },
+    {
+      "tStartS": 1094.88,
+      "tEndS": 1097.669,
+      "texte": "an autocompaction, we just in time"
+    },
+    {
+      "tStartS": 1097.679,
+      "tEndS": 1100.63,
+      "texte": "correct the model and still let it go"
+    },
+    {
+      "tStartS": 1100.64,
+      "tEndS": 1102.23,
+      "texte": "off and do the complex work that we"
+    },
+    {
+      "tStartS": 1102.24,
+      "tEndS": 1105.029,
+      "texte": "wanted to in our original prompt."
+    },
+    {
+      "tStartS": 1105.039,
+      "tEndS": 1107.19,
+      "texte": "And then sort of after the run, we have"
+    },
+    {
+      "tStartS": 1107.2,
+      "tEndS": 1108.789,
+      "texte": "a much easier task of determining"
+    },
+    {
+      "tStartS": 1108.799,
+      "tEndS": 1110.71,
+      "texte": "whether or not the code, the diff, the"
+    },
+    {
+      "tStartS": 1110.72,
+      "tEndS": 1112.549,
+      "texte": "artifact is aligned because it's a"
+    },
+    {
+      "tStartS": 1112.559,
+      "tEndS": 1114.71,
+      "texte": "static thing and we have static sets of"
+    },
+    {
+      "tStartS": 1114.72,
+      "tEndS": 1117.669,
+      "texte": "guardrails and can use very very many"
+    },
+    {
+      "tStartS": 1117.679,
+      "tEndS": 1121.35,
+      "texte": "LLM as judge to look at the code"
+    },
+    {
+      "tStartS": 1121.36,
+      "tEndS": 1124.15,
+      "texte": "operationalize it with a set or three of"
+    },
+    {
+      "tStartS": 1124.16,
+      "tEndS": 1125.909,
+      "texte": "static guard rails. You know, this is"
+    },
+    {
+      "tStartS": 1125.919,
+      "tEndS": 1128.07,
+      "texte": "what it means to write reliable code."
+    },
+    {
+      "tStartS": 1128.08,
+      "tEndS": 1129.19,
+      "texte": "This is what it means to write"
+    },
+    {
+      "tStartS": 1129.2,
+      "tEndS": 1131.669,
+      "texte": "performant React and make a"
+    },
+    {
+      "tStartS": 1131.679,
+      "tEndS": 1134.31,
+      "texte": "determination. Is this good or bad? And"
+    },
+    {
+      "tStartS": 1134.32,
+      "tEndS": 1137.19,
+      "texte": "if it's bad, why is it bad? Because the"
+    },
+    {
+      "tStartS": 1137.2,
+      "tEndS": 1140.23,
+      "texte": "LLM's crave text, these LLM as judges"
+    },
+    {
+      "tStartS": 1140.24,
+      "tEndS": 1142.549,
+      "texte": "can collaborate with the implementation"
+    },
+    {
+      "tStartS": 1142.559,
+      "tEndS": 1145.11,
+      "texte": "agent over that PR thread, give more"
+    },
+    {
+      "tStartS": 1145.12,
+      "tEndS": 1146.87,
+      "texte": "text back to the implementation agent,"
+    },
+    {
+      "tStartS": 1146.88,
+      "tEndS": 1149.51,
+      "texte": "and further realign the proposed diff"
+    },
+    {
+      "tStartS": 1149.52,
+      "tEndS": 1152.39,
+      "texte": "back to baseline."
+    },
+    {
+      "tStartS": 1152.4,
+      "tEndS": 1155.75,
+      "texte": "So, we've got agents.mds"
+    },
+    {
+      "tStartS": 1155.76,
+      "tEndS": 1158.31,
+      "texte": "where the context is during what types"
+    },
+    {
+      "tStartS": 1158.32,
+      "tEndS": 1160.31,
+      "texte": "of work the model might want to look at"
+    },
+    {
+      "tStartS": 1160.32,
+      "tEndS": 1162.63,
+      "texte": "that text, but otherwise not being"
+    },
+    {
+      "tStartS": 1162.64,
+      "tEndS": 1163.99,
+      "texte": "prescriptive around any of the"
+    },
+    {
+      "tStartS": 1164,
+      "tEndS": 1167.029,
+      "texte": "guardrails. We don't want to jam a ton"
+    },
+    {
+      "tStartS": 1167.039,
+      "tEndS": 1170.39,
+      "texte": "of rules in here because we're going to"
+    },
+    {
+      "tStartS": 1170.4,
+      "tEndS": 1172.15,
+      "texte": "chop up latent space too much. We're"
+    },
+    {
+      "tStartS": 1172.16,
+      "tEndS": 1174.07,
+      "texte": "going to make it difficult for the model"
+    },
+    {
+      "tStartS": 1174.08,
+      "tEndS": 1176.789,
+      "texte": "to spider through the codebase with"
+    },
+    {
+      "tStartS": 1176.799,
+      "tEndS": 1178.348,
+      "texte": "creativity."
+    },
+    {
+      "tStartS": 1178.358,
+      "tEndS": 1179.27,
+      "texte": "&gt;&gt; [snorts]"
+    },
+    {
+      "tStartS": 1179.28,
+      "tEndS": 1181.59,
+      "texte": "&gt;&gt; I find it very very useful from this"
+    },
+    {
+      "tStartS": 1181.6,
+      "tEndS": 1185.43,
+      "texte": "agents.mmd to point to a curated set of"
+    },
+    {
+      "tStartS": 1185.44,
+      "tEndS": 1187.75,
+      "texte": "review personas uh that are essentially"
+    },
+    {
+      "tStartS": 1187.76,
+      "tEndS": 1189.83,
+      "texte": "bulleted lists of guard rails. And I"
+    },
+    {
+      "tStartS": 1189.84,
+      "tEndS": 1191.669,
+      "texte": "find this really really neat for an"
+    },
+    {
+      "tStartS": 1191.679,
+      "tEndS": 1193.35,
+      "texte": "interfacing with the other humans on the"
+    },
+    {
+      "tStartS": 1193.36,
+      "tEndS": 1197.59,
+      "texte": "team perspective because it is so cheap"
+    },
+    {
+      "tStartS": 1197.6,
+      "tEndS": 1200.07,
+      "texte": "as a team to have a Slack conversation"
+    },
+    {
+      "tStartS": 1200.08,
+      "tEndS": 1202.95,
+      "texte": "in a thread around what it means to fix"
+    },
+    {
+      "tStartS": 1202.96,
+      "tEndS": 1204.87,
+      "texte": "that performance regression and then"
+    },
+    {
+      "tStartS": 1204.88,
+      "tEndS": 1207.19,
+      "texte": "appmentntion the agent in it to say"
+    },
+    {
+      "tStartS": 1207.2,
+      "tEndS": 1209.669,
+      "texte": "yoink all of this and put up a PR that"
+    },
+    {
+      "tStartS": 1209.679,
+      "tEndS": 1212.23,
+      "texte": "adds it to our static set of guardrails."
+    },
+    {
+      "tStartS": 1212.24,
+      "tEndS": 1214.23,
+      "texte": "So cheap in order to continually refine"
+    },
+    {
+      "tStartS": 1214.24,
+      "tEndS": 1215.909,
+      "texte": "and improve the output of our agents in"
+    },
+    {
+      "tStartS": 1215.919,
+      "tEndS": 1217.75,
+      "texte": "that way."
+    },
+    {
+      "tStartS": 1217.76,
+      "tEndS": 1219.51,
+      "texte": "I also think it's really neat to take"
+    },
+    {
+      "tStartS": 1219.52,
+      "tEndS": 1222.549,
+      "texte": "that same sort of pattern and apply it"
+    },
+    {
+      "tStartS": 1222.559,
+      "tEndS": 1224.39,
+      "texte": "towarding"
+    },
+    {
+      "tStartS": 1224.4,
+      "tEndS": 1226.23,
+      "texte": "what your product features are or what"
+    },
+    {
+      "tStartS": 1226.24,
+      "tEndS": 1228.39,
+      "texte": "the critical user journeys are or why"
+    },
+    {
+      "tStartS": 1228.4,
+      "tEndS": 1231.35,
+      "texte": "your apps even exist, what user problems"
+    },
+    {
+      "tStartS": 1231.36,
+      "tEndS": 1233.75,
+      "texte": "they solve. All this context that we can"
+    },
+    {
+      "tStartS": 1233.76,
+      "tEndS": 1237.27,
+      "texte": "give the agent helps ground it in what"
+    },
+    {
+      "tStartS": 1237.28,
+      "tEndS": 1239.909,
+      "texte": "we are trying to do and why how our team"
+    },
+    {
+      "tStartS": 1239.919,
+      "tEndS": 1242.149,
+      "texte": "thinks about working because all of this"
+    },
+    {
+      "tStartS": 1242.159,
+      "tEndS": 1243.51,
+      "texte": "is going to produce more and more"
+    },
+    {
+      "tStartS": 1243.52,
+      "tEndS": 1247.11,
+      "texte": "aligned output"
+    },
+    {
+      "tStartS": 1247.12,
+      "tEndS": 1250.47,
+      "texte": "in that messy middle. We can kind of use"
+    },
+    {
+      "tStartS": 1250.48,
+      "tEndS": 1253.669,
+      "texte": "tests on the as tests on the structure"
+    },
+    {
+      "tStartS": 1253.679,
+      "tEndS": 1257.029,
+      "texte": "of the files on disk really blunt"
+    },
+    {
+      "tStartS": 1257.039,
+      "tEndS": 1259.27,
+      "texte": "hammers around file line counts or"
+    },
+    {
+      "tStartS": 1259.28,
+      "tEndS": 1261.43,
+      "texte": "whether or not snapshot tests exist."
+    },
+    {
+      "tStartS": 1261.44,
+      "tEndS": 1264.23,
+      "texte": "these very very coarse grain tools in"
+    },
+    {
+      "tStartS": 1264.24,
+      "tEndS": 1266.31,
+      "texte": "order to make the model do what we know"
+    },
+    {
+      "tStartS": 1266.32,
+      "tEndS": 1268.149,
+      "texte": "is good."
+    },
+    {
+      "tStartS": 1268.159,
+      "tEndS": 1270.31,
+      "texte": "Just requiring that every React"
+    },
+    {
+      "tStartS": 1270.32,
+      "tEndS": 1272.47,
+      "texte": "component in our codebase has a snapshot"
+    },
+    {
+      "tStartS": 1272.48,
+      "tEndS": 1276.07,
+      "texte": "test that gives a 100% branch coverage"
+    },
+    {
+      "tStartS": 1276.08,
+      "tEndS": 1277.909,
+      "texte": "means that the model is naturally"
+    },
+    {
+      "tStartS": 1277.919,
+      "tEndS": 1279.909,
+      "texte": "decomposing these things and making them"
+    },
+    {
+      "tStartS": 1279.919,
+      "tEndS": 1282.789,
+      "texte": "pure where possible and not doing prop"
+    },
+    {
+      "tStartS": 1282.799,
+      "tEndS": 1284.39,
+      "texte": "drilling and putting hooks close to"
+    },
+    {
+      "tStartS": 1284.4,
+      "tEndS": 1285.83,
+      "texte": "where the data is used because that"
+    },
+    {
+      "tStartS": 1285.84,
+      "tEndS": 1287.27,
+      "texte": "makes it easier for it to fill the"
+    },
+    {
+      "tStartS": 1287.28,
+      "tEndS": 1289.029,
+      "texte": "requirement that there must be snapshot"
+    },
+    {
+      "tStartS": 1289.039,
+      "tEndS": 1292.23,
+      "texte": "tests. Uh, and we can do this. We can"
+    },
+    {
+      "tStartS": 1292.24,
+      "tEndS": 1293.99,
+      "texte": "assert this because it's free to produce"
+    },
+    {
+      "tStartS": 1294,
+      "tEndS": 1296.789,
+      "texte": "the code that spiders through disk and"
+    },
+    {
+      "tStartS": 1296.799,
+      "tEndS": 1298.87,
+      "texte": "matches up the snapshot test to the"
+    },
+    {
+      "tStartS": 1298.88,
+      "tEndS": 1302.47,
+      "texte": "underlying component."
+    },
+    {
+      "tStartS": 1302.48,
+      "tEndS": 1305.27,
+      "texte": "Another failure mode that I hear folks"
+    },
+    {
+      "tStartS": 1305.28,
+      "tEndS": 1307.35,
+      "texte": "talk about a bunch is that, you know,"
+    },
+    {
+      "tStartS": 1307.36,
+      "tEndS": 1309.75,
+      "texte": "these agents are doing type- shaped"
+    },
+    {
+      "tStartS": 1309.76,
+      "tEndS": 1311.27,
+      "texte": "probing all the time. I end up with"
+    },
+    {
+      "tStartS": 1311.28,
+      "tEndS": 1312.95,
+      "texte": "these nies or unknowns all over the"
+    },
+    {
+      "tStartS": 1312.96,
+      "tEndS": 1315.59,
+      "texte": "codebase. And the way I've approached it"
+    },
+    {
+      "tStartS": 1315.6,
+      "tEndS": 1318.23,
+      "texte": "is to just statically disallow any"
+    },
+    {
+      "tStartS": 1318.24,
+      "tEndS": 1319.83,
+      "texte": "function that has a type of any or"
+    },
+    {
+      "tStartS": 1319.84,
+      "tEndS": 1323.19,
+      "texte": "unknown unless it's parsing input in a"
+    },
+    {
+      "tStartS": 1323.2,
+      "tEndS": 1325.75,
+      "texte": "route handler or from the database."
+    },
+    {
+      "tStartS": 1325.76,
+      "tEndS": 1328.07,
+      "texte": "Other than that, with ESLint, we just"
+    },
+    {
+      "tStartS": 1328.08,
+      "tEndS": 1330.149,
+      "texte": "ban the existence of that type. We"
+    },
+    {
+      "tStartS": 1330.159,
+      "tEndS": 1332.63,
+      "texte": "require the codebase to be 100% typed,"
+    },
+    {
+      "tStartS": 1332.64,
+      "tEndS": 1335.19,
+      "texte": "which means all this bad behavior and"
+    },
+    {
+      "tStartS": 1335.2,
+      "tEndS": 1337.43,
+      "texte": "weird type probing just kind of falls"
+    },
+    {
+      "tStartS": 1337.44,
+      "tEndS": 1339.51,
+      "texte": "out because we require 100% code"
+    },
+    {
+      "tStartS": 1339.52,
+      "tEndS": 1341.35,
+      "texte": "coverage. These functions cannot"
+    },
+    {
+      "tStartS": 1341.36,
+      "tEndS": 1343.11,
+      "texte": "possibly be exercised because the"
+    },
+    {
+      "tStartS": 1343.12,
+      "tEndS": 1346.07,
+      "texte": "unknown types can't exist. And we get"
+    },
+    {
+      "tStartS": 1346.08,
+      "tEndS": 1348.47,
+      "texte": "more line code, more line code that I"
+    },
+    {
+      "tStartS": 1348.48,
+      "tEndS": 1350.71,
+      "texte": "would consider acceptable, high quality,"
+    },
+    {
+      "tStartS": 1350.72,
+      "tEndS": 1352.149,
+      "texte": "maintainable, and all these other sorts"
+    },
+    {
+      "tStartS": 1352.159,
+      "tEndS": 1354.39,
+      "texte": "of properties."
+    },
+    {
+      "tStartS": 1354.4,
+      "tEndS": 1356.549,
+      "texte": "And having these failing checks tell the"
+    },
+    {
+      "tStartS": 1356.559,
+      "tEndS": 1358.95,
+      "texte": "agent why they've failed and what to do"
+    },
+    {
+      "tStartS": 1358.96,
+      "tEndS": 1360.549,
+      "texte": "instead means that it's able to"
+    },
+    {
+      "tStartS": 1360.559,
+      "tEndS": 1363.43,
+      "texte": "self-heal."
+    },
+    {
+      "tStartS": 1363.44,
+      "tEndS": 1366.87,
+      "texte": "Ultimately, as we move into that uh"
+    },
+    {
+      "tStartS": 1366.88,
+      "tEndS": 1369.59,
+      "texte": "third phase of review and merge, we want"
+    },
+    {
+      "tStartS": 1369.6,
+      "tEndS": 1371.19,
+      "texte": "to treat the model as if it's another"
+    },
+    {
+      "tStartS": 1371.2,
+      "tEndS": 1372.87,
+      "texte": "member of the team and it needs to"
+    },
+    {
+      "tStartS": 1372.88,
+      "tEndS": 1377.029,
+      "texte": "convince me to merge its code. Um"
+    },
+    {
+      "tStartS": 1377.039,
+      "tEndS": 1378.95,
+      "texte": "I'm not shoulder surfing any of my"
+    },
+    {
+      "tStartS": 1378.96,
+      "tEndS": 1381.11,
+      "texte": "teammates in VS Code or Vim, right? when"
+    },
+    {
+      "tStartS": 1381.12,
+      "tEndS": 1383.11,
+      "texte": "they put up a PR and they attest that"
+    },
+    {
+      "tStartS": 1383.12,
+      "tEndS": 1385.43,
+      "texte": "they tested the code, I take their word,"
+    },
+    {
+      "tStartS": 1385.44,
+      "tEndS": 1387.51,
+      "texte": "you know, and if I am unsure, I'll ask"
+    },
+    {
+      "tStartS": 1387.52,
+      "tEndS": 1388.95,
+      "texte": "them to show me the logs from the"
+    },
+    {
+      "tStartS": 1388.96,
+      "tEndS": 1391.59,
+      "texte": "staging deploy or to post a screenshot"
+    },
+    {
+      "tStartS": 1391.6,
+      "tEndS": 1394.549,
+      "texte": "of them exercising the feature in uh the"
+    },
+    {
+      "tStartS": 1394.559,
+      "tEndS": 1397.99,
+      "texte": "app. And we can require these agents to"
+    },
+    {
+      "tStartS": 1398,
+      "tEndS": 1401.27,
+      "texte": "do the same thing. Uh this is a lot"
+    },
+    {
+      "tStartS": 1401.28,
+      "tEndS": 1403.19,
+      "texte": "easier these days now that we have"
+    },
+    {
+      "tStartS": 1403.2,
+      "tEndS": 1405.029,
+      "texte": "things like computer use and browser"
+    },
+    {
+      "tStartS": 1405.039,
+      "tEndS": 1407.11,
+      "texte": "use. Uh the codeex app is fantastic,"
+    },
+    {
+      "tStartS": 1407.12,
+      "tEndS": 1409.59,
+      "texte": "highly recommend it. Uh but even without"
+    },
+    {
+      "tStartS": 1409.6,
+      "tEndS": 1413.11,
+      "texte": "that, you know, vibing yourself up an XC"
+    },
+    {
+      "tStartS": 1413.12,
+      "tEndS": 1415.83,
+      "texte": "connected headless display in a Docker"
+    },
+    {
+      "tStartS": 1415.84,
+      "tEndS": 1418.47,
+      "texte": "container and wiring up FFmpeg to that"
+    },
+    {
+      "tStartS": 1418.48,
+      "tEndS": 1420.71,
+      "texte": "stream to record a reproduction video is"
+    },
+    {
+      "tStartS": 1420.72,
+      "tEndS": 1422.789,
+      "texte": "within reach because I don't care about"
+    },
+    {
+      "tStartS": 1422.799,
+      "tEndS": 1425.59,
+      "texte": "how gross this code is. and Codex is"
+    },
+    {
+      "tStartS": 1425.6,
+      "tEndS": 1427.83,
+      "texte": "able to sling ffmpeg better than anybody"
+    },
+    {
+      "tStartS": 1427.84,
+      "tEndS": 1432.23,
+      "texte": "in this room probably [snorts]"
+    },
+    {
+      "tStartS": 1432.24,
+      "tEndS": 1435.75,
+      "texte": "on the back half of things where we are"
+    },
+    {
+      "tStartS": 1435.76,
+      "tEndS": 1439.11,
+      "texte": "looking for ways to accept the diff. I'm"
+    },
+    {
+      "tStartS": 1439.12,
+      "tEndS": 1441.19,
+      "texte": "treating it again like I would my human"
+    },
+    {
+      "tStartS": 1441.2,
+      "tEndS": 1443.11,
+      "texte": "teammates benefit of the doubt bias"
+    },
+    {
+      "tStartS": 1443.12,
+      "tEndS": 1445.51,
+      "texte": "toward merge. What are the P2 and above"
+    },
+    {
+      "tStartS": 1445.52,
+      "tEndS": 1447.35,
+      "texte": "things that would be necessary for me to"
+    },
+    {
+      "tStartS": 1447.36,
+      "tEndS": 1449.669,
+      "texte": "accept this code? use the reviewer"
+    },
+    {
+      "tStartS": 1449.679,
+      "tEndS": 1460.63,
+      "texte": "agents, which is really"
+    },
+    {
+      "tStartS": 1460.64,
+      "tEndS": 1463.35,
+      "texte": "get the coding agent to pick them up,"
+    },
+    {
+      "tStartS": 1463.36,
+      "tEndS": 1465.51,
+      "texte": "implement it, get the reviewers to be"
+    },
+    {
+      "tStartS": 1465.52,
+      "tEndS": 1468.63,
+      "texte": "happy, and off we go. And this sort of"
+    },
+    {
+      "tStartS": 1468.64,
+      "tEndS": 1470.95,
+      "texte": "process with me observing along the way"
+    },
+    {
+      "tStartS": 1470.96,
+      "tEndS": 1472.95,
+      "texte": "of which review feedback is regularly"
+    },
+    {
+      "tStartS": 1472.96,
+      "tEndS": 1475.43,
+      "texte": "getting surfaced. Why is it making it to"
+    },
+    {
+      "tStartS": 1475.44,
+      "tEndS": 1477.269,
+      "texte": "this part of the pipeline, maybe I need"
+    },
+    {
+      "tStartS": 1477.279,
+      "tEndS": 1479.029,
+      "texte": "to use that as a signal that I need to"
+    },
+    {
+      "tStartS": 1479.039,
+      "tEndS": 1481.11,
+      "texte": "shift some of these guardrails left? And"
+    },
+    {
+      "tStartS": 1481.12,
+      "tEndS": 1482.71,
+      "texte": "then I can spend my time and the"
+    },
+    {
+      "tStartS": 1482.72,
+      "tEndS": 1484.39,
+      "texte": "reviewer agents can then spend their"
+    },
+    {
+      "tStartS": 1484.4,
+      "tEndS": 1488.31,
+      "texte": "time on more bespoke or more complex"
+    },
+    {
+      "tStartS": 1488.32,
+      "tEndS": 1492.549,
+      "texte": "changes that we need them to look at."
+    },
+    {
+      "tStartS": 1492.559,
+      "tEndS": 1494.71,
+      "texte": "Another thing that you should be"
+    },
+    {
+      "tStartS": 1494.72,
+      "tEndS": 1497.029,
+      "texte": "thinking about doing as a team is how to"
+    },
+    {
+      "tStartS": 1497.039,
+      "tEndS": 1499.029,
+      "texte": "systematize capturing all of this human"
+    },
+    {
+      "tStartS": 1499.039,
+      "tEndS": 1501.59,
+      "texte": "feedback. every review comment, every"
+    },
+    {
+      "tStartS": 1501.6,
+      "tEndS": 1503.11,
+      "texte": "time you have had to interrupt the"
+    },
+    {
+      "tStartS": 1503.12,
+      "tEndS": 1507.11,
+      "texte": "agent, every agentic intervention, every"
+    },
+    {
+      "tStartS": 1507.12,
+      "tEndS": 1509.59,
+      "texte": "failed build, every exception in"
+    },
+    {
+      "tStartS": 1509.6,
+      "tEndS": 1511.83,
+      "texte": "production, all of these in some sense"
+    },
+    {
+      "tStartS": 1511.84,
+      "tEndS": 1514.71,
+      "texte": "are signals that context was missing to"
+    },
+    {
+      "tStartS": 1514.72,
+      "tEndS": 1516.789,
+      "texte": "the implementation agent that it did not"
+    },
+    {
+      "tStartS": 1516.799,
+      "tEndS": 1519.19,
+      "texte": "consider the full endto-end consequences"
+    },
+    {
+      "tStartS": 1519.2,
+      "tEndS": 1520.87,
+      "texte": "of the code that it wrote and whether or"
+    },
+    {
+      "tStartS": 1520.88,
+      "tEndS": 1522.87,
+      "texte": "not it would be successfully deployed."
+    },
+    {
+      "tStartS": 1522.88,
+      "tEndS": 1525.75,
+      "texte": "And what we are trying to do, uh, which"
+    },
+    {
+      "tStartS": 1525.76,
+      "tEndS": 1527.269,
+      "texte": "I expect you'll learn about in the next"
+    },
+    {
+      "tStartS": 1527.279,
+      "tEndS": 1529.83,
+      "texte": "talk, is slurp all this data up and"
+    },
+    {
+      "tStartS": 1529.84,
+      "tEndS": 1532.47,
+      "texte": "dream over it every night, pointing a"
+    },
+    {
+      "tStartS": 1532.48,
+      "tEndS": 1534.39,
+      "texte": "bunch of sub agents at it, trying to"
+    },
+    {
+      "tStartS": 1534.4,
+      "tEndS": 1537.11,
+      "texte": "distill whether or not there's anything"
+    },
+    {
+      "tStartS": 1537.12,
+      "tEndS": 1538.39,
+      "texte": "that humans can do better in their"
+    },
+    {
+      "tStartS": 1538.4,
+      "tEndS": 1539.83,
+      "texte": "prompting, whether there's missing"
+    },
+    {
+      "tStartS": 1539.84,
+      "tEndS": 1541.19,
+      "texte": "guardrails that should exist in the"
+    },
+    {
+      "tStartS": 1541.2,
+      "tEndS": 1543.269,
+      "texte": "codebase that disallow this behavior,"
+    },
+    {
+      "tStartS": 1543.279,
+      "tEndS": 1545.029,
+      "texte": "and how we can get to a world where"
+    },
+    {
+      "tStartS": 1545.039,
+      "tEndS": 1547.75,
+      "texte": "we're more and more headless, less human"
+    },
+    {
+      "tStartS": 1547.76,
+      "tEndS": 1550.47,
+      "texte": "interrupt dependent, and able to trust"
+    },
+    {
+      "tStartS": 1550.48,
+      "tEndS": 1552.63,
+      "texte": "the agent to do more and more complex"
+    },
+    {
+      "tStartS": 1552.64,
+      "tEndS": 1557.11,
+      "texte": "things."
+    },
+    {
+      "tStartS": 1557.12,
+      "tEndS": 1558.95,
+      "texte": "I think vibe coding is a big part of"
+    },
+    {
+      "tStartS": 1558.96,
+      "tEndS": 1560.549,
+      "texte": "what it takes to be successful here"
+    },
+    {
+      "tStartS": 1560.559,
+      "tEndS": 1561.909,
+      "texte": "because there's a ton of guard rails"
+    },
+    {
+      "tStartS": 1561.919,
+      "tEndS": 1564.07,
+      "texte": "that only affect my local development"
+    },
+    {
+      "tStartS": 1564.08,
+      "tEndS": 1566.23,
+      "texte": "process. This code can be gross, but it"
+    },
+    {
+      "tStartS": 1566.24,
+      "tEndS": 1569.11,
+      "texte": "brings into possibility"
+    },
+    {
+      "tStartS": 1569.12,
+      "tEndS": 1571.99,
+      "texte": "this idea that I don't need to care"
+    },
+    {
+      "tStartS": 1572,
+      "tEndS": 1573.75,
+      "texte": "about parts of the software production"
+    },
+    {
+      "tStartS": 1573.76,
+      "tEndS": 1576.549,
+      "texte": "function. This lets me operate like a"
+    },
+    {
+      "tStartS": 1576.559,
+      "tEndS": 1578.87,
+      "texte": "group tech lead or an org lead where I"
+    },
+    {
+      "tStartS": 1578.88,
+      "tEndS": 1581.269,
+      "texte": "don't have visibility into every single"
+    },
+    {
+      "tStartS": 1581.279,
+      "tEndS": 1583.83,
+      "texte": "engineer's activity on the keyboard. But"
+    },
+    {
+      "tStartS": 1583.84,
+      "tEndS": 1586.07,
+      "texte": "the thing I care about are invariance"
+    },
+    {
+      "tStartS": 1586.08,
+      "tEndS": 1588.47,
+      "texte": "interfaces whether or not the components"
+    },
+    {
+      "tStartS": 1588.48,
+      "tEndS": 1589.99,
+      "texte": "that they're producing do what they say"
+    },
+    {
+      "tStartS": 1590,
+      "tEndS": 1592.789,
+      "texte": "on the tin with high reliability."
+    },
+    {
+      "tStartS": 1592.799,
+      "tEndS": 1594.789,
+      "texte": "And uh with that I'll just leave it with"
+    },
+    {
+      "tStartS": 1594.799,
+      "tEndS": 1596.549,
+      "texte": "uh y'all can go build things. These"
+    },
+    {
+      "tStartS": 1596.559,
+      "tEndS": 1599.029,
+      "texte": "tools are fantastic. Go get after it. Uh"
+    },
+    {
+      "tStartS": 1599.039,
+      "tEndS": 1602.63,
+      "texte": "I'll take some questions now. [applause]"
+    },
+    {
+      "tStartS": 1602.64,
+      "tEndS": 1604.39,
+      "texte": "&gt;&gt; Thank you so much."
+    },
+    {
+      "tStartS": 1604.4,
+      "tEndS": 1606.71,
+      "texte": "Thank you."
+    },
+    {
+      "tStartS": 1606.72,
+      "tEndS": 1610.149,
+      "texte": "Pow, that hand went up really fast. Hold"
+    },
+    {
+      "tStartS": 1610.159,
+      "tEndS": 1614.789,
+      "texte": "on one sec. Want to grab that one?"
+    },
+    {
+      "tStartS": 1614.799,
+      "tEndS": 1618.39,
+      "texte": "&gt;&gt; Hello. Uh, great talk. Um, you mentioned"
+    },
+    {
+      "tStartS": 1618.4,
+      "tEndS": 1621.029,
+      "texte": "earlier in your talk that you find that"
+    },
+    {
+      "tStartS": 1621.039,
+      "tEndS": 1624.39,
+      "texte": "you don't need to shift left as much as"
+    },
+    {
+      "tStartS": 1624.4,
+      "tEndS": 1626.63,
+      "texte": "before. You stay more right. And I'm"
+    },
+    {
+      "tStartS": 1626.64,
+      "tEndS": 1629.59,
+      "texte": "curious about that because uh isn't it"
+    },
+    {
+      "tStartS": 1629.6,
+      "tEndS": 1633.51,
+      "texte": "better for agents um to see something in"
+    },
+    {
+      "tStartS": 1633.52,
+      "tEndS": 1636.549,
+      "texte": "a lint rule rather than as uh review"
+    },
+    {
+      "tStartS": 1636.559,
+      "tEndS": 1638.31,
+      "texte": "feedback for example like what what what"
+    },
+    {
+      "tStartS": 1638.32,
+      "tEndS": 1641.909,
+      "texte": "do you mean by um staying more right and"
+    },
+    {
+      "tStartS": 1641.919,
+      "tEndS": 1644.47,
+      "texte": "not shifting left? So I think once you"
+    },
+    {
+      "tStartS": 1644.48,
+      "tEndS": 1646.71,
+      "texte": "kind of put these structures in place to"
+    },
+    {
+      "tStartS": 1646.72,
+      "tEndS": 1649.19,
+      "texte": "surface these requirements to the models"
+    },
+    {
+      "tStartS": 1649.2,
+      "tEndS": 1652.07,
+      "texte": "at the right time um it becomes pretty"
+    },
+    {
+      "tStartS": 1652.08,
+      "tEndS": 1654.31,
+      "texte": "easy to rely on them for the most part"
+    },
+    {
+      "tStartS": 1654.32,
+      "tEndS": 1658.07,
+      "texte": "to autodiscocover this stuff. Um, it is"
+    },
+    {
+      "tStartS": 1658.08,
+      "tEndS": 1660.87,
+      "texte": "very often the case that our agents MD"
+    },
+    {
+      "tStartS": 1660.88,
+      "tEndS": 1662.789,
+      "texte": "paints a picture of which guardrail"
+    },
+    {
+      "tStartS": 1662.799,
+      "tEndS": 1664.95,
+      "texte": "files are relevant for which categories"
+    },
+    {
+      "tStartS": 1664.96,
+      "tEndS": 1667.43,
+      "texte": "of changes backend working on the design"
+    },
+    {
+      "tStartS": 1667.44,
+      "tEndS": 1669.269,
+      "texte": "system, these sorts of things where the"
+    },
+    {
+      "tStartS": 1669.279,
+      "tEndS": 1671.35,
+      "texte": "models will just naturally page those"
+    },
+    {
+      "tStartS": 1671.36,
+      "tEndS": 1673.669,
+      "texte": "sets of persona oriented guardrails into"
+    },
+    {
+      "tStartS": 1673.679,
+      "tEndS": 1677.029,
+      "texte": "into context which means I very often"
+    },
+    {
+      "tStartS": 1677.039,
+      "tEndS": 1679.35,
+      "texte": "just don't see patterns of misbehavior"
+    },
+    {
+      "tStartS": 1679.36,
+      "tEndS": 1683.909,
+      "texte": "in that way. only if for example uh"
+    },
+    {
+      "tStartS": 1683.919,
+      "tEndS": 1686.63,
+      "texte": "guardrails are commonly required over"
+    },
+    {
+      "tStartS": 1686.64,
+      "tEndS": 1689.43,
+      "texte": "tasks that span 15 context windows and"
+    },
+    {
+      "tStartS": 1689.44,
+      "tEndS": 1691.59,
+      "texte": "by then that context in those guardrail"
+    },
+    {
+      "tStartS": 1691.6,
+      "tEndS": 1694.07,
+      "texte": "files has been autocompacted away then"
+    },
+    {
+      "tStartS": 1694.08,
+      "tEndS": 1695.43,
+      "texte": "that's the sort of thing that I would"
+    },
+    {
+      "tStartS": 1695.44,
+      "tEndS": 1697.35,
+      "texte": "use as a signal that okay this is the"
+    },
+    {
+      "tStartS": 1697.36,
+      "tEndS": 1699.269,
+      "texte": "thing that I need to shift shift left"
+    },
+    {
+      "tStartS": 1699.279,
+      "tEndS": 1702.789,
+      "texte": "further on but I I do recognize here"
+    },
+    {
+      "tStartS": 1702.799,
+      "tEndS": 1705.11,
+      "texte": "that it is sort of predicated on making"
+    },
+    {
+      "tStartS": 1705.12,
+      "tEndS": 1707.43,
+      "texte": "sure that like those autodiscocovery"
+    },
+    {
+      "tStartS": 1707.44,
+      "tEndS": 1711.51,
+      "texte": "functions are things that are reliable"
+    },
+    {
+      "tStartS": 1711.52,
+      "tEndS": 1713.909,
+      "texte": "Uh probably got time for one more here."
+    },
+    {
+      "tStartS": 1713.919,
+      "tEndS": 1715.19,
+      "texte": "&gt;&gt; Oh yes."
+    },
+    {
+      "tStartS": 1715.2,
+      "tEndS": 1718.95,
+      "texte": "&gt;&gt; Um is there a practical implementation"
+    },
+    {
+      "tStartS": 1718.96,
+      "tEndS": 1720.95,
+      "texte": "of those of the harness you've just"
+    },
+    {
+      "tStartS": 1720.96,
+      "tEndS": 1724.63,
+      "texte": "mentioned in terms of um some end to end"
+    },
+    {
+      "tStartS": 1724.64,
+      "tEndS": 1726.389,
+      "texte": "u implementation of those um"
+    },
+    {
+      "tStartS": 1726.399,
+      "tEndS": 1729.59,
+      "texte": "capabilities during before during and"
+    },
+    {
+      "tStartS": 1729.6,
+      "tEndS": 1730.47,
+      "texte": "after"
+    },
+    {
+      "tStartS": 1730.48,
+      "tEndS": 1732.149,
+      "texte": "&gt;&gt; I have started to bring some of these"
+    },
+    {
+      "tStartS": 1732.159,
+      "tEndS": 1734.87,
+      "texte": "techniques to my open source uh work. Uh"
+    },
+    {
+      "tStartS": 1734.88,
+      "tEndS": 1738.789,
+      "texte": "I uh used to long ago uh build a Ruby"
+    },
+    {
+      "tStartS": 1738.799,
+      "tEndS": 1740.549,
+      "texte": "interpreter in Rust called Artichoke."
+    },
+    {
+      "tStartS": 1740.559,
+      "tEndS": 1742.389,
+      "texte": "There's a bunch of crates uh out of that"
+    },
+    {
+      "tStartS": 1742.399,
+      "tEndS": 1745.35,
+      "texte": "work that I still actively maintain. Um"
+    },
+    {
+      "tStartS": 1745.36,
+      "tEndS": 1747.029,
+      "texte": "probably the most interesting one for"
+    },
+    {
+      "tStartS": 1747.039,
+      "tEndS": 1749.99,
+      "texte": "you to take a peek at is uh randt"
+    },
+    {
+      "tStartS": 1750,
+      "tEndS": 1752.47,
+      "texte": "artichoke randmt. It's a sort of mercen"
+    },
+    {
+      "tStartS": 1752.48,
+      "tEndS": 1755.83,
+      "texte": "twister implementation. Um been doing a"
+    },
+    {
+      "tStartS": 1755.84,
+      "tEndS": 1758.07,
+      "texte": "lot of fun stuff exploiting automations"
+    },
+    {
+      "tStartS": 1758.08,
+      "tEndS": 1760.23,
+      "texte": "in the codeex app to basically take my"
+    },
+    {
+      "tStartS": 1760.24,
+      "tEndS": 1761.59,
+      "texte": "hands off the wheel for a ton of the"
+    },
+    {
+      "tStartS": 1761.6,
+      "tEndS": 1763.669,
+      "texte": "maintenance tasks of this OSS work. I"
+    },
+    {
+      "tStartS": 1763.679,
+      "tEndS": 1765.029,
+      "texte": "haven't quite gotten to putting those"
+    },
+    {
+      "tStartS": 1765.039,
+      "tEndS": 1766.63,
+      "texte": "review agents in place yet, but it's"
+    },
+    {
+      "tStartS": 1766.64,
+      "tEndS": 1768.789,
+      "texte": "coming."
+    },
+    {
+      "tStartS": 1768.799,
+      "tEndS": 1772.149,
+      "texte": "&gt;&gt; Any final questions?"
+    },
+    {
+      "tStartS": 1772.159,
+      "tEndS": 1774.31,
+      "texte": "&gt;&gt; Nope. Okay. Uh, big round of applause to"
+    },
+    {
+      "tStartS": 1774.32,
+      "tEndS": 1775.19,
+      "texte": "Ryan. Thank you so much."
+    },
+    {
+      "tStartS": 1775.2,
+      "tEndS": 1778.44,
+      "texte": "&gt;&gt; Thank you everyone."
+    }
+  ]
+}

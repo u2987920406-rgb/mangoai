@@ -183,11 +183,41 @@ async function searchMojeek(query: string, n: number): Promise<WebResult[]> {
   );
 }
 
+/** Firechrome — moteur de recherche configurable (endpoint via FIRECHROME_SEARCH_URL).
+ *  Scrap une SERP via getBrowser() avec UA réaliste, comme DuckDuckGo/Mojeek.
+ *  Sélecteurs génériques (.result, .search-result, li.g) pour s'adapter à plusieurs
+ *  rendus de SERP. Renvoie [] si non configuré, captcha ou échec → on enchaîne sur
+ *  le moteur suivant. Ne lève jamais. */
+async function searchFirechrome(query: string, n: number): Promise<WebResult[]> {
+  const baseUrl = process.env.FIRECHROME_SEARCH_URL?.trim();
+  if (!baseUrl) return []; // non configuré → on passe au moteur suivant
+  return scrapeSerp(
+    `${baseUrl}?q=${encodeURIComponent(query)}`,
+    () => {
+      const out: { titre: string; url: string; extrait: string }[] = [];
+      for (const res of Array.from(document.querySelectorAll(".result, .search-result, li.g"))) {
+        const a = res.querySelector("a[href]") as HTMLAnchorElement | null;
+        if (!a) continue;
+        const href = a.href || a.getAttribute("href") || "";
+        if (!/^https?:\/\//i.test(href)) continue;
+        const snip = res.querySelector(".snippet, .s, p");
+        out.push({
+          titre: (a.textContent ?? "").trim(),
+          url: href,
+          extrait: (snip?.textContent ?? "").trim(),
+        });
+      }
+      return out;
+    },
+    n,
+  );
+}
+
 /** Recherche web réelle. Ordre : Tavily (si TAVILY_API_KEY → robuste, pensé agents)
- *  puis une CHAÎNE de moteurs keyless (DuckDuckGo → Mojeek) ; on renvoie le premier
- *  qui donne des résultats (chacun renvoie [] si captcha/échec → on enchaîne). Aucun
- *  moteur keyless n'est infaillible (anti-bot) : pour un usage intensif, poser
- *  TAVILY_API_KEY dans server/.env. Ne lève jamais. */
+ *  puis une CHAÎNE de moteurs keyless (Firechrome → DuckDuckGo → Mojeek) ; on renvoie
+ *  le premier qui donne des résultats (chacun renvoie [] si captcha/échec → on
+ *  enchaîne). Aucun moteur keyless n'est infaillible (anti-bot) : pour un usage
+ *  intensif, poser TAVILY_API_KEY dans server/.env. Ne lève jamais. */
 export async function searchWeb(query: string, n: number): Promise<WebResult[]> {
   const apiKey = process.env.TAVILY_API_KEY?.trim();
   if (apiKey) {
@@ -198,7 +228,7 @@ export async function searchWeb(query: string, n: number): Promise<WebResult[]> 
       /* repli moteurs keyless */
     }
   }
-  for (const engine of [searchDuckDuckGo, searchMojeek]) {
+  for (const engine of [searchFirechrome, searchDuckDuckGo, searchMojeek]) {
     try {
       const r = await engine(query, n);
       if (r.length) return r;

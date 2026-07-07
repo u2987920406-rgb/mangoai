@@ -1,0 +1,1709 @@
+{
+  "videoId": "RaFC_oRBwF0",
+  "meta": {
+    "titre": "Le coup à jouer avant que votre fournisseur IA ne vous enferme",
+    "chaine": "IA et Stratégie | Le SamourAI ",
+    "dureeS": 1802,
+    "publieeLe": "2026-06-30",
+    "description": "Microsoft, Uber, Airbnb et Shopify tournent déjà sur l'IA chinoise, et ils ne le disent pas. Pendant que GPT 5.6 et Fable restent sous cloche, classés comme du matériel militaire, GLM et DeepSeek raflent les tâches du quotidien pour 98% moins cher.\nLa conclusion qu'on entend un peu partout est fausse. L'IA ne devient pas trop chère pour survivre. Ce sont les subventions occidentales qui s'arrêtent. Pendant ce temps, le coût réel de l'intelligence s'effondre côté chinois, et le seul verrou qui reste, c'est le harnais.\n\n\nLe système présenté en fin de vidéo : votre équipe d'assistants lancées en une commande, avec un guide vidéo de 25 minutes pour l'adapter à vos besoins. \n→ Patreon : https://www.patreon.com/SamouraiDansant/posts/vos-agents-ia-160435392\n\nPour rejoindre notre ocmmunauté:\n→ Patreon (Pour aller plus loin + analyses exclusives + le discord de la communauté ) : https://www.patreon.com/SamouraiDansant\n→ Instagram (coulisses) : https://www.instagram.com/samourai_dansant\n→X:  https://twitter.com/SamouraiCircon1\n\nPour celles et ceux qui veulent aller plus loin que la vidéo, un Discord communautaire francophone autour de quatre axes : stratégie, carrière, finance, technologie. Un public que je modère à la main, de l'entraide entre membres, et des conversations qui durent avec des évènements réguliers entre membres. Disponible dans vos avantages Patreon.\n\n\n\nSOURCES \n\nGPT 5.6 sous accès gouvernemental restreint (vendredi 26 juin 2026, ~20 partenaires) :\n- Axios — https://www.axios.com/2026/06/26/openai-gpt-sol-terra-luna-trump\n- CNN — https://www.cnn.com/2026/06/25/tech/openai-limit-release-white-house\n- System card OpenAI — https://deploymentsafety.openai.com/gpt-5-6-preview\n\nVerrouillage de Fable 5 / Mythos 5 et prolongation (Fable toujours hors marché) :\n- Anthropic (communiqué officiel) — https://www.anthropic.com/news/fable-mythos-access\n- Fortune — https://fortune.com/2026/06/13/anthropic-disables-fable-mythos-export-controls-national-security-threat/\n- CNBC (30 juin, Mythos rétabli, Fable détenu) — https://www.cnbc.com/2026/06/30/white-house-ai-china-crackdown.html\n\nModèles ouverts chinois (GLM 5.2, DeepSeek V4, Qwen) moins chers et rivaux d'Opus :\n- Semgrep, « We have Mythos at Home » — https://semgrep.dev/blog/2026/we-have-mythos-at-home-glm-52-beats-claude-in-our-cyber-benchmarks/\n- Comparatif open-weight — https://lushbinary.com/blog/open-weight-ai-models-comparison-what-to-choose/\n\nBascule des entreprises occidentales (Shopify ÷75, Cursor/Kimi, Airbnb/Qwen, Microsoft, Coinbase, Lindy) :\n- Semafor (enquête du Congrès) — https://www.semafor.com/article/04/29/2026/house-committee-probes-cursor-parent-airbnb-over-chinese-ai\n- Tech Startups (détail Shopify ÷75) — https://techstartups.com/2026/06/29/western-companies-are-quietly-switching-to-chinese-ai-models-as-u-s-frontier-ai-prices-rise/\n\nFin des subventions Anthropic (15 juin, effet 12 à 150x) et budget Uber brûlé en 4 mois :\n- Forbes (Uber) — https://www.forbes.com/sites/janakirammsv/2026/05/17/uber-burns-its-2026-ai-budget-in-four-months-on-claude-code/\n- Codersera (12 à 150x) — https://codersera.com/blog/anthropic-june-2026-billing-change-claude-code/\n\nRamageddon et hausse Apple (25 juin 2026, DRAM +98% au T1) :\n- Reuters via Investing — https://www.investing.com/news/stock-market-news/apple-raises-prices-of-macbooks-ipads-as-memory-costs-skyrocket-4760683\n- Wikipédia (pénurie mémoire 2025-) — https://en.wikipedia.org/wiki/2025%E2%80%93present_global_memory_supply_shortage\n\nDomination chinoise en tokens et utilisateurs (602M d'utilisateurs, ~61% des tokens OpenRouter) :\n- The Diplomat — https://thediplomat.com/2026/05/chinas-plan-for-winning-the-ai-race-hinges-on-the-token-economy-not-chips/\n- People's Daily — https://en.people.cn/n3/2026/0408/c90000-20444562.html\n\nFuite Claude Code et projet Conway (erreur d'empaquetage, ~512K lignes, fin mars 2026) :\n- MindStudio — https://www.mindstudio.ai/blog/what-is-conway-agent-anthropic-always-on-background-ai\n\n\n#GPT56 #IAChinoise #IntelligenceArtificielle #HarnaisAgentique #DeepSeek #GLM #Anthropic #Fable #ClaudeCode #Microsoft #Mistral #Ramageddon #CloudAct #Orchestration #OpenAI #Alibaba #Kimi #SouveraineteNumerique #StrategieIA #Tech2026 #LLM #DernierKilometre"
+  },
+  "source": "subs-manuels",
+  "langue": "fr",
+  "segments": [
+    {
+      "tStartS": 0.08,
+      "tEndS": 4,
+      "texte": "Sans même faire entrer l'infrastructure énergétique dans l'équation, les faits récents"
+    },
+    {
+      "tStartS": 4,
+      "tEndS": 9.68,
+      "texte": "dévoilent une asymétrie stratégique majeure. D'un côté, une Amérique qui se bunkerise, de l'autre,"
+    },
+    {
+      "tStartS": 9.68,
+      "tEndS": 14.68,
+      "texte": "une Chine qui commoditise le marché. Le paradoxe est flagrant. En empêchant ses"
+    },
+    {
+      "tStartS": 14.68,
+      "tEndS": 18.88,
+      "texte": "meilleurs laboratoires de déployer leurs modèles les plus aboutis, Washington ne se"
+    },
+    {
+      "tStartS": 18.88,
+      "tEndS": 24.4,
+      "texte": "contente pas de créer une rareté artificielle. Elle installe un véritable climat de défiance."
+    },
+    {
+      "tStartS": 24.4,
+      "tEndS": 28.64,
+      "texte": "Le haut de gamme, c'était pourtant leur unique porte de sortie pour échapper aux griffes de la"
+    },
+    {
+      "tStartS": 28.64,
+      "tEndS": 34.44,
+      "texte": "Chine et donner au marché une raison objective de les choisir face à l'offre concurrente. Résultat,"
+    },
+    {
+      "tStartS": 34.44,
+      "tEndS": 39.16,
+      "texte": "les modèles les plus avancés comme Fable ou le dernier GPT sorti vendredi dernier"
+    },
+    {
+      "tStartS": 39.16,
+      "tEndS": 44.04,
+      "texte": "sont rendus inaccessibles pour le public et se retrouvent immédiatement classifiés comme des"
+    },
+    {
+      "tStartS": 44.04,
+      "tEndS": 49.56,
+      "texte": "armes stratégiques. conjuguer ses restrictions artificielles à une infrastructure qui sature"
+    },
+    {
+      "tStartS": 49.56,
+      "tEndS": 54.28,
+      "texte": "et enchaîne les pannes techniques et le calcul stratégique s'inverse. On en vient"
+    },
+    {
+      "tStartS": 54.28,
+      "tEndS": 59.28,
+      "texte": "légitimement à se demander ce qui nous arrime encore au fournisseur américains. Et de fait,"
+    },
+    {
+      "tStartS": 59.28,
+      "tEndS": 64.88,
+      "texte": "ce protectionnisme de dernier recours trahit une certaine panique stratégique. C'est la fébrilité"
+    },
+    {
+      "tStartS": 64.88,
+      "tEndS": 69.72,
+      "texte": "d'un lion blessé dont les réactions deviennent d'autant plus brutales et imprévisibles qu'il"
+    },
+    {
+      "tStartS": 69.72,
+      "tEndS": 74.88,
+      "texte": "peine à accepter l'émergence de son rival. Censé sanctuariser les modèles américains face à la"
+    },
+    {
+      "tStartS": 74.88,
+      "tEndS": 80.12,
+      "texte": "copie chinoise, cette politique d'embargo provoque pour l'instant l'exact inverse et elle offre à la"
+    },
+    {
+      "tStartS": 80.12,
+      "tEndS": 85.48,
+      "texte": "Chine un boulevard pour s'imposer. L'industrie chinoise en profite pour déployer des modèles"
+    },
+    {
+      "tStartS": 85.48,
+      "tEndS": 91.24,
+      "texte": "ouverts d'une puissance redoutable à l'image de GLM. Nous l'avons tous testé et le constat"
+    },
+    {
+      "tStartS": 91.24,
+      "tEndS": 96.08,
+      "texte": "est sans appel. Il parvient à concurrencer la frontière publiquement accessible américaine"
+    },
+    {
+      "tStartS": 96.08,
+      "tEndS": 101.84,
+      "texte": "comme Opus mais pour une fraction du coût. Or, le signal le plus violent ne vient pas de Pékin."
+    },
+    {
+      "tStartS": 101.84,
+      "tEndS": 107.6,
+      "texte": "Il vient de l'intérieur. Le tissu économique américain commence lui-même à faire ses sessions."
+    },
+    {
+      "tStartS": 107.6,
+      "tEndS": 113.44,
+      "texte": "Quand des acteurs systémiques comme Microsoft, Uber ou Airbnb migre vers l'offre chinoise,"
+    },
+    {
+      "tStartS": 113.44,
+      "tEndS": 118.68,
+      "texte": "une question existentielle se pose. L'offre commerciale américaine est-elle déjà devenue"
+    },
+    {
+      "tStartS": 118.68,
+      "tEndS": 124.16,
+      "texte": "obsolète face au standard chinois ? Washington a-t-elle définitivement perdu sa souveraineté"
+    },
+    {
+      "tStartS": 124.16,
+      "tEndS": 129.64,
+      "texte": "sur l'infrastructure mondiale de l'IA ? Mais plus important encore, votre stratégie actuelle"
+    },
+    {
+      "tStartS": 129.64,
+      "tEndS": 134.84,
+      "texte": "repose-t-elle encore sur un paradigme qui n'existe déjà plus ? C'est ce dont on va parler dans cette"
+    },
+    {
+      "tStartS": 134.84,
+      "tEndS": 140.88,
+      "texte": "vidéo. Au programme, la sortie de GPT 5.6, le prolongement de la détention de fable,"
+    },
+    {
+      "tStartS": 140.88,
+      "tEndS": 146.36,
+      "texte": "la montée en puissance du système chinois et bien sûr l'explosion matérielle des coûts de mémoire,"
+    },
+    {
+      "tStartS": 146.36,
+      "tEndS": 153.56,
+      "texte": "ce qu'on appelle déjà le Ramagedon qui pousse même Apple à monter le prix de ses MacBook."
+    },
+    {
+      "tStartS": 155.88,
+      "tEndS": 161.2,
+      "texte": "Commençons par le sommet de la pyramide. GPT 5.6 est sorti vendredi dernier et c'est"
+    },
+    {
+      "tStartS": 161.2,
+      "tEndS": 166.6,
+      "texte": "sur le papier le modèle le plus puissant jamais déployé par Open AI. Pourtant, ça sortit à tout"
+    },
+    {
+      "tStartS": 166.6,
+      "tEndS": 171.68,
+      "texte": "d'une mise sous cloche. Le modèle arrive bardé de restriction d'accès et tombe sous le même régime"
+    },
+    {
+      "tStartS": 171.68,
+      "tEndS": 176.64,
+      "texte": "de surveillance que le matériel militaire. La firme qui a popularisé l'intelligence artificielle"
+    },
+    {
+      "tStartS": 176.64,
+      "tEndS": 181.76,
+      "texte": "grand public se retrouve à rationner son propre joyau de peur qu'il ne franchisse une frontière"
+    },
+    {
+      "tStartS": 181.76,
+      "tEndS": 186.88,
+      "texte": "interdite ou qu'il ne finisse recopier. C'est le coût classique du petit confinement de 15"
+    },
+    {
+      "tStartS": 186.88,
+      "tEndS": 191.6,
+      "texte": "jours pour garder la situation sous contrôle. Le problème des mesures d'isolement censé être"
+    },
+    {
+      "tStartS": 191.6,
+      "tEndS": 195.84,
+      "texte": "de très courte durée, on l'a tous appris à la dure il n'y a pas si longtemps, c'est qu'elle"
+    },
+    {
+      "tStartS": 195.84,
+      "tEndS": 200.96,
+      "texte": "devienne vite la nouvelle norme. Même logique du côté de Fable. Sa suspension nous avait été"
+    },
+    {
+      "tStartS": 200.96,
+      "tEndS": 206.16,
+      "texte": "présentée comme une mesure temporaire. le temps de cadrer les usages les plus sensibles. Cette"
+    },
+    {
+      "tStartS": 206.16,
+      "tEndS": 211.6,
+      "texte": "parenthèse vient d'être prolongée. Le meilleur modèle d'anthropique reste donc inaccessible au"
+    },
+    {
+      "tStartS": 211.6,
+      "tEndS": 216.64,
+      "texte": "public, enfermé pendant que l'horloge tourne. Chaque semaine de détention supplémentaire,"
+    },
+    {
+      "tStartS": 216.64,
+      "tEndS": 221.04,
+      "texte": "c'est une semaine où le haut de gamme américain ne produit aucune valeur sur le marché, sinon le"
+    },
+    {
+      "tStartS": 221.04,
+      "tEndS": 226.08,
+      "texte": "sentiment grandissant qu'on ne peut plus compter dessus. Reste à voir ce que l'adversaire fait de"
+    },
+    {
+      "tStartS": 226.08,
+      "tEndS": 231.24,
+      "texte": "ce répit offert sur un plateau. Et en effet, pendant que Washington s'épuise à bunkeriser"
+    },
+    {
+      "tStartS": 231.24,
+      "tEndS": 235.2,
+      "texte": "l'élite de l'intelligence et à classifier ses modèles comme des armes de guerre,"
+    },
+    {
+      "tStartS": 235.2,
+      "tEndS": 241.48,
+      "texte": "Pékin applique une doctrine redoutable. C'est la stratégie de la submersion par le ventre mou."
+    },
+    {
+      "tStartS": 241.48,
+      "tEndS": 246.4,
+      "texte": "La Chine a parfaitement compris que la guerre ne se gagnera pas en battant la recherche américaine"
+    },
+    {
+      "tStartS": 246.4,
+      "tEndS": 251.68,
+      "texte": "sur des problèmes de cybersécurité quantique. Elle se gagne en s'accaparant la majorité écrasante"
+    },
+    {
+      "tStartS": 251.68,
+      "tEndS": 257.2,
+      "texte": "des tâches intellectuelles quotidiennes des entreprises mondiales. Des modèles comme GLM 5.2,"
+    },
+    {
+      "tStartS": 257.2,
+      "tEndS": 262.68,
+      "texte": "Dipsic, V4 ou Quen visent l'efficacité brute. Leur proposition de valeur est strictement"
+    },
+    {
+      "tStartS": 262.68,
+      "tEndS": 267.8,
+      "texte": "mathématique, quasi logistique. Aujourd'hui, les médias et les investisseurs ne parlent"
+    },
+    {
+      "tStartS": 267.8,
+      "tEndS": 273.48,
+      "texte": "que des modèles américains. On s'extasie sur des Ferrari de pointe comme Fable, mais au risque d'en"
+    },
+    {
+      "tStartS": 273.48,
+      "tEndS": 278.64,
+      "texte": "choquer quelques-uns, l'économie ne tourne pas en Ferrari. Jean Kovici le rappelle souvent pour le"
+    },
+    {
+      "tStartS": 278.64,
+      "tEndS": 284.52,
+      "texte": "monde physique. Sans camion, Paris meurt de faim en 3 jours. Lia suit la même règle. L'équivalent"
+    },
+    {
+      "tStartS": 284.52,
+      "tEndS": 290.08,
+      "texte": "du poids lourd qui transporte 80 % de la valeur au quotidien, ce sont les modèles chinois."
+    },
+    {
+      "tStartS": 290.08,
+      "tEndS": 295.6,
+      "texte": "Être presque 100 fois moins cher, immédiatement disponible pour un résultat indiscernable sur la"
+    },
+    {
+      "tStartS": 295.6,
+      "tEndS": 301.32,
+      "texte": "plupart des flux de travail réel. et leur arme fatale reste la vitesse d'itération. En Chine,"
+    },
+    {
+      "tStartS": 301.32,
+      "tEndS": 306.16,
+      "texte": "les laboratoires déploient une mise à jour majeure toutes les 7 semaines. En face,"
+    },
+    {
+      "tStartS": 306.16,
+      "tEndS": 310.44,
+      "texte": "la sphère américaine des technologies ouvertes s'est bureaucratisée. Elle stagne,"
+    },
+    {
+      "tStartS": 310.44,
+      "tEndS": 317.72,
+      "texte": "engluée dans des cycles de 8 mois à l'image du retard habissal de Lamabéot."
+    },
+    {
+      "tStartS": 317.72,
+      "tEndS": 322.76,
+      "texte": "L'ironie de cette guerre est totale. En imposant un embargo strict sur les puces électroniques,"
+    },
+    {
+      "tStartS": 322.76,
+      "tEndS": 326.72,
+      "texte": "les États-Unis pensaient asphyxier leur rival. Ils n'ont fait que le forcer à"
+    },
+    {
+      "tStartS": 326.72,
+      "tEndS": 332,
+      "texte": "exceller dans l'efficience architecturale. Faute de pouvoir empiler la puissance de calcul brut,"
+    },
+    {
+      "tStartS": 332,
+      "tEndS": 336.76,
+      "texte": "les ingénieurs chinois ont appris à faire deux fois plus avec deux fois moins. Cette efficacité"
+    },
+    {
+      "tStartS": 336.76,
+      "tEndS": 342.56,
+      "texte": "chirurgicale crée une distorsion inédite au cœur même de la silicone vallée. D'un côté, le discours"
+    },
+    {
+      "tStartS": 342.56,
+      "tEndS": 348.08,
+      "texte": "officiel met en scène des dirigeants qui prôent un patriotisme total et une union sacrée derrière les"
+    },
+    {
+      "tStartS": 348.08,
+      "tEndS": 353.52,
+      "texte": "bannières de Washington. De l'autre, la réalité froide de l'ingénierie, dictée par la rentabilité"
+    },
+    {
+      "tStartS": 353.52,
+      "tEndS": 358.48,
+      "texte": "unitaire et les coûts d'infrastructure, racontent une toute autre histoire. Les chiffres du dernier"
+    },
+    {
+      "tStartS": 358.48,
+      "tEndS": 363.24,
+      "texte": "rapport parlementaire américain sont tombés comme un coup près. Aujourd'hui, une écrasante"
+    },
+    {
+      "tStartS": 363.24,
+      "tEndS": 367.64,
+      "texte": "majorité de jeunes pousses américaines font tourner discrètement leurs produits sur des"
+    },
+    {
+      "tStartS": 367.64,
+      "tEndS": 372.52,
+      "texte": "modèles chinois. Face à la pression étouffante sur les coûts et aux limites techniques des"
+    },
+    {
+      "tStartS": 372.52,
+      "tEndS": 377.88,
+      "texte": "offres américaines, les géants économiques font sécession en coulisse. Ils téléchargent les cœurs"
+    },
+    {
+      "tStartS": 377.88,
+      "tEndS": 383.16,
+      "texte": "des modèles chinois. et les hébergent sur leur propre serveur. Ce n'est pas un choix politique,"
+    },
+    {
+      "tStartS": 383.16,
+      "tEndS": 387.84,
+      "texte": "c'est une décision purement rationnelle. Les données ne partent pas à Pékin, mais le moteur"
+    },
+    {
+      "tStartS": 387.84,
+      "tEndS": 393.84,
+      "texte": "lui a changé de nationalité. Par exemple, prenez Shopify qui a divisé ses coûts de traitement par"
+    },
+    {
+      "tStartS": 393.84,
+      "tEndS": 401.48,
+      "texte": "75 en remplaçant purement et simplement l'offre d'Open AI par le modèle d'Alibaba. Prenez Cursor,"
+    },
+    {
+      "tStartS": 401.48,
+      "tEndS": 406.72,
+      "texte": "le fleuron absolu de la programmation assistée qui a discrètement bâti son dernier système sur"
+    },
+    {
+      "tStartS": 406.72,
+      "tEndS": 413.12,
+      "texte": "l'infrastructure de Kimi développé par Moonshot AI avant d'être démasqué ou encore Airbnb qui"
+    },
+    {
+      "tStartS": 413.12,
+      "tEndS": 418,
+      "texte": "s'appuie massivement sur la technologie chinoise pour orchestrer son service client mondial quitte"
+    },
+    {
+      "tStartS": 418,
+      "tEndS": 422.44,
+      "texte": "à s'attirer les foudres du Congrès. Mais au milieu de cette frénésie, le signal le"
+    },
+    {
+      "tStartS": 422.44,
+      "tEndS": 427.12,
+      "texte": "plus spectaculaire vient de l'intérieur même chez Microsoft. Dans le plus grand secret,"
+    },
+    {
+      "tStartS": 427.12,
+      "tEndS": 432.4,
+      "texte": "la firme prépare la banalisation totale des modèles dans son propre cloud. Elle liste déjà"
+    },
+    {
+      "tStartS": 432.4,
+      "tEndS": 438.6,
+      "texte": "en avant-première dans Azure les déclinaisons de Diepsic 4. Pourquoi un tel mouvement ? Parce que"
+    },
+    {
+      "tStartS": 438.6,
+      "tEndS": 443.6,
+      "texte": "Microsoft teste une version affinée de Deepsic pour servir de moteur à bas cou à ses propres"
+    },
+    {
+      "tStartS": 443.6,
+      "tEndS": 449.48,
+      "texte": "outils de productivité. L'objectif stratégique est simple à comprendre. Il s'agit de pouvoir orienter"
+    },
+    {
+      "tStartS": 449.48,
+      "tEndS": 454.76,
+      "texte": "chaque tâche vers le modèle le moins cher possible pour sauver ses marges quit à ce que ce modèle"
+    },
+    {
+      "tStartS": 454.76,
+      "tEndS": 460.68,
+      "texte": "vienne de l'autre bout du monde. C'est le triomphe d'une économie souterraine. Wall Street évalue le"
+    },
+    {
+      "tStartS": 460.68,
+      "tEndS": 465.92,
+      "texte": "marché avec un thermomètre inadapté en mesurant le chiffre d'affaires des interfaces visibles,"
+    },
+    {
+      "tStartS": 465.92,
+      "tEndS": 471.12,
+      "texte": "notamment en regardant les factures à pays. Or, l'écosystème ouvert chinois est un continent"
+    },
+    {
+      "tStartS": 471.12,
+      "tEndS": 475.96,
+      "texte": "submergé. Il ne remonte dans aucun tableau de bord californien puisqu'il produit de la valeur"
+    },
+    {
+      "tStartS": 475.96,
+      "tEndS": 481.36,
+      "texte": "opérationnelle intraçable. pas des abonnements facturables. L'ironie de cette guerre de position,"
+    },
+    {
+      "tStartS": 481.36,
+      "tEndS": 485.8,
+      "texte": "c'est que cette flotte invisible de modèles chinois qui motorise aujourd'hui les entreprises"
+    },
+    {
+      "tStartS": 485.8,
+      "tEndS": 490.8,
+      "texte": "du monde entier a d'abord été distylé à partir des cerveaux américains. Mais ne pêchez pas par"
+    },
+    {
+      "tStartS": 490.8,
+      "tEndS": 495.96,
+      "texte": "naïveté car le siphonage est bilatéral. À ce jeu du pillage industriel mutuel,"
+    },
+    {
+      "tStartS": 495.96,
+      "tEndS": 500.52,
+      "texte": "l'avantage finit par s'annuler de lui-même et quand la technique se neutralise, la"
+    },
+    {
+      "tStartS": 500.52,
+      "tEndS": 505.96,
+      "texte": "seule variable qui dicte encore l'issue du combat reste l'accès au gisement de données brutes. Or,"
+    },
+    {
+      "tStartS": 505.96,
+      "tEndS": 510.64,
+      "texte": "justement sur le terrain de l'extraction de masse, la certitude de voir les États-Unis conserver"
+    },
+    {
+      "tStartS": 510.64,
+      "tEndS": 516.44,
+      "texte": "leur avantage est aussi remis en question. Pour rappel, la moitié de la planète tourne d'ors et"
+    },
+    {
+      "tStartS": 516.44,
+      "tEndS": 521.92,
+      "texte": "déjà sur des architectures chinoises. Près de la moitié du trafic de token et donc de l'inférence"
+    },
+    {
+      "tStartS": 521.92,
+      "tEndS": 527.56,
+      "texte": "se fait sur leur modèle. et la faille ne cesse de s'élargir. En plus de ça, Pékin dispose d'un"
+    },
+    {
+      "tStartS": 527.56,
+      "tEndS": 532.8,
+      "texte": "marché d'un milliard d'internautes parfaitement verrouillé et exploitable à volonté. Et en nombre"
+    },
+    {
+      "tStartS": 532.8,
+      "tEndS": 539.08,
+      "texte": "d'utilisateurs d'IA générative, la Chine pèse déjà plus de trois fois le poids des États-Unis."
+    },
+    {
+      "tStartS": 539.92,
+      "tEndS": 544.88,
+      "texte": "À ce stade de la vidéo, si l'on pousse l'asymptote de cette tendance, il est légitime de se demander"
+    },
+    {
+      "tStartS": 544.88,
+      "tEndS": 550.16,
+      "texte": "si le leadership américain est encore un monopole réel ou une simple vitrine d'exposition qui ne"
+    },
+    {
+      "tStartS": 550.16,
+      "tEndS": 555.96,
+      "texte": "garantit plus un service continu à ses clients. Aujourd'hui, la perte de confiance est tactée."
+    },
+    {
+      "tStartS": 555.96,
+      "tEndS": 560.28,
+      "texte": "On observe un vrai basculement des décideurs occidentaux vers les architectures chinoises"
+    },
+    {
+      "tStartS": 560.28,
+      "tEndS": 565.24,
+      "texte": "et le calcul est purement pragmatique. D'abord pour une question d'infrastructure. En faisant"
+    },
+    {
+      "tStartS": 565.24,
+      "tEndS": 569.16,
+      "texte": "tourner ces modèles sur leur propre serveur, les entreprises reprennent le contrôle de la"
+    },
+    {
+      "tStartS": 569.16,
+      "tEndS": 574.76,
+      "texte": "machine et sécurisent leur conformité. Surtout, cette autonomie leur permet de creuser l'écart."
+    },
+    {
+      "tStartS": 574.76,
+      "tEndS": 579.08,
+      "texte": "C'est en affinance et modèles ouverts avec leurs propres données internes qu'elles se fabriquent"
+    },
+    {
+      "tStartS": 579.08,
+      "tEndS": 585.32,
+      "texte": "un avantage compétitif sur mesure. C'est le cas chez Cursor ou chez Airbnb. Ensuite se"
+    },
+    {
+      "tStartS": 585.32,
+      "tEndS": 590.24,
+      "texte": "pose l'enjeu de la dépendance technologique. Il est complexe de bâtir une vision à long terme"
+    },
+    {
+      "tStartS": 590.24,
+      "tEndS": 595.36,
+      "texte": "lorsque l'accès à un modèle critique peut être révoqué unilatéralement, même pour des motifs"
+    },
+    {
+      "tStartS": 595.36,
+      "tEndS": 602.08,
+      "texte": "de sécurité. Cette incertitude opérationnelle se double d'un risque stratégique. Les entreprises"
+    },
+    {
+      "tStartS": 602.08,
+      "tEndS": 606.96,
+      "texte": "hésitent logiquement à confier leurs données propriétaires à des acteurs susceptibles de"
+    },
+    {
+      "tStartS": 606.96,
+      "tEndS": 613.16,
+      "texte": "développer ensuite des solutions frontales sur leur propre marché. Enfin, la réalité financière"
+    },
+    {
+      "tStartS": 613.16,
+      "tEndS": 618,
+      "texte": "vient clore le débat. Avec la pression actuelle sur la rentabilité, le coût d'usage des modèles"
+    },
+    {
+      "tStartS": 618,
+      "tEndS": 624.24,
+      "texte": "américains fermés ne tient plus la route à grande échelle. Sur le papier, la décision est évidente."
+    },
+    {
+      "tStartS": 624.24,
+      "tEndS": 629.84,
+      "texte": "La logique voudrait qu'on débranche immédiatement nos API américaines. Mais la réalité du terrain,"
+    },
+    {
+      "tStartS": 629.84,
+      "tEndS": 633.84,
+      "texte": "celle que je vis moi et des milliers d'autres qui ont les mains dans le cambouille, racontent"
+    },
+    {
+      "tStartS": 633.84,
+      "tEndS": 639.44,
+      "texte": "une autre histoire. Certes, un modèle ouvert chinois surpasse désormais Claude sur la majorité"
+    },
+    {
+      "tStartS": 639.44,
+      "tEndS": 646.72,
+      "texte": "des tâches courantes et ce pour 98 % moins cher. Pourtant, si l'on hésite encore à tout basculer,"
+    },
+    {
+      "tStartS": 646.72,
+      "tEndS": 654.96,
+      "texte": "cela ne tient pas à la qualité du modèle ou au benchmark. C'est avant tout à cause du harnet."
+    },
+    {
+      "tStartS": 658.24,
+      "tEndS": 661.64,
+      "texte": "Quand vous changez un modèle américain pour un modèle chinois en pratique,"
+    },
+    {
+      "tStartS": 661.64,
+      "tEndS": 666.2,
+      "texte": "vous savez que cela va vous forcer à rebâtir tout un équilibre de coût et de performance et"
+    },
+    {
+      "tStartS": 666.2,
+      "tEndS": 671.52,
+      "texte": "notamment en ce qui concerne l'architecture qui le connecte au réel, le contexte, la mémoire,"
+    },
+    {
+      "tStartS": 671.52,
+      "tEndS": 677.04,
+      "texte": "les outils, la logique de routage et cetera. Et c'est cette compétence d'intégration qui"
+    },
+    {
+      "tStartS": 677.04,
+      "tEndS": 681.44,
+      "texte": "est le véritable goulot d'étranglement pour beaucoup. Le verrou n'est plus dans le modèle."
+    },
+    {
+      "tStartS": 681.44,
+      "tEndS": 687.44,
+      "texte": "Il s'est déplacé dans ce qu'on appelle le harnet agentique et celui qui maîtrise la création de ce"
+    },
+    {
+      "tStartS": 687.44,
+      "tEndS": 694.4,
+      "texte": "type d'orchestrateur détient une avance que la guerre des prix n'offre à personne. Lorsque le"
+    },
+    {
+      "tStartS": 694.4,
+      "tEndS": 700.12,
+      "texte": "modèle frontière est bloqué à la douane, c'est le dernier kilomètre qui relie un cerveau artificiel"
+    },
+    {
+      "tStartS": 700.12,
+      "tEndS": 705,
+      "texte": "brut à vos habitudes de travail qui prend le plus de valeur. Parce que tant que la frontière"
+    },
+    {
+      "tStartS": 705,
+      "tEndS": 710.52,
+      "texte": "progresse, l'avance se gagne en accédant à un modèle plus malin que le voisin. Une fois qu'on"
+    },
+    {
+      "tStartS": 710.52,
+      "tEndS": 716.28,
+      "texte": "ne peut plus y accéder, ce levier s'éteint et tout le monde plafonne à la même intelligence. Le seul"
+    },
+    {
+      "tStartS": 716.28,
+      "tEndS": 720.56,
+      "texte": "terrain qui reste pour se distinguer, c'est d'atteler ce cerveau brut à son travail mieux"
+    },
+    {
+      "tStartS": 720.56,
+      "tEndS": 726,
+      "texte": "que les autres. Et ce travail là, c'est ce qu'on appelle le dernier kilomètre. Prenez Claude Tag,"
+    },
+    {
+      "tStartS": 726,
+      "tEndS": 730.96,
+      "texte": "la dernière fonctionnalité d'anthropique intégrée directement dans SLAC. Vous ne codez rien,"
+    },
+    {
+      "tStartS": 730.96,
+      "tEndS": 735.4,
+      "texte": "vous mentionnez l'assistant dans une conversation et il absorbe tout l'historique de votre équipe"
+    },
+    {
+      "tStartS": 735.4,
+      "tEndS": 740.16,
+      "texte": "pour vous en livrer la synthèse. C'est un arnais, sauf qu'Antropique le tient à votre place. Le"
+    },
+    {
+      "tStartS": 740.16,
+      "tEndS": 745.56,
+      "texte": "dernier kilomètre, il le parcourt pour vous et en échange, il se loge au plus près de votre contexte"
+    },
+    {
+      "tStartS": 745.56,
+      "tEndS": 752.16,
+      "texte": "pour bien sûr apprendre ce que vous y faites. Le plan d'expansion est lisible. Les ingénieurs"
+    },
+    {
+      "tStartS": 752.16,
+      "tEndS": 757.08,
+      "texte": "avaient déjà cloud code, les profils plus avertis exploités desktop ou cow-work. Mais là,"
+    },
+    {
+      "tStartS": 757.08,
+      "tEndS": 761.4,
+      "texte": "c'est certes très pratique pour un collaborateur qui ne sait même pas installer un logiciel sur sa"
+    },
+    {
+      "tStartS": 761.4,
+      "tEndS": 767.24,
+      "texte": "machine puisqu'on lui livre le harnet à domicile sur Slack. Mais en abaissant la friction à zéro,"
+    },
+    {
+      "tStartS": 767.24,
+      "tEndS": 772.28,
+      "texte": "Entropiic ne fait pas de l'altruisme numérique. Il maximise la surface d'interaction avec vos"
+    },
+    {
+      "tStartS": 772.28,
+      "tEndS": 777.36,
+      "texte": "données les plus chaotiques. L'outil se présente comme un simple harnet, mais c'est tropique qui le"
+    },
+    {
+      "tStartS": 777.36,
+      "tEndS": 782.08,
+      "texte": "tient. Il couvre votre dernier kilomètre pour vous et vous gagnez un assistant clé en main."
+    },
+    {
+      "tStartS": 782.08,
+      "tEndS": 787.76,
+      "texte": "En échange de quoi il s'ancre dans votre contexte pour cartographier vos processus. C'est un cheval"
+    },
+    {
+      "tStartS": 787.76,
+      "tEndS": 792.64,
+      "texte": "de trois stratégique qui capture votre dernier kilomètre, alimente leur boucle d'extraction"
+    },
+    {
+      "tStartS": 792.64,
+      "tEndS": 799.04,
+      "texte": "de valeur et vous enferme dans l'ergonomie. Autre exemple, le système Copilot intégré dans la suite"
+    },
+    {
+      "tStartS": 799.04,
+      "tEndS": 803.76,
+      "texte": "Microsoft qui lit vos mails en arrière-plan pendant que vous rédigez un document Word pour"
+    },
+    {
+      "tStartS": 803.76,
+      "tEndS": 808.88,
+      "texte": "vous suggérer la bonne information financière ou encore les routeurs d'entreprise d'Open AI"
+    },
+    {
+      "tStartS": 808.88,
+      "tEndS": 814.52,
+      "texte": "qui orient automatiquement une requête vers votre base de données comptables internes avant même de"
+    },
+    {
+      "tStartS": 814.52,
+      "tEndS": 819.32,
+      "texte": "générer une réponse. Ces arnés ne sont pas des produits informatiques comme les autres. C'est"
+    },
+    {
+      "tStartS": 819.32,
+      "tEndS": 824.52,
+      "texte": "l'axe de conquête idéal. En s'insérant dans vos flux, ils font coup double. Ils rendent leurs"
+    },
+    {
+      "tStartS": 824.52,
+      "tEndS": 830.08,
+      "texte": "solution indispensables à vos équipes et décuplent l'extraction de télémétrie. L'essentiel de la"
+    },
+    {
+      "tStartS": 830.08,
+      "tEndS": 834.96,
+      "texte": "valeur de votre entreprise réside dans sa matière noire, à savoir les discussions informelles,"
+    },
+    {
+      "tStartS": 834.96,
+      "tEndS": 840.6,
+      "texte": "les décisions non documentées, tout l'historique enfoui des projets. En s'insérant via ces harnis"
+    },
+    {
+      "tStartS": 840.6,
+      "tEndS": 845.44,
+      "texte": "invisibles, les fournisseurs américains siphonnent cette donnée non structurée sans le moindre effort"
+    },
+    {
+      "tStartS": 845.44,
+      "tEndS": 850.6,
+      "texte": "de votre part. Et je ne spécule pas, souvenez-vous d'avril dernier et de la fuite de Claude God. Elle"
+    },
+    {
+      "tStartS": 850.6,
+      "tEndS": 855.8,
+      "texte": "a révélé l'existence de Conway, un agent résident fait pour vous observer travailler en silence et"
+    },
+    {
+      "tStartS": 855.8,
+      "tEndS": 861.44,
+      "texte": "reporter vos données à Anthropique. Ce genre de cheval de 3 existe. Croire au fairplay quand la"
+    },
+    {
+      "tStartS": 861.44,
+      "tEndS": 866.48,
+      "texte": "domination mondiale du secteur est en jeu, c'est refuser de voir la réalité en face. Est-ce qu'ils"
+    },
+    {
+      "tStartS": 866.48,
+      "tEndS": 871.4,
+      "texte": "s'en servent sans le dire ? Personne en dehors de chez eux ne peut le savoir et c'est déjà ça"
+    },
+    {
+      "tStartS": 871.4,
+      "tEndS": 875.56,
+      "texte": "le problème. Leur promesse n'est pas vraiment vérifiable. Mais laissons leurs intentions"
+    },
+    {
+      "tStartS": 875.56,
+      "tEndS": 881.84,
+      "texte": "de côté. Le Cloud Act à Washington de forcer n'importe quel fournisseur américain à livrer"
+    },
+    {
+      "tStartS": 881.84,
+      "tEndS": 887.52,
+      "texte": "vos données, même hébergé en Europe, souvent sans le droit de vous prévenir. C'est pour ça que la"
+    },
+    {
+      "tStartS": 887.52,
+      "tEndS": 894.76,
+      "texte": "justice européenne a invalidé le privacil en 2020, ajouté une guerre technologique avec la Chine et"
+    },
+    {
+      "tStartS": 894.76,
+      "tEndS": 900.16,
+      "texte": "un gouvernement qui en juin a déjà débranché les clients étrangers d'Anthropique. Pas besoin de"
+    },
+    {
+      "tStartS": 900.16,
+      "tEndS": 905.96,
+      "texte": "croire à un complot. Il suffit de lire la loi et de regarder comment se défend un lion blessé qui"
+    },
+    {
+      "tStartS": 905.96,
+      "tEndS": 911.64,
+      "texte": "sent sa domination contestée. Et c'est ici que la situation peut devenir délicate si l'on ne s'y"
+    },
+    {
+      "tStartS": 911.64,
+      "tEndS": 916.64,
+      "texte": "prépare pas correctement. Remplacer un fournisseur dans un bout de code est une affaire d'ingénieur,"
+    },
+    {
+      "tStartS": 916.64,
+      "tEndS": 920.96,
+      "texte": "mais débrancher un collègue virtuel que vos salariés non techniques sollicitent"
+    },
+    {
+      "tStartS": 920.96,
+      "tEndS": 927.28,
+      "texte": "machinalement 50 fois par jour est un cauchemar de conduite du changement. Le jour où votre direction"
+    },
+    {
+      "tStartS": 927.28,
+      "tEndS": 931.96,
+      "texte": "voudra basculer sur un modèle chinois hébergé en interne pour faire des économies massives,"
+    },
+    {
+      "tStartS": 931.96,
+      "tEndS": 936.96,
+      "texte": "elle se heurtera au mur de la fronde interne. Pour partir, il faudra reconstruire de toute"
+    },
+    {
+      "tStartS": 936.96,
+      "tEndS": 942.76,
+      "texte": "pièce ce fameux harnet logiciel qui permettait à la machine de lire l'entreprise en temps réel. Les"
+    },
+    {
+      "tStartS": 942.76,
+      "tEndS": 948,
+      "texte": "coûts de sortie deviennent alors prohibitifs. En résumé, l'industrie américaine a trouvé la"
+    },
+    {
+      "tStartS": 948,
+      "tEndS": 954.48,
+      "texte": "parade parfaite. Elle vous loue votre propre mémoire collective. Pour résumer, d'un côté,"
+    },
+    {
+      "tStartS": 954.48,
+      "tEndS": 958.88,
+      "texte": "nous avons une souveraineté par l'ingénierie qui implique d'assumer la lourdeur technique,"
+    },
+    {
+      "tStartS": 958.88,
+      "tEndS": 963.56,
+      "texte": "d'intégrer des technologies chinoises libres pour garantir un coût minime et une indépendance"
+    },
+    {
+      "tStartS": 963.56,
+      "tEndS": 968.92,
+      "texte": "totale. De l'autre, nous acceptons une servitude volontaire par l'ergonomie qui consiste à payer"
+    },
+    {
+      "tStartS": 968.92,
+      "tEndS": 974,
+      "texte": "le prix fort pour le confort du harnet américain en acceptant de céder la captation de tout votre"
+    },
+    {
+      "tStartS": 974,
+      "tEndS": 979.32,
+      "texte": "contexte organisationnel. Attention quand même à la version facile de cette histoire. On répète"
+    },
+    {
+      "tStartS": 979.32,
+      "tEndS": 984.72,
+      "texte": "partout que le cerveau est devenu une commodité et que l'orchestration serait le nouveau verrou."
+    },
+    {
+      "tStartS": 984.72,
+      "tEndS": 989.8,
+      "texte": "C'est déjà à moitié faux. Les modèles de frontière comme Fable absorbent cette couche d'orchestration"
+    },
+    {
+      "tStartS": 989.8,
+      "tEndS": 995,
+      "texte": "et la fournissent nativement dans leur poids. Le routage, la mémoire, l'appel d'outil,"
+    },
+    {
+      "tStartS": 995,
+      "tEndS": 1000.64,
+      "texte": "tout ce qui composait le harnet générique remonte peu à peu dans le modèle lui-même. Cette partie"
+    },
+    {
+      "tStartS": 1000.64,
+      "tEndS": 1005.52,
+      "texte": "de la valeur se banalise donc à son tour, sauf que ça ne change rien à la conclusion pour une"
+    },
+    {
+      "tStartS": 1005.52,
+      "tEndS": 1010.28,
+      "texte": "raison qu'on a déjà sous les yeux. Ces modèles sont fermés. L'orchestration que Fable embarque,"
+    },
+    {
+      "tStartS": 1010.28,
+      "tEndS": 1014.32,
+      "texte": "vous ne la possédez pas. Vous la louez et on vient de voir qu'on peut vous la couper du"
+    },
+    {
+      "tStartS": 1014.32,
+      "tEndS": 1019.96,
+      "texte": "jour au lendemain. Reste alors le seul actif que personne ne livre clé en main. Le dernier"
+    },
+    {
+      "tStartS": 1019.96,
+      "tEndS": 1026.56,
+      "texte": "kilomètre branché sur votre réalité à vous. vos flux de travail, l'historique de vos décisions,"
+    },
+    {
+      "tStartS": 1026.56,
+      "tEndS": 1031.32,
+      "texte": "vos données propriétaires. Pour un intégrateur ou un consultant, ce dernier kilomètre est une"
+    },
+    {
+      "tStartS": 1031.32,
+      "tEndS": 1036,
+      "texte": "mine d'or aujourd'hui comme demain. Et il change carrément de nature le jour où vous l'augmentez"
+    },
+    {
+      "tStartS": 1036,
+      "tEndS": 1040.88,
+      "texte": "d'un affinage sur vos données propriétaires parce que vous fabriquez alors quelque chose"
+    },
+    {
+      "tStartS": 1040.88,
+      "tEndS": 1046.56,
+      "texte": "qu'aucun modèle générique, ouvert ou fermé, ne saura reproduire. Le choix qui se pose à votre"
+    },
+    {
+      "tStartS": 1046.56,
+      "tEndS": 1052.04,
+      "texte": "organisation tient là. construire ce dernier kilomètre chez vous et en garder la maîtrise"
+    },
+    {
+      "tStartS": 1052.04,
+      "tEndS": 1058.2,
+      "texte": "ou louer le confort clé en main et laisser un/3 capter tout votre contexte. C'est la décision"
+    },
+    {
+      "tStartS": 1058.2,
+      "tEndS": 1064.56,
+      "texte": "structurante du moment. Reste un dernier paramètre qui rend ce choix encore plus urgent. Pendant"
+    },
+    {
+      "tStartS": 1064.56,
+      "tEndS": 1069.52,
+      "texte": "qu'on s'écharpe sur le modèle à adopter, le sol se dérobe du côté des coupts et pas seulement ce"
+    },
+    {
+      "tStartS": 1069.52,
+      "tEndS": 1074.88,
+      "texte": "démodèle. Les prix de la mémoire vive s'envolent au point qu'on a déjà forgé un mot pour décrire le"
+    },
+    {
+      "tStartS": 1074.88,
+      "tEndS": 1080.8,
+      "texte": "phénomène. Le Ramagedon. La demande des centres de données en puce mémoire aspire la production"
+    },
+    {
+      "tStartS": 1080.8,
+      "tEndS": 1085.8,
+      "texte": "mondiale et il ne reste presque rien pour le reste de l'industrie. Apple vient d'ailleurs de relever"
+    },
+    {
+      "tStartS": 1085.8,
+      "tEndS": 1090.44,
+      "texte": "le prix de ses MacBook et ce n'est qu'un symptôme parmi d'autres puisque tout ce qui touche au"
+    },
+    {
+      "tStartS": 1090.44,
+      "tEndS": 1095.96,
+      "texte": "calcul coûte brutalement plus cher. Face à cette hausse qui semble venir de partout à la fois,"
+    },
+    {
+      "tStartS": 1095.96,
+      "tEndS": 1101.68,
+      "texte": "une petite musique rassurante commence à monter. Avec la fin du token maxing, cette époque révolue"
+    },
+    {
+      "tStartS": 1101.68,
+      "tEndS": 1106.08,
+      "texte": "où les entreprises affichaient avec fierté des consommations de token, même à perte."
+    },
+    {
+      "tStartS": 1106.08,
+      "tEndS": 1111.52,
+      "texte": "et la hausse structurelle des coûts de calcul poussé par la consommation des agents. Certains en"
+    },
+    {
+      "tStartS": 1111.52,
+      "tEndS": 1117.36,
+      "texte": "déduisent que le modèle économique est cassé comme si la technologie de l'IA allait s'évaporer. C'est"
+    },
+    {
+      "tStartS": 1117.36,
+      "tEndS": 1122.4,
+      "texte": "un non sens historique. Ce n'est pas parce que le modèle de pointage antique coûte cher aujourd'hui"
+    },
+    {
+      "tStartS": 1122.4,
+      "tEndS": 1127.56,
+      "texte": "que la machine est inutile. C'est comme si au début de l'automobile, on avait abandonné les"
+    },
+    {
+      "tStartS": 1127.56,
+      "tEndS": 1132.32,
+      "texte": "premières voitures pour retourner au cheval sous prétexte qu'elles étaient hors de prix."
+    },
+    {
+      "tStartS": 1132.32,
+      "tEndS": 1137.16,
+      "texte": "La mécanique est d'ailleurs la même quand on y pense. Le moteur a converti une énergie en force"
+    },
+    {
+      "tStartS": 1137.16,
+      "tEndS": 1141.48,
+      "texte": "mécanique pour écraser le muscle à l'échelle, ce qui, je vous le rappelle au passage, a"
+    },
+    {
+      "tStartS": 1141.48,
+      "tEndS": 1147.04,
+      "texte": "financer la société moderne. De l'urbanisation aux retraites jusqu'à l'éducation de masse et le luxe"
+    },
+    {
+      "tStartS": 1147.04,
+      "tEndS": 1152.2,
+      "texte": "d'être derrière cet écran aujourd'hui au lieu de travailler la terre pour survivre. Et bien, le GPU"
+    },
+    {
+      "tStartS": 1152.2,
+      "tEndS": 1157.08,
+      "texte": "fait exactement la même chose avec la cognition. Et rien que le fait qu'on ne peut pas empiler 10"
+    },
+    {
+      "tStartS": 1157.08,
+      "tEndS": 1163.48,
+      "texte": "cerveaux pour obtenir 10 fois plus de réflexion alors que la puissance de calcul, elle s'aligne à"
+    },
+    {
+      "tStartS": 1163.48,
+      "tEndS": 1169.84,
+      "texte": "volonté va bouleverser la face de la civilisation qui dompte ce principe. Mais au-delà des envolés"
+    },
+    {
+      "tStartS": 1169.84,
+      "tEndS": 1175.16,
+      "texte": "futurologiques dans votre travail à vous, ce sont sur les tâches exécutives que l'écart se creusera"
+    },
+    {
+      "tStartS": 1175.16,
+      "tEndS": 1181.16,
+      "texte": "le plus. Alors bien sûr, il faudra lui fournir le bon contexte, exactement comme un moteur"
+    },
+    {
+      "tStartS": 1181.16,
+      "tEndS": 1187.4,
+      "texte": "qui ne donne sa pleine efficacité qu'avec le bon carburant, un châssis et une boîte qui vont avec."
+    },
+    {
+      "tStartS": 1187.4,
+      "tEndS": 1191.92,
+      "texte": "Et donc, même si je sais que pour une majorité d'entre vous, cette explication est inutile,"
+    },
+    {
+      "tStartS": 1191.92,
+      "tEndS": 1196.44,
+      "texte": "je le répète quand même. Même si les agents consomment structurellement 100 fois plus de"
+    },
+    {
+      "tStartS": 1196.44,
+      "tEndS": 1201.92,
+      "texte": "calcul et d'énergie aujourd'hui, le substrat qui transforme l'électricité en intelligence"
+    },
+    {
+      "tStartS": 1201.92,
+      "tEndS": 1207.48,
+      "texte": "surclasse le substrat biologique et ce faisant, il verrouille un changement de paradigme. Le"
+    },
+    {
+      "tStartS": 1207.48,
+      "tEndS": 1212.4,
+      "texte": "cerveau humain ne tient tout simplement pas la comparaison avec le GPU sur le travail cognitif"
+    },
+    {
+      "tStartS": 1212.4,
+      "tEndS": 1218.48,
+      "texte": "qui touche à l'exécution, tout comme nos muscles ne rivaliseront jamais avec un moteur. Alors oui,"
+    },
+    {
+      "tStartS": 1218.48,
+      "tEndS": 1222.4,
+      "texte": "la facture de l'infrastructure est salée aujourd'hui parce que ces agents consomment"
+    },
+    {
+      "tStartS": 1222.4,
+      "tEndS": 1226.56,
+      "texte": "énormément mais c'est la règle de toute bascule industrielle. Souvenez-vous,"
+    },
+    {
+      "tStartS": 1226.56,
+      "tEndS": 1231.88,
+      "texte": "les premières automobiles coûtaient une fortune. L'enjeu n'était pas de tenir un budget, mais de"
+    },
+    {
+      "tStartS": 1231.88,
+      "tEndS": 1237.28,
+      "texte": "prouver que l'air du cheval était révolu. C'est exactement ce qui se joue ici. L'avant-garde se"
+    },
+    {
+      "tStartS": 1237.28,
+      "tEndS": 1241.56,
+      "texte": "paie au prix fort. Les pionniers mettent la main à la poche pour forger leur expérience,"
+    },
+    {
+      "tStartS": 1241.56,
+      "tEndS": 1246.24,
+      "texte": "leur modèle et leur propre harnet avant le reste du marché. Il s'agit d'avoir un coup"
+    },
+    {
+      "tStartS": 1246.24,
+      "tEndS": 1251.24,
+      "texte": "d'avance pour comprendre les règles du jeu plutôt que de subir les conséquences de plein fouet."
+    },
+    {
+      "tStartS": 1251.92,
+      "tEndS": 1256.4,
+      "texte": "Beaucoup espèrent une acalmie, mais spoiler alerte, on ne va pas tous se réveiller demain"
+    },
+    {
+      "tStartS": 1256.4,
+      "tEndS": 1262,
+      "texte": "comme d'un mauvais rêve, revenir à 2019 et se dire que l'intelligence artificielle n'a jamais existé"
+    },
+    {
+      "tStartS": 1262,
+      "tEndS": 1266.8,
+      "texte": "et qu'on va tranquillement recoder à la main et écrire nos mails nous-mêmes. C'est pourtant la"
+    },
+    {
+      "tStartS": 1266.8,
+      "tEndS": 1271.28,
+      "texte": "fausse réassurance que les gens se racontent en ce moment. Ils lisent la fin de l'optimisation"
+    },
+    {
+      "tStartS": 1271.28,
+      "tEndS": 1275.76,
+      "texte": "massive et subventionnée des requêtes et la flambée soudaine des prix comme un verdict"
+    },
+    {
+      "tStartS": 1275.76,
+      "tEndS": 1281.96,
+      "texte": "définitif sur la technologie elle-même. L'erreur est de confondre une correction tarifaire avec un"
+    },
+    {
+      "tStartS": 1281.96,
+      "tEndS": 1287.12,
+      "texte": "plafond technologique. Regardez plutôt les signaux de ces dernières semaines. Anthropique qui a dû"
+    },
+    {
+      "tStartS": 1287.12,
+      "tEndS": 1292.04,
+      "texte": "scinder ses offres en urgence le 15 juin dernier pour couper l'herbe sous le pied des agents"
+    },
+    {
+      "tStartS": 1292.04,
+      "tEndS": 1298.24,
+      "texte": "autonomes qui extrayaient jusqu'à 175 fois le prix de leur abonnement. Même constat pour copilot"
+    },
+    {
+      "tStartS": 1298.24,
+      "tEndS": 1303.52,
+      "texte": "qui bascule dans la douleur vers une stricte facturation au compteur de token ou encore Uber"
+    },
+    {
+      "tStartS": 1303.52,
+      "tEndS": 1310.2,
+      "texte": "qui a littéralement cramer tout son budget annuel prévu pour Claude Code 2026 en à peine 4 mois."
+    },
+    {
+      "tStartS": 1310.2,
+      "tEndS": 1314.4,
+      "texte": "La conclusion rassurante que le grand public enti est tragiquement fausse. Ils se disent"
+    },
+    {
+      "tStartS": 1314.4,
+      "tEndS": 1319.08,
+      "texte": "que la technologie est trop chère, qu'elle n'est pas rentable et qu'au final elle ne prendra pas"
+    },
+    {
+      "tStartS": 1319.08,
+      "tEndS": 1324.16,
+      "texte": "leur emploi. Mais cette flambée des factures mesure une seule et unique chose, à savoir"
+    },
+    {
+      "tStartS": 1324.16,
+      "tEndS": 1330.08,
+      "texte": "la fin abrupte des subventions sur les interfaces occidentales. Absolument rien d'autre. Pendant que"
+    },
+    {
+      "tStartS": 1330.08,
+      "tEndS": 1335.56,
+      "texte": "l'Occident ferme les robinets et facture le prix fort, le coût réel de l'intelligence s'effondre"
+    },
+    {
+      "tStartS": 1335.56,
+      "tEndS": 1341.24,
+      "texte": "littéralement sur une deuxième courbe d'offre du côté chinois. D'un côté, dipsic tombe à quelques"
+    },
+    {
+      "tStartS": 1341.24,
+      "tEndS": 1348.12,
+      "texte": "centimes et même des modèles comme GLM 5.2 offrent le contrôle total, des poids téléchargeable et"
+    },
+    {
+      "tStartS": 1348.12,
+      "tEndS": 1354,
+      "texte": "hébergeable sur votre propre infrastructure. Autrement dit, la capacité cognitive qui menace"
+    },
+    {
+      "tStartS": 1354,
+      "tEndS": 1359.84,
+      "texte": "les emplois traditionnels n'a tout simplement jamais été aussi bon marché. Soyons précis et"
+    },
+    {
+      "tStartS": 1359.84,
+      "tEndS": 1365.32,
+      "texte": "gardons un certain recul, l'autohébergement de ces modèles ne devient financièrement rentable qu'à"
+    },
+    {
+      "tStartS": 1365.32,
+      "tEndS": 1371.04,
+      "texte": "très gros volume d'usage. Pour un individu isolé ou une très petite structure, l'opération reste"
+    },
+    {
+      "tStartS": 1371.04,
+      "tEndS": 1377.28,
+      "texte": "souvent théorique. C'est ce détail qui protège les géants du cloud de la désertion des particuliers."
+    },
+    {
+      "tStartS": 1377.28,
+      "tEndS": 1382.24,
+      "texte": "Mais pour une entreprise à l'échelle, c'est un changement de paradigme absolu. Face à cette"
+    },
+    {
+      "tStartS": 1382.24,
+      "tEndS": 1387.88,
+      "texte": "instabilité structurelle, la posture défensive est suicidaire. Il faut passer à l'offensive et rendre"
+    },
+    {
+      "tStartS": 1387.88,
+      "tEndS": 1395.12,
+      "texte": "votre organisation incontestable, que la bulle éclate ou que la rareté s'installe. Premièrement,"
+    },
+    {
+      "tStartS": 1395.12,
+      "tEndS": 1399.04,
+      "texte": "il faut saturer le milieu de gamme. Ne cherchez plus à économiser vos jetons de"
+    },
+    {
+      "tStartS": 1399.04,
+      "tEndS": 1403.4,
+      "texte": "calcul à tout prix. Utilisez massivement les modèles intermédiaires qui ne coûtent presque"
+    },
+    {
+      "tStartS": 1403.4,
+      "tEndS": 1409.24,
+      "texte": "rien. Multipliez-les, faites-les voter entre eux, créer des consensus artificiel pour traiter des"
+    },
+    {
+      "tStartS": 1409.24,
+      "tEndS": 1414.52,
+      "texte": "tâches complexes. Il faut arrêter d'escalader systématiquement vers les modèles de pointe"
+    },
+    {
+      "tStartS": 1414.52,
+      "tEndS": 1419.64,
+      "texte": "qui constituent le sommet des coûts et ruinent votre économie unitaire. Deuxièmement, il faut"
+    },
+    {
+      "tStartS": 1419.64,
+      "tEndS": 1425.68,
+      "texte": "vampiriser l'expertise américaine pour calibrer votre système. Utilisez leur modèle de pointe pour"
+    },
+    {
+      "tStartS": 1425.68,
+      "tEndS": 1431.12,
+      "texte": "générer et valider le cadrage de vos requêtes. L'objectif est d'extraire cette logique pour la"
+    },
+    {
+      "tStartS": 1431.12,
+      "tEndS": 1436.16,
+      "texte": "verrouiller dans votre harnet d'orchestration. Vous pouvez alors déléguer l'exécution pure à"
+    },
+    {
+      "tStartS": 1436.16,
+      "tEndS": 1440.96,
+      "texte": "de petits modèles ouverts hébergés localement qui se contentront de jouer une partition déjà"
+    },
+    {
+      "tStartS": 1440.96,
+      "tEndS": 1447.2,
+      "texte": "écrite. Troisièmement, restez contractuellement liquide. Fuyez comme la peste les engagements de"
+    },
+    {
+      "tStartS": 1447.2,
+      "tEndS": 1452.36,
+      "texte": "capacité sur le long terme. Le surcoût immédiat de la souplesse vaut infiniment mieux que le"
+    },
+    {
+      "tStartS": 1452.36,
+      "tEndS": 1457.56,
+      "texte": "risque mortel de se retrouver enchaîné à une architecture qui perdrait brutalement toute"
+    },
+    {
+      "tStartS": 1457.56,
+      "tEndS": 1463.48,
+      "texte": "sa valeur en cas de stress sur l'écosystème. Ensuite, cartographiez votre travail selon sa"
+    },
+    {
+      "tStartS": 1463.48,
+      "tEndS": 1468.88,
+      "texte": "place dans la distribution des tâches. Au centre, vous avez le gros du quotidien, des problèmes aux"
+    },
+    {
+      "tStartS": 1468.88,
+      "tEndS": 1474.56,
+      "texte": "formes déjà vu 1000 fois dont la sortie se vérifie d'un coup d'œil, un site, un plan de présentation,"
+    },
+    {
+      "tStartS": 1474.56,
+      "tEndS": 1480.16,
+      "texte": "une synthèse, du code courant. Sur ce terrain, le modèle ouvert chinois égale le modèle de pointe"
+    },
+    {
+      "tStartS": 1480.16,
+      "tEndS": 1485.6,
+      "texte": "américain. Souvent le dépasse pour une fraction du prix. Au bord de la distribution, en revanche,"
+    },
+    {
+      "tStartS": 1485.6,
+      "tEndS": 1491.6,
+      "texte": "pour les tâches rares, ambigues et à fort en jeu, là le modèle de pointe garde toute sa valeur et"
+    },
+    {
+      "tStartS": 1491.6,
+      "tEndS": 1496.88,
+      "texte": "mérite son tarif. Le problème, c'est que presque personne n'a mesuré quelle part de son travail"
+    },
+    {
+      "tStartS": 1496.88,
+      "tEndS": 1502.08,
+      "texte": "penche d'un côté ou de l'autre. Faute de cette mesure, on envoie tout vers le sommet et on paye"
+    },
+    {
+      "tStartS": 1502.08,
+      "tEndS": 1507.84,
+      "texte": "le prix fort pour une intelligence que le milieu fournissait déjà. Enfin, recruter l'efficience"
+    },
+    {
+      "tStartS": 1507.84,
+      "tEndS": 1514.4,
+      "texte": "technique. La compétence clé en 2026 n'est plus de connaître les subtilités du modèle à la mode."
+    },
+    {
+      "tStartS": 1514.4,
+      "tEndS": 1519.28,
+      "texte": "La véritable valeur réside dans la capacité à faire accomplir des tâches de très haut niveau"
+    },
+    {
+      "tStartS": 1519.28,
+      "tEndS": 1524.12,
+      "texte": "par des modèles médiocres. Chercher des profils capables de maîtriser le routage intelligent,"
+    },
+    {
+      "tStartS": 1524.12,
+      "tEndS": 1528.56,
+      "texte": "l'évaluation systémique des réponses et la spécialisation des flux de travail."
+    },
+    {
+      "tStartS": 1528.56,
+      "tEndS": 1534.16,
+      "texte": "Un architecte du harnet vote aujourd'hui 100 fois plus qu'un simple utilisateur de requête."
+    },
+    {
+      "tStartS": 1537.56,
+      "tEndS": 1542.4,
+      "texte": "Récapitulons. En mettant son haut de gamme sous cloche, Washington laisse le champ libre. La"
+    },
+    {
+      "tStartS": 1542.4,
+      "tEndS": 1547.56,
+      "texte": "Chine ne cherche plus à battre la frontière. Elle sature la majorité des tâches quotidiennes avec"
+    },
+    {
+      "tStartS": 1547.56,
+      "tEndS": 1552.8,
+      "texte": "des modèles bradés sur lesquels les entreprises américaines basculent déjà en silence. Le verrou"
+    },
+    {
+      "tStartS": 1552.8,
+      "tEndS": 1557.24,
+      "texte": "s'est déplacé. Les États-Unis reculent sur la guerre des coups mais reportent le combat sur"
+    },
+    {
+      "tStartS": 1557.24,
+      "tEndS": 1561.32,
+      "texte": "le harnet d'orchestration pour capturer votre contexte. Et pendant que le grand"
+    },
+    {
+      "tStartS": 1561.32,
+      "tEndS": 1566.8,
+      "texte": "public confond la fin des subventions avec un mur technologique, les prix s'effondrent côté"
+    },
+    {
+      "tStartS": 1566.8,
+      "tEndS": 1572.44,
+      "texte": "chinois. Face à ce déséquilibre, une seule parade : bâtir pour l'abondance comme pour la pénurie."
+    },
+    {
+      "tStartS": 1572.44,
+      "tEndS": 1577.68,
+      "texte": "Syphoner l'expertise américaine, forger son propre harnet, fuir les menottes contractuelles et viser"
+    },
+    {
+      "tStartS": 1577.68,
+      "tEndS": 1583.96,
+      "texte": "l'efficience pure. Le tout avant que les portes ne se ferment. Et l'Europe dans cette équation,"
+    },
+    {
+      "tStartS": 1583.96,
+      "tEndS": 1588.36,
+      "texte": "je vous vois venir et c'est une question légitime qu'il faut aborder. Nous avons la chance de"
+    },
+    {
+      "tStartS": 1588.36,
+      "tEndS": 1593.56,
+      "texte": "compter sur Mistral qui coche les bonnes cases, une approche ouverte, hébergeable localement et"
+    },
+    {
+      "tStartS": 1593.56,
+      "tEndS": 1598.56,
+      "texte": "un véritable atout pour notre souveraineté. Mais une fois éloigné des micros, la vérité que les"
+    },
+    {
+      "tStartS": 1598.56,
+      "tEndS": 1603.76,
+      "texte": "conseils d'administration ont déjà intégré, c'est qu'à l'instant té la rentabilité a un passeport"
+    },
+    {
+      "tStartS": 1603.76,
+      "tEndS": 1608.72,
+      "texte": "chinois, même les Américains l'ont compris et s'en servent en coulisse. Ne pas jouer cette carte,"
+    },
+    {
+      "tStartS": 1608.72,
+      "tEndS": 1613.68,
+      "texte": "c'est choisir de perdre avec les honneurs. Aussi, comme dans toutes mes vidéos, cette carte n'est"
+    },
+    {
+      "tStartS": 1613.68,
+      "tEndS": 1618.32,
+      "texte": "pas éternelle non plus. Le front ouvert chinois, c'est l'arme de guerre pour les opportunistes que"
+    },
+    {
+      "tStartS": 1618.32,
+      "tEndS": 1623.76,
+      "texte": "je conseille aujourd'hui. Je dois vous mettre en garde. La Chine publie ses poids parce qu'elle est"
+    },
+    {
+      "tStartS": 1623.76,
+      "tEndS": 1629,
+      "texte": "derrière pour l'instant pour assécher les labos américains qui vivent de la pays et pour augmenter"
+    },
+    {
+      "tStartS": 1629,
+      "tEndS": 1634.72,
+      "texte": "son influence. Le jour où elle passera devant, elle n'a plus aucune raison d'offrir son avance au"
+    },
+    {
+      "tStartS": 1634.72,
+      "tEndS": 1640.76,
+      "texte": "monde entier. Le prochain dips psyc peut très bien sortir fermé sans rompre aucune promesse. Et ça,"
+    },
+    {
+      "tStartS": 1640.76,
+      "tEndS": 1644.88,
+      "texte": "je ne vois personne en parler pour l'instant. Celui que vous avez déjà téléchargé reste à vous,"
+    },
+    {
+      "tStartS": 1644.88,
+      "tEndS": 1649.48,
+      "texte": "mais vous tenez une photo et ces modèles déjà puissants, déjà capables de travailler sur un"
+    },
+    {
+      "tStartS": 1649.48,
+      "tEndS": 1653.36,
+      "texte": "certain nombre de tâches ne garantissent pas que vous serez toujours à la bonne cadence"
+    },
+    {
+      "tStartS": 1653.36,
+      "tEndS": 1659.24,
+      "texte": "dans 3 mois. Une fois le robinet coupé, votre modèle vieillit aussitôt pendant que la frontière"
+    },
+    {
+      "tStartS": 1659.24,
+      "tEndS": 1664.44,
+      "texte": "continue de monter. Raison de plus, de monter en compétence pendant que c'est ouvert des deux côtés"
+    },
+    {
+      "tStartS": 1664.44,
+      "tEndS": 1669.04,
+      "texte": "et de bâtir pour le jour où la porte se ferme parce qu'elle peut très bien se fermer côté"
+    },
+    {
+      "tStartS": 1669.04,
+      "tEndS": 1675.48,
+      "texte": "chinois aussi. Si l'analyse d'aujourd'hui raisonne en vous, la suite se passe sur le Patréon. Le but"
+    },
+    {
+      "tStartS": 1675.48,
+      "tEndS": 1680.68,
+      "texte": "est de vous y donner les armes pour piloter. Au programme, des parcours complets sur la maîtrise"
+    },
+    {
+      "tStartS": 1680.68,
+      "tEndS": 1685.52,
+      "texte": "de l'écosystème anthropique, une spécialisation sur la création d'un second cerveau adapté à l'air"
+    },
+    {
+      "tStartS": 1685.52,
+      "tEndS": 1690.36,
+      "texte": "de LIA et le lancement cette semaine de notre parcours de pointe. Sur la logique agentique,"
+    },
+    {
+      "tStartS": 1690.36,
+      "tEndS": 1694.56,
+      "texte": "le chef d'orchestre. En nous rejoignant, vous débloquez aussi le Discord privé,"
+    },
+    {
+      "tStartS": 1694.56,
+      "tEndS": 1699.36,
+      "texte": "des dizaines de vidéos exclusives et des outils pour vos audits stratégiques pour jaoger votre"
+    },
+    {
+      "tStartS": 1699.36,
+      "tEndS": 1703.68,
+      "texte": "fluence dans le domaine, ainsi que des conseils de carrière que je ne publie pas sur YouTube"
+    },
+    {
+      "tStartS": 1703.68,
+      "tEndS": 1708.36,
+      "texte": "pour aider à naviguer cette révolution. Vous trouverez aussi également le code que j'utilise"
+    },
+    {
+      "tStartS": 1708.36,
+      "tEndS": 1712.72,
+      "texte": "réellement pour orchestrer mes agents et des dossiers de recherche pour plus d'informations."
+    },
+    {
+      "tStartS": 1712.72,
+      "tEndS": 1718.08,
+      "texte": "De la remise à niveau accéléré, débrué et de la présentation technique simplifiée. Si vous"
+    },
+    {
+      "tStartS": 1718.08,
+      "tEndS": 1722.96,
+      "texte": "avez dans votre réseau quelqu'un qui s'apprête à engager son entreprise sur plusieurs années avec"
+    },
+    {
+      "tStartS": 1722.96,
+      "tEndS": 1727.56,
+      "texte": "un fournisseur d'intelligence artificielle, un responsable qui signe ses contrats ou qui"
+    },
+    {
+      "tStartS": 1727.56,
+      "tEndS": 1732.4,
+      "texte": "décide de l'architecture, envoyez-lui cette vidéo avant qu'il ne s'engage pour de bon."
+    },
+    {
+      "tStartS": 1732.4,
+      "tEndS": 1737,
+      "texte": "Il est peut-être en train de verrouiller sa boîte sur un paradigme qui n'existe déjà plus et le"
+    },
+    {
+      "tStartS": 1737,
+      "tEndS": 1742.2,
+      "texte": "temps de cette vidéo aujourd'hui lui évitera de reconstruire tout son arnet dans 6 mois. Merci de"
+    },
+    {
+      "tStartS": 1742.2,
+      "tEndS": 1747.24,
+      "texte": "m'avoir écouté jusqu'au bout et à la prochaine. Il faut savoir que les ordinateurs ont remplacé"
+    },
+    {
+      "tStartS": 1747.24,
+      "tEndS": 1754.08,
+      "texte": "les employés et les machines les ouvriers et là je je barre la route, c'est le cas de le dire. Qui"
+    },
+    {
+      "tStartS": 1754.08,
+      "tEndS": 1761.68,
+      "texte": "dit barrage du pH ? Et je pense que moi avec mes barrières automatiques, c'est fini les grossesses,"
+    },
+    {
+      "tStartS": 1761.68,
+      "tEndS": 1767.64,
+      "texte": "les congés payés, les 13e mois, les certificats médicaux et les gens qui carotent chez eux."
+    },
+    {
+      "tStartS": 1767.64,
+      "tEndS": 1772.12,
+      "texte": "Comprenez chez moi c'est une fois par an entretien et puis c'est terminé et j'ai un outil économique"
+    },
+    {
+      "tStartS": 1772.12,
+      "tEndS": 1777.04,
+      "texte": "qui est cohérent qui fonctionne et retourbant. On vous sent Oui. perturbé. Oui. Dire que les"
+    },
+    {
+      "tStartS": 1777.04,
+      "tEndS": 1780.48,
+      "texte": "salariés c'est que définiant, c'est ce qu'il vient de dire. Les salariés, c'est souffert de"
+    },
+    {
+      "tStartS": 1780.48,
+      "tEndS": 1785.08,
+      "texte": "ma part et j'en vois tous les jours des gens qui souffrent, c'est des êtres humains. Une barrière,"
+    },
+    {
+      "tStartS": 1785.08,
+      "tEndS": 1789.48,
+      "texte": "c'est loin d'être un être humain. Moi je souffre pas. Non mais j'ai jamais dit que vous étiez un"
+    },
+    {
+      "tStartS": 1789.48,
+      "tEndS": 1798.56,
+      "texte": "être humain. Souffre pasin. J'ai jamais dit que vous étiez un être humain. On est bien d'accord."
+    }
+  ]
+}

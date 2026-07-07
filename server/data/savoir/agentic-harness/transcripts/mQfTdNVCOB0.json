@@ -1,0 +1,3652 @@
+{
+  "videoId": "mQfTdNVCOB0",
+  "meta": {
+    "titre": "Harness Engineering Masterclass: Technical Deep Dive on how to build Agentic Systems",
+    "chaine": "The Carbon Layer",
+    "dureeS": 1686,
+    "publieeLe": "2026-05-16",
+    "description": "In this episode, the focus is on demystifying harness engineering for AI agents. The discussion covers the essential components and primitives that make AI systems reliable and safe. Key insights include the importance of instructions, context delivery, and context management in shaping model behavior and preventing issues like hallucinations. The episode also explores the role of tool interfaces, execution environments, and durable states in creating dependable AI workflows.\n\nTimecodes\n\n0:00 Introduction to harness engineering and its significance.\n1:01  Explanation of the model's role and the concept of hallucinations.\n2:39 Definition of an AI agent and the agentic loop.\n3:45 Discussion on the importance of instructions as a primitive.\n6:15 Context delivery and its impact on model performance.\n8:14 Context management and its role in maintaining focus.\n10:46 Tool interfaces and their importance in enabling model actions.\n12:19  Execution environments and their role in operational control.\n14:16 Durable state and its significance in preserving work.\n16:19 Orchestration and its role in managing workflows.\n18:13 Sub-agents and their function in dividing tasks.\n20:20 Skill layers and their importance in providing reusable procedures.\n22:20 Verification and observability as key components for reliability.\n25:14 Evolution of harness engineering and its impact on AI systems.\n\nHarness engineering transforms clever agents into dependable systems by building reliability into the system around the model.",
+    "chapitres": [
+      {
+        "t": 0,
+        "titre": "Introduction to harness engineering and its significance."
+      },
+      {
+        "t": 61,
+        "titre": "Explanation of the model's role and the concept of hallucinations."
+      },
+      {
+        "t": 159,
+        "titre": "Definition of an AI agent and the agentic loop."
+      },
+      {
+        "t": 225,
+        "titre": "Discussion on the importance of instructions as a primitive."
+      },
+      {
+        "t": 375,
+        "titre": "Context delivery and its impact on model performance."
+      },
+      {
+        "t": 494,
+        "titre": "Context management and its role in maintaining focus."
+      },
+      {
+        "t": 646,
+        "titre": "Tool interfaces and their importance in enabling model actions."
+      },
+      {
+        "t": 739,
+        "titre": "Execution environments and their role in operational control."
+      },
+      {
+        "t": 856,
+        "titre": "Durable state and its significance in preserving work."
+      },
+      {
+        "t": 979,
+        "titre": "Orchestration and its role in managing workflows."
+      },
+      {
+        "t": 1093,
+        "titre": "Sub-agents and their function in dividing tasks."
+      },
+      {
+        "t": 1220,
+        "titre": "Skill layers and their importance in providing reusable procedures."
+      },
+      {
+        "t": 1340,
+        "titre": "Verification and observability as key components for reliability."
+      },
+      {
+        "t": 1514,
+        "titre": "Evolution of harness engineering and its impact on AI systems."
+      }
+    ]
+  },
+  "source": "subs-manuels",
+  "langue": "en",
+  "segments": [
+    {
+      "tStartS": 0,
+      "tEndS": 1.75,
+      "texte": "Hello everyone. Today we'll be trying to"
+    },
+    {
+      "tStartS": 1.76,
+      "tEndS": 3.87,
+      "texte": "demystify what harness engineering is"
+    },
+    {
+      "tStartS": 3.88,
+      "tEndS": 5.63,
+      "texte": "all about. In particular, I'm talking"
+    },
+    {
+      "tStartS": 5.64,
+      "tEndS": 9.19,
+      "texte": "about the AI agent harness engineering."
+    },
+    {
+      "tStartS": 9.2,
+      "tEndS": 11.15,
+      "texte": "And so, I'll try to walk through all the"
+    },
+    {
+      "tStartS": 11.16,
+      "tEndS": 12.47,
+      "texte": "different"
+    },
+    {
+      "tStartS": 12.48,
+      "tEndS": 14.55,
+      "texte": "components and primitives as I'm calling"
+    },
+    {
+      "tStartS": 14.56,
+      "tEndS": 17.99,
+      "texte": "it. Now, these are not all well-defined."
+    },
+    {
+      "tStartS": 18,
+      "tEndS": 20.15,
+      "texte": "These are not something that everyone"
+    },
+    {
+      "tStartS": 20.16,
+      "tEndS": 22.39,
+      "texte": "has agreed upon. This is just my way of"
+    },
+    {
+      "tStartS": 22.4,
+      "tEndS": 25.43,
+      "texte": "trying to explain what goes in when you"
+    },
+    {
+      "tStartS": 25.44,
+      "tEndS": 28.83,
+      "texte": "use systems like Codex and Claude Code."
+    },
+    {
+      "tStartS": 28.84,
+      "tEndS": 31.79,
+      "texte": "And it's not just a model, right?"
+    },
+    {
+      "tStartS": 31.8,
+      "tEndS": 33.63,
+      "texte": "Harness engineering, that maybe that's a"
+    },
+    {
+      "tStartS": 33.64,
+      "tEndS": 35.71,
+      "texte": "good way to start, is the system around"
+    },
+    {
+      "tStartS": 35.72,
+      "tEndS": 38.27,
+      "texte": "the model. The model matters. Like,"
+    },
+    {
+      "tStartS": 38.28,
+      "tEndS": 40.15,
+      "texte": "of course it does, which is why we have"
+    },
+    {
+      "tStartS": 40.16,
+      "tEndS": 42.67,
+      "texte": "the whole model wars that we see with"
+    },
+    {
+      "tStartS": 42.68,
+      "tEndS": 44.59,
+      "texte": "all the benchmarks and stuff that goes"
+    },
+    {
+      "tStartS": 44.6,
+      "tEndS": 47.23,
+      "texte": "around. But once you start building the"
+    },
+    {
+      "tStartS": 47.24,
+      "tEndS": 50.63,
+      "texte": "real agent workflows, the model is only"
+    },
+    {
+      "tStartS": 50.64,
+      "tEndS": 53.35,
+      "texte": "one part of this entire machine. So, the"
+    },
+    {
+      "tStartS": 53.36,
+      "tEndS": 56.07,
+      "texte": "harness gets to decide what the model"
+    },
+    {
+      "tStartS": 56.08,
+      "tEndS": 59.07,
+      "texte": "sees, what it can act on via tools, of"
+    },
+    {
+      "tStartS": 59.08,
+      "tEndS": 62.43,
+      "texte": "course, uh what it remembers, what words"
+    },
+    {
+      "tStartS": 62.44,
+      "tEndS": 65.43,
+      "texte": "get delegated, how and what it verifies,"
+    },
+    {
+      "tStartS": 65.44,
+      "tEndS": 67.79,
+      "texte": "and and overall, like how it recovers"
+    },
+    {
+      "tStartS": 67.8,
+      "tEndS": 71.95,
+      "texte": "from a failure. So, this is the"
+    },
+    {
+      "tStartS": 71.96,
+      "tEndS": 75.95,
+      "texte": "deep dive in that topic to reveal how"
+    },
+    {
+      "tStartS": 75.96,
+      "tEndS": 78.87,
+      "texte": "the magic as we see Claude Code and"
+    },
+    {
+      "tStartS": 78.88,
+      "tEndS": 81.63,
+      "texte": "Codex do and expose the machinery that"
+    },
+    {
+      "tStartS": 81.64,
+      "tEndS": 85.07,
+      "texte": "is making that happen. The The center of"
+    },
+    {
+      "tStartS": 85.08,
+      "tEndS": 88.11,
+      "texte": "all of this is is the model, right? And"
+    },
+    {
+      "tStartS": 88.12,
+      "tEndS": 90.91,
+      "texte": "with model, what happens is uh"
+    },
+    {
+      "tStartS": 90.92,
+      "tEndS": 93.87,
+      "texte": "you give it a prompt and model gives you"
+    },
+    {
+      "tStartS": 93.88,
+      "tEndS": 95.55,
+      "texte": "a text. And then it gives you a text"
+    },
+    {
+      "tStartS": 95.56,
+      "tEndS": 98.39,
+      "texte": "back, and that in itself is already"
+    },
+    {
+      "tStartS": 98.4,
+      "tEndS": 102.19,
+      "texte": "useful. Early on, when the whole ChatGPT"
+    },
+    {
+      "tStartS": 102.2,
+      "tEndS": 105.15,
+      "texte": "era was just starting on, that's all"
+    },
+    {
+      "tStartS": 105.16,
+      "tEndS": 106.95,
+      "texte": "most of the people did. They would kind"
+    },
+    {
+      "tStartS": 106.96,
+      "tEndS": 109.83,
+      "texte": "of craft these nice prompt and outcomes"
+    },
+    {
+      "tStartS": 109.84,
+      "tEndS": 113.47,
+      "texte": "and some text. And that text can be used"
+    },
+    {
+      "tStartS": 113.48,
+      "tEndS": 116.07,
+      "texte": "to help you explain a concept. It can"
+    },
+    {
+      "tStartS": 116.08,
+      "tEndS": 118.43,
+      "texte": "help draft a plan. It can even write an"
+    },
+    {
+      "tStartS": 118.44,
+      "tEndS": 121.43,
+      "texte": "email if you provided a good prompt. And"
+    },
+    {
+      "tStartS": 121.44,
+      "tEndS": 122.35,
+      "texte": "so,"
+    },
+    {
+      "tStartS": 122.36,
+      "tEndS": 124.83,
+      "texte": "that is all it was. It's just basically"
+    },
+    {
+      "tStartS": 124.84,
+      "tEndS": 126.19,
+      "texte": "a model and you interacted with the"
+    },
+    {
+      "tStartS": 126.2,
+      "tEndS": 129.43,
+      "texte": "model directly via some API. But this"
+    },
+    {
+      "tStartS": 129.44,
+      "tEndS": 131.19,
+      "texte": "has a boundary, and that boundary is"
+    },
+    {
+      "tStartS": 131.2,
+      "tEndS": 133.27,
+      "texte": "obvious. The model only sees what is"
+    },
+    {
+      "tStartS": 133.28,
+      "tEndS": 136.03,
+      "texte": "inside of that prompt and all the data"
+    },
+    {
+      "tStartS": 136.04,
+      "tEndS": 138.63,
+      "texte": "that it's trained on. That is what will"
+    },
+    {
+      "tStartS": 138.64,
+      "tEndS": 141.03,
+      "texte": "help it to kind of give you that output"
+    },
+    {
+      "tStartS": 141.04,
+      "tEndS": 143.71,
+      "texte": "or the text. So, if your current project"
+    },
+    {
+      "tStartS": 143.72,
+      "tEndS": 146.67,
+      "texte": "or repository or the ticket or incident"
+    },
+    {
+      "tStartS": 146.68,
+      "tEndS": 149.39,
+      "texte": "or workflow is not part of that input,"
+    },
+    {
+      "tStartS": 149.4,
+      "tEndS": 151.59,
+      "texte": "the model will start guessing, and"
+    },
+    {
+      "tStartS": 151.6,
+      "tEndS": 153.79,
+      "texte": "that's what we call hallucination. So,"
+    },
+    {
+      "tStartS": 153.8,
+      "tEndS": 156.15,
+      "texte": "the first question is not actually that"
+    },
+    {
+      "tStartS": 156.16,
+      "tEndS": 157.71,
+      "texte": "is the model smart. I think the first"
+    },
+    {
+      "tStartS": 157.72,
+      "tEndS": 159.71,
+      "texte": "question is what are we giving it to"
+    },
+    {
+      "tStartS": 159.72,
+      "tEndS": 161.55,
+      "texte": "work with in the first place. What is in"
+    },
+    {
+      "tStartS": 161.56,
+      "tEndS": 163.47,
+      "texte": "the prompt is what the question will"
+    },
+    {
+      "tStartS": 163.48,
+      "tEndS": 164.35,
+      "texte": "become."
+    },
+    {
+      "tStartS": 164.36,
+      "tEndS": 166.99,
+      "texte": "So, if this is the model, what does an"
+    },
+    {
+      "tStartS": 167,
+      "tEndS": 169.47,
+      "texte": "agent mean? So, again, the word agent"
+    },
+    {
+      "tStartS": 169.48,
+      "tEndS": 171.63,
+      "texte": "gets thrown around quite a lot."
+    },
+    {
+      "tStartS": 171.64,
+      "tEndS": 174.87,
+      "texte": "Open AI's agent SDK defines it as like"
+    },
+    {
+      "tStartS": 174.88,
+      "tEndS": 177.71,
+      "texte": "an LLM or a model that is configured"
+    },
+    {
+      "tStartS": 177.72,
+      "tEndS": 180.03,
+      "texte": "with some instructions and it's provided"
+    },
+    {
+      "tStartS": 180.04,
+      "tEndS": 182.31,
+      "texte": "some tools and it's put into this"
+    },
+    {
+      "tStartS": 182.32,
+      "tEndS": 185.03,
+      "texte": "environment that it can act on."
+    },
+    {
+      "tStartS": 185.04,
+      "tEndS": 187.87,
+      "texte": "That's what is the definition of like an"
+    },
+    {
+      "tStartS": 187.88,
+      "tEndS": 190.27,
+      "texte": "agent. And Codex and Cloud Code show the"
+    },
+    {
+      "tStartS": 190.28,
+      "tEndS": 193.27,
+      "texte": "product version of that agent."
+    },
+    {
+      "tStartS": 193.28,
+      "tEndS": 196.27,
+      "texte": "But that loop where it all those reason,"
+    },
+    {
+      "tStartS": 196.28,
+      "tEndS": 199.79,
+      "texte": "act, observe, and repeating that loop is"
+    },
+    {
+      "tStartS": 199.8,
+      "tEndS": 202.43,
+      "texte": "what we call as the agentic loop. But"
+    },
+    {
+      "tStartS": 202.44,
+      "tEndS": 204.19,
+      "texte": "before we jump in and start talking"
+    },
+    {
+      "tStartS": 204.2,
+      "tEndS": 205.55,
+      "texte": "about the primitives, I think we should"
+    },
+    {
+      "tStartS": 205.56,
+      "tEndS": 208.27,
+      "texte": "clarify three things as to not confuse"
+    },
+    {
+      "tStartS": 208.28,
+      "tEndS": 210.15,
+      "texte": "that. Model, that is the reasoning"
+    },
+    {
+      "tStartS": 210.16,
+      "tEndS": 212.19,
+      "texte": "engine. Second is this runtime that we"
+    },
+    {
+      "tStartS": 212.2,
+      "tEndS": 213.949,
+      "texte": "just talked about. That is the loop"
+    },
+    {
+      "tStartS": 213.959,
+      "tEndS": 216.71,
+      "texte": "where the model will observe, decide,"
+    },
+    {
+      "tStartS": 216.72,
+      "tEndS": 218.79,
+      "texte": "call, and act on it. And then third,"
+    },
+    {
+      "tStartS": 218.8,
+      "tEndS": 220.35,
+      "texte": "which is what our deep dive is going to"
+    },
+    {
+      "tStartS": 220.36,
+      "tEndS": 222.59,
+      "texte": "be, the harness itself. That is the"
+    },
+    {
+      "tStartS": 222.6,
+      "tEndS": 225.99,
+      "texte": "system around this runtime. And we'll"
+    },
+    {
+      "tStartS": 226,
+      "tEndS": 227.83,
+      "texte": "talk about some of those one by one."
+    },
+    {
+      "tStartS": 227.84,
+      "tEndS": 230.509,
+      "texte": "When an agent fails, we usually blame"
+    },
+    {
+      "tStartS": 230.519,
+      "tEndS": 232.07,
+      "texte": "the model. We'll say like, \"Oh, the"
+    },
+    {
+      "tStartS": 232.08,
+      "tEndS": 234.15,
+      "texte": "model might not be that great.\" And"
+    },
+    {
+      "tStartS": 234.16,
+      "tEndS": 236.47,
+      "texte": "sometimes that is true. Like, there is"
+    },
+    {
+      "tStartS": 236.48,
+      "tEndS": 238.51,
+      "texte": "clearly difference between model"
+    },
+    {
+      "tStartS": 238.52,
+      "tEndS": 241.03,
+      "texte": "capabilities and smartness. But, often"
+    },
+    {
+      "tStartS": 241.04,
+      "tEndS": 243.79,
+      "texte": "is the it's the layer or one of these"
+    },
+    {
+      "tStartS": 243.8,
+      "tEndS": 246.11,
+      "texte": "components or the layer around it. It"
+    },
+    {
+      "tStartS": 246.12,
+      "tEndS": 248.43,
+      "texte": "just didn't support the model. And then,"
+    },
+    {
+      "tStartS": 248.44,
+      "tEndS": 250.47,
+      "texte": "that's basically what I want to talk uh"
+    },
+    {
+      "tStartS": 250.48,
+      "tEndS": 252.75,
+      "texte": "in the rest of the video. So, having"
+    },
+    {
+      "tStartS": 252.76,
+      "tEndS": 254.39,
+      "texte": "said that, let's talk about the first"
+    },
+    {
+      "tStartS": 254.4,
+      "tEndS": 256.47,
+      "texte": "primitive itself. And that is"
+    },
+    {
+      "tStartS": 256.48,
+      "tEndS": 258.71,
+      "texte": "instruction. What does this mean? So,"
+    },
+    {
+      "tStartS": 258.72,
+      "tEndS": 261.39,
+      "texte": "you tell the model who it is, you tell"
+    },
+    {
+      "tStartS": 261.4,
+      "tEndS": 263.35,
+      "texte": "it the kind of work that it is doing,"
+    },
+    {
+      "tStartS": 263.36,
+      "tEndS": 264.79,
+      "texte": "you tell it the tone, you tell it the"
+    },
+    {
+      "tStartS": 264.8,
+      "tEndS": 266.909,
+      "texte": "constraints, you tell it to your coding"
+    },
+    {
+      "tStartS": 266.919,
+      "tEndS": 269.15,
+      "texte": "styles, you give it some your rules of"
+    },
+    {
+      "tStartS": 269.16,
+      "tEndS": 271.909,
+      "texte": "how to review the code, and things that"
+    },
+    {
+      "tStartS": 271.919,
+      "tEndS": 274.35,
+      "texte": "you it should not do. That becomes the"
+    },
+    {
+      "tStartS": 274.36,
+      "tEndS": 276.27,
+      "texte": "instruction that you're giving to the"
+    },
+    {
+      "tStartS": 276.28,
+      "tEndS": 277.59,
+      "texte": "model. And so, that's why we should"
+    },
+    {
+      "tStartS": 277.6,
+      "tEndS": 279.75,
+      "texte": "treat that as a primitive. This is where"
+    },
+    {
+      "tStartS": 279.76,
+      "tEndS": 282.51,
+      "texte": "agents.md is one form of instruction."
+    },
+    {
+      "tStartS": 282.52,
+      "tEndS": 284.83,
+      "texte": "Claude.md, if you're using Claude, that"
+    },
+    {
+      "tStartS": 284.84,
+      "tEndS": 287.47,
+      "texte": "fit into this primitive. Again, in the"
+    },
+    {
+      "tStartS": 287.48,
+      "tEndS": 288.79,
+      "texte": "same family, you can think of system"
+    },
+    {
+      "tStartS": 288.8,
+      "tEndS": 291.23,
+      "texte": "prompt, custom instructions, repository"
+    },
+    {
+      "tStartS": 291.24,
+      "tEndS": 294.47,
+      "texte": "rules that some of these agent uh agent"
+    },
+    {
+      "tStartS": 294.48,
+      "tEndS": 296.63,
+      "texte": "harnesses support. Cursor, call it"
+    },
+    {
+      "tStartS": 296.64,
+      "tEndS": 299.55,
+      "texte": "cursor rules. So, those are all in some"
+    },
+    {
+      "tStartS": 299.56,
+      "tEndS": 301.63,
+      "texte": "form or the other this primitive, this"
+    },
+    {
+      "tStartS": 301.64,
+      "tEndS": 303.11,
+      "texte": "instruction. And they are powerful"
+    },
+    {
+      "tStartS": 303.12,
+      "tEndS": 305.47,
+      "texte": "because they move the repeated guidance"
+    },
+    {
+      "tStartS": 305.48,
+      "tEndS": 307.43,
+      "texte": "that you otherwise would have given to"
+    },
+    {
+      "tStartS": 307.44,
+      "tEndS": 309.71,
+      "texte": "the model into the environment itself."
+    },
+    {
+      "tStartS": 309.72,
+      "tEndS": 312.43,
+      "texte": "You as a user don't have to repeat those"
+    },
+    {
+      "tStartS": 312.44,
+      "tEndS": 313.909,
+      "texte": "things over and over again. You don't"
+    },
+    {
+      "tStartS": 313.919,
+      "tEndS": 315.67,
+      "texte": "even have to uh copy-paste the"
+    },
+    {
+      "tStartS": 315.68,
+      "tEndS": 317.63,
+      "texte": "instructions all the time. There is some"
+    },
+    {
+      "tStartS": 317.64,
+      "tEndS": 320.35,
+      "texte": "orchestration this primitive instruction"
+    },
+    {
+      "tStartS": 320.36,
+      "tEndS": 321.59,
+      "texte": "that it"
+    },
+    {
+      "tStartS": 321.6,
+      "tEndS": 325.15,
+      "texte": "the harness will take care of. And so,"
+    },
+    {
+      "tStartS": 325.16,
+      "tEndS": 326.15,
+      "texte": "that's why they say like, \"Hey,"
+    },
+    {
+      "tStartS": 326.16,
+      "tEndS": 329.59,
+      "texte": "agents.md will automatically be provided"
+    },
+    {
+      "tStartS": 329.6,
+      "tEndS": 331.35,
+      "texte": "to the model.\" So, uh"
+    },
+    {
+      "tStartS": 331.36,
+      "tEndS": 333.63,
+      "texte": "instruction are the first harness layer,"
+    },
+    {
+      "tStartS": 333.64,
+      "tEndS": 335.87,
+      "texte": "right? Because they shape the behavior"
+    },
+    {
+      "tStartS": 335.88,
+      "tEndS": 338.07,
+      "texte": "of anything that happens with the model."
+    },
+    {
+      "tStartS": 338.08,
+      "tEndS": 340.67,
+      "texte": "But, there is a limit to what"
+    },
+    {
+      "tStartS": 340.68,
+      "tEndS": 343.11,
+      "texte": "instructions can on its own do."
+    },
+    {
+      "tStartS": 343.12,
+      "tEndS": 346.909,
+      "texte": "So, instructions are passive. They can"
+    },
+    {
+      "tStartS": 346.919,
+      "tEndS": 349.35,
+      "texte": "say, \"Follow the project convention, but"
+    },
+    {
+      "tStartS": 349.36,
+      "tEndS": 351.55,
+      "texte": "they cannot discover those convention"
+    },
+    {
+      "tStartS": 351.56,
+      "tEndS": 354.35,
+      "texte": "unless those right files are available."
+    },
+    {
+      "tStartS": 354.36,
+      "tEndS": 355.91,
+      "texte": "For example, they can say be careful"
+    },
+    {
+      "tStartS": 355.92,
+      "tEndS": 357.91,
+      "texte": "with like say"
+    },
+    {
+      "tStartS": 357.92,
+      "tEndS": 359.59,
+      "texte": "the migrations."
+    },
+    {
+      "tStartS": 359.6,
+      "tEndS": 361.47,
+      "texte": "But they cannot inspect the actual"
+    },
+    {
+      "tStartS": 361.48,
+      "tEndS": 363.07,
+      "texte": "migration"
+    },
+    {
+      "tStartS": 363.08,
+      "tEndS": 364.11,
+      "texte": "itself."
+    },
+    {
+      "tStartS": 364.12,
+      "tEndS": 365.83,
+      "texte": "And because agent can't see it."
+    },
+    {
+      "tStartS": 365.84,
+      "tEndS": 368.19,
+      "texte": "Instructions help the model to behave"
+    },
+    {
+      "tStartS": 368.2,
+      "tEndS": 369.99,
+      "texte": "better, but they do not give it the"
+    },
+    {
+      "tStartS": 370,
+      "tEndS": 370.95,
+      "texte": "entire world. You cannot give"
+    },
+    {
+      "tStartS": 370.96,
+      "tEndS": 373.11,
+      "texte": "everything, right? So, keeping that in"
+    },
+    {
+      "tStartS": 373.12,
+      "tEndS": 376.11,
+      "texte": "mind, let's see what then the next uh"
+    },
+    {
+      "tStartS": 376.12,
+      "tEndS": 377.71,
+      "texte": "primitive would be, right? And that next"
+    },
+    {
+      "tStartS": 377.72,
+      "tEndS": 380.47,
+      "texte": "one is the context delivery. This"
+    },
+    {
+      "tStartS": 380.48,
+      "tEndS": 382.23,
+      "texte": "context delivery mechanism of the"
+    },
+    {
+      "tStartS": 382.24,
+      "tEndS": 384.47,
+      "texte": "harness gives the model the material"
+    },
+    {
+      "tStartS": 384.48,
+      "tEndS": 387.11,
+      "texte": "that it needs. So, you would have used"
+    },
+    {
+      "tStartS": 387.12,
+      "tEndS": 389.99,
+      "texte": "the at rate symbol to refer to a file,"
+    },
+    {
+      "tStartS": 390,
+      "tEndS": 390.87,
+      "texte": "right?"
+    },
+    {
+      "tStartS": 390.88,
+      "tEndS": 393.27,
+      "texte": "All of those are in some way or the"
+    },
+    {
+      "tStartS": 393.28,
+      "tEndS": 395.31,
+      "texte": "other this primitive, which is context"
+    },
+    {
+      "tStartS": 395.32,
+      "tEndS": 396.909,
+      "texte": "delivery. This is where you immediately"
+    },
+    {
+      "tStartS": 396.919,
+      "tEndS": 398.51,
+      "texte": "see the difference between like a"
+    },
+    {
+      "tStartS": 398.52,
+      "tEndS": 400.87,
+      "texte": "bare-bones model and an agent working"
+    },
+    {
+      "tStartS": 400.88,
+      "tEndS": 402.99,
+      "texte": "inside this harness that has context"
+    },
+    {
+      "tStartS": 403,
+      "tEndS": 406.27,
+      "texte": "delivery. So, because now you you"
+    },
+    {
+      "tStartS": 406.28,
+      "tEndS": 407.67,
+      "texte": "can give it a relevant file. You can"
+    },
+    {
+      "tStartS": 407.68,
+      "tEndS": 409.47,
+      "texte": "give it the failing test. You can give"
+    },
+    {
+      "tStartS": 409.48,
+      "tEndS": 411.51,
+      "texte": "the stack trace. And and now you have a"
+    },
+    {
+      "tStartS": 411.52,
+      "tEndS": 413.27,
+      "texte": "very different animal. And so, if"
+    },
+    {
+      "tStartS": 413.28,
+      "tEndS": 415.35,
+      "texte": "earlier you used to ask a model to fix a"
+    },
+    {
+      "tStartS": 415.36,
+      "tEndS": 417.19,
+      "texte": "bug with no files, it would give you a"
+    },
+    {
+      "tStartS": 417.2,
+      "tEndS": 418.99,
+      "texte": "generic fix. But now you give that"
+    },
+    {
+      "tStartS": 419,
+      "tEndS": 420.59,
+      "texte": "source file, you're going to get a very"
+    },
+    {
+      "tStartS": 420.6,
+      "tEndS": 423.35,
+      "texte": "different answers. But here we will now"
+    },
+    {
+      "tStartS": 423.36,
+      "tEndS": 425.07,
+      "texte": "start seeing the limitation of this"
+    },
+    {
+      "tStartS": 425.08,
+      "tEndS": 426.909,
+      "texte": "layer as well, right? So, this alone is"
+    },
+    {
+      "tStartS": 426.919,
+      "tEndS": 429.19,
+      "texte": "also not enough. And so, let's see why."
+    },
+    {
+      "tStartS": 429.2,
+      "tEndS": 431.07,
+      "texte": "So, you have instructions and you have a"
+    },
+    {
+      "tStartS": 431.08,
+      "tEndS": 433.75,
+      "texte": "context delivery where you can make it"
+    },
+    {
+      "tStartS": 433.76,
+      "tEndS": 436.35,
+      "texte": "refer to files and logs and docs, right?"
+    },
+    {
+      "tStartS": 436.36,
+      "tEndS": 439.71,
+      "texte": "But dumping that in is not on its own"
+    },
+    {
+      "tStartS": 439.72,
+      "tEndS": 441.15,
+      "texte": "context engineering. You might have a"
+    },
+    {
+      "tStartS": 441.16,
+      "tEndS": 443.27,
+      "texte": "chat that is way too long. Sometimes"
+    },
+    {
+      "tStartS": 443.28,
+      "tEndS": 445.07,
+      "texte": "your production incident has logs that"
+    },
+    {
+      "tStartS": 445.08,
+      "tEndS": 447.43,
+      "texte": "are like too long. If you pour all of"
+    },
+    {
+      "tStartS": 447.44,
+      "tEndS": 449.39,
+      "texte": "that into the model, you are not going"
+    },
+    {
+      "tStartS": 449.4,
+      "tEndS": 451.63,
+      "texte": "to get some really smart thing. You"
+    },
+    {
+      "tStartS": 451.64,
+      "tEndS": 453.51,
+      "texte": "You'll actually see the AI slow as we"
+    },
+    {
+      "tStartS": 453.52,
+      "tEndS": 457.07,
+      "texte": "are on Because model has a finite"
+    },
+    {
+      "tStartS": 457.08,
+      "tEndS": 459.43,
+      "texte": "context window. So, if you start putting"
+    },
+    {
+      "tStartS": 459.44,
+      "tEndS": 461.87,
+      "texte": "everything, it it cannot hold that into"
+    },
+    {
+      "tStartS": 461.88,
+      "tEndS": 464.99,
+      "texte": "its context window. So, even inside that"
+    },
+    {
+      "tStartS": 465,
+      "tEndS": 467.19,
+      "texte": "window that that model has, the"
+    },
+    {
+      "tStartS": 467.2,
+      "tEndS": 469.71,
+      "texte": "attention is not free. So, wrong context"
+    },
+    {
+      "tStartS": 469.72,
+      "tEndS": 472.19,
+      "texte": "sometimes ends up being way much more"
+    },
+    {
+      "tStartS": 472.2,
+      "tEndS": 474.39,
+      "texte": "worse than missing context because it"
+    },
+    {
+      "tStartS": 474.4,
+      "tEndS": 477.07,
+      "texte": "gives the model a plausible distraction."
+    },
+    {
+      "tStartS": 477.08,
+      "tEndS": 479.75,
+      "texte": "So, the problem now changes. Like, we no"
+    },
+    {
+      "tStartS": 479.76,
+      "tEndS": 482.99,
+      "texte": "longer can ask, can we provide context?"
+    },
+    {
+      "tStartS": 483,
+      "tEndS": 485.51,
+      "texte": "I think we start asking, who decides"
+    },
+    {
+      "tStartS": 485.52,
+      "tEndS": 487.75,
+      "texte": "what context matters right now? And"
+    },
+    {
+      "tStartS": 487.76,
+      "tEndS": 489.31,
+      "texte": "that's an interesting question."
+    },
+    {
+      "tStartS": 489.32,
+      "tEndS": 492.909,
+      "texte": "Harness is is meant to kind of help with"
+    },
+    {
+      "tStartS": 492.919,
+      "tEndS": 495.39,
+      "texte": "that aspect of it. So, yes, we as humans"
+    },
+    {
+      "tStartS": 495.4,
+      "tEndS": 496.83,
+      "texte": "of course play a part in it, but at the"
+    },
+    {
+      "tStartS": 496.84,
+      "tEndS": 498.99,
+      "texte": "same time, there's a lot that Harness"
+    },
+    {
+      "tStartS": 499,
+      "tEndS": 501.59,
+      "texte": "can do on our behalf. And that brings us"
+    },
+    {
+      "tStartS": 501.6,
+      "tEndS": 504.55,
+      "texte": "to the third primitive. And that is the"
+    },
+    {
+      "tStartS": 504.56,
+      "tEndS": 506.95,
+      "texte": "context management. This is where the"
+    },
+    {
+      "tStartS": 506.96,
+      "tEndS": 509.83,
+      "texte": "management of that context enters."
+    },
+    {
+      "tStartS": 509.84,
+      "tEndS": 512.149,
+      "texte": "The Harness, as you would have seen,"
+    },
+    {
+      "tStartS": 512.159,
+      "tEndS": 514.95,
+      "texte": "does a lot of the stuff to manage that"
+    },
+    {
+      "tStartS": 514.96,
+      "tEndS": 518.029,
+      "texte": "context as to what is the right context"
+    },
+    {
+      "tStartS": 518.039,
+      "tEndS": 520.149,
+      "texte": "that the model should be provided. This"
+    },
+    {
+      "tStartS": 520.159,
+      "tEndS": 522.07,
+      "texte": "means that you might have heard of rag"
+    },
+    {
+      "tStartS": 522.08,
+      "tEndS": 523.83,
+      "texte": "or retrieval augmented generation. It"
+    },
+    {
+      "tStartS": 523.84,
+      "tEndS": 526.31,
+      "texte": "might help in that aspect. It might"
+    },
+    {
+      "tStartS": 526.32,
+      "tEndS": 528.79,
+      "texte": "rerank that thing and figure out which"
+    },
+    {
+      "tStartS": 528.8,
+      "tEndS": 530.87,
+      "texte": "parts of this retrieved chunks to"
+    },
+    {
+      "tStartS": 530.88,
+      "tEndS": 533.55,
+      "texte": "include. It might summarize at"
+    },
+    {
+      "tStartS": 533.56,
+      "tEndS": 535.67,
+      "texte": "at a regular interval. When it when it"
+    },
+    {
+      "tStartS": 535.68,
+      "tEndS": 537.27,
+      "texte": "sees that it's reaching the context"
+    },
+    {
+      "tStartS": 537.28,
+      "tEndS": 539.71,
+      "texte": "limit, it might trigger compaction. You"
+    },
+    {
+      "tStartS": 539.72,
+      "tEndS": 541.19,
+      "texte": "might have heard that word as well."
+    },
+    {
+      "tStartS": 541.2,
+      "tEndS": 543.63,
+      "texte": "Putting all of these in in order or in"
+    },
+    {
+      "tStartS": 543.64,
+      "tEndS": 545.95,
+      "texte": "in in a way that it assembles this"
+    },
+    {
+      "tStartS": 545.96,
+      "tEndS": 548.67,
+      "texte": "entire context. The job basically ends"
+    },
+    {
+      "tStartS": 548.68,
+      "tEndS": 551.95,
+      "texte": "up deciding what enters the model at"
+    },
+    {
+      "tStartS": 551.96,
+      "tEndS": 553.39,
+      "texte": "that particular instance. And that"
+    },
+    {
+      "tStartS": 553.4,
+      "tEndS": 555.63,
+      "texte": "sounds small until you try to run a real"
+    },
+    {
+      "tStartS": 555.64,
+      "tEndS": 558.03,
+      "texte": "task. So, if a repository is too large"
+    },
+    {
+      "tStartS": 558.04,
+      "tEndS": 560.07,
+      "texte": "and a chat transcript gets too long, if"
+    },
+    {
+      "tStartS": 560.08,
+      "tEndS": 561.91,
+      "texte": "all of that gets dumped into the model,"
+    },
+    {
+      "tStartS": 561.92,
+      "tEndS": 564.829,
+      "texte": "you have not made the agent smarter, you"
+    },
+    {
+      "tStartS": 564.839,
+      "tEndS": 567.63,
+      "texte": "have made the prompt noisier. So,"
+    },
+    {
+      "tStartS": 567.64,
+      "tEndS": 570.23,
+      "texte": "popular names for this show up as"
+    },
+    {
+      "tStartS": 570.24,
+      "tEndS": 572.63,
+      "texte": "context compressors, prompt caches,"
+    },
+    {
+      "tStartS": 572.64,
+      "tEndS": 574.87,
+      "texte": "retrieval ranking, session summaries,"
+    },
+    {
+      "tStartS": 574.88,
+      "tEndS": 577.79,
+      "texte": "compaction. The name change, but the job"
+    },
+    {
+      "tStartS": 577.8,
+      "tEndS": 580.63,
+      "texte": "is still how do we protect the model's"
+    },
+    {
+      "tStartS": 580.64,
+      "tEndS": 583.31,
+      "texte": "attention? How do we get the model to"
+    },
+    {
+      "tStartS": 583.32,
+      "tEndS": 586.83,
+      "texte": "focus on the right context for it to do"
+    },
+    {
+      "tStartS": 586.84,
+      "tEndS": 588.59,
+      "texte": "the task that we want it to do. The"
+    },
+    {
+      "tStartS": 588.6,
+      "tEndS": 589.95,
+      "texte": "point is simple."
+    },
+    {
+      "tStartS": 589.96,
+      "tEndS": 591.95,
+      "texte": "But harness is"
+    },
+    {
+      "tStartS": 591.96,
+      "tEndS": 595.35,
+      "texte": "managing the attention for the model by"
+    },
+    {
+      "tStartS": 595.36,
+      "tEndS": 597.75,
+      "texte": "context management. But context"
+    },
+    {
+      "tStartS": 597.76,
+      "tEndS": 599.75,
+      "texte": "management makes the agent smarter"
+    },
+    {
+      "tStartS": 599.76,
+      "tEndS": 602.83,
+      "texte": "inside the conversation. It can keep the"
+    },
+    {
+      "tStartS": 602.84,
+      "tEndS": 605.07,
+      "texte": "important parts and summarize the stale"
+    },
+    {
+      "tStartS": 605.08,
+      "tEndS": 607.23,
+      "texte": "parts and retrieve the right files at"
+    },
+    {
+      "tStartS": 607.24,
+      "tEndS": 609.31,
+      "texte": "the right time, avoid spending half the"
+    },
+    {
+      "tStartS": 609.32,
+      "tEndS": 612.75,
+      "texte": "window on on noisy context. But the"
+    },
+    {
+      "tStartS": 612.76,
+      "tEndS": 616.55,
+      "texte": "agent is still mostly a talker. It can"
+    },
+    {
+      "tStartS": 616.56,
+      "tEndS": 620.19,
+      "texte": "tell what it would do. It can identify"
+    },
+    {
+      "tStartS": 620.2,
+      "tEndS": 623.11,
+      "texte": "the file. It can propose a command to"
+    },
+    {
+      "tStartS": 623.12,
+      "tEndS": 625.47,
+      "texte": "run. It can say the next step is for us"
+    },
+    {
+      "tStartS": 625.48,
+      "tEndS": 628.19,
+      "texte": "to run a failing test. Great. But at"
+    },
+    {
+      "tStartS": 628.2,
+      "tEndS": 631.23,
+      "texte": "some point that alone is not is not"
+    },
+    {
+      "tStartS": 631.24,
+      "tEndS": 634.11,
+      "texte": "enough. If the work requires action, the"
+    },
+    {
+      "tStartS": 634.12,
+      "tEndS": 637.27,
+      "texte": "model needs a way to ask the outside"
+    },
+    {
+      "tStartS": 637.28,
+      "tEndS": 639.55,
+      "texte": "world to do something. Someone has to"
+    },
+    {
+      "tStartS": 639.56,
+      "tEndS": 642.91,
+      "texte": "then do that act part that the model has"
+    },
+    {
+      "tStartS": 642.92,
+      "tEndS": 646.43,
+      "texte": "decided or identified at that stage. And"
+    },
+    {
+      "tStartS": 646.44,
+      "tEndS": 648.95,
+      "texte": "that brings us to the next primitive,"
+    },
+    {
+      "tStartS": 648.96,
+      "tEndS": 651.95,
+      "texte": "which is tool interface. Tools give the"
+    },
+    {
+      "tStartS": 651.96,
+      "tEndS": 655.59,
+      "texte": "model a way to act. It's no longer just"
+    },
+    {
+      "tStartS": 655.6,
+      "tEndS": 657.829,
+      "texte": "the agent talking. This is like"
+    },
+    {
+      "tStartS": 657.839,
+      "tEndS": 659.59,
+      "texte": "structured action that it will take."
+    },
+    {
+      "tStartS": 659.6,
+      "tEndS": 661.75,
+      "texte": "Tool would have a name. Tool would have"
+    },
+    {
+      "tStartS": 661.76,
+      "tEndS": 664.11,
+      "texte": "a description. It would have schema."
+    },
+    {
+      "tStartS": 664.12,
+      "tEndS": 666.03,
+      "texte": "It may have an output schema as well."
+    },
+    {
+      "tStartS": 666.04,
+      "tEndS": 668.51,
+      "texte": "And the model decides that I should call"
+    },
+    {
+      "tStartS": 668.52,
+      "tEndS": 670.63,
+      "texte": "this tool with these arguments. That is"
+    },
+    {
+      "tStartS": 670.64,
+      "tEndS": 672.75,
+      "texte": "the model side of the contract."
+    },
+    {
+      "tStartS": 672.76,
+      "tEndS": 675.15,
+      "texte": "And if you have seen the rise of MCP,"
+    },
+    {
+      "tStartS": 675.16,
+      "tEndS": 678.23,
+      "texte": "it's it's it's this layer. MCP is useful"
+    },
+    {
+      "tStartS": 678.24,
+      "tEndS": 680.91,
+      "texte": "here because it serves as a way to"
+    },
+    {
+      "tStartS": 680.92,
+      "tEndS": 683.91,
+      "texte": "abstract away how these tools are made"
+    },
+    {
+      "tStartS": 683.92,
+      "tEndS": 685.829,
+      "texte": "available to the model. It's the model"
+    },
+    {
+      "tStartS": 685.839,
+      "tEndS": 688.51,
+      "texte": "context protocol. So if anyone, any"
+    },
+    {
+      "tStartS": 688.52,
+      "tEndS": 691.39,
+      "texte": "service provider is authoring such MCP"
+    },
+    {
+      "tStartS": 691.4,
+      "tEndS": 694.87,
+      "texte": "MCP servers, it'll expose their tools to"
+    },
+    {
+      "tStartS": 694.88,
+      "tEndS": 697.39,
+      "texte": "the model for it to then act not just"
+    },
+    {
+      "tStartS": 697.4,
+      "tEndS": 699.23,
+      "texte": "talk. So, if you have used open AI"
+    },
+    {
+      "tStartS": 699.24,
+      "tEndS": 700.67,
+      "texte": "function calling"
+    },
+    {
+      "tStartS": 700.68,
+      "tEndS": 702.71,
+      "texte": "or Anthropic tool use,"
+    },
+    {
+      "tStartS": 702.72,
+      "tEndS": 707.35,
+      "texte": "MCP tools, bash, or grep or find, you"
+    },
+    {
+      "tStartS": 707.36,
+      "tEndS": 709.95,
+      "texte": "are using this primitive. So, the model"
+    },
+    {
+      "tStartS": 709.96,
+      "tEndS": 712.51,
+      "texte": "is no longer just describing the work,"
+    },
+    {
+      "tStartS": 712.52,
+      "tEndS": 715.27,
+      "texte": "it can request actions as well. But,"
+    },
+    {
+      "tStartS": 715.28,
+      "tEndS": 718.71,
+      "texte": "again, this also has limitation. Say the"
+    },
+    {
+      "tStartS": 718.72,
+      "tEndS": 720.83,
+      "texte": "model correctly decides I should run the"
+    },
+    {
+      "tStartS": 720.84,
+      "tEndS": 723.31,
+      "texte": "test command. Great. Where? On my"
+    },
+    {
+      "tStartS": 723.32,
+      "tEndS": 725.75,
+      "texte": "laptop? In a container? In a cloud"
+    },
+    {
+      "tStartS": 725.76,
+      "tEndS": 727.83,
+      "texte": "sandbox with network access? With"
+    },
+    {
+      "tStartS": 727.84,
+      "tEndS": 729.67,
+      "texte": "secrets? With right access to the whole"
+    },
+    {
+      "tStartS": 729.68,
+      "tEndS": 731.63,
+      "texte": "repo? And what about the output? So,"
+    },
+    {
+      "tStartS": 731.64,
+      "tEndS": 734.35,
+      "texte": "tools can fail, tools can return messy"
+    },
+    {
+      "tStartS": 734.36,
+      "tEndS": 736.79,
+      "texte": "text, web pages can contain prompt"
+    },
+    {
+      "tStartS": 736.8,
+      "tEndS": 739.43,
+      "texte": "injection, right? API can return partial"
+    },
+    {
+      "tStartS": 739.44,
+      "tEndS": 741.23,
+      "texte": "data. The model may choose the right"
+    },
+    {
+      "tStartS": 741.24,
+      "tEndS": 743.19,
+      "texte": "tool and valid arguments, but the"
+    },
+    {
+      "tStartS": 743.2,
+      "tEndS": 745.75,
+      "texte": "harness still has to answer the"
+    },
+    {
+      "tStartS": 745.76,
+      "tEndS": 748.39,
+      "texte": "operational question, which is where"
+    },
+    {
+      "tStartS": 748.4,
+      "tEndS": 751.03,
+      "texte": "does this run? Under what boundaries?"
+    },
+    {
+      "tStartS": 751.04,
+      "tEndS": 752.71,
+      "texte": "And how much do we trust what comes"
+    },
+    {
+      "tStartS": 752.72,
+      "tEndS": 755.39,
+      "texte": "back? That is the execution environment,"
+    },
+    {
+      "tStartS": 755.4,
+      "tEndS": 757.63,
+      "texte": "and that is our next primitive. So, the"
+    },
+    {
+      "tStartS": 757.64,
+      "tEndS": 759.91,
+      "texte": "execution environment is where the tool"
+    },
+    {
+      "tStartS": 759.92,
+      "tEndS": 762.63,
+      "texte": "calls become bounded reality. It's the"
+    },
+    {
+      "tStartS": 762.64,
+      "tEndS": 765.35,
+      "texte": "file system scope, network policy,"
+    },
+    {
+      "tStartS": 765.36,
+      "tEndS": 768.15,
+      "texte": "credentials, sandboxing, containers,"
+    },
+    {
+      "tStartS": 768.16,
+      "tEndS": 770.63,
+      "texte": "browser sessions, cloud workspace. All"
+    },
+    {
+      "tStartS": 770.64,
+      "tEndS": 772.87,
+      "texte": "of those is what we are putting in this"
+    },
+    {
+      "tStartS": 772.88,
+      "tEndS": 774.79,
+      "texte": "primitive. This is where words that you"
+    },
+    {
+      "tStartS": 774.8,
+      "tEndS": 776.99,
+      "texte": "might have heard of sandbox container,"
+    },
+    {
+      "tStartS": 777,
+      "tEndS": 779.59,
+      "texte": "dev container, work tree, browser"
+    },
+    {
+      "tStartS": 779.6,
+      "tEndS": 781.55,
+      "texte": "profile. There are companies that are"
+    },
+    {
+      "tStartS": 781.56,
+      "tEndS": 783.63,
+      "texte": "founded in for this layer as well."
+    },
+    {
+      "tStartS": 783.64,
+      "tEndS": 786.15,
+      "texte": "Daytona is one that comes to E2B is"
+    },
+    {
+      "tStartS": 786.16,
+      "tEndS": 788.15,
+      "texte": "another one that comes to mind. I know"
+    },
+    {
+      "tStartS": 788.16,
+      "tEndS": 791.55,
+      "texte": "Docker now has sandbox, a dev sandbox."
+    },
+    {
+      "tStartS": 791.56,
+      "tEndS": 793.91,
+      "texte": "So, this is a primitive that we should"
+    },
+    {
+      "tStartS": 793.92,
+      "tEndS": 795.07,
+      "texte": "be thinking of as well, and it is"
+    },
+    {
+      "tStartS": 795.08,
+      "tEndS": 798.59,
+      "texte": "Harness that is providing, configuring,"
+    },
+    {
+      "tStartS": 798.6,
+      "tEndS": 801.11,
+      "texte": "and collaborating with the tool call and"
+    },
+    {
+      "tStartS": 801.12,
+      "tEndS": 802.43,
+      "texte": "putting it in, and that is what it's"
+    },
+    {
+      "tStartS": 802.44,
+      "tEndS": 804.35,
+      "texte": "making it possible, basically. This is"
+    },
+    {
+      "tStartS": 804.36,
+      "tEndS": 806.31,
+      "texte": "why running each task in an isolated"
+    },
+    {
+      "tStartS": 806.32,
+      "tEndS": 808.47,
+      "texte": "sandbox matters. It's not just a"
+    },
+    {
+      "tStartS": 808.48,
+      "tEndS": 810.47,
+      "texte": "deployment detail, it is a harness"
+    },
+    {
+      "tStartS": 810.48,
+      "tEndS": 812.83,
+      "texte": "primitive at this stage. Um and the"
+    },
+    {
+      "tStartS": 812.84,
+      "tEndS": 814.99,
+      "texte": "model can ask to run a command, the"
+    },
+    {
+      "tStartS": 815,
+      "tEndS": 817.15,
+      "texte": "harness decides where the command runs,"
+    },
+    {
+      "tStartS": 817.16,
+      "tEndS": 819.31,
+      "texte": "what it can see, what it can change, and"
+    },
+    {
+      "tStartS": 819.32,
+      "tEndS": 821.23,
+      "texte": "what it needs in terms of uh say human"
+    },
+    {
+      "tStartS": 821.24,
+      "tEndS": 823.39,
+      "texte": "approval. So, this layer is also where"
+    },
+    {
+      "tStartS": 823.4,
+      "tEndS": 825.87,
+      "texte": "trust gets practical. We are We are not"
+    },
+    {
+      "tStartS": 825.88,
+      "tEndS": 827.51,
+      "texte": "just telling model like, \"Please do not"
+    },
+    {
+      "tStartS": 827.52,
+      "tEndS": 829.99,
+      "texte": "touch secrets.\" But, instead at this"
+    },
+    {
+      "tStartS": 830,
+      "tEndS": 831.79,
+      "texte": "layer we can make it such that it does"
+    },
+    {
+      "tStartS": 831.8,
+      "tEndS": 834.15,
+      "texte": "not get secrets. So, then environment"
+    },
+    {
+      "tStartS": 834.16,
+      "tEndS": 836.71,
+      "texte": "gives the agent place to work, but one"
+    },
+    {
+      "tStartS": 836.72,
+      "tEndS": 838.75,
+      "texte": "clean sandbox is not enough for long"
+    },
+    {
+      "tStartS": 838.76,
+      "tEndS": 841.35,
+      "texte": "work. The agent's task sometimes pause,"
+    },
+    {
+      "tStartS": 841.36,
+      "tEndS": 843.51,
+      "texte": "they resume, they fork, they fail"
+    },
+    {
+      "tStartS": 843.52,
+      "tEndS": 845.55,
+      "texte": "sometimes, and they need a plan. They"
+    },
+    {
+      "tStartS": 845.56,
+      "tEndS": 847.55,
+      "texte": "need a log, they need to record what was"
+    },
+    {
+      "tStartS": 847.56,
+      "tEndS": 851.27,
+      "texte": "tried, they need continuity"
+    },
+    {
+      "tStartS": 851.28,
+      "tEndS": 853.47,
+      "texte": "uh so that the next step is where it"
+    },
+    {
+      "tStartS": 853.48,
+      "tEndS": 855.99,
+      "texte": "starts rather than redoing from scratch."
+    },
+    {
+      "tStartS": 856,
+      "tEndS": 858.03,
+      "texte": "If the only place where all of this was"
+    },
+    {
+      "tStartS": 858.04,
+      "tEndS": 860.31,
+      "texte": "stored is inside the model context,"
+    },
+    {
+      "tStartS": 860.32,
+      "tEndS": 862.59,
+      "texte": "yeah, if it crashes or if something"
+    },
+    {
+      "tStartS": 862.6,
+      "tEndS": 865.43,
+      "texte": "happens, we lose it. The system needs"
+    },
+    {
+      "tStartS": 865.44,
+      "tEndS": 867.91,
+      "texte": "something much more durable than, yeah,"
+    },
+    {
+      "tStartS": 867.92,
+      "tEndS": 870.15,
+      "texte": "I think I remember that one, right? So,"
+    },
+    {
+      "tStartS": 870.16,
+      "tEndS": 872.23,
+      "texte": "that brings us to the next primitive"
+    },
+    {
+      "tStartS": 872.24,
+      "tEndS": 873.07,
+      "texte": "that"
+    },
+    {
+      "tStartS": 873.08,
+      "tEndS": 874.51,
+      "texte": "you would think of when you're creating"
+    },
+    {
+      "tStartS": 874.52,
+      "tEndS": 876.59,
+      "texte": "a custom harness. And that is durable"
+    },
+    {
+      "tStartS": 876.6,
+      "tEndS": 878.829,
+      "texte": "state. So, durable state is the"
+    },
+    {
+      "tStartS": 878.839,
+      "tEndS": 881.19,
+      "texte": "workbench that survives the current"
+    },
+    {
+      "tStartS": 881.2,
+      "tEndS": 884.43,
+      "texte": "turn. Plan files, checkpoints, task"
+    },
+    {
+      "tStartS": 884.44,
+      "tEndS": 888.23,
+      "texte": "state where it is in the task, the the"
+    },
+    {
+      "tStartS": 888.24,
+      "tEndS": 891.27,
+      "texte": "session summaries, logs of what it has"
+    },
+    {
+      "tStartS": 891.28,
+      "tEndS": 894.55,
+      "texte": "done, diff, memory stores, all of these,"
+    },
+    {
+      "tStartS": 894.56,
+      "tEndS": 895.19,
+      "texte": "right?"
+    },
+    {
+      "tStartS": 895.2,
+      "tEndS": 897.51,
+      "texte": "Context management decides what gets"
+    },
+    {
+      "tStartS": 897.52,
+      "tEndS": 899.43,
+      "texte": "brought into the model right now, but"
+    },
+    {
+      "tStartS": 899.44,
+      "tEndS": 902.23,
+      "texte": "the durable state preserves the the"
+    },
+    {
+      "tStartS": 902.24,
+      "tEndS": 904.55,
+      "texte": "facts, the artifacts, the progress"
+    },
+    {
+      "tStartS": 904.56,
+      "tEndS": 906.19,
+      "texte": "outside the prompt so that they can"
+    },
+    {
+      "tStartS": 906.2,
+      "tEndS": 908.23,
+      "texte": "survive the current run. For coding"
+    },
+    {
+      "tStartS": 908.24,
+      "tEndS": 910.11,
+      "texte": "agents, durable state might be a branch"
+    },
+    {
+      "tStartS": 910.12,
+      "tEndS": 912.43,
+      "texte": "with changes, a test log, a plan"
+    },
+    {
+      "tStartS": 912.44,
+      "tEndS": 914.51,
+      "texte": "document, or a summary of what failed,"
+    },
+    {
+      "tStartS": 914.52,
+      "tEndS": 917.55,
+      "texte": "right? For research agents, it might be"
+    },
+    {
+      "tStartS": 917.56,
+      "tEndS": 920.51,
+      "texte": "a source map or extracted quotes, a a"
+    },
+    {
+      "tStartS": 920.52,
+      "tEndS": 923.03,
+      "texte": "table. The important part is not the"
+    },
+    {
+      "tStartS": 923.04,
+      "tEndS": 925.23,
+      "texte": "storage format. The important part is"
+    },
+    {
+      "tStartS": 925.24,
+      "tEndS": 928.39,
+      "texte": "that progress becomes inspectable"
+    },
+    {
+      "tStartS": 928.4,
+      "tEndS": 930.99,
+      "texte": "outside the model's current attention,"
+    },
+    {
+      "tStartS": 931,
+      "tEndS": 932.75,
+      "texte": "and that is important."
+    },
+    {
+      "tStartS": 932.76,
+      "tEndS": 935.31,
+      "texte": "Um durable state will preserve work, but"
+    },
+    {
+      "tStartS": 935.32,
+      "tEndS": 937.87,
+      "texte": "it does not coordinate the work. A plan"
+    },
+    {
+      "tStartS": 937.88,
+      "tEndS": 940.07,
+      "texte": "file can say what should happen. It does"
+    },
+    {
+      "tStartS": 940.08,
+      "tEndS": 942.07,
+      "texte": "not decide what to retry or when to"
+    },
+    {
+      "tStartS": 942.08,
+      "tEndS": 944.59,
+      "texte": "retry. A log can be can be recording"
+    },
+    {
+      "tStartS": 944.6,
+      "tEndS": 946.95,
+      "texte": "that a command failed, but it does not"
+    },
+    {
+      "tStartS": 946.96,
+      "tEndS": 949.27,
+      "texte": "decide whether to ask for approval or"
+    },
+    {
+      "tStartS": 949.28,
+      "tEndS": 951.79,
+      "texte": "not. Similarly, a memory can preserve a"
+    },
+    {
+      "tStartS": 951.8,
+      "tEndS": 954.07,
+      "texte": "lesson, but it does not schedule the"
+    },
+    {
+      "tStartS": 954.08,
+      "tEndS": 956.63,
+      "texte": "next run. So, once the workflow has life"
+    },
+    {
+      "tStartS": 956.64,
+      "tEndS": 958.99,
+      "texte": "cycle, state alone clearly is not"
+    },
+    {
+      "tStartS": 959,
+      "tEndS": 960.75,
+      "texte": "enough. You need something that says,"
+    },
+    {
+      "tStartS": 960.76,
+      "tEndS": 963.03,
+      "texte": "\"Start here, pause there, resume after"
+    },
+    {
+      "tStartS": 963.04,
+      "tEndS": 965.27,
+      "texte": "this. Run this check up after this"
+    },
+    {
+      "tStartS": 965.28,
+      "tEndS": 967.31,
+      "texte": "action. Ask the human before the risky"
+    },
+    {
+      "tStartS": 967.32,
+      "tEndS": 969.67,
+      "texte": "step.\" That part is a whole new"
+    },
+    {
+      "tStartS": 969.68,
+      "tEndS": 971.03,
+      "texte": "primitive."
+    },
+    {
+      "tStartS": 971.04,
+      "tEndS": 973.35,
+      "texte": "And in the agent harness, that primitive"
+    },
+    {
+      "tStartS": 973.36,
+      "tEndS": 976.35,
+      "texte": "will show up as the orchestration. So,"
+    },
+    {
+      "tStartS": 976.36,
+      "tEndS": 977.47,
+      "texte": "I've kind of"
+    },
+    {
+      "tStartS": 977.48,
+      "tEndS": 980.51,
+      "texte": "zoomed out a little bit here. So, we now"
+    },
+    {
+      "tStartS": 980.52,
+      "tEndS": 982.23,
+      "texte": "have all the previous one showing up."
+    },
+    {
+      "tStartS": 982.24,
+      "tEndS": 984.11,
+      "texte": "Instructions is there, context delivery"
+    },
+    {
+      "tStartS": 984.12,
+      "tEndS": 986.35,
+      "texte": "is there, context management is there,"
+    },
+    {
+      "tStartS": 986.36,
+      "tEndS": 988.11,
+      "texte": "durable state is there, execution"
+    },
+    {
+      "tStartS": 988.12,
+      "tEndS": 990.27,
+      "texte": "environment, model of course is there."
+    },
+    {
+      "tStartS": 990.28,
+      "tEndS": 993.15,
+      "texte": "And now we have another primitive, which"
+    },
+    {
+      "tStartS": 993.16,
+      "tEndS": 995.63,
+      "texte": "is orchestration. Orchestration is the"
+    },
+    {
+      "tStartS": 995.64,
+      "tEndS": 998.829,
+      "texte": "harness deciding how work moves. Life"
+    },
+    {
+      "tStartS": 998.839,
+      "tEndS": 1001.03,
+      "texte": "cycle hooks, heartbeats as we have seen"
+    },
+    {
+      "tStartS": 1001.04,
+      "tEndS": 1002.87,
+      "texte": "from Open Claw and all, retries,"
+    },
+    {
+      "tStartS": 1002.88,
+      "tEndS": 1004.79,
+      "texte": "approval gates, human hand-offs,"
+    },
+    {
+      "tStartS": 1004.8,
+      "tEndS": 1007.27,
+      "texte": "wrapping the tools, ordering some steps,"
+    },
+    {
+      "tStartS": 1007.28,
+      "tEndS": 1009.67,
+      "texte": "the task list, routing the model."
+    },
+    {
+      "tStartS": 1009.68,
+      "tEndS": 1011.75,
+      "texte": "There's a lot that goes on into this"
+    },
+    {
+      "tStartS": 1011.76,
+      "tEndS": 1013.99,
+      "texte": "one. So, before a tool can do this and"
+    },
+    {
+      "tStartS": 1014,
+      "tEndS": 1016.59,
+      "texte": "after failure do that, all of that comes"
+    },
+    {
+      "tStartS": 1016.6,
+      "tEndS": 1018.43,
+      "texte": "becomes part of this particular"
+    },
+    {
+      "tStartS": 1018.44,
+      "tEndS": 1020.829,
+      "texte": "primitive. Plot code hooks are great"
+    },
+    {
+      "tStartS": 1020.839,
+      "tEndS": 1023.39,
+      "texte": "example of this. Agent frameworks expose"
+    },
+    {
+      "tStartS": 1023.4,
+      "tEndS": 1025.829,
+      "texte": "life cycle events because real system"
+    },
+    {
+      "tStartS": 1025.839,
+      "tEndS": 1028.67,
+      "texte": "need places to intercept the behavior."
+    },
+    {
+      "tStartS": 1028.68,
+      "tEndS": 1030.55,
+      "texte": "The model is not doing all of that by"
+    },
+    {
+      "tStartS": 1030.56,
+      "tEndS": 1033.55,
+      "texte": "willpower. The harness is carrying a"
+    },
+    {
+      "tStartS": 1033.56,
+      "tEndS": 1036.15,
+      "texte": "workflow, and it's this particular"
+    },
+    {
+      "tStartS": 1036.16,
+      "tEndS": 1039.309,
+      "texte": "primitive that is doing the busy work."
+    },
+    {
+      "tStartS": 1039.319,
+      "tEndS": 1041.99,
+      "texte": "This layer is where the agent work"
+    },
+    {
+      "tStartS": 1042,
+      "tEndS": 1043.99,
+      "texte": "starts to look less like chat and more"
+    },
+    {
+      "tStartS": 1044,
+      "tEndS": 1046.35,
+      "texte": "like a runtime. But, as you have seen"
+    },
+    {
+      "tStartS": 1046.36,
+      "tEndS": 1048.63,
+      "texte": "the pattern, orchestration helps one"
+    },
+    {
+      "tStartS": 1048.64,
+      "tEndS": 1051.59,
+      "texte": "agent do more, but one agent still has"
+    },
+    {
+      "tStartS": 1051.6,
+      "tEndS": 1054.59,
+      "texte": "one attention stream. Sometimes you need"
+    },
+    {
+      "tStartS": 1054.6,
+      "tEndS": 1057.15,
+      "texte": "branches. You might want mid-work"
+    },
+    {
+      "tStartS": 1057.16,
+      "tEndS": 1059.27,
+      "texte": "someone to go and research something,"
+    },
+    {
+      "tStartS": 1059.28,
+      "tEndS": 1061.87,
+      "texte": "you know, or go and look inside that Git"
+    },
+    {
+      "tStartS": 1061.88,
+      "tEndS": 1065.59,
+      "texte": "repository, or draft something on this"
+    },
+    {
+      "tStartS": 1065.6,
+      "tEndS": 1066.91,
+      "texte": "on a separate thing, review the"
+    },
+    {
+      "tStartS": 1066.92,
+      "tEndS": 1070.91,
+      "texte": "diagrams, verify the browser rendered"
+    },
+    {
+      "tStartS": 1070.92,
+      "tEndS": 1073.63,
+      "texte": "correctly. If one agent does all of"
+    },
+    {
+      "tStartS": 1073.64,
+      "tEndS": 1076.19,
+      "texte": "these serially, the process"
+    },
+    {
+      "tStartS": 1076.2,
+      "tEndS": 1077.87,
+      "texte": "has two issues. One, it becomes very"
+    },
+    {
+      "tStartS": 1077.88,
+      "tEndS": 1080.19,
+      "texte": "slow because it happens in serial. And"
+    },
+    {
+      "tStartS": 1080.2,
+      "tEndS": 1082.11,
+      "texte": "the second is the context, the thing"
+    },
+    {
+      "tStartS": 1082.12,
+      "tEndS": 1083.95,
+      "texte": "that we talked about, gets crowded. So,"
+    },
+    {
+      "tStartS": 1083.96,
+      "tEndS": 1087.07,
+      "texte": "when work branches, the harness needs to"
+    },
+    {
+      "tStartS": 1087.08,
+      "tEndS": 1089.59,
+      "texte": "do that branching as well. And that"
+    },
+    {
+      "tStartS": 1089.6,
+      "tEndS": 1091.71,
+      "texte": "brings us to the next primitive in"
+    },
+    {
+      "tStartS": 1091.72,
+      "tEndS": 1094.51,
+      "texte": "harness. And that one is sub-agents."
+    },
+    {
+      "tStartS": 1094.52,
+      "tEndS": 1097.83,
+      "texte": "Okay. So, not all harness, or not all"
+    },
+    {
+      "tStartS": 1097.84,
+      "tEndS": 1100.91,
+      "texte": "providers that are putting on harness,"
+    },
+    {
+      "tStartS": 1100.92,
+      "tEndS": 1103.39,
+      "texte": "even open source one, keep this, right?"
+    },
+    {
+      "tStartS": 1103.4,
+      "tEndS": 1105.51,
+      "texte": "I think, if I'm not wrong, Pi is a"
+    },
+    {
+      "tStartS": 1105.52,
+      "tEndS": 1107.07,
+      "texte": "classic example of this, where they"
+    },
+    {
+      "tStartS": 1107.08,
+      "tEndS": 1109.47,
+      "texte": "don't have a built-in sub-agent. If you"
+    },
+    {
+      "tStartS": 1109.48,
+      "tEndS": 1111.91,
+      "texte": "want, you can add it in Pi, but yeah,"
+    },
+    {
+      "tStartS": 1111.92,
+      "tEndS": 1114.39,
+      "texte": "they do serve a purpose. Sub-agents let"
+    },
+    {
+      "tStartS": 1114.4,
+      "tEndS": 1116.43,
+      "texte": "the harness split work into bounded"
+    },
+    {
+      "tStartS": 1116.44,
+      "tEndS": 1118.79,
+      "texte": "loops. Now, instead of just one of all"
+    },
+    {
+      "tStartS": 1118.8,
+      "tEndS": 1120.35,
+      "texte": "of those things that we had, now it's"
+    },
+    {
+      "tStartS": 1120.36,
+      "tEndS": 1122.27,
+      "texte": "multiple of those. One agent explores"
+    },
+    {
+      "tStartS": 1122.28,
+      "tEndS": 1124.47,
+      "texte": "the code base, one reviews the diff, one"
+    },
+    {
+      "tStartS": 1124.48,
+      "tEndS": 1126.95,
+      "texte": "verifies sources, one drafts a plan. You"
+    },
+    {
+      "tStartS": 1126.96,
+      "tEndS": 1128.83,
+      "texte": "get the point, right?"
+    },
+    {
+      "tStartS": 1128.84,
+      "tEndS": 1131.19,
+      "texte": "And the main one that fires off all of"
+    },
+    {
+      "tStartS": 1131.2,
+      "tEndS": 1133.19,
+      "texte": "these things keeps the responsibility"
+    },
+    {
+      "tStartS": 1133.2,
+      "tEndS": 1136.67,
+      "texte": "for integrating all of the"
+    },
+    {
+      "tStartS": 1136.68,
+      "tEndS": 1138.71,
+      "texte": "And I think OpenAI's agent SDK has two"
+    },
+    {
+      "tStartS": 1138.72,
+      "tEndS": 1141.39,
+      "texte": "useful patterns here. One is agents as"
+    },
+    {
+      "tStartS": 1141.4,
+      "tEndS": 1143.03,
+      "texte": "tools. So, we talked about tools"
+    },
+    {
+      "tStartS": 1143.04,
+      "tEndS": 1146.07,
+      "texte": "already. What if you treat agent as a"
+    },
+    {
+      "tStartS": 1146.08,
+      "tEndS": 1147.95,
+      "texte": "tool as well? And that's basically where"
+    },
+    {
+      "tStartS": 1147.96,
+      "tEndS": 1149.67,
+      "texte": "you end up with the sub-agent. Where a"
+    },
+    {
+      "tStartS": 1149.68,
+      "tEndS": 1151.83,
+      "texte": "manager keeps control and calls the"
+    },
+    {
+      "tStartS": 1151.84,
+      "tEndS": 1154.31,
+      "texte": "specialists, and then hands off where"
+    },
+    {
+      "tStartS": 1154.32,
+      "tEndS": 1156.19,
+      "texte": "the active conversation moves to a"
+    },
+    {
+      "tStartS": 1156.2,
+      "tEndS": 1157.95,
+      "texte": "specialist, right? But that's a"
+    },
+    {
+      "tStartS": 1157.96,
+      "tEndS": 1160.11,
+      "texte": "primitive. Primitive is the capability"
+    },
+    {
+      "tStartS": 1160.12,
+      "tEndS": 1163.47,
+      "texte": "to fire off and branch off with clean"
+    },
+    {
+      "tStartS": 1163.48,
+      "tEndS": 1166.03,
+      "texte": "context with with the existing context"
+    },
+    {
+      "tStartS": 1166.04,
+      "tEndS": 1169.07,
+      "texte": "of the main agent. Um so sub agent is"
+    },
+    {
+      "tStartS": 1169.08,
+      "tEndS": 1171.55,
+      "texte": "not just more model, it is a model with"
+    },
+    {
+      "tStartS": 1171.56,
+      "tEndS": 1174.51,
+      "texte": "a narrower job, narrower context, and"
+    },
+    {
+      "tStartS": 1174.52,
+      "tEndS": 1176.55,
+      "texte": "often narrower tools as well."
+    },
+    {
+      "tStartS": 1176.56,
+      "tEndS": 1178.67,
+      "texte": "That's why the term specialist, right?"
+    },
+    {
+      "tStartS": 1178.68,
+      "tEndS": 1180.91,
+      "texte": "That is why sub agents help as well"
+    },
+    {
+      "tStartS": 1180.92,
+      "tEndS": 1183.03,
+      "texte": "because they reduce the surface area"
+    },
+    {
+      "tStartS": 1183.04,
+      "tEndS": 1184.71,
+      "texte": "each worker has to reason about."
+    },
+    {
+      "tStartS": 1184.72,
+      "tEndS": 1186.67,
+      "texte": "Remember that whole context and the"
+    },
+    {
+      "tStartS": 1186.68,
+      "tEndS": 1188.95,
+      "texte": "attention? Well, that's what the harness"
+    },
+    {
+      "tStartS": 1188.96,
+      "tEndS": 1190.87,
+      "texte": "is doing via this Yeah, the harness is"
+    },
+    {
+      "tStartS": 1190.88,
+      "tEndS": 1192.83,
+      "texte": "helping say that don't worry about all"
+    },
+    {
+      "tStartS": 1192.84,
+      "tEndS": 1194.43,
+      "texte": "of these things, you just worry about"
+    },
+    {
+      "tStartS": 1194.44,
+      "tEndS": 1196.87,
+      "texte": "these tools, you just worry about this"
+    },
+    {
+      "tStartS": 1196.88,
+      "tEndS": 1198.87,
+      "texte": "aspect of the work that you need to do,"
+    },
+    {
+      "tStartS": 1198.88,
+      "tEndS": 1201.23,
+      "texte": "and off you go. And then, once it comes"
+    },
+    {
+      "tStartS": 1201.24,
+      "tEndS": 1203.79,
+      "texte": "back, it integrates all of that stuff."
+    },
+    {
+      "tStartS": 1203.8,
+      "tEndS": 1205.91,
+      "texte": "But delegation creates a new problem,"
+    },
+    {
+      "tStartS": 1205.92,
+      "tEndS": 1208.39,
+      "texte": "right? If every sub agent invents its"
+    },
+    {
+      "tStartS": 1208.4,
+      "tEndS": 1210.91,
+      "texte": "own process, you get parallel"
+    },
+    {
+      "tStartS": 1210.92,
+      "tEndS": 1213.19,
+      "texte": "inconsistency. So, this is the"
+    },
+    {
+      "tStartS": 1213.2,
+      "tEndS": 1215.27,
+      "texte": "delegation problem. It feels faster"
+    },
+    {
+      "tStartS": 1215.28,
+      "tEndS": 1216.71,
+      "texte": "until everyone comes back with a"
+    },
+    {
+      "tStartS": 1216.72,
+      "tEndS": 1218.15,
+      "texte": "different interpretation of the job they"
+    },
+    {
+      "tStartS": 1218.16,
+      "tEndS": 1220.75,
+      "texte": "were given in that. So, agents need"
+    },
+    {
+      "tStartS": 1220.76,
+      "tEndS": 1223.83,
+      "texte": "procedures. They need reusable know-how"
+    },
+    {
+      "tStartS": 1223.84,
+      "tEndS": 1226.63,
+      "texte": "that can be loaded at the right time and"
+    },
+    {
+      "tStartS": 1226.64,
+      "tEndS": 1228.55,
+      "texte": "a way that the"
+    },
+    {
+      "tStartS": 1228.56,
+      "tEndS": 1230.07,
+      "texte": "a primitive for that helps with this"
+    },
+    {
+      "tStartS": 1230.08,
+      "tEndS": 1232.87,
+      "texte": "particular aspect is the skill layer."
+    },
+    {
+      "tStartS": 1232.88,
+      "tEndS": 1234.23,
+      "texte": "It's the skills and procedures,"
+    },
+    {
+      "tStartS": 1234.24,
+      "tEndS": 1236.91,
+      "texte": "basically. So, if these sub agents are"
+    },
+    {
+      "tStartS": 1236.92,
+      "tEndS": 1238.59,
+      "texte": "going to be fired"
+    },
+    {
+      "tStartS": 1238.6,
+      "tEndS": 1240.87,
+      "texte": "to do a very narrow task, wouldn't it be"
+    },
+    {
+      "tStartS": 1240.88,
+      "tEndS": 1243.51,
+      "texte": "awesome if we can provide exact"
+    },
+    {
+      "tStartS": 1243.52,
+      "tEndS": 1245.07,
+      "texte": "checklist that it can follow or a"
+    },
+    {
+      "tStartS": 1245.08,
+      "tEndS": 1246.35,
+      "texte": "procedure that it can follow in a"
+    },
+    {
+      "tStartS": 1246.36,
+      "tEndS": 1248.51,
+      "texte": "reusable pattern, right? So that every"
+    },
+    {
+      "tStartS": 1248.52,
+      "tEndS": 1251.19,
+      "texte": "time you want a narrow"
+    },
+    {
+      "tStartS": 1251.2,
+      "tEndS": 1252.79,
+      "texte": "sub agent to do that, you would just"
+    },
+    {
+      "tStartS": 1252.8,
+      "tEndS": 1255.19,
+      "texte": "hand off that agent, give it a skill,"
+    },
+    {
+      "tStartS": 1255.2,
+      "tEndS": 1256.91,
+      "texte": "off you go, right? So, skills are"
+    },
+    {
+      "tStartS": 1256.92,
+      "tEndS": 1259.19,
+      "texte": "reusable procedures for the recurring"
+    },
+    {
+      "tStartS": 1259.2,
+      "tEndS": 1261.63,
+      "texte": "work, right? How do you review a PR,"
+    },
+    {
+      "tStartS": 1261.64,
+      "tEndS": 1263.23,
+      "texte": "right? Or a pull request. How do you"
+    },
+    {
+      "tStartS": 1263.24,
+      "tEndS": 1265.99,
+      "texte": "prep for for an for an episode, right?"
+    },
+    {
+      "tStartS": 1266,
+      "tEndS": 1270.27,
+      "texte": "How do you use a certain Git repository?"
+    },
+    {
+      "tStartS": 1270.28,
+      "tEndS": 1273.31,
+      "texte": "How do you do browser checks and tests?"
+    },
+    {
+      "tStartS": 1273.32,
+      "tEndS": 1274.75,
+      "texte": "Um and so on and so forth. I think at"
+    },
+    {
+      "tStartS": 1274.76,
+      "tEndS": 1276.27,
+      "texte": "this stage everyone is very familiar"
+    },
+    {
+      "tStartS": 1276.28,
+      "tEndS": 1277.99,
+      "texte": "with what the skills do, what kind of"
+    },
+    {
+      "tStartS": 1278,
+      "tEndS": 1280.07,
+      "texte": "skills are available, but you will see"
+    },
+    {
+      "tStartS": 1280.08,
+      "tEndS": 1282.67,
+      "texte": "this as skills the slash commands the"
+    },
+    {
+      "tStartS": 1282.68,
+      "tEndS": 1284.91,
+      "texte": "playbooks and runbooks and recipes and"
+    },
+    {
+      "tStartS": 1284.92,
+      "tEndS": 1287.83,
+      "texte": "workflows, but they are all part of this"
+    },
+    {
+      "tStartS": 1287.84,
+      "tEndS": 1290.47,
+      "texte": "particular primitive. A good skill will"
+    },
+    {
+      "tStartS": 1290.48,
+      "tEndS": 1293.91,
+      "texte": "encode a workflow. When to use it, what"
+    },
+    {
+      "tStartS": 1293.92,
+      "tEndS": 1296.07,
+      "texte": "inputs it should uh should be given,"
+    },
+    {
+      "tStartS": 1296.08,
+      "tEndS": 1299.31,
+      "texte": "what steps it would follow in what order"
+    },
+    {
+      "tStartS": 1299.32,
+      "tEndS": 1301.79,
+      "texte": "if need be, which tools to prefer. So,"
+    },
+    {
+      "tStartS": 1301.8,
+      "tEndS": 1304.15,
+      "texte": "they make the harness less dependent on"
+    },
+    {
+      "tStartS": 1304.16,
+      "tEndS": 1306.47,
+      "texte": "every agent rediscovering the same"
+    },
+    {
+      "tStartS": 1306.48,
+      "tEndS": 1309.03,
+      "texte": "process from scratch. They move repeated"
+    },
+    {
+      "tStartS": 1309.04,
+      "tEndS": 1311.51,
+      "texte": "expertise from remember to do that thing"
+    },
+    {
+      "tStartS": 1311.52,
+      "tEndS": 1314.03,
+      "texte": "as instruction into a named capability"
+    },
+    {
+      "tStartS": 1314.04,
+      "tEndS": 1315.59,
+      "texte": "that the harness can invoke, right? And"
+    },
+    {
+      "tStartS": 1315.6,
+      "tEndS": 1318.03,
+      "texte": "that's that's important. That's why this"
+    },
+    {
+      "tStartS": 1318.04,
+      "tEndS": 1320.67,
+      "texte": "was a a pivotal moment when skill became"
+    },
+    {
+      "tStartS": 1320.68,
+      "tEndS": 1322.47,
+      "texte": "a thing later and of course it became"
+    },
+    {
+      "tStartS": 1322.48,
+      "tEndS": 1324.35,
+      "texte": "part of the Linux Foundation. Now,"
+    },
+    {
+      "tStartS": 1324.36,
+      "tEndS": 1327.55,
+      "texte": "skills make work repeatable, but they do"
+    },
+    {
+      "tStartS": 1327.56,
+      "tEndS": 1330.23,
+      "texte": "not prove the work succeeded, right? A"
+    },
+    {
+      "tStartS": 1330.24,
+      "tEndS": 1332.79,
+      "texte": "skill can say run the test, but did it"
+    },
+    {
+      "tStartS": 1332.8,
+      "tEndS": 1335.43,
+      "texte": "pass? It can say check the browser, was"
+    },
+    {
+      "tStartS": 1335.44,
+      "tEndS": 1337.43,
+      "texte": "the screenshot clean? So, the procedure"
+    },
+    {
+      "tStartS": 1337.44,
+      "tEndS": 1339.75,
+      "texte": "is necessary, but it is not evidence."
+    },
+    {
+      "tStartS": 1339.76,
+      "tEndS": 1342.87,
+      "texte": "And so, that primitive is verification"
+    },
+    {
+      "tStartS": 1342.88,
+      "tEndS": 1345.19,
+      "texte": "and observability. Verification asks for"
+    },
+    {
+      "tStartS": 1345.2,
+      "tEndS": 1348.47,
+      "texte": "receipts. Tests, builds, type check,"
+    },
+    {
+      "tStartS": 1348.48,
+      "tEndS": 1350.75,
+      "texte": "lint, browser screenshot, visual"
+    },
+    {
+      "tStartS": 1350.76,
+      "tEndS": 1352.43,
+      "texte": "inspection, some sort of evals,"
+    },
+    {
+      "tStartS": 1352.44,
+      "tEndS": 1354.19,
+      "texte": "basically. The"
+    },
+    {
+      "tStartS": 1354.2,
+      "tEndS": 1356.11,
+      "texte": "the agent would say I am done and the"
+    },
+    {
+      "tStartS": 1356.12,
+      "tEndS": 1358.59,
+      "texte": "harness can then ask, \"Well, show me.\""
+    },
+    {
+      "tStartS": 1358.6,
+      "tEndS": 1360.79,
+      "texte": "So, this is one of the biggest mindset"
+    },
+    {
+      "tStartS": 1360.8,
+      "tEndS": 1362.95,
+      "texte": "shifts in Harness Engineering. You do"
+    },
+    {
+      "tStartS": 1362.96,
+      "tEndS": 1364.75,
+      "texte": "not trust the final sentence because it"
+    },
+    {
+      "tStartS": 1364.76,
+      "tEndS": 1367.39,
+      "texte": "sounds confident. You ask what external"
+    },
+    {
+      "tStartS": 1367.4,
+      "tEndS": 1369.87,
+      "texte": "checks can back it up. For coding work,"
+    },
+    {
+      "tStartS": 1369.88,
+      "tEndS": 1372.23,
+      "texte": "it's easy like you want a test to run"
+    },
+    {
+      "tStartS": 1372.24,
+      "tEndS": 1374.39,
+      "texte": "and and and pass."
+    },
+    {
+      "tStartS": 1374.4,
+      "tEndS": 1375.83,
+      "texte": "For a presentation, it might be a"
+    },
+    {
+      "tStartS": 1375.84,
+      "tEndS": 1378.19,
+      "texte": "browser screenshot with no overlap in"
+    },
+    {
+      "tStartS": 1378.2,
+      "tEndS": 1380.83,
+      "texte": "text or so. For research, it might be"
+    },
+    {
+      "tStartS": 1380.84,
+      "tEndS": 1382.99,
+      "texte": "primary sources and clean table. I"
+    },
+    {
+      "tStartS": 1383,
+      "tEndS": 1385.79,
+      "texte": "remember my first interaction with agent"
+    },
+    {
+      "tStartS": 1385.8,
+      "tEndS": 1387.75,
+      "texte": "within a harness, of course."
+    },
+    {
+      "tStartS": 1387.76,
+      "tEndS": 1389.79,
+      "texte": "When I asked it to do some coding task,"
+    },
+    {
+      "tStartS": 1389.8,
+      "tEndS": 1391.51,
+      "texte": "it automatically said like, \"Okay, now"
+    },
+    {
+      "tStartS": 1391.52,
+      "tEndS": 1393.11,
+      "texte": "let me run the test.\" And I'm like,"
+    },
+    {
+      "tStartS": 1393.12,
+      "tEndS": 1395.47,
+      "texte": "\"Wow, that is great.\" I didn't have to"
+    },
+    {
+      "tStartS": 1395.48,
+      "tEndS": 1396.75,
+      "texte": "say it. And this was even before the"
+    },
+    {
+      "tStartS": 1396.76,
+      "tEndS": 1398.71,
+      "texte": "skill weather thing, right?"
+    },
+    {
+      "tStartS": 1398.72,
+      "tEndS": 1400.27,
+      "texte": "But that's because the harness was"
+    },
+    {
+      "tStartS": 1400.28,
+      "tEndS": 1402.71,
+      "texte": "written in a in a way that it"
+    },
+    {
+      "tStartS": 1402.72,
+      "tEndS": 1404.51,
+      "texte": "prompted the model to then look for"
+    },
+    {
+      "tStartS": 1404.52,
+      "tEndS": 1407.83,
+      "texte": "verification as a extra step. And for a"
+    },
+    {
+      "tStartS": 1407.84,
+      "tEndS": 1409.35,
+      "texte": "very long time, that was a"
+    },
+    {
+      "tStartS": 1409.36,
+      "tEndS": 1411.15,
+      "texte": "differentiating factor. And a lot of"
+    },
+    {
+      "tStartS": 1411.16,
+      "tEndS": 1413.51,
+      "texte": "people attributed that to the model's"
+    },
+    {
+      "tStartS": 1413.52,
+      "tEndS": 1415.55,
+      "texte": "smartness. And again, there was a"
+    },
+    {
+      "tStartS": 1415.56,
+      "tEndS": 1417.87,
+      "texte": "component of that. But harness played a"
+    },
+    {
+      "tStartS": 1417.88,
+      "tEndS": 1420.39,
+      "texte": "big role in that as well. If the harness"
+    },
+    {
+      "tStartS": 1420.4,
+      "tEndS": 1423.63,
+      "texte": "requires verification, it will guide the"
+    },
+    {
+      "tStartS": 1423.64,
+      "tEndS": 1425.83,
+      "texte": "model to do so. So, in the end, of"
+    },
+    {
+      "tStartS": 1425.84,
+      "tEndS": 1427.75,
+      "texte": "course, it's a model doing it, but"
+    },
+    {
+      "tStartS": 1427.76,
+      "tEndS": 1429.63,
+      "texte": "harness played a part in giving it the"
+    },
+    {
+      "tStartS": 1429.64,
+      "tEndS": 1432.07,
+      "texte": "right attention at the right time for it"
+    },
+    {
+      "tStartS": 1432.08,
+      "tEndS": 1434.35,
+      "texte": "to be not doing the verification. Right?"
+    },
+    {
+      "tStartS": 1434.36,
+      "tEndS": 1437.63,
+      "texte": "So, looks good to me is is not a"
+    },
+    {
+      "tStartS": 1437.64,
+      "tEndS": 1440.19,
+      "texte": "verification strategy. It basically"
+    },
+    {
+      "tStartS": 1440.2,
+      "tEndS": 1442.27,
+      "texte": "needs to have some checks and balances."
+    },
+    {
+      "tStartS": 1442.28,
+      "tEndS": 1444.75,
+      "texte": "And then harness can play a part in that"
+    },
+    {
+      "tStartS": 1444.76,
+      "tEndS": 1447.27,
+      "texte": "aspect as well. Now, verification tells"
+    },
+    {
+      "tStartS": 1447.28,
+      "tEndS": 1449.07,
+      "texte": "you whether something passed. It does"
+    },
+    {
+      "tStartS": 1449.08,
+      "tEndS": 1452.15,
+      "texte": "not tell you why it failed. So, a test"
+    },
+    {
+      "tStartS": 1452.16,
+      "tEndS": 1454.23,
+      "texte": "fails, but was it the context that was"
+    },
+    {
+      "tStartS": 1454.24,
+      "tEndS": 1456.59,
+      "texte": "wrong? Or did the tool return bad"
+    },
+    {
+      "tStartS": 1456.6,
+      "tEndS": 1459.19,
+      "texte": "output? Did the agent edit the wrong"
+    },
+    {
+      "tStartS": 1459.2,
+      "tEndS": 1462.11,
+      "texte": "file? Did a sub-agent miss a constraint,"
+    },
+    {
+      "tStartS": 1462.12,
+      "tEndS": 1464.91,
+      "texte": "right? Without a run record, debugging"
+    },
+    {
+      "tStartS": 1464.92,
+      "tEndS": 1467.27,
+      "texte": "becomes hard. And that does not scale."
+    },
+    {
+      "tStartS": 1467.28,
+      "tEndS": 1469.51,
+      "texte": "So, you need to know what the model saw,"
+    },
+    {
+      "tStartS": 1469.52,
+      "tEndS": 1471.99,
+      "texte": "what tool it called, what argument it"
+    },
+    {
+      "tStartS": 1472,
+      "tEndS": 1474.71,
+      "texte": "used, what came back, and what changed."
+    },
+    {
+      "tStartS": 1474.72,
+      "tEndS": 1477.35,
+      "texte": "And that is the observability part. So,"
+    },
+    {
+      "tStartS": 1477.36,
+      "tEndS": 1479.83,
+      "texte": "observability is the recorder for the"
+    },
+    {
+      "tStartS": 1479.84,
+      "tEndS": 1482.51,
+      "texte": "agent run. Traces, tool call timelines,"
+    },
+    {
+      "tStartS": 1482.52,
+      "tEndS": 1485.87,
+      "texte": "logs, cost, latency, prompt versions,"
+    },
+    {
+      "tStartS": 1485.88,
+      "tEndS": 1488.39,
+      "texte": "tool versions, approval events, the full"
+    },
+    {
+      "tStartS": 1488.4,
+      "tEndS": 1490.35,
+      "texte": "chain of user intent to the final"
+    },
+    {
+      "tStartS": 1490.36,
+      "tEndS": 1491.39,
+      "texte": "output."
+    },
+    {
+      "tStartS": 1491.4,
+      "tEndS": 1493.79,
+      "texte": "Bug is often not in the final message."
+    },
+    {
+      "tStartS": 1493.8,
+      "tEndS": 1496.31,
+      "texte": "It is in one of these in between steps."
+    },
+    {
+      "tStartS": 1496.32,
+      "tEndS": 1499.19,
+      "texte": "It is the three tool calls earlier when"
+    },
+    {
+      "tStartS": 1499.2,
+      "tEndS": 1501.39,
+      "texte": "the agent searched for the wrong symbol"
+    },
+    {
+      "tStartS": 1501.4,
+      "tEndS": 1503.35,
+      "texte": "or trusted the wrong page or skipped the"
+    },
+    {
+      "tStartS": 1503.36,
+      "tEndS": 1504.67,
+      "texte": "failing test."
+    },
+    {
+      "tStartS": 1504.68,
+      "tEndS": 1506.47,
+      "texte": "And so this observability turns the"
+    },
+    {
+      "tStartS": 1506.48,
+      "tEndS": 1508.95,
+      "texte": "agent messed up into a debuggable"
+    },
+    {
+      "tStartS": 1508.96,
+      "tEndS": 1510.07,
+      "texte": "system."
+    },
+    {
+      "tStartS": 1510.08,
+      "tEndS": 1511.59,
+      "texte": "And this matters because you cannot"
+    },
+    {
+      "tStartS": 1511.6,
+      "tEndS": 1514.11,
+      "texte": "improve what you cannot inspect. And so"
+    },
+    {
+      "tStartS": 1514.12,
+      "tEndS": 1517.19,
+      "texte": "then comes the evolution of the harness"
+    },
+    {
+      "tStartS": 1517.2,
+      "tEndS": 1520.23,
+      "texte": "itself. This is where failures become"
+    },
+    {
+      "tStartS": 1520.24,
+      "tEndS": 1523.75,
+      "texte": "infrastructure. A repeated context miss"
+    },
+    {
+      "tStartS": 1523.76,
+      "tEndS": 1526.35,
+      "texte": "might be pointing at something that you"
+    },
+    {
+      "tStartS": 1526.36,
+      "tEndS": 1528.47,
+      "texte": "need to add a retrieval rule, right? A"
+    },
+    {
+      "tStartS": 1528.48,
+      "tEndS": 1530.79,
+      "texte": "bad tool result becomes a stricter"
+    },
+    {
+      "tStartS": 1530.8,
+      "tEndS": 1533.71,
+      "texte": "schema. A dangerous command that you saw"
+    },
+    {
+      "tStartS": 1533.72,
+      "tEndS": 1535.15,
+      "texte": "in your observability becomes a"
+    },
+    {
+      "tStartS": 1535.16,
+      "tEndS": 1537.63,
+      "texte": "permission gate that you would add after"
+    },
+    {
+      "tStartS": 1537.64,
+      "tEndS": 1539.95,
+      "texte": "you saw that. A missed edge case that"
+    },
+    {
+      "tStartS": 1539.96,
+      "tEndS": 1542.39,
+      "texte": "you see from your observability becomes"
+    },
+    {
+      "tStartS": 1542.4,
+      "tEndS": 1544.07,
+      "texte": "a test. Um"
+    },
+    {
+      "tStartS": 1544.08,
+      "tEndS": 1546.19,
+      "texte": "a recurring correction that the model"
+    },
+    {
+      "tStartS": 1546.2,
+      "tEndS": 1548.87,
+      "texte": "has to do might become a memory. And a"
+    },
+    {
+      "tStartS": 1548.88,
+      "tEndS": 1551.03,
+      "texte": "repeated workflow becomes a skill what"
+    },
+    {
+      "tStartS": 1551.04,
+      "tEndS": 1554.39,
+      "texte": "Hermes agent does. This is the agent"
+    },
+    {
+      "tStartS": 1554.4,
+      "tEndS": 1555.75,
+      "texte": "version of"
+    },
+    {
+      "tStartS": 1555.76,
+      "tEndS": 1557.63,
+      "texte": "the postmortem loop. Do not just explain"
+    },
+    {
+      "tStartS": 1557.64,
+      "tEndS": 1559.79,
+      "texte": "the incident, change the system so the"
+    },
+    {
+      "tStartS": 1559.8,
+      "tEndS": 1561.91,
+      "texte": "class of the failure same class of"
+    },
+    {
+      "tStartS": 1561.92,
+      "tEndS": 1563.99,
+      "texte": "failure has a harder time coming back."
+    },
+    {
+      "tStartS": 1564,
+      "tEndS": 1566.11,
+      "texte": "The point is not to produce a perfect"
+    },
+    {
+      "tStartS": 1566.12,
+      "tEndS": 1568.15,
+      "texte": "run once. The point is to make the next"
+    },
+    {
+      "tStartS": 1568.16,
+      "tEndS": 1570.19,
+      "texte": "run start from a better place. And"
+    },
+    {
+      "tStartS": 1570.2,
+      "tEndS": 1572.03,
+      "texte": "without this layer every agent session"
+    },
+    {
+      "tStartS": 1572.04,
+      "tEndS": 1573.91,
+      "texte": "becomes the same lesson delivered with a"
+    },
+    {
+      "tStartS": 1573.92,
+      "tEndS": 1576.39,
+      "texte": "new new wrapper if you will. But with it"
+    },
+    {
+      "tStartS": 1576.4,
+      "tEndS": 1578.55,
+      "texte": "the harness will compound, right? So"
+    },
+    {
+      "tStartS": 1578.56,
+      "tEndS": 1580.19,
+      "texte": "this is when the harness engineering"
+    },
+    {
+      "tStartS": 1580.2,
+      "tEndS": 1582.67,
+      "texte": "becomes more than agent babysitting if"
+    },
+    {
+      "tStartS": 1582.68,
+      "tEndS": 1584.95,
+      "texte": "you will. So if you put all of these"
+    },
+    {
+      "tStartS": 1584.96,
+      "tEndS": 1587.23,
+      "texte": "together, right? All of these components"
+    },
+    {
+      "tStartS": 1587.24,
+      "tEndS": 1588.99,
+      "texte": "that we have talked about and then you"
+    },
+    {
+      "tStartS": 1589,
+      "tEndS": 1590.35,
+      "texte": "would go back at the time when the"
+    },
+    {
+      "tStartS": 1590.36,
+      "tEndS": 1592.19,
+      "texte": "articles were discussing and and"
+    },
+    {
+      "tStartS": 1592.2,
+      "tEndS": 1594.27,
+      "texte": "creating architecture of how cloud code"
+    },
+    {
+      "tStartS": 1594.28,
+      "tEndS": 1596.71,
+      "texte": "is working, you would then realize that"
+    },
+    {
+      "tStartS": 1596.72,
+      "tEndS": 1600.19,
+      "texte": "this looks very much like that diagram."
+    },
+    {
+      "tStartS": 1600.2,
+      "tEndS": 1603.03,
+      "texte": "This at some level is how cloud code"
+    },
+    {
+      "tStartS": 1603.04,
+      "tEndS": 1604.63,
+      "texte": "works and this at some level is how"
+    },
+    {
+      "tStartS": 1604.64,
+      "tEndS": 1606.59,
+      "texte": "codex works and this at some level is"
+    },
+    {
+      "tStartS": 1606.6,
+      "tEndS": 1609.43,
+      "texte": "how Gemini CLI works. And it is useful"
+    },
+    {
+      "tStartS": 1609.44,
+      "tEndS": 1612.87,
+      "texte": "now because it should now not look like"
+    },
+    {
+      "tStartS": 1612.88,
+      "tEndS": 1615.11,
+      "texte": "a random complex thing that you see in"
+    },
+    {
+      "tStartS": 1615.12,
+      "tEndS": 1618.35,
+      "texte": "here. Each primitive that is listed here"
+    },
+    {
+      "tStartS": 1618.36,
+      "tEndS": 1620.75,
+      "texte": "has a purpose. It has a meaning. It was"
+    },
+    {
+      "tStartS": 1620.76,
+      "tEndS": 1622.07,
+      "texte": "put there"
+    },
+    {
+      "tStartS": 1622.08,
+      "tEndS": 1624.55,
+      "texte": "for a reason. That is the payoff that I"
+    },
+    {
+      "tStartS": 1624.56,
+      "tEndS": 1626.35,
+      "texte": "wanted you to have. Here's a practical"
+    },
+    {
+      "tStartS": 1626.36,
+      "tEndS": 1628.35,
+      "texte": "test that I would leave everyone with."
+    },
+    {
+      "tStartS": 1628.36,
+      "tEndS": 1631.87,
+      "texte": "When an agent fails, do not only ask was"
+    },
+    {
+      "tStartS": 1631.88,
+      "tEndS": 1634.35,
+      "texte": "the model good enough? Ask which harness"
+    },
+    {
+      "tStartS": 1634.36,
+      "tEndS": 1636.83,
+      "texte": "layer ran out of the road? Was the"
+    },
+    {
+      "tStartS": 1636.84,
+      "tEndS": 1638.95,
+      "texte": "instruction missing? Was the context"
+    },
+    {
+      "tStartS": 1638.96,
+      "tEndS": 1641.55,
+      "texte": "wrong? Did the memory go stale? Was it"
+    },
+    {
+      "tStartS": 1641.56,
+      "tEndS": 1644.35,
+      "texte": "tool schema that was vague? Did the"
+    },
+    {
+      "tStartS": 1644.36,
+      "tEndS": 1646.23,
+      "texte": "command run in the wrong environment?"
+    },
+    {
+      "tStartS": 1646.24,
+      "tEndS": 1648.79,
+      "texte": "Did the workflow need state that are to"
+    },
+    {
+      "tStartS": 1648.8,
+      "tEndS": 1651.19,
+      "texte": "be durable? Did it need orchestration?"
+    },
+    {
+      "tStartS": 1651.2,
+      "tEndS": 1653.47,
+      "texte": "Should it have been delegated? Was there"
+    },
+    {
+      "tStartS": 1653.48,
+      "tEndS": 1656.15,
+      "texte": "no skill? Was there no verification? Or"
+    },
+    {
+      "tStartS": 1656.16,
+      "tEndS": 1658.27,
+      "texte": "did we not have a trace that allowed us"
+    },
+    {
+      "tStartS": 1658.28,
+      "tEndS": 1660.99,
+      "texte": "to that allows us to look inside? And"
+    },
+    {
+      "tStartS": 1661,
+      "tEndS": 1662.59,
+      "texte": "did we learn nothing from the last"
+    },
+    {
+      "tStartS": 1662.6,
+      "tEndS": 1665.51,
+      "texte": "failure? That is the shift, Harness"
+    },
+    {
+      "tStartS": 1665.52,
+      "tEndS": 1668.15,
+      "texte": "engineering is how we move from clever"
+    },
+    {
+      "tStartS": 1668.16,
+      "tEndS": 1670.55,
+      "texte": "agents to dependable systems. A model is"
+    },
+    {
+      "tStartS": 1670.56,
+      "tEndS": 1673.75,
+      "texte": "still import important, but reliability"
+    },
+    {
+      "tStartS": 1673.76,
+      "tEndS": 1675.67,
+      "texte": "gets built in the system around the"
+    },
+    {
+      "tStartS": 1675.68,
+      "tEndS": 1680.084,
+      "texte": "model. Hope this was helpful. Thank you."
+    },
+    {
+      "tStartS": 1680.094,
+      "tEndS": 1682.114,
+      "texte": "&gt;&gt; [music]"
+    }
+  ]
+}

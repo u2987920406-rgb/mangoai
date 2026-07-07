@@ -1,0 +1,33 @@
+{
+  "slug": "agentic-harness",
+  "videos": [
+    {
+      "youtubeId": "RaFC_oRBwF0",
+      "statut": "extraite",
+      "titre": "Le coup à jouer avant que votre fournisseur IA ne vous enferme",
+      "source": "subs-manuels",
+      "segments": 49,
+      "claims": 123,
+      "rejected": 12
+    },
+    {
+      "youtubeId": "c8bE0cj7vHY",
+      "statut": "extraite",
+      "titre": "Ryan Lopopolo - Harness Engineering: How to Build Software When Humans Steer and Agents Execute",
+      "source": "subs-manuels",
+      "segments": 118,
+      "claims": 67,
+      "rejected": 70
+    },
+    {
+      "youtubeId": "mQfTdNVCOB0",
+      "statut": "extraite",
+      "titre": "Harness Engineering Masterclass: Technical Deep Dive on how to build Agentic Systems",
+      "source": "subs-manuels",
+      "segments": 118,
+      "claims": 85,
+      "rejected": 57
+    }
+  ],
+  "reconciled": true
+}

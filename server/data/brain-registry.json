@@ -79,7 +79,7 @@
   },
   "accueil": {
     "provider": "ollama",
-    "model": "gemma4:12b",
+    "model": "glm-5.2:cloud",
     "timeoutMs": 60000
   }
 }
