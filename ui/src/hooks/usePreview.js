@@ -20,6 +20,26 @@ export function usePreview({ screen, projectName, pushToast, onRequestFix }) {
   const [seedInput, setSeedInput] = useState(null);
   const [editTarget, setEditTarget] = useState(null);
 
+  // (2026-07-07) Re-POST /api/preview/:projet : revalide/relance le serveur Vite et
+  // récupère son URL COURANTE (peut différer de l'URL connue si Vite a redémarré ou
+  // changé de port, ex. après une erreur de build en cours de tour). Contrairement à
+  // bumpPreview() (simple remount sur l'URL déjà connue), c'est la SEULE opération qui
+  // garantit un aperçu à jour — jusqu'ici seul « quitter/revenir dans le workspace »
+  // (l'effet ci-dessous) l'exerçait, forçant l'utilisateur à sortir de l'app pour voir
+  // un aperçu qui s'était remis d'un crash Vite pendant le tour de l'agent.
+  const refreshPreview = useCallback(() => {
+    if (!projectName?.trim()) return;
+    return fetch(`/api/preview/${encodeURIComponent(projectName)}`, { method: "POST" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        if (d?.url) {
+          setPreviewUrl(d.url);
+          setPreviewKey((k) => k + 1);
+        }
+      })
+      .catch(() => {});
+  }, [projectName]);
+
   // Entrer dans le workspace (ou changer de projet) démarre/relance l'aperçu Vite.
   useEffect(() => {
     if (screen !== SCREENS.WORKSPACE || !projectName.trim()) return;
@@ -99,6 +119,7 @@ export function usePreview({ screen, projectName, pushToast, onRequestFix }) {
     setPreviewUrl,
     previewKey,
     bumpPreview,
+    refreshPreview,
     previewErrors,
     clearErrors,
     inspecting,

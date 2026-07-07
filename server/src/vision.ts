@@ -134,6 +134,33 @@ export async function capturePreview(url: string, opts: { fullPage?: boolean } =
   }
 }
 
+/** (É2, render-integrity — 2026-07-07) Variante ADDITIVE de capturePreview : mesure
+ *  la casse DÉTERMINISTE (débordement/chevauchement/images cassées, render-integrity.ts)
+ *  sur la page LIVE avant de la fermer, en plus du screenshot. N'affecte AUCUN appelant
+ *  existant de capturePreview (fonction séparée, jamais appelée par défaut). */
+export async function capturePreviewWithIntegrity(
+  url: string,
+  opts: { fullPage?: boolean } = {},
+): Promise<{ buf: Buffer; integrity: import("./render-integrity.js").IntegrityReport }> {
+  const { measureIntegrity } = await import("./render-integrity.js");
+  const b = await getBrowser();
+  const context = await b.newContext({ viewport: VIEWPORT });
+  try {
+    const page = await context.newPage();
+    await page.goto(url, { waitUntil: "load", timeout: 10_000 });
+    await page.waitForLoadState("networkidle", { timeout: 4_000 }).catch(() => {});
+    await page.waitForTimeout(300);
+    const integrity = await measureIntegrity(page).catch(
+      (): import("./render-integrity.js").IntegrityReport => ({ broken: false, faults: [] }),
+    );
+    const buf = await page.screenshot({ type: "jpeg", quality: 80, fullPage: opts.fullPage === true });
+    return { buf, integrity };
+  } finally {
+    await context.close().catch(() => {});
+    touchIdleTimer();
+  }
+}
+
 // The browser is a subprocess (jalon 1 isolation stance): a Playwright crash
 // surfaces as a tool error, never as a server crash. Closed after idle so a
 // finished turn doesn't keep Edge in memory.

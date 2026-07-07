@@ -67,8 +67,13 @@ export function judgeSystem(ctx: JudgeContext): string {
   );
 }
 
-/** Parse la réponse du juge (prose VL) → note bornée + casse + raison. Pur. */
-export function parseJudgeScore(text: string): { score: number; broken: boolean; reason: string } {
+/** Parse la réponse du juge (prose VL) → note bornée + casse + raison. Pur.
+ *  `parsed:false` signale qu'AUCUNE note n'a pu être lue dans le texte (réponse
+ *  vide, hors-format...) — `score` vaut alors 50 par convention d'affichage
+ *  UNIQUEMENT ; l'appelant ne doit jamais le traiter comme un vrai jugement
+ *  (sinon un échec d'appel se travestit silencieusement en note neutre — voir
+ *  l'incident du 2026-07-07 : réponse vide notée 50/100 comme un skin réel). */
+export function parseJudgeScore(text: string): { score: number; broken: boolean; reason: string; parsed: boolean } {
   const t = (text ?? "").trim();
   // Casse : explicite (CASSÉ: oui) ou mots-clés.
   const brokenExplicit = /CASS[ÉE]\s*:?\s*oui/i.test(t);
@@ -83,7 +88,8 @@ export function parseJudgeScore(text: string): { score: number; broken: boolean;
     const any = t.match(/\b(\d{1,3})\b/);
     if (any) score = parseInt(any[1], 10);
   }
-  if (!Number.isFinite(score)) score = 50; // ni note ni entier → neutre
+  const parsed = Number.isFinite(score);
+  if (!parsed) score = 50; // valeur d'affichage seulement — voir avertissement ci-dessus
   score = Math.max(0, Math.min(100, score));
 
   // Raison : après le 2e «|», sinon la 1re ligne nettoyée.
@@ -91,7 +97,7 @@ export function parseJudgeScore(text: string): { score: number; broken: boolean;
   const parts = t.split("|");
   if (parts.length >= 3) reason = parts.slice(2).join("|").trim();
   if (!reason) reason = t.split("\n")[0].replace(/SCORE\s*:?\s*\d+/i, "").replace(/CASS[ÉE]\s*:?\s*(oui|non)/i, "").replace(/^[|\s—-]+/, "").trim();
-  return { score, broken, reason: reason.slice(0, 200) };
+  return { score, broken, reason: reason.slice(0, 200), parsed };
 }
 
 /**
@@ -120,9 +126,14 @@ export async function judgeSkins(
         );
         if (r.status === "ok" && r.summary?.trim()) {
           const v = parseJudgeScore(r.summary);
-          s.score = v.score;
-          s.judgeReason = v.reason;
-          s.broken = v.broken;
+          // (É2, render-integrity — 2026-07-07) axiome 10 : le déterministe (s'il a
+          // déjà tranché broken:true, ex. render-integrity.ts) est PRIMAIRE — le VL
+          // ne peut plus l'écraser en disant "non", il ne fait que le confirmer/compléter.
+          if (!s.broken) s.broken = v.broken;
+          if (v.parsed) {
+            s.score = v.score;
+            s.judgeReason = v.reason;
+          } // sinon : réponse illisible → skin non noté (jamais un 50 fantôme)
         }
       } catch { /* skin non noté — jamais bloquant */ }
     }),

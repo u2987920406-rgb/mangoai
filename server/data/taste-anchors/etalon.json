@@ -1,0 +1,60 @@
+{
+  "_comment": "Corpus étalon gelé (É1, 2026-07-07) — captures réelles du lot nuit-2026-07-03, notées par Raf. Sert d'ancres pour valider tout futur juge de goût (absolu, pairwise, ou déterministe) contre un vrai jugement humain, pas contre lui-même. sha256 permet de détecter toute dérive du fichier source.",
+  "source": "docs/nuit-2026-07-03",
+  "geleLe": "2026-07-07",
+  "ancres": [
+    {
+      "app": "abysse-vivante",
+      "fichier": "abysse-viewport.png",
+      "sha256": "09bb47997e748893686a22033db685b2bbc65f4c1c9a0289b55ec5c21a71a218",
+      "noteHumaine": 5,
+      "role": "ancre"
+    },
+    {
+      "app": "festival-aurora",
+      "fichier": "aurora-viewport.png",
+      "sha256": "68bdc8b9660b33e29e9d4497a4e870c1414a1f7b9a130eb1b8f35c63877ca83a",
+      "noteHumaine": 4,
+      "role": "ancre"
+    },
+    {
+      "app": "lumen-synesthesie",
+      "fichier": "lumen-viewport.png",
+      "sha256": "8f86c53a5425019c09d2b20b7e9c920c7dfef90da98241fac8ca1986c2bdcfdf",
+      "noteHumaine": 5,
+      "role": "ancre"
+    },
+    {
+      "app": "neon-drift",
+      "fichier": "neon-drift-viewport.png",
+      "sha256": "9569ac36caaf7957b464f1f327cb2f810e27363fc43091aaf82eeeada688d61d",
+      "noteHumaine": 5,
+      "role": "ancre"
+    },
+    {
+      "app": "maison-onyx",
+      "fichier": "onyx-viewport.png",
+      "sha256": "d9b90c9976f6c6738057701be600412569254cc98a040d515241d32180a2a6cc",
+      "noteHumaine": 5,
+      "role": "ancre",
+      "captureSecondaire": {
+        "fichier": "onyx-scroll.png",
+        "sha256": "ffaa09e619ef19d43a5f98bd1bdd811f80c012566d9a04b073fe4c8ec6fd3848",
+        "_note": "capture de scroll supplémentaire, pas une ancre distincte"
+      }
+    },
+    {
+      "app": "mission-ares",
+      "fichier": "ares-viewport.png",
+      "sha256": "ed1b229fbd66bfa0681aab29e40593646121a02b227955fe17b268e6840cfc59",
+      "noteHumaine": null,
+      "role": "non-ancre",
+      "_note": "jamais noté par Raf — ne sert jamais de seuil, uniquement 3ᵉ voix informative si besoin"
+    }
+  ],
+  "floor": {
+    "fichier": "floor.png",
+    "sha256": "0a9ebec03e3cab0f6cf665557a19e71d1bd8185d0013911d1e2eafc41f6307a4",
+    "_note": "capture de la fixture 'combine' délibérément cassée (débordement + chevauchement + image cassée), générée et vérifiée par test-render-integrity.ts (É2) — ancre basse MESURÉE, pas inventée. Fichier stocké dans ce même dossier (server/data/taste-anchors/floor.png)."
+  }
+}

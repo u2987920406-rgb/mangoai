@@ -181,8 +181,12 @@ export async function runClosureGate(
     intent = await deps.judge(task, result.text, files, projectDir);
   } catch (e) {
     judgeSkipped = (e as Error).message.split("\n")[0];
-    intent = { couverture: 100, manques: [], note: "(juge KO)" };
+    intent = { couverture: 100, manques: [], note: "(juge KO)", parsed: false };
   }
+  // (2026-07-07) une réponse du juge NON PARSABLE (hors-format) donnait un 100/100
+  // silencieux, indiscernable d'une vraie validation — même famille de bug que
+  // l'incident neon-drift (taste-judge.ts). On la surface désormais comme judgeSkipped.
+  if (!intent.parsed && !judgeSkipped) judgeSkipped = `juge illisible (hors-format) : ${intent.note}`;
   const intentOk = intent.couverture >= th.intentMin;
 
   // 2+3. GOÛT + QA en UN regard (critiqueScreen → overall + measure WCAG). Si l'aperçu

@@ -258,7 +258,7 @@ async function run() {
   // Branchement dans runClosureGate (eleve-gate.ts)
   // -------------------------------------------------------------------------
 
-  const goodIntent: IntentVerdict = { couverture: 90, manques: [], note: "" };
+  const goodIntent: IntentVerdict = { couverture: 90, manques: [], note: "", parsed: true };
   const critique = (overall: number): DesignCritique => ({
     overall,
     lenses: [{ name: "harmonie", score: overall, issue: "", fix: "" }],

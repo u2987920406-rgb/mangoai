@@ -99,6 +99,8 @@ async function main(): Promise<void> {
     check("parseJugeVerdict : NEGATIF arbitrage → vide", v.arbitrage === "");
     check("parseJugeVerdict : muet → isole (fail-open)", parseJugeVerdict("").verdict === "isole");
     check("parseJugeVerdict : accents (désaccord/résumé)", parseJugeVerdict("Verdict : désaccord\nRésumé : x").verdict === "desaccord");
+    check("parseJugeVerdict : verdict lisible → parsed:true", v.parsed === true);
+    check("parseJugeVerdict : prose hors-format → parsed:false (2026-07-07)", parseJugeVerdict("aucun format ici").parsed === false);
   }
 
   // ── Test DÉSACCORD : les DEUX conservés, statut conteste, rien supprimé ─────
@@ -166,6 +168,21 @@ async function main(): Promise<void> {
     }
     check("JUGE LÈVE : ne remonte jamais l'exception", !threw);
     check("JUGE LÈVE : traité comme muet (isole)", res?.judgeSilent === 1 && res?.verdicts.isole === 1);
+    store.close();
+  }
+
+  // ── Juge RÉPOND mais hors-format (2026-07-07) : jamais un "isole" décidé ──
+  {
+    const { store } = freshStoreOpposed();
+    // Réponse non vide, AUCUNE ligne VERDICT: lisible → parsed:false.
+    const juge = scriptedJuge("Je pense que c'est globalement cohérent, sans plus de détail.", "ok");
+    let res;
+    try {
+      res = await reconcileCorpus(store, { dispatch: juge });
+    } catch { /* ne doit jamais lever */ }
+    check("HORS-FORMAT : ne lève jamais (fail-open)", res !== undefined);
+    check("HORS-FORMAT : judgeUnparsed = 1 (pas judgeSilent, le juge a répondu)", res?.judgeUnparsed === 1 && res?.judgeSilent === 0);
+    check("HORS-FORMAT : verdicts.isole PAS incrémenté (ce n'est pas un vrai classement)", res?.verdicts.isole === 0);
     store.close();
   }
 

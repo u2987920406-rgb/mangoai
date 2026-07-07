@@ -12,7 +12,15 @@ import { sampleDirections, directionMood, type TasteDirection } from "./taste-di
 import { sampleCompositions, compositionBrief, type HeroComposition } from "./taste-compositions.js";
 import { imageForDirection } from "./taste-images.js";
 import { startPreview as realStart, stopPreview as realStop } from "./preview.js";
-import { capturePreview as realCapture } from "./vision.js";
+import { capturePreview as realCapture, capturePreviewWithIntegrity } from "./vision.js";
+
+// (É2, render-integrity — 2026-07-07) flag OFF par défaut : zéro changement de
+// comportement tant que non activé. ON = un 2ᵉ passage léger sur la page live
+// mesure la casse DÉTERMINISTE (débordement/chevauchement/images cassées) en
+// plus du screenshot — jamais bloquant (fail-open), source PRIMAIRE de la casse
+// (axiome 10 de methode-fable.md), le mot-clé « CASSÉ » du juge VL reste
+// secondaire (voir taste-judge.ts : ne peut plus écraser un broken:true déjà posé ici).
+const RENDER_INTEGRITY_ON = String(process.env.RENDER_INTEGRITY ?? "off").toLowerCase() === "on";
 
 const REF_DIR_DEFAULT = path.resolve(process.cwd(), "..", "taste-references");
 const sleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -246,6 +254,17 @@ export async function generateTasteSkins(
       const file = `${b.id}.jpg`;
       fs.writeFileSync(path.join(opts.outDir, file), await capture(url));
       const r: SkinRender = { id: b.id, name: b.name, ok: true, file, palette: b.palette };
+      if (RENDER_INTEGRITY_ON) {
+        try {
+          const { integrity } = await capturePreviewWithIntegrity(url);
+          if (integrity.broken) {
+            r.broken = true;
+            r.judgeReason = `[déterministe] ${integrity.faults.join("; ")}`;
+          }
+        } catch {
+          /* jamais bloquant — la casse déterministe reste un bonus, pas un mur */
+        }
+      }
       results.push(r);
       onProgress({ type: "skin", skin: r });
     }

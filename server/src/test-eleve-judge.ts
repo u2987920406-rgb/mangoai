@@ -54,6 +54,9 @@ async function run() {
   {
     const v = parseIntentVerdict("blabla sans format");
     check("couverture défaut = 100 (ne bloque pas)", v.couverture === 100);
+    check("parsed:false (2026-07-07 — jamais confondu avec une vraie validation)", v.parsed === false);
+    const ok1 = parseIntentVerdict("COUVERTURE: 60\nMANQUES:\n- x");
+    check("couverture lisible → parsed:true", ok1.parsed === true);
   }
 
   console.log("\n[4] judgeIntention — happy + DEMANDE transmise");
@@ -135,7 +138,7 @@ async function run() {
 
   console.log("\n[7] applyScopeGuard (L40) — garde de cadre déterministe, PURE");
   {
-    const base = { couverture: 100, manques: [] as string[], note: "n" };
+    const base = { couverture: 100, manques: [] as string[], note: "n", parsed: true };
     const inScope = applyScopeGuard(base, "Ajoute une page Contact à mon site");
     check("dans le périmètre → verdict inchangé (100)", inScope.couverture === 100 && inScope.manques.length === 0);
 
@@ -147,7 +150,7 @@ async function run() {
     check("mobile natif détecté", native.couverture === SCOPE_MISMATCH_CAP && /mobile natif/i.test(native.manques[0]));
 
     // couverture déjà basse → on garde le min (ne remonte jamais)
-    const low = applyScopeGuard({ couverture: 20, manques: ["x"], note: "n" }, "jeu Unreal Engine");
+    const low = applyScopeGuard({ couverture: 20, manques: ["x"], note: "n", parsed: true }, "jeu Unreal Engine");
     check("couverture déjà < cap → reste basse (min)", low.couverture === 20);
     check("manque de cadre PRÉFIXÉ aux manques existants", low.manques.length === 2 && /hors périmètre/i.test(low.manques[0]) && low.manques[1] === "x");
 

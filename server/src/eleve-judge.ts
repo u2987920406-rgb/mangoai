@@ -20,6 +20,10 @@ export interface IntentVerdict {
   couverture: number; // 0-100 : à quel point le livré couvre la demande
   manques: string[]; // ce qui manque vs la demande
   note: string; // prose brute (traçabilité)
+  /** false = la réponse du juge n'a PAS pu être lue (hors-format/vide/indisponible) —
+   *  `couverture:100` est alors une valeur d'AFFICHAGE seule, jamais une vraie validation.
+   *  Voir l'incident neon-drift (taste-judge.ts, 2026-07-07) : même bug, même correctif. */
+  parsed: boolean;
 }
 
 export interface JudgeDeps {
@@ -67,6 +71,7 @@ const NEGATIF = /^(rien|aucun|n\/?a|néant|aucune|ras)\b/i;
 export function parseIntentVerdict(prose: string): IntentVerdict {
   const text = (prose ?? "").trim();
   const cov = text.match(/couverture\s*[:：]?\s*(\d{1,3})/i);
+  const parsed = !!cov;
   const couverture = cov ? Math.max(0, Math.min(100, parseInt(cov[1], 10))) : 100;
 
   const manques: string[] = [];
@@ -88,7 +93,7 @@ export function parseIntentVerdict(prose: string): IntentVerdict {
       inManques = false; // une ligne non-puce clôt la liste
     }
   }
-  return { couverture, manques: manques.slice(0, 8), note: text.slice(0, 400) };
+  return { couverture, manques: manques.slice(0, 8), note: text.slice(0, 400), parsed };
 }
 
 /**
@@ -117,7 +122,7 @@ export function applyScopeGuard(
   const manque = `Cadre demandé hors périmètre (${families.join(", ")}) : MangoOS livre une app WEB (React/Three.js/PWA), pas du natif/moteur de jeu — le livré ne peut pas répondre au cadre demandé.`;
   const couverture = Math.min(verdict.couverture, SCOPE_MISMATCH_CAP);
   const manques = [manque, ...verdict.manques.filter((m) => m !== manque)].slice(0, 8);
-  return { couverture, manques, note: verdict.note };
+  return { couverture, manques, note: verdict.note, parsed: verdict.parsed };
 }
 
 /**
@@ -135,7 +140,7 @@ export async function judgeIntention(
   // La garde de cadre (L40) s'applique au verdict neutre AUSSI : un mismatch de cadre est
   // détecté sans LLM, donc même juge indisponible on ne renvoie pas un faux « 100 couvert ».
   const neutral = (why: string): IntentVerdict =>
-    applyScopeGuard({ couverture: 100, manques: [], note: `(juge indisponible : ${why})` }, task);
+    applyScopeGuard({ couverture: 100, manques: [], note: `(juge indisponible : ${why})`, parsed: false }, task);
 
   // (L21) Ce qui a CHANGÉ (bornés ; contenu = DONNÉE potentiellement hostile).
   // Pour un fichier MODIFIÉ d'un projet existant → le DIFF vs HEAD (montre exactement

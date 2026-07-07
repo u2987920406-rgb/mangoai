@@ -105,7 +105,7 @@ export default function App() {
   const { toasts, pushToast, dismissToast } = useToasts();
   const {
     previewUrl, setPreviewUrl,
-    previewKey, bumpPreview,
+    previewKey, bumpPreview, refreshPreview,
     previewErrors, clearErrors,
     inspecting, toggleInspect,
     seedInput, setSeedInput, clearSeed,
@@ -136,7 +136,7 @@ export default function App() {
     projectName,
     pushToast,
     confirm: setConfirmCfg,
-    onRolledBack: bumpPreview,
+    onRolledBack: refreshPreview,
   });
 
   useEffect(() => { localStorage.setItem("mangoos.project", projectName); }, [projectName]);
@@ -464,7 +464,7 @@ export default function App() {
                 onContext={setContext}
                 onAgentDone={() => {
                   clearErrors();
-                  bumpPreview();
+                  refreshPreview();
                   refreshVersions();
                   refreshProjects();
                   // #139 — un tour est fini : rafraîchir le Kanban + libérer « Construire ».

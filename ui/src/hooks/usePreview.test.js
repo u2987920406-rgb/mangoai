@@ -123,4 +123,34 @@ describe("usePreview", () => {
     expect(fetchMock.mock.calls[0][0]).toContain("/api/preview/demo");
     await waitFor(() => expect(result.current.previewUrl).toBe("http://127.0.0.1:5179"));
   });
+
+  // (2026-07-07) refreshPreview : re-POST /api/preview → revalide l'aperçu et
+  // adopte la NOUVELLE url (ex. Vite a redémarré sur un autre port pendant le
+  // tour de l'agent) — contrairement à bumpPreview qui remonte sur l'ancienne.
+  it("refreshPreview re-POST /api/preview et adopte la nouvelle URL + bump la clé", async () => {
+    const { result } = renderHook(() => usePreview(base)); // hors workspace : pas de fetch parasite
+    expect(fetchMock).not.toHaveBeenCalled();
+    const k0 = result.current.previewKey;
+
+    fetchMock.mockImplementationOnce(() =>
+      Promise.resolve({ ok: true, json: () => Promise.resolve({ url: "http://127.0.0.1:5188" }) }),
+    );
+    await act(async () => {
+      await result.current.refreshPreview();
+    });
+    expect(fetchMock).toHaveBeenCalledWith("/api/preview/demo", { method: "POST" });
+    expect(result.current.previewUrl).toBe("http://127.0.0.1:5188");
+    expect(result.current.previewKey).toBe(k0 + 1);
+  });
+
+  it("refreshPreview : réponse non-ok → ne touche ni l'URL ni la clé", async () => {
+    const { result } = renderHook(() => usePreview({ ...base, projectName: "demo" }));
+    const k0 = result.current.previewKey;
+    fetchMock.mockImplementationOnce(() => Promise.resolve({ ok: false }));
+    await act(async () => {
+      await result.current.refreshPreview();
+    });
+    expect(result.current.previewUrl).toBeNull();
+    expect(result.current.previewKey).toBe(k0);
+  });
 });

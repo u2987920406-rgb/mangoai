@@ -147,6 +147,12 @@ export interface JugeVerdict {
   verdict: GroupeVerdict;
   resume: string;
   arbitrage: string;
+  /** false = aucune ligne VERDICT: lisible dans la prose (hors-format) — le
+   *  `verdict` retourné (repli "isole") est alors un défaut d'AFFICHAGE, jamais
+   *  un vrai classement du juge. Même famille de bug que neon-drift/taste-judge
+   *  et l'incident intent-judge (2026-07-07) : une réponse illisible ne doit
+   *  jamais se compter comme un jugement réel. */
+  parsed: boolean;
 }
 
 const VERDICTS: readonly GroupeVerdict[] = ["consensus", "conditionnel", "desaccord", "isole"];
@@ -196,6 +202,7 @@ export function parseJugeVerdict(prose: string, fallback: GroupeVerdict = "isole
   const text = (prose ?? "").trim();
   let verdict: GroupeVerdict = fallback;
   const vm = text.match(/verdict\s*[:：]?\s*(consensus|conditionnel|d[ée]saccord|isol[ée])/i);
+  const parsed = !!vm;
   if (vm) {
     const v = normalizeSujetKey(vm[1]);
     if (v.startsWith("consensus")) verdict = "consensus";
@@ -222,7 +229,7 @@ export function parseJugeVerdict(prose: string, fallback: GroupeVerdict = "isole
   const resume = grab(/^\s*r[ée]sum[ée]\s*[:：]\s*(.*)$/i);
   let arbitrage = grab(/^\s*arbitrage\s*[:：]\s*(.*)$/i);
   if (NEGATIF.test(arbitrage)) arbitrage = "";
-  return { verdict, resume: resume.slice(0, 1000), arbitrage: arbitrage.slice(0, 1000) };
+  return { verdict, resume: resume.slice(0, 1000), arbitrage: arbitrage.slice(0, 1000), parsed };
 }
 
 // ── Application journalisée des verdicts (écrit dans la base via É2) ─────────
@@ -255,6 +262,10 @@ export interface ReconcileResult {
   judged: number; // groupes multi-claims soumis au juge
   judgeSilent: number; // groupes où le juge a été muet APRÈS retry (fail-open → isole)
   judgeRetried: number; // fix L78-4 : groupes muets au 1er essai récupérés au retry
+  /** (2026-07-07) groupes où le juge A RÉPONDU (non muet) mais sans ligne VERDICT:
+   *  lisible — fail-open → isole, mais PAS compté dans `verdicts` (ce n'est pas un
+   *  vrai classement) ni confondu avec `judgeSilent` (le juge n'était pas muet). */
+  judgeUnparsed: number;
   verdicts: Record<GroupeVerdict, number>;
   groupes: number; // groupes écrits en base
 }
@@ -293,6 +304,7 @@ export async function reconcileCorpus(
     judged: 0,
     judgeSilent: 0,
     judgeRetried: 0,
+    judgeUnparsed: 0,
     verdicts: { consensus: 0, conditionnel: 0, desaccord: 0, isole: 0 },
     groupes: 0,
   };
@@ -344,9 +356,10 @@ export async function reconcileCorpus(
 
     // ── Étage 2 : verdict ────────────────────────────────────────────────
     let verdict: JugeVerdict;
+    let genuine = true; // faux seulement si le verdict "isole" est un repli, pas un vrai jugement
     if (cluster.claims.length === 1) {
-      // Un seul claim → isole direct (aucun appel juge nécessaire).
-      verdict = { verdict: "isole", resume: cluster.claims[0].enonce, arbitrage: "" };
+      // Un seul claim → isole direct (aucun appel juge nécessaire — un vrai classement).
+      verdict = { verdict: "isole", resume: cluster.claims[0].enonce, arbitrage: "", parsed: true };
     } else {
       res.judged++;
       const user = buildJugePrompt(cluster, ctx);
@@ -369,13 +382,23 @@ export async function reconcileCorpus(
       if (!prose.trim()) {
         res.judgeSilent++;
         // Fail-open : juge muet même après retry → isole (rien perdu, résumé = concat).
-        verdict = { verdict: "isole", resume: cluster.claims.map((c) => c.enonce).join(" / ").slice(0, 1000), arbitrage: "" };
+        // (comportement pré-existant conservé : ce cas tallie déjà verdicts.isole,
+        // testé explicitement — seul le cas NEUF "répond mais hors-format" ci-dessous
+        // est exclu du tally, voir judgeUnparsed.)
+        verdict = { verdict: "isole", resume: cluster.claims.map((c) => c.enonce).join(" / ").slice(0, 1000), arbitrage: "", parsed: false };
       } else {
         verdict = parseJugeVerdict(prose, "isole");
         if (!verdict.resume) verdict.resume = cluster.claims.map((c) => c.enonce).join(" / ").slice(0, 1000);
+        if (!verdict.parsed) {
+          // (2026-07-07) le juge a RÉPONDU mais hors-format — un vrai desaccord/consensus
+          // raté ne doit jamais s'enregistrer silencieusement comme "isole" décidé.
+          res.judgeUnparsed++;
+          genuine = false;
+          verdict.arbitrage = verdict.arbitrage || "(juge illisible : verdict hors-format, isole par défaut — non fiable)";
+        }
       }
     }
-    res.verdicts[verdict.verdict]++;
+    if (genuine) res.verdicts[verdict.verdict]++;
 
     // ── Écriture du groupe (embedding best-effort) ───────────────────────
     let gEmb: number[] | undefined;

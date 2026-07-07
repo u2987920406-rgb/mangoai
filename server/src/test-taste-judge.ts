@@ -38,7 +38,10 @@ async function run() {
     const c = parseJudgeScore("Je dirais environ 72 sur 100, propre.");
     check("repli premier entier → 72", c.score === 72);
     const d = parseJudgeScore("aucune note ici");
-    check("ni note ni entier → défaut 50", d.score === 50);
+    check("ni note ni entier → défaut 50 (affichage seul)", d.score === 50);
+    check("ni note ni entier → parsed:false (ne doit jamais compter comme un vrai jugement)", d.parsed === false);
+    const g = parseJudgeScore("SCORE: 87 | CASSÉ: non | ok");
+    check("note lisible → parsed:true", g.parsed === true);
     const e = parseJudgeScore("SCORE: 250 | CASSÉ: non");
     check("score borné à 100", e.score === 100);
     const f = parseJudgeScore("Le contenu est illisible, contraste trop faible");
@@ -91,7 +94,22 @@ async function run() {
     check("status error → score undefined", out[0].score === undefined);
   }
 
-  console.log("\n[6] buildJudgeContext — cold-start tolérant (workspace vide)");
+  console.log("\n[6] judgeSkins — réponse ok mais illisible (pas de score) → skin non noté, jamais 50 fantôme");
+  {
+    const skins = [skin("m"), skin("n")];
+    const d: JudgeDeps = {
+      readImage: () => Buffer.from("x"),
+      dispatch: async (_a, _s, user) =>
+        user.includes("« m »")
+          ? { status: "ok", summary: "Très joli, vraiment agréable à regarder." } // aucun chiffre
+          : { status: "ok", summary: "SCORE: 80 | CASSÉ: non | propre" },
+    };
+    const out = await judgeSkins("/skins", skins, { tasteAxioms: "", designSystem: "" }, d);
+    check("réponse illisible → score undefined (pas 50)", out.find((s) => s.id === "m")?.score === undefined);
+    check("réponse lisible → notée normalement", out.find((s) => s.id === "n")?.score === 80);
+  }
+
+  console.log("\n[7] buildJudgeContext — cold-start tolérant (workspace vide)");
   {
     const ctx = buildJudgeContext("/chemin/inexistant", "vitrine");
     check("ne throw pas, renvoie des chaînes", typeof ctx.tasteAxioms === "string" && typeof ctx.designSystem === "string");
