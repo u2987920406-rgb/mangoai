@@ -18,6 +18,7 @@ import { flag } from "./flags.js";
 import { emptyWorkingState, updateWorkingState, formatWorkingState, type WorkingState } from "./working-memory.js";
 import { saveSnapshot, clearSnapshot, loadSnapshot } from "./loop-state.js";
 import { runAsActor, currentActor, type Actor } from "./perimeter-context.js";
+import { appendBacklog } from "./project-backlog.js";
 
 // ── Types du dialogue OpenAI-compat ──────────────────────────────────────────
 
@@ -113,6 +114,10 @@ export interface AgenticOptions {
    * = on herite du contexte d'acteur ambiant (`currentActor()`, pose par un
    * runner nocturne) puis, a defaut, `interactive`. Gate OFF = sans effet. */
   actor?: Actor;
+  /** (#183) Étiquette lisible de l'acteur qui pilote CE run, pour la boîte noire
+   * projet (.backlog.jsonl) — ex. « Élève (glm-5.2:cloud) », « Agent forgé :
+   * Contremaître local ». Absent → "Élève" (comportement historique, chat). */
+  actorLabel?: string;
 }
 
 export interface AgenticBuildResult {
@@ -263,30 +268,50 @@ function compact(messages: ChatMessage[], ctxMax: number): boolean {
  *  - PostToolUse → observation (le résultat est déjà produit ; la V1 ne le modifie pas).
  * runHooks ne lève jamais ; l'invoke lui-même reste protégé par le try/catch de l'appelant.
  */
+/** (#183) Résumé COURT et lisible des arguments d'un outil, pour la boîte noire —
+ * jamais le contenu complet (un write_file de 400 lignes ne doit pas dupliquer
+ * son contenu dans le journal). Privilégie un champ "path"/"file" explicite. */
+function summarizeToolArgs(args: Record<string, unknown>): string {
+  const path = args.path ?? args.file ?? args.filePath ?? args.command;
+  if (typeof path === "string" && path) return path;
+  try {
+    return JSON.stringify(args).slice(0, 120);
+  } catch {
+    return "";
+  }
+}
+
 export async function runGatedInvoke(
   registry: ToolRegistry,
   name: string,
   args: Record<string, unknown>,
-  opts: { hooks?: HookRegistration[]; projectDir?: string; enabled?: boolean } = {},
+  opts: { hooks?: HookRegistration[]; projectDir?: string; enabled?: boolean; actorLabel?: string } = {},
 ): Promise<{ text: string; isError: boolean }> {
   const hooks = opts.hooks ?? [];
+  const actor = opts.actorLabel ?? "Élève";
+  const logBacklog = (r: { text: string; isError: boolean }) => {
+    if (opts.projectDir) {
+      appendBacklog(opts.projectDir, { actor, action: name, detail: summarizeToolArgs(args), ok: !r.isError });
+    }
+    return r;
+  };
   if (!opts.enabled || hooks.length === 0) {
     const r = await registry.invoke(name, args);
-    return { text: r.text, isError: !!r.isError };
+    return logBacklog({ text: r.text, isError: !!r.isError });
   }
   const projectDir = opts.projectDir ?? "";
   const pre = await runHooks({ event: "PreToolUse", projectDir, toolName: name, toolInput: args }, hooks);
   if (pre.decision !== "allow") {
     const why = pre.reasons.join(" ; ")
       || (pre.decision === "ask" ? "confirmation requise (aucun humain dans la boucle)" : "refusé");
-    return { text: `⛔ Action « ${name} » bloquée par un hook : ${why}`, isError: true };
+    return logBacklog({ text: `⛔ Action « ${name} » bloquée par un hook : ${why}`, isError: true });
   }
   const finalArgs = pre.updatedInput ?? args;
   const r = await registry.invoke(name, finalArgs);
   const result = { text: r.text, isError: !!r.isError };
   // PostToolUse : observation seule en V1 (le résultat est déjà produit).
   await runHooks({ event: "PostToolUse", projectDir, toolName: name, toolInput: finalArgs, result: result.text }, hooks);
-  return result;
+  return logBacklog(result);
 }
 
 /**
@@ -514,6 +539,9 @@ async function buildAgenticImpl(
         } catch {
           summary = "Terminé.";
         }
+        if (opts.projectDir) {
+          appendBacklog(opts.projectDir, { actor: opts.actorLabel ?? "Élève", action: "finish", detail: summary, ok: true });
+        }
         clearRunSnapshot();
         return { text: summary, toolTrace, finished: true, iterations: iter + 1, stuck: false };
       }
@@ -582,6 +610,7 @@ async function buildAgenticImpl(
             hooks: opts.hooks,
             projectDir: opts.projectDir,
             enabled: process.env.ELEVE_HOOKS === "on",
+            actorLabel: opts.actorLabel,
           });
           resultText = gated.text;
           isErr = gated.isError;
@@ -723,6 +752,9 @@ export interface AgenticRunCtx {
   /** (#180 É2) Acteur pilotant ce run, transmis à buildAgentic et hérité par les
    * sous-agents délégués. Absent → contexte ambiant / `interactive`. */
   actor?: Actor;
+  /** (#183) Étiquette lisible de l'acteur, transmise à buildAgentic pour la boîte
+   * noire projet. Absent → "Élève" (comportement historique). */
+  actorLabel?: string;
 }
 
 /** Lance la boucle agentique sur `user`, en injectant l'outil `delegate` tant
@@ -745,6 +777,7 @@ export async function runAgenticTask(user: string, ctx: AgenticRunCtx): Promise<
       budget: ctx.loopBudget, // (🟠1) le fusible de coût existe enfin en prod
       snapshots: ctx.depth === 0, // (🟠2) seul le parent snapshotte — les sous-agents n'écrasent plus sa reprise
       actor: ctx.actor, // (#180 É2) palier de périmètre — hérité par les sous-agents
+      actorLabel: ctx.actorLabel, // (#183) boîte noire projet — hérité par les sous-agents
     });
 
   if (!ctx.tracer) return runOnce();

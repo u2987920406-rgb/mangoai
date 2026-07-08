@@ -26,7 +26,7 @@ export type AgenticFn = (
   system: string,
   user: string,
   registry: ToolRegistry,
-  opts?: { model?: string; maxIterations?: number },
+  opts?: { model?: string; maxIterations?: number; projectDir?: string; actorLabel?: string },
 ) => Promise<{ text: string; toolTrace: ToolStep[] }>
 
 /** Constructeur de registre injecté — compatible avec `buildEleveActionTools`. */
@@ -67,7 +67,12 @@ export async function runSpecialistAgentic(
       agent.systemPrompt,
       sanitizeExternal(String(task ?? "")),
       registry,
-      { maxIterations: SPECIALIST_MAX_ITER, ...(agent.model ? { model: agent.model } : {}) },
+      {
+        maxIterations: SPECIALIST_MAX_ITER,
+        projectDir,
+        actorLabel: `Agent forgé : ${agent.name}`,
+        ...(agent.model ? { model: agent.model } : {}),
+      },
     )
     return { ok: true, text: (result.text ?? "").trim(), toolTrace: result.toolTrace ?? [], agent }
   } catch (err) {

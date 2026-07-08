@@ -7,6 +7,11 @@ import { z } from "zod";
 import { ToolRegistry } from "./kernel-mcp.js";
 import { buildAgentic, runAgenticTask, type PostFn, type ChatMessage, type ToolCall } from "./eleve-runtime.js";
 
+// Placeholder SANS existence réelle : ces tests ne se soucient pas du CONTENU du
+// projet, juste du threading de projectDir. Un chemin inexistant garantit qu'aucune
+// écriture (dont la boîte noire #183) n'atteint jamais un vrai dossier du repo.
+const FAKE_PROJECT_DIR = "/__mango_test_no_write__";
+
 let pass = 0;
 let fail = 0;
 function check(label: string, cond: boolean) {
@@ -167,7 +172,7 @@ async function run() {
       { toolCalls: [call("finish", { summary: "tout fait" })] }, // parent termine
     ]);
     const r = await runAgenticTask("construis", {
-      projectDir: ".", system: "sys", post,
+      projectDir: FAKE_PROJECT_DIR, system: "sys", post,
       buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
       depth: 0, maxDepth: 2, budget,
     });
@@ -185,7 +190,7 @@ async function run() {
       { toolCalls: [call("finish", { summary: "fin" })] },
     ]);
     const r = await runAgenticTask("t", {
-      projectDir: ".", system: "s", post,
+      projectDir: FAKE_PROJECT_DIR, system: "s", post,
       buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
       depth: 0, maxDepth: 0, budget,
     });
@@ -203,7 +208,7 @@ async function run() {
       { toolCalls: [call("finish", { summary: "fin" })] }, // parent termine
     ]);
     const r = await runAgenticTask("t", {
-      projectDir: ".", system: "s", post,
+      projectDir: FAKE_PROJECT_DIR, system: "s", post,
       buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
       depth: 0, maxDepth: 2, budget,
     });
@@ -232,7 +237,7 @@ async function run() {
       { toolCalls: [call("finish", { summary: "fin" })] },
     ]);
     const r = await runAgenticTask("t", {
-      projectDir: ".", system: "s", post,
+      projectDir: FAKE_PROJECT_DIR, system: "s", post,
       buildRegistry: () => stubRegistry(writes), buildUser: (s) => s,
       depth: 0, maxDepth: 2, budget,
       allowDelegate: false, // cerveau faible → pas de délégation
@@ -254,7 +259,7 @@ async function run() {
     ]);
     let overrideUsed = false;
     const r = await runAgenticTask("construis", {
-      projectDir: ".", system: "sys-parent", post,
+      projectDir: FAKE_PROJECT_DIR, system: "sys-parent", post,
       buildRegistry: () => stubRegistry(parentWrites), buildUser: (s) => s,
       depth: 0, maxDepth: 2, budget,
       resolveDelegateCtx: (agentType) => {

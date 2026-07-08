@@ -57,6 +57,7 @@ import {
   type ExecRung,
 } from "./stratege-escalate.js";
 import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gate.js";
+import { appendBacklog } from "./project-backlog.js";
 import { measureProjectDesign, measureSummary } from "./design-metrics.js";
 import { flag } from "./flags.js";
 import { memoireSection, buildMemoireTool, type MemoireDeps } from "./eleve-memoire.js";
@@ -780,7 +781,7 @@ export async function askEleveAgentic(
   system: string,
   user: string,
   registry: ToolRegistry,
-  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean; maxIterations?: number; antiSpiral?: AntiSpiralCfg } = {},
+  opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean; maxIterations?: number; antiSpiral?: AntiSpiralCfg; projectDir?: string; actorLabel?: string } = {},
 ): Promise<AgenticResult> {
   // La boucle à outils n'est branchée que sur l'endpoint OpenAI-compat. En Ollama
   // local pur, repli texte (le function-calling local sera traité en Phase 2).
@@ -854,12 +855,18 @@ export async function askEleveAgentic(
         // Anti-doublon : appel d'exploration STRICTEMENT identique déjà fait → on ne ré-exécute pas.
         resultText = duplicateExplorationMessage(name);
       } else {
+        let toolOk = true;
         try {
           const args = JSON.parse(rawArgs) as Record<string, unknown>;
           const r = await registry.invoke(name, args);
           resultText = r.text;
+          toolOk = !r.isError;
         } catch (e) {
           resultText = `Erreur outil "${name}" : ${(e as Error).message}`;
+          toolOk = false;
+        }
+        if (opts.projectDir) {
+          appendBacklog(opts.projectDir, { actor: opts.actorLabel ?? "Élève", action: name, detail: rawArgs.slice(0, 120), ok: toolOk });
         }
         if (spiral && isExplorationTool(spiral, name)) seenExploration.add(dupKey);
       }
@@ -1186,6 +1193,7 @@ export async function runRelay(
         try {
           const mResult = { text: esc2?.eleveSummary || "résolu par le Maître", toolTrace: [] as Array<{ name: string; args: string }> };
           const verdict = await runClosureGate(projectDir, task, mResult, WORKSPACE_DIR, inferProjectType(task));
+          appendBacklog(projectDir, { actor: "Gardien", action: "clôture (après Maître)", detail: verdict.raisons.join(" ; ") || "OK", ok: verdict.ok });
           const goutLabel = verdict.design
             ? verdict.tasteScored
               ? `, goût ${verdict.design.overall}/100${verdict.tasteObserve ? " (observé)" : ""}`
@@ -1346,6 +1354,7 @@ export async function runRelay(
         }
         return undefined;
       })(),
+      actorLabel: `Élève (${callModel})`, // (#183) boîte noire projet
     };
 
     // RÉVISION 2026-06-24 — « apprendre, pas secourir » (souveraineté). Sur blocage
@@ -1824,6 +1833,7 @@ export async function runRelay(
       if (process.env.ELEVE_CLOSURE_GATE === "on" && result?.finished) {
         try {
           const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task));
+          appendBacklog(projectDir, { actor: "Gardien", action: "clôture", detail: verdict.raisons.join(" ; ") || "OK", ok: verdict.ok });
           const goutLabel = verdict.design
             ? verdict.tasteScored
               ? `, goût ${verdict.design.overall}/100${verdict.tasteObserve ? " (observé)" : ""}`

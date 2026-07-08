@@ -13,6 +13,8 @@
 // Discipline Mango (non négociable) : « ne lève JAMAIS ». Un handler qui plante, time-out ou
 // renvoie n'importe quoi ne doit pas casser un tour → il est traité comme absent (fail-open).
 
+import { appendBacklog } from "./project-backlog.js";
+
 /** Les points d'ancrage réels de la boucle Mango (voir le tableau du plan #172, section 3). */
 export type MangoHookEvent =
   | "PreToolUse"    // avant registry.invoke(name, args) — peut deny/ask/modifier l'input
@@ -230,12 +232,24 @@ export async function runHooks(
  * ne lève jamais ; `[]` de hooks → no-op immédiat. Renvoie le résultat (utile aux tests) mais
  * l'appelant peut l'ignorer (fire-and-forget via `void`).
  */
+const OBSERVATION_ACTORS: Record<MangoHookEvent, string> = {
+  PreToolUse: "Élève",
+  PostToolUse: "Élève",
+  OnBlock: "Stratège",
+  PreFinish: "Gardien",
+  OnEscalate: "Escalade → Maître (Claude)",
+  OnGapRecorded: "Auto-évolution (lacune repérée)",
+};
+
 export async function fireObservationHook(
   event: MangoHookEvent,
   projectDir: string,
   detail: string,
   hooks: HookRegistration[],
 ): Promise<MangoHookResult> {
+  // (#183) Boîte noire projet — TOUJOURS journalisé, indépendamment du nombre de
+  // hooks configurés (observabilité, pas une garde gatée par ELEVE_HOOKS).
+  appendBacklog(projectDir, { actor: OBSERVATION_ACTORS[event] ?? event, action: event, detail });
   const base: MangoHookResult = { decision: "allow", reasons: [], ran: 0, errors: 0 };
   if (!hooks || hooks.length === 0) return base;
   try {
