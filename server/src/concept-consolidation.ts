@@ -15,6 +15,7 @@ import path from "node:path";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { updateConceptConfidence, type Embed } from "./concept-registry.js";
 import type { VerdictContexte } from "./verificateur-contexte.js";
+import type { VerdictChaine } from "./chaine-ambigue.js";
 import type { Blackboard } from "./kernel-blackboard.js";
 
 export interface VerificationEvent {
@@ -22,7 +23,10 @@ export interface VerificationEvent {
   /** Résumé COURT du contexte de tâche au moment de la vérification (pas l'embedding
    *  — juste de quoi comprendre, en relecture, "même mot mais quel contexte"). */
   contexteSignature: string;
-  verdict: VerdictContexte;
+  /** Verdict mot-isolé (Étape 1) OU verdict de cohérence en chaîne (Étape 1bis,
+   *  chaine-ambigue.ts) — deux vocabulaires ternaires distincts, même discipline
+   *  fail-open, jamais un score thresholdé. */
+  verdict: VerdictContexte | VerdictChaine;
   cheminUtilise: "rapide" | "lent" | "aucun";
   /** Issue RÉELLE constatée après coup (Gardien #161 ou jugement de Raf) —
    *  `null` = pas encore connue au moment de la journalisation. */

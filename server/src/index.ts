@@ -60,7 +60,7 @@ import type { Span } from "./kernel-trace.js";
 import { publishDesignReference, publishDesignProduced, buildProducedDesign, paletteFromContract } from "./kernel-design-events.js";
 import { loadContract } from "./perfect-plan.js";
 import { generateLexique } from "./lexique.js";
-import { verifierChoixGabaritEnArrierePlan } from "./eleve-context-hook.js";
+import { verifierChoixGabaritEnArrierePlan, analyserChaineEnAmontDuGabarit } from "./eleve-context-hook.js";
 import { registerPromptLabRoutes } from "./promptlab.js";
 import { registerTokenizerRoutes } from "./tokenizer.js";
 import { registerIdeationRoutes } from "./ideation.js";
@@ -715,6 +715,19 @@ app.post("/api/chat", async (req, res) => {
         templateSection = domainTemplateSection(agentPrompt);
       } catch {
         templateSection = "";
+      }
+      // Boucle de vérification contextuelle — Étape 1bis (gate ELEVE_CONTEXT_CHAINE,
+      // off par défaut) : cohérence JOINTE des termes ambigus consécutifs du brief,
+      // AVANT que la direction structurelle (templateSection) ne soit injectée dans
+      // le prompt système. Ne touche jamais createProject/la réponse SSE — seul un
+      // verdict "incoherente" PARSÉ vide templateSection ce tour-là (repli sur le
+      // chemin déjà sûr "aucun domaine détecté").
+      if (templateSection) {
+        const { suppressDomain } = await analyserChaineEnAmontDuGabarit(agentPrompt).catch(() => ({ suppressDomain: false, rapport: null }));
+        if (suppressDomain) {
+          send({ type: "status", text: "⚠️ Direction ambiguë détectée dans le brief — gabarit de domaine non appliqué ce tour, clarification recommandée." });
+          templateSection = "";
+        }
       }
       const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN, templateSection });
       const r = await runRelay(agentPrompt, dir, {

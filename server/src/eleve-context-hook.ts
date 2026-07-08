@@ -11,6 +11,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { flag } from "./flags.js";
 import { verifierChoix } from "./verificateur-contexte.js";
+import { verifierChaineAmbigue, type RapportChaineAmbigue } from "./chaine-ambigue.js";
 import { logVerification } from "./concept-consolidation.js";
 import { searchWeb } from "./eleve-web-tools.js";
 import { dispatch } from "./brain-dispatch.js";
@@ -36,6 +37,62 @@ async function juger(system: string, user: string): Promise<string> {
   // JSON <<<MANGO>>>, une ligne de prose comme attendu par parseVerdictContexte.
   const res = await dispatch("juge", system, user, { freeform: true });
   return res.summary;
+}
+
+/** Extracteur de termes ambigus — même rôle "juge", freeform : la réponse
+ *  attendue est un JSON court, pas le contrat <<<MANGO>>>. */
+async function extraire(system: string, user: string): Promise<string> {
+  const res = await dispatch("juge", system, user, { freeform: true });
+  return res.summary;
+}
+
+const CHAINE_TIMEOUT_MS = 6000;
+
+function withTimeout<T>(p: Promise<T>, ms: number, onTimeout: T): Promise<T> {
+  return new Promise((resolve) => {
+    const t = setTimeout(() => resolve(onTimeout), ms);
+    p.then((v) => {
+      clearTimeout(t);
+      resolve(v);
+    }).catch(() => {
+      clearTimeout(t);
+      resolve(onTimeout);
+    });
+  });
+}
+
+/**
+ * Analyse EN AMONT (avant l'injection du manifeste de domaine) la cohérence
+ * jointe des termes ambigus consécutifs du brief. Contrairement à
+ * `verifierChoixGabaritEnArrierePlan` (observation pure, a posteriori), cet
+ * appel est SYNCHRONE et BORNÉ (timeout court) : seul un verdict
+ * "incoherente" PARSÉ demande de supprimer le manifeste de domaine ce
+ * tour-là — tout le reste (coherente/incertaine/timeout/erreur) laisse le
+ * comportement byte-identique à aujourd'hui. Ne lève jamais.
+ */
+export async function analyserChaineEnAmontDuGabarit(
+  agentPrompt: string,
+): Promise<{ suppressDomain: boolean; rapport: RapportChaineAmbigue | null }> {
+  if (!flag("ELEVE_CONTEXT_CHAINE")) return { suppressDomain: false, rapport: null };
+  try {
+    const rapport = await withTimeout(
+      verifierChaineAmbigue(agentPrompt, { extraire, juger, chercherDefinitionWeb }),
+      CHAINE_TIMEOUT_MS,
+      null,
+    );
+    if (!rapport) return { suppressDomain: false, rapport: null };
+    logVerification({
+      concept: rapport.termesEnJeu.join(" + ") || "(aucun terme ambigu)",
+      contexteSignature: agentPrompt.slice(0, 200),
+      verdict: rapport.verdict,
+      cheminUtilise: "aucun",
+      issuePositive: null,
+    });
+    const suppressDomain = rapport.parsed && rapport.verdict === "incoherente";
+    return { suppressDomain, rapport };
+  } catch {
+    return { suppressDomain: false, rapport: null };
+  }
 }
 
 /**

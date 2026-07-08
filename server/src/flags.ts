@@ -243,6 +243,12 @@ export const FLAGS = {
     default: false,
     description: "Vérifie qu'un gabarit fraîchement choisi correspond au sens RÉEL du mot employé par l'utilisateur (concept-registry.ts + verificateur-contexte.ts) — incident déclencheur : un gabarit \"formation\" réutilisé sans jamais vérifier qu'il correspondait à ce que Raf entend par ce mot. Chemin rapide : définition déjà validée par Raf, recherchée par embedding dans le Blackboard (scope concept:valide). Chemin lent : recherche web + définition candidate déposée comme \"lacune de sens\" (data/concept-gaps.json, à valider dans l'Atelier). Le hit d'index NE court-circuite JAMAIS le jugement final (verdict ternaire correspond/ne-correspond-pas/incertain, jamais un score). ÉTAPE 1 : observation seule (fire-and-forget, jamais bloquant) — chaque vérification est journalisée (concept-consolidation.ts) pour l'audit qui décidera si un vrai blocage se justifie. OFF (défaut) → verifierChoixGabaritEnArrierePlan retourne immédiatement, aucune I/O, comportement byte-identique.",
   },
+  // ── Boucle de vérification contextuelle — Étape 1bis (2026-07-08, chaîne de termes) ──
+  ELEVE_CONTEXT_CHAINE: {
+    env: "ELEVE_CONTEXT_CHAINE",
+    default: false,
+    description: "Complément de ELEVE_CONTEXT_LOOP : ne juge plus un seul mot isolé mais la COHÉRENCE JOINTE de plusieurs termes ambigus consécutifs d'un brief (chaine-ambigue.ts) — demande explicite de Raf : « si dès le départ on part dans le mauvais sens, tout ce qui en découle est faux ». Détecte 0-4 termes candidats (petit appel LLM), retourne \"coherente\" directe SANS juge si <2 termes trouvés, sinon un juge tranche coherente/incoherente/incertaine (jamais un score thresholdé). Contrairement à ELEVE_CONTEXT_LOOP (purement observationnel), ce gate a un effet borné et réversible : SEUL un verdict \"incoherente\" PARSÉ (jamais un timeout/erreur/incertaine) vide `templateSection` avant l'assemblage du prompt système (index.ts, juste avant domainTemplateSection) — l'Élève retombe alors sur le prompt générique, chemin déjà sûr et existant. `createProject`, le scaffold technique et la réponse SSE du tour ne sont JAMAIS affectés. OFF (défaut) → analyserChaineEnAmontDuGabarit retourne immédiatement {suppressDomain:false, rapport:null}, aucune I/O, templateSection calculé exactement comme avant.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;
