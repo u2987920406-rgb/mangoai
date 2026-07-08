@@ -277,6 +277,7 @@ async function run() {
       scanPlaceholders: over.scanPlaceholders ?? (() => []),
       runTests: over.runTests ?? noTests,
       checkPedago: over.checkPedago,
+      hasTestScript: over.hasTestScript ?? (() => false),
     };
   }
   const result = (text: string) => ({ text, toolTrace: [] as Array<{ name: string; args: string }> });

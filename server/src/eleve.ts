@@ -755,6 +755,21 @@ type est \`<div className="mx-auto max-w-6xl px-6">\`, et ça vaut pour le HERO 
 footer). N'aligne un bloc à gauche/droite QUE si l'asymétrie est VOULUE — et alors rends-la explicite (\`ml-auto\`/
 \`mr-auto\`), jamais par oubli du centrage.
 
+⚠ SCEPTICISME À L'INGESTION (pas seulement à la clôture) : quand tu reçois un contenu généré — le résumé d'un
+sous-agent délégué (delegate), ou une donnée que tu as toi-même écrite à une itération précédente — commence
+par identifier un doute concret AVANT de l'intégrer tel quel (une date qui ne colle pas, une référence qui
+n'existe pas encore, une valeur incohérente avec ce que tu as déjà posé). Ne diffère pas la vérification à la
+fin : le doute noté AU MOMENT de la réception attrape des défauts qu'une relecture globale tardive rate.
+
+⚠ VÉRIFIER L'AGRÉGAT PAR DU CODE, PAS PAR UNE RELECTURE (capital pour tout projet à plusieurs fichiers de
+données qui se référencent entre eux — lore/catalogue/curriculum/config) : une relecture, la tienne ou celle
+d'un autre passage du même modèle, rattrape les erreurs LOCALES (une phrase qui se contredit) mais PAS les
+erreurs STRUCTURELLES (deux identifiants/positions qui entrent en collision, une référence croisée jamais
+posée, un ordre chronologique violé entre deux fichiers) — un rang égal ne voit pas l'agrégat, seul un
+contrôle DÉTERMINISTE le voit. Si ton projet a plusieurs fichiers de données interdépendants, ÉCRIS et EXÉCUTE
+(run_command) un petit script de vérification qui croise ces fichiers (unicité des clés/positions, toute
+référence utilisée est bien définie ailleurs, tout ordre annoncé est respecté) AVANT d'appeler finish.
+
 Méthode : planifie (tâche multi-étapes : planifier d'abord) → explore le minimum avec read_file/list_files/
 search_code → écris (write_file/edit_file) → APRÈS chaque écriture importante, appelle check_build → en cas d'erreur, lis-la et CORRIGE, puis recommence → quand
 tout est vert et la tâche faite, appelle finish(summary). Si un outil échoue, NE le répète pas en boucle :
@@ -1206,6 +1221,8 @@ export async function runRelay(
           // (revue 2026-07-03, action #6, constat B) juge ET critique KO ensemble → Gardien
           // dégradé à 2 regex triviales ; toujours visible, bloquant seulement si le gate est ON.
           if (verdict.dualSkip) push(`  ⚠ juge ET critique KO SIMULTANÉMENT — Gardien dégradé (2 regex triviales)${verdict.ok ? " — non bloquant, ELEVE_GATE_DUAL_SKIP_BLOCK=off" : ""}`);
+          // (axiome 17, 2026-07-08) signal disponible non exploité — visible, jamais bloquant.
+          if (verdict.signalGap) push(`  📶 ${verdict.signalGap}`);
           if (!verdict.ok) issues.push(...(verdict.raisons.length ? verdict.raisons : ["clôture qualité non atteinte"]));
         } catch (e) {
           push(`⚠ Gardien (après Maître) indisponible (${(e as Error).message.split("\n")[0]}) — on laisse passer`);
@@ -1844,6 +1861,8 @@ export async function runRelay(
           // « ok non vérifié » doit se voir dans le log, pas se déguiser en ✓.
           if (verdict.judgeSkipped) push(`  ⚠ juge d'intention KO (${verdict.judgeSkipped}) — couverture NEUTRE (100), NON vérifiée`);
           if (verdict.critiqueSkipped) push(`  ⚠ critique visuelle KO (${verdict.critiqueSkipped}) — goût + WCAG NON vérifiés ce tour`);
+          // (axiome 17, 2026-07-08) signal disponible non exploité — visible, jamais bloquant.
+          if (verdict.signalGap) push(`  📶 ${verdict.signalGap}`);
           // (N15, 2026-07-03) mesures d'ARTISANAT statiques (déterministes, $0) en
           // OBSERVATION : familles de polices, échelle typo, couleurs littérales,
           // motion présent. Non-bloquant pour l'instant (calibrage) — mais VISIBLE.

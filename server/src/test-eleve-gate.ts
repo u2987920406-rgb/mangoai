@@ -9,6 +9,7 @@ import {
   changedFilesFromTrace,
   buildGateNudge,
   scanFilesForPlaceholders,
+  hasRealTestScript,
   type GateDeps,
   type GateVerdict,
 } from "./eleve-gate.js";
@@ -16,6 +17,9 @@ import { setPlan, clearPlan } from "./eleve-plan.js";
 import type { DesignCritique } from "./design-coach.js";
 import type { IntentVerdict } from "./eleve-judge.js";
 import type { TestRun } from "./inspection.js";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 const noTests = async (): Promise<TestRun> => ({ ok: true, signal: "no-test-script", detail: "", durationMs: 0 });
 
@@ -51,6 +55,7 @@ function deps(over: Partial<GateDeps> = {}): GateDeps {
     scanBalance: over.scanBalance ?? (() => []), // défaut : équilibre OK (pas de finding)
     scanPlaceholders: over.scanPlaceholders ?? (() => []), // défaut : vraies images OK
     runTests: over.runTests ?? noTests, // défaut : pas de script test → ne pénalise pas
+    hasTestScript: over.hasTestScript ?? (() => false), // défaut : pas de script réel → pas de signalGap
   };
 }
 
@@ -332,6 +337,42 @@ async function run() {
     const vOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "vitrine", { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 }, deps({ scanPlaceholders: () => [finding] }));
     check("désactivé → placeholdersOk:true, ok:true", vOff.placeholdersOk === true && vOff.ok === true);
     if (prev === undefined) delete process.env.ELEVE_GATE_PLACEHOLDERS; else process.env.ELEVE_GATE_PLACEHOLDERS = prev;
+  }
+
+  console.log("\n[14] hasRealTestScript (axiome 17) — détecte un script test RÉEL vs placeholder npm par défaut");
+  {
+    function tmpProjectWithScript(test?: string): string {
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mango-gate-signal-"));
+      fs.writeFileSync(
+        path.join(dir, "package.json"),
+        JSON.stringify({ name: "x", scripts: test !== undefined ? { test } : {} }),
+      );
+      return dir;
+    }
+    check("script réel (vitest) → true", hasRealTestScript(tmpProjectWithScript("vitest run")));
+    check("placeholder npm init par défaut → false", !hasRealTestScript(tmpProjectWithScript('echo "Error: no test specified" && exit 1')));
+    check("scripts.test absent → false", !hasRealTestScript(tmpProjectWithScript(undefined)));
+    check("package.json absent (dossier inexistant) → false, ne lève pas", !hasRealTestScript(path.join(os.tmpdir(), "mango-gate-signal-n-existe-pas")));
+  }
+
+  console.log("\n[15] runClosureGate — signalGap (axiome 17) : surfacé mais JAMAIS bloquant");
+  {
+    // Script réel présent + gate OFF → signalGap surfacé, ok INCHANGÉ (true).
+    delete process.env.ELEVE_GATE_TESTS;
+    const vGapOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", {}, deps({ hasTestScript: () => true }));
+    check("gate off + script réel → signalGap présent", typeof vGapOff.signalGap === "string" && /ELEVE_GATE_TESTS=off/.test(vGapOff.signalGap ?? ""));
+    check("signalGap ne bloque JAMAIS ok", vGapOff.ok === true);
+
+    // Pas de script réel → jamais de signalGap.
+    const vNoGap = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", {}, deps({ hasTestScript: () => false }));
+    check("pas de script réel → signalGap absent", vNoGap.signalGap === undefined);
+
+    // Gate ON + tests verts (testsRan:true) → signal déjà pris, pas de gap.
+    process.env.ELEVE_GATE_TESTS = "on";
+    const passing = async (): Promise<TestRun> => ({ ok: true, signal: "tests-ok", detail: "", durationMs: 10 });
+    const vRan = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", {}, deps({ runTests: passing, hasTestScript: () => true }));
+    check("gate on + tests lancés → signalGap absent (signal déjà pris)", vRan.signalGap === undefined);
+    delete process.env.ELEVE_GATE_TESTS;
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-gate : ${pass} pass, ${fail} fail`);

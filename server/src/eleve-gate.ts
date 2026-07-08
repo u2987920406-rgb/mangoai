@@ -49,6 +49,13 @@ export interface GateVerdict {
   // (projet de formation). Absent en gate OFF → verdict byte-identique à avant ce volet.
   pedago?: PedagoVerdict;
   pedagoOk?: boolean;
+  // (axiome 17, 2026-07-08 — expérience #183) « la clôture doit atteindre le signal le
+  // plus HAUT ATTEIGNABLE, pas le plus commode. » Un script de test RÉEL existe mais
+  // ELEVE_GATE_TESTS=off → un signal plus fiable que le seul build était disponible et
+  // n'a pas été pris. TOUJOURS surfacé (observabilité, même style que judgeSkipped/
+  // critiqueSkipped) ; NE bloque PAS la clôture (`ok` inchangé) — c'est un signal, pas
+  // encore une garde durcie.
+  signalGap?: string;
   raisons: string[]; // ce qu'il faut corriger (vide si ok)
 }
 
@@ -79,6 +86,10 @@ export interface GateDeps {
   /** (#181 É4) Volet PÉDAGO (gated ELEVE_GATE_PEDAGO). Optionnel : absent → volet sauté
    *  (comportement historique). Ne lève jamais côté implémentation réelle. */
   checkPedago?: (projectDir: string) => Promise<PedagoVerdict>;
+  /** (axiome 17) Un script `test` RÉEL (≠ placeholder npm par défaut) existe-t-il dans
+   *  package.json ? Sert UNIQUEMENT à signaler un signal disponible non exploité — ne
+   *  lève jamais, best-effort. */
+  hasTestScript: (projectDir: string) => boolean;
 }
 
 /** Lecteur réel : lit chaque fichier sous projectDir et délègue au détecteur pur. */
@@ -132,6 +143,24 @@ function realScanPlaceholders(projectDir: string, files: string[]): PlaceholderF
   });
 }
 
+// (axiome 17) Placeholder que `npm init`/nos templates posent par défaut — ne compte
+// PAS comme un signal disponible (il échoue toujours, exprès, ce n'est pas un test).
+const NPM_DEFAULT_TEST_SCRIPT = /Error: no test specified/i;
+
+/** Un script `test` RÉEL (≠ placeholder par défaut) existe-t-il dans package.json ?
+ * PUR modulo lecture fichier ; ne lève jamais (dossier/JSON absent → false). */
+export function hasRealTestScript(projectDir: string): boolean {
+  try {
+    const pkg = JSON.parse(fs.readFileSync(path.join(projectDir, "package.json"), "utf8")) as {
+      scripts?: Record<string, string>;
+    };
+    const test = pkg.scripts?.test;
+    return typeof test === "string" && test.trim().length > 0 && !NPM_DEFAULT_TEST_SCRIPT.test(test);
+  } catch {
+    return false;
+  }
+}
+
 const realGateDeps: GateDeps = {
   judge: (task, summary, files, projectDir) => judgeIntention(task, summary, files, projectDir),
   critique: (projectDir, workspaceDir, projectType) =>
@@ -141,6 +170,7 @@ const realGateDeps: GateDeps = {
   scanPlaceholders: realScanPlaceholders,
   runTests: (dir) => runProjectTests(dir),
   checkPedago: (dir) => checkPedagoReel(dir),
+  hasTestScript: hasRealTestScript,
 };
 
 /** Fichiers écrits par l'agent, dérivés de la trace d'outils. PUR. */
@@ -273,6 +303,24 @@ export async function runClosureGate(
     }
   }
 
+  // 5bis. SIGNAL GAP (axiome 17, 2026-07-08) — « la clôture doit atteindre le signal le
+  // plus HAUT ATTEIGNABLE, pas le plus commode. » Un script `test` RÉEL existe mais le
+  // gate ELEVE_GATE_TESTS est OFF (ou le script n'a pas tourné) → un signal plus fiable
+  // que le seul build était disponible et n'a pas été pris. TOUJOURS calculé (même
+  // pattern que judgeSkipped/critiqueSkipped), ne bloque JAMAIS `ok` — observabilité
+  // d'abord, durcissement en garde réel = décision séparée.
+  let signalGap: string | undefined;
+  try {
+    if (!testsRan && deps.hasTestScript(projectDir)) {
+      signalGap =
+        process.env.ELEVE_GATE_TESTS === "on"
+          ? "un script `test` réel existe mais n'a pas produit de signal exploitable ce tour (voir `tests`)"
+          : "un script `test` réel existe dans package.json mais n'est pas exécuté à la clôture (ELEVE_GATE_TESTS=off) — signal disponible non exploité";
+    }
+  } catch {
+    signalGap = undefined;
+  }
+
   // 6. PÉDAGO (#181 É4, opt-in ELEVE_GATE_PEDAGO, défaut OFF) — couverture curriculum↔
   // banques, leçon-avant-exercice, sources déclarées, lisibilité, échantillon d'exactitude
   // sourcé (D5 étages 2+3). Applicable SEULEMENT aux projets de formation (manifest
@@ -344,6 +392,7 @@ export async function runClosureGate(
     intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance,
     placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, dualSkip, testsRan, testsOk, tests, raisons,
     ...(pedago ? { pedago, pedagoOk } : {}),
+    ...(signalGap ? { signalGap } : {}),
   };
 }
 
