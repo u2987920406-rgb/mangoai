@@ -366,9 +366,17 @@ export function selectNextItem(
   if (due.length > 0) return due[0];
 
   const weakThreshold = 0.5;
+  // Une leçon passe TOUJOURS avant un exercice du même module (enseigner
+  // d'abord, tester ensuite) — indépendant de la convention de nommage des
+  // id, qui ne doit jamais être le seul garant de cet ordre pédagogique.
   const courant = items
     .filter((it) => it.moduleId === learner.moduleCourant)
-    .sort((a, b) => a.id.localeCompare(b.id));
+    .sort((a, b) => {
+      const aLecon = a.type === "lecon" ? 0 : 1;
+      const bLecon = b.type === "lecon" ? 0 : 1;
+      if (aLecon !== bLecon) return aLecon - bLecon;
+      return a.id.localeCompare(b.id);
+    });
 
   const weak = courant.filter((it) =>
     it.skillIds.some((s) => (learner.mastery[s] ?? 0) < weakThreshold),

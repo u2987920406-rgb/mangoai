@@ -1,7 +1,11 @@
 // Starter `formation` (#181 É2) — orchestrateur du moteur pédagogique.
 // Machine d'états à un écran à la fois (patron education.md : "jamais une
-// liste, un écran à la fois") : Placement -> CarteParcours <-> (Leçon |
-// Exercice | Révision) -> Bilan -> CarteParcours.
+// liste, un écran à la fois") : CarteParcours <-> (Leçon | Exercice |
+// Révision) -> Bilan -> CarteParcours. Placement = OPTIONNEL, à la demande
+// de l'apprenant (bouton dans CarteParcours), jamais imposé au premier
+// lancement — une formation enseigne D'ABORD, elle ne teste pas en premier
+// (retour de Raf, 2026-07-08 : un premier écran de quiz sans aucun cours
+// donne l'impression qu'"il n'y a aucun intérêt, rien qui marche").
 //
 // Cette app est le STARTER (D1) : le curriculum/banque importés depuis
 // src/data/curriculum-cafe.ts sont un EXEMPLE de preuve — la Fabrique (É3)
@@ -42,12 +46,12 @@ export default function App() {
   }, [bankExt]);
 
   useEffect(() => {
-    const isFirstVisit = learner.historique.length === 0 && learner.modulesValides.length === 0;
-    setScreen(isFirstVisit ? "placement" : "carte");
+    // Le premier écran vu par l'apprenant est TOUJOURS la carte de parcours
+    // (déjà la valeur par défaut de `screen`) — jamais un quiz de placement
+    // imposé. Le placement reste disponible en option, déclenché par
+    // l'apprenant lui-même depuis la carte (startPlacement ci-dessous).
     const stopSync = startBackgroundSync();
     return stopSync;
-    // volontairement [] : le placement ne doit se déclencher qu'au tout premier montage
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -64,8 +68,13 @@ export default function App() {
   }
 
   // ---------------------------------------------------------------------
-  // Placement
+  // Placement — TOUJOURS optionnel, déclenché par l'apprenant lui-même
+  // (jamais imposé au premier lancement, cf. en-tête du fichier).
   // ---------------------------------------------------------------------
+  function startPlacement() {
+    setScreen("placement");
+  }
+
   function handlePlacementComplete(answers) {
     const mastery = { ...learner.mastery };
     const bySkill = new Map();
@@ -223,6 +232,7 @@ export default function App() {
       dueCount={dueCount}
       onOpenModule={openModule}
       onOpenRevision={openRevision}
+      onStartPlacement={startPlacement}
     />
   );
 }

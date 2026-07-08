@@ -1,6 +1,6 @@
 // Écran Carte de parcours — vue du curriculum + progression par module
 // (maîtrise moyenne des compétences du module, verrouillage par prérequis).
-export default function CarteParcours({ curriculum, learner, dueCount, onOpenModule, onOpenRevision }) {
+export default function CarteParcours({ curriculum, learner, dueCount, onOpenModule, onOpenRevision, onStartPlacement }) {
   function masteryOfModule(mod) {
     const values = mod.skillIds.map((s) => learner.mastery[s] ?? 0);
     if (values.length === 0) return 0;
@@ -18,14 +18,24 @@ export default function CarteParcours({ curriculum, learner, dueCount, onOpenMod
           <p className="text-sm uppercase tracking-wide text-amber-600">Parcours</p>
           <h1 className="text-2xl font-bold">{curriculum.sujet}</h1>
         </div>
-        {dueCount > 0 && (
-          <button
-            onClick={onOpenRevision}
-            className="rounded-xl bg-amber-500 px-4 py-2 font-medium text-white shadow-sm"
-          >
-            Réviser ({dueCount})
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {onStartPlacement && (
+            <button
+              onClick={onStartPlacement}
+              className="text-sm font-medium text-slate-500 underline decoration-dotted hover:text-slate-700"
+            >
+              Passer un test de niveau (optionnel)
+            </button>
+          )}
+          {dueCount > 0 && (
+            <button
+              onClick={onOpenRevision}
+              className="rounded-xl bg-amber-500 px-4 py-2 font-medium text-white shadow-sm"
+            >
+              Réviser ({dueCount})
+            </button>
+          )}
+        </div>
       </header>
 
       <ol className="flex flex-col gap-3">
