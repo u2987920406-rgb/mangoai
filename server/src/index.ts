@@ -60,6 +60,7 @@ import type { Span } from "./kernel-trace.js";
 import { publishDesignReference, publishDesignProduced, buildProducedDesign, paletteFromContract } from "./kernel-design-events.js";
 import { loadContract } from "./perfect-plan.js";
 import { generateLexique } from "./lexique.js";
+import { verifierChoixGabaritEnArrierePlan } from "./eleve-context-hook.js";
 import { registerPromptLabRoutes } from "./promptlab.js";
 import { registerTokenizerRoutes } from "./tokenizer.js";
 import { registerIdeationRoutes } from "./ideation.js";
@@ -497,6 +498,11 @@ app.post("/api/chat", async (req, res) => {
     } else if (isNewProject) {
       send({ type: "status", text: "Création du projet (template + npm install)…" });
       dir = await createProject(projectName, template || undefined);
+      // Boucle de vérification contextuelle — Étape 1 (gate ELEVE_CONTEXT_LOOP,
+      // off par défaut) : le gabarit choisi correspond-il au sens réel du mot
+      // employé par l'utilisateur ? Fire-and-forget, jamais bloquant (même
+      // patron que generateLexique ci-dessous).
+      if (template) void verifierChoixGabaritEnArrierePlan(template, prompt, dir).catch(() => {});
     } else {
       dir = projectDir(projectName);
     }

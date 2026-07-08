@@ -237,6 +237,12 @@ export const FLAGS = {
     default: false,
     description: "Le Tuteur (#181 É5, formation-tuteur.ts) : boucle adaptative LENTE côté serveur. Lit le modèle apprenant miroité dans `shared:formation-<slug>` (D2), diagnostique les faiblesses PERSISTANTES via `diagnoseWeaknesses` (É1, formation-adaptive.ts), et — seulement si des faiblesses sont trouvées — génère un lot d'exercices CIBLÉS (le sujet du lot cite les compétences faibles et le pattern d'erreur observé) via la même mécanique que la Fabrique (É3, generateContentItems), le valide (schéma É1 + images) et l'écrit en `bank-ext:<module>` dans la collection partagée (absorbé par l'app cliente via SSE, cf. `learner-store.ts` subscribeBankExt). Câblé en fin de lot nocturne (nocturnal.ts), UNE entrée par formation active (scan `workspace/*/formation.json`), fail-open par formation (un échec n'arrête ni les autres formations ni le reste du nocturne). OFF (défaut) → aucune lecture/écriture, `maybeRunTuteurCycle` retourne immédiatement, comportement byte-identique.",
   },
+  // ── Boucle de vérification contextuelle — Étape 1 (2026-07-08, gabarit/artefact) ──
+  ELEVE_CONTEXT_LOOP: {
+    env: "ELEVE_CONTEXT_LOOP",
+    default: false,
+    description: "Vérifie qu'un gabarit fraîchement choisi correspond au sens RÉEL du mot employé par l'utilisateur (concept-registry.ts + verificateur-contexte.ts) — incident déclencheur : un gabarit \"formation\" réutilisé sans jamais vérifier qu'il correspondait à ce que Raf entend par ce mot. Chemin rapide : définition déjà validée par Raf, recherchée par embedding dans le Blackboard (scope concept:valide). Chemin lent : recherche web + définition candidate déposée comme \"lacune de sens\" (data/concept-gaps.json, à valider dans l'Atelier). Le hit d'index NE court-circuite JAMAIS le jugement final (verdict ternaire correspond/ne-correspond-pas/incertain, jamais un score). ÉTAPE 1 : observation seule (fire-and-forget, jamais bloquant) — chaque vérification est journalisée (concept-consolidation.ts) pour l'audit qui décidera si un vrai blocage se justifie. OFF (défaut) → verifierChoixGabaritEnArrierePlan retourne immédiatement, aucune I/O, comportement byte-identique.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;
