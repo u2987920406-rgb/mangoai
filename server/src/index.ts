@@ -498,11 +498,6 @@ app.post("/api/chat", async (req, res) => {
     } else if (isNewProject) {
       send({ type: "status", text: "Création du projet (template + npm install)…" });
       dir = await createProject(projectName, template || undefined);
-      // Boucle de vérification contextuelle — Étape 1 (gate ELEVE_CONTEXT_LOOP,
-      // off par défaut) : le gabarit choisi correspond-il au sens réel du mot
-      // employé par l'utilisateur ? Fire-and-forget, jamais bloquant (même
-      // patron que generateLexique ci-dessous).
-      if (template) void verifierChoixGabaritEnArrierePlan(template, prompt, dir).catch(() => {});
     } else {
       dir = projectDir(projectName);
     }
@@ -772,6 +767,18 @@ app.post("/api/chat", async (req, res) => {
         await streamAgentTurn(undefined);
       }
     }
+
+    // Boucle de vérification contextuelle — Étape 1 (gate ELEVE_CONTEXT_LOOP,
+    // off par défaut) : le gabarit choisi correspond-il au sens réel du mot
+    // employé par l'utilisateur ? Fire-and-forget, jamais bloquant (même patron
+    // que generateLexique). Déclenché ICI, APRÈS la génération réelle (runRelay/
+    // streamAgentTurn ci-dessus), pas juste après createProject — L111 (audit
+    // CTXLOOP 2026-07-09, 2/3 contrôles « déjà vu » en faux négatif) : lu trop
+    // tôt, ce hook comparait le PLACEHOLDER générique du scaffold au brief
+    // spécifique (les templates de contenu comme vitrine/ecommerce/threejs n'ont
+    // aucun contenu distinctif avant que l'Élève/Claude n'écrive quelque chose).
+    // Ici src/App.jsx contient déjà le vrai contenu généré pour ce tour.
+    if (isNewProject && template) void verifierChoixGabaritEnArrierePlan(template, prompt, dir).catch(() => {});
 
     // Vérification d'effet de l'édition visuelle (#6) : signal OBJECTIF que le
     // changement a pris (le fichier cible a changé d'octets), au lieu de le

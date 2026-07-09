@@ -7,6 +7,13 @@
 // (même patron que `generateLexique` dans index.ts) : cette Étape 1 est de
 // l'OBSERVATION — chaque vérification est journalisée pour l'audit qui
 // décidera si un vrai blocage se justifie (cf. le plan de cette étape).
+//
+// L111 (audit CTXLOOP, 2026-07-09) : ce hook est déclenché dans index.ts APRÈS
+// la génération réelle (runRelay/streamAgentTurn), pas juste après
+// createProject() — sinon `lireContenuGabarit` ne voit que le placeholder
+// générique du scaffold, faux `ne-correspond-pas` systématique sur les
+// gabarits de CONTENU (vitrine/ecommerce/blog/scènes de démo threejs…) même
+// quand le choix de gabarit était correct.
 import fs from "node:fs";
 import path from "node:path";
 import { flag } from "./flags.js";
@@ -16,9 +23,10 @@ import { logVerification } from "./concept-consolidation.js";
 import { searchWeb } from "./eleve-web-tools.js";
 import { dispatch } from "./brain-dispatch.js";
 
-/** Extrait représentatif du gabarit fraîchement scaffoldé — le CONTENU réel,
- *  jamais juste son nom (c'est tout le sens de la boucle). `App.jsx` porte
- *  presque toujours l'essentiel de la structure/du flux d'un starter MangoOS. */
+/** Extrait représentatif du contenu RÉEL du projet — le CONTENU, jamais juste
+ *  le nom du gabarit (c'est tout le sens de la boucle). Appelé après la
+ *  génération (cf. L111 ci-dessus), donc `App.jsx` porte déjà ce que l'Élève/
+ *  Claude a effectivement écrit pour ce brief, pas le placeholder du starter. */
 function lireContenuGabarit(dir: string): string {
   try {
     return fs.readFileSync(path.join(dir, "src", "App.jsx"), "utf8").slice(0, 3000);
