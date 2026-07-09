@@ -21,12 +21,9 @@ import { inspectProject } from "./inspection.js";
 import type { Action } from "./contract.js";
 
 const UNIT_ONLY = process.argv.includes("--unit");
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-function check(label: string, cond: boolean) {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-}
+const check = makeCheck(() => { failures++; });
 
 // ─────────────────────────────────────────────────────────────────────────
 // ÉTAGE 1 — Exécuteur déterministe

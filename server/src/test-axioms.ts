@@ -11,12 +11,9 @@ import path from "node:path";
 import { AXIOMS_FILE_NAME, selectAxioms } from "./axioms.js";
 import { detectProjectType } from "./blueprints.js";
 
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-const check = (label: string, cond: boolean) => {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-};
+const check = makeCheck(() => { failures++; });
 const countAxioms = (s: string) => (s.match(/AXIOME-/g) ?? []).length;
 const has = (s: string, id: string) => s.includes(id);
 
