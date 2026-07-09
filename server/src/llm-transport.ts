@@ -114,11 +114,13 @@ export async function claudeQuery(prompt: string, opts: ClaudeQueryOptions): Pro
 // ── Transport Ollama /api/chat (texte simple) ────────────────────────────────
 /** Un tour Ollama (system+user → texte brut, SANS trim — famille B eleve). `keepAlive`
  *  ('10m') maintient le modèle chaud entre appels (famille A) ; omis → payload
- *  byte-identique à l'ancien askEleveOllama. */
+ *  byte-identique à l'ancien askEleveOllama. `imageBase64` (famille A askOllama, VL
+ *  local) ajoute le champ `images` au message user ; absent → payload byte-identique
+ *  à l'ancien askEleveOllama (spread conditionnel, comme openAiChat). */
 export async function ollamaChat(
   system: string,
   user: string,
-  opts: { baseUrl: string; model: string; timeoutMs: number; keepAlive?: string },
+  opts: { baseUrl: string; model: string; timeoutMs: number; keepAlive?: string; imageBase64?: string },
 ): Promise<string> {
   const res = await fetch(`${opts.baseUrl}/api/chat`, {
     method: "POST",
@@ -131,7 +133,7 @@ export async function ollamaChat(
       ...(opts.keepAlive ? { keep_alive: opts.keepAlive } : {}),
       messages: [
         { role: "system", content: system },
-        { role: "user", content: user },
+        { role: "user", content: user, ...(opts.imageBase64 ? { images: [opts.imageBase64] } : {}) },
       ],
     }),
   });
