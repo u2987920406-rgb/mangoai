@@ -1,11 +1,16 @@
 import { useState } from "react";
 import ReactMarkdown from "react-markdown";
-import { Blocks, BookText, BrainCircuit, Check, Clipboard, ClipboardCheck, Compass, Eye, Footprints, FolderOpen, GitBranch, Languages, Loader2, Palette, Pencil, Plus, RefreshCw, Sparkles, User, Wrench, X } from "lucide-react";
+import { Blocks, BrainCircuit, Check, Clipboard, ClipboardCheck, Compass, Footprints, FolderOpen, Languages, Loader2, Pencil, Plus, RefreshCw, Sparkles, User, Wrench, X } from "lucide-react";
 import Section from "./knowledge/Section.jsx";
 import IdentityLayer from "./knowledge/IdentityLayer.jsx";
 import BrainRegistryPanel from "./knowledge/BrainRegistryPanel.jsx";
 import { miroirSwatches, stripFrontmatter, mutateProposal } from "./knowledge/helpers.js";
 import { useKnowledge } from "./knowledge/useKnowledge.js";
+import ArchitectureSection from "./knowledge/ArchitectureSection.jsx";
+import MiroirSection from "./knowledge/MiroirSection.jsx";
+import LexiqueSection from "./knowledge/LexiqueSection.jsx";
+import DesignSystemSection from "./knowledge/DesignSystemSection.jsx";
+import PreferencesSection from "./knowledge/PreferencesSection.jsx";
 
 // Dropdown body showing what MangoOS has learned. Mounted only while the menu
 // is open, so it re-fetches and is always fresh (the background review may
@@ -15,27 +20,6 @@ export default function Knowledge({ projectName }) {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", body: "" });
   const [saving, setSaving] = useState(false);
-  // Design system inline editor
-  const [editingDS, setEditingDS] = useState(false);
-  const [dsDraft, setDsDraft] = useState("");
-  const [savingDS, setSavingDS] = useState(false);
-  // Préférences apprises inline editor + Ré-apprendre (#49)
-  const [editingPref, setEditingPref] = useState(false);
-  const [prefDraft, setPrefDraft] = useState("");
-  const [savingPref, setSavingPref] = useState(false);
-  const [learningPref, setLearningPref] = useState(false);
-  // Architecture map inline editor
-  const [editingArch, setEditingArch] = useState(false);
-  const [archDraft, setArchDraft] = useState("");
-  const [savingArch, setSavingArch] = useState(false);
-  // Language contract inline editor (idée #45)
-  const [editingLex, setEditingLex] = useState(false);
-  const [lexDraft, setLexDraft] = useState("");
-  const [savingLex, setSavingLex] = useState(false);
-
-  const [editingMir, setEditingMir] = useState(false);
-  const [mirDraft, setMirDraft] = useState("");
-  const [savingMir, setSavingMir] = useState(false);
   // Conseil d'experts — rattrapage projet dévié (idée #44)
   const [councilProblem, setCouncilProblem] = useState("");
   const [councilRunning, setCouncilRunning] = useState(false);
@@ -632,226 +616,11 @@ export default function Knowledge({ projectName }) {
         </Section>
       )}
 
-      {/* Chantier #38 — Carte d'architecture vivante (par projet) */}
-      {(data.architecture || true) && (
-        <Section
-          icon={GitBranch}
-          title="Architecture"
-          action={
-            !editingArch ? (
-              <button
-                onClick={() => { setArchDraft(data.architecture || ""); setEditingArch(true); }}
-                className="rounded p-0.5 text-faint hover:text-ink transition-colors"
-                title="Modifier la carte d'architecture"
-              >
-                <Pencil size={11} />
-              </button>
-            ) : null
-          }
-        >
-          {!editingArch ? (
-            data.architecture ? (
-              <div className="md text-xs leading-relaxed">
-                <ReactMarkdown>{stripFrontmatter(data.architecture)}</ReactMarkdown>
-              </div>
-            ) : (
-              <p className="text-xs text-faint italic">
-                Vide — l'agent remplit automatiquement cette carte après chaque changement structurel.
-              </p>
-            )
-          ) : (
-            <div className="space-y-2">
-              <textarea
-                value={archDraft}
-                onChange={(e) => setArchDraft(e.target.value)}
-                rows={8}
-                placeholder={"## Stack\n- React + Vite + Tailwind v4\n\n## Composants\n- Header : navigation\n- Hero : section principale\n\n## API\n- (aucune pour l'instant)"}
-                className="w-full resize-y rounded-lg border border-edge bg-bg px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none transition-colors"
-              />
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setEditingArch(false)}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-edge py-1.5 text-xs text-dim hover:text-ink transition-colors"
-                >
-                  <X size={11} /> Annuler
-                </button>
-                <button
-                  disabled={savingArch}
-                  onClick={async () => {
-                    setSavingArch(true);
-                    try {
-                      await fetch(`/api/architecture/${encodeURIComponent(projectName)}`, {
-                        method: "PUT",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ content: archDraft }),
-                      });
-                      setData((d) => ({ ...d, architecture: archDraft }));
-                      setEditingArch(false);
-                    } finally {
-                      setSavingArch(false);
-                    }
-                  }}
-                  className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-accent py-1.5 text-xs font-semibold text-white hover:bg-accent-soft disabled:opacity-40 transition-colors"
-                >
-                  {savingArch ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                  {savingArch ? "Sauvegarde…" : "Sauvegarder"}
-                </button>
-              </div>
-            </div>
-          )}
-        </Section>
-      )}
+      <ArchitectureSection data={data} setData={setData} projectName={projectName} />
 
-      {/* Idée #48 — Le Miroir : compréhension validable (porte du cadrage #47) */}
-      <Section
-        icon={Eye}
-        title="Le Miroir"
-        action={
-          !editingMir ? (
-            <button
-              onClick={() => { setMirDraft(data.miroir || ""); setEditingMir(true); }}
-              className="rounded p-0.5 text-faint hover:text-ink transition-colors"
-              title="Corriger le miroir"
-            >
-              <Pencil size={11} />
-            </button>
-          ) : null
-        }
-      >
-        {!editingMir ? (
-          data.miroir ? (
-            <div className="space-y-2">
-              {miroirSwatches(data.miroir).length > 0 && (
-                <div className="flex flex-wrap gap-1.5">
-                  {miroirSwatches(data.miroir).map((s) => (
-                    <div key={s.hex} className="flex items-center gap-1 rounded-md border border-edge bg-bg px-1.5 py-0.5" title={`${s.hex}${s.label ? " — " + s.label : ""}`}>
-                      <span className="h-3 w-3 rounded-sm border border-edge/60" style={{ backgroundColor: s.hex }} />
-                      <span className="font-mono text-[10px] text-dim">{s.hex}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-              <div className="md text-xs leading-relaxed">
-                <ReactMarkdown>{stripFrontmatter(data.miroir)}</ReactMarkdown>
-              </div>
-            </div>
-          ) : (
-            <p className="text-xs text-faint italic">
-              Vide — en mode 💎 Élite, avant de coder un nouveau projet, MangoOS te renvoie
-              ici « voici ce que j'ai compris de toi » (palette extraite, ambiance, structure,
-              références digérées) à valider ou corriger.
-            </p>
-          )
-        ) : (
-          <div className="space-y-2">
-            <textarea
-              value={mirDraft}
-              onChange={(e) => setMirDraft(e.target.value)}
-              rows={10}
-              placeholder={"# Voici ce que j'ai compris de toi\n\n## Intention\n…\n\n## Palette\n- #1A1A2E — base sombre (depuis la photo du lieu)\n- #FF6B35 — accent chaud\n\n## Structure & écrans\n…"}
-              className="w-full resize-y rounded-lg border border-edge bg-bg px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none transition-colors"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditingMir(false)}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-edge py-1.5 text-xs text-dim hover:text-ink transition-colors"
-              >
-                <X size={11} /> Annuler
-              </button>
-              <button
-                disabled={savingMir}
-                onClick={async () => {
-                  setSavingMir(true);
-                  try {
-                    await fetch(`/api/miroir/${encodeURIComponent(projectName)}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ content: mirDraft }),
-                    });
-                    setData((d) => ({ ...d, miroir: mirDraft }));
-                    setEditingMir(false);
-                  } finally {
-                    setSavingMir(false);
-                  }
-                }}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-accent py-1.5 text-xs font-semibold text-white hover:bg-accent-soft disabled:opacity-40 transition-colors"
-              >
-                {savingMir ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                {savingMir ? "Sauvegarde…" : "Sauvegarder"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Section>
+      <MiroirSection data={data} setData={setData} projectName={projectName} />
 
-      {/* Idée #45 — Contrat de langage (Ubiquitous Language, par projet) */}
-      <Section
-        icon={BookText}
-        title="Contrat de langage"
-        action={
-          !editingLex ? (
-            <button
-              onClick={() => { setLexDraft(data.lexique || ""); setEditingLex(true); }}
-              className="rounded p-0.5 text-faint hover:text-ink transition-colors"
-              title="Modifier le contrat de langage"
-            >
-              <Pencil size={11} />
-            </button>
-          ) : null
-        }
-      >
-        {!editingLex ? (
-          data.lexique ? (
-            <div className="md text-xs leading-relaxed">
-              <ReactMarkdown>{stripFrontmatter(data.lexique)}</ReactMarkdown>
-            </div>
-          ) : (
-            <p className="text-xs text-faint italic">
-              Vide — le lexique du projet (un concept = un nom = un composant) se construit
-              tout seul depuis ton intention, puis s'enrichit à chaque nouveau composant.
-            </p>
-          )
-        ) : (
-          <div className="space-y-2">
-            <textarea
-              value={lexDraft}
-              onChange={(e) => setLexDraft(e.target.value)}
-              rows={8}
-              placeholder={"# Contrat de langage\n\n| Terme naturel (humain) | Terme technique (domaine) | Composant / fichier | Description |\n|---|---|---|---|\n| barre de vie | HealthPoints | HealthBar.jsx — HUD/ | Jauge de PV du joueur |"}
-              className="w-full resize-y rounded-lg border border-edge bg-bg px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none transition-colors"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditingLex(false)}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-edge py-1.5 text-xs text-dim hover:text-ink transition-colors"
-              >
-                <X size={11} /> Annuler
-              </button>
-              <button
-                disabled={savingLex}
-                onClick={async () => {
-                  setSavingLex(true);
-                  try {
-                    await fetch(`/api/lexique/${encodeURIComponent(projectName)}`, {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ content: lexDraft }),
-                    });
-                    setData((d) => ({ ...d, lexique: lexDraft }));
-                    setEditingLex(false);
-                  } finally {
-                    setSavingLex(false);
-                  }
-                }}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-accent py-1.5 text-xs font-semibold text-white hover:bg-accent-soft disabled:opacity-40 transition-colors"
-              >
-                {savingLex ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                {savingLex ? "Sauvegarde…" : "Sauvegarder"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Section>
+      <LexiqueSection data={data} setData={setData} projectName={projectName} />
 
       {/* Idée #42 — Couches d'identité (cross-projet) */}
       <IdentityLayer
@@ -883,163 +652,9 @@ export default function Knowledge({ projectName }) {
         onSaved={(v) => setData((d) => ({ ...d, identity: { ...(d.identity || {}), vision: v } }))}
       />
 
-      {/* Chantier A — Design system persistant (cross-projet) */}
-      <Section
-        icon={Palette}
-        title="Design system"
-        action={
-          !editingDS ? (
-            <button
-              onClick={() => { setDsDraft(data.designSystem || ""); setEditingDS(true); }}
-              className="rounded p-0.5 text-faint hover:text-ink transition-colors"
-              title="Modifier le design system"
-            >
-              <Pencil size={11} />
-            </button>
-          ) : null
-        }
-      >
-        {!editingDS ? (
-          data.designSystem ? (
-            <div className="md text-xs leading-relaxed">
-              <ReactMarkdown>{stripFrontmatter(data.designSystem)}</ReactMarkdown>
-            </div>
-          ) : (
-            <p className="text-xs text-faint italic">
-              Vide — l'agent le remplit quand tu valides un choix visuel, ou clique ✏ pour initialiser.
-            </p>
-          )
-        ) : (
-          <div className="space-y-2">
-            <textarea
-              value={dsDraft}
-              onChange={(e) => setDsDraft(e.target.value)}
-              rows={8}
-              placeholder={"## Palette\n- Primaire : #6366f1\n\n## Typographie\n- Police : Inter\n\n## Conventions\n- Arrondis : 8px"}
-              className="w-full resize-y rounded-lg border border-edge bg-bg px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none transition-colors"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditingDS(false)}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-edge py-1.5 text-xs text-dim hover:text-ink transition-colors"
-              >
-                <X size={11} /> Annuler
-              </button>
-              <button
-                disabled={savingDS}
-                onClick={async () => {
-                  setSavingDS(true);
-                  try {
-                    await fetch("/api/design-system", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ content: dsDraft }),
-                    });
-                    setData((d) => ({ ...d, designSystem: dsDraft }));
-                    setEditingDS(false);
-                  } finally {
-                    setSavingDS(false);
-                  }
-                }}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-accent py-1.5 text-xs font-semibold text-white hover:bg-accent-soft disabled:opacity-40 transition-colors"
-              >
-                {savingDS ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                {savingDS ? "Sauvegarde…" : "Sauvegarder"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Section>
+      <DesignSystemSection data={data} setData={setData} />
 
-      {/* Idée #49 — Préférences apprises (cross-projet) */}
-      <Section
-        icon={Sparkles}
-        title="Préférences apprises"
-        action={
-          <div className="flex items-center gap-1">
-            <button
-              onClick={async () => {
-                setLearningPref(true);
-                try {
-                  const r = await fetch("/api/preferences/learn", { method: "POST" });
-                  if (r.ok) {
-                    const d = await r.json();
-                    setData((prev) => ({ ...prev, preferences: d.content }));
-                  }
-                } finally {
-                  setLearningPref(false);
-                }
-              }}
-              disabled={learningPref}
-              className="flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-faint hover:text-ink transition-colors disabled:opacity-40"
-              title="Ré-apprendre les préférences depuis les projets"
-            >
-              <RefreshCw size={10} className={learningPref ? "animate-spin" : ""} />
-              Ré-apprendre
-            </button>
-            {!editingPref && (
-              <button
-                onClick={() => { setPrefDraft(data.preferences || ""); setEditingPref(true); }}
-                className="rounded p-0.5 text-faint hover:text-ink transition-colors"
-                title="Modifier les préférences"
-              >
-                <Pencil size={11} />
-              </button>
-            )}
-          </div>
-        }
-      >
-        {!editingPref ? (
-          data.preferences ? (
-            <div className="md text-xs leading-relaxed">
-              <ReactMarkdown>{stripFrontmatter(data.preferences)}</ReactMarkdown>
-            </div>
-          ) : (
-            <p className="text-xs text-faint italic">
-              Vide — MangoOS apprend tes préférences récurrentes (ton, police, layout, palette) au fil de tes projets, puis les hérite au démarrage des nouveaux. Clique sur Ré-apprendre pour les déduire maintenant.
-            </p>
-          )
-        ) : (
-          <div className="space-y-2">
-            <textarea
-              value={prefDraft}
-              onChange={(e) => setPrefDraft(e.target.value)}
-              rows={8}
-              placeholder={"# Préférences apprises\n- Dark mode systématique\n- Police sans-serif (Inter)\n- Layout centré max-w-2xl\n- Boutons arrondis (radius 8px)"}
-              className="w-full resize-y rounded-lg border border-edge bg-bg px-2.5 py-1.5 font-mono text-xs text-ink placeholder:text-faint focus:border-accent focus:outline-none transition-colors"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setEditingPref(false)}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg border border-edge py-1.5 text-xs text-dim hover:text-ink transition-colors"
-              >
-                <X size={11} /> Annuler
-              </button>
-              <button
-                disabled={savingPref}
-                onClick={async () => {
-                  setSavingPref(true);
-                  try {
-                    await fetch("/api/preferences", {
-                      method: "PUT",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ content: prefDraft }),
-                    });
-                    setData((d) => ({ ...d, preferences: prefDraft }));
-                    setEditingPref(false);
-                  } finally {
-                    setSavingPref(false);
-                  }
-                }}
-                className="flex flex-1 items-center justify-center gap-1 rounded-lg bg-accent py-1.5 text-xs font-semibold text-white hover:bg-accent-soft disabled:opacity-40 transition-colors"
-              >
-                {savingPref ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
-                {savingPref ? "Sauvegarde…" : "Sauvegarder"}
-              </button>
-            </div>
-          </div>
-        )}
-      </Section>
+      <PreferencesSection data={data} setData={setData} />
 
       {/* Idée #74 — Constellations (super-skills par composition) */}
       <Section
