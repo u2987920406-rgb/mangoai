@@ -10,9 +10,9 @@
 // faux scripté. D'où une boucle 100 % testable sans réseau ni vrai build.
 
 import { z } from "zod";
-import { ToolRegistry, toOpenAITools, type OpenAITool, type KernelTool } from "./kernel-mcp.js";
-import { FINISH_TOOL } from "./eleve-action-tools.js";
-import type { KernelTracer } from "./kernel-trace.js";
+import { ToolRegistry, toOpenAITools, type OpenAITool, type KernelTool } from "./kernel/kernel-mcp.js";
+import { FINISH_TOOL } from "./eleve-tools/eleve-action-tools.js";
+import type { KernelTracer } from "./kernel/kernel-trace.js";
 import { runHooks, type HookRegistration } from "./mango-hooks.js";
 import { flag } from "./flags.js";
 import { emptyWorkingState, updateWorkingState, formatWorkingState, type WorkingState } from "./working-memory.js";

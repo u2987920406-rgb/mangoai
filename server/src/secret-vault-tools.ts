@@ -5,9 +5,9 @@
 import { z } from "zod";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
-import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
+import type { KernelTool, KernelToolResult } from "./kernel/kernel-mcp.js";
 import { isCloneableUrl } from "./vision.js";
-import { sanitizeExternal } from "./agent-contract.js";
+import { sanitizeExternal } from "./agent/agent-contract.js";
 import {
   parseSecretRef,
   resolveSecret,

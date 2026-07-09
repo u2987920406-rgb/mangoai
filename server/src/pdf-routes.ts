@@ -9,7 +9,7 @@ import type { Express, Request, Response } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { Blackboard } from "./kernel-blackboard.js";
+import { Blackboard } from "./kernel/kernel-blackboard.js";
 import {
   indexPdf,
   queryPdf,
@@ -68,7 +68,7 @@ export async function registerPdfRoutes(app: Express, depsOverride?: PdfDeps): P
 
   // Store persistant SQLite (fallback mémoire si node:sqlite indisponible).
   try {
-    const { SqliteStore } = await import("./kernel-blackboard-sqlite.js");
+    const { SqliteStore } = await import("./kernel/kernel-blackboard-sqlite.js");
     pdfBoard = new Blackboard(new SqliteStore(DB_PATH));
   } catch (err) {
     console.error("[pdf] SQLite indisponible, store mémoire :", err instanceof Error ? err.message : err);

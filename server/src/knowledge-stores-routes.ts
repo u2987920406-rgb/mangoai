@@ -6,7 +6,7 @@ import type { Express, Request, Response } from "express";
 import { loadMemory, loadUserProfile } from "./memory.js";
 import { listSkills } from "./skills.js";
 import { loadAxioms } from "./axioms.js";
-import { loadDesignSystem, saveDesignSystem } from "./design-system.js";
+import { loadDesignSystem, saveDesignSystem } from "./design/design-system.js";
 import { IDENTITY_LAYERS, loadLanguage, loadThinkingStyle, loadVision, type IdentityLayer } from "./identity.js";
 import { loadArchitecture, ARCHITECTURE_FILE_NAME } from "./architecture.js";
 import { loadLexique, saveLexique } from "./lexique.js";

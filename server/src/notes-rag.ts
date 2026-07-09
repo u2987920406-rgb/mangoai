@@ -2,7 +2,7 @@ import { Express } from "express";
 import fs from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 import { embedOllama } from "./ollama.js";
 

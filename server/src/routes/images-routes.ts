@@ -5,7 +5,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { WORKSPACE_DIR, projectExists, projectDir } from "../projects.js";
 import { generateKreaImage } from "../krea.js";
-import { slugify as fluxSlugify } from "../eleve-flux-tools.js";
+import { slugify as fluxSlugify } from "../eleve-tools/eleve-flux-tools.js";
 
 const IMAGES_DIR = path.join(WORKSPACE_DIR, ".images");
 const IMAGE_NAME_RE = /^[a-z0-9][a-z0-9._-]*.png$/i;

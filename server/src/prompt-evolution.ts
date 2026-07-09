@@ -15,7 +15,7 @@ import path from "node:path";
 import { atomicWriteFileSync } from "./safe-io.js";
 import fs from "node:fs";
 import type { Express, Request, Response } from "express";
-import { resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 import { AXIOMS_FILE_NAME, capRegistry, loadAxioms, axiomStats } from "./axioms.js";
 import { WORKSPACE_DIR } from "./projects.js";

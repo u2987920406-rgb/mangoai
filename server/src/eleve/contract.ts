@@ -12,9 +12,9 @@ import {
   askEleveOllama,
   type EndpointOverride,
 } from "./provider.js";
-import { type LLMProvider } from "../llm-engine.js";
-import { ollamaChatTools, openAiChatTools } from "../llm-transport.js";
-import { toOpenAITools, type ToolRegistry, type OpenAITool } from "../kernel-mcp.js";
+import { type LLMProvider } from "../llm/llm-engine.js";
+import { ollamaChatTools, openAiChatTools } from "../llm/llm-transport.js";
+import { toOpenAITools, type ToolRegistry, type OpenAITool } from "../kernel/kernel-mcp.js";
 import { eleveRetryPolicy } from "../eleve-retry.js";
 import { coerceTextToolCall } from "../tool-call-coerce.js";
 import { isInterrupted } from "../interrupt.js";
@@ -69,7 +69,7 @@ async function postEleveCompletions(
 // string JSON) et il n'y a pas d'id de tool_call. Les mappers PURS toOllamaMessages/
 // fromOllamaResponse vivent désormais dans la couche transport unique (T2) ; on les
 // ré-exporte (test-eleve-ollama-tools les importe depuis eleve, contrat inchangé).
-export { toOllamaMessages, fromOllamaResponse } from "../llm-transport.js";
+export { toOllamaMessages, fromOllamaResponse } from "../llm/llm-transport.js";
 
 async function postEleveOllamaTools(
   messages: ChatMessage[],

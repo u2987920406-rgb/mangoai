@@ -3,8 +3,8 @@
 // ce qui casse tout cycle entre escalade et relay.
 import { type Inspection } from "../inspection.js";
 import { type ModelProfile } from "../models/profile.js";
-import { type LLMProvider } from "../llm-engine.js";
-import { type BrainPolicy } from "../brain-runtime.js";
+import { type LLMProvider } from "../llm/llm-engine.js";
+import { type BrainPolicy } from "../brain/brain-runtime.js";
 import { type PostFn } from "../eleve-runtime.js";
 import { type EndpointOverride } from "./provider.js";
 

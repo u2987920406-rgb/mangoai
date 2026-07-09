@@ -15,9 +15,9 @@
 import fs from "node:fs";
 import path from "node:path";
 import { atomicWriteFileSync } from "./safe-io.js";
-import { getBlackboard, type Blackboard } from "./kernel-blackboard.js";
+import { getBlackboard, type Blackboard } from "./kernel/kernel-blackboard.js";
 import { embedOllama } from "./ollama.js";
-import { gapSignature } from "./self-evolution.js";
+import { gapSignature } from "./self/self-evolution.js";
 
 export const CONCEPT_SCOPE = "concept:valide";
 

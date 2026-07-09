@@ -11,9 +11,9 @@
 import path from "node:path";
 import fs from "node:fs";
 import { getBrain } from "./kernel.js";
-import { dispatch } from "./brain-dispatch.js";
-import type { AgentId } from "./brain-registry.js";
-import type { AgentResult } from "./agent-contract.js";
+import { dispatch } from "./brain.js";
+import type { AgentId } from "./brain/brain-registry.js";
+import type { AgentResult } from "./agent/agent-contract.js";
 import { findSourceFiles } from "./multi-project.js";
 import { projectDir as resolveProjectDir } from "./projects.js";
 import { loadMemory } from "./memory.js";

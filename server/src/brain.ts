@@ -13,11 +13,11 @@
 // branchent ICI, en un seul endroit. Les appelants migrent un par un (adossée, pas
 // substituée) — les imports directs de brain-dispatch/llm-engine/eleve restent valides.
 
-import { dispatch, dispatchParallel, type DispatchOpts } from "./brain-dispatch.js";
-import { askLLM } from "./llm-engine.js";
+import { dispatch, dispatchParallel, type DispatchOpts } from "./brain/brain-dispatch.js";
+import { askLLM } from "./llm/llm-engine.js";
 import { chatEleve, elevePost } from "./eleve.js";
-import type { AgentId } from "./brain-registry.js";
-import type { AgentResult } from "./agent-contract.js";
+import type { AgentId } from "./brain/brain-registry.js";
+import type { AgentResult } from "./agent/agent-contract.js";
 
 /** Façade appelable + méthodes orientant vers chaque moteur consolidé. */
 export interface BrainFacade {
@@ -47,3 +47,10 @@ brainImpl.elevePost = elevePost;
 
 /** Le point d'entrée cerveau unique. */
 export const brain: BrainFacade = brainImpl;
+
+// Ré-exports nommés de délégation pure — permettent aux appelants d'importer
+// `dispatch` / `dispatchParallel` / `DispatchOpts` DEPUIS la façade (`./brain.js`)
+// plutôt que directement depuis brain-dispatch. Aucune logique ajoutée : ce sont
+// exactement les symboles de brain-dispatch (l'implémentation privée reste inchangée).
+export { dispatch, dispatchParallel };
+export type { DispatchOpts };

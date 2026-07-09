@@ -8,7 +8,7 @@
 // On envoie une minuscule image pour charger AUSSI le projecteur (mmproj) → le 1er
 // vrai appel image est pleinement chaud.
 
-import { getBrain, type BrainConfig } from "./brain-registry.js";
+import { getBrain, type BrainConfig } from "./brain/brain-registry.js";
 import { askOllama } from "./ollama.js";
 
 // 1×1 PNG transparent — charge le projecteur vision en plus des poids.

@@ -16,8 +16,8 @@ import path from "node:path";
 import fs from "node:fs";
 import os from "node:os";
 import { z } from "zod";
-import { ToolRegistry, type KernelTool } from "./kernel-mcp.js";
-import { buildEleveActionTools } from "./eleve-action-tools.js";
+import { ToolRegistry, type KernelTool } from "./kernel/kernel-mcp.js";
+import { buildEleveActionTools } from "./eleve-tools/eleve-action-tools.js";
 import { askEleveAgentic } from "./eleve.js";
 import { selfAntiSpiralCfg } from "./eleve-antispiral.js";
 

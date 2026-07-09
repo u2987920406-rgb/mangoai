@@ -10,8 +10,8 @@
 // L'extracteur réel (pdfjs-dist) est chargé DYNAMIQUEMENT (extractPdfText) pour
 // que les tests n'aient aucune dépendance sur le module natif.
 
-import { Blackboard } from "./kernel-blackboard.js";
-import { cosine } from "./kernel-blackboard-store.js";
+import { Blackboard } from "./kernel/kernel-blackboard.js";
+import { cosine } from "./kernel/kernel-blackboard-store.js";
 
 // ── Types du domaine ─────────────────────────────────────────────────────────
 

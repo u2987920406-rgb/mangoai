@@ -20,8 +20,8 @@ import { flag } from "./flags.js";
 import { verifierChoix } from "./verificateur-contexte.js";
 import { verifierChaineAmbigue, type RapportChaineAmbigue } from "./chaine-ambigue.js";
 import { logVerification } from "./concept-consolidation.js";
-import { searchWeb } from "./eleve-web-tools.js";
-import { dispatch } from "./brain-dispatch.js";
+import { searchWeb } from "./eleve-tools/eleve-web-tools.js";
+import { dispatch } from "./brain.js";
 
 /** Extrait représentatif du contenu RÉEL du projet — le CONTENU, jamais juste
  *  le nom du gabarit (c'est tout le sens de la boucle). Appelé après la

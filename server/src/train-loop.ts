@@ -30,7 +30,7 @@ import { recordTurnMetrics } from "./metrics.js";
 import { inferProjectType } from "./blueprints.js";
 import { flag } from "./flags.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
-import { interruptAgent } from "./agent.js";
+import { interruptAgent } from "./agent/agent.js";
 
 const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
 const TRAIN_LOG = path.join(WORKSPACE_DIR, ".train.jsonl");

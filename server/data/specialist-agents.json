@@ -47,7 +47,11 @@
     "createdByAgent": "codeur",
     "createdAt": "2026-06-27T22:17:42.563Z",
     "model": "glm-ocr:latest",
-    "timeoutMs": 60000
+    "timeoutMs": 60000,
+    "stats": {
+      "consulted": 11,
+      "wins": 0
+    }
   },
   {
     "id": "sa_1782598679873_2_anatomiste-de-classeurs",

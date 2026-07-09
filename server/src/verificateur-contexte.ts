@@ -16,7 +16,7 @@
 // "correspond" en cas de réponse illisible (fail-open ≠ fail-positif — même
 // discipline que taste-judge.ts/eleve-judge.ts après l'audit du 2026-07-07).
 import { searchConcept, recordConceptGap, type Embed } from "./concept-registry.js";
-import type { Blackboard } from "./kernel-blackboard.js";
+import type { Blackboard } from "./kernel/kernel-blackboard.js";
 
 export type VerdictContexte = "correspond" | "ne-correspond-pas" | "incertain";
 

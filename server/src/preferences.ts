@@ -11,7 +11,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { atomicWriteFileSync } from "./safe-io.js";
 import { getBrain } from "./kernel.js";
-import { loadDesignSystem } from "./design-system.js";
+import { loadDesignSystem } from "./design/design-system.js";
 import { loadLanguage, loadThinkingStyle } from "./identity.js";
 import { listProjects, projectDir } from "./projects.js";
 import { loadMiroir } from "./miroir.js";

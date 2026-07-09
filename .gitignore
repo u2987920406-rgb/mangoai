@@ -65,3 +65,6 @@ server/.toeic-content.state.json
 server/.toeic-content.avance.state.json
 server/.toeic-content.debutant.state.json
 server/.toeic-content.intermediaire.state.json
+
+# Scripts de preuve jetables (bruit racine de src/) — jamais versionnés
+server/src/_prove-*

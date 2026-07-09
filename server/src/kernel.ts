@@ -24,8 +24,8 @@ import {
   resolveProvider,
   type LLMProvider,
   type AskLLMOptions,
-} from './llm-engine.js'
-import { getTracer, type KernelTracer } from './kernel-trace.js'
+} from './llm/llm-engine.js'
+import { getTracer, type KernelTracer } from './kernel/kernel-trace.js'
 import { flag } from './flags.js'
 
 // ── Le contrat universel du cerveau ──────────────────────────────────────────

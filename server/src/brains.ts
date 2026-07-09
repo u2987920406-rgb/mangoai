@@ -18,7 +18,7 @@
 import path from "node:path";
 import { atomicWriteFileSync } from "./safe-io.js";
 import fs from "node:fs";
-import type { LLMProvider } from "./llm-engine.js";
+import type { LLMProvider } from "./llm/llm-engine.js";
 import type { ScanReport, ScanVerdict } from "./model-scan.js";
 import type { ModelProfile } from "./models/profile.js";
 

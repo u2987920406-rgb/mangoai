@@ -2,7 +2,7 @@ import type { Express, Request, Response } from 'express'
 import { atomicWriteFileSync } from "./safe-io.js";
 import fs from 'node:fs'
 import path from 'node:path'
-import { resolveProvider } from './llm-engine.js'
+import { resolveProvider } from './llm/llm-engine.js'
 import { getBrain } from './kernel.js'
 
 const WORKSPACE_DIR = path.join(process.cwd(), '..', 'workspace')

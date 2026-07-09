@@ -1,6 +1,6 @@
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import type { Express, Request, Response } from 'express'
-import { subscriptionEnv } from './llm-engine.js'
+import { subscriptionEnv } from './llm/llm-engine.js'
 
 // The Lab runs a raw prompt against several models side by side. It goes
 // through the Agent SDK (which reuses the local Claude Code login) rather than

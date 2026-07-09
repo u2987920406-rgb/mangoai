@@ -12,10 +12,10 @@
 // juste sans l'indirection qui masquerait le streaming.
 import type { Express, Request, Response } from "express";
 import { askEleveAgentic } from "./eleve.js";
-import { getSpecialist } from "./specialist-agents.js";
-import { sanitizeExternal } from "./agent-contract.js";
+import { getSpecialist } from "./specialist/specialist-agents.js";
+import { sanitizeExternal } from "./agent/agent-contract.js";
 import { ESTHETE_AGENT_ID, buildEstheteTools, ESTHETE_TOOL_POLICY } from "./esthete-agent.js";
-import { SPECIALIST_MAX_ITER } from "./specialist-agentic.js";
+import { SPECIALIST_MAX_ITER } from "./specialist/specialist-agentic.js";
 
 // (V3-1, 2026-07-03) budget DÉDIÉ du super agent de finition : 6 itérations (le cap
 // des spécialistes forgés) coupaient une passe de polish sérieuse en plein vol —

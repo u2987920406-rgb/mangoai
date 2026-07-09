@@ -22,7 +22,7 @@ import {
   DEFAULT_REGISTRY,
   type AgentId,
   type BrainConfig,
-} from "./brain-registry.js";
+} from "./brain/brain-registry.js";
 
 export interface ApplyResult {
   ok: boolean;

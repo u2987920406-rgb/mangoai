@@ -36,10 +36,10 @@
 // Gate `DRY_RUN`, défaut OFF : tant que rien n'importe ce module, l'exécuteur direct
 // existant reste byte-identique (OFF = ce fichier n'est jamais dans le chemin).
 
-import { speculativeAttempt } from "./eleve-speculative-runner.js";
-import type { DraftStep } from "./eleve-speculative-runner.js";
-import type { SpecStep } from "./eleve-speculative.js";
-import { realSpecExecDeps, type SpecExecDeps } from "./eleve-speculative-exec.js";
+import { speculativeAttempt } from "./eleve-speculative/eleve-speculative-runner.js";
+import type { DraftStep } from "./eleve-speculative/eleve-speculative-runner.js";
+import type { SpecStep } from "./eleve-speculative/eleve-speculative.js";
+import { realSpecExecDeps, type SpecExecDeps } from "./eleve-speculative/eleve-speculative-exec.js";
 import type { SelfWorktree } from "./mango-self.js";
 
 /** Outils dont le nom dénote une MUTATION → type-check avant d'accepter (même règle que #171). */

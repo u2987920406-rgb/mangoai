@@ -18,7 +18,7 @@
 
 import vm from "node:vm";
 import { z } from "zod";
-import { ToolRegistry, toOpenAITools } from "./kernel-mcp.js";
+import { ToolRegistry, toOpenAITools } from "./kernel/kernel-mcp.js";
 import { parseContract } from "./contract.js";
 import type { PostFn, ToolCall } from "./eleve-runtime.js";
 import type { ModelProfile } from "./models/profile.js";

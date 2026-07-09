@@ -2,12 +2,12 @@
 // archi #3). FEUILLE bas-niveau : ce module n'importe AUCUN autre sous-module
 // eleve/ — il est importé transversalement par contract/escalade/relay.
 import { resolveProfile } from "../models/profile.js";
-import { type LLMProvider } from "../llm-engine.js";
+import { type LLMProvider } from "../llm/llm-engine.js";
 // T1 : la résolution d'endpoint openai-compat de l'Élève délègue au résolveur
 // unique (famille 'eleve' — SANS LLM_OPENAI_URL/KEY, baseUrl ignoré pour les presets).
-import { resolveEndpoint, normalizeCompletionsUrl } from "../llm-endpoint.js";
+import { resolveEndpoint, normalizeCompletionsUrl } from "../llm/llm-endpoint.js";
 // T4 : couche transport unique (mappers inclus).
-import { ollamaChat, openAiChat } from "../llm-transport.js";
+import { ollamaChat, openAiChat } from "../llm/llm-transport.js";
 
 export const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
 export const ELEVE_MODEL = process.env.ELEVE_MODEL ?? "gemma4:12b";

@@ -1,13 +1,12 @@
 import { useEffect, useRef, useState } from "react";
-import { ArrowLeft, ChevronRight, FolderOpen, Loader2, Mic, Paperclip, Send, X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import QuickModelPicker from "./QuickModelPicker.jsx";
 import { MODELS } from "./home/helpers.js";
-import ModelBadge from "./home/ModelBadge.jsx";
 import HamburgerMenu from "./home/HamburgerMenu.jsx";
-import UserBubble from "./home/UserBubble.jsx";
-import AssistantBubble from "./home/AssistantBubble.jsx";
-import ThinkingIndicator from "./home/ThinkingIndicator.jsx";
 import BottomBar from "./home/BottomBar.jsx";
+import IdleScreen from "./home/IdleScreen.jsx";
+import GraduatePanel from "./home/GraduatePanel.jsx";
+import ConversationThread from "./home/ConversationThread.jsx";
 
 /* ── Page d'accueil ──────────────────────────────────────────────────────── */
 export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLauncher, onOpenSettings, model = "sonnet", onModel }) {
@@ -251,8 +250,7 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
   /* ── Mode idle — layout centré ── */
   if (!hasChat) {
     return (
-      <div className="relative flex h-full flex-col items-center justify-center overflow-hidden bg-bg">
-        <HamburgerMenu
+      <IdleScreen
         onOpenWindow={onOpenWindow}
         onOpenAppBuilder={onOpenAppBuilder}
         onOpenLauncher={onOpenLauncher}
@@ -260,142 +258,25 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
         conversations={conversations}
         onLoadConversation={loadConversation}
         onDeleteConversation={deleteConversation}
+        attachments={attachments}
+        removeAttachment={removeAttachment}
+        attachNote={attachNote}
+        onClearNote={() => setAttachNote("")}
+        input={input}
+        setInput={setInput}
+        handleKey={handleKey}
+        addFiles={addFiles}
+        thinking={thinking}
+        welcomeFileRef={welcomeFileRef}
+        model={model}
+        handleFixedModel={handleFixedModel}
+        handleOpenModelExtra={handleOpenModelExtra}
+        quickBrain={quickBrain}
+        sendMessage={sendMessage}
+        quickPickerOpen={quickPickerOpen}
+        setQuickPickerOpen={setQuickPickerOpen}
+        setQuickBrain={setQuickBrain}
       />
-
-        {/* Dégradé radial central */}
-        <div
-          className="pointer-events-none absolute inset-0"
-          style={{
-            background:
-              "radial-gradient(ellipse 65% 65% at 50% 45%, rgba(124,92,255,0.13) 0%, rgba(11,13,18,0) 72%)",
-          }}
-        />
-
-        <div className="relative z-10 flex w-full max-w-2xl flex-col items-center gap-8 px-6">
-
-          {/* ── Logo MangoOS ── */}
-          <div className="flex flex-col items-center">
-            <img
-              src="/mango-logo.png"
-              alt="MangoOS"
-              className="h-24 w-auto select-none object-contain"
-              style={{ filter: "drop-shadow(0 4px 24px rgba(124,92,255,0.25))" }}
-            />
-          </div>
-
-          {/* ── Fenêtre de chat ── */}
-          <div
-            className="w-full overflow-hidden rounded-2xl border border-accent/20 bg-panel/70
-                       shadow-2xl shadow-accent/8 backdrop-blur-xl"
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={(e) => { e.preventDefault(); addFiles(e.dataTransfer.files); }}
-          >
-            {/* Pièces jointes */}
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 px-4 pt-3">
-                {attachments.map((a, i) => (
-                  <span key={`${a.name}-${i}`} className="flex items-center gap-1.5 rounded-lg border border-accent/30 bg-accent/10 px-2 py-1 text-xs text-accent-soft">
-                    <Paperclip size={11} className="shrink-0" />
-                    <span className="max-w-44 truncate font-mono">{a.name}</span>
-                    <button onClick={() => removeAttachment(i)} title="Retirer" className="text-accent-soft/60 hover:text-err transition-colors">
-                      <X size={11} />
-                    </button>
-                  </span>
-                ))}
-              </div>
-            )}
-
-            {/* Hint honnête : un binaire/archive a été refusé ici → diriger vers un projet */}
-            {attachNote && (
-              <div className="mx-4 mt-2 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/10 px-3 py-2 text-xs text-warn">
-                <span className="flex-1">{attachNote}</span>
-                <button onClick={() => setAttachNote("")} title="OK" className="shrink-0 text-warn/60 hover:text-warn transition-colors">
-                  <X size={12} />
-                </button>
-              </div>
-            )}
-
-            {/* Textarea principale */}
-            <textarea
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKey}
-              onPaste={(e) => {
-                const files = [...e.clipboardData.items].filter((it) => it.kind === "file").map((it) => it.getAsFile()).filter(Boolean);
-                if (files.length > 0) { e.preventDefault(); addFiles(files); }
-              }}
-              disabled={thinking}
-              placeholder="Comment vas-tu ? Ça fait plaisir de te revoir…"
-              rows={5}
-              className="w-full resize-none bg-transparent px-5 py-5 text-[16px] text-ink
-                         placeholder:text-faint/50 focus:outline-none disabled:opacity-60
-                         leading-relaxed"
-              autoFocus
-            />
-
-            {/* Barre du bas : trombone + modèle à gauche, micro + envoi à droite */}
-            <div className="flex items-center justify-between border-t border-edge/50 px-3 py-2">
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => welcomeFileRef.current?.click()}
-                  title="Joindre un fichier (texte, code, .md…)"
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-edge/70 bg-panel/60 text-dim hover:text-accent-soft transition-colors"
-                >
-                  <Paperclip size={15} />
-                </button>
-                <input
-                  ref={welcomeFileRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => { addFiles(e.target.files); e.target.value = ""; }}
-                />
-                <span className="h-2 w-2 animate-pulse rounded-full bg-ok" />
-                <ModelBadge
-                  model={model}
-                  onModel={handleFixedModel}
-                  openUp
-                  onOpenSettings={handleOpenModelExtra}
-                  overrideLabel={quickBrain?.label}
-                />
-              </div>
-              <div className="flex items-center">
-                <button
-                  title="Wispr Flow — dictée vocale (activer Wispr Flow dans Windows Terminal)"
-                  className="flex h-9 w-9 items-center justify-center rounded-l-xl
-                             border border-r-0 border-edge/70 bg-panel/60 text-dim
-                             hover:text-accent-soft transition-colors"
-                >
-                  <Mic size={15} />
-                </button>
-                <button
-                  onClick={sendMessage}
-                  disabled={(!input.trim() && attachments.length === 0) || thinking}
-                  className="flex h-9 w-9 items-center justify-center rounded-r-xl
-                             bg-accent text-white shadow-md shadow-accent/30
-                             hover:opacity-90 disabled:opacity-40 transition-all"
-                >
-                  {thinking ? (
-                    <Loader2 size={15} className="animate-spin" />
-                  ) : (
-                    <Send size={14} />
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <p className="text-[11px] text-faint">
-            Entrée pour envoyer · <span className="opacity-60">Shift+Entrée pour sauter une ligne</span>
-          </p>
-        </div>
-        <QuickModelPicker
-          open={quickPickerOpen}
-          onClose={() => setQuickPickerOpen(false)}
-          onPicked={setQuickBrain}
-        />
-      </div>
     );
   }
 
@@ -424,66 +305,30 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       </button>
 
       {/* Fil de messages */}
-      <div className="flex-1 overflow-y-auto nice-scroll px-6 py-10">
-        <div className="mx-auto max-w-3xl">
-          {/* Voile gris-violet très léger qui encadre la conversation et
-              adoucit le contraste entre le texte et le fond */}
-          <div
-            className="flex flex-col gap-10 rounded-3xl border border-accent/10 px-7 py-9 shadow-xl shadow-black/20"
-            style={{ backgroundColor: "rgba(124, 92, 255, 0.045)" }}
-          >
-            {messages.map((m, i) =>
-              m.role === "user" ? (
-                <UserBubble key={i} content={m.content} thinking={thinking} onRegenerate={() => regenerateFrom(i)} />
-              ) : (
-                <AssistantBubble key={i} content={m.content} onFeedback={homeFeedback} />
-              )
-            )}
-            {thinking && <ThinkingIndicator label={modelLabel} />}
-            <div ref={bottomRef} />
-          </div>
-        </div>
-      </div>
+      <ConversationThread
+        messages={messages}
+        thinking={thinking}
+        modelLabel={modelLabel}
+        onRegenerate={regenerateFrom}
+        onFeedback={homeFeedback}
+        bottomRef={bottomRef}
+      />
 
       {/* Barre fixe en bas */}
       <div className="shrink-0 border-t border-edge/30 bg-bg/95 px-4 py-4 backdrop-blur-xl">
         <div className="mx-auto max-w-3xl">
           {/* Graduation : passer cette discussion (+ fichiers + contexte) dans l'atelier. Toujours
               dispo via le bouton ; le panneau s'ouvre aussi quand Mango propose (suggestGraduate). */}
-          {hasChat && (graduateOpen ? (
-            <div className="mb-2 rounded-xl border border-accent/30 bg-accent/[0.07] p-3">
-              <div className="mb-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-accent-soft">
-                <FolderOpen size={15} className="shrink-0" />
-                <span className="font-medium">On passe à l'atelier ?</span>
-                <span className="text-xs text-dim">J'emporte nos fichiers et le contexte de la discussion.</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  value={graduateName}
-                  onChange={(e) => setGraduateName(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") graduate(); }}
-                  placeholder="nom du projet"
-                  className="flex-1 rounded-lg border border-edge/70 bg-panel/60 px-3 py-1.5 text-sm text-ink placeholder:text-faint/50 focus:outline-none focus:border-accent/50"
-                  autoFocus
-                />
-                <button onClick={graduate} disabled={gradBusy} title="Créer le projet et ouvrir l'atelier"
-                  className="flex items-center gap-1.5 rounded-lg bg-accent px-3 py-1.5 text-sm font-medium text-white transition-opacity disabled:opacity-60">
-                  {gradBusy ? <Loader2 size={14} className="animate-spin" /> : <ChevronRight size={14} />}
-                  {gradBusy ? "Création…" : "Ouvrir l'atelier"}
-                </button>
-                <button onClick={() => setGraduateOpen(false)} className="rounded-lg px-2 py-1.5 text-xs text-dim hover:text-ink transition-colors">
-                  Plus tard
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="mb-2 flex justify-end">
-              <button onClick={() => setGraduateOpen(true)} title="Passer cette discussion dans l'atelier (construire/planifier)"
-                className="flex items-center gap-1.5 rounded-lg border border-edge/60 bg-panel/50 px-2.5 py-1 text-xs text-dim hover:text-accent-soft hover:border-accent/40 transition-colors">
-                <FolderOpen size={13} /> Ouvrir dans l'atelier
-              </button>
-            </div>
-          ))}
+          {hasChat && (
+            <GraduatePanel
+              graduateOpen={graduateOpen}
+              setGraduateOpen={setGraduateOpen}
+              graduateName={graduateName}
+              setGraduateName={setGraduateName}
+              graduate={graduate}
+              gradBusy={gradBusy}
+            />
+          )}
           <BottomBar
             input={input}
             setInput={setInput}

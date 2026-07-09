@@ -26,10 +26,10 @@
 // `abCompare` elle-même reste une fonction PURE/injectable, toujours appelable
 // directement par les tests/scripts (comme les autres modules du chantier
 // fondations : la fonction n'est jamais gatée, seule la surface l'est).
-import { dispatch as realDispatch, type DispatchOpts } from "./brain-dispatch.js";
-import type { AgentId } from "./brain-registry.js";
-import type { AgentResult } from "./agent-contract.js";
-import { cachedComplete } from "./llm-cache.js";
+import { dispatch as realDispatch, type DispatchOpts } from "./brain.js";
+import type { AgentId } from "./brain/brain-registry.js";
+import type { AgentResult } from "./agent/agent-contract.js";
+import { cachedComplete } from "./llm/llm-cache.js";
 import { judgeIntention, type IntentVerdict } from "./eleve-judge.js";
 import { loadRuns as loadEvolutionRuns, saveRuns as saveEvolutionRuns, type EvolutionProposal, type EvolutionRun } from "./prompt-evolution.js";
 import { atomicWriteFileSync } from "./safe-io.js";

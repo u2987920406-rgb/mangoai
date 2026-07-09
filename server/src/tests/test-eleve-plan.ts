@@ -1,0 +1,203 @@
+// Tests du store de plan + formateurs (#160). PUR, déterministe. On exerce :
+// store set/get/clear, formatPlan (étapes numérotées + consigne), formatPlanReminder
+// (compact), et buildRelanceNudge (préfixe le rappel du plan SI un plan existe).
+
+import {
+  setPlan,
+  getPlan,
+  clearPlan,
+  markStepDone,
+  markStepBlocked,
+  hasBlocked,
+  nextStep,
+  mergePlan,
+  formatPlan,
+  formatPlanReminder,
+  buildRelanceNudge,
+  type ElevePlan,
+} from "../eleve-plan.js";
+
+let pass = 0;
+let fail = 0;
+function check(label: string, cond: boolean) {
+  if (cond) {
+    pass++;
+    console.log(`  ✓ ${label}`);
+  } else {
+    fail++;
+    console.log(`  ✗ ${label}`);
+  }
+}
+
+const plan = (): ElevePlan => ({
+  titre: "Page Contact",
+  etapes: [
+    { n: 1, titre: "Composant formulaire", detail: "nom/email/message" },
+    { n: 2, titre: "Validation des champs" },
+    { n: 3, titre: "État d'envoi" },
+  ],
+  at: 1,
+});
+
+function run() {
+  console.log("\n[1] Store set/get/clear (par projet)");
+  {
+    clearPlan("/p");
+    check("get vide au départ", getPlan("/p") === undefined);
+    setPlan("/p", plan());
+    check("get après set", getPlan("/p")?.titre === "Page Contact");
+    check("isolé par projet", getPlan("/autre") === undefined);
+    clearPlan("/p");
+    check("get vide après clear", getPlan("/p") === undefined);
+  }
+
+  console.log("\n[2] formatPlan — cases à cocher + prochaine étape");
+  {
+    const t = formatPlan(plan());
+    check("titre", /📋 Plan — Page Contact/.test(t));
+    check("étape 1 cochable (☐) avec détail", t.includes("☐ 1. Composant formulaire — nom/email/message"));
+    check("étape 2 sans détail", t.includes("☐ 2. Validation des champs"));
+    check("indique la prochaine étape + etape_faite + check_build", /Prochaine étape/.test(t) && /etape_faite/.test(t) && /check_build/.test(t));
+  }
+
+  console.log("\n[3] formatPlanReminder — compact + progression");
+  {
+    const r = formatPlanReminder(plan());
+    check("rappel du titre", /Rappel de TON plan « Page Contact »/.test(r));
+    check("progression 0/3", /0\/3 fait/.test(r));
+    check("étapes en ligne compacte cochées", r.includes("☐1. Composant formulaire · ☐2. Validation des champs · ☐3. État d'envoi"));
+    check("incite à reprendre les non cochées", /non cochées|Reprends/i.test(r));
+  }
+
+  console.log("\n[4] buildRelanceNudge — préfixe le plan SI présent");
+  {
+    const sansPlan = buildRelanceNudge("/x", "plafond d'itérations", 1, 2, () => undefined);
+    check("sans plan : pas de rappel, mais le nudge classique", !/Rappel de TON plan/.test(sansPlan) && /AGIS maintenant/.test(sansPlan));
+    check("sans plan : mentionne la relance", /relance 1\/2/.test(sansPlan));
+
+    const avecPlan = buildRelanceNudge("/x", "blocage (sur-exploration)", 2, 2, () => plan());
+    check("avec plan : rappel EN TÊTE", avecPlan.startsWith("📋 Rappel de TON plan"));
+    check("avec plan : suivi du nudge classique", /AGIS maintenant/.test(avecPlan) && /relance 2\/2/.test(avecPlan));
+  }
+
+  console.log("\n[5] buildRelanceNudge — lookup réel (store)");
+  {
+    clearPlan("/proj");
+    const a = buildRelanceNudge("/proj", "plafond d'itérations", 1, 2);
+    check("store vide → pas de rappel", !/Rappel de TON plan/.test(a));
+    setPlan("/proj", plan());
+    const b = buildRelanceNudge("/proj", "plafond d'itérations", 1, 2);
+    check("store peuplé → rappel injecté", /Rappel de TON plan/.test(b));
+    clearPlan("/proj");
+  }
+
+  console.log("\n[6] L18 — markStepDone + nextStep + progression cochée");
+  {
+    clearPlan("/l18");
+    check("markStepDone sans plan → undefined", markStepDone("/l18", 1) === undefined);
+    setPlan("/l18", { ...plan(), done: [] });
+    check("nextStep initial = étape 1", nextStep(getPlan("/l18")!)?.n === 1);
+
+    markStepDone("/l18", 1);
+    const p1 = getPlan("/l18")!;
+    check("étape 1 cochée", (p1.done ?? []).includes(1));
+    check("nextStep avance à 2", nextStep(p1)?.n === 2);
+    check("formatPlan montre ☑ 1 et ☐ 2", formatPlan(p1).includes("☑ 1. Composant formulaire") && formatPlan(p1).includes("☐ 2."));
+    check("reminder progression 1/3", /1\/3 fait/.test(formatPlanReminder(p1)));
+
+    markStepDone("/l18", 1); // idempotent
+    check("double coche idempotente", (getPlan("/l18")!.done ?? []).filter((n) => n === 1).length === 1);
+    check("hors borne ignoré (0 et 99)", (markStepDone("/l18", 99), markStepDone("/l18", 0), (getPlan("/l18")!.done ?? []).join() === "1"));
+
+    markStepDone("/l18", 2);
+    markStepDone("/l18", 3);
+    const pAll = getPlan("/l18")!;
+    check("toutes cochées → nextStep undefined", nextStep(pAll) === undefined);
+    check("formatPlan invite à finish", /appelle finish/.test(formatPlan(pAll)));
+    clearPlan("/l18");
+  }
+
+  console.log("\n[7] L35/L47 — escalade de CONVERGENCE en fin de budget de relances");
+  {
+    const planDone = (): ElevePlan => ({ ...plan(), done: [1] }); // prochaine = étape 2
+    const tot = (relances: number) => buildRelanceNudge("/x", "blocage", relances, 6, planDone);
+
+    const early = tot(1); // 1 < ceil(6/2)=3 → pas de convergence
+    check("relance précoce (1/6) → PAS de bloc CONVERGENCE", !/CONVERGENCE/.test(early));
+    check("relance précoce garde le nudge normal", /AGIS maintenant/.test(early) && /relance 1\/6/.test(early));
+
+    const late = tot(4); // 4 >= 3 → convergence
+    check("relance tardive (4/6) → bloc CONVERGENCE", /🔴 CONVERGENCE/.test(late));
+    check("interdit l'exploration", /INTERDICTION d'appeler read_file/.test(late));
+    check("pointe la prochaine étape (2)", /étape 2/.test(late) && /Validation des champs/.test(late));
+
+    // sans plan : convergence générique (pas de numéro d'étape) mais bien présente
+    const lateNoPlan = buildRelanceNudge("/x", "plafond", 3, 6, () => undefined);
+    check("convergence sans plan = générique", /CONVERGENCE/.test(lateNoPlan) && /code qui manque/.test(lateNoPlan));
+  }
+
+  console.log("\n[8] L56 — mergePlan préserve la progression au re-planifier");
+  {
+    const existing: ElevePlan = { ...plan(), done: [1, 2] }; // 1 & 2 faites
+    // Re-planifier le MÊME plan → done conservé.
+    const same = mergePlan(existing, { ...plan(), done: [] });
+    check("même plan → done [1,2] conservé", same.done?.slice().sort().join() === "1,2");
+    check("nextStep = 3 (pas de réécriture des étapes faites)", nextStep(same)?.n === 3);
+
+    // Pas de plan existant → le plan neuf est rendu tel quel (done vide).
+    const fresh = mergePlan(undefined, { ...plan(), done: [] });
+    check("sans existant → done vide", (fresh.done ?? []).length === 0);
+
+    // Plan modifié : matching par titre (casse/accents), étapes neuves non cochées,
+    // renumérotation suivie.
+    const changed: ElevePlan = {
+      titre: "Page Contact",
+      etapes: [
+        { n: 1, titre: "VALIDATION des champs" }, // = étape 2 existante (cochée) ↕ casse
+        { n: 2, titre: "Aperçu" }, // neuve
+        { n: 3, titre: "Composant formulaire" }, // = étape 1 existante (cochée)
+      ],
+      at: 2,
+    };
+    const merged = mergePlan(existing, changed);
+    check("matching par titre malgré réordonnancement → done = [1,3]", merged.done?.slice().sort().join() === "1,3");
+    check("étape neuve (Aperçu) non cochée", !merged.done?.includes(2));
+  }
+
+  console.log("\n[B1.1] Statut BLOQUÉ (ELEVE_PLAN_V2)");
+  {
+    const dir = "/proj-blocked";
+    setPlan(dir, { titre: "Feature X", etapes: [{ n: 1, titre: "A" }, { n: 2, titre: "B" }, { n: 3, titre: "C" }], at: 1, done: [1] });
+    const p = markStepBlocked(dir, 2);
+    check("étape 2 marquée bloquée", p?.blocked?.includes(2) === true);
+    check("hasBlocked → true (bloquée non faite)", hasBlocked(p!) === true);
+    check("bloquer n'altère pas les faites (1 reste fait)", p?.done?.includes(1) === true);
+    // Bloquer une étape déjà faite la retire de done (bloqué ≠ fait).
+    markStepBlocked(dir, 1);
+    check("bloquer une étape faite la retire de done", getPlan(dir)?.done?.includes(1) === false);
+    // Rendu : 🚫 présent + invite à re-planifier.
+    const rendu = formatPlanReminder(getPlan(dir)!);
+    check("formatPlanReminder montre 🚫 + invite re-planifier", rendu.includes("🚫") && /re-planifie/i.test(rendu));
+    const full = formatPlan(getPlan(dir)!);
+    check("formatPlan montre 🚫 et l'invite de blocage", full.includes("🚫") && /BLOQUÉES/.test(full));
+    // Bornes : numéro invalide → no-op sans crash.
+    check("numéro hors bornes → plan inchangé (pas de crash)", markStepBlocked(dir, 99)?.blocked?.includes(99) === false);
+    check("pas de plan → undefined", markStepBlocked("/inexistant", 1) === undefined);
+    clearPlan(dir);
+  }
+
+  console.log("\n[B1.1] Gate off = rendu identique (aucune étape bloquée jamais)");
+  {
+    // Sans jamais appeler markStepBlocked, blocked reste absent → rendu strictement
+    // identique à #160 (pas de 🚫, pas de ligne de blocage).
+    const plan: ElevePlan = { titre: "T", etapes: [{ n: 1, titre: "A" }, { n: 2, titre: "B" }], at: 1, done: [1] };
+    check("hasBlocked → false sans blocage", hasBlocked(plan) === false);
+    check("formatPlanReminder sans 🚫", !formatPlanReminder(plan).includes("🚫"));
+    check("formatPlan sans ligne de blocage", !formatPlan(plan).includes("BLOQUÉES"));
+  }
+
+  console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-plan : ${pass} pass, ${fail} fail`);
+  if (fail > 0) process.exit(1);
+}
+
+run();

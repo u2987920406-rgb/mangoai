@@ -12,7 +12,7 @@
 // Les autres classes (wrong-tool, flaky-resource, ambiguous) → escalade (gérées ailleurs
 // ou réservées aux phases suivantes).
 
-import type { Diagnosis } from "./stratege-signals.js";
+import type { Diagnosis } from "./stratege/stratege-signals.js";
 
 export type Remedy =
   | { kind: "install-dependency"; pkg: string; nudge: string } // ACTE : npm install <pkg> puis relance

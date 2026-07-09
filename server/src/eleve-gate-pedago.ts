@@ -35,10 +35,10 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import type { Curriculum, FormationManifest, Item } from "./formation-model.js";
-import { loadManifest as loadManifestReel } from "./formation-fabrique.js";
+import type { Curriculum, FormationManifest, Item } from "./formation/formation-model.js";
+import { loadManifest as loadManifestReel } from "./formation/formation-fabrique.js";
 import { scrapeExternal } from "./vision.js";
-import { askLLM } from "./llm-engine.js";
+import { askLLM } from "./llm/llm-engine.js";
 
 // ---------------------------------------------------------------------------
 // Dépendances injectables

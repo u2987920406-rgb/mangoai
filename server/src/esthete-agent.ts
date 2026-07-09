@@ -11,10 +11,10 @@
 // lacune ponctuelle détectée en cours de build. Réutilise la STRUCTURE
 // SpecialistAgent (déjà validée par validateSpec) et le moteur #175
 // (runSpecialistAgentic + toolPolicy scellée), jamais générée par GLM.
-import { upsertSpecialists, type SpecialistAgent } from "./specialist-agents.js";
-import { buildEleveActionTools, type ToolPolicy } from "./eleve-action-tools.js";
-import { buildEleveVisionTools } from "./eleve-vision-tools.js";
-import { ToolRegistry } from "./kernel-mcp.js";
+import { upsertSpecialists, type SpecialistAgent } from "./specialist/specialist-agents.js";
+import { buildEleveActionTools, type ToolPolicy } from "./eleve-tools/eleve-action-tools.js";
+import { buildEleveVisionTools } from "./eleve-tools/eleve-vision-tools.js";
+import { ToolRegistry } from "./kernel/kernel-mcp.js";
 
 export const ESTHETE_AGENT_ID = "sa_system_esthete";
 export const ESTHETE_AGENT_NAME = "Esthète";

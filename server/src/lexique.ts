@@ -21,7 +21,7 @@
 // living maintenance by the agent.
 import path from "node:path";
 import fs from "node:fs";
-import { claudeWebResearch } from "./llm-engine.js";
+import { claudeWebResearch } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 
 export const LEXIQUE_FILE_NAME = ".lexique.md";

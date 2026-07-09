@@ -15,8 +15,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { critiqueScreen, prioritizedFixes, realCoachDeps, type DesignCritique } from "./design-coach.js";
-import { buildJudgeContext } from "./taste-judge.js";
+import { critiqueScreen, prioritizedFixes, realCoachDeps, type DesignCritique } from "./design/design-coach.js";
+import { buildJudgeContext } from "./taste/taste-judge.js";
 import { judgeIntention, type IntentVerdict } from "./eleve-judge.js";
 import { getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from "./layout-balance.js";

@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from 'express'
-import { resolveProvider } from './llm-engine.js'
+import { resolveProvider } from './llm/llm-engine.js'
 import { getBrain } from './kernel.js'
 
 interface IdeationResult {

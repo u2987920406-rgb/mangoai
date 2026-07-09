@@ -19,7 +19,7 @@
 // nombre qui traverse un seuil »). Fail-open vers "incertaine" sur toute
 // erreur/JSON illisible — jamais un faux "coherente" silencieux.
 import { searchConcept, type Embed } from "./concept-registry.js";
-import type { Blackboard } from "./kernel-blackboard.js";
+import type { Blackboard } from "./kernel/kernel-blackboard.js";
 
 export type VerdictChaine = "coherente" | "incoherente" | "incertaine";
 

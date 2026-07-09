@@ -3,7 +3,7 @@
 // et l'enregistre dans .axioms.md avec le tag validé-utilisateur ou à-éviter.
 import path from "node:path";
 import fs from "node:fs";
-import { resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
 

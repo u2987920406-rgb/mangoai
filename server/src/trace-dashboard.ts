@@ -10,8 +10,8 @@
 // voit AUSSI les appels one-shot (juges, patrouilleurs, radar…), pas seulement les
 // tours de chat. Tout en mémoire, déterministe, zéro I/O.
 import type { Express, Request, Response } from 'express'
-import { getBus, type KernelBus } from './kernel-bus.js'
-import { TRACE_EVENT, type SpanData } from './kernel-trace.js'
+import { getBus, type KernelBus } from './kernel/kernel-bus.js'
+import { TRACE_EVENT, type SpanData } from './kernel/kernel-trace.js'
 
 /** Une ligne de trace condensée pour l'UI (extraite d'un span). */
 export interface TraceRow {

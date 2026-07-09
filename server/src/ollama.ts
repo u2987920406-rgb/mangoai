@@ -4,7 +4,7 @@
 // modèle par défaut. Sert de moteur de résumé pour l'index multi-projets, et
 // peut être réutilisé par toute autre feature qui doit passer « en interne ».
 
-import { ollamaChat } from './llm-transport.js'
+import { ollamaChat } from './llm/llm-transport.js'
 
 const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://localhost:11434'
 // Modèle par défaut : celui de l'Élève (un modèle de code, idéal pour résumer

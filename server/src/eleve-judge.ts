@@ -11,8 +11,8 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { dispatch as realDispatch } from "./brain-dispatch.js";
-import { sanitizeExternal } from "./agent-contract.js";
+import { dispatch as realDispatch } from "./brain.js";
+import { sanitizeExternal } from "./agent/agent-contract.js";
 import { detectOutOfScope } from "./capabilities.js";
 import { gitFileDiff } from "./judge-diff.js";
 

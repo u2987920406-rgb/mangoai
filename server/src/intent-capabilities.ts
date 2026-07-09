@@ -23,9 +23,9 @@
 // (déjà sur-provisionnée) est PERTINENTE ; la nouveauté réelle de ce module porte sur
 // les capacités LOURDES (vision, media-gen) qui, elles, ne sont PAS offertes par défaut.
 
-import { dispatch } from "./brain-dispatch.js";
+import { dispatch } from "./brain.js";
 import { flag } from "./flags.js";
-import { DISCUSS_DEFAULT_CAPS, type Capability } from "./eleve-tool-capabilities.js";
+import { DISCUSS_DEFAULT_CAPS, type Capability } from "./eleve-tools/eleve-tool-capabilities.js";
 
 /** Contexte d'une tâche (au-delà du seul texte) — porte la moitié du signal (D2, alt. rejetée #2). */
 export interface TaskContext {

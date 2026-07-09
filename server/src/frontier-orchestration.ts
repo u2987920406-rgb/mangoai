@@ -21,12 +21,12 @@
 // Toutes les dépendances sont INJECTÉES (jamais de mock global) : le runner d'outils de
 // l'Élève (`askEleveAgentic`), `dispatch`, le constructeur de registre et `sanitizeExternal`.
 
-import { buildEleveDiscussTools } from "./eleve-action-tools.js";
-import type { ToolRegistry } from "./kernel-mcp.js";
-import { sanitizeExternal, type AgentResult } from "./agent-contract.js";
-import { dispatch } from "./brain-dispatch.js";
-import type { AgentId, BrainConfig } from "./brain-registry.js";
-import type { Capability, RequiredCaps } from "./eleve-tool-capabilities.js";
+import { buildEleveDiscussTools } from "./eleve-tools/eleve-action-tools.js";
+import type { ToolRegistry } from "./kernel/kernel-mcp.js";
+import { sanitizeExternal, type AgentResult } from "./agent/agent-contract.js";
+import { dispatch } from "./brain.js";
+import type { AgentId, BrainConfig } from "./brain/brain-registry.js";
+import type { Capability, RequiredCaps } from "./eleve-tools/eleve-tool-capabilities.js";
 
 /** Runner d'outils de l'Élève — signature d'`askEleveAgentic` réduite à ce dont on a besoin. */
 export type EleveToolRunner = (

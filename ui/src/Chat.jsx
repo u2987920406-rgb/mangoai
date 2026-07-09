@@ -1,12 +1,19 @@
 ﻿import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 // Phase C (audit-mango-2.0 §5) — le monolithe s'est découpé : helpers purs et blocs
-// autonomes vivent dans components/chat/, Chat.jsx reste l'orchestrateur (état + réseau).
+// autonomes vivent dans components/chat/, la logique d'état vit dans hooks/,
+// Chat.jsx reste l'orchestrateur (assemblage + réseau du tour courant).
 import {
   parseQuestion,
-  CHAT_ACTIONS, ACTION_MODELS_KEY, loadActionModels, groupMessages,
+  CHAT_ACTIONS, groupMessages,
 } from "./components/chat/helpers.js";
 import ChatMessages from "./components/chat/ChatMessages.jsx";
 import ChatComposer from "./components/chat/ChatComposer.jsx";
+import { useExternalBusy } from "./hooks/useExternalBusy.js";
+import { useVoiceInput } from "./hooks/useVoiceInput.js";
+import { useSnapCapture } from "./hooks/useSnapCapture.js";
+import { useSkillAutocomplete } from "./hooks/useSkillAutocomplete.js";
+import { useChatActionModels } from "./hooks/useChatActionModels.js";
+import { useFileAttachments } from "./hooks/useFileAttachments.js";
 
 let nextId = 1;
 const uid = () => nextId++;
@@ -44,231 +51,69 @@ export default function Chat({
   // L'agent est-il occupé AILLEURS (autre acteur : session automatique, run nocturne) ?
   // Sondé périodiquement → l'indicateur de réflexion s'affiche même hors de notre tour,
   // pour qu'on sache d'attendre AVANT d'envoyer (fini le 409 rouge par surprise).
-  const [externalBusy, setExternalBusy] = useState(false);
+  const [externalBusy, setExternalBusy] = useExternalBusy(busy);
   const working = busy || externalBusy; // occupé, peu importe la source
-  const [attachments, setAttachments] = useState([]); // File[] — images/PDF joints
   const sessionRef = useRef(null); // Agent SDK session_id, kept across turns
   const abortRef = useRef(null); // AbortController du tour en cours (clic « Stop »)
   const listRef = useRef(null);
   const inputRef = useRef(null);
-  const fileRef = useRef(null);
   // Live mirrors of the current project + busy state, read by the post-turn
   // history poll (#73): a setTimeout closure captures stale values otherwise.
   const projectNameRef = useRef(projectName);
   const busyRef = useRef(busy);
-  const [listening, setListening] = useState(false);
-  const [transcribing, setTranscribing] = useState(false);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
-  const [contextFile, setContextFile] = useState(null);   // string | null
-  const [filePicker, setFilePicker] = useState(false);    // popover ouvert ?
   const [awaitingPlanConfirm, setAwaitingPlanConfirm] = useState(false);
   // Après un tour Discuter, l'Élève (lecture seule) a pu diagnostiquer un correctif :
   // on propose de l'APPLIQUER en un clic via le mode Construire (qui a l'écriture).
   const [awaitingApply, setAwaitingApply] = useState(false);
-  const [fileList, setFileList] = useState([]);            // fichiers du projet
-  const [fileSearch, setFileSearch] = useState("");
-  const pickerRef = useRef(null);
-  // Modèle par action (Construire/Planifier/Discuter), configurable + mémorisé.
-  const [actionModels, setActionModels] = useState(loadActionModels);
-  const [activeAction, setActiveAction] = useState("construire"); // bouton actif (highlight + planificateur)
-  const [modelMenuFor, setModelMenuFor] = useState(null);         // id de l'action dont le menu modèle est ouvert
-  // #174 — Skills à invocation directe : « /slug args » tapé au composer est
-  // remplacé par le corps de la skill (substitution côté back). `skills` = liste
-  // légère (slug + description) pour l'autocomplétion et la validation du slug.
-  const [skills, setSkills] = useState([]);
-  const [menuActive, setMenuActive] = useState(0);            // item surligné de l'autocomplete /slug
-  const [menuDismissed, setMenuDismissed] = useState(false);  // Échap ferme jusqu'à la frappe suivante
-  const expandingRef = useRef(false);                        // évite deux expansions concurrentes (double-Entrée)
-  useEffect(() => {
-    try { localStorage.setItem(ACTION_MODELS_KEY, JSON.stringify(actionModels)); } catch { /* localStorage indispo */ }
-  }, [actionModels]);
-  // Clic sur un bouton d'action → active l'action et applique SON modèle + mode.
-  const pickAction = (a) => {
-    setActiveAction(a.id);
-    setAwaitingApply(false);
-    onChatMode({ model: actionModels[a.id], mode: a.mode });
-  };
-  // Choix du modèle d'une action (menu déroulant) → mémorise et, si l'action est
-  // active, applique aussitôt le nouveau modèle.
-  const setActionModel = (actionId, modelId) => {
-    setActionModels((prev) => ({ ...prev, [actionId]: modelId }));
-    setModelMenuFor(null);
-    if (activeAction === actionId) {
-      const a = CHAT_ACTIONS.find((x) => x.id === actionId);
-      onChatMode({ model: modelId, mode: a.mode });
-    }
-  };
 
-  // #174 — Charge la bibliothèque de skills (slug + description) pour l'autocomplete
-  // et la validation du slug. Rechargée quand l'input (re)devient une commande « / »
-  // pour capter une skill créée en cours de session, sans spammer le réseau.
-  const refetchSkills = useCallback(() => {
-    fetch("/api/skills")
-      .then((r) => (r.ok ? r.json() : { skills: [] }))
-      .then((d) => setSkills((d.skills ?? []).filter((s) => s && s.slug)))
-      .catch(() => {});
-  }, []);
-  useEffect(() => { refetchSkills(); }, [refetchSkills]);
-  const startsSlash = input.startsWith("/");
-  useEffect(() => { if (startsSlash) refetchSkills(); }, [startsSlash, refetchSkills]);
-
-  // Autocomplete : ouvert uniquement tant que le slug est en cours de frappe
-  // (slash + slug SANS espace) ; dès qu'un espace est tapé, on passe aux arguments
-  // et le menu se ferme. Un slug inconnu tapé en entier n'ouvre rien de spécial.
-  const slugTyping = /^\/(\S*)$/.exec(input);
-  const slugQuery = slugTyping ? slugTyping[1].toLowerCase() : null;
-  const skillSuggestions = useMemo(() => {
-    if (slugQuery === null) return [];
-    return skills.filter((s) => s.slug.toLowerCase().includes(slugQuery)).slice(0, 6);
-  }, [slugQuery, skills]);
-  const skillMenuOpen = skillSuggestions.length > 0 && !menuDismissed && !busy;
-  // Reset de la sélection + réouverture (après Échap) à chaque frappe — MAIS uniquement
-  // pour une commande « /… » (le seul cas où l'autocomplete existe). Sans ce gate,
-  // 2 setState partaient à CHAQUE frappe de prose ; en dev (StrictMode double les
-  // effets) la frappe rapide empile assez de rendus synchrones pour franchir la limite
-  // React « Maximum update depth exceeded ». Gaté sur `startsSlash` → zéro churn hors slug.
-  useEffect(() => {
-    if (!startsSlash) return;
-    setMenuActive(0);
-    setMenuDismissed(false);
-  }, [input, startsSlash]);
-
-  // Complète le composer avec « /slug » + un espace (prêt pour les arguments).
-  const completeSkill = (s) => {
-    if (!s) return;
-    setInput(`/${s.slug} `);
+  const push = (msg) => {
+    setMessages((prev) => [...prev, { id: uid(), ...msg }]);
     requestAnimationFrame(() => {
-      const el = inputRef.current;
-      if (el) {
-        el.focus();
-        el.style.height = "auto";
-        el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-        el.setSelectionRange(el.value.length, el.value.length);
-      }
+      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
     });
   };
 
-  // Résout « /slug [args] » → corps expansé (substitution $ARGUMENTS côté back),
-  // ou null si le slug est inconnu / l'endpoint échoue → l'appelant envoie alors
-  // le texte brut tel quel (garde-fou : un slash + slug inconnu ne casse rien).
-  const skillSlugs = useMemo(() => new Set(skills.map((s) => s.slug)), [skills]);
-  async function maybeExpandSkill(raw) {
-    const m = /^\/([^\s]+)([\s\S]*)$/.exec(raw);
-    if (!m || !skillSlugs.has(m[1])) return null;
-    const args = m[2].trim();
-    try {
-      const r = await fetch(`/api/skills/${encodeURIComponent(m[1])}?args=${encodeURIComponent(args)}`);
-      if (!r.ok) return null;
-      const d = await r.json();
-      return typeof d.expanded === "string" ? d.expanded : null;
-    } catch {
-      return null;
-    }
-  }
+  const {
+    attachments, setAttachments,
+    fileRef,
+    contextFile, setContextFile,
+    filePicker, setFilePicker,
+    fileList,
+    fileSearch, setFileSearch,
+    pickerRef,
+    addFiles,
+  } = useFileAttachments(projectName);
 
-  // Au MONTAGE : synchronise le mode parent sur le bouton actif (Construire→elite).
-  // Sans ça, après un remontage (F5, bascule de projet) le highlight revient sur
-  // "construire" tandis que le mode parent reste collé sur un ancien "discuss"
-  // (issu d'un tour Planifier/Discuter) → un envoi « Construire » partait à tort en
-  // conversation. Désormais highlight et mode ne peuvent plus diverger.
-  useEffect(() => {
-    const a = CHAT_ACTIONS.find((x) => x.id === activeAction);
-    if (a) onChatMode({ model: actionModels[a.id], mode: a.mode });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { listening, transcribing, toggleMic } = useVoiceInput(setInput, onToast);
 
-  useEffect(() => {
-    if (!filePicker) return;
-    fetch(`/api/files/${encodeURIComponent(projectName)}`)
-      .then((r) => r.ok ? r.json() : { files: [] })
-      .then((d) => setFileList(d.files ?? []))
-      .catch(() => {});
-  }, [filePicker, projectName]);
+  const {
+    snapMode, setSnapMode,
+    snapBusy,
+    snapRect, setSnapRect,
+    snapStart,
+    cancelSnap,
+    finishSnap,
+  } = useSnapCapture({ projectName, push, addFiles });
 
-  useEffect(() => {
-    if (!filePicker) return;
-    function onOutside(e) {
-      if (pickerRef.current && !pickerRef.current.contains(e.target)) setFilePicker(false);
-    }
-    document.addEventListener("mousedown", onOutside);
-    return () => document.removeEventListener("mousedown", onOutside);
-  }, [filePicker]);
+  const {
+    actionModels,
+    activeAction, setActiveAction,
+    modelMenuFor, setModelMenuFor,
+    pickAction,
+    setActionModel,
+  } = useChatActionModels(onChatMode, () => setAwaitingApply(false));
 
-  // Aligné sur ce que Mango sait lire + le backend (server/src/uploads.ts) :
-  // images · PDF/Office/texte (lire_document) · archives .zip/.rar (lire_archive).
-  const ACCEPTED = /\.(png|jpe?g|webp|gif|pdf|docx|xlsx|pptx|txt|md|csv|json|zip|rar)$/i;
-  const addFiles = (files) => {
-    const valid = [...files].filter((f) => f && ACCEPTED.test(f.name || ".png"));
-    if (valid.length === 0) return;
-    setAttachments((prev) => [...prev, ...valid].slice(0, 6));
-  };
-
-  // Snap mode: the user draws a rectangle over the preview; the backend
-  // re-renders the preview at the iframe's exact size and crops that zone.
-  const [snapMode, setSnapMode] = useState(false);
-  const [snapBusy, setSnapBusy] = useState(false);
-  const [snapRect, setSnapRect] = useState(null); // {x, y, w, h} viewport coords
-  const snapStart = useRef(null);
-
-  useEffect(() => {
-    if (!snapMode) return;
-    const onKey = (e) => e.key === "Escape" && cancelSnap();
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [snapMode]);
-
-  const cancelSnap = () => {
-    setSnapMode(false);
-    setSnapRect(null);
-    snapStart.current = null;
-  };
-
-  async function finishSnap() {
-    const rect = snapRect;
-    cancelSnap();
-    if (!rect || rect.w < 8 || rect.h < 8) return;
-    const iframe = document.querySelector("iframe");
-    if (!iframe) {
-      push({ role: "status", text: "Aucun aperçu à capturer — lance d'abord l'app." });
-      return;
-    }
-    // Intersect the drawn rectangle with the preview iframe
-    const r = iframe.getBoundingClientRect();
-    const x1 = Math.max(rect.x, r.left);
-    const y1 = Math.max(rect.y, r.top);
-    const x2 = Math.min(rect.x + rect.w, r.right);
-    const y2 = Math.min(rect.y + rect.h, r.bottom);
-    if (x2 - x1 < 8 || y2 - y1 < 8) {
-      push({ role: "status", text: "La zone capturée doit recouvrir l'aperçu (panneau de droite)." });
-      return;
-    }
-    setSnapBusy(true);
-    try {
-      const res = await fetch("/api/snap", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          projectName,
-          viewport: { width: Math.round(r.width), height: Math.round(r.height) },
-          box: {
-            x: Math.round(x1 - r.left),
-            y: Math.round(y1 - r.top),
-            width: Math.round(x2 - x1),
-            height: Math.round(y2 - y1),
-          },
-        }),
-      });
-      const d = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(d.error ?? `Erreur HTTP ${res.status}`);
-      const bytes = Uint8Array.from(atob(d.data), (c) => c.charCodeAt(0));
-      addFiles([new File([bytes], "capture-zone.png", { type: "image/png" })]);
-    } catch (err) {
-      push({ role: "error", text: `Capture impossible : ${err.message ?? err}` });
-    } finally {
-      setSnapBusy(false);
-    }
-  }
+  // #174 — Skills à invocation directe : « /slug args » tapé au composer est
+  // remplacé par le corps de la skill (substitution côté back).
+  const {
+    menuDismissed, setMenuDismissed,
+    expandingRef,
+    skillSuggestions,
+    skillMenuOpen,
+    completeSkill,
+    maybeExpandSkill,
+    menuActive, setMenuActive,
+  } = useSkillAutocomplete({ input, inputRef, busy, setInput });
 
   // Switching projects = different conversation; the backend will resume
   // the project's stored session on the next message. The persisted chat
@@ -302,13 +147,6 @@ export default function Chat({
       cancelled = true;
     };
   }, [projectName, seedHistory]);
-
-  const push = (msg) => {
-    setMessages((prev) => [...prev, { id: uid(), ...msg }]);
-    requestAnimationFrame(() => {
-      listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
-    });
-  };
 
   // Callback STABLE (useCallback) : indispensable pour que <Message> mémoïsé ne
   // re-rende pas à chaque frappe dans la chatbox. Sans ça, une prop onFeedback
@@ -708,48 +546,6 @@ export default function Chat({
     const el = e.target;
     el.style.height = "auto";
     el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
-  }
-
-  async function toggleMic() {
-    if (listening) {
-      mediaRecorderRef.current?.stop();
-      return;
-    }
-    let stream;
-    try {
-      stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    } catch {
-      onToast("error", "Micro indisponible — autorisation refusée ou aucun micro détecté.");
-      return;
-    }
-    audioChunksRef.current = [];
-    const recorder = new MediaRecorder(stream, { mimeType: "audio/webm" });
-    recorder.ondataavailable = (e) => { if (e.data.size > 0) audioChunksRef.current.push(e.data); };
-    recorder.onstop = async () => {
-      stream.getTracks().forEach((t) => t.stop());
-      setListening(false);
-      setTranscribing(true);
-      try {
-        const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
-        const form = new FormData();
-        form.append("audio", blob, "record.webm");
-        const res = await fetch("/api/transcribe", { method: "POST", body: form });
-        if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          onToast("error", err.error ? `Transcription échouée : ${err.error}` : `Transcription échouée (HTTP ${res.status}).`);
-        } else {
-          const data = await res.json().catch(() => ({}));
-          if (data.text?.trim()) setInput((prev) => (prev ? prev + " " + data.text : data.text));
-          else onToast("error", "Rien n'a été transcrit — réessaie en parlant plus distinctement.");
-        }
-      } catch {
-        onToast("error", "Transcription échouée — serveur injoignable ?");
-      }
-      setTranscribing(false);
-    };
-    recorder.start();
-    mediaRecorderRef.current = recorder;
-    setListening(true);
   }
 
   // Phase C2 — callbacks passés aux blocs extraits (ChatMessages / ChatComposer).

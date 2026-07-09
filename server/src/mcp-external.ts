@@ -20,8 +20,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { z, type ZodRawShape, type ZodTypeAny } from "zod";
-import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
-import { sanitizeExternal } from "./agent-contract.js";
+import type { KernelTool, KernelToolResult } from "./kernel/kernel-mcp.js";
+import { sanitizeExternal } from "./agent/agent-contract.js";
 
 // ── Config déclarative ───────────────────────────────────────────────────────
 

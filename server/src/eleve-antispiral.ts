@@ -15,7 +15,7 @@
 //
 // Tout est pur/déterministe ici (état immuable) ; l'intégration vit dans askEleveAgentic.
 
-import type { OpenAITool } from "./kernel-mcp.js";
+import type { OpenAITool } from "./kernel/kernel-mcp.js";
 
 export interface AntiSpiralCfg {
   /** Noms d'outils considérés comme « exploration » (lecture/recherche, sans effet). */

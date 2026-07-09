@@ -11,11 +11,11 @@
 // injectable via `deps` pour des tests déterministes (modèle orchestrator.ts).
 import path from "node:path";
 import fs from "node:fs";
-import { resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
-import { dispatch } from "./brain-dispatch.js";
-import type { AgentId } from "./brain-registry.js";
-import type { AgentResult } from "./agent-contract.js";
+import { dispatch } from "./brain.js";
+import type { AgentId } from "./brain/brain-registry.js";
+import type { AgentResult } from "./agent/agent-contract.js";
 import { appendHistory } from "./history.js";
 import type { ProjectType } from "./blueprints.js";
 

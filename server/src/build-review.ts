@@ -3,7 +3,7 @@
 import path from "node:path";
 import fs from "node:fs";
 import { projectDir, WORKSPACE_DIR } from "./projects.js";
-import { resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 import { AXIOMS_FILE_NAME } from "./axioms.js";
 import { summarizeReviewAnswers, REVIEW_AXIOM_GUARDRAIL } from "./nocturnal.js";

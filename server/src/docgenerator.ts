@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Express, Request, Response } from "express";
 import { WORKSPACE_DIR } from "./projects.js";
-import { resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 
 const MAX_FILES = 20;

@@ -16,7 +16,7 @@ import { selectAxioms, designAxiomsSection } from "./axioms.js";
 import { BLUEPRINTS_RULES } from "./blueprints.js";
 import { CADRAGE_RULES, PLAN_RULES, MOODBOARD_RULES, MOODBOARD_RULES_MVP } from "./plan.js";
 import { WORKSPACE_DIR } from "./projects.js";
-import { DESIGN_SYSTEM_RULES, designSystemPromptSection } from "./design-system.js";
+import { DESIGN_SYSTEM_RULES, designSystemPromptSection } from "./design/design-system.js";
 import { identityPromptSection } from "./identity.js";
 import { CAPABILITIES_CLAUSE } from "./capabilities.js";
 import { ARCHITECTURE_RULES, architecturePromptSection } from "./architecture.js";
@@ -31,7 +31,7 @@ import { MULTI_PROJECT_RULES, multiProjectPromptSection } from "./multi-project.
 import { superAgentPromptSection } from "./super-agent-builder.js";
 import { preferencesPromptSection } from "./preferences.js";
 import { recoveryPromptSection } from "./orchestrator.js";
-import { SELF_CRITIQUE_RULES } from "./self-critique.js";
+import { SELF_CRITIQUE_RULES } from "./self/self-critique.js";
 import { perfectPlanSection } from "./perfect-plan.js";
 import { projectPlanSection, skeletonDone, SCAFFOLD_RULES, PROJET_MODE_RULES } from "./project-plan.js";
 import { mangoAppContractSection } from "./mango-app-contract.js";

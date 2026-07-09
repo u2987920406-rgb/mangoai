@@ -1,6 +1,6 @@
 // Idée #40 — Super-agent spécialisé : génère un agent expert complet depuis un domaine.
 import type { Express, Request, Response } from 'express'
-import { resolveProvider, claudeWebResearch } from './llm-engine.js'
+import { resolveProvider, claudeWebResearch } from './llm/llm-engine.js'
 import { getBrain } from './kernel.js'
 import path from 'node:path'
 import fs from 'node:fs'

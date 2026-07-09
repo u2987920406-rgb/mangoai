@@ -16,7 +16,7 @@ import { atomicWriteFileSync } from "./safe-io.js";
 import { updateConceptConfidence, type Embed } from "./concept-registry.js";
 import type { VerdictContexte } from "./verificateur-contexte.js";
 import type { VerdictChaine } from "./chaine-ambigue.js";
-import type { Blackboard } from "./kernel-blackboard.js";
+import type { Blackboard } from "./kernel/kernel-blackboard.js";
 
 export interface VerificationEvent {
   concept: string;

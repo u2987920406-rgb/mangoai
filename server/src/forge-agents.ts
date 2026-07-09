@@ -2,7 +2,7 @@
 //   cd server && npx tsx src/forge-agents.ts [n]
 // Charge .env (ELEVE_API_URL/KEY) comme le backend. JAMAIS importé en prod.
 import "dotenv/config"
-import { forgeAgents } from "./agent-forge.js"
+import { forgeAgents } from "./agent/agent-forge.js"
 
 const n = Number(process.argv[2] ?? 10) || 10
 

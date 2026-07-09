@@ -12,8 +12,8 @@
 // Fail-open partout : la mémoire est un CONFORT, jamais un point de panne — si
 // l'embedding échoue (Ollama absent) ou la recherche lève, on rend "" / [].
 import { z } from "zod";
-import type { KernelTool, KernelToolResult } from "./kernel-mcp.js";
-import type { SearchHit } from "./kernel-blackboard-store.js";
+import type { KernelTool, KernelToolResult } from "./kernel/kernel-mcp.js";
+import type { SearchHit } from "./kernel/kernel-blackboard-store.js";
 
 /** Dépendances injectables : embarquer un texte (nomic, null si indispo) + chercher. */
 export interface MemoireDeps {

@@ -10,7 +10,7 @@
 // Chaque document = une (key → value JSON) dans ce scope. Les apps générées (sur
 // un autre port) y accèdent par REST (/api/shared/...) — CORS déjà ouvert — donc
 // le partage est CROSS-FRAMEWORK : pas besoin de standardiser sur React.
-import { getBlackboard } from "./kernel-blackboard.js";
+import { getBlackboard } from "./kernel/kernel-blackboard.js";
 
 /** Un document de collection partagée tel que renvoyé par l'API. */
 export interface SharedDoc {

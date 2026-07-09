@@ -1,7 +1,7 @@
 // Runner de tests maison pour MangoOS.
 //
-// Le backend possède ~215 scripts `src/test-*.ts` autonomes : chacun s'exécute
-// via `npx tsx src/test-X.ts` et sort avec exit 0 (succès) / 1 (échec). Aucun
+// Le backend possède ~219 scripts `src/tests/test-*.ts` autonomes : chacun s'exécute
+// via `npx tsx src/tests/test-X.ts` et sort avec exit 0 (succès) / 1 (échec). Aucun
 // framework n'est imposé : ce runner ORCHESTRE les scripts existants tels quels,
 // sans les réécrire ni installer vitest.
 //
@@ -32,6 +32,7 @@ import { spawn } from "node:child_process";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SERVER_DIR = path.resolve(__dirname, "..");
 const SRC_DIR = path.join(SERVER_DIR, "src");
+const TESTS_DIR = path.join(SRC_DIR, "tests");
 const MANIFEST_PATH = path.join(SERVER_DIR, "test-manifest.json");
 
 type Tier = "smoke" | "offline" | "full" | "broken";
@@ -62,7 +63,7 @@ const RUN_SETS: Record<"smoke" | "offline" | "full", Tier[]> = {
 // --- découverte ---------------------------------------------------------
 function discover(): string[] {
   return fs
-    .readdirSync(SRC_DIR)
+    .readdirSync(TESTS_DIR)
     .filter((f) => f.startsWith("test-") && f.endsWith(".ts"))
     .map((f) => f.replace(/\.ts$/, ""))
     .filter((name) => name !== "test-util" && name !== "test-runner") // helper + runner lui-même
@@ -94,7 +95,7 @@ function lastMeaningfulLine(buf: string): string {
 function runTest(name: string): Promise<RunResult> {
   return new Promise((resolve) => {
     const start = Date.now();
-    const child = spawn("npx", ["tsx", path.join("src", `${name}.ts`)], {
+    const child = spawn("npx", ["tsx", path.join("src", "tests", `${name}.ts`)], {
       cwd: SERVER_DIR,
       shell: process.platform === "win32", // npx.cmd sous Windows
       env: process.env,
