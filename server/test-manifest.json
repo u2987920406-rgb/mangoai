@@ -1,5 +1,23 @@
 {
   "_doc": "Classement des scripts src/test-*.ts par tier pour test-runner.ts. tier ∈ smoke|offline|full|broken. reason décrit la dépendance (network/backend) ou le symptôme (broken). Sondé le 2026-07-09 : chaque test lancé via `npx tsx` avec OLLAMA_URL + ELEVE_API_URL pointés sur un port mort (réseau non requis) et timeout 75s. offline = exit 0 dans ces conditions.",
+  "_doc_suites": "suites = sélections nommées transverses (gate rapide ciblé). Un test garde son tier de base ; une suite le RE-sélectionne juste pour un gate court. suite 'llm' = tests exerçant transport/endpoint/retry/dispatch/relay touchés par le chantier consolidation LLM #2. Gate rapide via `npm run test:llm`.",
+  "suites": {
+    "llm": [
+      "test-llm-endpoint-oracle",
+      "test-llm-engine",
+      "test-brain-endpoints",
+      "test-eleve-provider",
+      "test-eleve-ollama-tools",
+      "test-eleve-retry",
+      "test-brain-fallback",
+      "test-brain-runtime",
+      "test-relay",
+      "test-eleve-runtime",
+      "test-llm-cache",
+      "test-e2e-intention-dispatch",
+      "test-brain-dispatch"
+    ]
+  },
   "entries": {
     "test-ab-harness": {
       "tier": "offline"

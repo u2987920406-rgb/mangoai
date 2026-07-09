@@ -36,7 +36,11 @@ const MANIFEST_PATH = path.join(SERVER_DIR, "test-manifest.json");
 
 type Tier = "smoke" | "offline" | "full" | "broken";
 interface ManifestEntry { tier: Tier; reason?: string }
-interface Manifest { entries: Record<string, ManifestEntry> }
+// `suites` = sélections nommées transverses (ex. "llm") qui listent EXACTEMENT des
+// tests à exécuter comme gate rapide ciblé, INDÉPENDAMMENT de leur tier de base.
+// Un test reste dans son tier (offline/smoke/broken) → la couverture offline est
+// intacte ; une suite ne fait que le RE-sélectionner pour un gate court.
+interface Manifest { entries: Record<string, ManifestEntry>; suites?: Record<string, string[]> }
 
 // --- args ---------------------------------------------------------------
 const argv = process.argv.slice(2);
@@ -45,7 +49,7 @@ function argValue(flag: string): string | undefined {
   return i >= 0 ? argv[i + 1] : undefined;
 }
 const LIST = argv.includes("--list");
-const TIER = (argValue("--tier") ?? "smoke") as "smoke" | "offline" | "full";
+const TIER = argValue("--tier") ?? "smoke";
 const TIMEOUT_MS = Number(argValue("--timeout") ?? 90_000);
 
 // Quels tiers du manifeste sont exécutés pour un tier demandé (cumulatif).
@@ -156,11 +160,25 @@ function doList(): void {
 async function doRun(): Promise<void> {
   const discovered = discover();
   const man = loadManifest();
-  const wanted = new Set(RUN_SETS[TIER]);
-  const toRun = discovered.filter((name) => {
-    const e = man.entries[name];
-    return e && wanted.has(e.tier);
-  });
+  let toRun: string[];
+  if (TIER in RUN_SETS) {
+    const wanted = new Set(RUN_SETS[TIER as "smoke" | "offline" | "full"]);
+    toRun = discovered.filter((name) => {
+      const e = man.entries[name];
+      return e && wanted.has(e.tier);
+    });
+  } else if (man.suites?.[TIER]) {
+    // Suite nommée : exactement les tests listés (dans l'ordre du manifeste),
+    // filtrés sur ceux réellement présents au glob.
+    const known = new Set(discovered);
+    toRun = man.suites[TIER].filter((name) => known.has(name));
+    const missing = man.suites[TIER].filter((name) => !known.has(name));
+    if (missing.length) console.log(`⚠ suite « ${TIER} » : tests introuvables ignorés → ${missing.join(", ")}`);
+  } else {
+    console.error(`Tier/suite inconnu : « ${TIER} ». Tiers : ${Object.keys(RUN_SETS).join(", ")} · Suites : ${Object.keys(man.suites ?? {}).join(", ") || "(aucune)"}`);
+    process.exit(2);
+    return;
+  }
 
   console.log("═".repeat(72));
   console.log(`RUNNER — tier « ${TIER} » · ${toRun.length} test(s) · timeout ${TIMEOUT_MS / 1000}s`);
