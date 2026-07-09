@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["scripts"],
+  "exclude": ["scripts/_prove-assets.ts", "scripts/_prove-demo.ts"]
+}
