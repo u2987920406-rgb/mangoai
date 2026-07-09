@@ -33,7 +33,7 @@ import { resolveEndpoint, normalizeCompletionsUrl } from "./llm-endpoint.js";
 // T2 : couche transport unique — le transport function-calling local (Ollama tools)
 // délègue à la brique partagée (mappers inclus). Les autres transports Élève
 // (askEleveOllama/askEleveOpenAI/postEleveCompletions) convergent à la tranche T4.
-import { ollamaChatTools, openAiChatTools } from "./llm-transport.js";
+import { ollamaChat, ollamaChatTools, openAiChat, openAiChatTools } from "./llm-transport.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
@@ -422,52 +422,24 @@ function buildEleveUser(
 const ELEVE_FETCH_TIMEOUT_MS = Math.max(30_000, Number(process.env.ELEVE_FETCH_TIMEOUT_MS ?? 180_000));
 
 // ── Cerveau Élève par défaut : Gemma local via Ollama ──────────────────────────
+// T4 : transport délégué à la brique partagée ollamaChat. Famille eleve = SANS
+// keep_alive, SANS trim → byte-identique à l'ancien fetch inline.
 async function askEleveOllama(system: string, user: string, model?: string): Promise<string> {
-  const res = await fetch(`${OLLAMA}/api/chat`, {
-    method: "POST",
-    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      options: { temperature: 0 },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
-  const data = (await res.json()) as { message?: { content?: string } };
-  return data.message?.content ?? "";
+  return ollamaChat(system, user, { baseUrl: OLLAMA, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS });
 }
 
 // ── Cerveau Élève « turbo » : endpoint compatible OpenAI (DeepSeek, etc.) ──────
 // Même contrat d'E/S (system + user → texte) que la version Ollama → la boucle
 // de relais est INCHANGÉE. ⚠ Payant : la note n'est PAS captée dans les
 // métriques (le tour Élève reste compté coût 0 ; seule l'escalade Claude l'est).
+// T4 : transport délégué à openAiChat. Famille eleve = SANS max_tokens, SANS trim,
+// libellé 'API Élève' → byte-identique. La vérif de clé (message spécifique) reste ici.
 async function askEleveOpenAI(system: string, user: string, model?: string, provider: LLMProvider = "openai", endpoint?: EndpointOverride): Promise<string> {
   const { url, key } = openAiEndpoint(provider, endpoint);
   if (!key) {
     throw new Error("Clé API Élève manquante (provider openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
   }
-  const res = await fetch(url, {
-    method: "POST",
-    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      temperature: 0,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`API Élève HTTP ${res.status}`);
-  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return data.choices?.[0]?.message?.content ?? "";
+  return openAiChat(system, user, { url, key, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, errorLabel: "API Élève", trim: false });
 }
 
 // Aiguillage du cerveau Élève selon le provider. Défaut = global (.env) ; un appel

@@ -156,6 +156,9 @@ export async function openAiChat(
     imageBase64?: string;
     imageMimeType?: string;
     errorLabel?: string;
+    /** Trim de la réponse. Défaut true (famille engine askOpenAI). La famille eleve
+     *  (askEleveOpenAI) renvoyait le contenu BRUT → passe trim:false (byte-identique). */
+    trim?: boolean;
   },
 ): Promise<string> {
   const mime = opts.imageMimeType ?? "image/jpeg";
@@ -182,7 +185,8 @@ export async function openAiChat(
   });
   if (!res.ok) throw new Error(`${opts.errorLabel ?? "OpenAI-compat"} HTTP ${res.status}`);
   const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return (data.choices?.[0]?.message?.content ?? "").trim();
+  const content = data.choices?.[0]?.message?.content ?? "";
+  return opts.trim === false ? content : content.trim();
 }
 
 // ── Transport openai-compat function-calling (tools) ─────────────────────────
