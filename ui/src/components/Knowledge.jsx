@@ -1,17 +1,17 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { Blocks, BookText, BrainCircuit, Check, Clipboard, ClipboardCheck, Compass, Eye, Footprints, FolderOpen, GitBranch, Languages, Loader2, Palette, Pencil, Plus, RefreshCw, Sparkles, User, Wrench, X } from "lucide-react";
 import Section from "./knowledge/Section.jsx";
 import IdentityLayer from "./knowledge/IdentityLayer.jsx";
 import BrainRegistryPanel from "./knowledge/BrainRegistryPanel.jsx";
 import { miroirSwatches, stripFrontmatter, mutateProposal } from "./knowledge/helpers.js";
+import { useKnowledge } from "./knowledge/useKnowledge.js";
 
 // Dropdown body showing what MangoOS has learned. Mounted only while the menu
 // is open, so it re-fetches and is always fresh (the background review may
 // have updated the stores seconds after the last turn).
 export default function Knowledge({ projectName }) {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState(null);
+  const { data, setData, error, evoRuns, setEvoRuns } = useKnowledge(projectName);
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ name: "", description: "", body: "" });
   const [saving, setSaving] = useState(false);
@@ -60,8 +60,7 @@ export default function Knowledge({ projectName }) {
   const [creatingProc, setCreatingProc] = useState(false);
   const [procForm, setProcForm] = useState({ name: "", problem: "", tags: "", body: "" });
   const [savingProc, setSavingProc] = useState(false);
-  // Évolution des règles (idée #76)
-  const [evoRuns, setEvoRuns] = useState(null); // null = pas encore chargé
+  // Évolution des règles (idée #76) — evoRuns/setEvoRuns viennent de useKnowledge
   const [evoRunning, setEvoRunning] = useState(false);
   const [evoExpanded, setEvoExpanded] = useState(null); // proposalId déplié
   const [componentCode, setComponentCode] = useState({});
@@ -70,22 +69,6 @@ export default function Knowledge({ projectName }) {
   const [creatingComponent, setCreatingComponent] = useState(false);
   const [componentForm, setComponentForm] = useState({ name: "", description: "", tags: "", code: "" });
   const [savingComponent, setSavingComponent] = useState(false);
-
-  useEffect(() => {
-    let alive = true;
-    fetch(`/api/knowledge/${encodeURIComponent(projectName)}`)
-      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Erreur HTTP ${r.status}`))))
-      .then((d) => alive && setData(d))
-      .catch((e) => alive && setError(e.message ?? String(e)));
-    // Idée #76 — runs d'évolution des règles (endpoint séparé du knowledge agrégé)
-    fetch("/api/prompt-evolution")
-      .then((r) => (r.ok ? r.json() : { runs: [] }))
-      .then((d) => alive && setEvoRuns(d.runs ?? []))
-      .catch(() => alive && setEvoRuns([]));
-    return () => {
-      alive = false;
-    };
-  }, [projectName]);
 
   const skillForm = (
     <div className="border-t border-edge mt-1 pt-1 px-1 pb-1">
