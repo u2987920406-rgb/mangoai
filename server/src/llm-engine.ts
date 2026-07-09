@@ -25,6 +25,11 @@
 // sinon LLM_PROVIDER global, sinon le défaut passé par la feature.
 import { query } from '@anthropic-ai/claude-agent-sdk'
 import { askOllama } from './ollama.js'
+// Résolution d'endpoint openai-compat UNIQUE (T1) : les deux chaînes de repli de
+// MangoOS délèguent désormais à resolveEndpoint (famille 'engine' ici). PROVIDER_PRESETS
+// vit dans le module leaf llm-endpoint et est ré-exporté ici (API publique inchangée).
+import { PROVIDER_PRESETS, normalizeCompletionsUrl, resolveEndpoint } from './llm-endpoint.js'
+export { PROVIDER_PRESETS } from './llm-endpoint.js'
 
 export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'litellm'
 
@@ -52,30 +57,8 @@ export interface AskLLMOptions {
   apiKeyEnv?: string
 }
 
-interface ProviderPreset {
-  baseURL: string
-  defaultModel: string
-  apiKeyEnv: string
-}
-
-/** Presets OpenAI-compat pour deepseek / mistral / groq. */
-export const PROVIDER_PRESETS: Record<'deepseek' | 'mistral' | 'groq', ProviderPreset> = {
-  deepseek: {
-    baseURL: 'https://api.deepseek.com/v1',
-    defaultModel: 'deepseek-chat',
-    apiKeyEnv: 'DEEPSEEK_API_KEY',
-  },
-  mistral: {
-    baseURL: 'https://api.mistral.ai/v1',
-    defaultModel: 'mistral-large-latest',
-    apiKeyEnv: 'MISTRAL_API_KEY',
-  },
-  groq: {
-    baseURL: 'https://api.groq.com/openai/v1',
-    defaultModel: 'llama-3.3-70b-versatile',
-    apiKeyEnv: 'GROQ_API_KEY',
-  },
-}
+// PROVIDER_PRESETS (deepseek / mistral / groq) : source unique dans llm-endpoint,
+// importé + ré-exporté en tête de fichier. (Ancienne définition inline supprimée en T1.)
 
 /** Résout un provider depuis une valeur .env (ou le défaut global), borné aux
  * 6 valeurs valides. `envValue` = la variable dédiée d'une feature. */
@@ -106,21 +89,19 @@ export function resolvePresetEndpoint(
   provider: 'deepseek' | 'mistral' | 'groq',
   overrides: EndpointOverrides = {},
 ): { baseURL: string; key: string } {
-  const preset = PROVIDER_PRESETS[provider]
-  const baseURL = overrides.baseUrl ?? preset.baseURL
-  const overrideKey = overrides.apiKeyEnv ? (process.env[overrides.apiKeyEnv] ?? '').trim() : ''
-  const key = overrideKey || (process.env[preset.apiKeyEnv] ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
-  return { baseURL, key }
+  // T1 : adaptateur mince → résolveur unique (famille 'engine'). url = base BRUTE
+  // (askOpenAI applique /chat/completions ensuite), byte-identique à l'ancien code.
+  const { url, key } = resolveEndpoint(provider, 'engine', overrides)
+  return { baseURL: url, key }
 }
 
 /** Résolution pour le proxy litellm. Sans override : baseURL = LITELLM_BASE_URL
  * (ou défaut localhost:4000), clé = LITELLM_API_KEY (ou placeholder). Avec
  * override : mêmes règles de priorité / fail-open que resolvePresetEndpoint. */
 export function resolveLitellmEndpoint(overrides: EndpointOverrides = {}): { baseURL: string; key: string } {
-  const baseURL = (overrides.baseUrl ?? process.env.LITELLM_BASE_URL ?? 'http://localhost:4000/v1').trim()
-  const overrideKey = overrides.apiKeyEnv ? (process.env[overrides.apiKeyEnv] ?? '').trim() : ''
-  const key = overrideKey || (process.env.LITELLM_API_KEY ?? 'sk-litellm-local').trim()
-  return { baseURL, key }
+  // T1 : adaptateur mince → résolveur unique (famille 'engine').
+  const { url, key } = resolveEndpoint('litellm', 'engine', overrides)
+  return { baseURL: url, key }
 }
 
 function defaultModel(provider: LLMProvider): string {
@@ -248,10 +229,10 @@ async function askOpenAI(
   imageBase64?: string,
   imageMimeType?: string,
 ): Promise<string> {
-  const rawBase = (baseURLOverride ?? process.env.LLM_OPENAI_URL ?? process.env.ELEVE_API_URL ?? 'https://api.deepseek.com/v1')
-    .trim()
-    .replace(/\/+$/, '')
-  const url = rawBase.endsWith('/chat/completions') ? rawBase : `${rawBase}/chat/completions`
+  // T1 : normalisation d'URL déléguée au module d'endpoint unique (byte-identique
+  // à l'ancien .trim().replace().endsWith(...)). Repli d'env inchangé pour le
+  // provider 'openai' générique appelé sans base override.
+  const url = normalizeCompletionsUrl(baseURLOverride ?? process.env.LLM_OPENAI_URL ?? process.env.ELEVE_API_URL ?? 'https://api.deepseek.com/v1')
   const key = (apiKeyOverride ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
   if (!key) throw new Error('Clé OpenAI-compatible manquante (LLM_OPENAI_KEY ou ELEVE_API_KEY dans server/.env).')
   const mime = imageMimeType ?? 'image/jpeg'
@@ -312,8 +293,10 @@ export async function askLLM(system: string, user: string, opts: AskLLMOptions =
   if (provider === 'openai') {
     // Brain-Dispatch #150 : un BrainConfig peut router 'openai' vers un endpoint
     // OpenAI-compat custom (Zhipu, etc.) avec sa propre clé nommée par env.
-    const ovKey = opts.apiKeyEnv ? ((process.env[opts.apiKeyEnv] ?? '').trim() || undefined) : undefined
-    return askOpenAI(system, user, model, maxTokens, timeoutMs, opts.baseUrl, ovKey, imageBase64, imageMimeType)
+    // T1 : résolution via le résolveur unique (famille 'engine' — inclut le repli
+    // LLM_OPENAI_URL/KEY). url = base BRUTE, askOpenAI la normalise → byte-identique.
+    const { url, key } = resolveEndpoint('openai', 'engine', { baseUrl: opts.baseUrl, apiKeyEnv: opts.apiKeyEnv })
+    return askOpenAI(system, user, model, maxTokens, timeoutMs, url, key, imageBase64, imageMimeType)
   }
   return askClaude(system, user, model)
 }

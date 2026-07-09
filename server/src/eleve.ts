@@ -26,7 +26,10 @@ import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
-import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
+import { type LLMProvider } from "./llm-engine.js";
+// T1 : la résolution d'endpoint openai-compat de l'Élève délègue au résolveur
+// unique (famille 'eleve' — SANS LLM_OPENAI_URL/KEY, baseUrl ignoré pour les presets).
+import { resolveEndpoint, normalizeCompletionsUrl } from "./llm-endpoint.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
@@ -109,9 +112,9 @@ export function normalizeEleveProvider(raw?: string): "ollama" | "openai" {
   return (raw ?? "").trim().toLowerCase() === "openai" ? "openai" : "ollama";
 }
 // Tolère une base (".../v1") OU l'endpoint complet (".../chat/completions").
+// T1 : adaptateur mince → normalisation partagée (byte-identique).
 export function completionsUrl(base: string): string {
-  const b = (base ?? "").trim().replace(/\/+$/, "");
-  return b.endsWith("/chat/completions") ? b : `${b}/chat/completions`;
+  return normalizeCompletionsUrl(base);
 }
 export const ELEVE_PROVIDER = normalizeEleveProvider(process.env.ELEVE_PROVIDER);
 const ELEVE_API_URL = process.env.ELEVE_API_URL ?? "https://api.deepseek.com/v1";
@@ -139,17 +142,10 @@ export interface EndpointOverride {
  * SEULEMENT là où ELEVE_API_URL/ELEVE_API_KEY intervenaient déjà. `endpoint` absent
  * (ou champs vides) → résolution STRICTEMENT identique à avant l'ajout de C1-P0. */
 export function openAiEndpoint(provider: LLMProvider, endpoint?: EndpointOverride): { url: string; key: string } {
-  const fallbackUrl = endpoint?.baseUrl?.trim() || ELEVE_API_URL;
-  const fallbackKey = (endpoint?.apiKeyEnv ? process.env[endpoint.apiKeyEnv] : undefined)?.trim() || ELEVE_API_KEY;
-  if (provider === "deepseek" || provider === "mistral" || provider === "groq") {
-    const p = PROVIDER_PRESETS[provider];
-    return { url: completionsUrl(p.baseURL), key: (process.env[p.apiKeyEnv] ?? fallbackKey).trim() };
-  }
-  if (provider === "litellm") {
-    return { url: completionsUrl(process.env.LITELLM_BASE_URL ?? "http://localhost:4000/v1"), key: (process.env.LITELLM_API_KEY ?? "sk-litellm-local").trim() };
-  }
-  // "openai" générique (inclut Ollama Cloud) → endpoint Élève, ou registre si fourni.
-  return { url: completionsUrl(fallbackUrl), key: fallbackKey };
+  // T1 : adaptateur mince → résolveur unique (famille 'eleve'). Byte-identique à
+  // l'ancien code : repli ELEVE_API_URL/KEY (SANS LLM_OPENAI_*), baseUrl ignoré
+  // pour les presets, url = endpoint complet (/chat/completions).
+  return resolveEndpoint(provider, "eleve", endpoint);
 }
 
 export type ResolvedBy = "eleve" | "maitre" | "none";
