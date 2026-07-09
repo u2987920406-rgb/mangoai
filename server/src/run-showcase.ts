@@ -8,8 +8,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { createProject, projectDir, projectExists, WORKSPACE_DIR } from "./projects.js";
-import { runRelay, defaultRelayDeps } from "./eleve.js";
+import { projectDir, WORKSPACE_DIR } from "./projects.js";
 import { judgeProject } from "./nocturnal.js";
 import { runEvolution } from "./prompt-evolution.js";
 
@@ -88,11 +87,18 @@ async function checkOllama(): Promise<boolean> {
 // ── SSE reader (modèle drive-game-test.ts) ────────────────────────────────────
 async function runPhase(
   projectName: string,
-  phase: { id: string; mode: string; prompt: string },
+  phase: { id: string; mode: string; prompt: string; model?: string },
   sessionId: string | undefined,
+  template?: string,
 ): Promise<{ result: PhaseResult; sessionId: string | undefined }> {
   const started = Date.now();
-  const body = { prompt: phase.prompt, projectName, model: "sonnet", mode: phase.mode, sessionId };
+  // template n'a d'effet que sur le TOUT PREMIER appel (projet inexistant côté
+  // serveur, cf. index.ts isNewProject) — l'envoyer aux phases suivantes est
+  // inoffensif (ignoré, le projet existe déjà). Corrige un bug du driver
+  // d'origine : template n'était JAMAIS envoyé, donc C/E auraient reçu le
+  // template de base plutôt que shadcn/vitrine.
+  const body: Record<string, unknown> = { prompt: phase.prompt, projectName, model: phase.model ?? "sonnet", mode: phase.mode, sessionId };
+  if (template) body.template = template;
   let res: Response;
   try {
     res = await fetch(`${BASE}/api/chat`, {
@@ -149,7 +155,13 @@ async function runPhase(
   return { result: { id: phase.id, mode: phase.mode, ok, costUsd, numTurns, ms: Date.now() - started, error }, sessionId: newSession };
 }
 
-// ── LOT ÉLÈVE : createProject + runRelay + juge ───────────────────────────────
+// ── LOT ÉLÈVE : via /api/chat (model:"eleve"), même pipeline que le lot Claude ─
+// Passe DÉLIBÉRÉMENT par /api/chat plutôt que par runRelay() en direct (comme
+// le driver d'origine le faisait) : seul ce chemin déclenche le hook CTXLOOP
+// (verifierChoixGabaritEnArrierePlan, index.ts), le briefing Stratège #164, et
+// tout ce qui est câblé au niveau du handler plutôt qu'à l'intérieur de
+// runRelay lui-même. Sans ça, le lot Élève tournerait "à côté" du vrai pipeline
+// de production — contraire à la demande de Raf de pousser TOUS les mécanismes.
 async function runEleveProject(
   name: string,
   template: string,
@@ -158,52 +170,34 @@ async function runEleveProject(
   state: ShowcaseState,
 ): Promise<ProjectResult> {
   const started = Date.now();
-  log(`\n═══ [ÉLÈVE] ${name} (template: ${template}) ═══`);
+  log(`\n═══ [ÉLÈVE via /api/chat] ${name} (template: ${template}) ═══`);
   log(`Tâche : ${task.slice(0, 200)}…`);
 
+  const phaseKey = `eleve-${name}-build`;
   const dir = projectDir(name);
   let buildOk = false;
-  let score: number | undefined;
-  let dims: Record<string, number> | undefined;
-  let judgeComment: string | undefined;
   let costUsd = 0;
   let error: string | undefined;
 
-  if (!projectExists(name)) {
-    try {
-      log(`Création du projet avec template « ${template} »…`);
-      await createProject(name, template);
-      log(`✓ Projet créé`);
-    } catch (e) {
-      error = `createProject: ${(e as Error).message}`;
-      log(`✗ ${error}`);
-      return { name, lot: "eleve", template, task, buildOk: false, costUsd: 0, durationMs: Date.now() - started, phases: [], capacites, error };
-    }
+  if (state.done.includes(phaseKey)) {
+    log(`⏭  [build] déjà fait.`);
+    buildOk = true;
   } else {
-    log(`Projet existant — reprise du runRelay.`);
+    let sessionId: string | undefined = state.sessions[name];
+    const phase = { id: "A1-build", mode: "elite", model: "eleve", prompt: task };
+    const { result, sessionId: ns } = await runPhase(name, phase, sessionId, template);
+    if (ns) { state.sessions[name] = ns; saveState(state); }
+    buildOk = result.ok;
+    costUsd = result.costUsd;
+    error = result.error;
+    const tag = result.ok ? "✅" : "❌";
+    log(`${tag} build — turns:${result.numTurns} $${result.costUsd.toFixed(4)} ${Math.round(result.ms / 1000)}s${result.error ? " ERR:" + result.error : ""}`);
+    if (result.ok) markDone(state, phaseKey);
   }
 
-  try {
-    const r = await runRelay(
-      task,
-      dir,
-      { maitreModel: "sonnet", onLog: (l) => log(`  [relay] ${l}`) },
-      defaultRelayDeps,
-    );
-    buildOk = r.success;
-    costUsd = r.costUsd;
-    if (r.success) {
-      log(`✓ Build OK — résolu par ${r.resolvedBy} en ${r.attempts} tentative(s), coût $${r.costUsd.toFixed(4)}`);
-    } else {
-      error = r.inspection.detail.slice(-200);
-      log(`✗ Build KO (${r.inspection.signal})`);
-    }
-  } catch (e) {
-    error = `runRelay: ${(e as Error).message}`;
-    log(`✗ ${error}`);
-    return { name, lot: "eleve", template, task, buildOk: false, costUsd: 0, durationMs: Date.now() - started, phases: [], capacites, error };
-  }
-
+  let score: number | undefined;
+  let dims: Record<string, number> | undefined;
+  let judgeComment: string | undefined;
   if (buildOk) {
     try {
       const j = await judgeProject(dir, task);
@@ -218,7 +212,6 @@ async function runEleveProject(
     }
   }
 
-  markDone(state, `eleve-${name}`);
   return { name, lot: "eleve", template, task, buildOk, score, dims, judgeComment, costUsd, durationMs: Date.now() - started, phases: [], capacites, error };
 }
 
@@ -268,7 +261,10 @@ async function runClaudeProject(
     }
 
     log(`\n▶ [${phase.id}] mode ${phase.mode}…`);
-    const { result, sessionId: ns } = await runPhase(name, phase, sessionId);
+    // template n'a d'effet que sur le tout 1er appel (projet inexistant) — le
+    // passer à chaque phase est inoffensif, corrige le bug d'origine où
+    // createProject recevait toujours template:undefined.
+    const { result, sessionId: ns } = await runPhase(name, phase, sessionId, template);
     if (ns) {
       sessionId = ns;
       state.sessions[name] = ns;
