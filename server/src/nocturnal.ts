@@ -17,7 +17,9 @@ import { appendHistory, formatToolLine, loadHistory, type ChatEntry } from "./hi
 import { inspectProject, type InspectionSignal } from "./inspection.js";
 import { installBackendDepsAsync } from "./backend-generator.js";
 import { generateUniquePrompts } from "./train-loop.js";
-import { askLLM, resolveProvider } from "./llm-engine.js";
+import { resolveProvider } from "./llm-engine.js";
+// T5 : l'appel LLM one-shot passe par la façade cerveau unique (brain.ask = askLLM).
+import { brain } from "./brain.js";
 import { getBrain } from "./kernel.js";
 import { capturePreview } from "./vision.js";
 import { startPreview } from "./preview.js";
@@ -213,7 +215,7 @@ export async function judgeProject(dir: string, task: string): Promise<{ score: 
   const user = `${visualIntro}Tâche demandée : ${task}\n${prefs ? `\nPréférences connues de l'utilisateur :\n${prefs.slice(0, 800)}\n` : ""}\nCode du projet (échantillon) :\n${source}\n\nNote ce projet de 0 à 10 sur chaque axe et donne un commentaire bref (1 phrase). Réponds EXACTEMENT par :\n{"dims":{"design":N,"fonctionnel":N,"originalite":N,"coherence":N,"qualite":N},"score":N,"comment":"…"}\n- design = esthétique/UI · fonctionnel = ça marche/complet · originalite = sort de l'ordinaire · coherence = fidèle au goût utilisateur ci-dessus · qualite = qualité du code.`;
   try {
     const raw = hasVision
-      ? await askLLM(system, user, { provider: resolveProvider(process.env.NOCTURNAL_JUDGE_PROVIDER, "claude"), maxTokens: 400, imageBase64, imageMimeType: "image/jpeg" })
+      ? await brain.ask(system, user, { provider: resolveProvider(process.env.NOCTURNAL_JUDGE_PROVIDER, "claude"), maxTokens: 400, imageBase64, imageMimeType: "image/jpeg" })
       : await getBrain().complete(system, user, { provider: resolveProvider(process.env.NOCTURNAL_JUDGE_PROVIDER, "claude"), maxTokens: 400 });
     return parseJudgeOutput(raw);
   } catch {
