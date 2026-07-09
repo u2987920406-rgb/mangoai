@@ -79,7 +79,7 @@ function cleanProject(dir: string, nmLink: string): void {
 }
 
 // L'Élève SEUL, sans filet : escalade neutralisée → on mesure sa compétence brute.
-const noEscalate = async () => ({ axiom: false, costUsd: 0 });
+const noEscalate = async () => ({ axiom: false, costUsd: 0, codeChanged: false });
 
 async function scoreTask(task: AuditTask): Promise<TaskScore> {
   const { dir, nmLink } = makeProject();

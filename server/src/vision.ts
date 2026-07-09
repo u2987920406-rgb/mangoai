@@ -168,12 +168,28 @@ export async function capturePreviewWithIntegrity(
 // l'instance : deux appels concurrents lançaient DEUX Chromium — le premier
 // était écrasé par l'assignation et fuyait (jamais fermé, l'idle timer ne
 // référençant que le nouveau).
+// (L112, run showcase 2026-07-09) chromium.launch() est le SEUL appel Playwright
+// de ce fichier sans timeout explicite — tous les autres (goto/waitForLoadState/
+// clic/fill) en ont un. Observé en direct : un launch qui ne se résout ni ne
+// rejette jamais gèle le verrou agent GLOBAL (agent-lock.ts) indéfiniment, pour
+// TOUT MangoOS (chat + nocturne + cron), pas seulement ce tour. Course contre un
+// délai : au-delà, on REJETTE (jamais de pendaison silencieuse) — les appelants
+// de vision.ts sont déjà en try/catch avec dégradation gracieuse (critiqueSkipped
+// etc.), donc un rejet propre est absorbé proprement, contrairement à un hang.
+const BROWSER_LAUNCH_TIMEOUT_MS = 30_000;
 let launchInFlight: Promise<Browser> | null = null;
 export async function getBrowser(): Promise<Browser> {
   if (browser?.isConnected()) return browser;
   if (!launchInFlight) {
-    launchInFlight = chromium
-      .launch({ channel: "msedge", headless: true })
+    launchInFlight = Promise.race([
+      chromium.launch({ channel: "msedge", headless: true }),
+      new Promise<Browser>((_, reject) => {
+        setTimeout(
+          () => reject(new Error(`chromium.launch() timeout après ${BROWSER_LAUNCH_TIMEOUT_MS}ms (L112)`)),
+          BROWSER_LAUNCH_TIMEOUT_MS,
+        );
+      }),
+    ])
       .then((b) => {
         browser = b;
         return b;

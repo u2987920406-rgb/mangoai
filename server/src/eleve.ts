@@ -15,14 +15,15 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawn } from "node:child_process";
+import { spawn, execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { parseContract } from "./contract.js";
 import { executeContract } from "./executor.js";
 import { inspectProject, type Inspection } from "./inspection.js";
 import { hasBackend, BACKEND_DIR_NAME } from "./backend-generator.js";
 import { axiomsFingerprint, selectAxioms } from "./axioms.js";
-import { loadMemory } from "./memory.js";
+import { loadMemory, MEMORY_FILE_NAME } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
@@ -57,7 +58,10 @@ import {
   type ExecRung,
 } from "./stratege-escalate.js";
 import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gate.js";
-import { appendBacklog } from "./project-backlog.js";
+import { appendBacklog, BACKLOG_FILE_NAME } from "./project-backlog.js";
+import { LEXIQUE_FILE_NAME } from "./lexique.js";
+import { ARCHITECTURE_FILE_NAME } from "./architecture.js";
+import { HISTORY_FILE_NAME } from "./history.js";
 import { measureProjectDesign, measureSummary } from "./design-metrics.js";
 import { flag } from "./flags.js";
 import { memoireSection, buildMemoireTool, type MemoireDeps } from "./eleve-memoire.js";
@@ -211,7 +215,7 @@ export interface RelayDeps {
   askEleve: (system: string, user: string) => Promise<string>;
   inspect: (projectDir: string) => Promise<Inspection>;
   ensureDeps: (projectDir: string, log: (s: string) => void) => Promise<void>;
-  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number }>;
+  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean }>;
   // #104 Phase 2 — juge fonctionnel optionnel (injectable). Absent de
   // defaultRelayDeps → la porte ne peut JAMAIS se déclencher par défaut.
   judge?: (projectDir: string, task: string) => Promise<{ fonctionnel: number; note: string } | null>;
@@ -973,7 +977,84 @@ PAS complète. Deux missions, dans l'ordre :
    CAT ∈ {VISION,UIUX,ARCH,DATA,PERF,A11Y,BUILD}. Toujours "candidat". Plafond ~12 / 3000 car.
 Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
 
-async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number }> {
+// (L113, run showcase 2026-07-09) Le seul critère de succès qu'escalateToClaude
+// retournait était axiomsFingerprint (fichiers d'axiomes UNIQUEMENT) + costUsd —
+// aucune vérification qu'un vrai fichier de CODE avait changé. Observé en direct :
+// un tour interrompu (L112) peut recevoir un événement `result` d'abandon précoce,
+// le placeholder de départ (jamais touché) compile déjà → "build vert, résolu par
+// le Maître, +1 axiome" alors que zéro ligne de code n'a été écrite. Filtre les
+// fichiers de métadonnées (non gitignorés mais jamais du "code") pour ne compter
+// que les VRAIS changements, sur le modèle de commitVersion (versions.ts).
+const ESCALATION_METADATA_FILES = new Set([
+  BACKLOG_FILE_NAME,
+  LEXIQUE_FILE_NAME,
+  ARCHITECTURE_FILE_NAME,
+  HISTORY_FILE_NAME,
+  MEMORY_FILE_NAME,
+]);
+
+const execFileAsync = promisify(execFile);
+
+/** Chemins avec un changement non commité dans `dir` (porcelain v1, best-effort —
+ *  fail-open vers un set vide si pas un repo git / erreur, ne bloque jamais). */
+export async function gitDirtyPaths(dir: string): Promise<Set<string>> {
+  try {
+    const { stdout } = await execFileAsync("git", ["status", "--porcelain"], { cwd: dir });
+    return new Set(
+      stdout
+        .split("\n")
+        .map((l) => l.slice(3).trim()) // "XY path" (porcelain v1) → path
+        .filter(Boolean),
+    );
+  } catch {
+    return new Set();
+  }
+}
+
+/** true si `after` contient un chemin absent de `before` et qui n'est PAS un
+ *  fichier de métadonnées connu — c'est-à-dire un VRAI changement de code. */
+export function hasRealCodeChange(before: Set<string>, after: Set<string>): boolean {
+  for (const f of after) {
+    if (before.has(f)) continue;
+    if (ESCALATION_METADATA_FILES.has(f)) continue;
+    return true;
+  }
+  return false;
+}
+
+// (L112) Idle-timeout sur la consommation de query() : si AUCUN message n'arrive
+// pendant idleMs, on abandonne (best-effort .return() sur l'itérateur) plutôt que
+// d'attendre indéfiniment — c'est le 2ᵉ/3ᵉ cas L112 observé (claude.exe bloqué
+// 20-35 min, aucun tool-call loggé). 5 min de marge : généreux pour un seul appel
+// Bash légitime (npm install observé jusqu'à ~2 min dans ce run), largement en
+// dessous des blocages réels observés.
+const ESCALATION_IDLE_TIMEOUT_MS = 5 * 60_000;
+
+async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_cost_usd?: number }>): Promise<{ costUsd: number; timedOut: boolean }> {
+  let costUsd = 0;
+  let timedOut = false;
+  const iterator = q[Symbol.asyncIterator]();
+  for (;;) {
+    const step = await Promise.race([
+      iterator.next().then((r) => ({ kind: "value" as const, r })),
+      new Promise<{ kind: "timeout" }>((resolve) => setTimeout(() => resolve({ kind: "timeout" }), ESCALATION_IDLE_TIMEOUT_MS)),
+    ]);
+    if (step.kind === "timeout") {
+      timedOut = true;
+      try {
+        await iterator.return?.();
+      } catch {
+        /* best-effort — ne doit jamais faire planter l'appelant */
+      }
+      break;
+    }
+    if (step.r.done) break;
+    if (step.r.value.type === "result") costUsd = step.r.value.total_cost_usd ?? 0;
+  }
+  return { costUsd, timedOut };
+}
+
+async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean }> {
   // Détection de l'axiome appris sur l'UNION des fichiers de la partition (un
   // axiome rangé dans .axioms.<famille>.md compte aussi), via une empreinte NON
   // plafonnée : un nouvel axiome est appendé en fin de registre, donc au-delà du
@@ -1004,6 +1085,8 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
     escProfile.escalateAppendix, // "" pour GENERIC → prompt inchangé
   ].join("\n");
 
+  const filesBefore = await gitDirtyPaths(ctx.projectDir);
+
   const q = query({
     prompt,
     options: {
@@ -1015,11 +1098,12 @@ async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolea
       systemPrompt: { type: "preset", preset: "claude_code", append: incomplete ? ESCALATE_FINISH_SYSTEM : ESCALATE_SYSTEM },
     },
   });
-  let costUsd = 0;
-  for await (const m of q) if (m.type === "result") costUsd = m.total_cost_usd ?? 0;
+  const { costUsd, timedOut } = await consumeEscalationStream(q);
 
   const axiom = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles) !== axBefore;
-  return { axiom, costUsd };
+  const filesAfter = await gitDirtyPaths(ctx.projectDir);
+  const codeChanged = !timedOut && hasRealCodeChange(filesBefore, filesAfter);
+  return { axiom, costUsd, codeChanged };
 }
 
 export const defaultRelayDeps: RelayDeps = {
@@ -1209,6 +1293,14 @@ export async function runRelay(
       const insp = await inspectReady();
       if (!insp.ok) {
         push(`✗ build encore cassé après escalade — échec`);
+        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
+      }
+      // (L113, run showcase 2026-07-09) build vert ne suffit PAS : un placeholder
+      // jamais touché compile déjà. Sans changement de code réel, ce n'était pas
+      // une résolution — c'est un abandon (souvent causé par L112 : le tour a été
+      // interrompu avant d'écrire quoi que ce soit) déguisé en succès.
+      if (!esc.codeChanged) {
+        push(`✗ le Maître n'a modifié AUCUN fichier de code réel — échec (pas une résolution)`);
         return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
       }
       push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);

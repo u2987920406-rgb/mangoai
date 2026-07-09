@@ -73,7 +73,7 @@ const mockDeps: RelayDeps = {
   },
   inspect: async () => mockOkInspection,
   ensureDeps: async () => {},
-  escalate: async () => ({ axiom: false, costUsd: 0 }),
+  escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
 };
 
 // Utilise un répertoire temporaire inexistant — ensureDeps est mocké donc ça passe

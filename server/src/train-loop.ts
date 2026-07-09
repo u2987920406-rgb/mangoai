@@ -261,7 +261,7 @@ async function main(): Promise<void> {
     escalate: async (ctx) => {
       if (escalations >= maxEscalations) {
         console.log("[train] plafond d'escalades atteint → pas d'escalade (échec enregistré tel quel)");
-        return { axiom: false, costUsd: 0 };
+        return { axiom: false, costUsd: 0, codeChanged: false };
       }
       escalations++;
       console.log(`[train] escalade Claude ${escalations}/${maxEscalations}…`);

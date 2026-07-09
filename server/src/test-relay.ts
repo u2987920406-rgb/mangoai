@@ -57,7 +57,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("OK"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => ({ axiom: false, costUsd: 0 }),
+      escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
     console.log("\n  [A] Élève compétent :");
@@ -78,7 +78,7 @@ async function deterministic(): Promise<void> {
       escalate: async (ctx) => {
         escalated = true;
         fs.writeFileSync(path.join(ctx.projectDir, "marker.txt"), "OK"); // le Maître répare
-        return { axiom: true, costUsd: 0.12 };
+        return { axiom: true, costUsd: 0.12, codeChanged: true };
       },
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
@@ -98,7 +98,7 @@ async function deterministic(): Promise<void> {
       ensureDeps: noEnsure,
       escalate: async (ctx) => {
         fs.writeFileSync(path.join(ctx.projectDir, "marker.txt"), "OK");
-        return { axiom: true, costUsd: 0.08 };
+        return { axiom: true, costUsd: 0.08, codeChanged: true };
       },
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
@@ -114,7 +114,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => ({ axiom: false, costUsd: 0.05 }), // le Maître ne corrige pas
+      escalate: async () => ({ axiom: false, costUsd: 0.05, codeChanged: false }), // le Maître ne corrige pas
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 1 }, deps);
     console.log("\n  [D] Échec des deux étages :");
@@ -131,7 +131,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => { eleveCalls++; return writeMarker("OK"); }, // build TOUJOURS vert
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => ({ axiom: false, costUsd: 0 }),
+      escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
       judge: async () => { judgeCalls++; return { fonctionnel: 2, note: "template vide" }; },
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2, functionalGate: true, functionalMin: 5 }, deps);
@@ -149,7 +149,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => { eleveCalls++; return writeMarker("OK"); },
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => ({ axiom: false, costUsd: 0 }),
+      escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
       judge: async () => { judgeCalls++; return { fonctionnel: 1, note: "vide" }; },
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps); // gate non passé → OFF
@@ -180,7 +180,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("BAD"), // ne doit PAS être utilisé (chemin agentique)
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0 }; },
+      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0, codeChanged: true }; },
       agenticPost: agenticScript([
         [call("write_file", { path: "marker.txt", content: "OK" }, 1)],
         [call("finish", { summary: "marker posé" }, 2)],
@@ -203,7 +203,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async (ctx) => { escalated = true; fs.writeFileSync(path.join(ctx.projectDir, "marker.txt"), "OK"); return { axiom: true, costUsd: 0.1 }; },
+      escalate: async (ctx) => { escalated = true; fs.writeFileSync(path.join(ctx.projectDir, "marker.txt"), "OK"); return { axiom: true, costUsd: 0.1, codeChanged: true }; },
       agenticPost: agenticScript([
         [call("write_file", { path: "marker.txt", content: "BAD" }, 1)],
         [call("finish", { summary: "fini (mais cassé)" }, 2)],
@@ -226,7 +226,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("OK"), // chemin contrat
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => ({ axiom: false, costUsd: 0 }),
+      escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
       agenticPost: async () => { agenticUsed = true; return { content: "", toolCalls: [] }; },
     };
     const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
@@ -250,7 +250,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d), // marker OK → build vert
       ensureDeps: noEnsure,
-      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0.02 }; },
+      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0.02, codeChanged: true }; },
       // Le moteur écrit le marker (build vert) mais ne finit JAMAIS → seen/corrections → stuck.
       agenticPost: agenticScript([[call("write_file", { path: "marker.txt", content: "OK" }, 1)]]),
     };
@@ -283,7 +283,7 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0.02 }; },
+      escalate: async () => { escalated = true; return { axiom: false, costUsd: 0.02, codeChanged: true }; },
       agenticPost: post,
     };
     const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
@@ -306,13 +306,42 @@ async function deterministic(): Promise<void> {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async (ctx) => { escIncomplete = ctx.incomplete === true; return { axiom: false, costUsd: 0.02 }; },
+      escalate: async (ctx) => { escIncomplete = ctx.incomplete === true; return { axiom: false, costUsd: 0.02, codeChanged: true }; },
       agenticPost: agenticScript([[call("write_file", { path: "marker.txt", content: "OK" }, 1)]]),
     };
     const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
     console.log("\n  [F4c] Opt-in ELEVE_ESCALATE_ON_BLOCK=on → escalade (terminer) :");
     check("escalade en mode 'terminer' (incomplete)", escIncomplete);
     check("résolu par le Maître, pas laissé incomplete", r.resolvedBy === "maitre" && r.success && !r.incomplete);
+    if (prevR === undefined) delete process.env.ELEVE_SELF_RELANCE_MAX; else process.env.ELEVE_SELF_RELANCE_MAX = prevR;
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  {
+    // G — L113 (run showcase 2026-07-09) : le build est DÉJÀ vert (l'Élève a laissé
+    // un état compilable avant de caler), mais le Maître n'a RIEN modifié de réel
+    // (escalate mock : codeChanged=false, exactement comme un tour interrompu par
+    // L112 qui reçoit un `result` d'abandon précoce). AVANT le correctif, ceci
+    // aurait été rapporté comme "résolu par le Maître" — un faux succès complet.
+    // Après le correctif, doit être un échec explicite.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-G-"));
+    const prevR = process.env.ELEVE_SELF_RELANCE_MAX, prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_SELF_RELANCE_MAX = "1";
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      // Le Maître "répond" (result reçu, coût facturé) mais n'a rien écrit de réel.
+      escalate: async () => ({ axiom: false, costUsd: 0.02, codeChanged: false }),
+      // L'agentic engine laisse le build vert (marker.txt=OK) avant de caler —
+      // insp.ok sera VRAI au moment de l'escalade, exactement comme L113.
+      agenticPost: agenticScript([[call("write_file", { path: "marker.txt", content: "OK" }, 1)]]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [G] L113 — build vert mais AUCUN code changé par le Maître :");
+    check("PAS un succès malgré le build vert (L113 corrigée)", r.resolvedBy === "none" && !r.success);
     if (prevR === undefined) delete process.env.ELEVE_SELF_RELANCE_MAX; else process.env.ELEVE_SELF_RELANCE_MAX = prevR;
     if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });

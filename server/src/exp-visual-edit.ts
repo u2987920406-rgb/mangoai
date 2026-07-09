@@ -41,7 +41,7 @@ function cleanProject(dir: string, nmLink: string): void {
   if (!fs.existsSync(nmLink)) fs.rmSync(dir, { recursive: true, force: true });
 }
 
-const noEscalate = async () => ({ axiom: false, costUsd: 0 });
+const noEscalate = async () => ({ axiom: false, costUsd: 0, codeChanged: false });
 
 (async () => {
   if (!fs.existsSync(path.join(SOURCE, "node_modules"))) {
