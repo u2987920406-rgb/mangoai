@@ -10,5 +10,17 @@
     "hits": 1,
     "createdAt": "2026-07-08T20:41:15.176Z",
     "updatedAt": "2026-07-08T20:41:15.176Z"
+  },
+  {
+    "id": "concept_1783574141154_phaser-cree-une-base-de-connaissances-complete-sur-les-phasers-de-st",
+    "sig": "phaser-cree-une-base-de-connaissances-complete-sur-les-phasers-de-star-trek-type",
+    "mot": "phaser",
+    "definitionCandidate": "Phaser (Star Trek) : arme à énergie dirigée standard de Starfleet et d'autres puissances, tirant des particules nadion. Réglages multiples selon l'intensité : étourdissement (« stun », non létal, incapacite sans tuer) et destruction (« kill », létal, peut vaporiser une cible). Les règles d'engagement de Starfleet imposent le réglage étourdissement par défaut, sauf ordre contraire explicite. Source : Memory Alpha (memory-alpha.fandom.com/wiki/Phaser).",
+    "contexteDeValidite": "Crée une base de connaissances complète sur les phasers de Star Trek : types de tir (stun/kill), puissance en gigajoules, usage par faction (Starfleet, Klingons, Romuliens), et épisodes emblématiques où ils apparaissent.",
+    "task": "Crée une base de connaissances complète sur les phasers de Star Trek : types de tir (stun/kill), puissance en gigajoules, usage par faction (Starfleet, Klingons, Romuliens), et épisodes emblématiques où ils apparaissent.",
+    "status": "proposed",
+    "hits": 1,
+    "createdAt": "2026-07-09T05:15:41.154Z",
+    "updatedAt": "2026-07-09T05:15:41.154Z"
   }
 ]
