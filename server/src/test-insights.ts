@@ -6,12 +6,9 @@ import { inferProjectType, templateForType } from "./blueprints.js";
 import type { TurnMetrics } from "./metrics.js";
 import type { AxiomStats } from "./axioms.js";
 
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-const check = (label: string, cond: boolean) => {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-};
+const check = makeCheck(() => { failures++; });
 const near = (a: number, b: number, eps = 1e-6) => Math.abs(a - b) < eps;
 
 const base = (o: Partial<TurnMetrics>): TurnMetrics => ({

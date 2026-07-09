@@ -19,12 +19,9 @@ import { resolveProfile } from "./models/profile.js";
 import type { PostFn, ToolCall } from "./eleve-runtime.js";
 
 const LIVE = process.argv.includes("--live");
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-function check(label: string, cond: boolean) {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-}
+const check = makeCheck(() => { failures++; });
 
 const inspOk = (): Inspection => ({ ok: true, signal: "ok", detail: "", durationMs: 0 });
 const inspKo = (d: string): Inspection => ({ ok: false, signal: "build-failed", detail: d, durationMs: 0 });

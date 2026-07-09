@@ -15,15 +15,14 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { spawn, execFile } from "node:child_process";
-import { promisify } from "node:util";
+import { spawn } from "node:child_process";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import { parseContract } from "./contract.js";
 import { executeContract } from "./executor.js";
 import { inspectProject, type Inspection } from "./inspection.js";
 import { hasBackend, BACKEND_DIR_NAME } from "./backend-generator.js";
 import { axiomsFingerprint, selectAxioms } from "./axioms.js";
-import { loadMemory, MEMORY_FILE_NAME } from "./memory.js";
+import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
@@ -58,10 +57,7 @@ import {
   type ExecRung,
 } from "./stratege-escalate.js";
 import { runClosureGate, evaluateGate, changedFilesFromTrace } from "./eleve-gate.js";
-import { appendBacklog, BACKLOG_FILE_NAME } from "./project-backlog.js";
-import { LEXIQUE_FILE_NAME } from "./lexique.js";
-import { ARCHITECTURE_FILE_NAME } from "./architecture.js";
-import { HISTORY_FILE_NAME } from "./history.js";
+import { appendBacklog } from "./project-backlog.js";
 import { measureProjectDesign, measureSummary } from "./design-metrics.js";
 import { flag } from "./flags.js";
 import { memoireSection, buildMemoireTool, type MemoireDeps } from "./eleve-memoire.js";
@@ -977,50 +973,11 @@ PAS complète. Deux missions, dans l'ordre :
    CAT ∈ {VISION,UIUX,ARCH,DATA,PERF,A11Y,BUILD}. Toujours "candidat". Plafond ~12 / 3000 car.
 Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
 
-// (L113, run showcase 2026-07-09) Le seul critère de succès qu'escalateToClaude
-// retournait était axiomsFingerprint (fichiers d'axiomes UNIQUEMENT) + costUsd —
-// aucune vérification qu'un vrai fichier de CODE avait changé. Observé en direct :
-// un tour interrompu (L112) peut recevoir un événement `result` d'abandon précoce,
-// le placeholder de départ (jamais touché) compile déjà → "build vert, résolu par
-// le Maître, +1 axiome" alors que zéro ligne de code n'a été écrite. Filtre les
-// fichiers de métadonnées (non gitignorés mais jamais du "code") pour ne compter
-// que les VRAIS changements, sur le modèle de commitVersion (versions.ts).
-const ESCALATION_METADATA_FILES = new Set([
-  BACKLOG_FILE_NAME,
-  LEXIQUE_FILE_NAME,
-  ARCHITECTURE_FILE_NAME,
-  HISTORY_FILE_NAME,
-  MEMORY_FILE_NAME,
-]);
-
-const execFileAsync = promisify(execFile);
-
-/** Chemins avec un changement non commité dans `dir` (porcelain v1, best-effort —
- *  fail-open vers un set vide si pas un repo git / erreur, ne bloque jamais). */
-export async function gitDirtyPaths(dir: string): Promise<Set<string>> {
-  try {
-    const { stdout } = await execFileAsync("git", ["status", "--porcelain"], { cwd: dir });
-    return new Set(
-      stdout
-        .split("\n")
-        .map((l) => l.slice(3).trim()) // "XY path" (porcelain v1) → path
-        .filter(Boolean),
-    );
-  } catch {
-    return new Set();
-  }
-}
-
-/** true si `after` contient un chemin absent de `before` et qui n'est PAS un
- *  fichier de métadonnées connu — c'est-à-dire un VRAI changement de code. */
-export function hasRealCodeChange(before: Set<string>, after: Set<string>): boolean {
-  for (const f of after) {
-    if (before.has(f)) continue;
-    if (ESCALATION_METADATA_FILES.has(f)) continue;
-    return true;
-  }
-  return false;
-}
+// (L113) Signaux git de l'escalade (gitDirtyPaths / hasRealCodeChange + filtre des
+// fichiers de métadonnées) extraits dans ./git-signals.ts. Ré-exportés ici pour
+// préserver la surface publique de eleve.ts (imports externes inchangés).
+import { gitDirtyPaths, hasRealCodeChange } from "./git-signals.js";
+export { gitDirtyPaths, hasRealCodeChange };
 
 // (L112) Idle-timeout sur la consommation de query() : si AUCUN message n'arrive
 // pendant idleMs, on abandonne (best-effort .return() sur l'itérateur) plutôt que

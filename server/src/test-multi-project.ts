@@ -8,12 +8,9 @@ import os from "node:os";
 import path from "node:path";
 import { multiProjectPromptSection } from "./multi-project.js";
 
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-const check = (label: string, cond: boolean) => {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-};
+const check = makeCheck(() => { failures++; });
 
 /** Crée un fichier (et les dossiers parents) dans le workspace temporaire. */
 function touch(base: string, rel: string): void {

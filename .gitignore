@@ -47,7 +47,7 @@ server/data/*.bak-v*
 run-driver.mjs
 
 # Bancs d'essai jetables du Moteur de Goût (#149) — non versionnés
-server/src/exp-taste-*.ts
+server/scripts/exp-taste-*.ts
 server/snap-*.mjs
 
 # Plan de run de validation — local, non versionné

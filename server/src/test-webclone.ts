@@ -7,12 +7,9 @@
 
 import { isCloneableUrl } from "./vision.js";
 
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-const check = (label: string, cond: boolean) => {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-};
+const check = makeCheck(() => { failures++; });
 
 line("═");
 console.log("webclone — garde-fou isCloneableUrl");

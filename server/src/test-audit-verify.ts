@@ -9,12 +9,9 @@ import os from "node:os";
 import path from "node:path";
 import { verifyEffect, type EffectSpec } from "./audit-verify.js";
 
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-const check = (label: string, cond: boolean) => {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-};
+const check = makeCheck(() => { failures++; });
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), "auditverify-"));
 const write = (rel: string, content: string) => {
