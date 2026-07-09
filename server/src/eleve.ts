@@ -30,6 +30,10 @@ import { type LLMProvider } from "./llm-engine.js";
 // T1 : la résolution d'endpoint openai-compat de l'Élève délègue au résolveur
 // unique (famille 'eleve' — SANS LLM_OPENAI_URL/KEY, baseUrl ignoré pour les presets).
 import { resolveEndpoint, normalizeCompletionsUrl } from "./llm-endpoint.js";
+// T2 : couche transport unique — le transport function-calling local (Ollama tools)
+// délègue à la brique partagée (mappers inclus). Les autres transports Élève
+// (askEleveOllama/askEleveOpenAI/postEleveCompletions) convergent à la tranche T4.
+import { ollamaChatTools } from "./llm-transport.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
@@ -558,66 +562,17 @@ async function postEleveCompletions(
 // Souveraineté : la MÊME boucle agentique tourne sur un modèle LOCAL tool-capable
 // (Qwen/GLM quantisé) — zéro cloud. Ollama parle nativement `tools`/`tool_calls`,
 // avec deux différences vs OpenAI : les arguments d'outil sont un OBJET (pas une
-// string JSON) et il n'y a pas d'id de tool_call. On isole la traduction dans des
-// mappers PURS, testables sans réseau.
-interface OllamaToolCall { function: { name: string; arguments: Record<string, unknown> | string } }
-interface OllamaMessage { role: string; content: string; tool_calls?: OllamaToolCall[] }
-
-function safeParseArgs(raw: string): Record<string, unknown> {
-  try { return JSON.parse(raw || "{}") as Record<string, unknown>; } catch { return {}; }
-}
-
-/** Nos ChatMessage → messages Ollama (arguments d'outil en OBJET). PUR. */
-export function toOllamaMessages(messages: ChatMessage[]): OllamaMessage[] {
-  return messages.map((m) => {
-    if (m.role === "assistant" && m.tool_calls?.length) {
-      return {
-        role: "assistant",
-        content: m.content ?? "",
-        tool_calls: m.tool_calls.map((tc) => ({ function: { name: tc.function.name, arguments: safeParseArgs(tc.function.arguments) } })),
-      };
-    }
-    return { role: m.role, content: m.content ?? "" };
-  });
-}
-
-/** Réponse Ollama → notre {content, toolCalls} (arguments re-stringifiés, id généré). PUR. */
-export function fromOllamaResponse(
-  data: { message?: { content?: string; tool_calls?: OllamaToolCall[] } },
-): { content: string; toolCalls?: ToolCall[] } {
-  const msg = data.message;
-  const content = msg?.content ?? "";
-  const tcs = msg?.tool_calls;
-  if (!tcs?.length) return { content };
-  const toolCalls: ToolCall[] = tcs.map((tc, i) => ({
-    id: `ollama_${i}_${tc.function?.name ?? "tool"}`,
-    function: {
-      name: tc.function?.name ?? "",
-      arguments: typeof tc.function?.arguments === "string" ? tc.function.arguments : JSON.stringify(tc.function?.arguments ?? {}),
-    },
-  }));
-  return { content, toolCalls };
-}
+// string JSON) et il n'y a pas d'id de tool_call. Les mappers PURS toOllamaMessages/
+// fromOllamaResponse vivent désormais dans la couche transport unique (T2) ; on les
+// ré-exporte (test-eleve-ollama-tools les importe depuis eleve, contrat inchangé).
+export { toOllamaMessages, fromOllamaResponse } from "./llm-transport.js";
 
 async function postEleveOllamaTools(
   messages: ChatMessage[],
   tools: OpenAITool[] | null,
   model?: string,
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
-  const res = await fetch(`${OLLAMA}/api/chat`, {
-    method: "POST",
-    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      options: { temperature: 0 },
-      messages: toOllamaMessages(messages),
-      ...(tools ? { tools } : {}),
-    }),
-  });
-  if (!res.ok) throw new Error(`Ollama tools HTTP ${res.status}`);
-  return fromOllamaResponse((await res.json()) as { message?: { content?: string; tool_calls?: OllamaToolCall[] } });
+  return ollamaChatTools({ baseUrl: OLLAMA, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, messages, tools });
 }
 
 /** Un provider sait-il piloter une boucle à outils ? openai-compat OU ollama local. */

@@ -359,6 +359,9 @@
     "test-llm-engine": {
       "tier": "offline"
     },
+    "test-llm-transport": {
+      "tier": "offline"
+    },
     "test-loop-state": {
       "tier": "offline"
     },

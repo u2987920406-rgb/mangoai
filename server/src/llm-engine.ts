@@ -23,13 +23,17 @@
 //
 // Réglage par feature : <FEATURE>_PROVIDER dans .env (ex. SUPERAGENT_PROVIDER),
 // sinon LLM_PROVIDER global, sinon le défaut passé par la feature.
-import { query } from '@anthropic-ai/claude-agent-sdk'
 import { askOllama } from './ollama.js'
 // Résolution d'endpoint openai-compat UNIQUE (T1) : les deux chaînes de repli de
 // MangoOS délèguent désormais à resolveEndpoint (famille 'engine' ici). PROVIDER_PRESETS
 // vit dans le module leaf llm-endpoint et est ré-exporté ici (API publique inchangée).
 import { PROVIDER_PRESETS, normalizeCompletionsUrl, resolveEndpoint } from './llm-endpoint.js'
 export { PROVIDER_PRESETS } from './llm-endpoint.js'
+// Couche transport UNIQUE (T2) : askClaude/claudeWebResearch/askOpenAI délèguent aux
+// briques partagées. subscriptionEnv (garde-fou abonnement) est désormais SOURCÉ ici et
+// ré-exporté — les importeurs (agent.ts, promptlab.ts, index.ts) restent inchangés.
+import { claudeQuery, openAiChat, subscriptionEnv, CLAUDE_QUERY_TIMEOUT_MS } from './llm-transport.js'
+export { subscriptionEnv } from './llm-transport.js'
 
 export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'litellm'
 
@@ -115,103 +119,42 @@ function defaultModel(provider: LLMProvider): string {
   return process.env.LLM_OPENAI_MODEL ?? process.env.ELEVE_MODEL ?? 'deepseek-chat'
 }
 
-// ── Abonnement vs crédits API : le garde-fou central ─────────────────────────
-// CRUCIAL : query() utilise l'ABONNEMENT Claude Code UNIQUEMENT si
-// ANTHROPIC_API_KEY est absente de l'env. Une clé (même sans crédit) le détourne
-// silencieusement vers les crédits API PAYANTS. Tout appel à query() qui veut
-// l'abonnement DOIT passer cet env nettoyé (askClaude, claudeWebResearch,
-// runAgent dans agent.ts, le Lab dans promptlab.ts). Centralisé ici pour qu'un
-// seul endroit porte la règle.
-export function subscriptionEnv(): Record<string, string | undefined> {
-  const env: Record<string, string | undefined> = { ...process.env }
-  delete env.ANTHROPIC_API_KEY
-  return env
-}
-
-// (N16, nuit 2026-07-03) Deadline DURE sur les itérations query() : l'option
-// timeoutMs d'askLLM n'était appliquée qu'aux providers HTTP — un stream SDK
-// qui pend (réseau muet) gelait le juge nocturne, donc TOUT le batch de nuit,
-// `running=true` pour toujours. On interrompt le query proprement puis on lève
-// (l'appelant a déjà ses catch : verdict neutre / repli — jamais un gel).
-const CLAUDE_QUERY_TIMEOUT_MS = Math.max(60_000, Number(process.env.CLAUDE_QUERY_TIMEOUT_MS ?? 300_000))
-
-async function withQueryDeadline(
-  q: { interrupt?: () => Promise<void> },
-  work: Promise<string>,
-  timeoutMs: number,
-  label: string,
-): Promise<string> {
-  let timer: NodeJS.Timeout | undefined
-  const deadline = new Promise<never>((_, reject) => {
-    timer = setTimeout(() => {
-      void q.interrupt?.().catch(() => undefined) // best-effort : libère le process SDK
-      reject(new Error(`${label} : aucune réponse après ${Math.round(timeoutMs / 1000)} s (deadline)`))
-    }, timeoutMs)
-  })
-  try {
-    return await Promise.race([work, deadline])
-  } finally {
-    if (timer) clearTimeout(timer)
-  }
-}
+// subscriptionEnv (garde-fou abonnement) + CLAUDE_QUERY_TIMEOUT_MS + le drain/deadline
+// du flux query() vivent désormais dans llm-transport.ts (couche unique, T2). Importés
+// en tête ; subscriptionEnv est ré-exporté pour les importeurs historiques.
 
 // ── Provider claude : query() via l'ABONNEMENT ───────────────────────────────
+// T2 : délègue à claudeQuery (transport unique). systemAppend = system → systemPrompt
+// preset ; separator '' ; deadline standard. Byte-identique à l'ancien askClaude.
 async function askClaude(system: string, user: string, model: string): Promise<string> {
-  const env = subscriptionEnv()
-  const q = query({
-    prompt: user,
-    options: {
-      model,
-      systemPrompt: { type: 'preset', preset: 'claude_code', append: system },
-      maxTurns: 5,
-      allowedTools: [],
-      env,
-    },
+  return claudeQuery(user, {
+    model,
+    systemAppend: system,
+    allowedTools: [],
+    maxTurns: 5,
+    timeoutMs: CLAUDE_QUERY_TIMEOUT_MS,
+    label: 'askClaude',
   })
-  const drain = (async () => {
-    let text = ''
-    for await (const m of q) {
-      if (m.type === 'assistant') {
-        const content = (m as { message?: { content?: Array<{ type: string; text?: string }> } }).message?.content ?? []
-        for (const b of content) if (b.type === 'text' && b.text) text += b.text
-      }
-    }
-    return text.trim()
-  })()
-  return withQueryDeadline(q, drain, CLAUDE_QUERY_TIMEOUT_MS, 'askClaude')
 }
 
 // ── Recherche web via l'ABONNEMENT (query + outil WebSearch, multi-tours) ────
 // claude-only : WebSearch est un outil Claude Code (ni Ollama ni OpenAI-compat
 // ne l'ont nativement). Renvoie la synthèse texte ("" si rien). Plus lent
 // (~1 min) car c'est une vraie recherche web. Comme askClaude, on neutralise
-// ANTHROPIC_API_KEY pour forcer l'abonnement.
+// ANTHROPIC_API_KEY pour forcer l'abonnement. T2 : délègue à claudeQuery — PAS de
+// systemAppend (aucun systemPrompt), separator '\n', deadline ×2. Byte-identique.
 export async function claudeWebResearch(
   prompt: string,
   opts: { model?: string; maxTurns?: number } = {},
 ): Promise<string> {
-  const env = subscriptionEnv()
-  const q = query({
-    prompt,
-    options: {
-      model: opts.model ?? process.env.LLM_CLAUDE_MODEL ?? 'sonnet',
-      allowedTools: ['WebSearch'],
-      maxTurns: opts.maxTurns ?? 6,
-      env,
-    },
+  return claudeQuery(prompt, {
+    model: opts.model ?? process.env.LLM_CLAUDE_MODEL ?? 'sonnet',
+    allowedTools: ['WebSearch'],
+    maxTurns: opts.maxTurns ?? 6,
+    timeoutMs: CLAUDE_QUERY_TIMEOUT_MS * 2,
+    label: 'claudeWebResearch',
+    blockSeparator: '\n',
   })
-  const drain = (async () => {
-    let text = ''
-    for await (const m of q) {
-      if (m.type === 'assistant') {
-        const content = (m as { message?: { content?: Array<{ type: string; text?: string }> } }).message?.content ?? []
-        for (const b of content) if (b.type === 'text' && b.text) text += b.text + '\n'
-      }
-    }
-    return text.trim()
-  })()
-  // Recherche web réelle = plus lente qu'un tour de texte → marge ×2.
-  return withQueryDeadline(q, drain, CLAUDE_QUERY_TIMEOUT_MS * 2, 'claudeWebResearch')
 }
 
 // ── Provider openai-compatible (generic + deepseek / mistral / groq) ─────────
@@ -235,37 +178,9 @@ async function askOpenAI(
   const url = normalizeCompletionsUrl(baseURLOverride ?? process.env.LLM_OPENAI_URL ?? process.env.ELEVE_API_URL ?? 'https://api.deepseek.com/v1')
   const key = (apiKeyOverride ?? process.env.LLM_OPENAI_KEY ?? process.env.ELEVE_API_KEY ?? '').trim()
   if (!key) throw new Error('Clé OpenAI-compatible manquante (LLM_OPENAI_KEY ou ELEVE_API_KEY dans server/.env).')
-  const mime = imageMimeType ?? 'image/jpeg'
-  const userContent = imageBase64
-    ? [
-        { type: 'text', text: user },
-        { type: 'image_url', image_url: { url: `data:${mime};base64,${imageBase64}` } },
-      ]
-    : user
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model,
-        stream: false,
-        temperature: 0,
-        max_tokens: maxTokens,
-        messages: [
-          { role: 'system', content: system },
-          { role: 'user', content: userContent },
-        ],
-      }),
-      signal: controller.signal,
-    })
-    if (!res.ok) throw new Error(`OpenAI-compat HTTP ${res.status}`)
-    const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> }
-    return (data.choices?.[0]?.message?.content ?? '').trim()
-  } finally {
-    clearTimeout(timer)
-  }
+  // T2 : transport openai-compat délégué à la brique unique. Famille engine =
+  // max_tokens présent + label 'OpenAI-compat' → byte-identique à l'ancien fetch inline.
+  return openAiChat(system, user, { url, key, model, timeoutMs, maxTokens, imageBase64, imageMimeType, errorLabel: 'OpenAI-compat' })
 }
 
 /** Porte d'entrée unique : (system, user) → texte. Lève si le provider échoue ;
