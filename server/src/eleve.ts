@@ -26,7 +26,14 @@ import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
 import { resolveProfile, type ModelProfile } from "./models/profile.js";
-import { PROVIDER_PRESETS, type LLMProvider } from "./llm-engine.js";
+import { type LLMProvider } from "./llm-engine.js";
+// T1 : la résolution d'endpoint openai-compat de l'Élève délègue au résolveur
+// unique (famille 'eleve' — SANS LLM_OPENAI_URL/KEY, baseUrl ignoré pour les presets).
+import { resolveEndpoint, normalizeCompletionsUrl } from "./llm-endpoint.js";
+// T2 : couche transport unique — le transport function-calling local (Ollama tools)
+// délègue à la brique partagée (mappers inclus). Les autres transports Élève
+// (askEleveOllama/askEleveOpenAI/postEleveCompletions) convergent à la tranche T4.
+import { ollamaChat, ollamaChatTools, openAiChat, openAiChatTools } from "./llm-transport.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
@@ -40,7 +47,7 @@ import {
   duplicateExplorationMessage,
 } from "./eleve-antispiral.js";
 import { coerceTextToolCall } from "./tool-call-coerce.js";
-import { eleveRetryDelayMs, eleveMaxRetries } from "./eleve-retry.js";
+import { eleveRetryPolicy } from "./eleve-retry.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
@@ -109,9 +116,9 @@ export function normalizeEleveProvider(raw?: string): "ollama" | "openai" {
   return (raw ?? "").trim().toLowerCase() === "openai" ? "openai" : "ollama";
 }
 // Tolère une base (".../v1") OU l'endpoint complet (".../chat/completions").
+// T1 : adaptateur mince → normalisation partagée (byte-identique).
 export function completionsUrl(base: string): string {
-  const b = (base ?? "").trim().replace(/\/+$/, "");
-  return b.endsWith("/chat/completions") ? b : `${b}/chat/completions`;
+  return normalizeCompletionsUrl(base);
 }
 export const ELEVE_PROVIDER = normalizeEleveProvider(process.env.ELEVE_PROVIDER);
 const ELEVE_API_URL = process.env.ELEVE_API_URL ?? "https://api.deepseek.com/v1";
@@ -139,17 +146,10 @@ export interface EndpointOverride {
  * SEULEMENT là où ELEVE_API_URL/ELEVE_API_KEY intervenaient déjà. `endpoint` absent
  * (ou champs vides) → résolution STRICTEMENT identique à avant l'ajout de C1-P0. */
 export function openAiEndpoint(provider: LLMProvider, endpoint?: EndpointOverride): { url: string; key: string } {
-  const fallbackUrl = endpoint?.baseUrl?.trim() || ELEVE_API_URL;
-  const fallbackKey = (endpoint?.apiKeyEnv ? process.env[endpoint.apiKeyEnv] : undefined)?.trim() || ELEVE_API_KEY;
-  if (provider === "deepseek" || provider === "mistral" || provider === "groq") {
-    const p = PROVIDER_PRESETS[provider];
-    return { url: completionsUrl(p.baseURL), key: (process.env[p.apiKeyEnv] ?? fallbackKey).trim() };
-  }
-  if (provider === "litellm") {
-    return { url: completionsUrl(process.env.LITELLM_BASE_URL ?? "http://localhost:4000/v1"), key: (process.env.LITELLM_API_KEY ?? "sk-litellm-local").trim() };
-  }
-  // "openai" générique (inclut Ollama Cloud) → endpoint Élève, ou registre si fourni.
-  return { url: completionsUrl(fallbackUrl), key: fallbackKey };
+  // T1 : adaptateur mince → résolveur unique (famille 'eleve'). Byte-identique à
+  // l'ancien code : repli ELEVE_API_URL/KEY (SANS LLM_OPENAI_*), baseUrl ignoré
+  // pour les presets, url = endpoint complet (/chat/completions).
+  return resolveEndpoint(provider, "eleve", endpoint);
 }
 
 export type ResolvedBy = "eleve" | "maitre" | "none";
@@ -422,52 +422,24 @@ function buildEleveUser(
 const ELEVE_FETCH_TIMEOUT_MS = Math.max(30_000, Number(process.env.ELEVE_FETCH_TIMEOUT_MS ?? 180_000));
 
 // ── Cerveau Élève par défaut : Gemma local via Ollama ──────────────────────────
+// T4 : transport délégué à la brique partagée ollamaChat. Famille eleve = SANS
+// keep_alive, SANS trim → byte-identique à l'ancien fetch inline.
 async function askEleveOllama(system: string, user: string, model?: string): Promise<string> {
-  const res = await fetch(`${OLLAMA}/api/chat`, {
-    method: "POST",
-    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      options: { temperature: 0 },
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
-  const data = (await res.json()) as { message?: { content?: string } };
-  return data.message?.content ?? "";
+  return ollamaChat(system, user, { baseUrl: OLLAMA, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS });
 }
 
 // ── Cerveau Élève « turbo » : endpoint compatible OpenAI (DeepSeek, etc.) ──────
 // Même contrat d'E/S (system + user → texte) que la version Ollama → la boucle
 // de relais est INCHANGÉE. ⚠ Payant : la note n'est PAS captée dans les
 // métriques (le tour Élève reste compté coût 0 ; seule l'escalade Claude l'est).
+// T4 : transport délégué à openAiChat. Famille eleve = SANS max_tokens, SANS trim,
+// libellé 'API Élève' → byte-identique. La vérif de clé (message spécifique) reste ici.
 async function askEleveOpenAI(system: string, user: string, model?: string, provider: LLMProvider = "openai", endpoint?: EndpointOverride): Promise<string> {
   const { url, key } = openAiEndpoint(provider, endpoint);
   if (!key) {
     throw new Error("Clé API Élève manquante (provider openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
   }
-  const res = await fetch(url, {
-    method: "POST",
-    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      temperature: 0,
-      messages: [
-        { role: "system", content: system },
-        { role: "user", content: user },
-      ],
-    }),
-  });
-  if (!res.ok) throw new Error(`API Élève HTTP ${res.status}`);
-  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  return data.choices?.[0]?.message?.content ?? "";
+  return openAiChat(system, user, { url, key, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, errorLabel: "API Élève", trim: false });
 }
 
 // Aiguillage du cerveau Élève selon le provider. Défaut = global (.env) ; un appel
@@ -512,48 +484,12 @@ async function postEleveCompletions(
   endpoint?: EndpointOverride,
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
   const { url, key } = openAiEndpoint(provider, endpoint);
-  const payload = JSON.stringify({
-    model: model ?? ELEVE_MODEL,
-    stream: false,
-    temperature: 0,
-    messages,
-    ...(tools ? { tools, tool_choice: "auto" } : {}),
-  });
-  // Retry/backoff sur les codes TRANSITOIRES (429 rate-limit, 503 overload) — sinon un
-  // Élève cloud capable (Gemini free / GLM) abandonne au 1ᵉʳ 429 alors qu'il mène la boucle.
-  const maxRetries = eleveMaxRetries();
-  let lastStatus = 0;
-  for (let attempt = 0; ; attempt++) {
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body: payload,
-      });
-    } catch (e) {
-      // Timeout/coupure réseau = transitoire : même politique de retry qu'un 503,
-      // au lieu de geler le tour (ou de le tuer à la 1ʳᵉ microcoupure cloud).
-      const delay = eleveRetryDelayMs(503, attempt, null, maxRetries);
-      if (delay === null) throw new Error(`API Élève injoignable (${(e as Error)?.name ?? "réseau"}) après ${attempt + 1} tentative(s)`);
-      await new Promise((r) => setTimeout(r, delay));
-      continue;
-    }
-    if (res.ok) {
-      const data = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
-      };
-      const msg = data.choices?.[0]?.message;
-      if (!msg) throw new Error("réponse Élève vide");
-      return { content: msg.content ?? "", toolCalls: msg.tool_calls };
-    }
-    lastStatus = res.status;
-    const delay = eleveRetryDelayMs(res.status, attempt, res.headers.get("retry-after"), maxRetries);
-    await res.text().catch(() => undefined); // draine le corps avant de retenter/abandonner
-    if (delay === null) throw new Error(`API Élève HTTP ${lastStatus}`);
-    await new Promise((r) => setTimeout(r, delay));
-  }
+  // T3 : transport à outils délégué à la brique partagée, AVEC la politique de retry
+  // de l'Élève (429/503, Retry-After, réseau→503) — la SEULE politique active par
+  // défaut. Comportement identique à l'ancienne boucle inline (mêmes codes, mêmes
+  // libellés, timeout frais par tentative). Sinon un Élève cloud capable (Gemini free /
+  // GLM) abandonnait au 1ᵉʳ 429 alors qu'il mène la boucle agentique.
+  return openAiChatTools({ url, key, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, messages, tools, retry: eleveRetryPolicy() });
 }
 
 /** Le transport injecté au runtime agentique (eleve-runtime.buildAgentic), lié à
@@ -562,66 +498,17 @@ async function postEleveCompletions(
 // Souveraineté : la MÊME boucle agentique tourne sur un modèle LOCAL tool-capable
 // (Qwen/GLM quantisé) — zéro cloud. Ollama parle nativement `tools`/`tool_calls`,
 // avec deux différences vs OpenAI : les arguments d'outil sont un OBJET (pas une
-// string JSON) et il n'y a pas d'id de tool_call. On isole la traduction dans des
-// mappers PURS, testables sans réseau.
-interface OllamaToolCall { function: { name: string; arguments: Record<string, unknown> | string } }
-interface OllamaMessage { role: string; content: string; tool_calls?: OllamaToolCall[] }
-
-function safeParseArgs(raw: string): Record<string, unknown> {
-  try { return JSON.parse(raw || "{}") as Record<string, unknown>; } catch { return {}; }
-}
-
-/** Nos ChatMessage → messages Ollama (arguments d'outil en OBJET). PUR. */
-export function toOllamaMessages(messages: ChatMessage[]): OllamaMessage[] {
-  return messages.map((m) => {
-    if (m.role === "assistant" && m.tool_calls?.length) {
-      return {
-        role: "assistant",
-        content: m.content ?? "",
-        tool_calls: m.tool_calls.map((tc) => ({ function: { name: tc.function.name, arguments: safeParseArgs(tc.function.arguments) } })),
-      };
-    }
-    return { role: m.role, content: m.content ?? "" };
-  });
-}
-
-/** Réponse Ollama → notre {content, toolCalls} (arguments re-stringifiés, id généré). PUR. */
-export function fromOllamaResponse(
-  data: { message?: { content?: string; tool_calls?: OllamaToolCall[] } },
-): { content: string; toolCalls?: ToolCall[] } {
-  const msg = data.message;
-  const content = msg?.content ?? "";
-  const tcs = msg?.tool_calls;
-  if (!tcs?.length) return { content };
-  const toolCalls: ToolCall[] = tcs.map((tc, i) => ({
-    id: `ollama_${i}_${tc.function?.name ?? "tool"}`,
-    function: {
-      name: tc.function?.name ?? "",
-      arguments: typeof tc.function?.arguments === "string" ? tc.function.arguments : JSON.stringify(tc.function?.arguments ?? {}),
-    },
-  }));
-  return { content, toolCalls };
-}
+// string JSON) et il n'y a pas d'id de tool_call. Les mappers PURS toOllamaMessages/
+// fromOllamaResponse vivent désormais dans la couche transport unique (T2) ; on les
+// ré-exporte (test-eleve-ollama-tools les importe depuis eleve, contrat inchangé).
+export { toOllamaMessages, fromOllamaResponse } from "./llm-transport.js";
 
 async function postEleveOllamaTools(
   messages: ChatMessage[],
   tools: OpenAITool[] | null,
   model?: string,
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
-  const res = await fetch(`${OLLAMA}/api/chat`, {
-    method: "POST",
-    signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model: model ?? ELEVE_MODEL,
-      stream: false,
-      options: { temperature: 0 },
-      messages: toOllamaMessages(messages),
-      ...(tools ? { tools } : {}),
-    }),
-  });
-  if (!res.ok) throw new Error(`Ollama tools HTTP ${res.status}`);
-  return fromOllamaResponse((await res.json()) as { message?: { content?: string; tool_calls?: OllamaToolCall[] } });
+  return ollamaChatTools({ baseUrl: OLLAMA, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, messages, tools });
 }
 
 /** Un provider sait-il piloter une boucle à outils ? openai-compat OU ollama local. */

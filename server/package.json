@@ -12,6 +12,7 @@
     "check-key": "tsx src/check-key.ts",
     "test": "tsx src/test-runner.ts --tier smoke",
     "test:offline": "tsx src/test-runner.ts --tier offline",
+    "test:llm": "tsx src/test-runner.ts --tier llm",
     "test:full": "tsx src/test-runner.ts --tier full",
     "test:list": "tsx src/test-runner.ts --list"
   },

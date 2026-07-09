@@ -38,7 +38,8 @@ import { buildEleveDiscussTools } from "./eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain-runtime.js";
 import { requiredCapabilities, toolDemandSignal } from "./intent-capabilities.js";
 import { runFrontierOrchestration } from "./frontier-orchestration.js";
-import { dispatch } from "./brain-dispatch.js";
+// T5 : l'orchestration de l'Accueil passe le dispatcher via la façade cerveau unique.
+import { brain } from "./brain.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
 import { flag } from "./flags.js";
 import { getBrain } from "./brain-registry.js";
@@ -360,7 +361,7 @@ app.post("/api/home-chat", async (req, res) => {
           {
             runEleveTools: (sys, task, tools) =>
               askEleveAgentic(sys, task, tools, { model: process.env.ELEVE_MODEL }),
-            dispatch,
+            dispatch: brain.dispatch,
           },
         );
         text = fr.text;

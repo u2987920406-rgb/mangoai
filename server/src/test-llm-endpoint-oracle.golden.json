@@ -1,0 +1,200 @@
+[
+  {
+    "id": "E1",
+    "family": "engine",
+    "provider": "openai",
+    "override": "aucun override",
+    "capture": "faux-serveur",
+    "url": "/src-LLM_OPENAI_URL/v1/chat/completions",
+    "authorization": "Bearer k-LLM_OPENAI_KEY"
+  },
+  {
+    "id": "E2",
+    "family": "engine",
+    "provider": "openai",
+    "override": "baseUrl=ovr",
+    "capture": "faux-serveur",
+    "url": "/ovr-baseUrl/v1/chat/completions",
+    "authorization": "Bearer k-LLM_OPENAI_KEY"
+  },
+  {
+    "id": "E3",
+    "family": "engine",
+    "provider": "openai",
+    "override": "apiKeyEnv=CUSTOM_KEY_X",
+    "capture": "faux-serveur",
+    "url": "/src-LLM_OPENAI_URL/v1/chat/completions",
+    "authorization": "Bearer k-CUSTOM_KEY_X"
+  },
+  {
+    "id": "E4",
+    "family": "engine",
+    "provider": "openai",
+    "override": "apiKeyEnv=ABSENT_VAR (fail-open)",
+    "capture": "faux-serveur",
+    "url": "/src-LLM_OPENAI_URL/v1/chat/completions",
+    "authorization": "Bearer k-LLM_OPENAI_KEY"
+  },
+  {
+    "id": "E5",
+    "family": "engine",
+    "provider": "deepseek",
+    "override": "baseUrl=ovr",
+    "capture": "faux-serveur",
+    "url": "/ovr-baseUrl/v1/chat/completions",
+    "authorization": "Bearer k-DEEPSEEK_API_KEY"
+  },
+  {
+    "id": "E6",
+    "family": "engine",
+    "provider": "deepseek",
+    "override": "baseUrl=ovr + apiKeyEnv=CUSTOM_KEY_X",
+    "capture": "faux-serveur",
+    "url": "/ovr-baseUrl/v1/chat/completions",
+    "authorization": "Bearer k-CUSTOM_KEY_X"
+  },
+  {
+    "id": "E7",
+    "family": "engine",
+    "provider": "litellm",
+    "override": "aucun override",
+    "capture": "faux-serveur",
+    "url": "/src-LITELLM_BASE_URL/v1/chat/completions",
+    "authorization": "Bearer k-LITELLM_API_KEY"
+  },
+  {
+    "id": "E8",
+    "family": "engine",
+    "provider": "litellm",
+    "override": "baseUrl=ovr",
+    "capture": "faux-serveur",
+    "url": "/ovr-baseUrl/v1/chat/completions",
+    "authorization": "Bearer k-LITELLM_API_KEY"
+  },
+  {
+    "id": "V1",
+    "family": "eleve",
+    "provider": "openai",
+    "override": "aucun override",
+    "capture": "faux-serveur",
+    "url": "/src-ELEVE_API_URL/v1/chat/completions",
+    "authorization": "Bearer k-ELEVE_API_KEY"
+  },
+  {
+    "id": "V2",
+    "family": "eleve",
+    "provider": "openai",
+    "override": "baseUrl=ovr",
+    "capture": "faux-serveur",
+    "url": "/ovr-baseUrl/v1/chat/completions",
+    "authorization": "Bearer k-ELEVE_API_KEY"
+  },
+  {
+    "id": "V3",
+    "family": "eleve",
+    "provider": "openai",
+    "override": "apiKeyEnv=CUSTOM_KEY_X",
+    "capture": "faux-serveur",
+    "url": "/src-ELEVE_API_URL/v1/chat/completions",
+    "authorization": "Bearer k-CUSTOM_KEY_X"
+  },
+  {
+    "id": "V4",
+    "family": "eleve",
+    "provider": "openai",
+    "override": "apiKeyEnv=ABSENT_VAR (fail-open)",
+    "capture": "faux-serveur",
+    "url": "/src-ELEVE_API_URL/v1/chat/completions",
+    "authorization": "Bearer k-ELEVE_API_KEY"
+  },
+  {
+    "id": "V5",
+    "family": "eleve",
+    "provider": "litellm",
+    "override": "aucun override",
+    "capture": "faux-serveur",
+    "url": "/src-LITELLM_BASE_URL/v1/chat/completions",
+    "authorization": "Bearer k-LITELLM_API_KEY"
+  },
+  {
+    "id": "E9",
+    "family": "engine",
+    "provider": "deepseek",
+    "override": "aucun override",
+    "capture": "résolveur",
+    "url": "https://api.deepseek.com/v1/chat/completions",
+    "authorization": "Bearer k-DEEPSEEK_API_KEY"
+  },
+  {
+    "id": "E10",
+    "family": "engine",
+    "provider": "mistral",
+    "override": "aucun override",
+    "capture": "résolveur",
+    "url": "https://api.mistral.ai/v1/chat/completions",
+    "authorization": "Bearer k-MISTRAL_API_KEY"
+  },
+  {
+    "id": "E11",
+    "family": "engine",
+    "provider": "groq",
+    "override": "aucun override",
+    "capture": "résolveur",
+    "url": "https://api.groq.com/openai/v1/chat/completions",
+    "authorization": "Bearer k-GROQ_API_KEY"
+  },
+  {
+    "id": "E12",
+    "family": "engine",
+    "provider": "litellm",
+    "override": "aucun override (résolveur direct)",
+    "capture": "résolveur",
+    "url": "http://FAUX_HOST/src-LITELLM_BASE_URL/v1/chat/completions",
+    "authorization": "Bearer k-LITELLM_API_KEY"
+  },
+  {
+    "id": "V6",
+    "family": "eleve",
+    "provider": "deepseek",
+    "override": "aucun override",
+    "capture": "résolveur",
+    "url": "https://api.deepseek.com/v1/chat/completions",
+    "authorization": "Bearer k-DEEPSEEK_API_KEY"
+  },
+  {
+    "id": "V7",
+    "family": "eleve",
+    "provider": "deepseek",
+    "override": "baseUrl=ovr (ignoré par les presets Élève)",
+    "capture": "résolveur",
+    "url": "https://api.deepseek.com/v1/chat/completions",
+    "authorization": "Bearer k-DEEPSEEK_API_KEY"
+  },
+  {
+    "id": "V8",
+    "family": "eleve",
+    "provider": "mistral",
+    "override": "aucun override",
+    "capture": "résolveur",
+    "url": "https://api.mistral.ai/v1/chat/completions",
+    "authorization": "Bearer k-MISTRAL_API_KEY"
+  },
+  {
+    "id": "V9",
+    "family": "eleve",
+    "provider": "groq",
+    "override": "aucun override",
+    "capture": "résolveur",
+    "url": "https://api.groq.com/openai/v1/chat/completions",
+    "authorization": "Bearer k-GROQ_API_KEY"
+  },
+  {
+    "id": "A1",
+    "family": "engine",
+    "provider": "openai",
+    "override": "aucune clé résoluble (LLM_OPENAI_KEY+ELEVE_API_KEY absentes)",
+    "capture": "throw",
+    "url": "(aucune requête)",
+    "authorization": "(absente — le transport lève : Clé OpenAI-compatible manquante (LLM_OPENAI_KEY ou ELEVE_API_KEY dans server/.env).)"
+  }
+]
