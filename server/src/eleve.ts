@@ -124,91 +124,16 @@ export {
   type EndpointOverride,
 };
 
-export type ResolvedBy = "eleve" | "maitre" | "none";
-
-export interface RelayResult {
-  resolvedBy: ResolvedBy;
-  attempts: number; // tentatives de l'Élève avant succès/escalade
-  success: boolean; // le build passe à la fin
-  inspection: Inspection; // verdict objectif final
-  axiom: boolean; // un axiome a-t-il été écrit lors de l'escalade
-  costUsd: number; // coût Claude (0 si l'Élève a suffi)
-  log: string[]; // trace lisible
-  // Moteur agentique : build vert MAIS le moteur s'est arrêté sans conclure
-  // (plafond/blocage) → la tâche n'est peut-être pas terminée (honnêteté #146).
-  incomplete?: boolean;
-  // L'utilisateur a cliqué « Stop » : arrêt VOLONTAIRE, ni échec ni escalade.
-  // Le travail déjà écrit est committé par le tour → on peut reprendre ensuite.
-  aborted?: boolean;
-}
-
-export interface RelayOptions {
-  maxEleveAttempts?: number;
-  /** Modèle Claude pour l'escalade (défaut sonnet). */
-  maitreModel?: string;
-  /** Reçoit chaque ligne de trace en direct (pour le streaming SSE). */
-  onLog?: (line: string) => void;
-  // #104 Phase 2 — porte FONCTIONNELLE : ne pas s'arrêter à « build vert » si
-  // l'app est vide. Ne s'active que si gate=true (ou .env RELAY_FUNCTIONAL_GATE=1)
-  // ET qu'un `judge` est fourni dans les deps. OFF par défaut → boucle inchangée.
-  functionalGate?: boolean;
-  /** Score fonctionnel minimal (/10) accepté quand la porte est active (défaut 5). */
-  functionalMin?: number;
-  // #104 Phase 3 — injecter à l'Élève les moyens text qu'il n'avait pas
-  // (procédures #75, constellations #74). OFF par défaut (ou .env RELAY_INJECT_MEANS=1).
-  injectMeans?: boolean;
-  /** Surcharge le ModelProfile pour cet appel (agents spécialisés : uxui, layout…). */
-  profile?: ModelProfile;
-  /** Surcharge le modèle Ollama/API pour cet appel (ex. UXUI_AGENT_MODEL). */
-  eleveModel?: string;
-  /** Surcharge le PROVIDER pour cet appel (Phase E2 — multi-cerveaux par intention).
-   * Absent → provider global (.env). Permet de router une intention vers un cerveau
-   * cloud (openai-compat) ou local (ollama) indépendamment du global. */
-  provider?: LLMProvider;
-  /** Endpoint OpenAI-compat custom du binding courant (C1-P0, depuis le registre).
-   * Absent → endpoint .env global (ELEVE_API_URL/KEY), comportement inchangé. */
-  endpoint?: EndpointOverride;
-  /** Politique d'outils gatée par la force mesurée du cerveau (Phase E3). Absent →
-   * plein pouvoir (run_command + délégation), = comportement actuel. */
-  toolPolicy?: BrainPolicy;
-  /** Prompt système COMPLET (toute la coquille : skills, design system, identité…)
-   * assemblé par l'appelant (index.ts via assembleSystemPrompt). Utilisé par le
-   * moteur agentique pour que le cerveau pilote la coquille entière, pas un prompt
-   * nu. Absent → repli sur une base minimale. */
-  systemFull?: string;
-}
-
-/** Les deux cerveaux + les effets de bord, injectables pour les tests. */
-export interface RelayDeps {
-  askEleve: (system: string, user: string) => Promise<string>;
-  inspect: (projectDir: string) => Promise<Inspection>;
-  ensureDeps: (projectDir: string, log: (s: string) => void) => Promise<void>;
-  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean }>;
-  // #104 Phase 2 — juge fonctionnel optionnel (injectable). Absent de
-  // defaultRelayDeps → la porte ne peut JAMAIS se déclencher par défaut.
-  judge?: (projectDir: string, task: string) => Promise<{ fonctionnel: number; note: string } | null>;
-  // #146 Phase 2 — transport du MOTEUR agentique, injectable pour les tests.
-  // Absent en prod → elevePost (vrai endpoint OpenAI-compat). Fourni → active le
-  // moteur même hors provider openai (tests déterministes sans réseau).
-  agenticPost?: PostFn;
-  // Interruption coopérative (clic « Stop ») lue en tête de boucle agentique.
-  // Absent → isInterrupted (drapeau module armé par /api/stop). Surchargeable en test.
-  shouldAbort?: () => boolean;
-}
-
-export interface EscalationContext {
-  task: string;
-  projectDir: string;
-  lastError: string;
-  maitreModel: string;
-  /** Partition active — détermine axiomFiles et escalateAppendix. Défaut = PROFILE. */
-  profile?: ModelProfile;
-  /** #1 — true : l'Élève s'est ARRÊTÉ sans conclure (build vert mais tâche incomplète).
-   * Le Maître doit TERMINER la tâche, pas réparer un build cassé. */
-  incomplete?: boolean;
-  /** Résumé de ce que l'Élève a fait avant de se bloquer (pour orienter le Maître). */
-  eleveSummary?: string;
-}
+// (Chantier archi #3) Types de la boucle de relais extraits dans ./eleve/types.js.
+// Importés pour runRelay/defaultRelayDeps, ré-exportés (surface publique inchangée).
+import { type RelayResult, type RelayOptions, type RelayDeps } from "./eleve/types.js";
+export {
+  type ResolvedBy,
+  type RelayResult,
+  type RelayOptions,
+  type RelayDeps,
+  type EscalationContext,
+} from "./eleve/types.js";
 
 function listProjectFiles(projectDir: string, cap = 40): string[] {
   const out: string[] = [];
@@ -429,131 +354,11 @@ async function ensureDepsNpm(projectDir: string, log: (s: string) => void): Prom
   }
 }
 
-// ── Cerveau Maître par défaut : Claude corrige + écrit l'axiome ────────────────
-const ESCALATE_SYSTEM = `Tu es le MAÎTRE dans l'apprentissage de MangoOS. Un modèle
-ÉLÈVE local a tenté une tâche et a ÉCHOUÉ à une vérification OBJECTIVE (le build ne
-passe pas). Deux missions, dans l'ordre :
-1. CORRIGE le projet pour que "npm run build" passe — changement minimal et correct,
-   pas de refonte. Tu peux lire/éditer les fichiers et lancer le build pour vérifier.
-2. Puis distille EXACTEMENT UN axiome universel dans le registre .axioms.md (à la
-   racine du workspace) expliquant le PIÈGE qui a fait trébucher l'Élève — la
-   RÈGLE/le POURQUOI, jamais le code. Format, en français, une ligne vide entre axiomes :
-     AXIOME-[CAT]-[NN] (maturité: candidat · vu: AAAA-MM-JJ)
-     - Contexte : intention générale d'ingénierie/UX
-     - Piège : le piège invisible
-     - Règle d'or : la règle universelle verrouillante
-   CAT ∈ {VISION,UIUX,ARCH,DATA,PERF,A11Y,BUILD}. Un nouvel axiome est TOUJOURS
-   "candidat". Plafond ~12 axiomes / 3000 car. : fusionne plutôt que gonfler.
-Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
-
-// #1 — Mode « terminer » : l'Élève s'est arrêté sans conclure (build vert mais tâche
-// incomplète). Le Maître ne répare pas un build cassé, il TERMINE la tâche.
-const ESCALATE_FINISH_SYSTEM = `Tu es le MAÎTRE dans MangoOS. Un modèle ÉLÈVE local a
-travaillé sur une tâche mais s'est ARRÊTÉ AVANT DE LA TERMINER (sur-exploration /
-limite atteinte). Le build PASSE déjà, mais la modification demandée n'est probablement
-PAS complète. Deux missions, dans l'ordre :
-1. TERMINE la tâche demandée — complète la modification, proprement et MINIMALEMENT
-   (pas de refonte). Lis/édite ce qu'il faut et lance "npm run build" pour vérifier
-   qu'il passe toujours à la fin.
-2. Puis distille EXACTEMENT UN axiome universel dans .axioms.md (racine du workspace)
-   sur ce qui a fait CALER l'Élève (sur-exploration, indécision à passer à l'action…) —
-   la RÈGLE/le POURQUOI, jamais le code. Format, en français, une ligne vide entre axiomes :
-     AXIOME-[CAT]-[NN] (maturité: candidat · vu: AAAA-MM-JJ)
-     - Contexte : intention générale d'ingénierie/UX
-     - Piège : le piège invisible
-     - Règle d'or : la règle universelle verrouillante
-   CAT ∈ {VISION,UIUX,ARCH,DATA,PERF,A11Y,BUILD}. Toujours "candidat". Plafond ~12 / 3000 car.
-Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
-
-// (L113) Signaux git de l'escalade (gitDirtyPaths / hasRealCodeChange + filtre des
-// fichiers de métadonnées) extraits dans ./git-signals.ts. Ré-exportés ici pour
-// préserver la surface publique de eleve.ts (imports externes inchangés).
-import { gitDirtyPaths, hasRealCodeChange } from "./git-signals.js";
-export { gitDirtyPaths, hasRealCodeChange };
-
-// (L112) Idle-timeout sur la consommation de query() : si AUCUN message n'arrive
-// pendant idleMs, on abandonne (best-effort .return() sur l'itérateur) plutôt que
-// d'attendre indéfiniment — c'est le 2ᵉ/3ᵉ cas L112 observé (claude.exe bloqué
-// 20-35 min, aucun tool-call loggé). 5 min de marge : généreux pour un seul appel
-// Bash légitime (npm install observé jusqu'à ~2 min dans ce run), largement en
-// dessous des blocages réels observés.
-const ESCALATION_IDLE_TIMEOUT_MS = 5 * 60_000;
-
-async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_cost_usd?: number }>): Promise<{ costUsd: number; timedOut: boolean }> {
-  let costUsd = 0;
-  let timedOut = false;
-  const iterator = q[Symbol.asyncIterator]();
-  for (;;) {
-    const step = await Promise.race([
-      iterator.next().then((r) => ({ kind: "value" as const, r })),
-      new Promise<{ kind: "timeout" }>((resolve) => setTimeout(() => resolve({ kind: "timeout" }), ESCALATION_IDLE_TIMEOUT_MS)),
-    ]);
-    if (step.kind === "timeout") {
-      timedOut = true;
-      try {
-        await iterator.return?.();
-      } catch {
-        /* best-effort — ne doit jamais faire planter l'appelant */
-      }
-      break;
-    }
-    if (step.r.done) break;
-    if (step.r.value.type === "result") costUsd = step.r.value.total_cost_usd ?? 0;
-  }
-  return { costUsd, timedOut };
-}
-
-async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean }> {
-  // Détection de l'axiome appris sur l'UNION des fichiers de la partition (un
-  // axiome rangé dans .axioms.<famille>.md compte aussi), via une empreinte NON
-  // plafonnée : un nouvel axiome est appendé en fin de registre, donc au-delà du
-  // cap d'injection dès que l'union est volumineuse — le diff plafonné le raterait.
-  const escProfile = ctx.profile ?? PROFILE;
-  const axBefore = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles);
-  // cwd = workspace si le projet y vit (Claude atteint code + .axioms.md en
-  // relatif, comme la revue) ; sinon repli sur le projet seul.
-  const rel = path.relative(WORKSPACE_DIR, ctx.projectDir).replaceAll("\\", "/");
-  const inside = rel !== "" && !rel.startsWith("..");
-  const cwd = inside ? WORKSPACE_DIR : ctx.projectDir;
-  const projRef = inside ? rel : ".";
-
-  const incomplete = ctx.incomplete === true;
-  const prompt = [
-    incomplete ? `Projet : ./${projRef}` : `Projet à réparer : ./${projRef}`,
-    `Tâche demandée à l'Élève : ${ctx.task}`,
-    "",
-    incomplete ? "L'Élève s'est arrêté sans terminer. Ce qu'il a fait avant de caler :" : "Échec objectif constaté :",
-    (incomplete ? ctx.eleveSummary || ctx.lastError : ctx.lastError) || "(pas de détail)",
-    "",
-    `Registre d'axiomes (.axioms.md) actuel :`,
-    axBefore || "(vide)",
-    "",
-    incomplete
-      ? "TERMINE la tâche, vérifie que le build passe, puis ajoute l'unique axiome, puis arrête-toi."
-      : "Corrige le build, puis ajoute l'unique axiome, puis arrête-toi.",
-    escProfile.escalateAppendix, // "" pour GENERIC → prompt inchangé
-  ].join("\n");
-
-  const filesBefore = await gitDirtyPaths(ctx.projectDir);
-
-  const q = query({
-    prompt,
-    options: {
-      cwd,
-      model: ctx.maitreModel,
-      maxTurns: 24,
-      permissionMode: "acceptEdits",
-      allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
-      systemPrompt: { type: "preset", preset: "claude_code", append: incomplete ? ESCALATE_FINISH_SYSTEM : ESCALATE_SYSTEM },
-    },
-  });
-  const { costUsd, timedOut } = await consumeEscalationStream(q);
-
-  const axiom = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles) !== axBefore;
-  const filesAfter = await gitDirtyPaths(ctx.projectDir);
-  const codeChanged = !timedOut && hasRealCodeChange(filesBefore, filesAfter);
-  return { axiom, costUsd, codeChanged };
-}
+// (Chantier archi #3) Escalade Maître extraite dans ./eleve/escalade.js
+// (prompts ESCALATE + consumeEscalationStream + escalateToClaude).
+import { escalateToClaude } from "./eleve/escalade.js";
+// (L113) Signaux git de l'escalade — ré-exportés (surface publique inchangée).
+export { gitDirtyPaths, hasRealCodeChange } from "./git-signals.js";
 
 export const defaultRelayDeps: RelayDeps = {
   askEleve: askEleveDispatch,
