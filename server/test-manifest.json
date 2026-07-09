@@ -75,6 +75,9 @@
     "test-brain-endpoints": {
       "tier": "offline"
     },
+    "test-brain-facade": {
+      "tier": "offline"
+    },
     "test-brain-ensemble": {
       "tier": "offline"
     },
