@@ -335,6 +335,9 @@
     "test-llm-cache": {
       "tier": "offline"
     },
+    "test-llm-endpoint-oracle": {
+      "tier": "offline"
+    },
     "test-llm-engine": {
       "tier": "offline"
     },
