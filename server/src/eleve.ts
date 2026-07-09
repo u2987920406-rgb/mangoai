@@ -25,15 +25,12 @@ import { axiomsFingerprint, selectAxioms } from "./axioms.js";
 import { loadMemory } from "./memory.js";
 import { detectProjectType, inferProjectType } from "./blueprints.js";
 import { WORKSPACE_DIR } from "./projects.js";
-import { resolveProfile, type ModelProfile } from "./models/profile.js";
+import { type ModelProfile } from "./models/profile.js";
 import { type LLMProvider } from "./llm-engine.js";
-// T1 : la résolution d'endpoint openai-compat de l'Élève délègue au résolveur
-// unique (famille 'eleve' — SANS LLM_OPENAI_URL/KEY, baseUrl ignoré pour les presets).
-import { resolveEndpoint, normalizeCompletionsUrl } from "./llm-endpoint.js";
 // T2 : couche transport unique — le transport function-calling local (Ollama tools)
 // délègue à la brique partagée (mappers inclus). Les autres transports Élève
 // (askEleveOllama/askEleveOpenAI/postEleveCompletions) convergent à la tranche T4.
-import { ollamaChat, ollamaChatTools, openAiChat, openAiChatTools } from "./llm-transport.js";
+import { ollamaChatTools, openAiChatTools } from "./llm-transport.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
@@ -96,61 +93,36 @@ import { getTracer } from "./kernel-trace.js";
 import { listProcedures, loadProcedure } from "./procedures.js";
 import { constellationsSection } from "./constellations.js";
 
-const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
-const ELEVE_MODEL = process.env.ELEVE_MODEL ?? "gemma4:12b";
-
-// Partition de la famille du modèle Élève : prompt système, fichiers d'axiomes,
-// caps et routage d'escalade viennent du PROFIL (server/src/models/). Le cœur
-// reste agnostique ; un modèle non reconnu retombe sur GENERIC = comportement
-// actuel exact. Les ENV restent prioritaires (override global ponctuel).
-// Profil par défaut (famille du modèle global ELEVE_MODEL). Sert de fallback
-// quand runRelay est appelé sans opts.profile. Les surcharges par appel lisent
-// callProfile = opts.profile ?? PROFILE (résolution locale dans runRelay).
-const PROFILE = resolveProfile(ELEVE_MODEL);
-
-// Provider de l'Élève (« Élève turbo », optionnel). Par défaut « ollama » = le
-// modèle LOCAL ($0, souverain). En option « openai » = un endpoint compatible
-// OpenAI (DeepSeek, Together, etc.) — plus puissant mais PAYANT et non local.
-// Switch par .env, sans toucher au code : ELEVE_PROVIDER + ELEVE_API_URL/KEY.
-export function normalizeEleveProvider(raw?: string): "ollama" | "openai" {
-  return (raw ?? "").trim().toLowerCase() === "openai" ? "openai" : "ollama";
-}
-// Tolère une base (".../v1") OU l'endpoint complet (".../chat/completions").
-// T1 : adaptateur mince → normalisation partagée (byte-identique).
-export function completionsUrl(base: string): string {
-  return normalizeCompletionsUrl(base);
-}
-export const ELEVE_PROVIDER = normalizeEleveProvider(process.env.ELEVE_PROVIDER);
-const ELEVE_API_URL = process.env.ELEVE_API_URL ?? "https://api.deepseek.com/v1";
-const ELEVE_API_KEY = process.env.ELEVE_API_KEY?.trim() ?? "";
-
-// Phase E2 — provider PAR APPEL (multi-cerveaux). Le provider de l'Élève n'est
-// plus uniquement le global : chaque intention peut router vers SON cerveau (cloud
-// openai-compat OU ollama local). Le défaut reste le global (réversibilité totale).
-export const ELEVE_PROVIDER_DEFAULT: LLMProvider = ELEVE_PROVIDER === "openai" ? "openai" : "ollama";
-/** Un provider openai-compatible peut piloter la boucle agentique (function-calling). */
-export function isOpenAICompat(p: LLMProvider): boolean {
-  return p === "openai" || p === "deepseek" || p === "mistral" || p === "groq" || p === "litellm";
-}
-/** Endpoint custom (C1-P0) — le registre porte une base URL + le NOM de la
- * variable d'env qui tient la clé. On ne threade JAMAIS la valeur de la clé en
- * clair : seule cette fonction lit process.env[apiKeyEnv], au tout dernier moment. */
-export interface EndpointOverride {
-  baseUrl?: string;
-  apiKeyEnv?: string;
-}
-
-/** Résout l'endpoint (url + clé) d'un provider openai-compat. Défaut = endpoint
- * Élève (ELEVE_API_URL/KEY, p.ex. Ollama Cloud) ; presets pour deepseek/mistral/groq/litellm.
- * `endpoint` (C1-P0, depuis le registre/le binding) PRIME sur le repli .env — mais
- * SEULEMENT là où ELEVE_API_URL/ELEVE_API_KEY intervenaient déjà. `endpoint` absent
- * (ou champs vides) → résolution STRICTEMENT identique à avant l'ajout de C1-P0. */
-export function openAiEndpoint(provider: LLMProvider, endpoint?: EndpointOverride): { url: string; key: string } {
-  // T1 : adaptateur mince → résolveur unique (famille 'eleve'). Byte-identique à
-  // l'ancien code : repli ELEVE_API_URL/KEY (SANS LLM_OPENAI_*), baseUrl ignoré
-  // pour les presets, url = endpoint complet (/chat/completions).
-  return resolveEndpoint(provider, "eleve", endpoint);
-}
+// (Chantier archi #3) Socle provider + transport chat fin extraits dans
+// ./eleve/provider.js (la FEUILLE bas-niveau). Importés ici pour le reste de la
+// logique, et ré-exportés pour préserver la surface publique de eleve.ts.
+import {
+  OLLAMA,
+  ELEVE_MODEL,
+  PROFILE,
+  ELEVE_FETCH_TIMEOUT_MS,
+  ELEVE_API_KEY,
+  ELEVE_PROVIDER,
+  ELEVE_PROVIDER_DEFAULT,
+  isOpenAICompat,
+  openAiEndpoint,
+  normalizeEleveProvider,
+  completionsUrl,
+  askEleveOllama,
+  askEleveDispatch,
+  chatEleve,
+  type EndpointOverride,
+} from "./eleve/provider.js";
+export {
+  normalizeEleveProvider,
+  completionsUrl,
+  ELEVE_PROVIDER,
+  ELEVE_PROVIDER_DEFAULT,
+  isOpenAICompat,
+  openAiEndpoint,
+  chatEleve,
+  type EndpointOverride,
+};
 
 export type ResolvedBy = "eleve" | "maitre" | "none";
 
@@ -414,48 +386,6 @@ function buildEleveUser(
       : "Réponds UNIQUEMENT dans le format <mangoos>.",
   );
   return parts.join("\n");
-}
-
-// Timeout réseau de chaque appel Élève : un fetch qui pend (TCP half-open, cloud
-// muet) ne déclenche AUCUN retry et gèle le tour — agentBusy jamais libéré, UI
-// morte jusqu'au redémarrage du backend. Borne dure, configurable par env.
-const ELEVE_FETCH_TIMEOUT_MS = Math.max(30_000, Number(process.env.ELEVE_FETCH_TIMEOUT_MS ?? 180_000));
-
-// ── Cerveau Élève par défaut : Gemma local via Ollama ──────────────────────────
-// T4 : transport délégué à la brique partagée ollamaChat. Famille eleve = SANS
-// keep_alive, SANS trim → byte-identique à l'ancien fetch inline.
-async function askEleveOllama(system: string, user: string, model?: string): Promise<string> {
-  return ollamaChat(system, user, { baseUrl: OLLAMA, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS });
-}
-
-// ── Cerveau Élève « turbo » : endpoint compatible OpenAI (DeepSeek, etc.) ──────
-// Même contrat d'E/S (system + user → texte) que la version Ollama → la boucle
-// de relais est INCHANGÉE. ⚠ Payant : la note n'est PAS captée dans les
-// métriques (le tour Élève reste compté coût 0 ; seule l'escalade Claude l'est).
-// T4 : transport délégué à openAiChat. Famille eleve = SANS max_tokens, SANS trim,
-// libellé 'API Élève' → byte-identique. La vérif de clé (message spécifique) reste ici.
-async function askEleveOpenAI(system: string, user: string, model?: string, provider: LLMProvider = "openai", endpoint?: EndpointOverride): Promise<string> {
-  const { url, key } = openAiEndpoint(provider, endpoint);
-  if (!key) {
-    throw new Error("Clé API Élève manquante (provider openai-compat) — ajoute ELEVE_API_KEY dans server/.env.");
-  }
-  return openAiChat(system, user, { url, key, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, errorLabel: "API Élève", trim: false });
-}
-
-// Aiguillage du cerveau Élève selon le provider. Défaut = global (.env) ; un appel
-// peut router vers SON cerveau (Phase E2) : ollama local vs openai-compat cloud.
-async function askEleveDispatch(system: string, user: string, model?: string, provider: LLMProvider = ELEVE_PROVIDER_DEFAULT, endpoint?: EndpointOverride): Promise<string> {
-  return provider === "ollama" ? askEleveOllama(system, user, model) : askEleveOpenAI(system, user, model, provider, endpoint);
-}
-
-// ── Tour CONVERSATIONNEL de l'Élève (modes Discuter / Planifier) ──────────────
-// Hors de la boucle de relais : l'Élève répond en TEXTE, sans build ni contrat
-// <mangoos>. Même cerveau (Ollama local OU cloud selon ELEVE_PROVIDER), mais on
-// veut une réponse de conseil/plan, pas une construction. Modèle = ELEVE_MODEL
-// (l'Élève actif), surchargeable par appel. Le system prompt (posture Discussion
-// + contexte projet) est fourni par l'appelant (assembleSystemPrompt mode discuss).
-export async function chatEleve(system: string, user: string, model?: string, provider?: LLMProvider, endpoint?: EndpointOverride): Promise<string> {
-  return askEleveDispatch(system, user, model, provider ?? ELEVE_PROVIDER_DEFAULT, endpoint);
 }
 
 // ── Boucle AGENTIQUE de l'Élève (function-calling) — vers « Mango = Claude » ────
