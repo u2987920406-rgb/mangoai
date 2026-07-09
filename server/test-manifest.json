@@ -1,0 +1,655 @@
+{
+  "_doc": "Classement des scripts src/test-*.ts par tier pour test-runner.ts. tier ∈ smoke|offline|full|broken. reason décrit la dépendance (network/backend) ou le symptôme (broken). Sondé le 2026-07-09 : chaque test lancé via `npx tsx` avec OLLAMA_URL + ELEVE_API_URL pointés sur un port mort (réseau non requis) et timeout 75s. offline = exit 0 dans ces conditions.",
+  "entries": {
+    "test-ab-harness": {
+      "tier": "offline"
+    },
+    "test-agent-bus": {
+      "tier": "offline"
+    },
+    "test-agent-factory-e2e": {
+      "tier": "full",
+      "reason": "backend live requis (#104 e2e — « Erreur fatale » sans serveur sur :3000)"
+    },
+    "test-agent-forge": {
+      "tier": "offline"
+    },
+    "test-agent-runtime": {
+      "tier": "offline"
+    },
+    "test-agent-scheduler": {
+      "tier": "offline"
+    },
+    "test-assign-mode": {
+      "tier": "offline"
+    },
+    "test-audit-verify": {
+      "tier": "offline"
+    },
+    "test-axioms": {
+      "tier": "smoke"
+    },
+    "test-axioms-design": {
+      "tier": "offline"
+    },
+    "test-axioms-drift": {
+      "tier": "offline"
+    },
+    "test-axioms-rotation": {
+      "tier": "offline"
+    },
+    "test-axioms-validation": {
+      "tier": "offline"
+    },
+    "test-backend-bricks": {
+      "tier": "offline"
+    },
+    "test-backend-generator": {
+      "tier": "offline"
+    },
+    "test-blackboard-prune": {
+      "tier": "offline"
+    },
+    "test-brain-dispatch": {
+      "tier": "broken",
+      "reason": "1/38 échec déterministe — assertion « 14 agents présents » obsolète (drift du registre d’agents)"
+    },
+    "test-brain-endpoints": {
+      "tier": "offline"
+    },
+    "test-brain-ensemble": {
+      "tier": "offline"
+    },
+    "test-brain-fallback": {
+      "tier": "offline"
+    },
+    "test-brain-profile": {
+      "tier": "broken",
+      "reason": "crash déterministe ERR_INVALID_ARG_TYPE à test-brain-profile.ts:52 — applyProfile(\"full-local\") ne rend pas de backupPath, readFileSync(undefined) ; échoue dès « full-local lu »"
+    },
+    "test-brain-runtime": {
+      "tier": "offline"
+    },
+    "test-brains": {
+      "tier": "offline"
+    },
+    "test-capabilities": {
+      "tier": "offline"
+    },
+    "test-chaine-ambigue": {
+      "tier": "offline"
+    },
+    "test-clapet": {
+      "tier": "smoke"
+    },
+    "test-clicksource": {
+      "tier": "offline"
+    },
+    "test-concept-consolidation": {
+      "tier": "offline"
+    },
+    "test-concept-registry": {
+      "tier": "offline"
+    },
+    "test-constellations": {
+      "tier": "offline"
+    },
+    "test-core-utils": {
+      "tier": "smoke"
+    },
+    "test-cron-breaker": {
+      "tier": "offline"
+    },
+    "test-delegate-live": {
+      "tier": "offline"
+    },
+    "test-deploy": {
+      "tier": "offline"
+    },
+    "test-design-coach": {
+      "tier": "offline"
+    },
+    "test-design-metrics": {
+      "tier": "offline"
+    },
+    "test-desktop-system-shell": {
+      "tier": "offline"
+    },
+    "test-domains": {
+      "tier": "offline"
+    },
+    "test-dry-run": {
+      "tier": "offline"
+    },
+    "test-e2e-intention-dispatch": {
+      "tier": "offline"
+    },
+    "test-edit-match": {
+      "tier": "offline"
+    },
+    "test-eleve-action-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-antispiral": {
+      "tier": "offline"
+    },
+    "test-eleve-archive-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-artefact-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-artefact-usage": {
+      "tier": "offline"
+    },
+    "test-eleve-autotest": {
+      "tier": "offline"
+    },
+    "test-eleve-bricks": {
+      "tier": "offline"
+    },
+    "test-eleve-content": {
+      "tier": "offline"
+    },
+    "test-eleve-document-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-flux-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-gate": {
+      "tier": "offline"
+    },
+    "test-eleve-gate-pedago": {
+      "tier": "offline"
+    },
+    "test-eleve-http-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-image-check": {
+      "tier": "offline"
+    },
+    "test-eleve-image-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-judge": {
+      "tier": "offline"
+    },
+    "test-eleve-memoire": {
+      "tier": "offline"
+    },
+    "test-eleve-ollama-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-parcours-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-plan": {
+      "tier": "offline"
+    },
+    "test-eleve-planifier-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-provider": {
+      "tier": "offline"
+    },
+    "test-eleve-retry": {
+      "tier": "offline"
+    },
+    "test-eleve-runtime": {
+      "tier": "offline"
+    },
+    "test-eleve-site-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-slice-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-speculative": {
+      "tier": "offline"
+    },
+    "test-eleve-speculative-exec": {
+      "tier": "offline"
+    },
+    "test-eleve-speculative-runner": {
+      "tier": "offline"
+    },
+    "test-eleve-speculative-trigger": {
+      "tier": "offline"
+    },
+    "test-eleve-tool-capabilities": {
+      "tier": "offline"
+    },
+    "test-eleve-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-tuyauterie": {
+      "tier": "full",
+      "reason": "Ollama requis (le test demande explicitement `ollama serve`)"
+    },
+    "test-eleve-unity-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-vision-tools": {
+      "tier": "offline"
+    },
+    "test-eleve-web-tools": {
+      "tier": "offline"
+    },
+    "test-esthete-agent": {
+      "tier": "offline"
+    },
+    "test-esthete-routes": {
+      "tier": "offline"
+    },
+    "test-finition": {
+      "tier": "offline"
+    },
+    "test-fondations-gates-combines": {
+      "tier": "offline"
+    },
+    "test-formation-model": {
+      "tier": "offline"
+    },
+    "test-formation-tuteur": {
+      "tier": "offline"
+    },
+    "test-frontier-orchestration": {
+      "tier": "offline"
+    },
+    "test-gpu-serialize": {
+      "tier": "offline"
+    },
+    "test-grand-chantier": {
+      "tier": "offline"
+    },
+    "test-home-scratch": {
+      "tier": "offline"
+    },
+    "test-insights": {
+      "tier": "offline"
+    },
+    "test-inspection": {
+      "tier": "offline"
+    },
+    "test-intent-capabilities": {
+      "tier": "offline"
+    },
+    "test-jalon-d": {
+      "tier": "offline"
+    },
+    "test-judge-diff": {
+      "tier": "offline"
+    },
+    "test-kernel": {
+      "tier": "offline"
+    },
+    "test-kernel-artifacts": {
+      "tier": "offline"
+    },
+    "test-kernel-blackboard": {
+      "tier": "smoke"
+    },
+    "test-kernel-blackboard-sqlite": {
+      "tier": "offline"
+    },
+    "test-kernel-bus": {
+      "tier": "smoke"
+    },
+    "test-kernel-chat-bridge": {
+      "tier": "offline"
+    },
+    "test-kernel-curation-effect": {
+      "tier": "offline"
+    },
+    "test-kernel-curation-priority": {
+      "tier": "offline"
+    },
+    "test-kernel-design-events": {
+      "tier": "offline"
+    },
+    "test-kernel-mangoqa-bridge": {
+      "tier": "offline"
+    },
+    "test-kernel-mcp": {
+      "tier": "smoke"
+    },
+    "test-kernel-reuse": {
+      "tier": "offline"
+    },
+    "test-kernel-reuse-metrics": {
+      "tier": "offline"
+    },
+    "test-kernel-trace": {
+      "tier": "smoke"
+    },
+    "test-krea": {
+      "tier": "offline"
+    },
+    "test-layout-balance": {
+      "tier": "offline"
+    },
+    "test-lexique": {
+      "tier": "smoke"
+    },
+    "test-llm-cache": {
+      "tier": "offline"
+    },
+    "test-llm-engine": {
+      "tier": "offline"
+    },
+    "test-loop-state": {
+      "tier": "offline"
+    },
+    "test-mango-app-contract": {
+      "tier": "offline"
+    },
+    "test-mango-hooks": {
+      "tier": "offline"
+    },
+    "test-mango-hooks-config": {
+      "tier": "offline"
+    },
+    "test-mango-self": {
+      "tier": "offline"
+    },
+    "test-mangoqa": {
+      "tier": "offline"
+    },
+    "test-mangoqa-observer": {
+      "tier": "offline"
+    },
+    "test-mangoqa-stop-authority": {
+      "tier": "offline"
+    },
+    "test-mcp-external": {
+      "tier": "offline"
+    },
+    "test-memory-manifest": {
+      "tier": "offline"
+    },
+    "test-memory-migration": {
+      "tier": "offline"
+    },
+    "test-miroir": {
+      "tier": "offline"
+    },
+    "test-model-scan": {
+      "tier": "offline"
+    },
+    "test-models": {
+      "tier": "offline"
+    },
+    "test-multi-project": {
+      "tier": "offline"
+    },
+    "test-nocturnal": {
+      "tier": "offline"
+    },
+    "test-nocturnal-budget-qa": {
+      "tier": "offline"
+    },
+    "test-nocturnal-repair": {
+      "tier": "offline"
+    },
+    "test-nocturnal-review": {
+      "tier": "offline"
+    },
+    "test-notes": {
+      "tier": "offline"
+    },
+    "test-notify": {
+      "tier": "offline"
+    },
+    "test-ollama-routes": {
+      "tier": "offline"
+    },
+    "test-orchestrator": {
+      "tier": "smoke"
+    },
+    "test-patrol": {
+      "tier": "offline"
+    },
+    "test-pdf-pipeline": {
+      "tier": "offline"
+    },
+    "test-pdf-render": {
+      "tier": "offline"
+    },
+    "test-perfect-plan": {
+      "tier": "smoke"
+    },
+    "test-perimeter": {
+      "tier": "offline"
+    },
+    "test-perimeter-branch": {
+      "tier": "offline"
+    },
+    "test-preferences": {
+      "tier": "offline"
+    },
+    "test-preview": {
+      "tier": "offline"
+    },
+    "test-preview-sweep": {
+      "tier": "offline"
+    },
+    "test-procedures": {
+      "tier": "offline"
+    },
+    "test-project-backlog": {
+      "tier": "offline"
+    },
+    "test-project-plan": {
+      "tier": "offline"
+    },
+    "test-projects": {
+      "tier": "offline"
+    },
+    "test-prompt-evolution": {
+      "tier": "offline"
+    },
+    "test-radar": {
+      "tier": "offline"
+    },
+    "test-references": {
+      "tier": "smoke"
+    },
+    "test-relay": {
+      "tier": "smoke"
+    },
+    "test-render-integrity": {
+      "tier": "offline"
+    },
+    "test-reverse-learn": {
+      "tier": "offline"
+    },
+    "test-safe-io": {
+      "tier": "offline"
+    },
+    "test-sandbox-net": {
+      "tier": "offline"
+    },
+    "test-savoir-extraction": {
+      "tier": "offline"
+    },
+    "test-savoir-reconcile": {
+      "tier": "offline"
+    },
+    "test-savoir-store": {
+      "tier": "offline"
+    },
+    "test-savoir-transcript": {
+      "tier": "offline"
+    },
+    "test-scenario": {
+      "tier": "offline"
+    },
+    "test-scrape": {
+      "tier": "offline"
+    },
+    "test-secret-vault": {
+      "tier": "offline"
+    },
+    "test-self-evolution": {
+      "tier": "offline"
+    },
+    "test-self-evolution-autoforge": {
+      "tier": "offline"
+    },
+    "test-shared-data": {
+      "tier": "offline"
+    },
+    "test-sharingan": {
+      "tier": "offline"
+    },
+    "test-sharingan-image": {
+      "tier": "offline"
+    },
+    "test-sharingan-live": {
+      "tier": "offline"
+    },
+    "test-site-artifacts": {
+      "tier": "offline"
+    },
+    "test-site-crawler": {
+      "tier": "offline"
+    },
+    "test-site-design": {
+      "tier": "offline"
+    },
+    "test-site-dossier": {
+      "tier": "offline"
+    },
+    "test-site-images": {
+      "tier": "offline"
+    },
+    "test-site-vision": {
+      "tier": "offline"
+    },
+    "test-skills": {
+      "tier": "offline"
+    },
+    "test-sovereignty-metrics": {
+      "tier": "offline"
+    },
+    "test-specialist-agentic": {
+      "tier": "broken",
+      "reason": "3/27 échecs déterministes — gate P3 runAgentic (action→EXÉCUTE / conseil→CONSEIL) ne se comporte pas comme asserté"
+    },
+    "test-specialist-agents": {
+      "tier": "offline"
+    },
+    "test-specialist-delegate": {
+      "tier": "offline"
+    },
+    "test-specialized-agents": {
+      "tier": "offline"
+    },
+    "test-stratege": {
+      "tier": "offline"
+    },
+    "test-stratege-brain": {
+      "tier": "offline"
+    },
+    "test-stratege-collecteurs": {
+      "tier": "offline"
+    },
+    "test-stratege-demandes": {
+      "tier": "offline"
+    },
+    "test-stratege-escalate": {
+      "tier": "offline"
+    },
+    "test-stratege-global": {
+      "tier": "offline"
+    },
+    "test-stratege-learn": {
+      "tier": "offline"
+    },
+    "test-stratege-routes": {
+      "tier": "offline"
+    },
+    "test-stratege-run": {
+      "tier": "offline"
+    },
+    "test-stratege-signals": {
+      "tier": "offline"
+    },
+    "test-stratege-store": {
+      "tier": "offline"
+    },
+    "test-taste-anchors": {
+      "tier": "offline"
+    },
+    "test-taste-compare": {
+      "tier": "offline"
+    },
+    "test-taste-compositions": {
+      "tier": "offline"
+    },
+    "test-taste-directions": {
+      "tier": "offline"
+    },
+    "test-taste-engine": {
+      "tier": "offline"
+    },
+    "test-taste-generate": {
+      "tier": "offline"
+    },
+    "test-taste-images": {
+      "tier": "offline"
+    },
+    "test-taste-judge": {
+      "tier": "offline"
+    },
+    "test-taste-loop": {
+      "tier": "offline"
+    },
+    "test-taste-nocturnal": {
+      "tier": "offline"
+    },
+    "test-taste-queue": {
+      "tier": "offline"
+    },
+    "test-taste-render": {
+      "tier": "offline"
+    },
+    "test-template-library": {
+      "tier": "offline"
+    },
+    "test-temporal-context": {
+      "tier": "offline"
+    },
+    "test-tool-call-coerce": {
+      "tier": "offline"
+    },
+    "test-trace-dashboard": {
+      "tier": "offline"
+    },
+    "test-train": {
+      "tier": "offline"
+    },
+    "test-tutorial": {
+      "tier": "offline"
+    },
+    "test-tutorial-feedback": {
+      "tier": "offline"
+    },
+    "test-verificateur-contexte": {
+      "tier": "offline"
+    },
+    "test-vision-diff": {
+      "tier": "offline"
+    },
+    "test-vision-prewarm": {
+      "tier": "offline"
+    },
+    "test-webclone": {
+      "tier": "offline"
+    },
+    "test-working-memory": {
+      "tier": "offline"
+    }
+  }
+}
