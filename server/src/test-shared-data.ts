@@ -5,12 +5,9 @@
 import { Blackboard, setBlackboard, resetBlackboard } from "./kernel-blackboard.js";
 import { listDocs, getDoc, putDoc, deleteDoc, slug, collectionScope, subscribe, subscriberCount, type SharedChange } from "./shared-data.js";
 
-const line = (c = "─") => console.log(c.repeat(64));
+import { line, makeCheck } from "./test-util.js";
 let failures = 0;
-const check = (label: string, cond: boolean) => {
-  console.log(`  ${cond ? "✓" : "✗"} ${label}`);
-  if (!cond) failures++;
-};
+const check = makeCheck(() => { failures++; });
 
 line("═");
 console.log("shared-data — colonne de données partagée (Blackboard mémoire)");
