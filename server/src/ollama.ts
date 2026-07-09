@@ -4,6 +4,8 @@
 // modèle par défaut. Sert de moteur de résumé pour l'index multi-projets, et
 // peut être réutilisé par toute autre feature qui doit passer « en interne ».
 
+import { ollamaChat } from './llm-transport.js'
+
 const OLLAMA_URL = process.env.OLLAMA_URL ?? 'http://localhost:11434'
 // Modèle par défaut : celui de l'Élève (un modèle de code, idéal pour résumer
 // du code). Surchargeable sans toucher au code via OLLAMA_SUMMARY_MODEL.
@@ -31,45 +33,27 @@ export function resolveOllamaBaseUrl(baseUrlOverride?: string): string {
 }
 
 /** Un appel chat non-streamé à Ollama. Renvoie le texte de la réponse (trim).
- * Lève si Ollama est injoignable, renvoie une erreur HTTP, ou dépasse le délai. */
+ * Lève si Ollama est injoignable, renvoie une erreur HTTP, ou dépasse le délai.
+ *
+ * Délègue au transport partagé `ollamaChat` (llm-transport.ts) — socle /api/chat
+ * unique. Divergences propres à la famille A préservées via ses options :
+ *   • keep_alive:'10m' (garde le modèle chaud → évite le cold start ~2 min entre
+ *     fichiers d'un run d'indexation) → keepAlive.
+ *   • trim de la réponse (ollamaChat renvoie le texte brut) → .trim() ici.
+ *   • image VL (champ `images`) → imageBase64. */
 export async function askOllama(
   system: string,
   user: string,
   opts: OllamaOptions = {},
 ): Promise<string> {
-  const model = opts.model ?? DEFAULT_MODEL
-  const timeoutMs = opts.timeoutMs ?? 180_000
-  const baseUrl = resolveOllamaBaseUrl(opts.baseUrl)
-  const controller = new AbortController()
-  const timer = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const res = await fetch(`${baseUrl}/api/chat`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model,
-        stream: false,
-        options: { temperature: 0 },
-        // Garde le modèle chargé entre deux fichiers → évite de repayer le
-        // cold start (~2 min) à chaque appel d'un run d'indexation.
-        keep_alive: '10m',
-        messages: [
-          { role: 'system', content: system },
-          {
-            role: 'user',
-            content: user,
-            ...(opts.imageBase64 ? { images: [opts.imageBase64] } : {}),
-          },
-        ],
-      }),
-      signal: controller.signal,
-    })
-    if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`)
-    const data = (await res.json()) as { message?: { content?: string } }
-    return (data.message?.content ?? '').trim()
-  } finally {
-    clearTimeout(timer)
-  }
+  const text = await ollamaChat(system, user, {
+    baseUrl: resolveOllamaBaseUrl(opts.baseUrl),
+    model: opts.model ?? DEFAULT_MODEL,
+    timeoutMs: opts.timeoutMs ?? 180_000,
+    keepAlive: '10m',
+    imageBase64: opts.imageBase64,
+  })
+  return text.trim()
 }
 
 // Modèle d'embeddings local (différent d'un modèle de chat) — à pull une fois
