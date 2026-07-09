@@ -32,7 +32,7 @@ export { PROVIDER_PRESETS } from './llm-endpoint.js'
 // Couche transport UNIQUE (T2) : askClaude/claudeWebResearch/askOpenAI délèguent aux
 // briques partagées. subscriptionEnv (garde-fou abonnement) est désormais SOURCÉ ici et
 // ré-exporté — les importeurs (agent.ts, promptlab.ts, index.ts) restent inchangés.
-import { claudeQuery, openAiChat, subscriptionEnv, CLAUDE_QUERY_TIMEOUT_MS } from './llm-transport.js'
+import { claudeQuery, openAiChat, CLAUDE_QUERY_TIMEOUT_MS } from './llm-transport.js'
 export { subscriptionEnv } from './llm-transport.js'
 
 export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'litellm'
