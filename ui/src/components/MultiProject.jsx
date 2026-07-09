@@ -4,6 +4,7 @@ import CategoryFilters from "./multiproject/CategoryFilters.jsx";
 import Toast from "./multiproject/Toast.jsx";
 import ProjectCard from "./multiproject/ProjectCard.jsx";
 import SemanticResultRow from "./multiproject/SemanticResultRow.jsx";
+import { useSemanticSearch } from "./multiproject/useSemanticSearch.js";
 
 // --- Page principale ---
 export default function MultiProject({ onBack }) {
@@ -14,13 +15,17 @@ export default function MultiProject({ onBack }) {
   const [search, setSearch] = useState("");
   const [activeCategories, setActiveCategories] = useState(new Set());
 
-  // Recherche sémantique (Phase 3 idée #26)
-  const [searchMode, setSearchMode] = useState("name"); // "name" | "semantic"
-  const [semanticQuery, setSemanticQuery] = useState("");
-  const [semanticResults, setSemanticResults] = useState([]);
-  const [semanticLoading, setSemanticLoading] = useState(false);
-  const [needsIndex, setNeedsIndex] = useState(false);
-  const [indexing, setIndexing] = useState(false);
+  // Recherche sémantique (Phase 3 idée #26) — état + logique dans le hook dédié
+  const {
+    searchMode, setSearchMode,
+    semanticQuery, setSemanticQuery,
+    semanticResults,
+    semanticLoading,
+    needsIndex,
+    indexing,
+    runSemanticSearch,
+    runReindex,
+  } = useSemanticSearch(setToast);
 
   useEffect(() => {
     fetch("/api/multi-project/components")
@@ -45,52 +50,6 @@ export default function MultiProject({ onBack }) {
       else next.add(cat);
       return next;
     });
-  }
-
-  async function runSemanticSearch(e) {
-    e?.preventDefault();
-    const q = semanticQuery.trim();
-    if (!q) {
-      setSemanticResults([]);
-      return;
-    }
-    setSemanticLoading(true);
-    try {
-      const resp = await fetch(`/api/multi-project/search?q=${encodeURIComponent(q)}`);
-      const data = await resp.json();
-      setSemanticResults(data.results ?? []);
-      setNeedsIndex(Boolean(data.needsIndex));
-    } catch {
-      setSemanticResults([]);
-    } finally {
-      setSemanticLoading(false);
-    }
-  }
-
-  async function runReindex() {
-    setIndexing(true);
-    try {
-      const resp = await fetch("/api/multi-project/index", { method: "POST" });
-      const data = await resp.json();
-      if (!resp.ok) throw new Error(data.error ?? "Erreur d'indexation");
-      setNeedsIndex(false);
-      setToast(
-        `Index à jour — ${data.indexed} indexé${data.indexed > 1 ? "s" : ""}, ` +
-        `${data.reused} réutilisé${data.reused > 1 ? "s" : ""}, ${data.total} au total` +
-        (data.removed > 0 ? ` (${data.removed} retiré${data.removed > 1 ? "s" : ""})` : "")
-      );
-      // Relancer la recherche courante si une requête est en cours
-      if (semanticQuery.trim()) {
-        const r = await fetch(`/api/multi-project/search?q=${encodeURIComponent(semanticQuery.trim())}`);
-        const d = await r.json();
-        setSemanticResults(d.results ?? []);
-        setNeedsIndex(Boolean(d.needsIndex));
-      }
-    } catch (err) {
-      setToast(err instanceof Error ? err.message : "Erreur d'indexation");
-    } finally {
-      setIndexing(false);
-    }
   }
 
   // Filtrage textuel
