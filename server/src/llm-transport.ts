@@ -23,6 +23,7 @@
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { OpenAITool } from "./kernel-mcp.js";
 import type { ChatMessage, ToolCall } from "./eleve-runtime.js";
+import { fetchWithRetry, type RetryPolicy } from "./eleve-retry.js";
 
 // ── Abonnement vs crédits API : le garde-fou central ─────────────────────────
 // CRUCIAL : query() utilise l'ABONNEMENT Claude Code UNIQUEMENT si ANTHROPIC_API_KEY
@@ -185,8 +186,9 @@ export async function openAiChat(
 }
 
 // ── Transport openai-compat function-calling (tools) ─────────────────────────
-/** Un tour openai-compat AVEC outils. Renvoie {content, toolCalls?}. SANS retry
- *  (le retry 429/503 est ajouté en opt-in à la tranche T3). `url`/`key` déjà résolus. */
+/** Un tour openai-compat AVEC outils. Renvoie {content, toolCalls?}. `url`/`key`
+ *  déjà résolus. `retry` OPT-IN (T3) : absent → un seul essai (byte-identique au
+ *  fetch nu) ; fourni → retente 429/503 + réseau. Seul l'Élève passe une politique. */
 export async function openAiChatTools(opts: {
   url: string;
   key: string;
@@ -194,23 +196,29 @@ export async function openAiChatTools(opts: {
   timeoutMs: number;
   messages: ChatMessage[];
   tools: OpenAITool[] | null;
+  retry?: RetryPolicy;
 }): Promise<{ content: string; toolCalls?: ToolCall[] }> {
-  const res = await fetch(opts.url, {
-    method: "POST",
-    signal: AbortSignal.timeout(opts.timeoutMs),
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.key}` },
-    body: JSON.stringify({
-      model: opts.model,
-      stream: false,
-      temperature: 0,
-      messages: opts.messages,
-      ...(opts.tools ? { tools: opts.tools, tool_choice: "auto" } : {}),
-    }),
+  const payload = JSON.stringify({
+    model: opts.model,
+    stream: false,
+    temperature: 0,
+    messages: opts.messages,
+    ...(opts.tools ? { tools: opts.tools, tool_choice: "auto" } : {}),
   });
-  if (!res.ok) {
-    await res.text().catch(() => undefined); // draine le corps
-    throw new Error(`API Élève HTTP ${res.status}`);
-  }
+  const res = await fetchWithRetry(
+    opts.url,
+    () => ({
+      method: "POST",
+      signal: AbortSignal.timeout(opts.timeoutMs),
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${opts.key}` },
+      body: payload,
+    }),
+    opts.retry,
+    {
+      http: (status) => `API Élève HTTP ${status}`,
+      network: (attempts, name) => `API Élève injoignable (${name}) après ${attempts} tentative(s)`,
+    },
+  );
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
   };

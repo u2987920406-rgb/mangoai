@@ -33,7 +33,7 @@ import { resolveEndpoint, normalizeCompletionsUrl } from "./llm-endpoint.js";
 // T2 : couche transport unique — le transport function-calling local (Ollama tools)
 // délègue à la brique partagée (mappers inclus). Les autres transports Élève
 // (askEleveOllama/askEleveOpenAI/postEleveCompletions) convergent à la tranche T4.
-import { ollamaChatTools } from "./llm-transport.js";
+import { ollamaChatTools, openAiChatTools } from "./llm-transport.js";
 import { toOpenAITools, type ToolRegistry, type OpenAITool } from "./kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "./eleve-action-tools.js";
@@ -47,7 +47,7 @@ import {
   duplicateExplorationMessage,
 } from "./eleve-antispiral.js";
 import { coerceTextToolCall } from "./tool-call-coerce.js";
-import { eleveRetryDelayMs, eleveMaxRetries } from "./eleve-retry.js";
+import { eleveRetryPolicy } from "./eleve-retry.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "./eleve-image-check.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "./stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "./stratege.js";
@@ -512,48 +512,12 @@ async function postEleveCompletions(
   endpoint?: EndpointOverride,
 ): Promise<{ content: string; toolCalls?: ToolCall[] }> {
   const { url, key } = openAiEndpoint(provider, endpoint);
-  const payload = JSON.stringify({
-    model: model ?? ELEVE_MODEL,
-    stream: false,
-    temperature: 0,
-    messages,
-    ...(tools ? { tools, tool_choice: "auto" } : {}),
-  });
-  // Retry/backoff sur les codes TRANSITOIRES (429 rate-limit, 503 overload) — sinon un
-  // Élève cloud capable (Gemini free / GLM) abandonne au 1ᵉʳ 429 alors qu'il mène la boucle.
-  const maxRetries = eleveMaxRetries();
-  let lastStatus = 0;
-  for (let attempt = 0; ; attempt++) {
-    let res: Response;
-    try {
-      res = await fetch(url, {
-        method: "POST",
-        signal: AbortSignal.timeout(ELEVE_FETCH_TIMEOUT_MS),
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-        body: payload,
-      });
-    } catch (e) {
-      // Timeout/coupure réseau = transitoire : même politique de retry qu'un 503,
-      // au lieu de geler le tour (ou de le tuer à la 1ʳᵉ microcoupure cloud).
-      const delay = eleveRetryDelayMs(503, attempt, null, maxRetries);
-      if (delay === null) throw new Error(`API Élève injoignable (${(e as Error)?.name ?? "réseau"}) après ${attempt + 1} tentative(s)`);
-      await new Promise((r) => setTimeout(r, delay));
-      continue;
-    }
-    if (res.ok) {
-      const data = (await res.json()) as {
-        choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
-      };
-      const msg = data.choices?.[0]?.message;
-      if (!msg) throw new Error("réponse Élève vide");
-      return { content: msg.content ?? "", toolCalls: msg.tool_calls };
-    }
-    lastStatus = res.status;
-    const delay = eleveRetryDelayMs(res.status, attempt, res.headers.get("retry-after"), maxRetries);
-    await res.text().catch(() => undefined); // draine le corps avant de retenter/abandonner
-    if (delay === null) throw new Error(`API Élève HTTP ${lastStatus}`);
-    await new Promise((r) => setTimeout(r, delay));
-  }
+  // T3 : transport à outils délégué à la brique partagée, AVEC la politique de retry
+  // de l'Élève (429/503, Retry-After, réseau→503) — la SEULE politique active par
+  // défaut. Comportement identique à l'ancienne boucle inline (mêmes codes, mêmes
+  // libellés, timeout frais par tentative). Sinon un Élève cloud capable (Gemini free /
+  // GLM) abandonnait au 1ᵉʳ 429 alors qu'il mène la boucle agentique.
+  return openAiChatTools({ url, key, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, messages, tools, retry: eleveRetryPolicy() });
 }
 
 /** Le transport injecté au runtime agentique (eleve-runtime.buildAgentic), lié à

@@ -16,6 +16,7 @@ import {
   ollamaChat,
   ollamaChatTools,
 } from "./llm-transport.js";
+import { eleveRetryPolicy } from "./eleve-retry.js";
 
 let pass = 0, fail = 0;
 function check(label: string, cond: boolean) {
@@ -119,6 +120,36 @@ async function run() {
     const c = await srv.captured; srv.close();
     check("tools transmis", Array.isArray(c.body.tools));
     check("toolCalls remontés (id généré, args re-stringifiés)", out.toolCalls?.[0].function.name === "read_file" && out.toolCalls?.[0].function.arguments === '{"path":"a"}');
+  }
+
+  console.log("\n[C] openAiChatTools — retry OPT-IN (T3) : défaut aucun retry, policy = 429/503");
+  {
+    // Sans policy : un 500 lève IMMÉDIATEMENT (aucune tentative supplémentaire).
+    let hits = 0;
+    const s500 = http.createServer((_req, res) => { hits++; res.writeHead(500); res.end("boom"); });
+    await new Promise<void>((r) => s500.listen(0, "127.0.0.1", () => r()));
+    const p500 = (s500.address() as any).port;
+    let threw = false;
+    try {
+      await openAiChatTools({ url: `http://127.0.0.1:${p500}/x`, key: "k", model: "m", timeoutMs: 5000, messages: [{ role: "user", content: "go" }], tools: null });
+    } catch { threw = true; }
+    s500.close();
+    check("sans policy : 500 → throw immédiat", threw);
+    check("sans policy : une SEULE requête émise (pas de retry)", hits === 1);
+
+    // Avec policy Élève : un 503 puis un 200 → succès après retry (respect Retry-After: 0).
+    let n = 0;
+    const sFlaky = http.createServer((_req, res) => {
+      n++;
+      if (n === 1) { res.writeHead(503, { "Retry-After": "0" }); res.end("busy"); }
+      else { res.writeHead(200, { "Content-Type": "application/json" }); res.end(JSON.stringify({ choices: [{ message: { content: "enfin" } }] })); }
+    });
+    await new Promise<void>((r) => sFlaky.listen(0, "127.0.0.1", () => r()));
+    const pFlaky = (sFlaky.address() as any).port;
+    const out = await openAiChatTools({ url: `http://127.0.0.1:${pFlaky}/x`, key: "k", model: "m", timeoutMs: 5000, messages: [{ role: "user", content: "go" }], tools: null, retry: eleveRetryPolicy() });
+    sFlaky.close();
+    check("avec policy : 503 retenté puis 200 (2 requêtes)", n === 2);
+    check("avec policy : réponse finale récupérée après retry", out.content === "enfin");
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} llm-transport : ${pass} pass, ${fail} fail`);
