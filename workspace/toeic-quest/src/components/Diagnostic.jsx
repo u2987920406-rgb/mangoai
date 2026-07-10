@@ -35,7 +35,7 @@ export function Diagnostic({ progress, onOpenModule, onBack }) {
   return (
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Diagnostic</h1>
+        <h1 className="font-display text-2xl sm:text-4xl font-bold">Diagnostic</h1>
         <Button variant="ghost" size="sm" onClick={onBack}>← Accueil</Button>
       </div>
 

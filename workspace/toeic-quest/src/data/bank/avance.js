@@ -6,7 +6,7 @@ export const AVANCE = [
   // ── P3 · Conversations rapides — M40 ──
   {
     id: "P3-M40-01", moduleId: "M40", level: "avance", part: "P3", skill: "listening", difficulty: 3,
-    image: "https://images.pexels.com/photos/3182812/pexels-photo-3182812.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/3182812.jpeg",
     lines: [
       { speaker: "M", gender: "male", text: "I heard the client pushed back on our proposal again." },
       { speaker: "W", gender: "female", text: "They did, but honestly, I think it's a negotiating tactic. They want a lower price." },

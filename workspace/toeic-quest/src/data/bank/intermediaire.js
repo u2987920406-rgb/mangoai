@@ -6,7 +6,7 @@ export const INTERMEDIAIRE = [
   // ── P1 · Photos — M17 Actions complexes ──
   {
     id: "P1-M17-01", moduleId: "M17", level: "intermediaire", part: "P1", skill: "listening", difficulty: 2, voiceGender: "male",
-    image: "https://images.pexels.com/photos/3184360/pexels-photo-3184360.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/3184360.jpeg",
     transcript: "(A) A group of people are seated around a table reviewing documents. (B) The people are leaving the building. (C) A man is painting the wall. (D) The shelves are completely empty.",
     question: "Sélectionnez la phrase qui décrit le mieux l'image.",
     choices: ["A group of people are seated around a table reviewing documents.", "The people are leaving the building.", "A man is painting the wall.", "The shelves are completely empty."],
@@ -37,7 +37,7 @@ export const INTERMEDIAIRE = [
   // ── P3 · Conversations homme-femme — M20 multi-tours (cœur de la demande) ──
   {
     id: "P3-M20-01", moduleId: "M20", level: "intermediaire", part: "P3", skill: "listening", difficulty: 2,
-    image: "https://images.pexels.com/photos/3183197/pexels-photo-3183197.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/3183197.jpeg",
     lines: [
       { speaker: "M", gender: "male", text: "Hi Sarah, have you finished the quarterly report yet?" },
       { speaker: "W", gender: "female", text: "Almost. I just need the sales figures from your team to complete the last section." },
@@ -52,7 +52,7 @@ export const INTERMEDIAIRE = [
   },
   {
     id: "P3-M20-02", moduleId: "M20", level: "intermediaire", part: "P3", skill: "listening", difficulty: 3,
-    image: "https://images.pexels.com/photos/3184465/pexels-photo-3184465.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/3184465.jpeg",
     lines: [
       { speaker: "W", gender: "female", text: "Good morning. I'd like to return this jacket — it's the wrong size." },
       { speaker: "M", gender: "male", text: "Of course. Do you have the receipt with you?" },

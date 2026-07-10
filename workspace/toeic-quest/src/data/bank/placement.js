@@ -26,7 +26,7 @@ export const PLACEMENT = [
   },
   {
     id: "PL-04", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7652049.jpeg",
     passage: "NOTICE\n\nThe staff parking lot will be repaved this Saturday. Employees are asked to use the public garage on Elm Street, which will be free of charge for the day. Normal parking resumes Monday.",
     question: "Where should employees park on Saturday?",
     choices: ["The public garage on Elm Street", "The staff parking lot", "On the street near the office", "At a nearby shopping mall"], answer: 0,
@@ -64,7 +64,7 @@ export const PLACEMENT = [
   },
   {
     id: "PL-09", part: "P7", skill: "reading", difficulty: 3,
-    image: "https://images.pexels.com/photos/3184292/pexels-photo-3184292.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/3184292.jpeg",
     passage: "We regret to inform customers that, owing to an unexpected surge in demand, the GX-9 headphones are temporarily out of stock. Customers who pre-ordered will be prioritized once new units arrive, expected within two weeks. We appreciate your understanding and, as a gesture of goodwill, will include a complimentary carrying case with each delayed order.",
     question: "What is implied about customers who pre-ordered?",
     choices: ["They will receive their order before new general customers", "They will be refunded automatically", "They must place their order again", "They will not receive the carrying case"], answer: 0,

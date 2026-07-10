@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "../lib/utils.js";
+import { FlameIcon, ClockIcon } from "./icons.jsx";
 
 // ─── Barre d'XP avec niveau ──────────────────────────────────────────────────
 export function XPBar({ level, xpInLevel, xpForNext, compact = false }) {
@@ -31,10 +32,10 @@ export function XPBar({ level, xpInLevel, xpForNext, compact = false }) {
 // ─── Streak indicator ─────────────────────────────────────────────────────────
 export function StreakBadge({ streak }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-orange-50 border border-orange-200">
-      <span className="text-lg">🔥</span>
-      <span className="font-bold text-sm text-orange-600">{streak}</span>
-      <span className="text-xs text-orange-500">jours</span>
+    <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-coral/10 border border-coral/25 text-coral">
+      <FlameIcon size={15} />
+      <span className="font-bold text-sm tabular-nums">{streak}</span>
+      <span className="text-xs opacity-80">{streak > 1 ? "jours" : "jour"}</span>
     </div>
   );
 }
@@ -49,7 +50,7 @@ export function ScoreDisplay({ score, size = "md" }) {
   const s = sizes[size] || sizes.md;
   return (
     <div className="text-center">
-      <div className={cn("font-extrabold text-foreground", s.num)}>{score}</div>
+      <div className={cn("font-display font-bold text-foreground tabular-nums", s.num)} data-testid="estimated-score">{score}</div>
       <div className={cn("text-muted-foreground", s.label)}>Score TOEIC estimé</div>
     </div>
   );
@@ -131,10 +132,10 @@ export function SessionTimer({ active, onExpire, seconds = 0 }) {
   return (
     <div className={cn(
       "flex items-center gap-2 px-3 py-1.5 rounded-full font-mono font-bold text-sm transition-colors",
-      isLow ? "bg-red-50 text-red-600 animate-pulse" : "bg-muted text-foreground"
+      isLow ? "bg-destructive/10 text-destructive animate-pulse" : "bg-muted text-foreground"
     )}>
-      <span>⏱️</span>
-      <span>{String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}</span>
+      <ClockIcon size={14} />
+      <span className="tabular-nums">{String(mins).padStart(2, "0")}:{String(secs).padStart(2, "0")}</span>
     </div>
   );
 }

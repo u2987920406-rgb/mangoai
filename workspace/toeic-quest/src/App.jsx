@@ -3,7 +3,7 @@ import { useProgress } from "./hooks/useProgress.js";
 import { Dashboard } from "./components/Dashboard.jsx";
 import { Mascot } from "./components/Mascot.jsx";
 import { XPBar, StreakBadge } from "./components/Gamification.jsx";
-import { buildSession } from "./data/bank/index.js";
+import { buildSession, buildFreeSession } from "./data/bank/index.js";
 import { getModule } from "./data/curriculum.js";
 
 // Écrans secondaires chargés à la demande (code-splitting) — l'accueil reste instantané.
@@ -42,9 +42,9 @@ export default function App() {
     go("session");
   }, [go]);
 
-  // Démarre un mode libre (3 modes historiques).
+  // Démarre un mode libre (3 modes historiques) — échantillon plafonné, pas la banque entière.
   const startFreeMode = useCallback((mode) => {
-    setSessionCfg({ mode, moduleId: null, questions: null, returnTo: { name: "dashboard" } });
+    setSessionCfg({ mode, moduleId: null, questions: buildFreeSession(mode), returnTo: { name: "dashboard" } });
     go("session");
   }, [go]);
 
@@ -63,8 +63,8 @@ export default function App() {
 
   const handleRetry = useCallback(() => {
     if (!sessionCfg) { goHome(); return; }
-    // Reconstruit une session fraîche (nouveau tirage pour les modules).
-    const questions = sessionCfg.moduleId ? buildSession(sessionCfg.moduleId, sessionCfg.size) : null;
+    // Reconstruit une session fraîche (nouveau tirage, module OU mode libre).
+    const questions = sessionCfg.moduleId ? buildSession(sessionCfg.moduleId, sessionCfg.size) : buildFreeSession(sessionCfg.mode);
     setSessionCfg({ ...sessionCfg, questions });
     setLastSession(null);
     go("session");
@@ -79,7 +79,7 @@ export default function App() {
         <div className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between gap-4">
           <button onClick={goHome} aria-label="Accueil TOEIC Quest" className="flex items-center gap-2 shrink-0">
             <Mascot mood="happy" size={36} />
-            <span className="font-extrabold text-lg hidden sm:block">
+            <span className="font-display font-bold text-lg hidden sm:block tracking-tight">
               TOEIC<span className="text-accent-strong">QUEST</span>
             </span>
           </button>
@@ -97,6 +97,8 @@ export default function App() {
       {/* Main content */}
       <main className="mx-auto max-w-5xl px-4">
         <Suspense fallback={<ScreenLoader />}>
+        {/* Chorégraphie d'écran : chaque route entre avec un léger glissement + fondu. */}
+        <div key={route.name} className="animate-screen-in">
         {route.name === "dashboard" && (
           <Dashboard
             progress={progress}
@@ -155,6 +157,7 @@ export default function App() {
         {route.name === "result" && lastSession && (
           <SessionResult session={lastSession} onBackHome={goHome} onRetry={handleRetry} />
         )}
+        </div>
         </Suspense>
       </main>
 
@@ -162,8 +165,8 @@ export default function App() {
       {route.name === "dashboard" && (
         <footer className="border-t border-border mt-8">
           <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-muted-foreground">
-            <p>TOEIC QUEST — Préparation ludique au TOEIC 🥭</p>
-            <p className="mt-1 text-xs">Vos données sont stockées localement sur votre navigateur.</p>
+            <p className="font-semibold">TOEIC QUEST — Préparation ludique au TOEIC</p>
+            <p className="mt-1 text-xs">Vos données et vos images restent stockées localement sur votre navigateur.</p>
           </div>
         </footer>
       )}

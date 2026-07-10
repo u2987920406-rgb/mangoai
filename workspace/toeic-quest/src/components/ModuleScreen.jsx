@@ -5,6 +5,7 @@ import { Card, CardContent } from "./ui/card.jsx";
 import { Button } from "./ui/button.jsx";
 import { Badge } from "./ui/badge.jsx";
 import { cn } from "../lib/utils.js";
+import { StarIcon, PlayIcon, HourglassIcon } from "./icons.jsx";
 
 // Écran d'un module : objectif, parties travaillées, conseils, lancement de session.
 export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onStart, onBack }) {
@@ -30,7 +31,7 @@ export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onSt
               <div className="text-xs text-muted-foreground uppercase tracking-wide">
                 {LEVELS[mod.level].name} · Semaine {mod.week}
               </div>
-              <h1 className="text-2xl font-extrabold">{mod.title}</h1>
+              <h1 className="font-display text-2xl sm:text-3xl font-bold">{mod.title}</h1>
               <div className="flex flex-wrap gap-1.5 mt-2">
                 {mod.parts.map((p) => (
                   <Badge key={p} variant="secondary" title={PART_NAME[p]}>{PART_EMOJI[p]} {p}</Badge>
@@ -41,7 +42,7 @@ export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onSt
               <div className="text-right">
                 <div className="flex gap-0.5 justify-end">
                   {[1, 2, 3].map((n) => (
-                    <span key={n} className={cn("text-lg", n <= (prog.stars || 0) ? "opacity-100" : "opacity-25")}>⭐</span>
+                    <StarIcon key={n} size={18} className={cn(n <= (prog.stars || 0) ? "text-accent-strong" : "text-border")} />
                   ))}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">{Math.round((prog.bestAccuracy || 0) * 100)}% au mieux</div>
@@ -92,9 +93,10 @@ export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onSt
             onClick={() => onStart(mod, sessionSize)}
             disabled={!playable}
             size="lg"
-            className="w-full bg-accent text-accent-foreground hover:bg-accent/90"
+            className="w-full bg-accent text-accent-foreground hover:bg-accent/90 gap-2"
+            data-testid="start-session"
           >
-            {playable ? "▶ Commencer la session" : "🕒 Bientôt disponible"}
+            {playable ? <><PlayIcon size={15} /> Commencer la session</> : <><HourglassIcon size={15} /> Bientôt disponible</>}
           </Button>
         </CardContent>
       </Card>

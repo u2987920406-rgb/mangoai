@@ -7,7 +7,8 @@ import { Badge } from "./ui/badge.jsx";
 import { cn } from "../lib/utils.js";
 import { QUESTIONS, MODE_INFO, XP_PER_CORRECT, xpForResults } from "../data/questions.js";
 import { PART_EMOJI } from "../data/curriculum.js";
-import { speakLine, speakSequence, cancelSpeech } from "../lib/speech.js";
+import { speakLine, speakSequence, cancelSpeech, speechSupported } from "../lib/speech.js";
+import { PlayIcon, StarIcon, CheckIcon, XIcon, BulbIcon } from "./icons.jsx";
 
 // ─── Session de jeu — générique (modes libres ET modules du parcours) ─────────
 // props : questions? (injectées) · mode · moduleId? · onFinish · useTimer · timerSeconds
@@ -17,7 +18,9 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
   const [selected, setSelected] = useState(null);
   const [answered, setAnswered] = useState(false);
   const [results, setResults] = useState([]);
-  const [showTranscript, setShowTranscript] = useState(false);
+  // Fallback lisible : sans synthèse vocale, le transcript s'affiche d'office.
+  const [showTranscript, setShowTranscript] = useState(() => !speechSupported());
+  const [imgFailed, setImgFailed] = useState(false);
   const [activeLine, setActiveLine] = useState(-1);
   const [timerActive, setTimerActive] = useState(useTimer);
   const [timeUp, setTimeUp] = useState(false);
@@ -61,7 +64,8 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
   // Réinitialise l'état à chaque nouvelle question + auto-lecture audio.
   useEffect(() => {
     playedRef.current = false;
-    setShowTranscript(false);
+    setShowTranscript(!speechSupported());
+    setImgFailed(false);
     setActiveLine(-1);
   }, [currentIdx]);
 
@@ -137,13 +141,13 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
           <Badge
             variant="secondary"
             className={cn(
-              "bg-accent/15 text-accent-strong border-accent/30 font-bold tabular-nums transition-transform",
-              answered && isCorrect && "scale-110"
+              "bg-accent/15 text-accent-strong border-accent/30 font-bold tabular-nums gap-1",
+              answered && isCorrect && "animate-pop"
             )}
           >
-            ⭐ {sessionXp} XP
+            <StarIcon size={12} /> {sessionXp} XP
           </Badge>
-          <Badge variant="secondary">
+          <Badge variant="secondary" data-testid="session-count" className="tabular-nums">
             {(q.part && PART_EMOJI[q.part]) || modeInfo.emoji} {currentIdx + 1}/{questions.length}
           </Badge>
         </div>
@@ -161,9 +165,20 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
       <Card className="animate-fade-in-up" key={q.id}>
         <CardContent className="pt-6 space-y-4">
           {/* Image de contexte */}
-          {q.image && (
+          {q.image && !imgFailed && (
             <div className="rounded-xl overflow-hidden mb-2">
-              <img src={q.image} alt="Contexte de la question" className="w-full h-48 object-cover" loading="lazy" />
+              <img
+                src={q.image}
+                alt="Contexte de la question"
+                className="w-full h-48 object-cover"
+                loading="lazy"
+                onError={() => setImgFailed(true)}
+              />
+            </div>
+          )}
+          {q.image && imgFailed && (
+            <div className="rounded-xl mb-2 p-4 bg-muted/50 text-sm text-muted-foreground text-center">
+              Image indisponible hors-ligne — appuie-toi sur l'audio et le transcript.
             </div>
           )}
 
@@ -176,7 +191,7 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
                 onClick={playAudio}
                 aria-label="Écouter l'audio"
               >
-                ▶
+                <PlayIcon size={16} />
               </Button>
               <div className="flex-1">
                 <div className="text-sm font-medium">{isConversation ? "Écoutez la conversation" : "Écoutez l'audio"}</div>
@@ -263,22 +278,27 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
               }
               return (
                 <button
-                  key={idx}
+                  key={`${q.id}-${idx}`}
                   onClick={() => handleSelect(idx)}
                   disabled={answered}
+                  data-testid="choice"
+                  data-correct={isAnswer ? "true" : "false"}
+                  style={{ animationDelay: `${80 + idx * 70}ms` }}
                   className={cn(
-                    "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-3",
+                    "w-full text-left p-4 rounded-xl border-2 transition-all duration-200 flex items-center gap-3 animate-fade-in-up",
                     style,
-                    !answered && "cursor-pointer active:scale-[0.99]"
+                    !answered && "cursor-pointer active:scale-[0.98]",
+                    // Feedback tactile : la bonne réponse « pop », l'erreur « secoue ».
+                    answered && isSelected && (isAnswer ? "animate-pop" : "animate-shake")
                   )}
                 >
                   <span className={cn(
-                    "flex items-center justify-center w-7 h-7 rounded-full border-2 text-sm font-bold shrink-0",
+                    "flex items-center justify-center w-7 h-7 rounded-full border-2 text-sm font-bold shrink-0 transition-colors",
                     answered && isAnswer ? "border-primary bg-primary text-primary-foreground" :
                     answered && isSelected ? "border-destructive bg-destructive text-destructive-foreground" :
                     "border-border"
                   )}>
-                    {answered && isAnswer ? "✓" : answered && isSelected ? "✗" : String.fromCharCode(65 + idx)}
+                    {answered && isAnswer ? <CheckIcon size={13} /> : answered && isSelected ? <XIcon size={13} /> : String.fromCharCode(65 + idx)}
                   </span>
                   <span className="flex-1">{choice}</span>
                 </button>
@@ -292,8 +312,13 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
               "p-4 rounded-xl animate-fade-in-up space-y-3",
               isCorrect ? "bg-primary/5 border border-primary/20" : "bg-destructive/5 border border-destructive/20"
             )}>
-              <div className="flex items-center gap-2">
-                <span className="text-2xl">{isCorrect ? "🎉" : "💡"}</span>
+              <div className="flex items-center gap-2" data-testid="feedback">
+                <span className={cn(
+                  "flex items-center justify-center w-7 h-7 rounded-full text-white shrink-0",
+                  isCorrect ? "bg-primary" : "bg-accent-strong"
+                )}>
+                  {isCorrect ? <CheckIcon size={14} /> : <BulbIcon size={14} />}
+                </span>
                 <span className="font-bold">{isCorrect ? "Correct !" : "Pas tout à fait..."}</span>
               </div>
               <p className="text-sm text-foreground">{q.explanation}</p>

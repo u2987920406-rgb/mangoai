@@ -1,4 +1,5 @@
 import { cn } from "../lib/utils.js";
+import { LockIcon, HourglassIcon, StarIcon } from "./icons.jsx";
 
 // Couleur de thème (token @theme) → valeur HSL utilisable inline.
 function colorVar(color, alpha) {
@@ -35,11 +36,11 @@ export function ModuleNode({ module, progress, unlocked, playable, isNext, offse
         )}
         aria-label={module.title}
       >
-        {locked ? "🔒" : !playable ? "🕒" : module.emoji}
+        {locked ? <LockIcon size={22} /> : !playable ? <HourglassIcon size={22} /> : module.emoji}
         {completed && (
-          <span className="absolute -bottom-2 left-1/2 -translate-x-1/2 flex gap-0.5">
+          <span className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 flex gap-0.5 px-1 py-0.5 rounded-full bg-card border border-border shadow-sm">
             {[1, 2, 3].map((n) => (
-              <span key={n} className={cn("text-xs", n <= stars ? "opacity-100" : "opacity-25")}>⭐</span>
+              <StarIcon key={n} size={10} className={cn(n <= stars ? "text-accent-strong" : "text-border")} />
             ))}
           </span>
         )}

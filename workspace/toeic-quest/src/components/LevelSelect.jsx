@@ -4,6 +4,7 @@ import { Button } from "./ui/button.jsx";
 import { Badge } from "./ui/badge.jsx";
 import { Reveal } from "./Gamification.jsx";
 import { cn } from "../lib/utils.js";
+import { LockIcon, ArrowRightIcon } from "./icons.jsx";
 
 // Choix du niveau : 3 cartes (Débutant / Intermédiaire / Avancé).
 export function LevelSelect({ progress, onPickLevel, onBack }) {
@@ -13,7 +14,7 @@ export function LevelSelect({ progress, onPickLevel, onBack }) {
   return (
     <div className="py-6 space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl sm:text-3xl font-extrabold">Ton parcours TOEIC</h1>
+        <h1 className="font-display text-2xl sm:text-4xl font-bold">Ton parcours TOEIC</h1>
         <Button variant="ghost" size="sm" onClick={onBack}>← Accueil</Button>
       </div>
       <p className="text-muted-foreground">Un an de préparation, 7 parties officielles, vers le score 800+. Choisis ton niveau.</p>
@@ -29,7 +30,7 @@ export function LevelSelect({ progress, onPickLevel, onBack }) {
               <Card className={cn("transition-all", !isLocked && "hover:shadow-lg hover:-translate-y-1 cursor-pointer", isLocked && "opacity-70")}>
                 <CardContent className="pt-6 space-y-3" onClick={() => !isLocked && onPickLevel(lvl.id)}>
                   <div className="flex items-center justify-between">
-                    <div className="text-4xl">{isLocked ? "🔒" : lvl.emoji}</div>
+                    <div className="text-4xl">{isLocked ? <LockIcon size={34} className="text-muted-foreground" /> : lvl.emoji}</div>
                     <Badge variant="secondary">Sem. {lvl.weeks}</Badge>
                   </div>
                   <h3 className="font-bold text-lg">{lvl.name}</h3>
@@ -42,7 +43,7 @@ export function LevelSelect({ progress, onPickLevel, onBack }) {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-muted-foreground">{done}/{mods.length} complétés</span>
-                        <span className="text-accent-strong font-bold text-sm">Ouvrir →</span>
+                        <span className="flex items-center gap-1 text-accent-strong font-bold text-sm">Ouvrir <ArrowRightIcon size={14} /></span>
                       </div>
                     </>
                   ) : (

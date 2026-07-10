@@ -95,6 +95,26 @@ export function buildSession(moduleId, n = 10) {
   return shuffle(getByModule(moduleId)).slice(0, n);
 }
 
+// ── Session « mode libre » : échantillon PLAFONNÉ (jamais la banque entière) ──
+// Un mode libre tire FREE_SESSION_SIZE questions au hasard dans la compétence,
+// comme buildSession le fait pour les modules. Fini les 200+ questions d'affilée.
+export const FREE_SESSION_SIZE = 12;
+export function buildFreeSession(mode, n = FREE_SESSION_SIZE) {
+  const pool = QUESTION_BANK.filter((q) => q.skill === mode);
+  return shuffle(pool).slice(0, n);
+}
+
+// ── Index par id (banque + placement) : retrouve une question depuis un résultat ──
+let questionIndex = null;
+export function getQuestionById(id) {
+  if (!questionIndex) {
+    questionIndex = new Map();
+    for (const q of QUESTION_BANK) questionIndex.set(q.id, q);
+    for (const q of PLACEMENT) questionIndex.set(q.id, q);
+  }
+  return questionIndex.get(id) || null;
+}
+
 // Regroupe la banque par compétence pour la façade « 3 modes libres » historique.
 export function questionsBySkill() {
   return {

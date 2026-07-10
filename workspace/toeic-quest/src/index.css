@@ -78,8 +78,18 @@
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
+    /* Paire typographique nommée : FRAUNCES (display) + NUNITO (body).
+       Nunito porte le corps de texte — rond, amical, très lisible.
+       Fraunces porte les grands titres via .font-display — un serif optique
+       chaleureux qui donne le « moment typographique » mangue de l'app. */
     font-family: "Nunito", "Inter", system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  .font-display {
+    font-family: "Fraunces", Georgia, serif;
+    font-optical-sizing: auto;
+    letter-spacing: -0.015em;
   }
 
   html {
@@ -135,6 +145,10 @@
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-10px); }
 }
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 
 .animate-fade-in-up { animation: fadeInUp 0.5s ease-out both; }
 .animate-fade-in { animation: fadeIn 0.4s ease-out both; }
@@ -145,6 +159,7 @@
 .animate-shake { animation: shake 0.4s ease-in-out; }
 .animate-pop { animation: pop 0.3s ease-out; }
 .animate-float { animation: float 3s ease-in-out infinite; }
+.animate-screen-in { animation: screenIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both; }
 
 /* Reveal on scroll */
 .reveal {
@@ -182,3 +197,15 @@
 
 /* Focus visible */
 :focus-visible { outline: 2px solid hsl(var(--mango)); outline-offset: 2px; }
+
+/* ── Accessibilité : motion réduite ─────────────────────────────────────────
+   Toute la chorégraphie (stagger, confettis, pulses) se désactive proprement. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}

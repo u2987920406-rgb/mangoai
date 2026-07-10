@@ -34,7 +34,7 @@ export function CurriculumMap({ progress, level, onOpenModule, onChangeLevel, on
         <div>
           <div className="flex items-center gap-2">
             <span className="text-3xl">{lvl.emoji}</span>
-            <h1 className="text-2xl font-extrabold">Niveau {lvl.name}</h1>
+            <h1 className="font-display text-2xl sm:text-3xl font-bold">Niveau {lvl.name}</h1>
           </div>
           <p className="text-muted-foreground mt-1">Semaines {lvl.weeks} · score visé {lvl.scoreRange}</p>
           <Badge variant="secondary" className="mt-2">
@@ -44,15 +44,15 @@ export function CurriculumMap({ progress, level, onOpenModule, onChangeLevel, on
         <ScoreDisplay score={state.estimatedScore} size="md" />
       </div>
 
-      {/* Chemin de modules */}
-      <div className="relative space-y-5 max-w-2xl mx-auto">
+      {/* Chemin de modules : rail vertical continu, une étape par semaine */}
+      <div className="relative space-y-6 max-w-xl mx-auto">
         {mods.map((mod, i) => {
           const unlocked = isModuleUnlocked(mod, state);
           const playable = isModulePlayable(mod.id);
           return (
             <div key={mod.id} className="relative">
               {i < mods.length - 1 && (
-                <div className={cn("absolute left-8 top-16 w-0.5 h-5 -translate-x-1/2", unlocked ? "bg-accent/40" : "bg-border")} />
+                <div className={cn("absolute left-8 top-16 w-0.5 h-8 -translate-x-1/2", unlocked ? "bg-accent/40" : "bg-border")} />
               )}
               <ModuleNode
                 module={mod}
@@ -60,7 +60,7 @@ export function CurriculumMap({ progress, level, onOpenModule, onChangeLevel, on
                 unlocked={unlocked}
                 playable={playable}
                 isNext={next?.id === mod.id}
-                offset={i % 2 === 0 ? "left" : "right"}
+                offset="left"
                 onClick={onOpenModule}
               />
             </div>

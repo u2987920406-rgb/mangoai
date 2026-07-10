@@ -16,6 +16,18 @@ const MALE_HINTS = ["david", "mark", "george", "daniel", "alex", "guy", "james",
 
 let voicesCache = null;
 
+// Si le navigateur charge de nouvelles voix APRÈS coup, on invalide les caches
+// (Chrome émet parfois voiceschanged tardivement avec une liste plus riche).
+if (hasSpeech) {
+  window.speechSynthesis.addEventListener?.("voiceschanged", () => {
+    const v = window.speechSynthesis.getVoices();
+    if (v && v.length && (!voicesCache || v.length !== voicesCache.length)) {
+      voicesCache = v;
+      voicePair = null;
+    }
+  });
+}
+
 // Charge les voix (résout dès qu'elles sont disponibles, timeout 1 s).
 export function loadVoices() {
   if (!hasSpeech) return Promise.resolve([]);
@@ -59,39 +71,44 @@ function scoreVoiceForGender(voice, gender) {
   return 0;
 }
 
-// Choisit la meilleure voix anglaise pour un genre donné.
-// Fallback : si aucune correspondance de genre, renvoie deux voix anglaises
-// DISTINCTES (index 0 / 1) pour garder l'alternance audible dans un dialogue.
-const pickCache = {};
-export function pickVoice(voices, gender, langPref = ["en-us", "en-gb", "en"]) {
-  if (!voices || !voices.length) return null;
-  const key = gender;
-  if (pickCache[key]) return pickCache[key];
+// Résout UNE FOIS la paire de voix {female, male} — GARANTIES DISTINCTES dès que
+// le navigateur expose au moins 2 voix anglaises. L'ancienne heuristique choisissait
+// chaque genre indépendamment : selon l'OS, homme et femme finissaient sur la MÊME
+// voix (dialogue P3 inaudible). Ici on classe les voix pour chaque genre, on prend
+// la meilleure femme, puis le meilleur homme PARMI LES VOIX RESTANTES.
+let voicePair = null;
+export function resolveVoicePair(voices, langPref = ["en-us", "en-gb", "en"]) {
+  if (voicePair) return voicePair;
+  if (!voices || !voices.length) return { female: null, male: null };
 
   const english = voices.filter((v) => (v.lang || "").toLowerCase().startsWith("en"));
   const pool = english.length ? english : voices;
 
-  // Tri : préférence de langue, puis correspondance de genre.
-  const ranked = pool
-    .map((v) => {
-      const lang = (v.lang || "").toLowerCase();
-      let langScore = langPref.length;
-      for (let i = 0; i < langPref.length; i++) {
-        if (lang === langPref[i] || lang.startsWith(langPref[i])) { langScore = langPref.length - i; break; }
-      }
-      return { v, score: scoreVoiceForGender(v, gender) * 10 + langScore };
-    })
-    .sort((a, b) => b.score - a.score);
+  const langScore = (v) => {
+    const lang = (v.lang || "").toLowerCase();
+    for (let i = 0; i < langPref.length; i++) {
+      if (lang === langPref[i] || lang.startsWith(langPref[i])) return langPref.length - i;
+    }
+    return 0;
+  };
+  const rankFor = (gender) =>
+    pool
+      .map((v) => ({ v, score: scoreVoiceForGender(v, gender) * 10 + langScore(v) }))
+      .sort((a, b) => b.score - a.score);
 
-  let chosen = ranked[0]?.v || null;
+  const female = rankFor("female")[0]?.v || null;
+  // Meilleur candidat masculin EXCLUANT la voix féminine choisie → toujours distinct.
+  const maleRanked = rankFor("male").filter((r) => r.v !== female);
+  const male = maleRanked[0]?.v || female; // 1 seule voix dispo → on assume (fallback lisible : transcript).
 
-  // Si pas de vraie correspondance de genre, force une voix distincte pour male.
-  const matched = ranked[0] && scoreVoiceForGender(ranked[0].v, gender) > 0;
-  if (!matched && pool.length > 1) {
-    chosen = gender === "male" ? pool[1] : pool[0];
-  }
-  pickCache[key] = chosen;
-  return chosen;
+  voicePair = { female, male };
+  return voicePair;
+}
+
+// API historique : voix pour un genre donné (s'appuie sur la paire distincte).
+export function pickVoice(voices, gender) {
+  const pair = resolveVoicePair(voices);
+  return gender === "male" ? pair.male : pair.female;
 }
 
 export function cancelSpeech() {

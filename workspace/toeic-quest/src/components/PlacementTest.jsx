@@ -23,14 +23,14 @@ export function PlacementTest({ progress, onDone, onSkip }) {
     return (
       <div className="py-10 max-w-xl mx-auto text-center space-y-5">
         <Mascot mood="excited" size={120} className="mx-auto" />
-        <h1 className="text-3xl font-extrabold">Test de placement</h1>
+        <h1 className="font-display text-3xl sm:text-4xl font-bold">Test de placement</h1>
         <p className="text-muted-foreground">
           {PLACEMENT.length} questions rapides couvrant les 7 parties du TOEIC, de la plus simple à la plus
           corsée. Elles me permettent de situer ton niveau et d'adapter ton parcours. Aucun stress : c'est juste un repère !
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button size="lg" onClick={() => setPhase("test")} className="bg-accent text-accent-foreground hover:bg-accent/90">
-            ▶ Commencer le test
+          <Button size="lg" onClick={() => setPhase("test")} className="bg-accent text-accent-foreground hover:bg-accent/90 gap-2" data-testid="start-placement">
+            Commencer le test
           </Button>
           <Button size="lg" variant="outline" onClick={onSkip}>Passer (démarrer en Débutant)</Button>
         </div>
@@ -48,7 +48,7 @@ export function PlacementTest({ progress, onDone, onSkip }) {
     <div className="py-10 max-w-xl mx-auto text-center space-y-5">
       <Confetti show count={40} />
       <Mascot mood="celebrating" size={120} className="mx-auto" />
-      <h1 className="text-3xl font-extrabold">Niveau {lvl.name} {lvl.emoji}</h1>
+      <h1 className="font-display text-3xl sm:text-4xl font-bold" data-testid="placement-verdict">Niveau {lvl.name} {lvl.emoji}</h1>
       <p className="text-muted-foreground">
         Tu as obtenu <span className="font-bold text-foreground">{verdict.correct}/{verdict.total}</span>.
         Je te place au niveau <span className="font-bold text-foreground">{lvl.name}</span> (score visé {lvl.scoreRange}).

@@ -71,9 +71,9 @@ export function estimateScore(weightedCorrect, weightedTotal, hardSeen) {
 
 // ─── Images & métadonnées de mode (counts dynamiques) ────────────────────────
 export const MODE_IMAGES = {
-  listening: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-  reading: "https://images.pexels.com/photos/7654178/pexels-photo-7654178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
-  vocab: "https://images.pexels.com/photos/8547344/pexels-photo-8547344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+  listening: "/assets/pexels/7116329.jpeg",
+  reading: "/assets/pexels/7654178.jpeg",
+  vocab: "/assets/pexels/8547344.jpeg",
 };
 
 export const MODE_INFO = {

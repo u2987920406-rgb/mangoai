@@ -7,7 +7,7 @@ export const DEBUTANT = [
   // ── P4 · Short Talks — M08 Annonces & messages ──
   {
     id: "L1", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 1, voiceGender: "female",
-    image: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7116329.jpeg",
     transcript: "Good morning everyone. I'd like to call this meeting to order. Today we need to discuss the quarterly sales report and decide on our marketing budget for the next year. As you can see from the slides, our revenue has increased by fifteen percent compared to last year.",
     question: "What is the main purpose of the meeting?",
     choices: ["To discuss the quarterly sales report and marketing budget", "To introduce a new employee", "To plan a company party", "To review the annual budget"],
@@ -16,7 +16,7 @@ export const DEBUTANT = [
   },
   {
     id: "L2", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 1, voiceGender: "male",
-    image: "https://images.pexels.com/photos/12717154/pexels-photo-12717154.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/12717154.jpeg",
     transcript: "Attention passengers. Flight 847 to Singapore has been delayed by two hours due to bad weather conditions. The new departure time is 3:45 PM. Please proceed to gate 22 for boarding. We apologize for any inconvenience.",
     question: "Why was the flight delayed?",
     choices: ["Mechanical problems", "Bad weather conditions", "Late passengers", "Security issues"],
@@ -25,7 +25,7 @@ export const DEBUTANT = [
   },
   {
     id: "L4", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 1, voiceGender: "female",
-    image: "https://images.pexels.com/photos/5865152/pexels-photo-5865152.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/5865152.jpeg",
     transcript: "Welcome to La Bella Restaurant. Tonight we have a special three-course menu featuring our chef's signature dishes. The appetizer is a fresh bruschetta, followed by grilled salmon with seasonal vegetables, and for dessert, our famous tiramisu. Would you like to see the wine list?",
     question: "What is included in the special menu?",
     choices: ["Two courses and a drink", "Three courses: bruschetta, salmon, and tiramisu", "Only a main dish", "A buffet with multiple options"],
@@ -34,7 +34,7 @@ export const DEBUTANT = [
   },
   {
     id: "L6", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 2, voiceGender: "male",
-    image: "https://images.pexels.com/photos/8547344/pexels-photo-8547344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/8547344.jpeg",
     transcript: "Good afternoon. I'd like to announce that our company has just signed a partnership agreement with Global Tech Industries. This collaboration will allow us to expand our services to the Asian market starting next January. We expect this to create at least fifty new jobs within the company.",
     question: "How many new jobs are expected to be created?",
     choices: ["Fifteen", "Fifty", "Five hundred", "Five"],
@@ -43,7 +43,7 @@ export const DEBUTANT = [
   },
   {
     id: "L7", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 1, voiceGender: "female",
-    image: "https://images.pexels.com/photos/7108454/pexels-photo-7108454.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7108454.jpeg",
     transcript: "This is a reminder that the company picnic will be held this Saturday at Riverside Park from noon to 4 PM. All employees and their families are welcome. Please RSVP to the event coordinator by Thursday so we can finalize the catering order. Don't forget to bring sunscreen!",
     question: "When should employees RSVP?",
     choices: ["By Saturday", "By Thursday", "By Friday", "By Wednesday"],
@@ -52,7 +52,7 @@ export const DEBUTANT = [
   },
   {
     id: "L8", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 1, voiceGender: "male",
-    image: "https://images.pexels.com/photos/37772239/pexels-photo-37772239.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/37772239.jpeg",
     transcript: "Ladies and gentlemen, we are now approaching our destination. Please fasten your seatbelts and return your tray tables to their upright position. The local time is 7:30 AM and the temperature outside is 22 degrees Celsius. We hope you enjoyed your flight with us.",
     question: "What is the local temperature?",
     choices: ["27 degrees", "22 degrees Celsius", "7 degrees", "30 degrees"],
@@ -61,7 +61,7 @@ export const DEBUTANT = [
   },
   {
     id: "L10", moduleId: "M08", level: "debutant", part: "P4", skill: "listening", difficulty: 2, voiceGender: "female",
-    image: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7116329.jpeg",
     transcript: "I'm pleased to report that our new product line has exceeded all expectations. In the first month alone, we sold over ten thousand units, generating approximately two million dollars in revenue. Customer feedback has been overwhelmingly positive, with 95% of buyers rating the product four stars or above.",
     question: "What percentage of buyers rated the product four stars or above?",
     choices: ["85%", "90%", "95%", "99%"],
@@ -72,7 +72,7 @@ export const DEBUTANT = [
   // ── P4 · Short Talks — M14 Messages téléphoniques ──
   {
     id: "L3", moduleId: "M14", level: "debutant", part: "P4", skill: "listening", difficulty: 2, voiceGender: "female",
-    image: "https://images.pexels.com/photos/7654178/pexels-photo-7654178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7654178.jpeg",
     transcript: "Hi, this is Jennifer from the HR department. I'm calling to remind you that your annual performance review is scheduled for next Tuesday at 10 AM in conference room B. Please bring your self-assessment form and any documents you'd like to discuss.",
     question: "What does the listener need to bring to the meeting?",
     choices: ["A resume and cover letter", "A self-assessment form and documents", "A laptop and projector", "Nothing is needed"],
@@ -81,7 +81,7 @@ export const DEBUTANT = [
   },
   {
     id: "L5", moduleId: "M14", level: "debutant", part: "P4", skill: "listening", difficulty: 2, voiceGender: "male",
-    image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7652049.jpeg",
     transcript: "Thank you for calling Tech Solutions. Our office is currently closed. Our regular business hours are Monday through Friday, 9 AM to 6 PM. For urgent technical support, please press 1 to be connected to our emergency hotline. Otherwise, leave a message after the beep.",
     question: "What should the caller do for urgent technical support?",
     choices: ["Leave a message after the beep", "Call back during business hours", "Press 1 for the emergency hotline", "Send an email"],
@@ -90,7 +90,7 @@ export const DEBUTANT = [
   },
   {
     id: "L9", moduleId: "M14", level: "debutant", part: "P4", skill: "listening", difficulty: 2, voiceGender: "female",
-    image: "https://images.pexels.com/photos/5531037/pexels-photo-5531037.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/5531037.jpeg",
     transcript: "Excuse me, I'd like to make a reservation for four people this Friday at 7 PM. We're celebrating a birthday, so could you arrange a table near the window? Also, one of our guests is vegetarian — do you have a vegetarian menu available?",
     question: "What special request does the customer make?",
     choices: ["A table near the window and a vegetarian menu", "A birthday cake and candles", "A private room and a band", "A discount for a large group"],
@@ -101,7 +101,7 @@ export const DEBUTANT = [
   // ── P7 · Compréhension écrite — M09 Emails & mémos simples ──
   {
     id: "R1", moduleId: "M09", level: "debutant", part: "P7", skill: "reading", difficulty: 1,
-    image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7652049.jpeg",
     passage: "MEMORANDUM\n\nTo: All Staff\nFrom: Robert Chen, Operations Director\nDate: March 15\nSubject: New Office Hours\n\nStarting April 1st, our office will implement new operating hours. The office will open at 8:30 AM instead of 9:00 AM and close at 5:00 PM rather than 6:00 PM. This change is being made to improve work-life balance and reduce overtime costs. Employees who currently start at 9:00 AM will need to adjust their schedules accordingly. Flexible start times between 7:30 AM and 8:30 AM will be available upon request.",
     question: "What is the main reason for the change in office hours?",
     choices: ["To reduce overtime costs and improve work-life balance", "To accommodate more clients", "To compete with other companies", "To increase productivity"],
@@ -110,7 +110,7 @@ export const DEBUTANT = [
   },
   {
     id: "R5", moduleId: "M09", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/8547344/pexels-photo-8547344.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/8547344.jpeg",
     passage: "EMAIL\n\nDear Mr. Thompson,\n\nThank you for your interest in the Software Developer position at Innovatech. We were impressed by your portfolio and would like to invite you for an interview. The interview will take place on March 20th at 2 PM at our downtown office. Please prepare to discuss your experience with JavaScript frameworks and bring examples of your previous work. The interview will last approximately 90 minutes and will include a brief technical assessment.\n\nBest regards,\nSarah Martinez\nHR Manager",
     question: "What should the candidate bring to the interview?",
     choices: ["A resume and references", "Examples of previous work", "A laptop and presentation", "A completed application form"],
@@ -119,7 +119,7 @@ export const DEBUTANT = [
   },
   {
     id: "R6", moduleId: "M09", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/7108454/pexels-photo-7108454.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7108454.jpeg",
     passage: "COMPANY POLICY UPDATE\n\nEffective June 1st, all employees will be required to complete a cybersecurity training course. The online course takes approximately two hours and covers topics including password security, phishing awareness, and data protection. Employees must complete the training by July 15th. Those who fail to do so will have their system access temporarily suspended until the course is finished. The training can be accessed through the company intranet portal.",
     question: "What will happen to employees who don't complete the training by July 15th?",
     choices: ["They will be fired", "Their system access will be temporarily suspended", "They will receive a salary reduction", "They will be reassigned"],
@@ -128,7 +128,7 @@ export const DEBUTANT = [
   },
   {
     id: "R9", moduleId: "M09", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/37772239/pexels-photo-37772239.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/37772239.jpeg",
     passage: "TRAVEL EXPENSE POLICY\n\nEmployees traveling for business purposes may claim reimbursement for the following: economy-class airfare, hotel accommodations up to $150 per night, meals up to $50 per day, and ground transportation including taxis and rental cars. All receipts must be submitted within 30 days of return. First-class travel and personal entertainment expenses are not reimbursable. Expense reports must be approved by the department head before submission to Finance.",
     question: "What is the maximum hotel reimbursement per night?",
     choices: ["$50", "$100", "$150", "$200"],
@@ -137,7 +137,7 @@ export const DEBUTANT = [
   },
   {
     id: "R10", moduleId: "M09", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/7652049/pexels-photo-7652049.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7652049.jpeg",
     passage: "CONFERENCE INVITATION\n\nYou are cordially invited to attend the 2024 International Business Conference, held at the Grand Convention Center from September 12-14. This three-day event features keynote speeches from industry leaders, interactive workshops, and networking opportunities with over 200 companies. Early bird registration is available until August 1st at a discounted rate of $299. After that, the standard fee of $399 applies. Group discounts are available for parties of five or more.",
     question: "How much does early bird registration cost?",
     choices: ["$200", "$299", "$399", "$500"],
@@ -148,7 +148,7 @@ export const DEBUTANT = [
   // ── P7 · Compréhension écrite — M13 Annonces & notices ──
   {
     id: "R2", moduleId: "M13", level: "debutant", part: "P7", skill: "reading", difficulty: 1,
-    image: "https://images.pexels.com/photos/12717154/pexels-photo-12717154.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/12717154.jpeg",
     passage: "FLIGHT INFORMATION\n\nPassengers traveling on international flights are advised to arrive at the airport at least three hours before departure. Check-in counters close 45 minutes before the scheduled departure time. Each passenger is allowed one carry-on bag weighing no more than 10 kg and one personal item. Excess baggage fees apply for checked bags exceeding 23 kg. Business class passengers enjoy an increased allowance of 32 kg per checked bag.",
     question: "How much can a business class passenger's checked bag weigh?",
     choices: ["10 kg", "23 kg", "32 kg", "45 kg"],
@@ -157,7 +157,7 @@ export const DEBUTANT = [
   },
   {
     id: "R3", moduleId: "M13", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/7654178/pexels-photo-7654178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7654178.jpeg",
     passage: "ANNUAL REPORT EXCERPT\n\nThis year marked a significant milestone for our company. Total revenue reached $45.2 million, representing a 12% increase over the previous year. Our international division saw the most growth, with sales in Asia rising by 28%. The company hired 120 new employees across all departments, bringing our total workforce to 850. Looking ahead, we plan to open three new regional offices in the coming fiscal year.",
     question: "How many new employees were hired this year?",
     choices: ["85", "120", "450", "850"],
@@ -166,7 +166,7 @@ export const DEBUTANT = [
   },
   {
     id: "R4", moduleId: "M13", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/5865152/pexels-photo-5865152.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/5865152.jpeg",
     passage: "CUSTOMER SATISFACTION SURVEY RESULTS\n\nWe surveyed 500 customers about their dining experience. 78% rated the food quality as excellent, while 65% praised the friendly service. However, 42% felt that wait times were too long during peak hours. Only 15% found the prices too high. Based on these results, management plans to hire additional staff for evening shifts and introduce a reservation system to better manage customer flow.",
     question: "What percentage of customers found the prices too high?",
     choices: ["78%", "65%", "42%", "15%"],
@@ -175,7 +175,7 @@ export const DEBUTANT = [
   },
   {
     id: "R7", moduleId: "M13", level: "debutant", part: "P7", skill: "reading", difficulty: 2,
-    image: "https://images.pexels.com/photos/7116329/pexels-photo-7116329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/7116329.jpeg",
     passage: "NOTICE TO ALL TENANTS\n\nPlease be informed that the building's elevator system will undergo maintenance from Monday, May 8th through Wednesday, May 10th. During this period, only one elevator will be in service. We recommend using the stairs for floors 1 through 3. Deliveries requiring the freight elevator should be rescheduled. We apologize for the inconvenience and appreciate your patience. If you have any questions, please contact the building management office at extension 105.",
     question: "What is recommended for floors 1 through 3 during maintenance?",
     choices: ["Use the stairs", "Wait for the elevator", "Use the freight elevator", "Work from home"],
@@ -184,7 +184,7 @@ export const DEBUTANT = [
   },
   {
     id: "R8", moduleId: "M13", level: "debutant", part: "P7", skill: "reading", difficulty: 1,
-    image: "https://images.pexels.com/photos/5531037/pexels-photo-5531037.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940",
+    image: "/assets/pexels/5531037.jpeg",
     passage: "PROMOTION ANNOUNCEMENT\n\nGreen Valley Cafe is celebrating its fifth anniversary with a special promotion! From May 1st to May 15th, all customers will receive a 20% discount on their total bill. Additionally, the first 50 customers each day will receive a complimentary dessert. Our new spring menu features organic salads, artisan sandwiches, and freshly squeezed juices. Join us Monday through Friday from 7 AM to 8 PM. Reservations are recommended for groups of six or more.",
     question: "What do the first 50 customers each day receive?",
     choices: ["A 20% discount", "A complimentary dessert", "A free coffee", "A loyalty card"],

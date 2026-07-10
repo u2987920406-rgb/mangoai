@@ -1,10 +1,12 @@
 import { Mascot } from "./Mascot.jsx";
-import { XPBar, StreakBadge, ScoreDisplay, Reveal } from "./Gamification.jsx";
+import { XPBar, ScoreDisplay, Reveal } from "./Gamification.jsx";
 import { Card, CardContent } from "./ui/card.jsx";
 import { Button } from "./ui/button.jsx";
 import { Badge } from "./ui/badge.jsx";
 import { MODE_INFO, BADGES } from "../data/questions.js";
-import { nextRecommendedModule, getModule, LEVELS, PART_EMOJI } from "../data/curriculum.js";
+import { nextRecommendedModule, getModule, LEVELS } from "../data/curriculum.js";
+import { FREE_SESSION_SIZE } from "../data/bank/index.js";
+import { TargetIcon, MapIcon, ChartIcon, ArrowRightIcon, CheckIcon } from "./icons.jsx";
 
 export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDiagnostic, onOpenModule }) {
   const { state, level, xpInLevel, xpForNext } = progress;
@@ -23,10 +25,9 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2">
                 <Badge className="bg-primary/10 text-primary border-0">TOEIC QUEST</Badge>
-                {state.streak > 0 && <StreakBadge streak={state.streak} />}
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
-                {state.totalSessions === 0 ? "Bienvenue, futur TOEIC champion ! 👋" : "Bon retour, champion ! 👋"}
+              <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-balance">
+                {state.totalSessions === 0 ? "Bienvenue, futur champion du TOEIC." : "Bon retour, champion."}
               </h1>
               <p className="text-muted-foreground text-lg">
                 Une vraie formation TOEIC sur un an : 7 parties officielles, 3 niveaux, des conversations,
@@ -58,7 +59,9 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
         <Reveal delay={80}>
           <Card className="border-2 border-accent/40 bg-accent/5">
             <CardContent className="pt-6 flex flex-col sm:flex-row items-center gap-4">
-              <div className="text-4xl">🎯</div>
+              <div className="flex items-center justify-center w-12 h-12 rounded-2xl bg-accent/15 text-accent-strong shrink-0">
+                <TargetIcon size={26} />
+              </div>
               <div className="flex-1 text-center sm:text-left">
                 <div className="font-bold text-lg">Commence par un test de placement</div>
                 <div className="text-sm text-muted-foreground">12 questions pour situer ton niveau et personnaliser ton parcours.</div>
@@ -83,29 +86,33 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Continuer le parcours</div>
               <div className="font-bold text-lg leading-tight mt-0.5">{next ? next.title : "Tout est complété !"}</div>
               {next && <div className="text-sm text-muted-foreground mt-1">{LEVELS[next.level].name} · Semaine {next.week}</div>}
-              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Reprendre →</div>
+              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform flex items-center gap-1">Reprendre <ArrowRightIcon size={14} /></div>
             </CardContent>
           </Card>
         </Reveal>
         <Reveal delay={200}>
           <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full">
             <CardContent className="pt-6 h-full flex flex-col" onClick={onContinue}>
-              <div className="text-3xl mb-2">🗺️</div>
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-listening/10 text-listening mb-3">
+                <MapIcon size={22} />
+              </div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Carte du parcours</div>
               <div className="font-bold text-lg mt-0.5">52 semaines, 3 niveaux</div>
               <div className="text-sm text-muted-foreground mt-1">Visualise toute ta progression.</div>
-              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Ouvrir →</div>
+              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform flex items-center gap-1">Ouvrir <ArrowRightIcon size={14} /></div>
             </CardContent>
           </Card>
         </Reveal>
         <Reveal delay={250}>
           <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full">
             <CardContent className="pt-6 h-full flex flex-col" onClick={onDiagnostic}>
-              <div className="text-3xl mb-2">📊</div>
+              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-vocab/10 text-accent-strong mb-3">
+                <ChartIcon size={22} />
+              </div>
               <div className="text-xs text-muted-foreground uppercase tracking-wide">Diagnostic</div>
               <div className="font-bold text-lg mt-0.5">Forces & faiblesses</div>
               <div className="text-sm text-muted-foreground mt-1">Ta maîtrise des 7 parties TOEIC.</div>
-              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Analyser →</div>
+              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform flex items-center gap-1">Analyser <ArrowRightIcon size={14} /></div>
             </CardContent>
           </Card>
         </Reveal>
@@ -124,8 +131,8 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
                 <h3 className="font-bold text-lg mb-1">{info.name}</h3>
                 <p className="text-sm text-muted-foreground mb-3">{info.description}</p>
                 <div className="flex items-center justify-between">
-                  <Badge variant="secondary">{info.count} questions</Badge>
-                  <span className="text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Jouer →</span>
+                  <Badge variant="secondary" className="tabular-nums">{FREE_SESSION_SIZE} questions · banque de {info.count}</Badge>
+                  <span className="flex items-center gap-1 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Jouer <ArrowRightIcon size={14} /></span>
                 </div>
               </CardContent>
             </Card>
@@ -166,8 +173,8 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
                       <div className="text-xs text-muted-foreground">{s.date}</div>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="text-muted-foreground">{s.correct}/{s.total} ✓</span>
+                  <div className="flex items-center gap-4 text-sm tabular-nums">
+                    <span className="flex items-center gap-1 text-muted-foreground">{s.correct}/{s.total} <CheckIcon size={12} className="text-primary" /></span>
                     <span className="font-bold text-accent-strong">+{s.xpEarned} XP</span>
                   </div>
                 </div>
