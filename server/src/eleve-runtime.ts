@@ -19,6 +19,7 @@ import { emptyWorkingState, updateWorkingState, formatWorkingState, type Working
 import { saveSnapshot, clearSnapshot, loadSnapshot } from "./loop-state.js";
 import { runAsActor, currentActor, type Actor } from "./perimeter-context.js";
 import { appendBacklog } from "./project-backlog.js";
+import { coerceTextToolCall } from "./tool-call-coerce.js";
 
 // ── Types du dialogue OpenAI-compat ──────────────────────────────────────────
 
@@ -517,15 +518,28 @@ async function buildAgenticImpl(
       }
     }
     const { content, toolCalls } = await opts.post(messages, tools);
-    messages.push({ role: "assistant", content, ...(toolCalls ? { tool_calls: toolCalls } : {}) });
+    // Fallback tool-calling (parité avec askEleveAgentic/contract.ts) : des modèles
+    // locaux (ex. qwen2.5-coder) écrivent l'appel en TEXTE JSON dans `content` au lieu
+    // d'émettre un tool_calls structuré → on le coerce vers un outil CONNU seulement,
+    // sinon le moteur croit à tort que le cerveau a conclu (0 appel → plateau).
+    let effectiveCalls = toolCalls;
+    let assistantContent = content;
+    if (!effectiveCalls?.length) {
+      const coerced = coerceTextToolCall(content, tools?.map((t) => t.function.name) ?? []);
+      if (coerced) {
+        effectiveCalls = [{ id: `call_coerced_${iter}`, function: { name: coerced.name, arguments: coerced.arguments } }];
+        assistantContent = "";
+      }
+    }
+    messages.push({ role: "assistant", content: assistantContent, ...(effectiveCalls?.length ? { tool_calls: effectiveCalls } : {}) });
 
     // Le modèle ne demande plus d'outil : il a conclu (sans `finish` explicite).
-    if (!toolCalls?.length) {
+    if (!effectiveCalls?.length) {
       clearRunSnapshot();
       return { text: content, toolTrace, finished: false, iterations: iter + 1, stuck: false };
     }
 
-    for (const tc of toolCalls) {
+    for (const tc of effectiveCalls) {
       const name = tc.function.name;
       const rawArgs = tc.function.arguments || "{}";
       toolTrace.push({ name, args: rawArgs });
