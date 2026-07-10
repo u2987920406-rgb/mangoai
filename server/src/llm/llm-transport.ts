@@ -131,6 +131,10 @@ export async function ollamaChat(
       stream: false,
       options: { temperature: 0 },
       ...(opts.keepAlive ? { keep_alive: opts.keepAlive } : {}),
+      // VL local « thinking » (qwen3-vl) : forcer la réponse dans `content` (sinon elle part
+      // dans `thinking` et le juge de goût lit du vide → skin non noté). Ciblé sur le chemin
+      // vision (imageBase64 présent) → payload TEXTE inchangé, byte-identique pour l'Élève.
+      ...(opts.imageBase64 ? { think: false } : {}),
       messages: [
         { role: "system", content: system },
         { role: "user", content: user, ...(opts.imageBase64 ? { images: [opts.imageBase64] } : {}) },
@@ -138,8 +142,12 @@ export async function ollamaChat(
     }),
   });
   if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
-  const data = (await res.json()) as { message?: { content?: string } };
-  return data.message?.content ?? "";
+  const data = (await res.json()) as { message?: { content?: string; thinking?: string } };
+  // Repli « thinking » : un VL qui pense peut laisser `content` vide et mettre sa réponse
+  // dans `thinking` — on la récupère plutôt que de renvoyer du vide. Cas normal (content
+  // rempli) : retour inchangé, SANS trim (préservé).
+  const content = data.message?.content ?? "";
+  return content.trim() ? content : (data.message?.thinking ?? content);
 }
 
 // ── Transport openai-compat (texte simple) ───────────────────────────────────
