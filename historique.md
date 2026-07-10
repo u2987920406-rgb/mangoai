@@ -3315,3 +3315,30 @@ Le plan original (§3, É7) demandait de « faire tourner le Stratège sur plusi
 **Portée non couverte, assumée** : la boîte noire ne journalise pas encore chaque appel `brain-dispatch.ts::dispatch()` (juge/stratège/forgeron/vision…) — ce serait redondant avec `trace-dashboard.ts` (déjà orienté coût/perf/modèle) et aurait exigé de faire transiter `projectDir` à travers ~15 sites d'appel pour un bénéfice marginal par rapport à la couverture actuelle des ACTIONS. Si Raf veut ce niveau de détail plus tard (« quel cerveau a dit quoi »），c'est une extension ciblée de `brain-dispatch.ts`, pas un chantier ouvert dans cette livraison.
 
 Zéro git (en attente de Raf).
+
+## Journal — 2026-07-10 : Nuit des 6 apps expert — 6 apps de niveau expert, retours de jugement de Raf, distillation en axiomes
+
+**Contexte** : suite de l'assainissement architectural post-audit Fable et des 3 chantiers mineurs (regroupement de 69 fichiers en 10 sous-dossiers, découpage des monolithes UI, doc — déjà committés plus tôt dans la session, cf. entrées "suite 6" à "suite 10" de `statut.md`), la session bascule sur une **production de contenu** : 6 apps de niveau **expert**, générées directement par des **agents Claude** (React 19 / Vite 7 / Tailwind v4), les **modèles imposés par Raf** app par app (pas de choix automatique) — objectif : mesurer le rendu réel en situation, pas seulement la mécanique de génération.
+
+**Les 6 apps produites, dans `workspace/`** :
+
+1. **`toeic-quest`** (refonte, agent **Fable 5**) — refonte de la formation TOEIC #97/[[toeic-quest]] : **5 bugs corrigés**, UX modernisée, **tests Playwright e2e 4/4**. **Noté 4.8/5 par Raf.**
+2. **`systeme-solaire`** (agent **Opus 4.8**) — simulateur orbital 3D **képlérien** : algorithme de Brandes pour les trajectoires, **textures procédurales** des planètes, goût mesuré ~89. **Noté 4.8/5 par Raf** (« bluffé, exactement ce que j'avais en tête »). **Bug qualité trouvé** : la vitesse orbitale de Saturne est fausse (constante physique erronée, jamais vérifiée par aucun gate existant).
+3. **`frigo-chef`** (agent **Sonnet 5**) — scanner de contenu de frigo → moteur de matching vers **45 recettes**, goût 82. **Noté 4/5 par Raf.**
+4. **`galerie-albatre`** (agent **Fable 5**) — galerie d'exposition luxe **plâtre/laiton**, 15 pièces, goût ~94. **Noté 4.8/5 par Raf.**
+5. **`analytic-mind`** (agent **Opus 4.8**) — carte mentale analytique : **centralité de Brandes**, **clusters Union-Find**, **chemin critique**, goût 89. **Noté 4.5/5 par Raf.**
+6. **`site-mango`** (agent **Fable 5**) — vitrine de présentation MangoOS/MangoQA, goût mesuré ~94 (le plus haut score automatisé des 6) **mais noté 3.5/5 seulement par Raf** — verdict : « trop artiste, pas assez moderne/impactant ». **Écart notable entre le score de goût automatisé (le plus haut du lot) et le jugement humain (le plus bas)** : le moteur de goût actuel capte la qualité d'exécution esthétique mais pas l'adéquation au REGISTRE attendu (une vitrine produit doit vendre/impacter, pas se comporter comme une pièce artistique). **Décision** : `site-mango` **à REFAIRE**, dans le registre du précédent site Mango que Raf avait bien noté.
+
+**Revue de goût Fable 5 (7 lentilles)** appliquée en complément sur les 3 apps techniques (`systeme-solaire`, `frigo-chef`, `analytic-mind`) : deltas réels mesurés de **+12 à +18 points** après passe de raffinement — confirme que la boucle critique→corrige (#66/#68, Œil-Coach/passe esthétique) porte sur du réel, pas seulement en théorie.
+
+**Moyenne des notes Raf sur les 6 apps ≈ 4.4/5** — au-dessus du seuil de satisfaction, tiré vers le bas par le seul `site-mango`.
+
+**Retours de jugement + axiomes distillés** :
+- **Vitrine = moderne et impactante, jamais « artiste »** — un score de goût automatisé élevé ne garantit pas l'adéquation au registre commercial/produit attendu par Raf ; nouvel écart identifié entre goût mesuré et jugement humain sur ce type précis d'app (à surveiller sur les prochaines vitrines).
+- **Séparer le FONCTIONNEL (à maximiser sans compromis) du design-couleur (à co-décider avec Raf via variations)** — plutôt que d'imposer un rendu unique, proposer des alternatives et laisser Raf trancher visuellement sur l'axe esthétique, tout en ne négociant jamais sur l'axe fonctionnel.
+- **4 bugs qualité concrets identifiés, à ajouter aux gates de clôture** (#161, Gardien) : (a) `toeic-quest` — la bonne réponse du quiz restait systématiquement en position "a" (jamais randomisée) ; (b) `systeme-solaire` — constante physique fausse (vitesse orbitale de Saturne) jamais vérifiée par un gate ; (c) pertinence sémantique photo↔contexte non garantie ; (d) images tronquées/mal cadrées non détectées par les gates actuels. Les 4 consignés en limites honnêtes `limites.md` **L114-L117** (+ L118 FPS 3D headless, L119 génération d'images produit 1-pour-1, également notées pendant cette revue).
+- **Idée forte de Raf, née directement du retour 3.5/5 sur `site-mango`** : une **section « esthète »** dans le pipeline de génération — choix design façon **claude.ai/artifacts**, où Mango propose plusieurs **variations de rendus et de palettes** et Raf tranche visuellement, au lieu de subir un seul choix imposé par l'agent. Connexe #66/#68 (Œil-Coach), #149 (Moteur de Goût — préférence multi-variantes déjà éprouvée sur K skins GLM). Idée notée, **pas encore cadrée** techniquement (`statut.md` #191).
+
+**Nouvelles entrées `statut.md`** : #184-188 (les 5 apps ✅ FAIT), #189 (`site-mango` 🔄 À REFAIRE), #190 (corrections bugs qualité, à faire), #191 (section esthète, idée à cadrer).
+
+Zéro git (en attente de Raf).
