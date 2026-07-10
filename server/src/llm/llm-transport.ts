@@ -129,7 +129,9 @@ export async function ollamaChat(
     body: JSON.stringify({
       model: opts.model,
       stream: false,
-      options: { temperature: 0 },
+      // num_ctx explicite : sans lui, Ollama plafonne le contexte à 4096 tokens (défaut),
+      // ce qui étouffe l'Élève (le prompt système Mango fait ~11k tokens). Configurable.
+      options: { temperature: 0, num_ctx: Number(process.env.OLLAMA_NUM_CTX ?? 16384) },
       ...(opts.keepAlive ? { keep_alive: opts.keepAlive } : {}),
       // VL local « thinking » (qwen3-vl) : forcer la réponse dans `content` (sinon elle part
       // dans `thinking` et le juge de goût lit du vide → skin non noté). Ciblé sur le chemin
@@ -301,12 +303,17 @@ export async function ollamaChatTools(opts: {
     body: JSON.stringify({
       model: opts.model,
       stream: false,
-      options: { temperature: 0 },
+      // num_ctx explicite : sans lui, Ollama plafonne le contexte à 4096 tokens (défaut),
+      // ce qui étouffe l'Élève (le prompt système Mango fait ~11k tokens). Configurable.
+      options: { temperature: 0, num_ctx: Number(process.env.OLLAMA_NUM_CTX ?? 16384) },
       ...(opts.keepAlive ? { keep_alive: opts.keepAlive } : {}),
       messages: toOllamaMessages(opts.messages),
       ...(opts.tools ? { tools: opts.tools } : {}),
     }),
   });
-  if (!res.ok) throw new Error(`Ollama tools HTTP ${res.status}`);
+  if (!res.ok) {
+    const body = await res.text().catch(() => "");
+    throw new Error(`Ollama tools HTTP ${res.status}: ${body.slice(0, 400)}`);
+  }
   return fromOllamaResponse((await res.json()) as { message?: { content?: string; tool_calls?: OllamaToolCall[] } });
 }
