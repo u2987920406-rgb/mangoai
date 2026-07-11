@@ -59,6 +59,8 @@ export const TOOL_CAPABILITIES: ReadonlyMap<string, ToolCapability> = new Map<st
   ["list_files", { capability: "read-local", mutation: false }],
   ["search_code", { capability: "read-local", mutation: false }],
   ["check_build", { capability: "read-local", mutation: false }],
+  // verifie_design (2026-07-12) — lit les fichiers du projet, ne mute rien, comme check_build.
+  ["verifie_design", { capability: "read-local", mutation: false }],
   // Lecture de sources déposées (docs/archives) — read-only.
   ["lire_document", { capability: "read-local", mutation: false }],
   ["lire_archive", { capability: "read-local", mutation: false }],

@@ -7,6 +7,7 @@ import { draftSteps } from "./eleve-speculative-runner.js";
 import { runSpeculativeInWorktree, appSpecExecDeps, type SpecExecDeps } from "./eleve-speculative-exec.js";
 import { askLLM } from "../llm/llm-engine.js";
 import { sanitizeSelfSlug } from "../mango-self.js";
+import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA } from "../eleve/provider.js";
 
 // Outils que l'Élève peut drafter. DOIVENT correspondre EXACTEMENT aux outils réellement exposés
 // dans le worktree par buildSelfRegistry (SELF_ALLOWED_TOOLS + check_types), sinon une étape diverge
@@ -22,11 +23,12 @@ export interface PrepassDeps {
 export function realPrepassDeps(projectDir: string): PrepassDeps {
   return {
     // budget de tokens généreux : un draft de plusieurs étapes a besoin de place (cf. quirk slice 2).
+    // Raf (2026-07-11) : bindings LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
     ask: (system, user) =>
       askLLM(system, user, {
-        provider: "openai",
-        model: process.env.ELEVE_MODEL || "glm-5.2:cloud",
-        baseUrl: process.env.ELEVE_API_URL,
+        provider: ELEVE_PROVIDER,
+        model: ELEVE_MODEL,
+        baseUrl: ELEVE_PROVIDER === "ollama" ? OLLAMA : ELEVE_API_URL,
         apiKeyEnv: "ELEVE_API_KEY",
         maxTokens: 2500,
         timeoutMs: 90_000,

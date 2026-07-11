@@ -117,7 +117,11 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     }
 
     const systemBase = opts.systemFull ?? AGENTIC_FALLBACK_SYSTEM;
-    const visionClause = process.env.ELEVE_VISION === "on" ? AGENTIC_VISION_CLAUSE : "";
+    // (2026-07-12) défaut ON — Claude a mcp__vision__snapshot en PERMANENCE
+    // (agent.ts), l'Élève n'avait vois_ecran QUE si ELEVE_VISION=on explicite
+    // (opt-in). qwen3-vl:8b (vision, $0 local) validé fiable cette nuit → plus
+    // de raison de coût de garder ce gate fermé. Coupure ELEVE_VISION=off si besoin.
+    const visionClause = process.env.ELEVE_VISION !== "off" ? AGENTIC_VISION_CLAUSE : "";
     // (A1.2/B1.3, 2026-07-03) Rappel PROACTIF de la mémoire cross-projet : on
     // embarque la tâche, on cherche les souvenirs pertinents (palettes/artefacts
     // appris) et on les injecte en section BORNÉE. Gaté ELEVE_MEMOIRE (off →

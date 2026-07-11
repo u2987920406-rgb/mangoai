@@ -125,6 +125,7 @@ export const AGENTIC_TOOL_CONTRACT = `Tu disposes d'OUTILS que tu appelles toi-m
 - sharingan_url : coup d'œil RAPIDE (une page) — palette de couleurs, typographie, structure d'un site de référence
 - sharingan_image : extraire la palette de couleurs EXACTE (hex) + l'ambiance d'une image jointe (.assets/)
 - check_build : vérifier objectivement l'état du build
+- verifie_design : vérifier le DESIGN de façon déterministe (contraste WCAG, palette, polices, échelle typo, couleurs littérales, motion) — appelle-le après avoir touché aux styles, comme check_build mais pour le design
 - delegate : confier une SOUS-TÂCHE indépendante et bien bornée à un sous-agent (s'il est proposé) — agentType="builder" (implémente une partie isolée) ou "controleur" (audite et corrige, aucune nouvelle fonctionnalité) pour une persona dédiée, sans accès run_command
 - finish : déclarer la tâche terminée (build vert) avec un résumé
 

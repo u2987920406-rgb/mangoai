@@ -6,6 +6,7 @@ import { measureProjectDesign, measureSummary } from "../design/design-metrics.j
 import { startPreview } from "../preview.js";
 import { runParcours } from "../eleve-parcours.js";
 import { isMangoQaActive, emitPhaseComplete, waitForVerdict } from "../mangoqa.js";
+import { publishParcoursResult } from "../kernel/kernel-design-events.js";
 
 /** Le rouage de la bascule : l'Élève tente, MangoOS juge, le Maître escalade. */
 // #b incrément 2 — teste_parcours de CLÔTURE : ouvre la preview et vérifie qu'AUCUNE
@@ -53,7 +54,20 @@ export async function runClosureParcours(projectDir: string): Promise<{ ok: bool
     ]);
     const chargementOk = report.etapes[0]?.ok ?? report.ok;
     const errors = report.consoleErrors ?? [];
-    return { ok: chargementOk && errors.length === 0, errors };
+    const ok = chargementOk && errors.length === 0;
+    // (2026-07-11) publie le fait dur sur le Bus — MangoQA n'a aucun autre moyen de
+    // savoir si un parcours utilisateur a RÉELLEMENT tourné et réussi (jusqu'ici elle
+    // ne constatait que la PRÉSENCE de fichiers de test dans le code).
+    try {
+      publishParcoursResult({
+        project: path.basename(projectDir),
+        ok,
+        etapesOk: report.etapes.filter((e) => e.ok).length,
+        etapesTotal: report.etapes.length,
+        consoleErrors: errors,
+      });
+    } catch { /* best-effort */ }
+    return { ok, errors };
   } catch (e) {
     // Fail-open assumé (tâche non-UI, preview impossible) mais JAMAIS silencieux :
     // « ok non vérifié » et « ok vérifié » ne doivent plus être indiscernables.

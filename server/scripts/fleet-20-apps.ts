@@ -17,6 +17,7 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { query } from "@anthropic-ai/claude-agent-sdk";
+import { visionServer } from "../src/vision.js";
 import { createProject, projectDir, projectExists, WORKSPACE_DIR } from "../src/projects.js";
 import { curateImageBank, guaranteeLocalImages, formatImageBankForPrompt } from "../src/eleve-image-bank.js";
 import { runClosureGate } from "../src/eleve-gate.js";
@@ -173,7 +174,11 @@ async function buildOneApp(spec: AppSpec): Promise<AppRunLog> {
         model,
         maxTurns: MAX_TURNS,
         permissionMode: "acceptEdits",
-        allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
+        // (2026-07-12) alignement sur agent.ts (le vrai flux "Construire") : sans
+        // les outils vision, ces 20 apps n'avaient AUCUN accès à Sharingan/Snapshot
+        // (clone pixel-perfect, palette réelle d'une référence) — gap trouvé en audit.
+        allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep", "mcp__vision__snapshot", "mcp__vision__clone_url", "mcp__vision__scrape_url", "mcp__vision__sharingan_url", "mcp__vision__sharingan_image", "WebSearch", "WebFetch"],
+        mcpServers: { vision: visionServer },
         systemPrompt: { type: "preset", preset: "claude_code" },
       },
     });

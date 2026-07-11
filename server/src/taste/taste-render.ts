@@ -13,6 +13,7 @@ import { sampleCompositions, compositionBrief, type HeroComposition } from "./ta
 import { imageForDirection } from "./taste-images.js";
 import { startPreview as realStart, stopPreview as realStop } from "../preview.js";
 import { capturePreview as realCapture, capturePreviewWithIntegrity } from "../vision.js";
+import { publishRenderIntegrity } from "../kernel/kernel-design-events.js";
 
 // (É2, render-integrity — 2026-07-07) flag OFF par défaut : zéro changement de
 // comportement tant que non activé. ON = un 2ᵉ passage léger sur la page live
@@ -261,6 +262,9 @@ export async function generateTasteSkins(
             r.broken = true;
             r.judgeReason = `[déterministe] ${integrity.faults.join("; ")}`;
           }
+          // (2026-07-11) publie le fait dur sur le Bus — MangoQA n'a aucun autre
+          // moyen de connaître la casse RÉELLE du rendu (pas de Playwright côté QA).
+          try { publishRenderIntegrity({ project: path.basename(projectDir), broken: integrity.broken, faults: integrity.faults }); } catch { /* best-effort */ }
         } catch {
           /* jamais bloquant — la casse déterministe reste un bonus, pas un mur */
         }

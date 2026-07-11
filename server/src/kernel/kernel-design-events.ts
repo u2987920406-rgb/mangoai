@@ -18,6 +18,20 @@ import type { PerfectPlanContract } from '../perfect-plan.js'
 
 export const DESIGN_REFERENCE_EVENT = 'design.reference'
 export const DESIGN_PRODUCED_EVENT = 'design.produced'
+// (2026-07-11) casse visuelle DÉTERMINISTE (render-integrity.ts) — jamais publiée
+// jusqu'ici alors que MangoOS la calcule déjà intégralement (débordement/chevauchement/
+// images cassées). MangoQA n'a AUCUNE dépendance de rendu (pas de Playwright) — c'est
+// le SEUL moyen pour lui de connaître un fait dur de rendu réel, pas une déduction CSS.
+export const RENDER_INTEGRITY_EVENT = 'render.integrity'
+// (2026-07-11) résultat RÉEL de teste_parcours (eleve-parcours.ts) — un vrai
+// navigateur a joué le flux utilisateur (clics/saisies) et capté les erreurs
+// console. MangoQA (branche "tests") ne pouvait jusqu'ici que constater la
+// PRÉSENCE de fichiers de test dans le code, jamais si un parcours a RÉUSSI.
+export const PARCOURS_RESULT_EVENT = 'parcours.result'
+// (2026-07-11) verdict COMPLET du Gardien de clôture (eleve-gate.ts) — MangoQA
+// re-devine aujourd'hui (branches design-system/accessibility) ce que MangoOS a
+// déjà vérifié en production ; ce résumé chiffré lui donne un vrai point de départ.
+export const GATE_VERDICT_EVENT = 'gate.verdict'
 
 /** Une paire texte/fond extraite du CSS (forme lue par l'Œil). */
 export interface DesignPair {
@@ -143,6 +157,75 @@ export function publishDesignReference(
       sender: info.project,
       kind: 'progress',
       payload: { project: info.project, palette: info.palette, source: info.source },
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Publie la casse visuelle DÉTERMINISTE d'un rendu (render-integrity.ts). Fire-and-
+ * forget. Renvoie true si quelque chose a été publié (le rapport n'est jamais vide). */
+export function publishRenderIntegrity(
+  info: { project: string; broken: boolean; faults: string[] },
+  deps: DesignEventDeps = {},
+): boolean {
+  try {
+    const bus = deps.bus ?? getBus()
+    void bus.publish({
+      type: RENDER_INTEGRITY_EVENT,
+      sender: info.project,
+      kind: info.broken ? 'error' : 'progress',
+      payload: { project: info.project, broken: info.broken, faults: info.faults },
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Publie le résultat d'un teste_parcours RÉEL (eleve-parcours.ts). Fire-and-forget.
+ * Renvoie true si quelque chose a été publié (jamais vide — au moins l'étape de clôture). */
+export function publishParcoursResult(
+  info: { project: string; ok: boolean; etapesOk: number; etapesTotal: number; consoleErrors: string[] },
+  deps: DesignEventDeps = {},
+): boolean {
+  try {
+    const bus = deps.bus ?? getBus()
+    void bus.publish({
+      type: PARCOURS_RESULT_EVENT,
+      sender: info.project,
+      kind: info.ok ? 'success' : 'error',
+      payload: {
+        project: info.project,
+        ok: info.ok,
+        etapesOk: info.etapesOk,
+        etapesTotal: info.etapesTotal,
+        consoleErrors: info.consoleErrors,
+      },
+    })
+    return true
+  } catch {
+    return false
+  }
+}
+
+/** Publie le verdict complet du Gardien de clôture (eleve-gate.ts). Fire-and-forget. */
+export function publishGateVerdict(
+  info: {
+    project: string; ok: boolean;
+    intentOk: boolean; wcagOk: boolean; balanceOk: boolean; placeholdersOk: boolean; testsOk: boolean;
+    tasteScored: boolean; tasteOverall: number | null;
+  },
+  deps: DesignEventDeps = {},
+): boolean {
+  try {
+    const bus = deps.bus ?? getBus()
+    void bus.publish({
+      type: GATE_VERDICT_EVENT,
+      sender: info.project,
+      kind: info.ok ? 'success' : 'error',
+      payload: { ...info },
     })
     return true
   } catch {

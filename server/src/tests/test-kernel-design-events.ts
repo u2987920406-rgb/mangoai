@@ -10,8 +10,14 @@ import {
   paletteFromContract,
   publishDesignReference,
   publishDesignProduced,
+  publishRenderIntegrity,
+  publishParcoursResult,
+  publishGateVerdict,
   DESIGN_REFERENCE_EVENT,
   DESIGN_PRODUCED_EVENT,
+  RENDER_INTEGRITY_EVENT,
+  PARCOURS_RESULT_EVENT,
+  GATE_VERDICT_EVENT,
 } from '../kernel/kernel-design-events.js'
 import type { PerfectPlanContract } from '../perfect-plan.js'
 
@@ -124,6 +130,66 @@ const CSS = `
   check('produced sans couleur → false', none === false && s2.length === 0)
 }
 
+// ── publishRenderIntegrity (2026-07-11, casse visuelle déterministe) ─────────
+{
+  const { bus, seen } = captureBus()
+  const published = publishRenderIntegrity({ project: 'demo', broken: true, faults: ['débordement horizontal (1400px pour 1280px)'] }, { bus })
+  check('render.integrity publié → true', published === true)
+  const env = seen.find((e) => e.type === RENDER_INTEGRITY_EVENT)
+  check('render.integrity : enveloppe présente', !!env)
+  check('render.integrity : sender = projet', env?.sender === 'demo')
+  check('render.integrity : kind error si broken', env?.kind === 'error')
+  const p = env?.payload as { project: string; broken: boolean; faults: string[] }
+  check('render.integrity : broken transmis', p.broken === true)
+  check('render.integrity : faults transmis', Array.isArray(p.faults) && p.faults.length === 1)
+
+  const { bus: b2, seen: s2 } = captureBus()
+  const clean = publishRenderIntegrity({ project: 'demo', broken: false, faults: [] }, { bus: b2 })
+  check('render.integrity non-cassé → publié quand même (true)', clean === true)
+  const env2 = s2.find((e) => e.type === RENDER_INTEGRITY_EVENT)
+  check('render.integrity : kind progress si non-cassé', env2?.kind === 'progress')
+}
+
+// ── publishParcoursResult (2026-07-11, résultat RÉEL de teste_parcours) ──────
+{
+  const { bus, seen } = captureBus()
+  const published = publishParcoursResult({ project: 'demo', ok: false, etapesOk: 1, etapesTotal: 3, consoleErrors: ['TypeError: x is undefined'] }, { bus })
+  check('parcours.result publié → true', published === true)
+  const env = seen.find((e) => e.type === PARCOURS_RESULT_EVENT)
+  check('parcours.result : enveloppe présente', !!env)
+  check('parcours.result : sender = projet', env?.sender === 'demo')
+  check('parcours.result : kind error si échec', env?.kind === 'error')
+  const p = env?.payload as { ok: boolean; etapesOk: number; etapesTotal: number; consoleErrors: string[] }
+  check('parcours.result : ok transmis', p.ok === false)
+  check('parcours.result : etapesOk/Total transmis', p.etapesOk === 1 && p.etapesTotal === 3)
+  check('parcours.result : consoleErrors transmis', p.consoleErrors.length === 1)
+
+  const { bus: b2, seen: s2 } = captureBus()
+  publishParcoursResult({ project: 'demo', ok: true, etapesOk: 3, etapesTotal: 3, consoleErrors: [] }, { bus: b2 })
+  const env2 = s2.find((e) => e.type === PARCOURS_RESULT_EVENT)
+  check('parcours.result : kind success si réussi', env2?.kind === 'success')
+}
+
+// ── publishGateVerdict (2026-07-11, verdict complet du Gardien) ─────────────
+{
+  const { bus, seen } = captureBus()
+  const info = { project: 'demo', ok: false, intentOk: true, wcagOk: false, balanceOk: true, placeholdersOk: true, testsOk: true, tasteScored: true, tasteOverall: 62 }
+  const published = publishGateVerdict(info, { bus })
+  check('gate.verdict publié → true', published === true)
+  const env = seen.find((e) => e.type === GATE_VERDICT_EVENT)
+  check('gate.verdict : enveloppe présente', !!env)
+  check('gate.verdict : sender = projet', env?.sender === 'demo')
+  check('gate.verdict : kind error si ok=false', env?.kind === 'error')
+  const p = env?.payload as typeof info
+  check('gate.verdict : tous les booléens transmis', p.intentOk === true && p.wcagOk === false && p.balanceOk === true && p.placeholdersOk === true && p.testsOk === true)
+  check('gate.verdict : score de goût transmis', p.tasteScored === true && p.tasteOverall === 62)
+
+  const { bus: b2, seen: s2 } = captureBus()
+  publishGateVerdict({ ...info, ok: true }, { bus: b2 })
+  const env2 = s2.find((e) => e.type === GATE_VERDICT_EVENT)
+  check('gate.verdict : kind success si ok=true', env2?.kind === 'success')
+}
+
 // ── Fire-and-forget : bus qui lève ───────────────────────────────────────────
 {
   const explosive = { publish: () => { throw new Error('down') } } as unknown as KernelBus
@@ -131,6 +197,9 @@ const CSS = `
   try {
     publishDesignReference({ project: 'd', palette: ['#fff'], source: 's' }, { bus: explosive })
     publishDesignProduced({ project: 'd', files: [{ path: 'a.css', content: '.x{color:#fff;background:#000}' }] }, { bus: explosive })
+    publishRenderIntegrity({ project: 'd', broken: true, faults: ['x'] }, { bus: explosive })
+    publishParcoursResult({ project: 'd', ok: false, etapesOk: 0, etapesTotal: 1, consoleErrors: [] }, { bus: explosive })
+    publishGateVerdict({ project: 'd', ok: false, intentOk: false, wcagOk: false, balanceOk: false, placeholdersOk: false, testsOk: false, tasteScored: false, tasteOverall: null }, { bus: explosive })
   } catch {
     threw = true
   }

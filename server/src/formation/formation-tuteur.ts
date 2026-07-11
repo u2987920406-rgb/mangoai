@@ -37,6 +37,7 @@ import { SCHEMA_BY_TYPE, CLES_BY_TYPE, loadManifest as loadFormationManifest } f
 import { loadManifest as loadMangoAppManifest } from "../mango-app-contract.js";
 import { getDoc as sharedGetDoc, putDoc as sharedPutDoc } from "../shared-data.js";
 import { askLLM } from "../llm/llm-engine.js";
+import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA } from "../eleve/provider.js";
 import { searchPexelsImages } from "../taste/taste-images.js";
 import { WORKSPACE_DIR } from "../projects.js";
 
@@ -122,13 +123,13 @@ export interface TuteurDeps {
   now: () => Date;
 }
 
+// Raf (2026-07-11) : bindings LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
 function glmAskTuteur(): GenContentDeps["ask"] {
-  const model = process.env.ELEVE_MODEL || "glm-5.2:cloud";
   return (system, user) =>
     askLLM(system, user, {
-      provider: "openai",
-      model,
-      baseUrl: process.env.ELEVE_API_URL,
+      provider: ELEVE_PROVIDER,
+      model: ELEVE_MODEL,
+      baseUrl: ELEVE_PROVIDER === "ollama" ? OLLAMA : ELEVE_API_URL,
       apiKeyEnv: "ELEVE_API_KEY",
       maxTokens: 6000,
       timeoutMs: 180_000,

@@ -9,6 +9,7 @@ import fs from "node:fs";
 import { flag } from "../flags.js";
 import { temporalContext } from "../temporal-context.js";
 import { ELEVE_PROVIDER, askEleveAgentic, chatEleve } from "../eleve.js";
+import { ELEVE_MODEL } from "../eleve/provider.js";
 import { buildEleveDiscussTools } from "../eleve-tools/eleve-action-tools.js";
 import { FIDELITY_CLAUSE } from "../scenario.js";
 import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
@@ -159,8 +160,9 @@ app.post("/api/home-chat", async (req, res) => {
             system: systemForBrain,
           },
           {
+            // Raf (2026-07-11) : binding LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
             runEleveTools: (sys, task, tools) =>
-              askEleveAgentic(sys, task, tools, { model: process.env.ELEVE_MODEL }),
+              askEleveAgentic(sys, task, tools, { model: ELEVE_MODEL }),
             dispatch: brain.dispatch,
           },
         );

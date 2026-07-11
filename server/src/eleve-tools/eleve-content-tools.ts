@@ -13,6 +13,8 @@ import { confinePath } from "../perimeter-context.js";
 import { askLLM } from "../llm/llm-engine.js";
 import { cachedComplete } from "../llm/llm-cache.js";
 import { searchPexelsImages } from "../taste/taste-images.js";
+import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA as ELEVE_OLLAMA_URL } from "../eleve/provider.js";
+import { getBrain } from "../brain/brain-registry.js";
 import {
   generateContentItems,
   checkImageCoherence,
@@ -33,12 +35,17 @@ const GENERE_CONTENU_PROMPT_VERSION = "genere-contenu-v1";
  * jamais un tour agentique outillé) → enveloppé du cache sémantique OPT-IN (#182 É4,
  * gate LLM_SEMANTIC_CACHE, défaut OFF = appel direct byte-identique). */
 function glmAsk(): GenContentDeps["ask"] {
-  const model = process.env.ELEVE_MODEL || "glm-5.2:cloud";
+  // Raf (2026-07-11) : lit les bindings LIVE de eleve/provider.ts (resynchronisés
+  // par syncEleveFromBrainRegistry à chaque sauvegarde Réglages), plus jamais
+  // process.env.ELEVE_MODEL brut (figé au démarrage, source du bug "GLM-5.2 fantôme").
+  const model = ELEVE_MODEL;
+  const provider = ELEVE_PROVIDER;
+  const baseUrl = provider === "ollama" ? ELEVE_OLLAMA_URL : ELEVE_API_URL;
   const real = (system: string, user: string) =>
     askLLM(system, user, {
-      provider: "openai",
+      provider,
       model,
-      baseUrl: process.env.ELEVE_API_URL,
+      baseUrl,
       apiKeyEnv: "ELEVE_API_KEY",
       maxTokens: 6000,
       timeoutMs: 180_000,
@@ -46,13 +53,17 @@ function glmAsk(): GenContentDeps["ask"] {
   return (system, user) =>
     cachedComplete(system, user, {
       role: "genere-contenu",
-      providerModel: `openai:${model}`,
+      providerModel: `${provider}:${model}`,
       promptVersion: GENERE_CONTENU_PROMPT_VERSION,
       ask: real,
     });
 }
 
-const VL_MODEL = () => process.env.VL_MODEL || "qwen3-vl:8b";
+// Raf (2026-07-11) : VL_MODEL était un 3e registre — une variable d'env SÉPARÉE de
+// brain-registry.json, invisible à Réglages (même symptôme que "codeur" avant fix).
+// Lit maintenant le rôle "vision" du registre en direct (getBrain relit le disque
+// à chaque appel), .env reste le repli si le registre est absent/corrompu.
+const VL_MODEL = () => getBrain("vision").model || process.env.VL_MODEL || "qwen3-vl:8b";
 const OLLAMA = () => (process.env.OLLAMA_URL || "http://localhost:11434").replace(/\/$/, "") + "/api/generate";
 
 async function realToBase64(url: string): Promise<string | null> {

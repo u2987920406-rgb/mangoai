@@ -41,6 +41,7 @@ import { buildEleveDocumentTools } from "./eleve-document-tools.js";
 import { buildEleveArchiveTools } from "./eleve-archive-tools.js";
 import { buildEleveSiteTools } from "./eleve-site-tools.js";
 import { buildEleveSharinganTools } from "./eleve-sharingan-tools.js";
+import { buildEleveDesignTools } from "./eleve-design-tools.js";
 import { buildEleveImageTools } from "./eleve-image-tools.js";
 import { applyWrite, applyEdit, applyRun } from "../executor.js";
 import { searchPexelsImages, pexelsConfigured } from "../taste/taste-images.js";
@@ -429,9 +430,19 @@ export function buildEleveToolRegistry(projectDir: string, opts: EleveRegistryOp
     for (const t of buildEleveSharinganTools(projectDir)) reg.register(t);
   }
 
-  // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,
-  // défaut OFF → zéro régression). Profite aussi aux sous-agents délégués.
-  if (process.env.ELEVE_VISION === "on") {
+  // verifie_design (2026-07-12, #182 suite) — auto-vérification design déterministe
+  // ($0, pas de LLM) EN COURS de tâche, comme check_build mais pour le design.
+  // Coupure d'urgence ELEVE_DESIGN_CHECK=off.
+  if (process.env.ELEVE_DESIGN_CHECK !== "off") {
+    for (const t of buildEleveDesignTools(projectDir)) reg.register(t);
+  }
+
+  // Sharingan de l'Élève — l'œil sur son propre rendu. (2026-07-12) défaut ON :
+  // Claude a mcp__vision__snapshot en PERMANENCE (agent.ts), l'Élève ne pouvait
+  // pas s'auto-critiquer visuellement pendant une build normale. qwen3-vl:8b
+  // (vision, $0 local) validé fiable cette nuit → coupure ELEVE_VISION=off si besoin.
+  // Profite aussi aux sous-agents délégués.
+  if (process.env.ELEVE_VISION !== "off") {
     for (const t of buildEleveVisionTools(projectDir)) reg.register(t);
     for (const t of buildEleveImageTools(projectDir)) reg.register(t);
   }

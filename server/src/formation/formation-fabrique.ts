@@ -37,6 +37,7 @@ import {
 import { generateContentItems, checkImageCoherence, type GenContentDeps, type ImgCheckDeps } from "../eleve-content.js";
 import { atomicWriteFileSync } from "../safe-io.js";
 import { askLLM } from "../llm/llm-engine.js";
+import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA } from "../eleve/provider.js";
 import { searchWeb, type WebResult } from "../eleve-tools/eleve-web-tools.js";
 import { scrapeExternal, type ScrapedPage } from "../vision.js";
 import { searchPexelsImages } from "../taste/taste-images.js";
@@ -57,13 +58,13 @@ export interface FabriqueDeps {
   log: (line: string) => void;
 }
 
+// Raf (2026-07-11) : bindings LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
 function glmAskFabrique(): GenContentDeps["ask"] {
-  const model = process.env.ELEVE_MODEL || "glm-5.2:cloud";
   return (system, user) =>
     askLLM(system, user, {
-      provider: "openai",
-      model,
-      baseUrl: process.env.ELEVE_API_URL,
+      provider: ELEVE_PROVIDER,
+      model: ELEVE_MODEL,
+      baseUrl: ELEVE_PROVIDER === "ollama" ? OLLAMA : ELEVE_API_URL,
       apiKeyEnv: "ELEVE_API_KEY",
       maxTokens: 6000,
       timeoutMs: 180_000,

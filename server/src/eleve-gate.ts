@@ -23,6 +23,7 @@ import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from ".
 import { runProjectTests, type TestRun } from "./inspection.js";
 import { checkPedagoReel, type PedagoVerdict } from "./eleve-gate-pedago.js";
 import { flag } from "./flags.js";
+import { publishGateVerdict } from "./kernel/kernel-design-events.js";
 
 export interface GateVerdict {
   ok: boolean;
@@ -387,13 +388,26 @@ export async function runClosureGate(
         `rien n'a été réellement vérifié ce tour (intention+goût+QA réduits à 2 regex triviales). Relance quand l'infra (Ollama/preview) est disponible.`,
     );
   }
-  return {
+  const verdict: GateVerdict = {
     ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks && pedagoOk,
     intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance,
     placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, dualSkip, testsRan, testsOk, tests, raisons,
     ...(pedago ? { pedago, pedagoOk } : {}),
     ...(signalGap ? { signalGap } : {}),
   };
+  // (2026-07-11) publie le verdict COMPLET du Gardien sur le Bus — MangoQA
+  // re-devine aujourd'hui (branches design-system/accessibility) ce que MangoOS
+  // a déjà vérifié en production ; ce résumé chiffré recoupe ses propres branches
+  // au lieu de partir d'un blanc total. Fire-and-forget, jamais bloquant.
+  try {
+    publishGateVerdict({
+      project: path.basename(projectDir),
+      ok: verdict.ok,
+      intentOk, wcagOk, balanceOk, placeholdersOk, testsOk,
+      tasteScored, tasteOverall: tasteScored ? (design?.overall ?? null) : null,
+    });
+  } catch { /* best-effort */ }
+  return verdict;
 }
 
 /** Nudge de correction du Gardien (préfixe le plan #160). PUR. */

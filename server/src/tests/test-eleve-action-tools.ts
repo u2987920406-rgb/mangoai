@@ -28,8 +28,10 @@ fs.writeFileSync(path.join(dir, "src", "App.jsx"), "export default function App(
 const reg = buildEleveActionTools(dir);
 
 async function run() {
-  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + planifier #160 + web #154 + parcours #155 + artefact #156 + document #157 + archive + site #159)");
-  check("20 outils enregistrés", reg.names().length === 20);
+  console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + planifier #160 + web #154 + parcours #155 + artefact #156 + document #157 + archive + site #159 + sharingan + vision #182)");
+  // (2026-07-12) 24 = 20 (base) + sharingan_url/sharingan_image (toujours actifs,
+  // déterministes) + vois_ecran/lire_image (ELEVE_VISION passé à défaut ON).
+  check("25 outils enregistrés", reg.names().length === 25);
   check("outil archive présent (lire_archive)", reg.has("lire_archive"));
   check(
     "write_file/edit_file/run_command/add_dependency/chercher_image/finish présents",
@@ -44,7 +46,7 @@ async function run() {
   check("outil document #157 présent (lire_document)", reg.has("lire_document"));
   check("outil site #159 présent (extraire_site)", reg.has("extraire_site"));
   check("outils lecture Phase 1 conservés", ["read_file", "list_files", "search_code", "check_build"].every((n) => reg.has(n)));
-  check("toOpenAITools → 20 functions valides", toOpenAITools(reg).length === 20 && toOpenAITools(reg).every((t) => t.type === "function"));
+  check("toOpenAITools → 25 functions valides", toOpenAITools(reg).length === 25 && toOpenAITools(reg).every((t) => t.type === "function"));
   // chercher_image : scène vide → erreur pédagogique (branche déterministe, sans réseau)
   const imgEmpty = await reg.invoke("chercher_image", { scene: "  " });
   check("chercher_image scène vide → isError", imgEmpty.isError === true);
@@ -84,7 +86,7 @@ async function run() {
   {
     const gated = buildEleveActionTools(dir, { allowRun: false });
     check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
-    check("19 outils (run_command retiré, planifier + etape_faite + web + http + parcours + artefact + document + archive + site conservés)", gated.names().length === 19);
+    check("24 outils (run_command retiré, planifier + etape_faite + web + http + parcours + artefact + document + archive + site + sharingan + vision conservés)", gated.names().length === 24);
     check("lire_archive conservé même pour cerveau faible (lecture, sûr)", gated.has("lire_archive"));
     check("planifier conservé même pour cerveau faible (planifier aide surtout les faibles)", gated.has("planifier"));
     check("chercher_artefact conservé même pour cerveau faible (pur, sûr)", gated.has("chercher_artefact"));

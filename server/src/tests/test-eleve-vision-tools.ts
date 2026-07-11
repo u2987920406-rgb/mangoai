@@ -107,15 +107,18 @@ async function run() {
     delete process.env.ELEVE_VISION_BUDGET;
   }
 
-  console.log("\n[7] Gating ELEVE_VISION dans buildEleveActionTools");
+  console.log("\n[7] Gating ELEVE_VISION dans buildEleveActionTools (défaut ON, 2026-07-12)");
   {
     delete process.env.ELEVE_VISION;
-    const regOff = buildEleveActionTools(dir);
-    check("flag OFF → pas de vois_ecran", !regOff.has("vois_ecran"));
+    const regDefault = buildEleveActionTools(dir);
+    check("par défaut (non défini) → vois_ecran présent (Claude a Snapshot en permanence)", regDefault.has("vois_ecran"));
     process.env.ELEVE_VISION = "on";
     const regOn = buildEleveActionTools(dir);
-    check("flag ON → vois_ecran présent", regOn.has("vois_ecran"));
+    check("flag ON explicite → vois_ecran présent", regOn.has("vois_ecran"));
     check("flag ON → outils d'action toujours là", ["write_file", "edit_file", "finish"].every((n) => regOn.has(n)));
+    process.env.ELEVE_VISION = "off";
+    const regOff = buildEleveActionTools(dir);
+    check("flag OFF explicite → pas de vois_ecran (coupure d'urgence)", !regOff.has("vois_ecran"));
     delete process.env.ELEVE_VISION;
   }
 
