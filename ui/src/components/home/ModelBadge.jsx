@@ -1,11 +1,19 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import { MODELS } from "./helpers.js";
+import { useEleveLabel } from "../../hooks/useEleveLabel.js";
 
 // Badge/sélecteur de modèle — extrait verbatim de Home.jsx.
 export default function ModelBadge({ model, onModel, openUp = false, onOpenSettings, overrideLabel }) {
   const [open, setOpen] = useState(false);
-  const current = MODELS.find((m) => m.id === model) ?? MODELS[0];
+  // "eleve" affichait un nom codé en dur (GLM-5.2) déconnecté de Réglages —
+  // surcharge avec le vrai cerveau local configuré (brain-registry.json).
+  const eleveLabel = useEleveLabel();
+  const models = useMemo(
+    () => MODELS.map((m) => (m.id === "eleve" && eleveLabel ? { ...m, label: `Élève · ${eleveLabel}` } : m)),
+    [eleveLabel],
+  );
+  const current = models.find((m) => m.id === model) ?? models[0];
   return (
     <div className="relative">
       <button
@@ -23,7 +31,7 @@ export default function ModelBadge({ model, onModel, openUp = false, onOpenSetti
             className={`absolute z-50 w-52 overflow-hidden rounded-xl border border-edge bg-panel shadow-2xl
                         ${openUp ? "bottom-full right-0 mb-1.5" : "top-full left-0 mt-1.5"}`}
           >
-            {MODELS.map((m) => (
+            {models.map((m) => (
               <button
                 key={m.id}
                 onClick={() => { onModel?.(m.id); setOpen(false); }}

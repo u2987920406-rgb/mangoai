@@ -79,6 +79,7 @@ export default function ChatComposer({
           onPickAction={actions.pickAction}
           onToggleModelMenu={actions.setModelMenuFor}
           onSetModel={actions.setActionModel}
+          eleveLabel={actions.eleveLabel}
         />
         <div className="flex flex-col gap-1.5">
           <div className="flex items-end gap-1.5 pl-1.5">

@@ -40,7 +40,7 @@ import { runFrontierOrchestration } from "../frontier-orchestration.js";
 import { dispatch } from "../brain.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "../scenario.js";
 import { flag } from "../flags.js";
-import { getBrain } from "../brain/brain-registry.js";
+import { getBrain, shortModelLabel } from "../brain/brain-registry.js";
 import { temporalContext } from "../temporal-context.js";
 import { domainTemplateSection } from "../template-library.js";
 import { isAgentBusy, tryAcquireAgent, releaseAgent } from "../agent/agent-lock.js";
@@ -440,7 +440,11 @@ app.post("/api/chat", async (req, res) => {
       const buildBinding = !specialistProfile && model === "eleve"
         ? resolveBinding((await deriveIntention(false, intention, agentPrompt)).intention)
         : null;
-      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : (buildBinding?.card?.label ?? process.env.ELEVE_MODEL ?? "Élève");
+      // Raf (2026-07-11) : le libellé affiché DOIT refléter le modèle RÉELLEMENT
+      // résolu (buildBinding.model, via Réglages → brain-registry.json → `codeur`,
+      // cf. globalFallback() dans brain-runtime.ts) — jamais le repli .env figé, qui
+      // peut diverger de ce que Réglages affiche (source du bug "gemini encore là").
+      const agentLabel = model === "uxui" ? "UX/UI" : model === "layout" ? "Layout CSS" : (buildBinding?.card?.label ?? shortModelLabel(buildBinding?.model) ?? process.env.ELEVE_MODEL ?? "Élève");
       // « local » pour Ollama local, « cloud » pour un endpoint distant (Ollama Cloud, etc.).
       const provForTier = buildBinding?.provider ?? (ELEVE_PROVIDER === "openai" ? "openai" : "ollama");
       const agentTier = provForTier === "ollama" ? "local" : "cloud";

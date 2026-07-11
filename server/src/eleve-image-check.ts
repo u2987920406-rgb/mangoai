@@ -30,7 +30,7 @@ export interface ImageCheckReport {
 
 /** Parcourt récursivement `dir` (borné à src/, public/ et racine du projet) en
  * renvoyant les chemins de fichiers texte scannables. Ignore node_modules/dist/.git. */
-function listSourceFiles(dir: string, depth = 0): string[] {
+export function listSourceFiles(dir: string, depth = 0): string[] {
   if (depth > 6) return [];
   let entries: fs.Dirent[];
   try {
@@ -79,7 +79,7 @@ export function pexelsIdOf(url: string): string | null {
 
 /** Statut d'une URL : true = vivante, false = MORTE (404/410 confirmé), null =
  * indéterminé (réseau coupé, timeout, 5xx…) → on ne flag PAS (pas de faux positif). */
-async function probe(url: string, f: typeof fetch): Promise<boolean | null> {
+export async function probe(url: string, f: typeof fetch): Promise<boolean | null> {
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), 8000);
   try {
@@ -116,7 +116,7 @@ async function canonicalPexelsUrl(id: string, key: string, f: typeof fetch): Pro
 }
 
 /** Remplace la chaîne EXACTE `from` par `to` dans les fichiers donnés. */
-function replaceInFiles(files: string[], from: string, to: string): void {
+export function replaceInFiles(files: string[], from: string, to: string): void {
   for (const file of files) {
     try {
       const text = fs.readFileSync(file, "utf8");

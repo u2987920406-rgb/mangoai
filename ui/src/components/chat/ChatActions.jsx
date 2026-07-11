@@ -3,7 +3,7 @@
 import { ChevronDown } from "lucide-react";
 import { CHAT_ACTIONS, ACTION_MODEL_OPTIONS, actionModelLabel } from "./helpers.js";
 
-export default function ChatActions({ activeAction, actionModels, modelMenuFor, onPickAction, onToggleModelMenu, onSetModel }) {
+export default function ChatActions({ activeAction, actionModels, modelMenuFor, onPickAction, onToggleModelMenu, onSetModel, eleveLabel }) {
   return (
     <div className="flex flex-wrap gap-1.5 px-1.5 pb-2">
       {CHAT_ACTIONS.map((a) => {
@@ -29,7 +29,7 @@ export default function ChatActions({ activeAction, actionModels, modelMenuFor, 
                   : "border-edge/40 text-faint hover:text-dim hover:bg-edge-soft"
               }`}
             >
-              {actionModelLabel(actionModels[a.id])}
+              {actionModelLabel(actionModels[a.id], eleveLabel)}
               <ChevronDown size={9} />
             </button>
             {modelMenuFor === a.id && (
@@ -45,7 +45,7 @@ export default function ChatActions({ activeAction, actionModels, modelMenuFor, 
                       }`}
                     >
                       <span className={`h-1.5 w-1.5 shrink-0 rounded-full ${actionModels[a.id] === m.id ? "bg-accent" : "border border-edge"}`} />
-                      {m.label}
+                      {actionModelLabel(m.id, eleveLabel)}
                     </button>
                   ))}
                 </div>

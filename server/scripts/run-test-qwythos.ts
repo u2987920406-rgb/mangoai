@@ -9,8 +9,8 @@ import { glmProfile } from "../src/models/glm.js";
 function log(m: string): void { console.log(`[${new Date().toISOString()}] ${m}`); }
 const eleveOnlyDeps = { ...defaultRelayDeps, escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: false }) };
 
-const NAME = "galerie-qwythos";
-const MODEL = "hf.co/empero-ai/Qwythos-9B-Claude-Mythos-5-1M-GGUF:Q4_K_M";
+const NAME = "galerie-qwythos-q6";
+const MODEL = "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K";
 const TASK =
   "Crée une galerie d'art en ligne de vente d'objets de luxe en plâtre et laiton (luminaires, mobilier). " +
   "ANGLE : « une maison d'édition d'objets rares — la matière parle, la rareté impose le silence ». " +

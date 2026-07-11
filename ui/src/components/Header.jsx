@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { ArrowDownAZ, ArrowLeft, Brain, Building2, Check, ChevronDown, Clock, Cloud, FolderOpen, Gauge, Gem, Globe, GraduationCap, Layers, LayoutGrid, Loader2, Puzzle, Rocket, Search, Shield, Sparkles, Star, Trash2, Triangle, Zap } from "lucide-react";
 import Dropdown, { DropdownItem } from "./Dropdown.jsx";
 import { NEUTRAL, t } from "../neutral.js";
+import { useEleveLabel } from "../hooks/useEleveLabel.js";
 
 const DEPLOY_TARGETS = [
   { id: "cloudflare", label: "Cloudflare Pages", hint: "Edge gratuit — défaut", icon: Cloud },
@@ -9,11 +10,14 @@ const DEPLOY_TARGETS = [
   { id: "netlify", label: "Netlify", hint: "Sites statiques + forms", icon: Globe },
 ];
 
+// "eleve" n'a pas de nom fixe — c'est le cerveau local configuré dans Réglages
+// (brain-registry.json). Le libellé/hint ci-dessous est le REPLI avant que
+// useEleveLabel() (dans le composant) ait résolu le vrai nom (voir plus bas).
 const MODELS = [
   { id: "haiku", label: "Haiku", hint: "Rapide, projets simples", icon: Zap },
   { id: "sonnet", label: "Sonnet", hint: "Équilibré (recommandé)", icon: Gauge },
   { id: "opus", label: "Opus", hint: "Puissant, plus cher", icon: Brain },
-  { id: "eleve", label: t("Élève · GLM-5.2", "Student · GLM-5.2"), hint: t("GLM-5.2 cloud (Ollama) — Claude en secours", "GLM-5.2 cloud — Claude as backup"), icon: GraduationCap },
+  { id: "eleve", label: t("Élève", "Student"), hint: t("Cerveau local (Ollama) — Claude en secours", "Local brain (Ollama) — Claude as backup"), icon: GraduationCap },
 ];
 
 const MODES = [
@@ -49,7 +53,20 @@ export default function Header({
   onSwitchProject = null,
   onRefreshProjects = null,
 }) {
-  const current = MODELS.find((m) => m.id === model) ?? MODELS[1];
+  // Raf (2026-07-11) : "Élève · GLM-5.2" était codé en dur et ne suivait jamais le
+  // choix fait dans Réglages (brain-registry.json). On surcharge son label/hint
+  // avec le VRAI cerveau local configuré, dès qu'il est connu.
+  const eleveLabel = useEleveLabel();
+  const models = useMemo(
+    () =>
+      MODELS.map((m) =>
+        m.id === "eleve" && eleveLabel
+          ? { ...m, label: t(`Élève · ${eleveLabel}`, `Student · ${eleveLabel}`), hint: t(`${eleveLabel} (local, Ollama) — Claude en secours`, `${eleveLabel} (local, Ollama) — Claude as backup`) }
+          : m,
+      ),
+    [eleveLabel],
+  );
+  const current = models.find((m) => m.id === model) ?? models[1];
   const currentMode = MODES.find((m) => m.id === mode) ?? MODES[1];
 
   return (
@@ -144,7 +161,7 @@ export default function Header({
           }
         >
           {(close) =>
-            MODELS.map((m) => (
+            models.map((m) => (
               <DropdownItem
                 key={m.id}
                 icon={m.icon}

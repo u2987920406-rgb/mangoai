@@ -76,6 +76,10 @@ export const TOOL_CAPABILITIES: ReadonlyMap<string, ToolCapability> = new Map<st
   // OFFRABLE en Discuter dès que `vision` ∈ requiredCaps.
   ["vois_ecran", { capability: "vision", mutation: false }],
   ["lire_image", { capability: "vision", mutation: false }],
+  // Sharingan direct (2026-07-11) — même capacité "vision" (regarde un rendu/une
+  // image), déterministe (pas de coût VL), toujours dispo dès que vision ∈ requiredCaps.
+  ["sharingan_url", { capability: "vision", mutation: false }],
+  ["sharingan_image", { capability: "vision", mutation: false }],
   // Médias — chercher_image ne mute pas (rend des URLs) ; générer/découper écrit sur disque.
   ["chercher_image", { capability: "media-gen", mutation: false }],
   ["genere_image", { capability: "media-gen", mutation: true }],

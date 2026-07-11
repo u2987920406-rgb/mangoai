@@ -89,8 +89,12 @@ app.post("/api/home-chat", async (req, res) => {
         hasAttachment = fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length > 0;
       } catch { /* best-effort */ }
       const homeCaps = await requiredCapabilities(last.content, { hasAttachment });
+      // Raf (2026-07-11) : process.env.ELEVE_MODEL est un repli figé au démarrage —
+      // Réglages (Atelier des cerveaux → brain-registry.json → `codeur`, la même
+      // source que le flux Construire, cf. globalFallback()) doit rester la SEULE
+      // source vivante, sans redémarrage du backend pour prendre effet.
       const r = await askEleveAgentic(sys, last.content, buildEleveDiscussTools(scratch, homeCaps), {
-        model: process.env.ELEVE_MODEL,
+        model: getBrain("codeur").model || process.env.ELEVE_MODEL,
       });
       res.json({ text: (r.text ?? "").trim() || "(réponse vide de l'Élève)", suggestGraduate });
       return;

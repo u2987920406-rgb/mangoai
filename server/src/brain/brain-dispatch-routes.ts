@@ -12,6 +12,7 @@ import {
   type AgentId, type BrainConfig,
 } from "./brain-registry.js";
 import { estimatePipelineCost } from "../agent/agent-contract.js";
+import { syncEleveFromBrainRegistry } from "../eleve/provider.js";
 
 function isAgentId(v: unknown): v is AgentId {
   return typeof v === "string" && (AGENT_IDS as string[]).includes(v);
@@ -36,6 +37,9 @@ export function registerBrainDispatchRoutes(app: Express): void {
     }
     try {
       saveBrainRegistry(body as Record<AgentId, BrainConfig>);
+      // Raf (2026-07-11) : effet IMMÉDIAT — ELEVE_MODEL/PROFILE/ELEVE_PROVIDER (lus
+      // par tout le pipeline Élève) se resynchronisent sans redémarrer le backend.
+      syncEleveFromBrainRegistry();
       res.json({ registry: loadBrainRegistry() });
     } catch (e) {
       res.status(500).json({ error: `Sauvegarde impossible : ${(e as Error).message}` });

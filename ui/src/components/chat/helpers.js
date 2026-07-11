@@ -46,8 +46,12 @@ export const CHAT_ACTIONS = [
   { id: "planifier",  label: "Planifier",  mode: "discuss" },
   { id: "discuter",   label: "Discuter",   mode: "discuss" },
 ];
+// Raf (2026-07-11) : "eleve" n'a pas de nom fixe — c'est QUEL QUE SOIT le cerveau
+// local configuré dans Réglages (brain-registry.json → orchestrateur). Le libellé
+// ci-dessous est un REPLI le temps du fetch ; useChatActionModels() récupère le
+// vrai nom via /api/brain-registry et le passe en override (voir actionModelLabel).
 export const ACTION_MODEL_OPTIONS = [
-  { id: "eleve",  label: "GLM-5.2"   },
+  { id: "eleve",  label: "Élève (local)" },
   { id: "sonnet", label: "Sonnet 4.6" },
   { id: "opus",   label: "Opus 4.8"   },
   { id: "haiku",  label: "Haiku 4.5"  },
@@ -62,7 +66,21 @@ export function loadActionModels() {
     return { ...DEFAULT_ACTION_MODELS };
   }
 }
-export const actionModelLabel = (id) => ACTION_MODEL_OPTIONS.find((m) => m.id === id)?.label ?? id;
+/** Nom court lisible depuis un identifiant de modèle brut (registre brain-registry
+ * ou tag Ollama), ex. "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K" → "Qwythos 9B v2 (Q6)". */
+export function shortModelLabel(raw) {
+  if (!raw || typeof raw !== "string") return null;
+  const afterSlash = raw.split("/").pop();
+  const [name, tag] = afterSlash.split(":");
+  const clean = name.replace(/-GGUF$/i, "").replace(/[-_]+/g, " ").trim();
+  const quant = tag ? tag.replace(/^([Qq]\d+).*$/, "$1").toUpperCase() : "";
+  if (!tag) return clean;
+  return quant && quant !== tag.toUpperCase() ? `${clean} (${quant})` : `${clean} ${tag}`;
+}
+/** `eleveLabel` (optionnel) écrase le libellé statique de "eleve" par le nom du
+ * cerveau local RÉELLEMENT configuré (Réglages → brain-registry). */
+export const actionModelLabel = (id, eleveLabel) =>
+  (id === "eleve" && eleveLabel) || ACTION_MODEL_OPTIONS.find((m) => m.id === id)?.label || id;
 
 // Collapse consecutive tool messages into one expandable group
 export function groupMessages(messages) {

@@ -37,11 +37,11 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("14 agents présents (dont stratege #164 P3 + forgeron La Forge + routeur #182 D2)", AGENT_IDS.length === 14 && Object.keys(def).length === 14);
+    check("15 agents présents (dont stratege #164 P3 + forgeron La Forge + routeur #182 D2 + accueil #182 D3)", AGENT_IDS.length === 15 && Object.keys(def).length === 15);
     check("défaut stratege = gemma4:12b LOCAL ($0, barreau 1)", def.stratege.provider === "ollama" && def.stratege.model === "gemma4:12b");
     check("défaut forgeron = claude/opus (le meilleur raisonneur, acte rare)", def.forgeron.provider === "claude" && def.forgeron.model === "opus");
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
-    check("défaut codeur = l'Élève GLM (openai/glm-5.2:cloud)", def.codeur.provider === "openai" && def.codeur.model === "glm-5.2:cloud");
+    check("défaut codeur = l'Élève Qwythos v2 Q6 LOCAL (ollama, souveraineté prouvée)", def.codeur.provider === "ollama" && def.codeur.model === "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K");
 
     // Merge champ par champ : on n'override que le modèle du codeur.
     saveBrainRegistry({ ...def, codeur: { provider: "ollama", model: "qwen2.5-coder:7b", timeoutMs: 99_000 } });
@@ -114,11 +114,13 @@ async function run() {
 
   console.log("\n[7] estimatePipelineCost");
   {
-    const local = estimatePipelineCost(["optimiseur", "vision"], 100_000);
-    check("agents ollama (optimiseur+vision) → coût 0", local.usd === 0 && !local.warning);
-    // #162 — codeur = l'Élève GLM (openai) : désormais TARIFÉ (openai/* = 2 $/Mtok), plus $0.
-    const eleve = estimatePipelineCost(["codeur"], 1_000_000);
-    check("codeur GLM cloud → coût > 0 (openai tarifé)", eleve.usd > 0);
+    // (2026-07-11) codeur = l'Élève Qwythos v2 Q6 LOCAL (ollama) : $0, souveraineté
+    // prouvée en réel — inclus ici pour couvrir le cas ollama à 3 agents.
+    const local = estimatePipelineCost(["optimiseur", "vision", "codeur"], 100_000);
+    check("agents ollama (optimiseur+vision+codeur) → coût 0", local.usd === 0 && !local.warning);
+    // orchestrateur = claude/opus : resté TARIFÉ (openai/* et claude/* = payant, plus $0).
+    const cloudOne = estimatePipelineCost(["orchestrateur"], 1_000_000);
+    check("orchestrateur claude/opus → coût > 0 (cloud tarifé)", cloudOne.usd > 0);
     const cloud = estimatePipelineCost(["orchestrateur", "architecte"], 1_000_000);
     check("2× claude/opus sur 1M tokens → coût élevé + warning", cloud.usd > 2 && cloud.warning);
   }

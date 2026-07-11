@@ -805,10 +805,13 @@ function makeDelegateTool(ctx: AgenticRunCtx): KernelTool {
     description:
       "Délègue une SOUS-TÂCHE bien bornée et autonome à un sous-agent sur le même projet. " +
       "Optionnel : agentType (construire|planifier|discuter) confie la sous-tâche au CERVEAU adapté à cette intention " +
-      "(ex. un spécialiste code) ; sans agentType, le sous-agent emploie ton propre cerveau. Renvoie le résumé du sous-agent.",
+      "(ex. un spécialiste code) ; sans agentType, le sous-agent emploie ton propre cerveau. " +
+      "Personas dédiées — builder : implémente UNE partie bien bornée (section/composant/page) en parallèle d'autres builders, PAS d'accès run_command (évite les conflits npm/serveur dev) ; " +
+      "controleur : audit adversarial d'une app DÉJÀ CONSTRUITE (cas limites, états manquants, a11y, bugs) et CORRIGE sans ajouter de fonctionnalité, PAS d'accès run_command non plus. " +
+      "Renvoie le résumé du sous-agent.",
     inputSchema: {
       subtask: z.string().describe("La sous-tâche précise et autonome à confier au sous-agent"),
-      agentType: z.string().optional().describe("Intention du sous-agent : construire | planifier | discuter (optionnel)"),
+      agentType: z.string().optional().describe("construire | planifier | discuter (change de cerveau) — ou builder | controleur (persona + toolset restreint, même cerveau)"),
     },
     handler: async (args) => {
       const a = args as Record<string, unknown>;

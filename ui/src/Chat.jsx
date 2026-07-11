@@ -101,6 +101,7 @@ export default function Chat({
     modelMenuFor, setModelMenuFor,
     pickAction,
     setActionModel,
+    eleveLabel,
   } = useChatActionModels(onChatMode, () => setAwaitingApply(false));
 
   // #174 — Skills à invocation directe : « /slug args » tapé au composer est
@@ -440,6 +441,9 @@ export default function Chat({
       if (wasPlanPhase) setAwaitingPlanConfirm(true);
       if (wasDiscuter) setAwaitingApply(true);
       onAgentDone();
+      // Raf (2026-07-11) : après la réponse, remettre le focus dans le composer
+      // pour pouvoir enchaîner au clavier sans cliquer la souris dans la chatbox.
+      requestAnimationFrame(() => inputRef.current?.focus());
       // Surface the background agents' status lines (review + patrol #73 +
       // Mango QA verdict) once they've had time to finish, without keeping the
       // stream open. The later delays cover slow QA audits (~143s on big
@@ -539,6 +543,7 @@ export default function Chat({
       push({ role: "error", text: String(err) });
     } finally {
       setBusy(false);
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
   }
 
@@ -663,7 +668,7 @@ export default function Chat({
           setSearch: setFileSearch,
           pickContextFile: (f) => { setContextFile(f); setFilePicker(false); },
         }}
-        actions={{ activeAction, actionModels, modelMenuFor, pickAction, setModelMenuFor, setActionModel }}
+        actions={{ activeAction, actionModels, modelMenuFor, pickAction, setModelMenuFor, setActionModel, eleveLabel }}
         snap={{ start: () => setSnapMode(true), busy: snapBusy }}
         onCoach={coachSend}
         coachDisabled={!projectName.trim()}

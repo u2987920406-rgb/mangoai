@@ -3,6 +3,7 @@
 // eleve/ — il est importé transversalement par contract/escalade/relay.
 import { resolveProfile } from "../models/profile.js";
 import { type LLMProvider } from "../llm/llm-engine.js";
+import { getBrain } from "../brain/brain-registry.js";
 // T1 : la résolution d'endpoint openai-compat de l'Élève délègue au résolveur
 // unique (famille 'eleve' — SANS LLM_OPENAI_URL/KEY, baseUrl ignoré pour les presets).
 import { resolveEndpoint, normalizeCompletionsUrl } from "../llm/llm-endpoint.js";
@@ -10,21 +11,10 @@ import { resolveEndpoint, normalizeCompletionsUrl } from "../llm/llm-endpoint.js
 import { ollamaChat, openAiChat } from "../llm/llm-transport.js";
 
 export const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
-export const ELEVE_MODEL = process.env.ELEVE_MODEL ?? "gemma4:12b";
-
-// Partition de la famille du modèle Élève : prompt système, fichiers d'axiomes,
-// caps et routage d'escalade viennent du PROFIL (server/src/models/). Le cœur
-// reste agnostique ; un modèle non reconnu retombe sur GENERIC = comportement
-// actuel exact. Les ENV restent prioritaires (override global ponctuel).
-// Profil par défaut (famille du modèle global ELEVE_MODEL). Sert de fallback
-// quand runRelay est appelé sans opts.profile. Les surcharges par appel lisent
-// callProfile = opts.profile ?? PROFILE (résolution locale dans runRelay).
-export const PROFILE = resolveProfile(ELEVE_MODEL);
 
 // Provider de l'Élève (« Élève turbo », optionnel). Par défaut « ollama » = le
 // modèle LOCAL ($0, souverain). En option « openai » = un endpoint compatible
 // OpenAI (DeepSeek, Together, etc.) — plus puissant mais PAYANT et non local.
-// Switch par .env, sans toucher au code : ELEVE_PROVIDER + ELEVE_API_URL/KEY.
 export function normalizeEleveProvider(raw?: string): "ollama" | "openai" {
   return (raw ?? "").trim().toLowerCase() === "openai" ? "openai" : "ollama";
 }
@@ -33,14 +23,62 @@ export function normalizeEleveProvider(raw?: string): "ollama" | "openai" {
 export function completionsUrl(base: string): string {
   return normalizeCompletionsUrl(base);
 }
-export const ELEVE_PROVIDER = normalizeEleveProvider(process.env.ELEVE_PROVIDER);
-export const ELEVE_API_URL = process.env.ELEVE_API_URL ?? "https://api.deepseek.com/v1";
-export const ELEVE_API_KEY = process.env.ELEVE_API_KEY?.trim() ?? "";
 
+// Raf (2026-07-11) : « un SEUL endroit pour changer de modèle, sinon on se
+// perd. » Réglages (Atelier des cerveaux → brain-registry.json → rôle `codeur`,
+// SOURCE UNIQUE partagée avec globalFallback() dans brain-runtime.ts) pilote
+// désormais CES QUATRE VARIABLES EN DIRECT, sans redémarrage du backend. `let`
+// (pas `const`) : en ESM les imports sont des liaisons VIVANTES — un module qui
+// fait `import { ELEVE_MODEL } from "./provider.js"` voit la valeur à jour dès
+// que syncEleveFromBrainRegistry() la réassigne ici, sans rien changer chez lui.
+// .env (ELEVE_MODEL/ELEVE_PROVIDER/ELEVE_API_URL/KEY) redevient un simple
+// AMORÇAGE À FROID : valeur de secours si brain-registry.json est absent/vide
+// (repli DEFAULT_REGISTRY.codeur dans brain-registry.ts), plus jamais la vérité
+// une fois le registre présent.
+export let ELEVE_MODEL = process.env.ELEVE_MODEL ?? "gemma4:12b";
+// Partition de la famille du modèle Élève : prompt système, fichiers d'axiomes,
+// caps et routage d'escalade viennent du PROFIL (server/src/models/). Le cœur
+// reste agnostique ; un modèle non reconnu retombe sur GENERIC = comportement
+// actuel exact. Profil par défaut (famille du modèle global ELEVE_MODEL). Sert
+// de fallback quand runRelay est appelé sans opts.profile. Les surcharges par
+// appel lisent callProfile = opts.profile ?? PROFILE (résolution locale dans runRelay).
+export let PROFILE = resolveProfile(ELEVE_MODEL);
+export let ELEVE_PROVIDER = normalizeEleveProvider(process.env.ELEVE_PROVIDER);
+export let ELEVE_API_URL = process.env.ELEVE_API_URL ?? "https://api.deepseek.com/v1";
+export let ELEVE_API_KEY = process.env.ELEVE_API_KEY?.trim() ?? "";
 // Phase E2 — provider PAR APPEL (multi-cerveaux). Le provider de l'Élève n'est
 // plus uniquement le global : chaque intention peut router vers SON cerveau (cloud
 // openai-compat OU ollama local). Le défaut reste le global (réversibilité totale).
-export const ELEVE_PROVIDER_DEFAULT: LLMProvider = ELEVE_PROVIDER === "openai" ? "openai" : "ollama";
+export let ELEVE_PROVIDER_DEFAULT: LLMProvider = ELEVE_PROVIDER === "openai" ? "openai" : "ollama";
+
+/**
+ * Relit `brain-registry.json` (rôle `codeur`) et réassigne ELEVE_MODEL/PROFILE/
+ * ELEVE_PROVIDER/ELEVE_PROVIDER_DEFAULT/ELEVE_API_URL/ELEVE_API_KEY EN PLACE —
+ * chaque importeur de ces bindings ESM voit la nouvelle valeur immédiatement.
+ * Appelée (a) une fois au chargement du module (le registre prime sur .env dès
+ * le boot) et (b) par la route PUT /api/brain-registry après chaque sauvegarde
+ * de Réglages (effet immédiat, sans redémarrage). `codeur.model` vide (registre
+ * neuf/corrompu) → on garde .env tel quel (repli intact, jamais de régression).
+ */
+export function syncEleveFromBrainRegistry(): void {
+  const c = getBrain("codeur");
+  const model = (c.model ?? "").trim();
+  if (model) ELEVE_MODEL = model;
+  PROFILE = resolveProfile(ELEVE_MODEL);
+  // "codeur" peut porter n'importe quel LLMProvider (le registre est partagé avec
+  // tous les rôles) ; l'Élève ne sait dispatcher que ollama/openai-compat — un
+  // provider "claude" (ou autre) sur `codeur` n'est pas un usage prévu ici (le
+  // Maître Claude a son propre mécanisme, eleve/escalade.ts) → on n'y touche pas.
+  if (c.provider === "ollama") ELEVE_PROVIDER = "ollama";
+  else if (c.provider && c.provider !== "claude") ELEVE_PROVIDER = "openai";
+  ELEVE_PROVIDER_DEFAULT = ELEVE_PROVIDER === "openai" ? "openai" : "ollama";
+  if (c.baseUrl) ELEVE_API_URL = c.baseUrl;
+  if (c.apiKeyEnv) {
+    const key = process.env[c.apiKeyEnv]?.trim();
+    if (key) ELEVE_API_KEY = key;
+  }
+}
+syncEleveFromBrainRegistry();
 /** Un provider openai-compatible peut piloter la boucle agentique (function-calling). */
 export function isOpenAICompat(p: LLMProvider): boolean {
   return p === "openai" || p === "deepseek" || p === "mistral" || p === "groq" || p === "litellm";

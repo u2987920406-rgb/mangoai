@@ -11,6 +11,7 @@ import fs from "node:fs";
 import { z } from "zod";
 import { createSdkMcpServer, tool } from "@anthropic-ai/claude-agent-sdk";
 import { chromium, type Browser } from "playwright";
+import { publishDesignReference } from "./kernel/kernel-design-events.js";
 
 export const SNAPSHOTS_DIR_NAME = ".snapshots";
 
@@ -904,6 +905,13 @@ const sharinganTool = tool(
     }
     try {
       const result = await sharinganAnalyze(args.url);
+      // (2026-07-11) publie la CIBLE design sur le Bus — réveille la mesure de
+      // conformité (briefDrift) côté MangoQA/Œil Design, dormante faute d'une
+      // vraie référence Sharingan (jusqu'ici seule "perfect-plan" publiait).
+      // Fire-and-forget, best-effort : ne casse jamais l'analyse si projectDir absent.
+      if (projectDir && result.palette.length > 0) {
+        try { publishDesignReference({ project: path.basename(projectDir), palette: result.palette, source: "sharingan" }); } catch { /* best-effort */ }
+      }
       const analysis = formatSharinganAnalysis(result);
       const content: ({ type: "image"; data: string; mimeType: string } | { type: "text"; text: string })[] = [];
       if (result.screenshot.length <= MAX_IMAGE_BYTES) {
@@ -1100,6 +1108,10 @@ const sharinganImageTool = tool(
       // removes any near-black/white that bucketKeyToHex mid-point landed on).
       const finalPalette = dedupeColors(palette);
       const ambiance = ambianceDescriptor(pixels.filter((p) => p.a >= 10));
+
+      if (projectDir && finalPalette.length > 0) {
+        try { publishDesignReference({ project: path.basename(projectDir), palette: finalPalette, source: "sharingan" }); } catch { /* best-effort */ }
+      }
 
       const lines = [
         `# Sharingan image — ${path.basename(resolved)}`,

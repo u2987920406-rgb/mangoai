@@ -40,6 +40,7 @@ import { buildEleveArtefactTools } from "./eleve-artefact-tools.js";
 import { buildEleveDocumentTools } from "./eleve-document-tools.js";
 import { buildEleveArchiveTools } from "./eleve-archive-tools.js";
 import { buildEleveSiteTools } from "./eleve-site-tools.js";
+import { buildEleveSharinganTools } from "./eleve-sharingan-tools.js";
 import { buildEleveImageTools } from "./eleve-image-tools.js";
 import { applyWrite, applyEdit, applyRun } from "../executor.js";
 import { searchPexelsImages, pexelsConfigured } from "../taste/taste-images.js";
@@ -418,6 +419,14 @@ export function buildEleveToolRegistry(projectDir: string, opts: EleveRegistryOp
   // + searchWeb #154 + sanitizeExternal. Coupure ELEVE_SITE=off.
   if (process.env.ELEVE_SITE !== "off") {
     for (const t of buildEleveSiteTools(projectDir)) reg.register(t);
+  }
+
+  // Sharingan DIRECT (2026-07-11, #182 suite) — accès léger à sharinganAnalyze/
+  // analyzeImageFile, SANS repasser par tout le pipeline extraire_site (mêmes
+  // fonctions que le tool MCP mcp__vision__sharingan_url/image côté Claude).
+  // Déterministe, $0, aucune dépendance LLM → coupure ELEVE_SHARINGAN=off seulement.
+  if (process.env.ELEVE_SHARINGAN !== "off") {
+    for (const t of buildEleveSharinganTools(projectDir)) reg.register(t);
   }
 
   // Sharingan de l'Élève — l'œil sur son propre rendu (opt-in ELEVE_VISION=on,

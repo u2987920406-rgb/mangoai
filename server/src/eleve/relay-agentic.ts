@@ -18,6 +18,7 @@ import { runHooks, fireObservationHook } from "../mango-hooks.js";
 import { loadExternalMcpTools, defaultMcpConfigPath } from "../mcp-external.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "../eleve-plan.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "../eleve-image-check.js";
+import { curateImageBank, guaranteeLocalImages, formatImageBankForPrompt, formatGuarantee, type ImageBankEntry } from "../eleve-image-bank.js";
 import { diagnose, formatDiagnosis, type Diagnosis } from "../stratege/stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "../stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "../stratege/stratege-learn.js";
@@ -53,7 +54,7 @@ import { listProcedures, loadProcedure } from "../procedures.js";
 import { constellationsSection } from "../constellations.js";
 // Sous-modules eleve/ (feuille provider + contract + escalade + types).
 import { ELEVE_MODEL, ELEVE_PROVIDER_DEFAULT, PROFILE, askEleveDispatch } from "./provider.js";
-import { elevePost, supportsTools, askEleveAgentic, AGENTIC_TOOL_CONTRACT, AGENTIC_FALLBACK_SYSTEM, AGENTIC_VISION_CLAUSE } from "./contract.js";
+import { elevePost, supportsTools, askEleveAgentic, AGENTIC_TOOL_CONTRACT, AGENTIC_FALLBACK_SYSTEM, AGENTIC_VISION_CLAUSE, ELEVE_BUILDER_PROMPT, ELEVE_CONTROLEUR_PROMPT } from "./contract.js";
 import { escalateToClaude } from "./escalade.js";
 import { type RelayResult, type RelayOptions, type RelayDeps } from "./types.js";
 import { buildEleveUser } from "./relay-prompt.js";
@@ -129,13 +130,44 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         if (memoireClause) push("  🧠 Mémoire : souvenirs pertinents injectés");
       } catch { memoireClause = ""; }
     }
-    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}${memoireClause}`;
+    // (L123) Banque d'images LOCALES : on télécharge de VRAIES photos Pexels AVANT que
+    // l'Élève code et on les injecte (« utilise EXACTEMENT ces chemins »). `imageBank`
+    // est capturé par closure pour le filet de clôture (guaranteeLocalImages, plus bas).
+    // Gaté ELEVE_IMAGE_BANK (défaut ON), jamais en test. Fail-open : sans clé Pexels /
+    // réseau coupé → banque vide → system identique, aucune régression.
+    let imagesClause = "";
+    let imageBank: ImageBankEntry[] = [];
+    if (process.env.ELEVE_IMAGE_BANK !== "off" && !deps.agenticPost) {
+      try {
+        imageBank = await curateImageBank(task, projectDir);
+        imagesClause = formatImageBankForPrompt(imageBank);
+        if (imageBank.length) push(`  🖼 Banque d'images : ${imageBank.length} vraies photos téléchargées dans public/images/`);
+      } catch { imagesClause = ""; imageBank = []; }
+    }
+    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}${memoireClause}${imagesClause}`;
     let user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     // Phase E3 — un sous-agent peut prendre SON cerveau via agentType (= intention),
     // seulement s'il est explicitement routé, agentique et openai-compat ; sinon il
     // hérite du cerveau du parent (Phase D). En test (transport injecté), pas de switch.
+    // Personas de sous-agents FIXES (2026-07-11, #182 suite) — équivalent Élève
+    // des sous-agents Claude AGENTS.builder/AGENTS.controleur (agent.ts:91-104) :
+    // même worker/cerveau que le parent (pas de changement de brain), mais un
+    // system prompt dédié + toolset restreint (allowRun:false = pas de
+    // run_command, comme Claude qui les prive de Bash — évite que des builders
+    // parallèles se battent sur npm/le serveur de dev).
+    const PERSONAS: Record<string, string> = { builder: ELEVE_BUILDER_PROMPT, controleur: ELEVE_CONTROLEUR_PROMPT };
     const resolveDelegateCtx = (agentType: string): DelegateOverride | null => {
       if (deps.agenticPost) return null;
+      if (agentType === "builder" || agentType === "controleur") {
+        return {
+          system: `${agenticSystem}\n\n${PERSONAS[agentType]}`,
+          post: elevePost(callModel, callProvider, callEndpoint),
+          buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: false }),
+          buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
+          allowDelegate: false,
+          label: agentType,
+        };
+      }
       if (agentType !== "construire" && agentType !== "planifier" && agentType !== "discuter") return null;
       const b = resolveBinding(agentType);
       if (!b.card || !b.profile.agentic || !supportsTools(b.provider)) return null;
@@ -591,10 +623,23 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
           const imgReport = await checkAndRepairImages(projectDir);
           const line = formatImageCheck(imgReport);
           if (line) push(`  ${line}`);
-          if (imgReport.unrepairable.length > 0 && relances < selfRelanceMax) {
+          // (L123) Filet de DERNIER RECOURS : toute image encore cassée (URL Pexels morte
+          // non réparable OU chemin local /images/x.jpg inventé) est remplacée par la
+          // banque locale. On ne renvoie l'Élève QUE si la banque ne peut rien garantir
+          // (vide/insuffisante). Sans banque (gate off), on garde l'ancien comportement.
+          let stillBroken: string[] = imgReport.unrepairable;
+          if (process.env.ELEVE_IMAGE_BANK !== "off") {
+            const gr = await guaranteeLocalImages(projectDir, imageBank);
+            const gl = formatGuarantee(gr);
+            if (gl) push(`  ${gl}`);
+            stillBroken = gr.stillBroken;
+          }
+          if (stillBroken.length > 0 && relances < selfRelanceMax) {
             relances++;
-            push(`↻ Images cassées non réparables — renvoi de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
-            nudge = buildImageRepairNudge(imgReport);
+            push(`↻ Images cassées non garanties — renvoi de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+            nudge = buildImageRepairNudge(imgReport) ||
+              `⚠ ${stillBroken.length} image(s) cassée(s) :\n${stillBroken.map((u) => `- ${u}`).join("\n")}\n` +
+              `→ Remplace CHACUNE par une vraie photo via l'outil chercher_image (copie l'URL EXACTE), puis check_build et finish.`;
             continue;
           }
         } catch {

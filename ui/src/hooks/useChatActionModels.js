@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { ACTION_MODELS_KEY, CHAT_ACTIONS, loadActionModels } from "../components/chat/helpers.js";
+import { useEleveLabel } from "./useEleveLabel.js";
 
 // Modèle par action (Construire/Planifier/Discuter), configurable + mémorisé.
 // Extrait de Chat.jsx sans changement de comportement. `clearAwaitingApply` est
@@ -9,6 +10,7 @@ export function useChatActionModels(onChatMode, clearAwaitingApply) {
   const [actionModels, setActionModels] = useState(loadActionModels);
   const [activeAction, setActiveAction] = useState("construire"); // bouton actif (highlight + planificateur)
   const [modelMenuFor, setModelMenuFor] = useState(null);         // id de l'action dont le menu modèle est ouvert
+  const eleveLabel = useEleveLabel(); // nom RÉEL du cerveau local (Réglages → brain-registry)
 
   useEffect(() => {
     try { localStorage.setItem(ACTION_MODELS_KEY, JSON.stringify(actionModels)); } catch { /* localStorage indispo */ }
@@ -42,5 +44,5 @@ export function useChatActionModels(onChatMode, clearAwaitingApply) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return { actionModels, activeAction, setActiveAction, modelMenuFor, setModelMenuFor, pickAction, setActionModel };
+  return { actionModels, activeAction, setActiveAction, modelMenuFor, setModelMenuFor, pickAction, setActionModel, eleveLabel };
 }

@@ -21,10 +21,13 @@ export const readFileText = (file) =>
     reader.readAsText(file);
   });
 
-/* ── Modèles proposés dans le sélecteur (badge) ───────────────────────────── */
+/* ── Modèles proposés dans le sélecteur (badge) ─────────────────────────────
+   "eleve" n'a pas de nom fixe — c'est le cerveau local configuré dans Réglages
+   (brain-registry.json). Le libellé ci-dessous est le REPLI ; ModelBadge le
+   surcharge avec le vrai nom via useEleveLabel(). */
 export const MODELS = [
   { id: "sonnet", label: "Claude Sonnet 4.6" },
   { id: "opus",   label: "Claude Opus 4.8"   },
   { id: "haiku",  label: "Claude Haiku 4.5"  },
-  { id: "eleve",  label: "Élève · GLM-5.2"   },
+  { id: "eleve",  label: "Élève"              },
 ];

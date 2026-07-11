@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { buildEleveTools } from "../eleve-tools/eleve-tools.js";
+import { buildEleveTools, globToRegExp } from "../eleve-tools/eleve-tools.js";
 import { toOpenAITools } from "../kernel/kernel-mcp.js";
 
 let pass = 0;
@@ -26,6 +26,9 @@ const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eleve-tools-"));
 fs.mkdirSync(path.join(dir, "src"), { recursive: true });
 fs.writeFileSync(path.join(dir, "src", "App.jsx"), "export default function App(){\n  return <h1>Bonjour Mango</h1>;\n}\n");
 fs.writeFileSync(path.join(dir, "package.json"), '{"name":"tmp"}\n');
+fs.writeFileSync(path.join(dir, "src", "index.css"), "body { margin: 0; }\n");
+fs.mkdirSync(path.join(dir, "src", "components"), { recursive: true });
+fs.writeFileSync(path.join(dir, "src", "components", "Header.tsx"), "export const Header = () => null;\n");
 fs.mkdirSync(path.join(dir, "node_modules", "react"), { recursive: true });
 fs.writeFileSync(path.join(dir, "node_modules", "react", "index.js"), "// bruit à ignorer\n");
 
@@ -57,6 +60,20 @@ async function run() {
   const ls = await reg.invoke("list_files", {});
   check("liste src/App.jsx", ls.text.includes("src/App.jsx"));
   check("exclut node_modules", !ls.text.includes("node_modules"));
+
+  console.log("\n[3b] list_files avec pattern (Glob, #182 suite)");
+  check("globToRegExp('*.css') matche un fichier plat", globToRegExp("*.css").test("index.css"));
+  check("globToRegExp('*.css') NE matche PAS un sous-dossier", !globToRegExp("*.css").test("src/index.css"));
+  check("globToRegExp('src/**/*.tsx') matche en profondeur", globToRegExp("src/**/*.tsx").test("src/components/Header.tsx"));
+  check("globToRegExp('**/*.tsx') matche à tout niveau", globToRegExp("**/*.tsx").test("src/components/Header.tsx") && globToRegExp("**/*.tsx").test("Header.tsx"));
+  const lsTsx = await reg.invoke("list_files", { pattern: "**/*.tsx" });
+  check("list_files pattern=**/*.tsx ne renvoie QUE le .tsx", lsTsx.text.includes("Header.tsx") && !lsTsx.text.includes("App.jsx") && !lsTsx.text.includes("index.css"));
+  const lsCss = await reg.invoke("list_files", { pattern: "**/*.css" });
+  check("list_files pattern=**/*.css cible bien index.css", lsCss.text.includes("index.css") && !lsCss.text.includes(".tsx"));
+  const lsNone = await reg.invoke("list_files", { pattern: "**/*.vue" });
+  check("list_files pattern sans correspondance → message clair, pas d'erreur", lsNone.text.includes("aucun fichier ne correspond") && !lsNone.isError);
+  const lsBad = await reg.invoke("list_files", { pattern: "[" });
+  check("list_files motif glob dégénéré → pas de crash", typeof lsBad.text === "string");
 
   console.log("\n[4] search_code");
   const found = await reg.invoke("search_code", { query: "Bonjour Mango" });

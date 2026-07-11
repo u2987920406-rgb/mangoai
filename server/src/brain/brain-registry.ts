@@ -51,9 +51,14 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   orchestrateur: { provider: "claude", model: "opus", timeoutMs: 30_000 },
   architecte:    { provider: "claude", model: "opus", timeoutMs: 45_000 },
   // #162 — `codeur` EST l'Élève (les « mains » qui codent en Construire/Discuter) :
-  // GLM-5.2 via Ollama Cloud (provider openai). Source de vérité du cerveau Élève
-  // (lu par globalFallback) ; l'endpoint + la clé restent dans .env (ELEVE_API_URL/KEY).
-  codeur:        { provider: "openai", model: "glm-5.2:cloud", timeoutMs: 120_000 },
+  // Source de vérité UNIQUE du cerveau Élève, lue en DIRECT par tout le serveur
+  // (globalFallback() + eleve/provider.ts::syncEleveFromBrainRegistry(), sans
+  // redémarrage — Raf, 2026-07-11 : « un seul endroit pour changer de modèle »).
+  // Qwythos-9B-v2 Q6_K via Ollama LOCAL : souveraineté prouvée en réel (galerie
+  // générée, coût $0, 0 image cassée). Ce défaut n'intervient QUE si brain-registry.json
+  // est absent/corrompu (repli de dernier recours) ; en usage normal, la valeur
+  // vivante vient du fichier, éditable dans Réglages → Atelier des cerveaux.
+  codeur:        { provider: "ollama", model: "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K", timeoutMs: 120_000 },
   vision:        { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 60_000 },
   designer_ux:   { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
   extracteur:    { provider: "claude", model: "haiku", timeoutMs: 30_000 },
@@ -223,6 +228,23 @@ export function saveBrainRegistry(registry: Record<AgentId, BrainConfig>): void 
 /** Le cerveau d'un agent donné (toujours défini, repli sur le défaut). */
 export function getBrain(agentId: AgentId): BrainConfig {
   return loadBrainRegistry()[agentId] ?? { ...DEFAULT_REGISTRY[agentId] }
+}
+
+/**
+ * Nom court lisible d'un identifiant de modèle brut, pour affichage (statut de
+ * chat, logs). Raf (2026-07-11) : Réglages (Atelier des cerveaux → brain-registry.json)
+ * doit être la SEULE source du nom affiché ailleurs — jamais un libellé codé en
+ * dur ni une valeur .env figée. Miroir du helper UI (ui/src/components/chat/helpers.js).
+ * Ex. "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K" → "Qwythos 9B v2 (Q6)".
+ */
+export function shortModelLabel(raw: string | undefined | null): string | null {
+  if (!raw) return null
+  const afterSlash = raw.split("/").pop()!
+  const [name, tag] = afterSlash.split(":")
+  const clean = name.replace(/-GGUF$/i, "").replace(/[-_]+/g, " ").trim()
+  const quant = tag ? tag.replace(/^([Qq]\d+).*$/, "$1").toUpperCase() : ""
+  if (!tag) return clean
+  return quant && quant !== tag.toUpperCase() ? `${clean} (${quant})` : `${clean} ${tag}`
 }
 
 function cloneDefaults(): Record<AgentId, BrainConfig> {

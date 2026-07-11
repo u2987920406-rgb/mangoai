@@ -32,6 +32,32 @@ function resolveInside(root: string, rel: string): string {
   return confinePath(root, rel, "read");
 }
 
+/** Convertit un motif glob simple (`*`, `**`, `?`) en RegExp ancrée. Pure,
+ * dépendance-free (2026-07-11, #182 suite — comble le seul vrai gap Glob vs
+ * Claude : `list_files` listait tout, sans filtre par motif). */
+export function globToRegExp(glob: string): RegExp {
+  let re = "^";
+  for (let i = 0; i < glob.length; i++) {
+    const c = glob[i];
+    if (c === "*") {
+      if (glob[i + 1] === "*") {
+        re += ".*";
+        i++;
+        if (glob[i + 1] === "/") i++; // "**/foo" → ne force pas un "/" littéral en trop
+      } else {
+        re += "[^/]*";
+      }
+    } else if (c === "?") {
+      re += "[^/]";
+    } else if (".+^${}()|[]\\".includes(c)) {
+      re += "\\" + c;
+    } else {
+      re += c;
+    }
+  }
+  return new RegExp(re + "$");
+}
+
 /** Liste récursive des fichiers (hors IGNORE), bornée à MAX_LIST. */
 function walk(dir: string, root: string, out: string[]): void {
   let entries: fs.Dirent[];
@@ -89,8 +115,11 @@ export function buildEleveTools(projectDir: string): ToolRegistry {
     {
       name: "list_files",
       description:
-        "Liste les fichiers du projet (récursif, hors node_modules/.git/dist). Argument optionnel `dir` pour un sous-dossier.",
-      inputSchema: { dir: z.string().optional().describe("Sous-dossier à lister (défaut : racine du projet)") },
+        "Liste les fichiers du projet (récursif, hors node_modules/.git/dist). Argument optionnel `dir` pour un sous-dossier, `pattern` pour filtrer par motif glob (ex. 'src/**/*.tsx', '*.css') — équivalent de Glob.",
+      inputSchema: {
+        dir: z.string().optional().describe("Sous-dossier à lister (défaut : racine du projet)"),
+        pattern: z.string().optional().describe("Motif glob de filtrage, relatif à la racine du projet (ex. 'src/**/*.tsx', '**/*.css')"),
+      },
       handler: (args) => {
         const sub = args.dir ? String(args.dir) : ".";
         let base: string;
@@ -100,9 +129,15 @@ export function buildEleveTools(projectDir: string): ToolRegistry {
           return { text: (e as Error).message, isError: true };
         }
         if (!fs.existsSync(base)) return { text: `dossier introuvable : ${sub}`, isError: true };
-        const out: string[] = [];
+        let out: string[] = [];
         walk(base, root, out);
-        if (!out.length) return { text: "(aucun fichier)" };
+        const pattern = args.pattern ? String(args.pattern).trim() : "";
+        if (pattern) {
+          let re: RegExp;
+          try { re = globToRegExp(pattern); } catch { return { text: `motif glob invalide : ${pattern}`, isError: true }; }
+          out = out.filter((f) => re.test(f));
+        }
+        if (!out.length) return { text: pattern ? `(aucun fichier ne correspond à « ${pattern} »)` : "(aucun fichier)" };
         return { text: out.join("\n") + (out.length >= MAX_LIST ? `\n… [limité à ${MAX_LIST} fichiers]` : "") };
       },
     },
