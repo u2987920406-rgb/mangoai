@@ -64,6 +64,19 @@ Ces fonctions utilisent directement `query()` (abonnement Claude Code, $0) et n'
 | Recherche web | `llm-engine.ts` (`claudeWebResearch`) | **pas d'équivalent local** : `WebSearch` est un outil Claude ; souveraineté = brancher un outil de recherche local |
 | Utilitaires (`check-key`, `compare-eleves`) | — | hors périmètre produit |
 
+## Suite 2026-07-12 (SOUV-B) — audit de PARITÉ D'OUTILS (distinct de l'audit de PROVIDER ci-dessus)
+
+L'audit ci-dessus recense « quelle fonction utilise quel cerveau ». Un second audit, complémentaire, a recensé « quel OUTIL Claude possède mais que l'Élève n'a pas » — le chemin de construction peut déjà tourner 100 % local (Niveau 1), mais tournait avec **moins d'outils de vérification** que Claude. 10 écarts trouvés et fermés en une nuit :
+- Sharingan (extraction de site 6 couches) exposé directement à l'Élève ([[sharingan-vision-eleve]]) ;
+- `vois_ecran`/`lire_image` passés à défaut ON (parité avec le Snapshot permanent de Claude) ;
+- personas `builder`/`controleur` pour `delegate` (équivalent du sous-agent `Agent` de Claude) ;
+- nouvel outil `verifie_design` (auto-critique WCAG/palette/motion en cours de tâche) ;
+- `list_files` gagne un filtre glob ;
+- `brain-registry.json` devient source vivante (fin des 5 sites `process.env.ELEVE_MODEL` figés) ;
+- [[mangoqa]] nourri en vraies données de production via 3 nouveaux events Bus (`render.integrity`/`parcours.result`/`gate.verdict`), quel que soit le cerveau qui a construit l'app.
+
+**Règle retenue** (mémoire `feedback_souverainete_sans_regression`) : le critère de succès n'est pas « le cerveau local tourne techniquement » mais **« aucune régression de qualité/fiabilité perçue »** face à Claude — chaque capacité de vérification côté Claude doit avoir un équivalent côté Élève, sans attendre que Raf le remarque en l'utilisant. Détail complet → `historique.md`, journal 2026-07-11/12.
+
 ## Prochaines pierres (pour fermer la frontière 🔴)
 
 1. **Compaction / review / Lab** → router via `getBrain()` + `<FEATURE>_PROVIDER` (même patron que le Niveau 2) — gain net, faible risque.

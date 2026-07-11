@@ -2,8 +2,8 @@
 type: entite
 tags: [architecture, qa, audit]
 statut: actif
-sources: [statut, fondation, historique]
-maj: 2026-07-03
+sources: [statut, fondation, historique, SOUV-B]
+maj: 2026-07-12
 ---
 
 # MangoQA
@@ -26,10 +26,14 @@ Contrôle qualité en arrière-plan. Il lit le flux du [[kernel]] (exporté en `
 
 ⚠ **Bug chokidar documenté** : le signal de phase doit être écrit via Node.js, pas PowerShell/MINGW.
 
+## MangoQA nourri en vraies données de production (SOUV-B, 2026-07-12)
+
+Jusqu'ici, l'**Œil Design** (③ ci-dessus) calculait un `briefDrift` (comparaison palette référence ↔ CSS rendu) mais restait **dormant** en pratique : aucun event Bus `design.reference` n'était jamais publié avec `source:"sharingan"` — seuls des events `source:"perfect-plan"` existaient. Côté MangoOS, [[sharingan-vision-eleve]] a été câblé pour publier `design.reference` à chaque extraction Sharingan réussie (réel `sharinganAnalyze`), et 3 nouveaux events Bus ont été ajoutés dans `kernel/kernel-design-events.ts` — **`render.integrity`**, **`parcours.result`**, **`gate.verdict`** — câblés respectivement dans `taste-render.ts` (intégrité du rendu capturé), `relay-closure.ts` (résultat du parcours de clôture), `eleve-gate.ts` (verdict du [[gardien-cloture]] : intention/WCAG/équilibre/placeholders/tests/goût). Ces events sont publiés **quel que soit le cerveau** qui a construit l'app (local ou Claude) — MangoQA cesse d'être aveugle aux apps produites par le pipeline Élève souverain. Vérifié bout-en-bout entre les 2 dépôts (écriture côté MangoOS → lecture côté MangoQA via `.mangoqa/bus-events.jsonl`), sans aucune modification de code côté MangoQA.
+
 ## Liens
 
-Observe le [[kernel]] (via l'observateur `*` du Bus) · indépendant de [[boucle-curation]] et [[eleve-local]] · architecture détaillée dans [[fondation]] §V.
+Observe le [[kernel]] (via l'observateur `*` du Bus) · indépendant de [[boucle-curation]] et [[eleve-local]] · architecture détaillée dans [[fondation]] §V · reçoit désormais les events Sharingan de [[sharingan-vision-eleve]] · cf. [[audit-souverainete]] pour le contexte de l'audit qui a fermé cet écart.
 
 ## Sources
 
-[[fondation]] §V (les 3 visages) · [[statut]] #110, #111 · [[historique]].
+[[fondation]] §V (les 3 visages) · [[statut]] #110, #111, SOUV-B · [[historique]] (2026-07-11/12).
