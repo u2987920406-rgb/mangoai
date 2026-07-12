@@ -7,6 +7,7 @@ import BottomBar from "./home/BottomBar.jsx";
 import IdleScreen from "./home/IdleScreen.jsx";
 import GraduatePanel from "./home/GraduatePanel.jsx";
 import ConversationThread from "./home/ConversationThread.jsx";
+import ContextGauge from "./ContextGauge.jsx";
 
 /* ── Page d'accueil ──────────────────────────────────────────────────────── */
 export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLauncher, onOpenSettings, model = "sonnet", onModel }) {
@@ -27,6 +28,10 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
   const [graduateOpen, setGraduateOpen] = useState(false); // proposition/formulaire « ouvrir dans l'atelier »
   const [graduateName, setGraduateName] = useState("");
   const [gradBusy, setGradBusy] = useState(false);
+  // (2026-07-13) Jauge de contexte — l'Accueil n'a pas de Header comme l'Atelier ;
+  // le fetch JSON de /api/home-chat porte contextTokens/contextWindow (voir
+  // home-routes.ts). { tokens, window } | null.
+  const [context, setContext] = useState(null);
   const inputRef = useRef(null);
   const bottomRef = useRef(null);
   const welcomeFileRef = useRef(null);
@@ -179,6 +184,9 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       const withAnswer = [...history, { role: "assistant", content: data.text ?? "Erreur de réponse." }];
       setMessages(withAnswer);
       upsertConversation(id, withAnswer);
+      if (data.contextTokens && data.contextWindow) {
+        setContext({ tokens: data.contextTokens, window: data.contextWindow });
+      }
       // Mango a détecté une intention de CONSTRUIRE → propose de passer à l'atelier (Raf valide).
       if (data.suggestGraduate) setGraduateOpen(true);
     } catch (e) {
@@ -306,6 +314,16 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       >
         <ArrowLeft size={16} />
       </button>
+
+      {/* Jauge de contexte — fenêtre PHYSIQUE du cerveau actif, pas économique (même à $0) */}
+      {context && (
+        <div
+          className="absolute right-4 top-4 z-20 flex h-9 items-center rounded-xl
+                     border border-edge/60 bg-panel/80 px-3 backdrop-blur"
+        >
+          <ContextGauge tokens={context.tokens} window={context.window} />
+        </div>
+      )}
 
       {/* Fil de messages */}
       <ConversationThread

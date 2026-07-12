@@ -3,6 +3,7 @@ import { ArrowDownAZ, ArrowLeft, Brain, Building2, Check, ChevronDown, Clock, Cl
 import Dropdown, { DropdownItem } from "./Dropdown.jsx";
 import { NEUTRAL, t } from "../neutral.js";
 import { useEleveLabel } from "../hooks/useEleveLabel.js";
+import ContextGauge from "./ContextGauge.jsx";
 
 const DEPLOY_TARGETS = [
   { id: "cloudflare", label: "Cloudflare Pages", hint: "Edge gratuit — défaut", icon: Cloud },
@@ -404,18 +405,3 @@ function DeleteProjectButton({ onConfirm }) {
   );
 }
 
-function ContextGauge({ tokens, window: win }) {
-  const pct = Math.min(100, Math.round((tokens / win) * 100));
-  const color = pct >= 70 ? "bg-err" : pct >= 50 ? "bg-warn" : "bg-ok";
-  return (
-    <span
-      className="flex items-center gap-1.5 font-mono text-xs text-faint"
-      title={`Contexte : ${Math.round(tokens / 1000)}k / ${Math.round(win / 1000)}k tokens — compression auto au-delà de 70 %`}
-    >
-      <span className="h-1.5 w-12 overflow-hidden rounded-full bg-edge-soft">
-        <span className={`block h-full ${color}`} style={{ width: `${pct}%` }} />
-      </span>
-      {pct}%
-    </span>
-  );
-}

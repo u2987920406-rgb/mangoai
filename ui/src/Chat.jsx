@@ -492,6 +492,12 @@ export default function Chat({
         }
         if (!ev.ok) push({ role: "error", text: `L'agent s'est arrêté : ${ev.error}` });
         break;
+      // (2026-07-13) Jauge de contexte côté Élève (Ollama local) — la jauge du Header
+      // n'était alimentée QUE par le "result" natif du SDK Claude ; l'Élève envoie
+      // son propre event dédié (estimation, cf. chat-route.ts::sendEleveContext).
+      case "context":
+        if (ev.tokens && ev.window) onContext?.({ tokens: ev.tokens, window: ev.window });
+        break;
       case "error":
         push({ role: "error", text: ev.message ?? ev.error });
         break;

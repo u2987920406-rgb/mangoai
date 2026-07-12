@@ -41,6 +41,8 @@ import { dispatch } from "../brain.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "../scenario.js";
 import { flag } from "../flags.js";
 import { getBrain, shortModelLabel } from "../brain/brain-registry.js";
+import { estimateTokens, resolveContextWindow } from "../tokenizer.js";
+import { buildEleveContext } from "../eleve-compaction.js";
 import { temporalContext } from "../temporal-context.js";
 import { domainTemplateSection } from "../template-library.js";
 import { isAgentBusy, tryAcquireAgent, releaseAgent } from "../agent/agent-lock.js";
@@ -206,6 +208,24 @@ app.post("/api/chat", async (req, res) => {
   // Object refs (not plain lets): assigned inside streamAgentTurn's closure,
   // read in the finally block — TS control-flow can't track the assignment.
   const lastContext: { current: { tokens: number; window: number } | null } = { current: null };
+  // (2026-07-13) Jauge de contexte pour l'Élève — inexistante avant : la jauge du
+  // Header n'était alimentée QUE côté Claude (event `result` natif du SDK). Un
+  // cerveau $0 n'a AUCUNE raison d'être un angle mort du contexte : sa fenêtre est
+  // PHYSIQUE (num_ctx Ollama, 16384 par défaut, llm-transport.ts), pas économique —
+  // la dépasser tronque silencieusement le prompt système depuis le DÉBUT (risque
+  // réel, cf. l'incident « Qwythos niait connaître Sharingan »). Estimation heuristique
+  // (tokenizer.ts, ~3.5 car./token) faute de compter les tokens RÉELS renvoyés par
+  // Ollama (prompt_eval_count non exposé par le transport actuel) — honnête, pas exact.
+  function sendEleveContext(provider: string | undefined, ...texts: string[]): void {
+    try {
+      const tokens = estimateTokens(texts.join("\n")).count;
+      const window = resolveContextWindow(provider ?? (ELEVE_PROVIDER === "openai" ? "openai" : "ollama"));
+      lastContext.current = { tokens, window };
+      send({ type: "context", tokens, window });
+    } catch {
+      // Jauge best-effort : une erreur d'estimation ne doit jamais casser le tour.
+    }
+  }
   const lastResult: { current: { costUsd: number; numTurns: number } | null } = { current: null };
   // Élève relay outcome (jalon D), folded into this turn's metrics line.
   const relayMeta: { current: { resolvedBy: "eleve" | "maitre" | "none"; attempts: number } | null } = { current: null };
@@ -387,13 +407,20 @@ app.post("/api/chat", async (req, res) => {
       send({ type: "status", text: `💬 L'agent ${eleveName} (${agentTier}) réfléchit…` });
       const system = assembleSystemPrompt({ mode: "discuss", model: "eleve", projectDir: dir });
       // L'Élève n'a pas de session SDK persistante comme Claude : on lui repasse
-      // le fil récent comme contexte (loadHistory lit les tours ANTÉRIEURS ; le
-      // message courant est ajouté en fin — il sera persisté dans le `finally`).
-      const recent = loadHistory(dir)
-        .filter((e) => e.role === "user" || e.role === "agent")
-        .slice(-12)
-        .map((e) => `${e.role === "user" ? "Humain" : "MangoOS"} : ${e.text}`)
-        .join("\n");
+      // le fil récent comme contexte. (2026-07-13) Compaction dynamique — plus une
+      // fenêtre fixe de 12 tours (loadHistory().slice(-12)) : buildEleveContext
+      // ne résume QUE si la taille réelle dépasse le seuil (70 % de la fenêtre
+      // Ollama), avec l'ÉLÈVE LUI-MÊME comme résumeur (même patron que le /compact
+      // de Claude, sans la session SDK qu'il n'a pas — voir eleve-compaction.ts).
+      const historyEntries = loadHistory(dir).filter(
+        (e): e is ChatEntry & { role: "user" | "agent" } => e.role === "user" || e.role === "agent",
+      );
+      const recent = await buildEleveContext(
+        dir,
+        historyEntries,
+        (sys, user) => chatEleve(sys, user, binding.model, binding.provider, { baseUrl: binding.baseUrl, apiKeyEnv: binding.apiKeyEnv }),
+        resolveContextWindow(binding.provider),
+      );
       const userMsg = recent ? `${recent}\n\nHumain : ${prompt}` : prompt;
       // Discuter AGENTIQUE EN LECTURE : quand le cerveau gère les outils (GLM cloud
       // function-calling), l'Élève peut VRAIMENT lire le projet (list/read/search,
@@ -416,6 +443,7 @@ app.post("/api/chat", async (req, res) => {
       }
       record("agent", answer);
       send({ type: "text", text: answer });
+      sendEleveContext(binding.provider, system, userMsg, answer);
       lastResult.current = { costUsd: 0, numTurns: 1 };
       relayMeta.current = { resolvedBy: "eleve", attempts: 1 };
     } else if (useEleve) {
@@ -506,6 +534,10 @@ app.post("/api/chat", async (req, res) => {
         record("error", verdict);
         send({ type: "error", message: verdict });
       }
+      // Approximation (le prompt système du DÉBUT du tour, pas le pic réel atteint
+      // pendant la boucle d'outils de runRelay qui n'est pas instrumentée pour ça) —
+      // mieux qu'aucun signal, honnêtement partiel plutôt que faussement précis.
+      sendEleveContext(buildBinding?.provider, systemFull, agentPrompt, verdict);
     } else {
       // Resume the project's previous conversation if the client didn't pass one
       const effectiveSession = sessionId ?? getSession(projectName);

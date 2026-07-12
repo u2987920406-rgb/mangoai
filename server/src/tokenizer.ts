@@ -40,6 +40,21 @@ export function estimateTokens(text: string): TokenResult {
   return { count, segments }
 }
 
+/**
+ * Fenêtre de contexte à utiliser pour la jauge, selon le provider (2026-07-13).
+ * Ollama local : fenêtre PHYSIQUE réelle (num_ctx, 16384 par défaut,
+ * llm-transport.ts) — un cerveau $0 a quand même un plafond dur, pas économique.
+ * Autre (cloud/openai-compat) : fenêtre large par défaut (pas de risque pratique
+ * connu ici, même logique que DEFAULT_CONTEXT_WINDOW ci-dessus).
+ */
+export function resolveContextWindow(provider: string | undefined): number {
+  if (provider === "ollama") {
+    const n = Number(process.env.OLLAMA_NUM_CTX)
+    return Number.isFinite(n) && n > 0 ? n : 16384
+  }
+  return DEFAULT_CONTEXT_WINDOW
+}
+
 export function estimateCosts(tokenCount: number): CostBreakdown[] {
   // Tarifs en USD / 1K tokens (valeurs Anthropic publiques, juin 2026).
   // inputCostPer1k = prix d'entrée ; outputCostPer1k = prix de sortie.

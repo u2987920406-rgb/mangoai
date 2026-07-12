@@ -15,6 +15,8 @@ import { FIDELITY_CLAUSE } from "../scenario.js";
 import { brainArchitectureClause } from "../capabilities.js";
 import { selfKnowledgePromptSection } from "../self-knowledge.js";
 import { WORKSPACE_DIR } from "../projects.js";
+import { estimateTokens, resolveContextWindow } from "../tokenizer.js";
+import { buildEleveContext, type CompactableEntry } from "../eleve-compaction.js";
 import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
 import { runFrontierOrchestration } from "../frontier-orchestration.js";
 import { brain } from "../brain.js";
@@ -35,6 +37,17 @@ export function registerHomeRoutes(app: express.Express): void {
 app.get("/api/flags/home-quick-model", (_req, res) => {
   res.json({ enabled: flag("HOME_QUICK_MODEL") });
 });
+
+// (2026-07-13) L'Accueil n'a pas d'historique fichier (history.ts) — la conversation
+// vit côté CLIENT (Home.jsx, localStorage) et arrive ENTIÈRE à chaque requête, sans
+// borne (pire que l'ancienne fenêtre fixe de 12 tours de l'Atelier : ici, RIEN ne
+// limitait la taille avant ce chantier). `ts` synthétique (index séquentiel) car les
+// messages du client n'ont pas de vrai horodatage — buildEleveContext ne s'en sert
+// que pour ORDONNER/comparer, une chaîne triable suffit.
+function toCompactableEntries(messages: Array<{ role: string; content: string }>): CompactableEntry[] {
+  return messages
+    .map((m, i) => ({ role: (m.role === "user" ? "user" : "agent") as "user" | "agent", text: m.content, ts: String(i).padStart(8, "0") }));
+}
 
 // ── Chat d'accueil — conversation directe avec MangoOS (sans projectName) ──
 app.post("/api/home-chat", async (req, res) => {
@@ -79,6 +92,16 @@ app.post("/api/home-chat", async (req, res) => {
     // réellement appeler un outil (regarde_site_web, chercher_web, vois_ecran…).
     if (model === "eleve" && supportsTools(ELEVE_PROVIDER) && convId) {
       const scratch = ensureHomeScratch(convId);
+      // (2026-07-13) Compaction dynamique — l'ancien `history` (TOUS les tours,
+      // sans borne) est remplacé par un contexte qui ne résume QUE si la taille
+      // réelle dépasse le seuil, avec l'ÉLÈVE LUI-MÊME comme résumeur (cf.
+      // eleve-compaction.ts — même idée que le /compact de Claude, sans sa session).
+      const eleveHistory = await buildEleveContext(
+        scratch,
+        toCompactableEntries(messages.slice(0, -1)),
+        (sys, user) => chatEleve(sys, user),
+        resolveContextWindow("ollama"),
+      );
       const sys = [
         flag("TEMPORAL_AWARENESS") ? temporalContext() : "",
         "Tu es MangoOS, l'assistant IA personnel de Raf — chaleureux, direct, concis. Réponds en français sauf si on te parle en anglais.",
@@ -88,7 +111,7 @@ app.post("/api/home-chat", async (req, res) => {
         brainArchitectureClause(),
         selfKnowledgePromptSection(WORKSPACE_DIR),
         "Tu es ici en posture DISCUTER (lire, analyser, conseiller) — tu n'écris pas de fichiers et ne construis pas d'app ICI. Quand Raf veut CONSTRUIRE ou PLANIFIER, propose-lui de passer dans l'ATELIER (workspace) : « on ouvre l'atelier ? j'y emporte nos fichiers et le contexte » — c'est LUI qui valide.",
-        history ? `\n— Historique —\n${history}` : "",
+        eleveHistory ? `\n— Historique —\n${eleveHistory}` : "",
       ].filter(Boolean).join("\n");
       // #182 É2 — le registre offert suit le BESOIN de la tâche, pas la posture : une
       // pièce jointe dans .assets/ ou un mot-clé « regarde/rends » ÉLARGIT les capacités
@@ -106,7 +129,12 @@ app.post("/api/home-chat", async (req, res) => {
       const r = await askEleveAgentic(sys, last.content, buildEleveDiscussTools(scratch, homeCaps), {
         model: getBrain("codeur").model || process.env.ELEVE_MODEL,
       });
-      res.json({ text: (r.text ?? "").trim() || "(réponse vide de l'Élève)", suggestGraduate });
+      const answerText = (r.text ?? "").trim() || "(réponse vide de l'Élève)";
+      // (2026-07-13) Jauge de contexte — même logique que chat-route.ts::sendEleveContext :
+      // la fenêtre Ollama (num_ctx) est un plafond PHYSIQUE, pas économique, même à $0.
+      const contextTokens = estimateTokens(`${sys}\n${last.content}\n${answerText}`).count;
+      const contextWindow = resolveContextWindow(getBrain("codeur").provider);
+      res.json({ text: answerText, suggestGraduate, contextTokens, contextWindow });
       return;
     }
 
@@ -126,12 +154,16 @@ app.post("/api/home-chat", async (req, res) => {
       history ? `\n— Historique —\n${history}` : "",
     ].filter(Boolean).join("\n");
     let text: string;
+    // (2026-07-13) Provider retenu pour la jauge de contexte — reflète le cerveau
+    // RÉELLEMENT utilisé dans la branche empruntée (cf. sendEleveContext, chat-route.ts).
+    let providerForContext: string | undefined = ELEVE_PROVIDER === "openai" ? "openai" : "ollama";
     if (model === "eleve") {
       text = await chatEleve(system, last.content);
     } else if (model === "qwen") {
       // Qwen (« KUEN ») — VL/juge local via Ollama Cloud, souverain. Routage explicite du provider.
       const { askLLM } = await import("../llm/llm-engine.js");
       text = await askLLM(system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
+      providerForContext = "ollama";
     } else {
       // ── Cerveau NON-ÉLÈVE (Fable/Opus/Sonnet/Haiku) — chemin TEXTE PUR (askLLM sans
       // outils). #182 D3/É5 : ne plus rester SILENCIEUX quand la tâche réclame des outils.
@@ -147,6 +179,7 @@ app.post("/api/home-chat", async (req, res) => {
       // quel modèle Ollama installé) REMPLACE le MODEL_MAP figé comme source du
       // brainOverride. OFF (défaut) → accueilBrain reste null, comportement byte-identique.
       const accueilBrain = flag("HOME_QUICK_MODEL") ? getBrain("accueil") : null;
+      providerForContext = accueilBrain?.provider ?? "claude";
       const brainOverride = accueilBrain ?? { provider: "claude" as const, model: resolvedModel };
       const brainName = accueilBrain && accueilBrain.provider !== "claude"
         ? (accueilBrain.model ?? "Ce cerveau")
@@ -200,7 +233,11 @@ app.post("/api/home-chat", async (req, res) => {
         }
       }
     }
-    res.json({ text, suggestGraduate });
+    // (2026-07-13) Jauge de contexte — voir le point d'entrée agentique plus haut pour
+    // le contexte complet (fenêtre PHYSIQUE, pas économique, même à $0).
+    const contextTokens = estimateTokens(`${system}\n${last.content}\n${text}`).count;
+    const contextWindow = resolveContextWindow(providerForContext);
+    res.json({ text, suggestGraduate, contextTokens, contextWindow });
   } catch (err) {
     res.status(500).json({ error: String(err) });
   }
