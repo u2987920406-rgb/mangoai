@@ -738,7 +738,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -746,6 +746,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [
@@ -1474,7 +1478,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -1482,6 +1486,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [
@@ -2301,7 +2309,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -2309,6 +2317,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [
@@ -3058,7 +3070,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -3066,6 +3078,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [
@@ -3815,7 +3831,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -3823,6 +3839,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [
@@ -4303,7 +4323,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -4311,6 +4331,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [
@@ -4586,7 +4610,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -4594,6 +4618,10 @@
             "url": {
               "type": "string",
               "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            },
+            "partie": {
+              "description": "Partie du transcript à lire si la vidéo est longue (défaut 1, la première)",
+              "type": "number"
             }
           },
           "required": [

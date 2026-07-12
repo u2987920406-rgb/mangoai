@@ -88,17 +88,38 @@ async function run(): Promise<void> {
     check("échec → isError, pas de throw", r.isError === true);
   }
 
-  console.log("\n[7] Transcript long tronqué proprement");
+  console.log("\n[7] Transcript long → PAGINATION (2026-07-12 suite, cerveau local $0)");
   {
     const long: TranscriptResult = {
       ...OK_RESULT,
-      segments: Array.from({ length: 2000 }, (_, i) => ({ tStartS: i, tEndS: i + 1, texte: `phrase numéro ${i} bla bla bla` })),
+      segments: Array.from({ length: 3000 }, (_, i) => ({ tStartS: i, tEndS: i + 1, texte: `phrase numéro ${i} bla bla bla` })),
     };
     const tools = buildEleveYoutubeTools({ fetch: async () => long });
+    const tool = tools.find((t) => t.name === "lis_video_youtube")!;
+
+    const p1 = await tool.handler({ url: "https://youtu.be/abc123" });
+    check("partie 1 : pas d'erreur", !p1.isError);
+    check("partie 1 : numérotée « partie 1/N »", /partie 1\/\d+/.test(p1.text));
+    check("partie 1 : invite à demander la suite", /partie:2/.test(p1.text));
+    check("partie 1 : taille bornée (~20k + marge d'en-tête)", p1.text.length < 21_000);
+
+    const p2 = await tool.handler({ url: "https://youtu.be/abc123", partie: 2 });
+    check("partie 2 : pas d'erreur", !p2.isError);
+    check("partie 2 : numérotée « partie 2/N »", /partie 2\/\d+/.test(p2.text));
+    check("partie 2 : contenu DIFFÉRENT de la partie 1", p2.text !== p1.text);
+
+    // Partie hors bornes → repli sur la dernière partie existante (jamais d'erreur).
+    const pOOB = await tool.handler({ url: "https://youtu.be/abc123", partie: 999 });
+    check("partie hors bornes : pas d'erreur (repli sur la dernière)", !pOOB.isError);
+    check("partie hors bornes : dernière partie, pas d'invite « suite »", !/partie:\d+ pour lire la suite/.test(pOOB.text));
+  }
+
+  console.log("\n[8] Transcript court → une seule partie, jamais de mention de pagination");
+  {
+    const tools = buildEleveYoutubeTools({ fetch: async () => OK_RESULT });
     const r = await tools.find((t) => t.name === "lis_video_youtube")!.handler({ url: "https://youtu.be/abc123" });
-    check("pas d'erreur", !r.isError);
-    check("tronqué avec mention explicite", r.text.includes("tronqué"));
-    check("taille bornée", r.text.length < 14_000);
+    check("mention « partie 1/1 »", r.text.includes("partie 1/1"));
+    check("pas d'invite à lire la suite (vidéo courte)", !r.text.includes("pour lire la suite"));
   }
 
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-youtube-tools : ${pass} pass, ${fail} fail`);
