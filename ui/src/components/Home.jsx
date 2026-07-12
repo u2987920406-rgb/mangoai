@@ -206,6 +206,9 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
     setInput("");
     setAttachments([]);
     setAttachNote("");
+    // Le clic sur Envoyer déplace le focus dessus — le rendre à la zone de
+    // saisie pour pouvoir continuer à écrire sans re-cliquer.
+    requestAnimationFrame(() => inputRef.current?.focus());
     upsertConversation(id, withUser);
     runTurn(withUser, id);
   }

@@ -29,9 +29,10 @@ const reg = buildEleveActionTools(dir);
 
 async function run() {
   console.log("\n[1] Registre complet (lecture Phase 1 + action Phase 2 + planifier #160 + web #154 + parcours #155 + artefact #156 + document #157 + archive + site #159 + sharingan + vision #182)");
-  // (2026-07-12) 24 = 20 (base) + sharingan_url/sharingan_image (toujours actifs,
-  // déterministes) + vois_ecran/lire_image (ELEVE_VISION passé à défaut ON).
-  check("25 outils enregistrés", reg.names().length === 25);
+  // (2026-07-12 suite 2) 27 = 20 (base) + sharingan_url/sharingan_image (toujours actifs,
+  // déterministes) + vois_ecran/lire_image (ELEVE_VISION passé à défaut ON) + regarde_site_web
+  // (vision d'un site externe) + lis_video_youtube (infra #177 enfin câblée).
+  check("27 outils enregistrés", reg.names().length === 27);
   check("outil archive présent (lire_archive)", reg.has("lire_archive"));
   check(
     "write_file/edit_file/run_command/add_dependency/chercher_image/finish présents",
@@ -45,8 +46,10 @@ async function run() {
   check("outil artefact #156 présent (chercher_artefact)", reg.has("chercher_artefact"));
   check("outil document #157 présent (lire_document)", reg.has("lire_document"));
   check("outil site #159 présent (extraire_site)", reg.has("extraire_site"));
+  check("outil vision externe présent (regarde_site_web)", reg.has("regarde_site_web"));
+  check("outil vidéo YouTube présent (lis_video_youtube)", reg.has("lis_video_youtube"));
   check("outils lecture Phase 1 conservés", ["read_file", "list_files", "search_code", "check_build"].every((n) => reg.has(n)));
-  check("toOpenAITools → 25 functions valides", toOpenAITools(reg).length === 25 && toOpenAITools(reg).every((t) => t.type === "function"));
+  check("toOpenAITools → 27 functions valides", toOpenAITools(reg).length === 27 && toOpenAITools(reg).every((t) => t.type === "function"));
   // chercher_image : scène vide → erreur pédagogique (branche déterministe, sans réseau)
   const imgEmpty = await reg.invoke("chercher_image", { scene: "  " });
   check("chercher_image scène vide → isError", imgEmpty.isError === true);
@@ -86,7 +89,7 @@ async function run() {
   {
     const gated = buildEleveActionTools(dir, { allowRun: false });
     check("run_command ABSENT quand allowRun=false", !gated.has("run_command"));
-    check("24 outils (run_command retiré, planifier + etape_faite + web + http + parcours + artefact + document + archive + site + sharingan + vision conservés)", gated.names().length === 24);
+    check("26 outils (run_command retiré, planifier + etape_faite + web + http + parcours + artefact + document + archive + site + sharingan + vision + vision-externe + youtube conservés)", gated.names().length === 26);
     check("lire_archive conservé même pour cerveau faible (lecture, sûr)", gated.has("lire_archive"));
     check("planifier conservé même pour cerveau faible (planifier aide surtout les faibles)", gated.has("planifier"));
     check("chercher_artefact conservé même pour cerveau faible (pur, sûr)", gated.has("chercher_artefact"));

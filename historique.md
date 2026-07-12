@@ -3431,4 +3431,24 @@ Zéro git (en attente de Raf).
 
 Zéro git au-delà des 2 commits explicitement demandés par Raf (« Les deux dépôts ce soir » puis « commit push »).
 
-Zéro git (en attente de Raf).
+---
+
+## Idée #192 — Allégement `statut.md` (2026-07-12) : 690 Ko → 108,5 Ko, −84 %, zéro perte
+
+**Déclencheur** : après la clôture de SOUV-B, Raf demande si `statut.md` (lu en entier à CHAQUE démarrage de session, règle « Démarrage automatique » du `CLAUDE.md`) ne devrait pas être allégé — avec une exigence explicite : *« aucune règle importante ne doit être supprimée »* et une vraie vision long terme d'indexation (l'info doit rester toujours disponible sans être toujours chargée).
+
+**Audit initial (fork dédié, lecture seule)** : sur les 32 entrées « Dernière mise à jour » les plus récentes de `statut.md`, seules 8 avaient un équivalent dans `historique.md` — 24 étaient **orphelines** (aucune trace ailleurs), notamment tout le sprint 2026-07-04→07-09 (CAP « meilleure architecture » 5 chantiers, L111/L112/L113, audit CTXLOOP, boucle de vérification contextuelle Étapes 1/1bis, #165 souveraineté MangoQA, axiomes 16-18). Le plan initial (« vider le journal en confiance ») n'était donc PAS validable tel quel — décision : migrer d'abord, compresser ensuite.
+
+**Phase 1 — Migration des orphelins.** Les 25 entrées orphelines confirmées ont été réécrites (regroupées par sprint, pas copiées mot pour mot) en 3 nouvelles sections `## Journal — 2026-07-07/08/09` insérées à leur place chronologique dans `historique.md`, AVANT toute suppression côté `statut.md`. Une exploration complémentaire a révélé que `statut.md` contenait en réalité **241 entrées de journal**, pas 32 (32 « Dernière mise à jour » + 209 « Précédent » plus anciennes, antérieures au 2026-07-03). Décision assumée avec Raf pour cette partie plus ancienne : pas d'audit exhaustif entrée par entrée (coût disproportionné pour du contenu déjà daté) — filet de sécurité **git history** à la place (`git log -p -- statut.md` récupère le texte brut exact de n'importe quelle version antérieure, rien n'est jamais vraiment perdu même sans migration individuelle).
+
+**Phase 2 — Compression du journal.** Le bloc de 492 Ko (title + intro + 241 entrées reverse-chronologiques) remplacé par un court bloc « Où on en est » (l'entrée la plus récente en clair) + un pointeur explicite vers `historique.md`.
+
+**Phase 3 — Dégraissage des tableaux.** Le tableau « Cap stratégique » (14 lignes, cellules jusqu'à 7 Ko chacune) recompressé en titres courts + pointeurs `[[page-wiki]]`/`→ historique.md` (chaque ligne vérifiée : les initiatives #164/#168/#172/#173/#174/#175 avaient leur détail vivant dans des pages **wiki** dédiées — `[[le-stratege]]`, `[[auto-evolution]]`, `[[hooks]]`, `[[loop]]`, `[[skills]]`, `[[subagents]]` — pas dans `historique.md`, qui est un journal de sessions, pas une fiche de fonctionnalité). Le tableau « Idées en attente/actives » (~180 lignes, ~70 devenues des romans de 700 à 7000+ octets) traité par un second agent dédié : 48 lignes vérifiées (section `## Idée #N` confirmée dans `historique.md`) puis compressées ; ~62 lignes plus légères (400-2000 octets chacune, ~35 Ko cumulés) laissées **telles quelles** par prudence plutôt que compressées à l'aveugle — gain marginal jugé trop faible pour justifier un 3ᵉ audit coûteux.
+
+**Phase 4 — Règle durable.** Nouvelle section dans `CLAUDE.md` (« ⚖️ Discipline de poids `statut.md` — index, jamais archive ») : toute future ligne "Où on en est" reste ~500-800 caractères max, toute future ligne de tableau reste un titre + pointeur, jamais un paragraphe ; le détail complet va systématiquement dans `historique.md`/`wiki/`. Repère de déclenchement pour relancer le protocole : `statut.md` au-delà de ~150-200 Ko.
+
+**Résultat mesuré** : `statut.md` **689 607 → 108 523 octets (−84 %)**. `historique.md` +25 Ko (contenu migré, pas nouveau). `wiki/log.md` : entrée de maintenance datée ajoutée. **Vérification** : format tableau markdown intact (comptage de colonnes), aucune modification de code (tsc/build non concernés). Committé et poussé côté MangoOS (`212b238`, `7c01e91`) ; MangoQA non concerné (vérifié propre).
+
+**Nouvelles entrées** : `statut.md` — idée **#192** (✅ FAIT) + bloc « Où on en est (2026-07-12, matin) ». `wiki/log.md` — entrée de maintenance 2026-07-12. Aucune « limite honnête » introduite (travail de documentation pur, zéro code touché).
+
+Zéro git au-delà des commits explicitement demandés par Raf (« commit git »).

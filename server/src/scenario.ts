@@ -18,7 +18,8 @@ import { CADRAGE_RULES, PLAN_RULES, MOODBOARD_RULES, MOODBOARD_RULES_MVP } from 
 import { WORKSPACE_DIR } from "./projects.js";
 import { DESIGN_SYSTEM_RULES, designSystemPromptSection } from "./design/design-system.js";
 import { identityPromptSection } from "./identity.js";
-import { CAPABILITIES_CLAUSE } from "./capabilities.js";
+import { selfKnowledgePromptSection } from "./self-knowledge.js";
+import { CAPABILITIES_CLAUSE, brainArchitectureClause } from "./capabilities.js";
 import { ARCHITECTURE_RULES, architecturePromptSection } from "./architecture.js";
 import { LEXIQUE_RULES, lexiquePromptSection } from "./lexique.js";
 import { MIROIR_RULES, miroirPromptSection } from "./miroir.js";
@@ -491,6 +492,11 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // profile/memory so the agent reads intent through the user's own language,
   // thinking style and long-term vision. "" when all three layers are empty.
   identity: (ctx) => (tasteOff(ctx) ? "" : identityPromptSection(WORKSPACE_DIR)),
+  // (2026-07-12) Conscience de SOI de MangoOS — TOUJOURS injectée (Discuter ET
+  // Construire, jamais gatée par tasteOff contrairement à identity ci-dessus :
+  // ce n'est pas une donnée de goût, c'est le socle "que sait faire le système").
+  // Voir self-knowledge.ts pour le cas réel qui a motivé ce correctif.
+  selfKnowledge: () => selfKnowledgePromptSection(WORKSPACE_DIR),
   // Idée #120 — skills pertinents (tri sémantique) quand agent.ts les fournit,
   // sinon le dump complet (non-régression / tests).
   skills: (ctx) => ctx.skillsSection ?? skillsPromptSection(),
@@ -564,7 +570,10 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // agent.ts depuis le Blackboard. "" si pas de cible/aucune proche → zéro poids.
   artifacts: (ctx) => ctx.artifactsSection ?? "",
   // Mode discussion — posture conversationnelle (zéro build automatique).
-  discuss: () => DISCUSS_RULES,
+  // (2026-07-12) + brainArchitectureClause() LIVE — sans elle, le cerveau `codeur`
+  // (ex. Qwythos, texte pur) niait platement avoir la vision, ignorant l'existence
+  // du cerveau `vision` (qwen3-vl) du système. Voir capabilities.ts pour le contexte.
+  discuss: () => DISCUSS_RULES + brainArchitectureClause(),
   // #139 Mode Gros Projet — squelette-d'abord : injecté UNIQUEMENT tant que le
   // socle n'est pas posé (skeleton.status !== "done"). Une fois le squelette là,
   // "" → on passe en construction incrément par incrément.
@@ -585,38 +594,39 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
 // and uses the light vision rules. The order reproduces the previous hard-coded
 // concatenation exactly (verified byte-for-byte).
 const SCENARIOS: Record<"mvp" | "elite" | "finition" | "nocturne" | "esthetique" | "discuss" | "projet" | "compose" | "uxui" | "layout", string[]> = {
-  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "designAxiomsLive", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "selfCritique", "skills", "procedures", "superAgent"],
-  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxiomsLive", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  elite: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "designAxiomsLive", "constellations", "supabase", "backend", "analytic", "cadrage", "clarification", "plan", "miroir", "tests", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "selfKnowledge", "notes", "selfCritique", "skills", "procedures", "superAgent"],
+  mvp: ["tutorial", "perfectPlan", "mode", "clientContext", "styleBlend", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxiomsLive", "constellations", "supabase", "backend", "moodboardMvp", "clarification", "visionMvp", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "selfKnowledge", "notes", "skills", "procedures", "superAgent"],
   // Finition reuses the Élite arsenal but drops planning/moodboard (no new
   // feature design) and leads with the finition protocol to frame the phase.
-  finition: ["tutorial", "mode", "clientContext", "base", "finition", "blueprints", "supabase", "backend", "analytic", "tests", "visionElite", "axioms", "designSystem", "components", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
+  finition: ["tutorial", "mode", "clientContext", "base", "finition", "blueprints", "supabase", "backend", "analytic", "tests", "visionElite", "axioms", "designSystem", "components", "multiProject", "architecture", "lexique", "memory", "identity", "selfKnowledge", "skills", "procedures", "superAgent"],
   // Nocturne (#58) — arsenal DESIGN d'Élite (analytic + moodboard complet +
   // visionElite + design-system) en autonomie totale : on RETIRE les portes
   // humaines (cadrage qui sollicite, clarification, Miroir) et le scoping
   // architecte questionneur (PLAN_RULES → remplacé par moodboardNocturne), ainsi
   // que tutorial (pas de tuto la nuit) et tests (build rapide ciblé design).
-  nocturne: ["mode", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "designAxiomsLive", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  nocturne: ["mode", "base", "contexteFirst", "blueprints", "domainTemplate", "designCraft", "designAxioms", "designAxiomsLive", "constellations", "supabase", "backend", "analytic", "moodboardNocturne", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "recovery", "memory", "identity", "selfKnowledge", "notes", "skills", "procedures", "superAgent"],
   // Esthétique (#68) — polish graphique haute fidélité, désormais mode INTERNE
   // (run-finish/run-showcase/design-coach) : projet fonctionnel, on l'embellit.
   // Mène avec le protocole graphicPolish, garde tout l'arsenal qualité
   // (analytic + visionElite + design-system) SANS nouveau scope/plan (pas de
   // cadrage/clarification/Miroir) ni tests ni tutorial.
-  esthetique: ["mode", "clientContext", "base", "graphicPolish", "designCraft", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "memory", "identity", "skills", "procedures", "superAgent"],
+  esthetique: ["mode", "clientContext", "base", "graphicPolish", "designCraft", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "multiProject", "architecture", "lexique", "memory", "identity", "selfKnowledge", "skills", "procedures", "superAgent"],
   // Discussion — conversation naturelle sans build automatique. Zéro arsenal de
   // génération : juste la posture conversationnelle + contexte projet (notes,
   // mémoire, identité) pour que Claude puisse conseiller pertinemment.
-  discuss: ["discuss", "memory", "notes", "identity"],
+  // (2026-07-12) + selfKnowledge — TOUJOURS présent ici aussi, voir self-knowledge.ts.
+  discuss: ["discuss", "memory", "notes", "identity", "selfKnowledge"],
   // #139 Gros Projet — arsenal Élite SANS les portes humaines questionneuses
   // (cadrage/clarification/Miroir/tutorial) NI le scoping Mango Plan : le cadrage
   // EST le Perfect Plan + le manifest. `scaffold` (socle-d'abord) et `projectPlan`
   // (board du chantier) en tête, juste après la posture et le contrat.
-  projet: ["mode", "perfectPlan", "projectPlan", "scaffold", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  projet: ["mode", "perfectPlan", "projectPlan", "scaffold", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "selfKnowledge", "notes", "skills", "procedures", "superAgent"],
   // #138 App composable — arsenal Élite, avec le contrat MangoApp (manifest) et
   // la colonne de données partagée (mangoData) en TÊTE (juste après la posture),
   // pour que l'app se déclare et partage sa donnée dès le premier tour. On retire
   // les portes humaines questionneuses (cadrage/clarification/Miroir) comme en
   // projet : le cadrage, ici, c'est le contrat de suite.
-  compose: ["mode", "mangoAppContract", "mangoData", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "notes", "skills", "procedures", "superAgent"],
+  compose: ["mode", "mangoAppContract", "mangoData", "clientContext", "base", "blueprints", "supabase", "backend", "analytic", "visionElite", "axioms", "designSystem", "preferences", "components", "references", "artifacts", "multiProject", "architecture", "lexique", "memory", "identity", "selfKnowledge", "notes", "skills", "procedures", "superAgent"],
   // Agents sp��cialisés (#145) — ces modes routent via la boucle relay (runRelay),
   // jamais via assembleSystemPrompt. Ces entrées sont des filets de sécurité.
   uxui:   ["mode", "base", "axioms", "memory"],

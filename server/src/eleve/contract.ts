@@ -293,12 +293,21 @@ export async function askEleveAgentic(
   registry: ToolRegistry,
   opts: { model?: string; onTool?: (name: string, args: string) => void; shouldAbort?: () => boolean; maxIterations?: number; antiSpiral?: AntiSpiralCfg; projectDir?: string; actorLabel?: string } = {},
 ): Promise<AgenticResult> {
-  // La boucle à outils n'est branchée que sur l'endpoint OpenAI-compat. En Ollama
-  // local pur, repli texte (le function-calling local sera traité en Phase 2).
-  if (ELEVE_PROVIDER !== "openai") {
+  // (2026-07-12) La boucle à outils couvre désormais AUSSI Ollama local (E4,
+  // postEleveOllamaTools) — pas seulement OpenAI-compat. Avant ce fix, le chat
+  // d'accueil (home-routes.ts, seul appelant de cette fonction) tombait TOUJOURS
+  // en repli texte pur dès qu'un cerveau local (ex. Qwythos) était actif : aucun
+  // outil (regarde_site_web, chercher_web, vois_ecran…) n'était jamais réellement
+  // appelable depuis l'Accueil, même listé dans le prompt — cause racine trouvée
+  // en creusant « décris-moi l'image sur zara.com » qui ne pouvait qu'être
+  // hallucinée, jamais vraiment regardée. Repli texte réservé aux providers non
+  // outillables du tout (ex. un futur provider sans function-calling).
+  if (!supportsTools(ELEVE_PROVIDER)) {
     return { text: await askEleveOllama(system, user, opts.model), toolTrace: [] };
   }
-  if (!ELEVE_API_KEY) {
+  // La clé API n'est requise que pour l'endpoint OpenAI-compat — Ollama local
+  // n'en a pas besoin (baseUrl local uniquement).
+  if (ELEVE_PROVIDER === "openai" && !ELEVE_API_KEY) {
     throw new Error("ELEVE_API_KEY manquante (provider « openai ») — ajoute-la dans server/.env.");
   }
   const tools = toOpenAITools(registry);
@@ -321,7 +330,10 @@ export async function askEleveAgentic(
       // Si après filtrage il ne reste aucun outil, on conclut (tools=null) plutôt que d'envoyer [].
       active = filtered.length ? filtered : null;
     }
-    return postEleveCompletions(messages, active, opts.model);
+    // (2026-07-12) Dispatch par provider — E4 pour Ollama local, OpenAI-compat sinon.
+    return ELEVE_PROVIDER === "ollama"
+      ? postEleveOllamaTools(messages, active, opts.model)
+      : postEleveCompletions(messages, active, opts.model);
   };
 
   const maxIter = Math.max(1, opts.maxIterations ?? MAX_TOOL_ITERATIONS);

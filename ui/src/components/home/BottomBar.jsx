@@ -38,6 +38,10 @@ export default function BottomBar({ input, setInput, onSubmit, thinking, model, 
           </button>
         </div>
       )}
+      {/* PAS de disabled={thinking} — un champ désactivé perd automatiquement le focus
+          (forcé par le navigateur), ce qui cassait la fluidité (retour à <body>, il
+          fallait re-cliquer pour continuer à taper pendant que l'agent répond). Le
+          bouton Envoyer reste désactivé pendant thinking (anti double-envoi), ça suffit. */}
       <textarea
         ref={inputRef}
         value={input}
@@ -47,7 +51,6 @@ export default function BottomBar({ input, setInput, onSubmit, thinking, model, 
           const files = [...e.clipboardData.items].filter((it) => it.kind === "file").map((it) => it.getAsFile()).filter(Boolean);
           if (files.length > 0) { e.preventDefault(); onAddFiles(files); }
         }}
-        disabled={thinking}
         placeholder="Écrire un message… (ou glisse/joins un fichier 📎)"
         rows={2}
         className="w-full resize-none bg-transparent px-5 py-4 text-[16px] text-ink
@@ -83,6 +86,7 @@ export default function BottomBar({ input, setInput, onSubmit, thinking, model, 
               <Mic size={15} />
             </button>
             <button
+              onMouseDown={(e) => e.preventDefault()}
               onClick={onSubmit}
               disabled={(!input.trim() && attachments.length === 0) || thinking}
               className="flex h-9 w-9 items-center justify-center rounded-r-xl

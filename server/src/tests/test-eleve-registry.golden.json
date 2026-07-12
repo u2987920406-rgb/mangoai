@@ -707,6 +707,53 @@
           "additionalProperties": false
         }
       }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "regarde_site_web",
+        "description": "Capture une VRAIE capture d'écran d'un site web PUBLIC (url http(s), pas localhost) et fait décrire son contenu visuel par le cerveau vision — utile quand on te demande de décrire une image, une photo ou le rendu visuel d'une page externe (ex. « décris l'image sur zara.com »). Différent de `sharingan_url` (qui extrait des tokens de DESIGN — palette/typo — pas une description de contenu) et de `vois_ecran` (qui ne voit QUE l'aperçu de CETTE app, jamais un site externe). Donne dans `objectif` ce que tu veux voir décrit précisément.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL publique http(s) du site à regarder (ex. https://www.zara.com/fr/)"
+            },
+            "objectif": {
+              "type": "string",
+              "description": "Ce que tu veux voir décrit (ex. « décris l'image principale de la page »)"
+            }
+          },
+          "required": [
+            "url",
+            "objectif"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false
+        }
+      }
     }
   ],
   "construire_norun": [
@@ -1392,6 +1439,53 @@
           },
           "required": [
             "path"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "regarde_site_web",
+        "description": "Capture une VRAIE capture d'écran d'un site web PUBLIC (url http(s), pas localhost) et fait décrire son contenu visuel par le cerveau vision — utile quand on te demande de décrire une image, une photo ou le rendu visuel d'une page externe (ex. « décris l'image sur zara.com »). Différent de `sharingan_url` (qui extrait des tokens de DESIGN — palette/typo — pas une description de contenu) et de `vois_ecran` (qui ne voit QUE l'aperçu de CETTE app, jamais un site externe). Donne dans `objectif` ce que tu veux voir décrit précisément.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL publique http(s) du site à regarder (ex. https://www.zara.com/fr/)"
+            },
+            "objectif": {
+              "type": "string",
+              "description": "Ce que tu veux voir décrit (ex. « décris l'image principale de la page »)"
+            }
+          },
+          "required": [
+            "url",
+            "objectif"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
           ],
           "additionalProperties": false
         }
@@ -2176,6 +2270,53 @@
           "additionalProperties": false
         }
       }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "regarde_site_web",
+        "description": "Capture une VRAIE capture d'écran d'un site web PUBLIC (url http(s), pas localhost) et fait décrire son contenu visuel par le cerveau vision — utile quand on te demande de décrire une image, une photo ou le rendu visuel d'une page externe (ex. « décris l'image sur zara.com »). Différent de `sharingan_url` (qui extrait des tokens de DESIGN — palette/typo — pas une description de contenu) et de `vois_ecran` (qui ne voit QUE l'aperçu de CETTE app, jamais un site externe). Donne dans `objectif` ce que tu veux voir décrit précisément.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL publique http(s) du site à regarder (ex. https://www.zara.com/fr/)"
+            },
+            "objectif": {
+              "type": "string",
+              "description": "Ce que tu veux voir décrit (ex. « décris l'image principale de la page »)"
+            }
+          },
+          "required": [
+            "url",
+            "objectif"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false
+        }
+      }
     }
   ],
   "construire_vision": [
@@ -2882,6 +3023,53 @@
           },
           "required": [
             "path"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "regarde_site_web",
+        "description": "Capture une VRAIE capture d'écran d'un site web PUBLIC (url http(s), pas localhost) et fait décrire son contenu visuel par le cerveau vision — utile quand on te demande de décrire une image, une photo ou le rendu visuel d'une page externe (ex. « décris l'image sur zara.com »). Différent de `sharingan_url` (qui extrait des tokens de DESIGN — palette/typo — pas une description de contenu) et de `vois_ecran` (qui ne voit QUE l'aperçu de CETTE app, jamais un site externe). Donne dans `objectif` ce que tu veux voir décrit précisément.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL publique http(s) du site à regarder (ex. https://www.zara.com/fr/)"
+            },
+            "objectif": {
+              "type": "string",
+              "description": "Ce que tu veux voir décrit (ex. « décris l'image principale de la page »)"
+            }
+          },
+          "required": [
+            "url",
+            "objectif"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
           ],
           "additionalProperties": false
         }
@@ -3600,6 +3788,53 @@
     {
       "type": "function",
       "function": {
+        "name": "regarde_site_web",
+        "description": "Capture une VRAIE capture d'écran d'un site web PUBLIC (url http(s), pas localhost) et fait décrire son contenu visuel par le cerveau vision — utile quand on te demande de décrire une image, une photo ou le rendu visuel d'une page externe (ex. « décris l'image sur zara.com »). Différent de `sharingan_url` (qui extrait des tokens de DESIGN — palette/typo — pas une description de contenu) et de `vois_ecran` (qui ne voit QUE l'aperçu de CETTE app, jamais un site externe). Donne dans `objectif` ce que tu veux voir décrit précisément.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL publique http(s) du site à regarder (ex. https://www.zara.com/fr/)"
+            },
+            "objectif": {
+              "type": "string",
+              "description": "Ce que tu veux voir décrit (ex. « décris l'image principale de la page »)"
+            }
+          },
+          "required": [
+            "url",
+            "objectif"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
         "name": "genere_contenu",
         "description": "RÉDIGE un LOT de données structurées (questions, fiches, entrées de catalogue, leçons…) et l'enregistre en JSON dans le projet. Donne `sujet` (le thème), `schema` (décris la FORME d'un item, ex. « {question, choix:[4], reponse:index, explication} »), `n` (nombre). Options : `cles_requises` (clés obligatoires, validées) · `langue` (des champs texte) · `fichier` (chemin de sortie, défaut src/data/contenu.json). Idéal pour peupler une app de formation/quiz/catalogue sans tout écrire à la main.",
         "parameters": {
@@ -4063,6 +4298,27 @@
           "additionalProperties": false
         }
       }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
+          ],
+          "additionalProperties": false
+        }
+      }
     }
   ],
   "discuter_vision": [
@@ -4322,6 +4578,27 @@
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
           "properties": {},
+          "additionalProperties": false
+        }
+      }
+    },
+    {
+      "type": "function",
+      "function": {
+        "name": "lis_video_youtube",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête.",
+        "parameters": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "url": {
+              "type": "string",
+              "description": "URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"
+            }
+          },
+          "required": [
+            "url"
+          ],
           "additionalProperties": false
         }
       }

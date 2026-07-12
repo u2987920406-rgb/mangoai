@@ -340,6 +340,11 @@ export default function Chat({
       setAttachments([]);
       if (inputRef.current) inputRef.current.style.height = "auto";
       if (useEdit) onEditTargetConsumed?.();
+      // Rends la main au clavier TOUT DE SUITE (pas d'attendre la fin du tour,
+      // qui peut prendre plusieurs minutes en Construire) — sinon il faut re-cliquer
+      // dans la zone de saisie pour continuer à taper. Cf. le refocus en fin de
+      // tour (finally, plus bas) qui reste utile pour le cas "envoi programmatique".
+      requestAnimationFrame(() => inputRef.current?.focus());
     }
     setBusy(true);
 

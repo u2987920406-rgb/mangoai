@@ -55,6 +55,7 @@ import { constellationsSection } from "../constellations.js";
 // Sous-modules eleve/ (feuille provider + contract + escalade + types).
 import { ELEVE_MODEL, ELEVE_PROVIDER_DEFAULT, PROFILE, askEleveDispatch } from "./provider.js";
 import { elevePost, supportsTools, askEleveAgentic, AGENTIC_TOOL_CONTRACT, AGENTIC_FALLBACK_SYSTEM, AGENTIC_VISION_CLAUSE, ELEVE_BUILDER_PROMPT, ELEVE_CONTROLEUR_PROMPT } from "./contract.js";
+import { brainArchitectureClause } from "../capabilities.js";
 import { escalateToClaude } from "./escalade.js";
 import { type RelayResult, type RelayOptions, type RelayDeps } from "./types.js";
 import { buildEleveUser } from "./relay-prompt.js";
@@ -122,6 +123,12 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // (opt-in). qwen3-vl:8b (vision, $0 local) validé fiable cette nuit → plus
     // de raison de coût de garder ce gate fermé. Coupure ELEVE_VISION=off si besoin.
     const visionClause = process.env.ELEVE_VISION !== "off" ? AGENTIC_VISION_CLAUSE : "";
+    // (2026-07-12) Conscience de l'architecture multi-cerveaux, TOUJOURS injectée
+    // (indépendante d'ELEVE_VISION) : même sans vois_ecran offert ce tour-ci, le
+    // cerveau doit savoir que le SYSTÈME a un cerveau vision, pas juste lui. Voir
+    // capabilities.ts pour le cas réel qui a motivé ce correctif.
+    let brainClause = "";
+    try { brainClause = brainArchitectureClause(); } catch { brainClause = ""; }
     // (A1.2/B1.3, 2026-07-03) Rappel PROACTIF de la mémoire cross-projet : on
     // embarque la tâche, on cherche les souvenirs pertinents (palettes/artefacts
     // appris) et on les injecte en section BORNÉE. Gaté ELEVE_MEMOIRE (off →
@@ -148,7 +155,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         if (imageBank.length) push(`  🖼 Banque d'images : ${imageBank.length} vraies photos téléchargées dans public/images/`);
       } catch { imagesClause = ""; imageBank = []; }
     }
-    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}${memoireClause}${imagesClause}`;
+    const agenticSystem = `${systemBase}\n\n${AGENTIC_TOOL_CONTRACT}${visionClause}${brainClause}${memoireClause}${imagesClause}`;
     let user = buildEleveUser(task, projectDir, "", injectMeans, callCaps, "", true);
     // Phase E3 — un sous-agent peut prendre SON cerveau via agentType (= intention),
     // seulement s'il est explicitement routé, agentique et openai-compat ; sinon il

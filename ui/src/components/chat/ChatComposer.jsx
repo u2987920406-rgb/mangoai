@@ -226,6 +226,7 @@ export default function ChatComposer({
               // l'attente plutôt qu'un envoi voué au 409. Cliquable quand même
               // (le 409 est désormais doux + le texte est conservé).
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={onSend}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-accent/40 bg-accent/10 text-accent-soft transition-colors"
                 title="L'agent travaille (occupé) — patiente la fin avant d'envoyer"
@@ -234,6 +235,7 @@ export default function ChatComposer({
               </button>
             ) : (
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={onSend}
                 disabled={!canSend}
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-accent text-white hover:bg-accent-soft disabled:opacity-30 transition"

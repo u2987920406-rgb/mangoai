@@ -8,10 +8,13 @@ import path from "node:path";
 import fs from "node:fs";
 import { flag } from "../flags.js";
 import { temporalContext } from "../temporal-context.js";
-import { ELEVE_PROVIDER, askEleveAgentic, chatEleve } from "../eleve.js";
+import { ELEVE_PROVIDER, askEleveAgentic, chatEleve, supportsTools } from "../eleve.js";
 import { ELEVE_MODEL } from "../eleve/provider.js";
 import { buildEleveDiscussTools } from "../eleve-tools/eleve-action-tools.js";
 import { FIDELITY_CLAUSE } from "../scenario.js";
+import { brainArchitectureClause } from "../capabilities.js";
+import { selfKnowledgePromptSection } from "../self-knowledge.js";
+import { WORKSPACE_DIR } from "../projects.js";
 import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
 import { runFrontierOrchestration } from "../frontier-orchestration.js";
 import { brain } from "../brain.js";
@@ -70,7 +73,11 @@ app.post("/api/home-chat", async (req, res) => {
     // Le brouillon `convId` donne un disque (.assets) ; l'Élève reçoit les outils de LECTURE
     // (read/list/search + web + lire_document + lire_archive + requete_web GET) — PAS d'écriture
     // ni de build (c'est Raf qui valide la graduation vers l'atelier). Repli chatEleve sans outils.
-    if (model === "eleve" && ELEVE_PROVIDER === "openai" && convId) {
+    // (2026-07-12) Ollama local est désormais aussi outillable (E4, askEleveAgentic) —
+    // avant, seul openai-compat déclenchait cette branche : l'Accueil en Élève 100 %
+    // local (ex. Qwythos) tombait toujours en repli texte pur, sans jamais pouvoir
+    // réellement appeler un outil (regarde_site_web, chercher_web, vois_ecran…).
+    if (model === "eleve" && supportsTools(ELEVE_PROVIDER) && convId) {
       const scratch = ensureHomeScratch(convId);
       const sys = [
         flag("TEMPORAL_AWARENESS") ? temporalContext() : "",
@@ -78,6 +85,8 @@ app.post("/api/home-chat", async (req, res) => {
         "Tu es une application AUTONOME sur la machine de Raf — NI Claude Code, NI un terminal, NI un outil externe. Ne renvoie jamais vers un terminal/des réglages d'un autre logiciel : tout se fait DANS MangoOS.",
         "TU AS DES OUTILS, sers-t'en SANS demander la permission : LIS les fichiers joints et le brouillon (read_file/list_files/search_code), OUVRE une archive (.zip/.rar → lire_archive), lis un PDF/Word/Excel (lire_document), lis le WEB (lire_page/chercher_web/extraire_site) et interroge une API en GET (requete_web). Les pièces jointes de Raf sont dans .assets/. Ne dis JAMAIS « je n'ai pas accès au disque/à internet » ni « colle le contenu » : ouvre-les toi-même.",
         FIDELITY_CLAUSE,
+        brainArchitectureClause(),
+        selfKnowledgePromptSection(WORKSPACE_DIR),
         "Tu es ici en posture DISCUTER (lire, analyser, conseiller) — tu n'écris pas de fichiers et ne construis pas d'app ICI. Quand Raf veut CONSTRUIRE ou PLANIFIER, propose-lui de passer dans l'ATELIER (workspace) : « on ouvre l'atelier ? j'y emporte nos fichiers et le contexte » — c'est LUI qui valide.",
         history ? `\n— Historique —\n${history}` : "",
       ].filter(Boolean).join("\n");
@@ -108,6 +117,12 @@ app.post("/api/home-chat", async (req, res) => {
       "Réponds en français sauf si on te parle en anglais.",
       "Tu es une application autonome qui tourne sur la machine de Raf — tu n'es NI Claude Code, NI un terminal, NI un outil externe. Ne mentionne jamais « Claude Code », ne renvoie jamais vers un terminal, une commande slash, ou des réglages d'un autre logiciel : tout (permissions, actions, génération) se fait à l'intérieur de MangoOS.",
       "ACCÈS AUX FICHIERS : dans cette conversation tu n'as pas d'outils de lecture disque — pour qu'on te montre un fichier, demande à Raf de l'ATTACHER avec le bouton trombone 📎 ; son contenu t'arrivera dans le message entre des balises [[FILE:nom]]…[[/FILE]]. Ne prétends jamais avoir lu un fichier que tu n'as pas reçu ainsi.",
+      // (2026-07-12) Ce chat d'accueil construit son PROPRE prompt système (jamais
+      // assembleSystemPrompt/scenario.ts) — sans ces 2 clauses, le cerveau actif niait
+      // connaître Sharingan/la vision du système. Cas réel remonté par Raf. Voir
+      // capabilities.ts / self-knowledge.ts pour le contexte complet.
+      brainArchitectureClause(),
+      selfKnowledgePromptSection(WORKSPACE_DIR),
       history ? `\n— Historique —\n${history}` : "",
     ].filter(Boolean).join("\n");
     let text: string;

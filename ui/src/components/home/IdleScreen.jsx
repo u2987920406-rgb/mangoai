@@ -97,7 +97,10 @@ export default function IdleScreen({
             </div>
           )}
 
-          {/* Textarea principale */}
+          {/* Textarea principale — PAS de disabled={thinking} : un champ désactivé perd
+              automatiquement le focus (forcé par le navigateur), ce qui cassait la
+              fluidité (retour à <body>, il fallait re-cliquer pour continuer à taper).
+              Le bouton Envoyer reste lui bien désactivé pendant thinking (anti double-envoi). */}
           <textarea
             ref={inputRef}
             value={input}
@@ -107,7 +110,6 @@ export default function IdleScreen({
               const files = [...e.clipboardData.items].filter((it) => it.kind === "file").map((it) => it.getAsFile()).filter(Boolean);
               if (files.length > 0) { e.preventDefault(); addFiles(files); }
             }}
-            disabled={thinking}
             placeholder="Comment vas-tu ? Ça fait plaisir de te revoir…"
             rows={5}
             className="w-full resize-none bg-transparent px-5 py-5 text-[16px] text-ink
@@ -152,6 +154,7 @@ export default function IdleScreen({
                 <Mic size={15} />
               </button>
               <button
+                onMouseDown={(e) => e.preventDefault()}
                 onClick={sendMessage}
                 disabled={(!input.trim() && attachments.length === 0) || thinking}
                 className="flex h-9 w-9 items-center justify-center rounded-r-xl

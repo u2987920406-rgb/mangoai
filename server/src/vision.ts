@@ -25,7 +25,7 @@ const BUDGET_MVP = Number(process.env.VISION_BUDGET_MVP ?? 3);
 // to loop, small enough never to hit Anthropic's 5 MB / 8 000 px limits.
 const VIEWPORT = { width: 1280, height: 800 };
 const FULL_PAGE_MAX_HEIGHT = 6000;
-const MAX_IMAGE_BYTES = 4_000_000; // Hermes' proactive 4 MB embed cap
+export const MAX_IMAGE_BYTES = 4_000_000; // Hermes' proactive 4 MB embed cap
 const IDLE_CLOSE_MS = 60_000;
 // Idea #53 follow-up: a snapshot can drive an interactive app (canvas game…)
 // with a short input sequence before capturing, so the image shows an

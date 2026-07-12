@@ -38,7 +38,7 @@ export type DispatchFn = typeof dispatch;
 
 const URL_RE = /https?:\/\/[^\s)>\]]+/i;
 const VISION_RE =
-  /(regarde|rends[- ]?toi compte|rendu|à quoi (?:ça|cela|c'|ce) (?:ressemble|rend)|capture|screenshot|aper[çc]u visuel|montre[- ]moi (?:le|la|l')|vois[- ]tu|qu'est-ce que (?:ça|cela) donne)/i;
+  /(regarde|rends[- ]?toi compte|rendu|à quoi (?:ça|cela|c'|ce) (?:ressemble|rend)|capture|screenshot|aper[çc]u visuel|montre[- ]moi (?:le|la|l')|vois[- ]tu|qu'est-ce que (?:ça|cela) donne|d[ée]cri[st](?:-moi)?\s+(?:l'|la |le |une? )?(?:image|photo|capture|visuel|rendu|page))/i;
 const MEDIA_GEN_RE =
   /(g[ée]n[èe]re(?:[- ]moi)?\s+(?:une|des)\s+images?|cr[ée]e(?:[- ]moi)?\s+(?:une|des)\s+images?|dessine[- ]moi)/i;
 const ATTACHMENT_RE = /\.assets\//;

@@ -53,28 +53,27 @@ const setEqual = (a: OpenAITool[], b: OpenAITool[]) => JSON.stringify(sortByName
 
 console.log("\n[1] ÉGALITÉ BYTE-IDENTIQUE — préréglage CONSTRUIRE (ordre EXACT) vs golden pré-refactor");
 {
-  // (2026-07-12) golden RÉGÉNÉRÉ — 3 changements légitimes depuis la capture d'origine :
-  // Sharingan direct (sharingan_url/sharingan_image, TOUJOURS actif) + `pattern` glob
-  // ajouté au schéma de list_files + ELEVE_VISION passé à défaut ON (vois_ecran/lire_image
-  // désormais dans construire_default, plus seulement construire_vision).
+  // (2026-07-12 suite 2) golden RÉGÉNÉRÉ — 1 changement légitime de plus : nouvel outil
+  // `lis_video_youtube` (transcript+métadonnées YouTube, capacité "read-web", toujours
+  // actif, infra #177 enfin câblée) → +1 partout, y compris Discuter par défaut.
   setEnv({});
-  check("construire_default : 25 outils, égalité EXACTE (ordre + contrat)", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_default));
-  check("construire_norun (allowRun:false) : 24 outils, égalité EXACTE", exactEqual(toOpenAITools(buildEleveActionTools(projectDir, { allowRun: false })), GOLDEN.construire_norun));
+  check("construire_default : 27 outils, égalité EXACTE (ordre + contrat)", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_default));
+  check("construire_norun (allowRun:false) : 26 outils, égalité EXACTE", exactEqual(toOpenAITools(buildEleveActionTools(projectDir, { allowRun: false })), GOLDEN.construire_norun));
   check("construire_allowlist (sous-agent #175) : égalité EXACTE (finish conservé)", exactEqual(toOpenAITools(buildEleveActionTools(projectDir, { allowedTools: ["read_file", "write_file", "run_command"] })), GOLDEN.construire_allowlist));
   check("construire_denylist (run_command retiré) : égalité EXACTE", exactEqual(toOpenAITools(buildEleveActionTools(projectDir, { deniedTools: ["run_command"] })), GOLDEN.construire_denylist));
 
   setEnv({ ELEVE_VISION: "on" });
-  check("construire_vision (ELEVE_VISION=on explicite) : 25 outils, égalité EXACTE (identique au défaut désormais)", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_vision));
+  check("construire_vision (ELEVE_VISION=on explicite) : 27 outils, égalité EXACTE (identique au défaut désormais)", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_vision));
 
   setEnv({ ELEVE_CONTENT: "on", ELEVE_AUTOTEST: "on" });
-  check("construire_content_autotest : 29 outils, égalité EXACTE", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_content_autotest));
+  check("construire_content_autotest : 31 outils, égalité EXACTE", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_content_autotest));
 }
 
 console.log("\n[2] ÉGALITÉ BYTE-IDENTIQUE — préréglage DISCUTER (même ENSEMBLE + contrat) vs golden pré-refactor");
 {
   setEnv({});
   const d = toOpenAITools(buildEleveDiscussTools(projectDir));
-  check("discuter_default : 11 outils", d.length === 11);
+  check("discuter_default : 12 outils", d.length === 12);
   check("discuter_default : même ENSEMBLE d'outils + contrat identique (ordre normalisé)", setEqual(d, GOLDEN.discuter_default));
   const rw = d.find((t) => t.function.name === "requete_web");
   const props = (rw?.function.parameters as { properties?: Record<string, unknown> })?.properties ?? {};

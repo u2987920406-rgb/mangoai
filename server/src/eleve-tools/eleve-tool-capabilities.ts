@@ -71,6 +71,9 @@ export const TOOL_CAPABILITIES: ReadonlyMap<string, ToolCapability> = new Map<st
   // requete_web : GET est read-web ; la variante POST (mutation) est gérée par le
   // plafond côté REGISTRE (httpGetOnly) — l'outil lui-même reste offrable en lecture.
   ["requete_web", { capability: "read-web", mutation: false }],
+  // Vidéo YouTube — lecture web (transcript + métadonnées), même capacité que le reste
+  // de la lecture web. Infrastructure #177 câblée à un outil réel le 2026-07-12.
+  ["lis_video_youtube", { capability: "read-web", mutation: false }],
   // Mémoire cross-projet — lecture, mais capacité DISTINCTE (n'est pas offerte par défaut
   // en Discuter : c'est un rappel d'artefacts de build, pas une lecture de conversation).
   ["chercher_artefact", { capability: "read-memory", mutation: false }],
@@ -82,6 +85,9 @@ export const TOOL_CAPABILITIES: ReadonlyMap<string, ToolCapability> = new Map<st
   // image), déterministe (pas de coût VL), toujours dispo dès que vision ∈ requiredCaps.
   ["sharingan_url", { capability: "vision", mutation: false }],
   ["sharingan_image", { capability: "vision", mutation: false }],
+  // Vision d'un site EXTERNE (2026-07-12) — même capacité "vision" : lecture seule,
+  // OFFRABLE en Discuter dès que `vision` ∈ requiredCaps, exactement comme vois_ecran.
+  ["regarde_site_web", { capability: "vision", mutation: false }],
   // Médias — chercher_image ne mute pas (rend des URLs) ; générer/découper écrit sur disque.
   ["chercher_image", { capability: "media-gen", mutation: false }],
   ["genere_image", { capability: "media-gen", mutation: true }],

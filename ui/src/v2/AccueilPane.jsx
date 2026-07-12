@@ -93,6 +93,9 @@ export default function AccueilPane() {
     const withUser = [...messages, { role: "user", content: val }];
     setMessages(withUser);
     setInput("");
+    // Le clic sur le bouton Envoyer déplace le focus dessus — le rendre
+    // immédiatement à la zone de saisie pour continuer à taper sans re-cliquer.
+    requestAnimationFrame(() => inputRef.current?.focus());
     runTurn(withUser);
   };
 
@@ -184,7 +187,8 @@ export default function AccueilPane() {
         <Button variant="ghost" iconOnly icon={<Mic size={16} />} className="ml-auto" title="Entrée vocale" aria-label="Entrée vocale" />
         <Button
           variant="primary" iconOnly icon={<ArrowUp size={16} strokeWidth={2.2} />} className="rounded-xl"
-          title="Envoyer (Entrée)" aria-label="Envoyer" disabled={!input.trim() || thinking} onClick={send}
+          title="Envoyer (Entrée)" aria-label="Envoyer" disabled={!input.trim() || thinking}
+          onMouseDown={(e) => e.preventDefault()} onClick={send}
         />
       </div>
       {/* #182 D3 — divulgation honnête : un cerveau non-Élève (Fable/Opus/Sonnet/Haiku)

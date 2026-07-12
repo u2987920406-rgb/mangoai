@@ -17,6 +17,8 @@ import { z } from "zod";
 import { ToolRegistry, type KernelTool, type KernelToolResult } from "../kernel/kernel-mcp.js";
 import { buildEleveTools } from "./eleve-tools.js";
 import { buildEleveVisionTools } from "./eleve-vision-tools.js";
+import { buildEleveExternalVisionTools } from "./eleve-external-vision-tools.js";
+import { buildEleveYoutubeTools } from "./eleve-youtube-tools.js";
 import { buildEleveUnityTools } from "./eleve-unity-tools.js";
 import { buildEleveFluxTools } from "./eleve-flux-tools.js";
 import { buildEleveContentTools } from "./eleve-content-tools.js";
@@ -445,6 +447,22 @@ export function buildEleveToolRegistry(projectDir: string, opts: EleveRegistryOp
   if (process.env.ELEVE_VISION !== "off") {
     for (const t of buildEleveVisionTools(projectDir)) reg.register(t);
     for (const t of buildEleveImageTools(projectDir)) reg.register(t);
+  }
+
+  // regarde_site_web (2026-07-12) — vision d'un site EXTERNE (screenshot + lecture
+  // par le cerveau vision), trou trouvé en creusant une question réelle de Raf
+  // (« décris l'image sur zara.com ») : ni sharingan_url (design, pas contenu) ni
+  // vois_ecran (scope localhost) ne le couvraient. Gate dédié (indépendant
+  // d'ELEVE_VISION comme ELEVE_SHARINGAN l'est) — coupure ELEVE_EXTERNAL_VISION=off.
+  if (process.env.ELEVE_EXTERNAL_VISION !== "off") {
+    for (const t of buildEleveExternalVisionTools()) reg.register(t);
+  }
+
+  // lis_video_youtube (2026-07-12) — infrastructure #177 (savoir-transcript.ts, yt-dlp
+  // + repli scraping, testée) enfin câblée à un outil réel : elle n'était jamais
+  // appelée en dehors des tests avant ce soir. Coupure ELEVE_YOUTUBE=off si besoin.
+  if (process.env.ELEVE_YOUTUBE !== "off") {
+    for (const t of buildEleveYoutubeTools()) reg.register(t);
   }
 
   // Compétence Unity/C# (Phase 3a, opt-in ELEVE_UNITY=on, défaut OFF → zéro régression) :
