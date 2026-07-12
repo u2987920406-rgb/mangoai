@@ -58,6 +58,17 @@ L'utilisateur peut demander :
 - Toute nouvelle fonctionnalité = entrée dans `statut.md` (tableau + ligne "Où on en est") ET dans `historique.md` (section détail de l'idée)
 - Ports : backend Express 3000 · UI Vite 5173 · App générée 5174
 
+## ⚖️ Discipline de poids `statut.md` — index, jamais archive (règle de Raf, 2026-07-12)
+
+**Contexte** : `statut.md` avait dérivé de son rôle d'index (état courant, lu à chaque démarrage) vers une archive complète (690 Ko, 241 entrées de journal + tableaux aux cellules-romans). Allégé le 2026-07-12 à 108 Ko (−84 %) après audit de couverture ligne par ligne (rien de perdu — tout migré vers `historique.md`/`wiki/` avant suppression, sinon laissé tel quel).
+
+**Règle durable pour toute future entrée dans `statut.md`** :
+- **Ligne "Où on en est"** : ~500-800 caractères MAX. Un résumé exécutif (quoi, statut, chiffre-clé), pas un roman. Le détail technique complet va TOUJOURS dans `historique.md` (`## Journal — DATE`).
+- **Ligne de tableau** ("Idées en attente/actives", "Cap stratégique", etc.) : titre court (5-10 mots) + statut + éventuellement 1 clause de résultat-clé, puis un pointeur `→ historique.md`/`→ [[page-wiki]]`. Jamais de paragraphe dans une cellule de tableau.
+- **Si un fait doit absolument être visible sans naviguer ailleurs** (une règle de sécurité, une limite bloquante) : il a sa place ailleurs par construction — `limites.md` pour une limite honnête, ce `CLAUDE.md` pour une règle de fonctionnement, `wiki/` pour la synthèse d'un concept. `statut.md` n'est jamais le SEUL endroit où vit une information importante.
+
+**Pourquoi** : `statut.md` est lu en entier à CHAQUE démarrage de session (règle "Démarrage automatique" ci-dessus) — son poids est un coût récurrent, pas juste esthétique. Le triptyque `statut.md` (état courant) → `historique.md` (détail chronologique complet) → `wiki/` (synthèse thématique interconnectée) existe précisément pour que l'information reste **toujours disponible sans être toujours chargée**. Si `statut.md` regrossit significativement (repère : au-delà de ~150-200 Ko), relancer le même protocole d'allégement (audit de couverture → migration des orphelins → compression).
+
 ## ⚠️ Règle git absolue à l'atelier
 
 **Zéro opération git sans permission explicite de Raf** — ni `git add`, ni `git commit`, ni `git push`, ni `git pull`.
