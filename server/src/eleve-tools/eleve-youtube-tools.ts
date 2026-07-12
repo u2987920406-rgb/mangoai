@@ -45,6 +45,12 @@ function formatDuration(s: number): string {
   return h > 0 ? `${h}h${String(m).padStart(2, "0")}m${String(sec).padStart(2, "0")}s` : `${m}m${String(sec).padStart(2, "0")}s`;
 }
 
+/** Lien direct vers UN instant précis de la vidéo (le paramètre YouTube `&t=Ns`
+ *  saute directement à cette seconde à l'ouverture). */
+function timestampUrl(videoId: string, s: number): string {
+  return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}&t=${Math.round(s)}s`;
+}
+
 /** Découpe le texte COMPLET en parties ~MAX_TRANSCRIPT_CHARS, coupées sur une frontière
  *  de ligne (jamais en plein milieu d'un segment horodaté). PUR. */
 function paginateBody(fullBody: string, maxChars: number): string[] {
@@ -71,7 +77,11 @@ function formatResult(r: TranscriptResult, partie: number): string {
   lines.push(`**${r.meta.titre}** — ${r.meta.chaine}${r.meta.dureeS ? ` (${formatDuration(r.meta.dureeS)})` : ""}`);
   if (r.meta.publieeLe) lines.push(`Publiée le ${r.meta.publieeLe}.`);
   if (r.meta.chapitres?.length) {
-    lines.push(`Chapitres : ${r.meta.chapitres.map((c) => `${formatDuration(c.t)} ${c.titre}`).join(" · ")}`);
+    lines.push(
+      `Chapitres (lien direct vers l'instant précis) : ${r.meta.chapitres
+        .map((c) => `[${formatDuration(c.t)} ${c.titre}](${timestampUrl(r.videoId, c.t)})`)
+        .join(" · ")}`,
+    );
   }
   if (r.source === "absent") {
     lines.push(`⚠ Aucun transcript disponible (${r.raison ?? "raison inconnue"}).`);
@@ -86,6 +96,9 @@ function formatResult(r: TranscriptResult, partie: number): string {
   if (idx + 1 < parts.length) {
     lines.push(`\n[cette vidéo a ${parts.length} parties au total — rappelle lis_video_youtube avec la même url et partie:${idx + 2} pour lire la suite (déjà en cache, instantané) ; sinon synthétise ce que tu as déjà lu]`);
   }
+  lines.push(
+    `\n⚠ DANS TA RÉPONSE À L'UTILISATEUR : cite le timestamp [MM:SS] de chaque point important que tu mentionnes (ex. « à 2m30, il explique... »), pour qu'il puisse retrouver le passage rapidement s'il veut regarder la vidéo lui-même. Utilise ${timestampUrl(r.videoId, 0).replace("&t=0s", "&t=SECONDESs")} comme patron de lien direct vers un instant précis. Ne résume jamais sans indiquer OÙ dans la vidéo se trouve chaque info.`,
+  );
   return lines.join("\n");
 }
 
@@ -103,7 +116,8 @@ export function buildEleveYoutubeTools(deps: YoutubeVisionDeps = realDeps): Kern
       "sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. " +
       "Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la " +
       "MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire " +
-      "si tu as déjà de quoi répondre.",
+      "si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta " +
+      "réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
     inputSchema: {
       url: z.string().describe("URL YouTube (ex. https://www.youtube.com/watch?v=... ou https://youtu.be/...) ou id de vidéo"),
       partie: z.number().optional().describe("Partie du transcript à lire si la vidéo est longue (défaut 1, la première)"),

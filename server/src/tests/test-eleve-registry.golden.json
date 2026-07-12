@@ -738,7 +738,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -1478,7 +1478,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -2309,7 +2309,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -3070,7 +3070,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -3831,7 +3831,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -4323,7 +4323,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",
@@ -4610,7 +4610,7 @@
       "type": "function",
       "function": {
         "name": "lis_video_youtube",
-        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre.",
+        "description": "Comprend une vidéo YouTube en lisant son TRANSCRIPT horodaté (sous-titres) + ses métadonnées (titre, chaîne, durée, chapitres, description) — utile pour répondre à une question sur le contenu d'une vidéo, résumer, ou en extraire une info précise. Donne l'URL YouTube (ou son id). Si aucun sous-titre n'existe, tu reçois quand même les métadonnées et la description, avec une raison honnête. Vidéo longue → transcript en PLUSIEURS PARTIES (indiqué dans la réponse) : rappelle l'outil avec la MÊME url et `partie` incrémenté pour lire la suite (déjà en cache, instantané) — pas besoin de tout lire si tu as déjà de quoi répondre. IMPORTANT : cite TOUJOURS le timestamp [MM:SS] de chaque info dans ta réponse finale, pour que l'utilisateur puisse retrouver rapidement le passage dans la vidéo.",
         "parameters": {
           "$schema": "https://json-schema.org/draft/2020-12/schema",
           "type": "object",

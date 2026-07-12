@@ -122,6 +122,26 @@ async function run(): Promise<void> {
     check("pas d'invite à lire la suite (vidéo courte)", !r.text.includes("pour lire la suite"));
   }
 
+  console.log("\n[9] Consigne de citation des timestamps (2026-07-12 suite, référence rapide à la vidéo)");
+  {
+    const tools = buildEleveYoutubeTools({ fetch: async () => OK_RESULT });
+    const r = await tools.find((t) => t.name === "lis_video_youtube")!.handler({ url: "https://youtu.be/abc123" });
+    check("consigne de citer les timestamps présente", r.text.includes("cite le timestamp"));
+    check("patron de lien direct vers un instant présent", r.text.includes("youtube.com/watch?v=abc123&t=SECONDESs"));
+  }
+
+  console.log("\n[10] Chapitres → liens directs cliquables vers l'instant précis");
+  {
+    const withChapters: TranscriptResult = {
+      ...OK_RESULT,
+      meta: { ...OK_RESULT.meta, chapitres: [{ t: 0, titre: "Introduction" }, { t: 90, titre: "Le piston" }] },
+    };
+    const tools = buildEleveYoutubeTools({ fetch: async () => withChapters });
+    const r = await tools.find((t) => t.name === "lis_video_youtube")!.handler({ url: "https://youtu.be/abc123" });
+    check("chapitre avec lien direct (t=90s)", r.text.includes("youtube.com/watch?v=abc123&t=90s"));
+    check("titre du chapitre présent", r.text.includes("Le piston"));
+  }
+
   console.log(`\n${fail === 0 ? "✅" : "❌"} eleve-youtube-tools : ${pass} pass, ${fail} fail`);
   if (fail > 0) process.exit(1);
 }
