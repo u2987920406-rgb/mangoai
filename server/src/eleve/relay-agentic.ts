@@ -573,7 +573,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
           const r = route(d, strategeState, { planReminder: currentPlanReminder() });
           if (r.kind === "install-dependency") {
             push(`  ${formatRemedy(d, r)}`);
-            commitRemedy(d, strategeState);
+            commitRemedy(d, strategeState, r);
             const res = await installDependency(projectDir, r.pkg);
             if (res.ok) {
               relances++;
@@ -582,9 +582,19 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
               continue;
             }
             push(`  ⚠ Stratège : install « ${r.pkg} » a échoué (${res.refused ? "hors allowlist" : "npm KO"}) — escalade`);
+          } else if (r.kind === "reframe") {
+            // (2026-07-14) Blocage récidivant : remise en question plutôt qu'abandon — voir
+            // stratege.ts::reframeNudge. Pas de délégation ici : le reframe EST déjà le
+            // changement d'angle (contrairement à "nudge"/plateau-iterations, qui délègue).
+            push(`  ${formatRemedy(d, r)}`);
+            commitRemedy(d, strategeState, r);
+            relances++;
+            push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+            nudge = await applyRemedyNudge(d, r.label, r.nudge);
+            continue;
           } else if (r.kind === "nudge") {
             push(`  ${formatRemedy(d, r)}`);
-            commitRemedy(d, strategeState);
+            commitRemedy(d, strategeState, r);
             relances++;
             // slice 2 — sur plateau-iterations, on DÉLÈGUE vraiment : on cherche le spécialiste
             // forgé pertinent (match tâche↔agent) et on l'invoque pour une analyse experte, qui
@@ -621,6 +631,21 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         if (d && !agErr && relances < selfRelanceMax && tryBrainEscalation(d)) {
           relances++;
           push(`↻ Stratège : cerveau monté (barreau ${execTier}) — relance de l'Élève (${relances}/${selfRelanceMax})`);
+          continue;
+        }
+        // (2026-07-14, Raf) — REPLI GÉNÉRIQUE : sur build cassé `ambiguous`, si ni un remède
+        // déterministe, ni la reclassification cerveau (ELEVE_STRATEGE_BRAIN), ni une montée
+        // de cerveau (ELEVE_BRAIN_ESCALATE) n'ont pu s'appliquer (gates off, ou aucun barreau
+        // supérieur configuré), on abandonnait AVANT d'épuiser selfRelanceMax — contrairement
+        // à plateau-iterations qui retombe TOUJOURS sur un nudge générique (ligne ~823 plus
+        // bas). Constat réel (orbital-control) : `Could not resolve "./SatelliteDetail.css"`
+        // est un cas trivial (fichier oublié) que renvoyer l'erreur exacte au modèle aurait
+        // probablement réglé — aucun filet générique n'existait pour ce cas. On l'ajoute :
+        // même relances restantes, on redonne une chance avec l'erreur telle quelle.
+        if (d && !agErr && relances < selfRelanceMax) {
+          relances++;
+          push(`↻ Auto-relance ${relances}/${selfRelanceMax} de l'Élève (build cassé, ${d.blocker}) — erreur renvoyée telle quelle (coût 0)`);
+          nudge = `⚠ BUILD CASSÉ : ${d.cause}${d.detail ? `\nDétail : ${d.detail}` : ""}\nCorrige EXACTEMENT ce problème (fichier manquant, import invalide, etc.), puis relance le build.`;
           continue;
         }
         break;
@@ -813,9 +838,9 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         // décompose via delegate. Escalade Stratège (ou mode off) → nudge générique (#160).
         if (strategeActs && d) {
           const r = route(d, strategeState, { planReminder: currentPlanReminder() });
-          if (r.kind === "nudge") {
-            commitRemedy(d, strategeState);
-            push(`↻ Stratège : ${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
+          if (r.kind === "nudge" || r.kind === "reframe") {
+            commitRemedy(d, strategeState, r);
+            push(`↻ Stratège : ${r.kind === "reframe" ? "REMISE EN QUESTION — " : ""}${r.label} — relance de l'Élève (${relances}/${selfRelanceMax}, coût 0)`);
             nudge = await applyRemedyNudge(d, r.label, r.nudge);
             continue;
           }

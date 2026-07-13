@@ -33,7 +33,7 @@ export const REMEDY_BY_CLASS: Record<BlockerClass, string> = {
   "flaky-resource": "réparer la ressource (patron L30) ou substituer",
   "wandering": "ré-ancrer le plan (L17) ou décomposer via delegate",
   "plateau-iterations": "décomposer la tâche en sous-tâches (delegate)",
-  "ambiguous": "consulter le cerveau Stratège local (gemma4:12b) — Phase 3",
+  "ambiguous": "consulter le cerveau Stratège local (qwythos-tools:q6) — Phase 3",
 };
 
 /** Seuil de réécritures (write_file+edit_file) qui, sur build cassé, signe une boucle

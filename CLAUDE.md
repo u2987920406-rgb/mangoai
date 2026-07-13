@@ -29,6 +29,10 @@ Le dossier `wiki/` est une **couche de synthèse interconnectée** par-dessus le
 - Pour répondre à une question d'architecture, **lire d'abord `wiki/index.md`** puis la page-entité pertinente — souvent plus rapide que de parcourir `historique.md`.
 - Le vault Obsidian = ouvrir `D:\IA\MangoOS` en entier (les `[[liens]]` se résolvent par nom de fichier).
 
+## ⚠️ Checklist de pré-lancement (IMPÉRATIF avant tout pipeline "zéro intervention")
+
+**Avant de lancer un script long/autonome** (`run-*-apps.ts`, `run-mango-nuit.ts`, tout test `_prove-*` en conditions réelles, tout run sans supervision continue) : dérouler `PRELAUNCH_CHECKLIST.md` (racine du repo). Née d'un oubli réel (2026-07-14) : câblage modèle vérifié à fond mais MangoQA — dépendance d'EXÉCUTION, pas de config — mort sans que ce soit contrôlé avant le lancement. La checklist couvre : services externes vivants (Ollama, MangoQA), cohérence des 3 registres modèle, cohérence prompt↔chemin réellement emprunté (contrat vs agentique), capacité VRAM, hygiène du run (état nettoyé, filet de reprise posé).
+
 ## ⚠️ Vérification anti-serveur-orphelin (IMPÉRATIF à chaque démarrage du backend)
 
 **Avant de lancer le backend Express (port 3000), TOUJOURS vérifier qu'aucun process orphelin ne squatte le port.** Cette erreur s'est produite plusieurs fois : la session automatique nocturne de Raf laisse un `node` mort-vivant sur le port 3000 dans une session non-interactive. Tous ses spawns (npm/git/vite) échouent alors avec des codes obscurs (`3221225794` / `0xC0000142`, `git init` qui plante), ce qui bloque toute génération d'app.

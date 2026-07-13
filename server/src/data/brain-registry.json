@@ -17,7 +17,10 @@
   "vision": {
     "provider": "ollama",
     "model": "qwen3-vl:8b",
-    "timeoutMs": 60000
+    "timeoutMs": 60000,
+    "fallback": [
+      { "provider": "ollama", "model": "qwen3.5:cloud", "timeoutMs": 90000 }
+    ]
   },
   "designer_ux": {
     "provider": "ollama",

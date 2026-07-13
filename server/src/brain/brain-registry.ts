@@ -66,7 +66,10 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   extracteur:    { provider: "claude", model: "haiku", timeoutMs: 30_000 },
   testeur:       { provider: "claude", model: "sonnet", timeoutMs: 45_000 },
   auditeur:      { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
-  optimiseur:    { provider: "ollama", model: "gemma4:12b", timeoutMs: 60_000 },
+  // (2026-07-14) gemma4:12b désinstallé localement — repli de dernier recours
+  // réaligné sur le cerveau Élève courant (le fichier vivant brain-registry.json
+  // porte déjà qwythos-tools:q6 ; ce défaut n'intervient QUE si ce fichier disparaît).
+  optimiseur:    { provider: "ollama", model: "qwythos-tools:q6", timeoutMs: 60_000 },
   chercheur:     { provider: "claude", model: "sonnet", timeoutMs: 90_000 },
   // #161 — juge de clôture (intention↔livré) : souverain ($0) et DISTINCT de
   // l'exécutant GLM (provider openai), pour éviter l'auto-jugement biaisé.
@@ -74,9 +77,11 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // #164 Phase 3 — Le Stratège (cas AMBIGUS). Leçon TRINITY (veille Sakana) : un
   // petit cerveau LOCAL suffit à *classer* un blocage (il ne résout rien lui-même,
   // il choisit une classe du catalogue). Barreau 1 de l'échelle d'escalade :
-  // gemma4:12b LOCAL ($0 réel). Le barreau 2 (cloud supérieur) est un AUTRE agent,
-  // configurable par env (STRATEGE_ESCALATE_AGENT) — voir stratege-brain.ts.
-  stratege:      { provider: "ollama", model: "gemma4:12b", timeoutMs: 90_000 },
+  // (2026-07-14) gemma4:12b désinstallé — repli sur qwythos-tools:q6 (déjà chargé,
+  // évite un swap VRAM supplémentaire). Le barreau 2 (cloud supérieur, GLM 5.2 via
+  // le rôle `routeur`) est un AUTRE agent, configurable par env
+  // (STRATEGE_ESCALATE_AGENT) — voir stratege-brain.ts.
+  stratege:      { provider: "ollama", model: "qwythos-tools:q6", timeoutMs: 90_000 },
   // La Forge — le FORGERON qui CONÇOIT les agents (méta-prompting). Décision Raf
   // (2026-06-29) : c'est l'acte le PLUS exigeant (lire une lacune abstraite → rédiger
   // un prompt système d'expert + JSON valide) et il est RARE → on y met le meilleur

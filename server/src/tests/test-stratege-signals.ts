@@ -71,7 +71,7 @@ check("none → formatDiagnosis vide", REMEDY_BY_CLASS["none"] === "—");
 {
   const d = diagnose({ buildOk: false, finished: false, stuck: false, iterations: 5, buildDetail: "quelque chose d'inattendu sans signature connue", toolNames: ["edit_file"] });
   check("build cassé non reconnu → ambiguous", d.blocker === "ambiguous");
-  check("… remède = cerveau Stratège local", /gemma4:12b/.test(d.remedy));
+  check("… remède = cerveau Stratège local", /qwythos-tools:q6/.test(d.remedy));
 }
 
 // ── traçabilité : chaque diagnostic porte une preuve non vide ────────────────

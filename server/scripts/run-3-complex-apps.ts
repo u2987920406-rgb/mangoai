@@ -49,27 +49,34 @@ interface AppSpec {
   task: string;
 }
 
-// (2026-07-14, corrigé après le 1er run) — CETTE version du COMMON ne promet QUE ce
-// que le chemin CONTRAT offre réellement (<write>/<edit>/<run>, RIEN d'autre). La
-// version précédente disait "utilise l'outil chercher_image"/"outil planifier"/
-// "teste_parcours" — des outils AGENTIQUES qui n'existent pas ici ; Qwythos a tenté
-// de les invoquer via <run> (ex. <run>chercher_image</run>) → échec système immédiat
-// ("commande non reconnue"), et sur les 2 tentatives que permettait l'ancien profil
-// GENERIC, il n'a jamais pu s'en remettre — 2 des 3 apps ont "réussi" en laissant le
-// TEMPLATE INTACT (build vert d'un projet non modifié). Voir models/qwythos.ts pour
-// le detail du diagnostic et le profil dédié désormais utilisé (maxAttempts 2→6).
+// (2026-07-14, corrigé une 2e fois) — Le 1er run (profil GENERIC/contrat, ancien tag
+// Qwythos cassé) a produit un COMMON "chemin contrat only" (<write>/<edit>/<run>, sans
+// outils). Depuis, ELEVE_MODEL a été retaggé "qwythos-tools:q6" (Modelfile réparé,
+// tool-calling natif réel) : resolveProfile() route désormais ce script sur le moteur
+// AGENTIQUE (relay-agentic.ts, outils réels chercher_image/planifier/teste_parcours/
+// check_build), PAS le contrat. Rejouer avec l'ancien COMMON aurait activement menti
+// au modèle ("pas d'outil disponible ici" alors qu'il y en a) — corrigé, on reprend le
+// COMMON éprouvé (mango-nuit-specs.ts, abyss 5/5) adapté aux outils réels.
+// Point 7 ajouté suite à L126 (limites.md, 2026-07-14) : sur la tâche "CARAVAN", ce
+// même modèle a épuisé ses 10 auto-relances en exploration/planification sans jamais
+// écrire le fichier principal — consigne explicite pour contrer ce mode d'échec précis.
 const COMMON =
   `\n\n## RÈGLES DE PRODUCTION (non négociables)\n` +
-  `1. VRAIES IMAGES : écris des URLs Pexels DIRECTES plausibles (https://images.pexels.com/photos/<id>/pexels-photo-<id>.jpeg) ` +
-  `pour CHAQUE visuel réel — l'id peut être approximatif, Mango vérifie et répare après coup. ` +
+  `1. VRAIES IMAGES : utilise l'outil chercher_image (Pexels) pour CHAQUE visuel réel ` +
+  `(héros, galeries, vignettes). Décris des requêtes précises en anglais. ` +
   `INTERDIT : genere_image / Flux / placeholders gris.\n` +
-  `2. CONTEXTE D'ABORD : ancre-toi sur le sujet réel avant de concevoir.\n` +
-  `3. DÉCIDE et ÉCRIS directement — pas d'outil de planification séparé disponible ici, réfléchis puis <write>.\n` +
+  `2. CONTEXTE D'ABORD : commence par cerner l'identité du sujet (chercher_web si utile), ` +
+  `puis conçois autour de cette identité réelle.\n` +
+  `3. PLANIFIE BRIÈVEMENT (outil planifier, 3-5 étapes MAX), puis ÉCRIS tout de suite le fichier ` +
+  `principal — ne passe pas plus de 2-3 appels d'outils à explorer/lire avant d'écrire une première version.\n` +
   `4. EFFET WAHOU maîtrisé : animations à l'entrée, transitions fluides, hover riches — mais lisibilité et perf priment.\n` +
   `5. FONCTIONNEL : CHAQUE fonction listée doit RÉELLEMENT être écrite et marcher (clics, filtres, calculs, persistance localStorage) — ` +
-  `ne laisse JAMAIS le template de départ intact, un projet qui compile sans rien faire de la tâche demandée est un ÉCHEC.\n` +
-  `6. Le BUILD doit passer — vérifie-le toi-même avec EXACTEMENT <run>npm run build</run> (jamais un binaire nu comme "vite"). ` +
-  `Composants < 200 lignes, hooks séparés, responsive mobile→desktop.\n` +
+  `ne laisse JAMAIS le template de départ intact, un projet qui compile sans rien faire de la tâche demandée est un ÉCHEC. ` +
+  `Vérifie avec teste_parcours quand c'est pertinent.\n` +
+  `6. Le BUILD doit passer (check_build). Composants < 200 lignes, hooks séparés, responsive mobile→desktop.\n` +
+  `7. NE T'ÉTERNISE PAS EN EXPLORATION : une V1 fonctionnelle du fichier principal écrite tôt vaut mieux ` +
+  `qu'un plan parfait jamais exécuté. Si tu relis/modifies le CSS ou fais des vérifications, fais-le APRÈS ` +
+  `avoir écrit la logique principale, jamais avant.\n` +
   `\nSession AUTONOME : prends toutes les décisions toi-même. Ne demande rien, livre.`;
 
 const SPECS: AppSpec[] = [

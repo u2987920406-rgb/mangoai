@@ -74,5 +74,40 @@ console.log("\n[4] formatRemedy lisible");
   check("format escalate", /escalade/.test(formatRemedy(diag("none"), { kind: "escalate", reason: "x" })));
 }
 
+console.log("\n[5] reframe (2026-07-14) — récidive sur une classe STRATÉGIQUE");
+{
+  // plateau-iterations récidive (budget large) → 1 reframe, PAS un escalate immédiat.
+  const st = newStrategeState(5);
+  const d = diag("plateau-iterations");
+  const r1 = route(d, st);
+  check("1er passage → nudge (decompose)", r1.kind === "nudge");
+  commitRemedy(d, st, r1);
+  const r2 = route(d, st);
+  check("récidive → reframe (pas escalate)", r2.kind === "reframe");
+  check("reframe cite la remise en question", r2.kind === "reframe" && /REMISE EN QUESTION|remise en question/i.test(r2.nudge));
+  commitRemedy(d, st, r2);
+  check("commitRemedy(reframe) marque `reframed`", st.reframed.has(remedyKey(d)));
+  const r3 = route(d, st);
+  check("2e récidive → escalate (jamais 2 reframes)", r3.kind === "escalate");
+
+  // classe MÉCANIQUE (missing-dependency) : récidive → escalate direct, JAMAIS de reframe.
+  const st2 = newStrategeState(5);
+  const d2 = diag("missing-dependency", "gsap");
+  route(d2, st2);
+  commitRemedy(d2, st2);
+  const mdAgain = route(d2, st2);
+  check("missing-dependency récidive → escalate direct (pas de reframe)", mdAgain.kind === "escalate");
+
+  // l'historique s'accumule (accumulation de connaissance, pas juste répétition)
+  const st3 = newStrategeState(5);
+  const d3 = diag("wandering");
+  const rw1 = route(d3, st3);
+  commitRemedy(d3, st3, rw1);
+  const rw2 = route(d3, st3);
+  check("2e passage sur wandering → reframe", rw2.kind === "reframe");
+  check("historique non vide avant le reframe", st3.history.length === 1);
+  if (rw2.kind === "reframe") check("le nudge de reframe CITE l'historique accumulé", rw2.nudge.includes(st3.history[0]));
+}
+
 console.log(`\n${fail === 0 ? "✅" : "❌"} stratege : ${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);
