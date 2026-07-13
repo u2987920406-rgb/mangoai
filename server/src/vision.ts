@@ -560,12 +560,154 @@ export function processScraped(
   return { text, links, truncated };
 }
 
+// ── Lecture LÉGÈRE (sans navigateur) — 2026-07-13 ───────────────────────────
+// Constat en conditions réelles (Raf, ludum.fr) : un simple GET HTTP passe en
+// 200 là où le MÊME contenu, lu via Chromium headless, se prend un 403 — le
+// blocage vise l'EMPREINTE d'automatisation du navigateur (webdriver, timing,
+// plugins absents), pas le contenu. Un moteur de recherche/robot d'indexation
+// (et Gemini, constaté) lit ces pages en GET nu, sans jamais ouvrir de
+// navigateur. `scrapeExternal` tente donc CE chemin en premier pour le texte
+// (jamais pour une capture — `withImage` bascule direct sur Chromium) : plus
+// rapide, $0 de rendu, et surtout moins susceptible de déclencher une
+// protection anti-bot conçue pour repérer un navigateur automatisé. Repli
+// SILENCIEUX sur Chromium (comportement historique inchangé) si le fetch
+// échoue, renvoie du non-HTML, ou un texte trop court (coquille JS-only —
+// SPA qui ne rend rien sans exécuter son JS).
+const LIGHT_FETCH_UA =
+  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+const LIGHT_FETCH_TIMEOUT_MS = 8_000;
+const LIGHT_FETCH_MAX_BYTES = 5_000_000; // pages HTML légitimes tiennent large dedans
+const MIN_TEXT_FOR_LIGHT_FETCH = 200; // sous ce seuil : probablement une coquille JS-only
+
+/** Décode les entités HTML courantes (nommées + numériques). PUR. */
+export function decodeHtmlEntities(s: string): string {
+  return (s ?? "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&#(\d+);/g, (_, d: string) => String.fromCharCode(Number(d)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
+}
+
+/** Extrait titre + texte visible + liens d'un HTML brut, SANS navigateur (pas de
+ * JS exécuté — un getter statique, comme un robot d'indexation). PUR, testable
+ * sans réseau. `baseUrl` résout les liens relatifs. */
+export function extractTextFromHtml(html: string, baseUrl: string): { title: string; text: string; links: { href: string; label: string }[] } {
+  // `<textarea>` retiré au même titre : des sites y planquent des payloads JS
+  // (masqués en `display:none`, ex. ludum.fr) — un regex n'a pas la cascade CSS
+  // pour le savoir, donc autant l'écarter comme du bruit non-éditorial.
+  const cleaned = (html ?? "")
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<textarea[\s\S]*?<\/textarea>/gi, " ")
+    .replace(/<!--[\s\S]*?-->/g, " ");
+
+  const titleMatch = cleaned.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+  const title = titleMatch ? decodeHtmlEntities(titleMatch[1]).replace(/\s+/g, " ").trim() : "";
+
+  const links: { href: string; label: string }[] = [];
+  const linkRe = /<a\s+[^>]*href=["']([^"'#][^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(cleaned))) {
+    let href: string;
+    try {
+      href = new URL(m[1], baseUrl).toString();
+    } catch {
+      continue;
+    }
+    const label = decodeHtmlEntities(m[2].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
+    links.push({ href, label });
+  }
+
+  // (2026-07-13, cas réel ludum.fr) — le CHROME de page (menu, en-tête, pied de
+  // page, panneaux latéraux) est presque toujours du bruit, jamais ce qu'on est
+  // venu lire ; sur les gros sites e-commerce il peut à lui seul remplir toute
+  // la fenêtre de texte (`SCRAPE_MAX_TEXT`) avant que le contenu réel n'ait sa
+  // chance. On le retire du flux narratif (pas des LIENS, extraits juste avant :
+  // un lien de menu reste un lien valide).
+  const withoutChrome = cleaned
+    .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
+    .replace(/<header[\s\S]*?<\/header>/gi, " ")
+    .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
+    .replace(/<aside[\s\S]*?<\/aside>/gi, " ");
+
+  // Contenu PRINCIPAL en priorité : la balise sémantique <main>/<article> (quand
+  // présente — cas courant, y compris ludum.fr) porte le contenu qu'on cherche
+  // vraiment. On le met en TÊTE du texte renvoyé pour qu'il survive à la
+  // troncature en aval, puis le reste de la page suit en second (contexte
+  // secondaire) — sans le dupliquer.
+  let primaryHtml = "";
+  let bodyHtml = withoutChrome;
+  const mainMatch = withoutChrome.match(/<main[\s\S]*?<\/main>/i) ?? withoutChrome.match(/<article[\s\S]*?<\/article>/i);
+  if (mainMatch && mainMatch.index !== undefined) {
+    primaryHtml = mainMatch[0];
+    bodyHtml = withoutChrome.slice(0, mainMatch.index) + withoutChrome.slice(mainMatch.index + mainMatch[0].length);
+  }
+
+  const toPlainText = (fragment: string): string => {
+    const withBreaks = fragment.replace(/<\/(p|div|li|h[1-6]|tr|br)>/gi, "\n").replace(/<br\s*\/?>/gi, "\n");
+    const stripped = withBreaks.replace(/<[^>]+>/g, " ");
+    return decodeHtmlEntities(stripped)
+      .replace(/[ \t]+/g, " ")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  };
+
+  const primaryText = primaryHtml ? toPlainText(primaryHtml) : "";
+  const restText = toPlainText(bodyHtml);
+  // Seuil bas (juste anti-vide, pas anti-court) : un <main> non-vide est déjà un
+  // signal de pertinence bien plus fort qu'une absence de balise sémantique.
+  const text = primaryText.length > 20 ? `${primaryText}\n\n${restText}`.trim() : restText;
+
+  return { title, text, links };
+}
+
+/** Tente une lecture LÉGÈRE (fetch nu, sans navigateur). `null` si indisponible
+ * (réseau, non-HTML, contenu trop volumineux, ou texte trop court) — l'appelant
+ * se replie alors sur Chromium. Ne lève jamais. */
+async function fetchLight(url: string): Promise<{ title: string; text: string; links: { href: string; label: string }[] } | null> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), LIGHT_FETCH_TIMEOUT_MS);
+  try {
+    const res = await fetch(url, {
+      headers: { "User-Agent": LIGHT_FETCH_UA, "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8" },
+      redirect: "follow",
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return null;
+    const ct = res.headers.get("content-type") ?? "";
+    if (!/text\/html|application\/xhtml/i.test(ct)) return null;
+    const len = Number(res.headers.get("content-length") ?? "0");
+    if (len > LIGHT_FETCH_MAX_BYTES) return null;
+    const html = await res.text();
+    const extracted = extractTextFromHtml(html, res.url || url);
+    if (extracted.text.length < MIN_TEXT_FOR_LIGHT_FETCH) return null;
+    return extracted;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 /** Charge une page publique et en extrait titre + texte visible + liens.
  * `withImage` ajoute une capture pleine page (layout). Réutilise getBrowser(). */
 export async function scrapeExternal(
   url: string,
   withImage = false,
 ): Promise<ScrapedPage & { image?: Buffer }> {
+  // Chemin léger d'abord (texte only — une image exige le navigateur).
+  if (!withImage) {
+    const light = await fetchLight(url);
+    if (light) {
+      const { text, links, truncated } = processScraped(light.text, light.links);
+      return { title: light.title, text, links, truncated };
+    }
+  }
   const b = await getBrowser();
   const context = await b.newContext({ viewport: CLONE_VIEWPORT, deviceScaleFactor: 1 });
   try {
