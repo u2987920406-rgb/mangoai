@@ -19,6 +19,8 @@ Lire aussi `memory.md` pour l'état courant du projet.
 
 Lire aussi `fondation.md` — le document fondateur (architecture, vision 10 ans, principes non-négociables). Léger (~25 ko) et structurant : c'est la référence absolue pour toute décision d'architecture.
 
+Lire aussi `pipeline-eleve-qa.md` — câblage TECHNIQUE concret du pipeline Élève + Stratège + Forge + MangoQA (fichiers, variables d'env, mécanismes réels, état daté 2026-07-14). Complément opérationnel de `fondation.md` (qui reste au niveau vision) — la référence à jour avant toute question ou modification touchant au pipeline.
+
 **Ne PAS lire `historique.md` au démarrage** — ce fichier est lourd (~220 ko). Le lire uniquement quand l'utilisateur demande explicitement le détail d'une idée ou d'une session passée.
 
 ## Wiki de connaissance (`wiki/`, vault Obsidian)
