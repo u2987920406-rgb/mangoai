@@ -124,6 +124,12 @@ Rends UNIQUEMENT un objet JSON valide (aucun texte autour), avec EXACTEMENT ces 
 Indique la compétence DOMINANTE dans le rôle et les tags (vision / raisonnement / code…).
 Le cerveau (provider/model) sera AUTO-ASSIGNÉ par Mango selon cette compétence (vision → l'œil,
 raisonnement/code → l'Élève GLM) — tes champs "provider"/"model" sont indicatifs, Mango tranche.
+
+IMPORTANT — "tags" est une liste ORDONNÉE, PAS un sac de mots-clés : range-les du plus
+DÉFINISSANT (ce qui identifie le mieux cet agent PARMI TOUS les autres, ex. "unity" pour un
+agent Unity) au plus générique (ex. "gamedev"). Comme une liste d'ingrédients alimentaire
+(le 1er = le plus présent) : le mot en position 1 pèse le plus lourd quand Mango choisit quel
+agent consulter. 3 à 6 tags, en un seul mot chacun (pas de phrase), tous en minuscule sans accent.
 Aucun texte hors de l'objet JSON.`
 }
 

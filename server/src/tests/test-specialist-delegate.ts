@@ -128,5 +128,44 @@ console.log("\n[5] buildForgedResumeNudge (reprise robuste #168 T3)")
   check("porte le remède + appelle finish", n.includes("réorienter vers read_file/edit_file") && n.includes("finish"))
 }
 
+console.log("\n[2c] pickSpecialist — pondération par RANG de tag (2026-07-13, demande Raf)")
+{
+  // Deux agents jeu vidéo proches (mêmes mots de contexte génériques), qui ne divergent
+  // que sur leur tag n°1 — comme une liste d'ingrédients : le 1er tag = le plus définissant.
+  const unityAgent = mk({
+    id: "sa_unity", name: "Expert Unity", role: "développement de jeux vidéo avec moteur",
+    tags: ["unity", "csharp", "gamedev"], triggers: "jeux vidéo",
+  })
+  const unrealAgent = mk({
+    id: "sa_unreal", name: "Expert Unreal", role: "développement de jeux vidéo avec moteur",
+    tags: ["unreal", "blueprint", "gamedev"], triggers: "jeux vidéo",
+  })
+  const pool = [unityAgent, unrealAgent]
+
+  const mUnity = pickSpecialist(pool, "je veux faire un jeu vidéo avec Unity", { min: 1 })
+  check("un seul mot de tag n°1 (« unity ») suffit à trancher vers l'agent Unity", mUnity?.agent.id === "sa_unity")
+  const mUnreal = pickSpecialist(pool, "je veux faire un jeu vidéo avec Unreal", { min: 1 })
+  check("un seul mot de tag n°1 (« unreal ») suffit à trancher vers l'agent Unreal", mUnreal?.agent.id === "sa_unreal")
+
+  // Un agent générique dont le SEUL recouvrement porte sur un mot de CONTEXTE (poids 1, non
+  // priorisé) ne doit jamais dépasser un agent dont le tag n°1 matche directement (poids 3).
+  const generique = mk({
+    id: "sa_generique", name: "Généraliste jeux", role: "aide générale au développement de jeux vidéo divers",
+    tags: ["divers"], triggers: "jeux vidéo en général",
+  })
+  const mSpecifique = pickSpecialist([generique, unityAgent], "jeu vidéo Unity", { min: 1 })
+  check("le tag n°1 pertinent (Unity) l'emporte sur un agent au contexte plus large", mSpecifique?.agent.id === "sa_unity")
+
+  // Rétro-compatibilité du SEUIL : le seuil `min` reste un compte BRUT de mots-clés recouverts,
+  // pas le score pondéré — un unique mot fortuit sur un tag n°1 (poids 3) ne doit PAS suffire à
+  // franchir min=2 (sinon un seul mot ferait déclencher une délégation à tort).
+  const mSeuilBrut = pickSpecialist([unityAgent], "unity", { min: 2 })
+  check("le seuil `min` compte les mots bruts, pas le score pondéré (1 mot < min 2 → null)", mSeuilBrut === null)
+
+  // Le score renvoyé reflète bien la pondération (tag n°1 « unity » = 3, tag n°3 « gamedev » = 1.5).
+  const scoreUnity = pickSpecialist([unityAgent], "unity gamedev", { min: 1 })
+  check("score pondéré exposé (tag n°1 + tag n°3 = 3 + 1.5)", scoreUnity?.score === 4.5)
+}
+
 console.log(`\n${pass} pass, ${fail} fail`)
 process.exit(fail ? 1 : 0)

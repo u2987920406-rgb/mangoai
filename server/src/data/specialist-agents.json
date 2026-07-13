@@ -30,7 +30,7 @@
     ],
     "provider": "ollama",
     "createdByAgent": "systeme",
-    "createdAt": "2026-07-12T23:02:21.808Z",
+    "createdAt": "2026-07-13T03:14:03.122Z",
     "model": "glm-5.2:cloud",
     "timeoutMs": 120000,
     "mode": "action",
@@ -76,9 +76,14 @@
       "Architecture Unreal pour un jeu FPS multi-joueurs avec matchmaking web"
     ],
     "tags": [
-      "code",
-      "architecture",
-      "moteurs"
+      "unity",
+      "unreal",
+      "csharp",
+      "blueprint",
+      "gamedev",
+      "gameplay",
+      "personnage",
+      "inventaire"
     ],
     "provider": "openai",
     "createdByAgent": "codeur",
@@ -121,9 +126,11 @@
       "Analyse cette capture d'écran du dashboard et donne-moi le score de design"
     ],
     "tags": [
-      "raisonnement",
+      "design",
+      "score",
+      "convergence",
       "vision",
-      "code"
+      "wcag"
     ],
     "provider": "ollama",
     "createdByAgent": "codeur",

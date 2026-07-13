@@ -35,10 +35,21 @@ export function tokenize(text: string): Set<string> {
   return out
 }
 
-/** Texte « recherchable » d'un agent : tags (pondérés ×2) + rôle + déclencheurs + lacune + nom. */
-function agentText(a: SpecialistAgent): string {
-  const tags = (a.tags ?? []).join(" ")
-  return [tags, tags, a.role, a.triggers, a.lacune, a.name].join(" ")
+/** Texte « recherchable » de CONTEXTE d'un agent (poids 1, hors tags) : rôle + déclencheurs
+ *  + lacune + nom. Les tags sont scorés séparément par rang (voir `tagWeight`). */
+function agentContextText(a: SpecialistAgent): string {
+  return [a.role, a.triggers, a.lacune, a.name].join(" ")
+}
+
+// (2026-07-13, demande Raf) — poids par RANG du tag, comme une liste d'ingrédients ordonnée
+// par proportion (le 1er tag d'un agent = son ingrédient dominant). Un agent forgé doit lister
+// ses tags du plus définissant au moins définissant (voir buildForgeOnePrompt) ; les tags au-
+// delà du 3e rang, et les mots de contexte (rôle/déclencheurs/lacune/nom), pèsent 1 (poids
+// historique). Permet à UN tag n°1 net (ex. "unity") de trancher entre deux agents proches
+// plutôt que de compter chaque mot-clé à égalité.
+const TAG_RANK_WEIGHTS = [3, 2, 1.5] as const
+function tagWeight(rank: number): number {
+  return TAG_RANK_WEIGHTS[rank] ?? 1
 }
 
 /** Longueur du préfixe commun entre deux mots. */
@@ -71,9 +82,13 @@ export interface PickSpecialistOptions {
 
 /**
  * Choisit le spécialiste le plus pertinent pour un texte (tâche + blocage). PUR.
- * Score = nb de mots-clés partagés (tags comptés double via agentText). Renvoie le meilleur
- * au-dessus de `min` (défaut 2), sinon null. Ignore les agents sous le winrate minimal (#3)
- * une fois qu'ils ont assez d'usages pour que ce chiffre soit significatif. Ne lève jamais.
+ * Le SEUIL `min` reste basé sur le nombre BRUT de mots-clés de la tâche qui trouvent un
+ * recouvrement (comportement historique, inchangé — évite qu'un seul mot fortuit déclenche
+ * une délégation). Le CLASSEMENT entre agents éligibles, lui, utilise le score PONDÉRÉ par
+ * rang de tag (`tagWeight`) : un agent dont le tag n°1 matche l'emporte sur un agent qui ne
+ * matche que des mots de contexte génériques, même à recouvrement brut égal. Ignore les
+ * agents sous le winrate minimal (#3) une fois qu'ils ont assez d'usages pour être
+ * significatifs. Ne lève jamais.
  */
 export function pickSpecialist(
   specs: SpecialistAgent[],
@@ -92,13 +107,24 @@ export function pickSpecialist(
       const winrate = stats.consulted > 0 ? stats.wins / stats.consulted : 1
       if (winrate < minWinrate) continue // agent mesuré peu utile → ignoré par le matching
     }
-    const at = tokenize(agentText(agent))
-    // Score = nb de mots-clés de la TÂCHE qui matchent (tolérant) ≥1 mot-clé de l'agent.
-    let score = 0
+    const tags = agent.tags ?? []
+    const tagTokensByRank = tags.map((tag) => tokenize(tag))
+    const ctxTokens = tokenize(agentContextText(agent))
+    // Pour chaque mot de la TÂCHE : le meilleur poids qu'il obtient chez cet agent (tag de
+    // rang le plus haut qui matche, sinon 1 si seul le contexte matche, sinon 0).
+    let raw = 0
+    let weighted = 0
     for (const w of q) {
-      for (const a of at) { if (soft(w, a)) { score++; break } }
+      let hit = 0
+      tagTokensByRank.forEach((toks, rank) => {
+        for (const t of toks) { if (soft(w, t)) hit = Math.max(hit, tagWeight(rank)) }
+      })
+      if (hit === 0) {
+        for (const c of ctxTokens) { if (soft(w, c)) { hit = 1; break } }
+      }
+      if (hit > 0) { raw++; weighted += hit }
     }
-    if (score >= min && (!best || score > best.score)) best = { agent, score }
+    if (raw >= min && (!best || weighted > best.score)) best = { agent, score: weighted }
   }
   return best
 }
