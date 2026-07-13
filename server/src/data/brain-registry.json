@@ -62,7 +62,7 @@
   "forgeron": {
     "provider": "ollama",
     "model": "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K",
-    "timeoutMs": 120000
+    "timeoutMs": 240000
   },
   "routeur": {
     "provider": "ollama",

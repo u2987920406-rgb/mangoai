@@ -147,7 +147,11 @@ export async function runContractPath(ctx: RelayContext): Promise<RelayResult> {
     push(`✗ inspection objective : ${lastInspection.signal}`);
   }
 
-  // ── Escalade vers le Maître ──
-  push(`⤴ ${callMaxAttempts} échec(s) objectif(s) — escalade…`);
-  return await finalizeEscalation(lastError, callMaxAttempts);
+  // ── Escalade vers le Maître — OPT-IN strict (défaut OFF, souveraineté 2026-07-13) ──
+  if (process.env.ELEVE_ESCALATE_ON_BLOCK === "on") {
+    push(`⤴ ${callMaxAttempts} échec(s) objectif(s) — escalade (opt-in)…`);
+    return await finalizeEscalation(lastError, callMaxAttempts);
+  }
+  push(`✗ ${callMaxAttempts} échec(s) objectif(s), toujours cassé — j'ai vraiment essayé seul. ${lastError.slice(0, 300)}`);
+  return { resolvedBy: "none", attempts: callMaxAttempts, success: false, inspection: lastInspection, axiom: false, costUsd: 0, log, incomplete: true };
 }

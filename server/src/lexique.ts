@@ -21,7 +21,7 @@
 // living maintenance by the agent.
 import path from "node:path";
 import fs from "node:fs";
-import { claudeWebResearch } from "./llm/llm-engine.js";
+import { webResearch } from "./web-search.js";
 import { getBrain } from "./kernel.js";
 
 export const LEXIQUE_FILE_NAME = ".lexique.md";
@@ -72,7 +72,7 @@ export interface LexiqueDeps {
 
 const defaultDeps: LexiqueDeps = {
   ask: (system, user) => getBrain().complete(system, user, { maxTokens: 1500 }),
-  webResearch: (prompt) => claudeWebResearch(prompt),
+  webResearch: (prompt) => webResearch(prompt),
 };
 
 // Heuristic: does the intention look like a specialized/unknown domain that
@@ -112,9 +112,11 @@ export async function generateLexique(
   let domainContext = "";
   if (looksSpecialized(intention)) {
     try {
-      domainContext = await deps.webResearch(
-        `Pour un projet décrit ainsi : "${intention.trim()}". Identifie le DOMAINE métier et son vocabulaire spécialisé : 8-12 termes-clés du domaine, leur sens, et le terme naturel qu'un humain emploierait pour chacun. Synthèse concise en puces.`,
-      );
+      // (2026-07-13) Requête de RECHERCHE courte, pas une instruction agentique —
+      // webResearch() interroge directement un moteur (Tavily/DuckDuckGo/Mojeek),
+      // contrairement à claudeWebResearch qui laissait Claude formuler ses propres
+      // requêtes en plusieurs tours. Un prompt-phrase donnerait de mauvais résultats.
+      domainContext = await deps.webResearch(`${intention.trim()} vocabulaire termes spécifiques du domaine`);
     } catch {
       domainContext = "";
     }

@@ -258,7 +258,10 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // Décision de Raf (2026-06-27) : « continuer seul jusqu'au bout » plutôt que de
     // lui redemander à chaque fois. Relevé 2 → 6 ; le garde-fou anti-emballement est
     // désormais le bouton **Stop** (qui marche enfin) entre les mains de l'utilisateur.
-    const selfRelanceMax = Number(process.env.ELEVE_SELF_RELANCE_MAX ?? 6);
+    // (2026-07-13) Relevé 6 → 10 : Claude n'est plus le filet par défaut (ELEVE_ESCALATE_
+    // TO_CLAUDE=off, voir plus bas) — l'Élève doit aller PLUS loin seul avant de rendre
+    // la main, chaque relance restant $0/locale (le coût est juste du temps).
+    const selfRelanceMax = Number(process.env.ELEVE_SELF_RELANCE_MAX ?? 10);
     let agErr = "";
     let result: AgenticBuildResult | null = null;
     let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
@@ -844,5 +847,16 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       );
       return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
     }
-    return await finalizeEscalation(agErr || `build cassé (${insp.signal}) : ${insp.detail.slice(-300)}`, 1);
+    // Build cassé + relances épuisées — escalade Claude = OPT-IN strict, même
+    // gate que le cas « bloqué » ci-dessus. Défaut OFF : échec honnête plutôt
+    // qu'un appel Claude silencieux (2026-07-13, souveraineté).
+    const breakReason = agErr || `build cassé (${insp.signal}) : ${insp.detail.slice(-300)}`;
+    if (process.env.ELEVE_ESCALATE_ON_BLOCK === "on") {
+      return await finalizeEscalation(breakReason, 1);
+    }
+    push(
+      `✗ build toujours cassé après ${relances} auto-relance(s) — j'ai vraiment essayé seul. ` +
+        `${breakReason.slice(0, 300)} Précise ce qui bloque ou relance-moi.`,
+    );
+    return { resolvedBy: "none", attempts: 1, success: false, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
 }

@@ -23,10 +23,16 @@ import { coversGap, type OpenGap } from "../self/self-evolution.js"
 // Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
 import type { ToolPolicy } from "../eleve-tools/eleve-action-tools.js"
 
-/** Chemin du registre des limites, surchargeable par env (testabilité). */
+/** Chemin du registre des limites, surchargeable par env (testabilité).
+ *  (2026-07-13, trouvé en testant le Forgeron en réel sur l'Élève) — BUG pré-existant :
+ *  `import.meta.dirname` de ce module (server/src/agent/) ne remonte qu'à `server/`
+ *  avec 2 `..`, or `limites.md` est à la RACINE du repo (un niveau plus haut). Résultat :
+ *  `readLacunesDigest()` ne trouvait JAMAIS le fichier depuis TOUJOURS (fail-open silencieux
+ *  → 0 lacune, jamais un crash) — le Forgeron (et forgeForGap en auto-évolution live)
+ *  choisissait donc systématiquement "librement" au lieu de cibler une vraie lacune ouverte. */
 function limitesFile(): string {
   return process.env.LIMITES_FILE
-    ?? path.join(import.meta.dirname, "..", "..", "limites.md")
+    ?? path.join(import.meta.dirname, "..", "..", "..", "limites.md")
 }
 
 /** Une lacune extraite du registre, sous forme compacte. */

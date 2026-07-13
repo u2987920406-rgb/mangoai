@@ -1,6 +1,7 @@
 // Idée #40 — Super-agent spécialisé : génère un agent expert complet depuis un domaine.
 import type { Express, Request, Response } from 'express'
-import { resolveProvider, claudeWebResearch } from './llm/llm-engine.js'
+import { resolveProvider } from './llm/llm-engine.js'
+import { webResearch } from './web-search.js'
 import { getBrain } from './kernel.js'
 import path from 'node:path'
 import fs from 'node:fs'
@@ -171,15 +172,14 @@ export function registerSuperAgentRoutes(app: Express): void {
       ? `\n\nContexte supplémentaire fourni par l'utilisateur :\n${description.trim()}`
       : ''
 
-    // ── Étape 1 — Recherche web via l'ABONNEMENT (query + WebSearch) ───────────
-    // $0 crédit, mais plus lent (~1 min : vraie recherche web multi-tours).
-    // Fallback gracieux : si indisponible (réseau, abonnement…), on génère sans
-    // contexte web (webContext reste '').
+    // ── Étape 1 — Recherche web SOUVERAINE (web-search.ts, $0, aucune dépendance
+    // Claude) ────────────────────────────────────────────────────────────────
+    // Requête de recherche courte (pas une instruction agentique — webResearch()
+    // interroge directement un moteur, Claude n'est plus dans la boucle).
+    // Fallback gracieux : si indisponible (réseau…), on génère sans contexte web.
     let webContext = ''
     try {
-      webContext = await claudeWebResearch(
-        `Recherche les meilleures pratiques, le vocabulaire métier et le mode de raisonnement d'un expert en : ${domain.trim()}. Synthétise en 8-12 puces concrètes et opérationnelles.`,
-      )
+      webContext = await webResearch(`${domain.trim()} meilleures pratiques vocabulaire métier`)
     } catch {
       webContext = ''
     }

@@ -64,10 +64,12 @@ async function deterministic(): Promise<void> {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
-  // B) L'Élève échoue 2× (build cassé) → le Maître corrige + axiome
+  // B) L'Élève échoue 2× (build cassé) → gate OPT-IN=on → le Maître corrige + axiome
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-B-"));
     let escalated: boolean = false;
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on"; // filet Claude explicitement réactivé (2026-07-13)
     const deps: RelayDeps = {
       askEleve: async () => writeMarker("BAD"), // toujours cassé
       inspect: async (d) => markerInspect(d),
@@ -79,16 +81,19 @@ async function deterministic(): Promise<void> {
       },
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
-    console.log("\n  [B] Élève en échec → escalade :");
+    console.log("\n  [B] Élève en échec, gate=on → escalade :");
     check("escalade déclenchée après 2 échecs", escalated && r.attempts === 2);
     check("résolu par le Maître", r.resolvedBy === "maitre" && r.success);
     check("axiome appris + coût Claude reporté", r.axiom && r.costUsd === 0.12);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
-  // C) Sortie hors-contrat (parse échoue) → escalade quand même
+  // C) Sortie hors-contrat (parse échoue) → gate OPT-IN=on → escalade quand même
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-C-"));
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
     const deps: RelayDeps = {
       askEleve: async () => "Bien sûr, voici comment faire... (aucune balise)",
       inspect: async (d) => markerInspect(d),
@@ -99,23 +104,50 @@ async function deterministic(): Promise<void> {
       },
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
-    console.log("\n  [C] Réponse hors-contrat → escalade :");
+    console.log("\n  [C] Réponse hors-contrat, gate=on → escalade :");
     check("rejet répété → escalade → Maître", r.resolvedBy === "maitre" && r.success);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
-  // D) Échec total : ni l'Élève ni le Maître ne réparent
+  // D) Échec total, gate OPT-IN=on : Maître appelé mais ne corrige pas non plus
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-D-"));
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
+    let escalateCalls = 0;
     const deps: RelayDeps = {
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
-      escalate: async () => ({ axiom: false, costUsd: 0.05, codeChanged: false }), // le Maître ne corrige pas
+      escalate: async () => { escalateCalls++; return { axiom: false, costUsd: 0.05, codeChanged: false }; }, // le Maître ne corrige pas
     };
     const r = await runRelay("tâche", dir, { maxEleveAttempts: 1 }, deps);
-    console.log("\n  [D] Échec des deux étages :");
+    console.log("\n  [D] Échec des deux étages, gate=on :");
     check("resolvedBy = none, success = false", r.resolvedBy === "none" && !r.success);
+    check("Maître bien appelé (gate=on)", escalateCalls === 1);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // D2) Échec total, gate OFF (DÉFAUT, 2026-07-13) : échec honnête, ZÉRO appel Maître
+  {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-D2-"));
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    delete process.env.ELEVE_ESCALATE_ON_BLOCK; // défaut : escalade OFF
+    let escalateCalls = 0;
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"), // toujours cassé
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async () => { escalateCalls++; return { axiom: false, costUsd: 0.05, codeChanged: false }; },
+    };
+    const r = await runRelay("tâche", dir, { maxEleveAttempts: 1 }, deps);
+    console.log("\n  [D2] Échec total, gate OFF (défaut) → échec honnête, zéro Claude :");
+    check("resolvedBy = none, success = false", r.resolvedBy === "none" && !r.success);
+    check("costUsd = 0 (aucun coût Claude)", r.costUsd === 0);
+    check("Maître JAMAIS appelé (souveraineté par défaut)", escalateCalls === 0);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
@@ -193,8 +225,34 @@ async function deterministic(): Promise<void> {
   }
 
   {
-    // F2 — le moteur laisse le build cassé → escalade vers le Maître (inchangée).
+    // F2 — le moteur laisse le build cassé, gate OPT-IN=on → escalade vers le Maître.
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F2-"));
+    let escalated: boolean = false;
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async (ctx) => { escalated = true; fs.writeFileSync(path.join(ctx.projectDir, "marker.txt"), "OK"); return { axiom: true, costUsd: 0.1, codeChanged: true }; },
+      agenticPost: agenticScript([
+        [call("write_file", { path: "marker.txt", content: "BAD" }, 1)],
+        [call("finish", { summary: "fini (mais cassé)" }, 2)],
+      ]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
+    console.log("\n  [F2] Moteur agentique échoue, gate=on → escalade Maître :");
+    check("moteur n'a pas réparé → escalade", escalated);
+    check("résolu par le Maître + axiome", r.resolvedBy === "maitre" && r.success && r.axiom);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  {
+    // F2b — même échec, gate OFF (DÉFAUT, 2026-07-13) → honnête, ZÉRO appel Maître.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F2b-"));
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    delete process.env.ELEVE_ESCALATE_ON_BLOCK;
     let escalated: boolean = false;
     const deps: RelayDeps = {
       askEleve: async () => writeMarker("BAD"),
@@ -207,9 +265,10 @@ async function deterministic(): Promise<void> {
       ]),
     };
     const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 2 }, deps);
-    console.log("\n  [F2] Moteur agentique échoue → escalade Maître :");
-    check("moteur n'a pas réparé → escalade", escalated);
-    check("résolu par le Maître + axiome", r.resolvedBy === "maitre" && r.success && r.axiom);
+    console.log("\n  [F2b] Moteur agentique échoue, gate OFF (défaut) → échec honnête :");
+    check("Maître JAMAIS appelé", !escalated);
+    check("resolvedBy = none, success = false, coût 0", r.resolvedBy === "none" && !r.success && r.costUsd === 0);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
