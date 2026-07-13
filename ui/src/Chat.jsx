@@ -65,6 +65,10 @@ export default function Chat({
   // Après un tour Discuter, l'Élève (lecture seule) a pu diagnostiquer un correctif :
   // on propose de l'APPLIQUER en un clic via le mode Construire (qui a l'écriture).
   const [awaitingApply, setAwaitingApply] = useState(false);
+  // Fourche visuelle multi-wireframes (2026-07-13) — { variants } reçu via SSE
+  // (type: "wireframe-fork") sur un NOUVEAU projet en mode Élite, avant toute
+  // construction. null = aucune fourche en attente.
+  const [wireframeFork, setWireframeFork] = useState(null);
 
   const push = (msg) => {
     setMessages((prev) => [...prev, { id: uid(), ...msg }]);
@@ -498,6 +502,11 @@ export default function Chat({
       case "context":
         if (ev.tokens && ev.window) onContext?.({ tokens: ev.tokens, window: ev.window });
         break;
+      // Fourche visuelle multi-wireframes (2026-07-13) — 3 structures rendues en
+      // images, à choisir AVANT toute construction (cf. wireframe-fork.ts).
+      case "wireframe-fork":
+        if (ev.variants?.length) setWireframeFork({ variants: ev.variants });
+        break;
       case "error":
         push({ role: "error", text: ev.message ?? ev.error });
         break;
@@ -573,6 +582,27 @@ export default function Chat({
     setInput("Confirmé — construis maintenant selon ce plan.");
     requestAnimationFrame(() => inputRef.current?.focus());
   };
+  // Fourche visuelle multi-wireframes (2026-07-13) — le choix (un clic sur une
+  // carte) est envoyé comme DONNÉE STRUCTURÉE (POST /api/wireframe-fork/:name,
+  // patron perfect-plan, jamais du texte deviné), PUIS le tour Construire suivant
+  // est déclenché directement (même patron que applyDiagnosedFix — un clic décisif
+  // n'a pas besoin d'une seconde confirmation).
+  const chooseWireframe = async (variant) => {
+    setWireframeFork(null);
+    const spec = { angle: variant.angle, rationale: variant.rationale, regions: variant.regions };
+    try {
+      await fetch(`/api/wireframe-fork/${encodeURIComponent(projectName)}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ spec }),
+      });
+    } catch {
+      /* best-effort — le tour suivant retentera la génération si le choix n'a pas pris */
+    }
+    setActiveAction("construire");
+    onChatMode({ model: actionModels.construire, mode: "elite" });
+    send(`Construis avec la structure choisie : « ${variant.angle} ».`, { modeOverride: "elite" });
+  };
   // Applique le correctif diagnostiqué en mode Discuter : on embarque le diagnostic
   // (dernier message de l'agent) pour que le chemin Construire soit auto-suffisant.
   const applyDiagnosedFix = () => {
@@ -642,6 +672,8 @@ export default function Chat({
         onConfirmPlan={confirmPlan}
         awaitingApply={awaitingApply}
         onApplyFix={applyDiagnosedFix}
+        wireframeFork={wireframeFork}
+        onChooseWireframe={chooseWireframe}
       />
 
       <ChatComposer

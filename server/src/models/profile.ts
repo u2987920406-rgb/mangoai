@@ -15,6 +15,10 @@ import { gemmaProfile } from "./gemma.js";
 import { uxuiProfile } from "./uxui.js";
 import { layoutProfile } from "./layout.js";
 import { glmProfile } from "./glm.js";
+import { qwythosProfile } from "./qwythos.js";
+import { qwythosToolsProfile } from "./qwythos-tools.js";
+import { qwen3Profile } from "./qwen3.js";
+import { llama3GroqToolUseProfile } from "./llama3-groq-tool-use.js";
 
 export interface ModelProfile {
   /** Identifiant court de la famille ("gemma", "generic"). */
@@ -44,7 +48,11 @@ export interface ModelProfile {
 
 // Registre des familles reconnues. L'ordre compte : première correspondance
 // gagne. Un modèle non reconnu retombe sur GENERIC (= comportement actuel exact).
-const PROFILES: ModelProfile[] = [gemmaProfile, uxuiProfile, layoutProfile, glmProfile];
+// ORDRE IMPORTANT : qwythosToolsProfile AVANT qwythosProfile — "qwythos-tools:q6"
+// contient "qwythos" et matcherait qwythosProfile en premier sinon (regex /qwythos/i),
+// perdant agentic:true. Premier match gagne (Array.find), donc le plus SPÉCIFIQUE
+// doit toujours précéder le plus GÉNÉRAL.
+const PROFILES: ModelProfile[] = [gemmaProfile, uxuiProfile, layoutProfile, glmProfile, qwythosToolsProfile, qwythosProfile, qwen3Profile, llama3GroqToolUseProfile];
 
 /** Résout la partition d'un modèle ; fallback GENERIC (non-régression garantie). */
 export function resolveProfile(model: string): ModelProfile {

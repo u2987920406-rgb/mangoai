@@ -1201,6 +1201,28 @@ async function sampleImagePixels(dataUrl: string): Promise<RgbaPixel[]> {
   }
 }
 
+/** Rend un HTML/CSS STATIQUE (pas de navigation réelle, `page.setContent`) en JPEG —
+ *  même patron que `sampleImagePixels` ci-dessus, mais capture plein cadre au lieu
+ *  d'un sampling pixel. Aucun serveur dev requis : pour de petits gabarits fiables
+ *  (ex. mockups de structure, `wireframe-fork.ts`), pas pour un site/projet réel
+ *  (voir `captureExternal`/`scrapeExternal` pour ça). Ne lève jamais côté appelant
+ *  garanti seulement si `html` est un document complet valide. */
+export async function renderMockupScreenshot(
+  html: string,
+  viewport: { width: number; height: number } = { width: 800, height: 500 },
+): Promise<Buffer> {
+  const b = await getBrowser();
+  const context = await b.newContext({ viewport, deviceScaleFactor: 1 });
+  try {
+    const page = await context.newPage();
+    await page.setContent(html, { waitUntil: "load" });
+    return await page.screenshot({ type: "jpeg", quality: 85 });
+  } finally {
+    await context.close().catch(() => {});
+    touchIdleTimer();
+  }
+}
+
 /** File path → dominant palette + perceptual ambiance — the IMAGE mouth of the
  *  Sharingan, factored out of sharingan_image so the Moteur de Goût (#149) can reuse
  *  it directly (no MCP tool). Throws on unsupported format / missing file. */

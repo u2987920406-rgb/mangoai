@@ -203,7 +203,13 @@ export async function executeContract(
         }
         const { code, out, timedOut } = await runCommand(projectDir, action.command, runTimeout);
         if (timedOut) throw new Error(`délai dépassé (${runTimeout / 1000}s)`);
-        if (code !== 0) throw new Error(`exit ${code} — ${out.slice(-300).trim()}`);
+        // (2026-07-14, trouvé sur "3 apps complexes" v2) — même piège que
+        // relay-contract.ts:161 : re-tronquer à 300 caractères la sortie déjà bornée
+        // (8000, ligne ~131) coupait souvent le message CONCIS d'esbuild ("Expected
+        // ']' but found '}'" + ligne) hors fenêtre, ne laissant que la stack trace
+        // Node bruyante qui le suit — l'Élève recevait un indice inexploitable pour
+        // se corriger. `out` est déjà borné en amont, pas besoin de re-trancher.
+        if (code !== 0) throw new Error(`exit ${code} — ${out.trim()}`);
         outcomes.push({ action, status: "done", detail: `exit 0${palier}` });
       }
     } catch (e) {

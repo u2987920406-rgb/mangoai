@@ -1,0 +1,1419 @@
+{
+  "videoId": "SEk51GQdeag",
+  "meta": {
+    "titre": "How to make HD 2D Games in Unreal Engine 5",
+    "chaine": "Cobra Code",
+    "dureeS": 554,
+    "publieeLe": "2024-11-20",
+    "description": "Learn the necessary techniques for making gorgeous 2D/3D Hybrids in Unreal Engine 5\nGet my full Unreal 2D Top Down Course: https://tinyurl.com/Unreal2DTopDown\n⚔️Get my new JRPG Masterclass: https://cobracode.teachable.com/p/jrpg-masterclass\n\nSupport the channel on Patreon:\nhttps://www.patreon.com/CobraCode\n\n🔔Subscribe: http://www.youtube.com/channel/UCoKYIjbaEX4mnR8IWwtuBwA?sub_confirmation=1\nTwitter: https://twitter.com/CobraCodeDev\nDiscord: https://discord.com/invite/7VVeuZBy42\n\nSources:\nhttps://cgworld.jp/feature/201908-gg2019-oct.html\nhttps://www.youtube.com/watch?v=pZk-wiwxpU0\nhttps://www.youtube.com/watch?v=K6wW0pO08LE\nhttps://www.youtube.com/watch?v=UPzeHX3VaHY\nhttps://www.youtube.com/watch?v=r7_sWDIJOUo\n\n🎵 Music By:\n- Team Astro - Three of us\n- Provided by Lofi Girl\n- Watch: https://youtu.be/Ov-CsgU-guk?si=ZaF0qA_FhH4pZiFO\n\nIcons made by Freepik (https://www.freepik.com) from Flaticon (https://www.flaticon.com/)\n\n#cobracode #gamedev #unrealengine #ue5"
+  },
+  "source": "subs-manuels",
+  "langue": "en",
+  "segments": [
+    {
+      "tStartS": 0.12,
+      "tEndS": 2.35,
+      "texte": "HD 2D Graphics using Unreal Engine got"
+    },
+    {
+      "tStartS": 2.36,
+      "tEndS": 4.47,
+      "texte": "popularized by Square Enix and acquire"
+    },
+    {
+      "tStartS": 4.48,
+      "tEndS": 6.349,
+      "texte": "through the octopath daver series which"
+    },
+    {
+      "tStartS": 6.359,
+      "tEndS": 8.91,
+      "texte": "had its first release in 2018 even"
+    },
+    {
+      "tStartS": 8.92,
+      "tEndS": 11.15,
+      "texte": "though the term HD 2D is trademarked we"
+    },
+    {
+      "tStartS": 11.16,
+      "tEndS": 12.83,
+      "texte": "can all take inspiration from this art"
+    },
+    {
+      "tStartS": 12.84,
+      "tEndS": 15.07,
+      "texte": "style and apply it to our own games in"
+    },
+    {
+      "tStartS": 15.08,
+      "tEndS": 16.59,
+      "texte": "this video I'll break down the essential"
+    },
+    {
+      "tStartS": 16.6,
+      "tEndS": 19.31,
+      "texte": "steps to achieve this HD 2D look there"
+    },
+    {
+      "tStartS": 19.32,
+      "tEndS": 20.91,
+      "texte": "are a couple of Japanese speeches and"
+    },
+    {
+      "tStartS": 20.92,
+      "tEndS": 22.71,
+      "texte": "interviews from the de team of octopath"
+    },
+    {
+      "tStartS": 22.72,
+      "tEndS": 24.63,
+      "texte": "traveler which I will summarize and on"
+    },
+    {
+      "tStartS": 24.64,
+      "tEndS": 25.99,
+      "texte": "top of that give some more concrete"
+    },
+    {
+      "tStartS": 26,
+      "tEndS": 27.589,
+      "texte": "advice on how to implement these things"
+    },
+    {
+      "tStartS": 27.599,
+      "tEndS": 29.71,
+      "texte": "in Unreal Engine but I also do have a"
+    },
+    {
+      "tStartS": 29.72,
+      "tEndS": 31.669,
+      "texte": "full 17-hour course that will take you"
+    },
+    {
+      "tStartS": 31.679,
+      "tEndS": 33.15,
+      "texte": "through all of the steps of creating"
+    },
+    {
+      "tStartS": 33.16,
+      "tEndS": 34.67,
+      "texte": "three different 2D topown games in"
+    },
+    {
+      "tStartS": 34.68,
+      "tEndS": 36.99,
+      "texte": "unreal with the last one being a 2d 3D"
+    },
+    {
+      "tStartS": 37,
+      "tEndS": 38.51,
+      "texte": "hybrid utilizing a lot of these"
+    },
+    {
+      "tStartS": 38.52,
+      "tEndS": 40.069,
+      "texte": "techniques so please check it out from"
+    },
+    {
+      "tStartS": 40.079,
+      "tEndS": 42.51,
+      "texte": "the discount Link in the description"
+    },
+    {
+      "tStartS": 42.52,
+      "tEndS": 44.43,
+      "texte": "let's get right into it the first point"
+    },
+    {
+      "tStartS": 44.44,
+      "tEndS": 46.59,
+      "texte": "is quite obvious but the most important"
+    },
+    {
+      "tStartS": 46.6,
+      "tEndS": 48.029,
+      "texte": "and of course you'll need to use pixel"
+    },
+    {
+      "tStartS": 48.039,
+      "tEndS": 50.31,
+      "texte": "art characters when s Enix approached"
+    },
+    {
+      "tStartS": 50.32,
+      "tEndS": 52.349,
+      "texte": "acquir for octopath the requirement was"
+    },
+    {
+      "tStartS": 52.359,
+      "tEndS": 54.59,
+      "texte": "to use 2D characters in a 3D World to"
+    },
+    {
+      "tStartS": 54.6,
+      "tEndS": 56.51,
+      "texte": "mix nostalgic pixel art with modern"
+    },
+    {
+      "tStartS": 56.52,
+      "tEndS": 58.509,
+      "texte": "rendering techniques and aquire had to"
+    },
+    {
+      "tStartS": 58.519,
+      "tEndS": 60.31,
+      "texte": "figure out how to achieve that with"
+    },
+    {
+      "tStartS": 60.32,
+      "tEndS": 62.11,
+      "texte": "Unreal Engine we can make use of paper"
+    },
+    {
+      "tStartS": 62.12,
+      "tEndS": 63.95,
+      "texte": "2D which is the built-in framework for"
+    },
+    {
+      "tStartS": 63.96,
+      "tEndS": 66.03,
+      "texte": "sprite animations and we can just import"
+    },
+    {
+      "tStartS": 66.04,
+      "tEndS": 68.19,
+      "texte": "Sprite sheets turn them into flipbooks"
+    },
+    {
+      "tStartS": 68.2,
+      "tEndS": 69.749,
+      "texte": "and then apply those flipbooks to a"
+    },
+    {
+      "tStartS": 69.759,
+      "tEndS": 71.87,
+      "texte": "paper character based blueprint Sprite"
+    },
+    {
+      "tStartS": 71.88,
+      "tEndS": 73.55,
+      "texte": "sizes will differ per character but as"
+    },
+    {
+      "tStartS": 73.56,
+      "tEndS": 76.27,
+      "texte": "an example Cyrus is 34 pixels tall and"
+    },
+    {
+      "tStartS": 76.28,
+      "tEndS": 78.789,
+      "texte": "18 pixels wide while other characters"
+    },
+    {
+      "tStartS": 78.799,
+      "tEndS": 81.31,
+      "texte": "like alberry can be taller and wider"
+    },
+    {
+      "tStartS": 81.32,
+      "tEndS": 82.91,
+      "texte": "these characters usually feature a color"
+    },
+    {
+      "tStartS": 82.92,
+      "tEndS": 85.27,
+      "texte": "palette with pretty low saturation and"
+    },
+    {
+      "tStartS": 85.28,
+      "tEndS": 87.069,
+      "texte": "this NPC for example has six different"
+    },
+    {
+      "tStartS": 87.079,
+      "tEndS": 89.27,
+      "texte": "main colors outside of black with ramps"
+    },
+    {
+      "tStartS": 89.28,
+      "tEndS": 91.95,
+      "texte": "covering three to six tones for top-"
+    },
+    {
+      "tStartS": 91.96,
+      "tEndS": 93.27,
+      "texte": "down games these characters will"
+    },
+    {
+      "tStartS": 93.28,
+      "tEndS": 95.069,
+      "texte": "generally feature animations with four"
+    },
+    {
+      "tStartS": 95.079,
+      "tEndS": 97.429,
+      "texte": "different directions covering left right"
+    },
+    {
+      "tStartS": 97.439,
+      "tEndS": 100.35,
+      "texte": "up and down eight or 16 directions are"
+    },
+    {
+      "tStartS": 100.36,
+      "tEndS": 102.51,
+      "texte": "also possible for smoother animations"
+    },
+    {
+      "tStartS": 102.52,
+      "tEndS": 104.109,
+      "texte": "but will drastically increase your"
+    },
+    {
+      "tStartS": 104.119,
+      "tEndS": 106.27,
+      "texte": "workload even just four directions are"
+    },
+    {
+      "tStartS": 106.28,
+      "tEndS": 108.149,
+      "texte": "already a lot if you have hundreds of"
+    },
+    {
+      "tStartS": 108.159,
+      "tEndS": 109.749,
+      "texte": "characters and instead of drawing every"
+    },
+    {
+      "tStartS": 109.759,
+      "tEndS": 111.83,
+      "texte": "frame by hand in the case of octopath"
+    },
+    {
+      "tStartS": 111.84,
+      "tEndS": 114.03,
+      "texte": "they created a character base attached"
+    },
+    {
+      "tStartS": 114.04,
+      "tEndS": 116.19,
+      "texte": "modular clothing and used photoshop's"
+    },
+    {
+      "tStartS": 116.2,
+      "tEndS": 118.069,
+      "texte": "puppet warp functionality to create"
+    },
+    {
+      "tStartS": 118.079,
+      "tEndS": 119.99,
+      "texte": "these Sprite sheets however finally"
+    },
+    {
+      "tStartS": 120,
+      "tEndS": 122.149,
+      "texte": "adjustments would still be made by hand"
+    },
+    {
+      "tStartS": 122.159,
+      "tEndS": 123.709,
+      "texte": "after your characters are in engine you"
+    },
+    {
+      "tStartS": 123.719,
+      "tEndS": 125.389,
+      "texte": "need to come up with your own logic to"
+    },
+    {
+      "tStartS": 125.399,
+      "tEndS": 127.19,
+      "texte": "switch these directions in the blueprint"
+    },
+    {
+      "tStartS": 127.2,
+      "tEndS": 129.389,
+      "texte": "based on the characters rotation or just"
+    },
+    {
+      "tStartS": 129.399,
+      "tEndS": 131.67,
+      "texte": "utilize the free paper ZD plug-in which"
+    },
+    {
+      "tStartS": 131.68,
+      "tEndS": 133.309,
+      "texte": "comes with a system built in for"
+    },
+    {
+      "tStartS": 133.319,
+      "tEndS": 135.39,
+      "texte": "directional animations the next most"
+    },
+    {
+      "tStartS": 135.4,
+      "tEndS": 136.91,
+      "texte": "important thing are the lighting and"
+    },
+    {
+      "tStartS": 136.92,
+      "tEndS": 138.63,
+      "texte": "shadows and this is where Unreal Engine"
+    },
+    {
+      "tStartS": 138.64,
+      "tEndS": 140.55,
+      "texte": "really shines by default Sprites and"
+    },
+    {
+      "tStartS": 140.56,
+      "tEndS": 142.55,
+      "texte": "flipbooks won't cast Shadows but this"
+    },
+    {
+      "tStartS": 142.56,
+      "tEndS": 145.15,
+      "texte": "can be enabled by just ticking a box"
+    },
+    {
+      "tStartS": 145.16,
+      "tEndS": 146.79,
+      "texte": "they also don't receive Shadows or"
+    },
+    {
+      "tStartS": 146.8,
+      "tEndS": 148.63,
+      "texte": "lighting information and we simply have"
+    },
+    {
+      "tStartS": 148.64,
+      "tEndS": 150.589,
+      "texte": "to change from the unlet Sprite material"
+    },
+    {
+      "tStartS": 150.599,
+      "tEndS": 152.67,
+      "texte": "to the lit Sprite material to achieve"
+    },
+    {
+      "tStartS": 152.68,
+      "tEndS": 154.949,
+      "texte": "that in most cases you want to adjust"
+    },
+    {
+      "tStartS": 154.959,
+      "tEndS": 156.67,
+      "texte": "the directional light that simulates the"
+    },
+    {
+      "tStartS": 156.68,
+      "tEndS": 158.63,
+      "texte": "sun to hit the characters diagonally"
+    },
+    {
+      "tStartS": 158.64,
+      "tEndS": 160.39,
+      "texte": "from the front so it casts an"
+    },
+    {
+      "tStartS": 160.4,
+      "tEndS": 162.55,
+      "texte": "interesting diagonal shadow of course"
+    },
+    {
+      "tStartS": 162.56,
+      "tEndS": 163.869,
+      "texte": "you can then also place other light"
+    },
+    {
+      "tStartS": 163.879,
+      "tEndS": 166.229,
+      "texte": "sources into the scene and also fake"
+    },
+    {
+      "tStartS": 166.239,
+      "tEndS": 168.67,
+      "texte": "lights such as God Ray in octopath there"
+    },
+    {
+      "tStartS": 168.68,
+      "tEndS": 170.55,
+      "texte": "are also often scenes where you enter a"
+    },
+    {
+      "tStartS": 170.56,
+      "tEndS": 172.27,
+      "texte": "cave and your character will hold a lamp"
+    },
+    {
+      "tStartS": 172.28,
+      "tEndS": 174.149,
+      "texte": "that illuminates the environment and"
+    },
+    {
+      "tStartS": 174.159,
+      "tEndS": 175.47,
+      "texte": "this was actually one of the first"
+    },
+    {
+      "tStartS": 175.48,
+      "tEndS": 177.03,
+      "texte": "things the development team prototyped"
+    },
+    {
+      "tStartS": 177.04,
+      "tEndS": 178.869,
+      "texte": "still using Maya before moving into"
+    },
+    {
+      "tStartS": 178.879,
+      "tEndS": 180.79,
+      "texte": "unreal this this effect can be achieved"
+    },
+    {
+      "tStartS": 180.8,
+      "tEndS": 182.43,
+      "texte": "by simply attaching a spotlight to the"
+    },
+    {
+      "tStartS": 182.44,
+      "tEndS": 183.99,
+      "texte": "character and setting it to Absolute"
+    },
+    {
+      "tStartS": 184,
+      "tEndS": 185.99,
+      "texte": "rotation so it doesn't turn together"
+    },
+    {
+      "tStartS": 186,
+      "tEndS": 187.71,
+      "texte": "with the character and will always shine"
+    },
+    {
+      "tStartS": 187.72,
+      "tEndS": 189.83,
+      "texte": "at it from the front in one of the"
+    },
+    {
+      "tStartS": 189.84,
+      "tEndS": 191.949,
+      "texte": "interviews the art director Mika isuka"
+    },
+    {
+      "tStartS": 191.959,
+      "tEndS": 193.83,
+      "texte": "mentions how just using particle effects"
+    },
+    {
+      "tStartS": 193.84,
+      "tEndS": 195.63,
+      "texte": "wasn't enough and they would also spawn"
+    },
+    {
+      "tStartS": 195.64,
+      "tEndS": 197.07,
+      "texte": "point lights whenever an effect will"
+    },
+    {
+      "tStartS": 197.08,
+      "tEndS": 198.789,
+      "texte": "play out to also illuminate the"
+    },
+    {
+      "tStartS": 198.799,
+      "tEndS": 200.949,
+      "texte": "environment but they're also still using"
+    },
+    {
+      "tStartS": 200.959,
+      "tEndS": 203.55,
+      "texte": "unre Engine 4 so if you were to use ue5"
+    },
+    {
+      "tStartS": 203.56,
+      "tEndS": 205.309,
+      "texte": "and Lumen you could just play out an"
+    },
+    {
+      "tStartS": 205.319,
+      "tEndS": 207.11,
+      "texte": "effect and the emissive materials will"
+    },
+    {
+      "tStartS": 207.12,
+      "tEndS": 208.55,
+      "texte": "automatically illuminate the"
+    },
+    {
+      "tStartS": 208.56,
+      "tEndS": 210.789,
+      "texte": "surroundings but Lumen comes with a high"
+    },
+    {
+      "tStartS": 210.799,
+      "tEndS": 212.429,
+      "texte": "performance cost and you might not want"
+    },
+    {
+      "tStartS": 212.439,
+      "tEndS": 214.35,
+      "texte": "to use it the next most important thing"
+    },
+    {
+      "tStartS": 214.36,
+      "tEndS": 215.91,
+      "texte": "are the camera settings and just"
+    },
+    {
+      "tStartS": 215.92,
+      "tEndS": 217.55,
+      "texte": "changing a few things here will make a"
+    },
+    {
+      "tStartS": 217.56,
+      "tEndS": 219.27,
+      "texte": "huge difference during one of the"
+    },
+    {
+      "tStartS": 219.28,
+      "tEndS": 221.35,
+      "texte": "speeches okasan mentions how during the"
+    },
+    {
+      "tStartS": 221.36,
+      "tEndS": 223.55,
+      "texte": "first prototype in unreal the scale just"
+    },
+    {
+      "tStartS": 223.56,
+      "tEndS": 225.309,
+      "texte": "didn't look right and to achieve a"
+    },
+    {
+      "tStartS": 225.319,
+      "tEndS": 227.229,
+      "texte": "perspective closer to Retro pixel art"
+    },
+    {
+      "tStartS": 227.239,
+      "tEndS": 229.149,
+      "texte": "games from the past they angled the"
+    },
+    {
+      "tStartS": 229.159,
+      "tEndS": 231.07,
+      "texte": "camera downwards and decreased the field"
+    },
+    {
+      "tStartS": 231.08,
+      "tEndS": 233.069,
+      "texte": "of view setting I found that pointing"
+    },
+    {
+      "tStartS": 233.079,
+      "tEndS": 235.47,
+      "texte": "the camera downwards by 20° gives us the"
+    },
+    {
+      "tStartS": 235.48,
+      "tEndS": 237.35,
+      "texte": "nice top- down View for the field of"
+    },
+    {
+      "tStartS": 237.36,
+      "tEndS": 238.91,
+      "texte": "view setting on the camera something"
+    },
+    {
+      "tStartS": 238.92,
+      "tEndS": 242.429,
+      "texte": "between 35 and 45° gives us a similar"
+    },
+    {
+      "tStartS": 242.439,
+      "tEndS": 244.39,
+      "texte": "look to octopath and makes buildings"
+    },
+    {
+      "tStartS": 244.4,
+      "tEndS": 246.309,
+      "texte": "appear more miniature likee camera"
+    },
+    {
+      "tStartS": 246.319,
+      "tEndS": 247.91,
+      "texte": "settings alone aren't quite enough to"
+    },
+    {
+      "tStartS": 247.92,
+      "tEndS": 249.589,
+      "texte": "achieve this look though and we'll have"
+    },
+    {
+      "tStartS": 249.599,
+      "tEndS": 251.309,
+      "texte": "to utilize postprocessing which is"
+    },
+    {
+      "tStartS": 251.319,
+      "tEndS": 253.39,
+      "texte": "another big strength of unreal according"
+    },
+    {
+      "tStartS": 253.4,
+      "tEndS": 255.75,
+      "texte": "to okasan they only use settings already"
+    },
+    {
+      "tStartS": 255.76,
+      "tEndS": 256.87,
+      "texte": "available in unreal engines"
+    },
+    {
+      "tStartS": 256.88,
+      "tEndS": 259.03,
+      "texte": "postprocessing volume and didn't have to"
+    },
+    {
+      "tStartS": 259.04,
+      "tEndS": 261.15,
+      "texte": "develop any custom effects they made use"
+    },
+    {
+      "tStartS": 261.16,
+      "tEndS": 263.35,
+      "texte": "of color grading especially using a"
+    },
+    {
+      "tStartS": 263.36,
+      "tEndS": 265.03,
+      "texte": "strong gamma effect in dungeons to make"
+    },
+    {
+      "tStartS": 265.04,
+      "tEndS": 267.11,
+      "texte": "them appear darker but color grading is"
+    },
+    {
+      "tStartS": 267.12,
+      "tEndS": 268.749,
+      "texte": "something I personally am not that great"
+    },
+    {
+      "tStartS": 268.759,
+      "tEndS": 270.51,
+      "texte": "with and I usually just slightly crank"
+    },
+    {
+      "tStartS": 270.52,
+      "tEndS": 272.749,
+      "texte": "up the saturation and contrast or use"
+    },
+    {
+      "tStartS": 272.759,
+      "tEndS": 274.189,
+      "texte": "the settings that come from maps of"
+    },
+    {
+      "tStartS": 274.199,
+      "tEndS": 275.39,
+      "texte": "artists that really know what they're"
+    },
+    {
+      "tStartS": 275.4,
+      "tEndS": 277.749,
+      "texte": "doing Bloom was another setting also"
+    },
+    {
+      "tStartS": 277.759,
+      "tEndS": 279.55,
+      "texte": "heavily utilized and this extends the"
+    },
+    {
+      "tStartS": 279.56,
+      "tEndS": 281.35,
+      "texte": "glow of bright areas of an image"
+    },
+    {
+      "tStartS": 281.36,
+      "tEndS": 283.39,
+      "texte": "especially looking great on God Rays"
+    },
+    {
+      "tStartS": 283.4,
+      "tEndS": 285.83,
+      "texte": "candles and things of that nature here I"
+    },
+    {
+      "tStartS": 285.84,
+      "tEndS": 287.71,
+      "texte": "tend to use a bloom intensity off around"
+    },
+    {
+      "tStartS": 287.72,
+      "tEndS": 290.71,
+      "texte": "1.6 to not overdo it lens flare is"
+    },
+    {
+      "tStartS": 290.72,
+      "tEndS": 292.39,
+      "texte": "another setting they utilized which you"
+    },
+    {
+      "tStartS": 292.4,
+      "tEndS": 294.11,
+      "texte": "can also turn on with the click of a"
+    },
+    {
+      "tStartS": 294.12,
+      "tEndS": 295.83,
+      "texte": "single button and you can then play"
+    },
+    {
+      "tStartS": 295.84,
+      "tEndS": 297.59,
+      "texte": "around with the settings like the Boke"
+    },
+    {
+      "tStartS": 297.6,
+      "tEndS": 299.71,
+      "texte": "size and threshold but they also"
+    },
+    {
+      "tStartS": 299.72,
+      "tEndS": 301.029,
+      "texte": "mentioned how lens flare can be"
+    },
+    {
+      "tStartS": 301.039,
+      "tEndS": 302.79,
+      "texte": "problematic with a fixed camera game"
+    },
+    {
+      "tStartS": 302.8,
+      "tEndS": 304.67,
+      "texte": "like this and they would only apply it"
+    },
+    {
+      "tStartS": 304.68,
+      "tEndS": 306.909,
+      "texte": "very lightly so it would mostly activate"
+    },
+    {
+      "tStartS": 306.919,
+      "tEndS": 309.39,
+      "texte": "during sunrises and sunsets they also"
+    },
+    {
+      "tStartS": 309.4,
+      "tEndS": 311.43,
+      "texte": "mention how instead of using a skylight"
+    },
+    {
+      "tStartS": 311.44,
+      "tEndS": 313.51,
+      "texte": "they use the ambient cubemap postprocess"
+    },
+    {
+      "tStartS": 313.52,
+      "tEndS": 315.43,
+      "texte": "setting to brighten up darker areas"
+    },
+    {
+      "tStartS": 315.44,
+      "tEndS": 316.909,
+      "texte": "which aren't directly being hit by"
+    },
+    {
+      "tStartS": 316.919,
+      "tEndS": 318.71,
+      "texte": "sunlight yet another setting they"
+    },
+    {
+      "tStartS": 318.72,
+      "tEndS": 320.629,
+      "texte": "utilized is the vignette which slightly"
+    },
+    {
+      "tStartS": 320.639,
+      "tEndS": 322.909,
+      "texte": "darkens the edges of the screen all you"
+    },
+    {
+      "tStartS": 322.919,
+      "tEndS": 324.629,
+      "texte": "need to do for this is to change the"
+    },
+    {
+      "tStartS": 324.639,
+      "tEndS": 326.35,
+      "texte": "vignette intensity setting but you"
+    },
+    {
+      "tStartS": 326.36,
+      "tEndS": 328.189,
+      "texte": "definitely don't want to overdo it"
+    },
+    {
+      "tStartS": 328.199,
+      "tEndS": 329.71,
+      "texte": "actually it's active by default and"
+    },
+    {
+      "tStartS": 329.72,
+      "tEndS": 332.11,
+      "texte": "unreal with a default setting of 0.4 and"
+    },
+    {
+      "tStartS": 332.12,
+      "tEndS": 333.67,
+      "texte": "she mentions how they lowered this"
+    },
+    {
+      "tStartS": 333.68,
+      "tEndS": 335.71,
+      "texte": "number and I think something around 0.2"
+    },
+    {
+      "tStartS": 335.72,
+      "tEndS": 337.83,
+      "texte": "looks nice the probably most important"
+    },
+    {
+      "tStartS": 337.84,
+      "tEndS": 339.11,
+      "texte": "setting to achieve this tilt shift"
+    },
+    {
+      "tStartS": 339.12,
+      "tEndS": 341.39,
+      "texte": "miniature look though is depth of field"
+    },
+    {
+      "tStartS": 341.4,
+      "tEndS": 342.909,
+      "texte": "which allows you to make certain areas"
+    },
+    {
+      "tStartS": 342.919,
+      "tEndS": 344.99,
+      "texte": "in your view appear more in Focus while"
+    },
+    {
+      "tStartS": 345,
+      "tEndS": 346.87,
+      "texte": "making objects in front or behind that"
+    },
+    {
+      "tStartS": 346.88,
+      "tEndS": 349.39,
+      "texte": "area blurred out in octopath traveler"
+    },
+    {
+      "tStartS": 349.4,
+      "tEndS": 351.55,
+      "texte": "and all other Square Enix h2d games they"
+    },
+    {
+      "tStartS": 351.56,
+      "tEndS": 354.029,
+      "texte": "use B depth of field and you can still"
+    },
+    {
+      "tStartS": 354.039,
+      "tEndS": 356.27,
+      "texte": "use that in unal engine 4 however since"
+    },
+    {
+      "tStartS": 356.28,
+      "tEndS": 358.309,
+      "texte": "ue5 the depth of field was completely"
+    },
+    {
+      "tStartS": 358.319,
+      "tEndS": 360.11,
+      "texte": "changed and we now only have access to"
+    },
+    {
+      "tStartS": 360.12,
+      "tEndS": 362.27,
+      "texte": "the Cinematic depth of field which is"
+    },
+    {
+      "tStartS": 362.28,
+      "tEndS": 364.11,
+      "texte": "nice but will look slightly different"
+    },
+    {
+      "tStartS": 364.12,
+      "tEndS": 365.39,
+      "texte": "covering all of the settings here would"
+    },
+    {
+      "tStartS": 365.4,
+      "tEndS": 367.15,
+      "texte": "take too much time and I actually have a"
+    },
+    {
+      "tStartS": 367.16,
+      "tEndS": 370.11,
+      "texte": "separate video about this and combining"
+    },
+    {
+      "tStartS": 370.12,
+      "tEndS": 371.629,
+      "texte": "all of these different post-processing"
+    },
+    {
+      "tStartS": 371.639,
+      "tEndS": 373.11,
+      "texte": "effects will lead to a completely"
+    },
+    {
+      "tStartS": 373.12,
+      "tEndS": 375.309,
+      "texte": "different and much more modern look"
+    },
+    {
+      "tStartS": 375.319,
+      "tEndS": 376.95,
+      "texte": "another thing to keep in mind is the"
+    },
+    {
+      "tStartS": 376.96,
+      "tEndS": 379.029,
+      "texte": "environment as mentioned before the"
+    },
+    {
+      "tStartS": 379.039,
+      "tEndS": 381.07,
+      "texte": "characters are flat 2D Sprites but the"
+    },
+    {
+      "tStartS": 381.08,
+      "tEndS": 382.99,
+      "texte": "world is made up of 3D objects with"
+    },
+    {
+      "tStartS": 383,
+      "tEndS": 385.189,
+      "texte": "pixel art textures an easy way to"
+    },
+    {
+      "tStartS": 385.199,
+      "tEndS": 386.909,
+      "texte": "achieve a similar look without creating"
+    },
+    {
+      "tStartS": 386.919,
+      "tEndS": 389.029,
+      "texte": "custom assets is to use stylized or hand"
+    },
+    {
+      "tStartS": 389.039,
+      "tEndS": 391.27,
+      "texte": "painted asset packs from the marketplace"
+    },
+    {
+      "tStartS": 391.28,
+      "tEndS": 393.27,
+      "texte": "and then reduce the max texture size to"
+    },
+    {
+      "tStartS": 393.28,
+      "tEndS": 396.51,
+      "texte": "something around 256 or 128 pixels in"
+    },
+    {
+      "tStartS": 396.52,
+      "tEndS": 398.43,
+      "texte": "the texture settings this will scale"
+    },
+    {
+      "tStartS": 398.44,
+      "tEndS": 399.749,
+      "texte": "down the resolution and make the"
+    },
+    {
+      "tStartS": 399.759,
+      "tEndS": 402.07,
+      "texte": "textures appear more pixelated but of"
+    },
+    {
+      "tStartS": 402.08,
+      "tEndS": 403.749,
+      "texte": "course this often doesn't look perfect"
+    },
+    {
+      "tStartS": 403.759,
+      "tEndS": 405.629,
+      "texte": "and making assets from scratch with this"
+    },
+    {
+      "tStartS": 405.639,
+      "tEndS": 407.469,
+      "texte": "art style in mind will give you the best"
+    },
+    {
+      "tStartS": 407.479,
+      "tEndS": 410.11,
+      "texte": "result even if it's very timec consuming"
+    },
+    {
+      "tStartS": 410.12,
+      "tEndS": 411.95,
+      "texte": "isuk casan also mentioned how creating"
+    },
+    {
+      "tStartS": 411.96,
+      "tEndS": 414.35,
+      "texte": "very low poly models similar to the PS1"
+    },
+    {
+      "tStartS": 414.36,
+      "tEndS": 416.11,
+      "texte": "error actually didn't work out that"
+    },
+    {
+      "tStartS": 416.12,
+      "tEndS": 418.07,
+      "texte": "great and resulted in inconsistent"
+    },
+    {
+      "tStartS": 418.08,
+      "tEndS": 419.83,
+      "texte": "lighting so a lot of the model in"
+    },
+    {
+      "tStartS": 419.84,
+      "tEndS": 422.27,
+      "texte": "octopath are surprisingly High poly and"
+    },
+    {
+      "tStartS": 422.28,
+      "tEndS": 424.23,
+      "texte": "even though they do use pixelar textures"
+    },
+    {
+      "tStartS": 424.24,
+      "tEndS": 426.029,
+      "texte": "they apply bilinear or trilinear"
+    },
+    {
+      "tStartS": 426.039,
+      "tEndS": 427.749,
+      "texte": "filtering to smooth the transition"
+    },
+    {
+      "tStartS": 427.759,
+      "tEndS": 429.629,
+      "texte": "between colors instead of having crisp"
+    },
+    {
+      "tStartS": 429.639,
+      "tEndS": 431.83,
+      "texte": "pixel art which might look too harsh for"
+    },
+    {
+      "tStartS": 431.84,
+      "tEndS": 434.629,
+      "texte": "environmental objects but not all props"
+    },
+    {
+      "tStartS": 434.639,
+      "tEndS": 436.51,
+      "texte": "are created as 3D objects and she"
+    },
+    {
+      "tStartS": 436.52,
+      "tEndS": 439.309,
+      "texte": "mentions how having some 2.5d objects"
+    },
+    {
+      "tStartS": 439.319,
+      "tEndS": 440.909,
+      "texte": "which are basically Sprites that are"
+    },
+    {
+      "tStartS": 440.919,
+      "tEndS": 443.029,
+      "texte": "slightly bent creates a more cohesive"
+    },
+    {
+      "tStartS": 443.039,
+      "tEndS": 444.909,
+      "texte": "look and brings the 2D and 3D elements"
+    },
+    {
+      "tStartS": 444.919,
+      "tEndS": 447.029,
+      "texte": "together more nicely the octopath theme"
+    },
+    {
+      "tStartS": 447.039,
+      "tEndS": 448.309,
+      "texte": "would also utilize unal engines"
+    },
+    {
+      "tStartS": 448.319,
+      "tEndS": 450.07,
+      "texte": "landscape and foliage to tools for the"
+    },
+    {
+      "tStartS": 450.08,
+      "tEndS": 452.309,
+      "texte": "desert and snow environments and made"
+    },
+    {
+      "tStartS": 452.319,
+      "tEndS": 453.869,
+      "texte": "use of splines to place Rivers"
+    },
+    {
+      "tStartS": 453.879,
+      "tEndS": 455.749,
+      "texte": "throughout the world and dungeons in"
+    },
+    {
+      "tStartS": 455.759,
+      "tEndS": 457.35,
+      "texte": "addition they created their own block"
+    },
+    {
+      "tStartS": 457.36,
+      "tEndS": 459.309,
+      "texte": "based building tool inside of unreal"
+    },
+    {
+      "tStartS": 459.319,
+      "tEndS": 460.99,
+      "texte": "which is possible through custom editor"
+    },
+    {
+      "tStartS": 461,
+      "tEndS": 463.55,
+      "texte": "tools which every user can make however"
+    },
+    {
+      "tStartS": 463.56,
+      "tEndS": 465.95,
+      "texte": "this requires a lot of knoow and time"
+    },
+    {
+      "tStartS": 465.96,
+      "tEndS": 467.39,
+      "texte": "and they would then use these blocks"
+    },
+    {
+      "tStartS": 467.4,
+      "tEndS": 468.909,
+      "texte": "together with the landscape tool and"
+    },
+    {
+      "tStartS": 468.919,
+      "tEndS": 471.309,
+      "texte": "module assets to build out their world"
+    },
+    {
+      "tStartS": 471.319,
+      "tEndS": 473.189,
+      "texte": "buildings also play an important role"
+    },
+    {
+      "tStartS": 473.199,
+      "tEndS": 474.79,
+      "texte": "and they aren't built in a physically"
+    },
+    {
+      "tStartS": 474.8,
+      "tEndS": 477.11,
+      "texte": "correct size but rather a smaller scale"
+    },
+    {
+      "tStartS": 477.12,
+      "tEndS": 478.869,
+      "texte": "that is influenced by Final Fantasy 6"
+    },
+    {
+      "tStartS": 478.879,
+      "tEndS": 481.27,
+      "texte": "and supposed to invoke Nostalgia but"
+    },
+    {
+      "tStartS": 481.28,
+      "tEndS": 482.749,
+      "texte": "this brings up an issue of characters"
+    },
+    {
+      "tStartS": 482.759,
+      "tEndS": 484.27,
+      "texte": "not properly fitting into these"
+    },
+    {
+      "tStartS": 484.28,
+      "tEndS": 486.43,
+      "texte": "buildings to combat that they came up"
+    },
+    {
+      "tStartS": 486.44,
+      "tEndS": 487.95,
+      "texte": "with the idea of putting a trigger at"
+    },
+    {
+      "tStartS": 487.96,
+      "tEndS": 489.35,
+      "texte": "the door that would make the character"
+    },
+    {
+      "tStartS": 489.36,
+      "tEndS": 491.869,
+      "texte": "shrink to half the size but also cut the"
+    },
+    {
+      "tStartS": 491.879,
+      "tEndS": 494.189,
+      "texte": "camera distance in half by instantly"
+    },
+    {
+      "tStartS": 494.199,
+      "tEndS": 495.749,
+      "texte": "making this change the character appears"
+    },
+    {
+      "tStartS": 495.759,
+      "tEndS": 497.869,
+      "texte": "to be of the same size however we now"
+    },
+    {
+      "tStartS": 497.879,
+      "tEndS": 499.67,
+      "texte": "have twice the room to explore within"
+    },
+    {
+      "tStartS": 499.68,
+      "tEndS": 501.749,
+      "texte": "these buildings another important effect"
+    },
+    {
+      "tStartS": 501.759,
+      "tEndS": 503.67,
+      "texte": "is the ability to mask out objects in"
+    },
+    {
+      "tStartS": 503.68,
+      "tEndS": 505.11,
+      "texte": "the foreground that would obscure the"
+    },
+    {
+      "tStartS": 505.12,
+      "tEndS": 506.83,
+      "texte": "view to your character this is something"
+    },
+    {
+      "tStartS": 506.84,
+      "tEndS": 508.749,
+      "texte": "they employed in octopath and it's also"
+    },
+    {
+      "tStartS": 508.759,
+      "tEndS": 510.39,
+      "texte": "something I covered in my courses by"
+    },
+    {
+      "tStartS": 510.4,
+      "tEndS": 512.35,
+      "texte": "creating material functions and a custom"
+    },
+    {
+      "tStartS": 512.36,
+      "tEndS": 513.829,
+      "texte": "material that detects the position of"
+    },
+    {
+      "tStartS": 513.839,
+      "tEndS": 515.75,
+      "texte": "the camera and if objects are blocking"
+    },
+    {
+      "tStartS": 515.76,
+      "tEndS": 517.75,
+      "texte": "the view and those are the most"
+    },
+    {
+      "tStartS": 517.76,
+      "tEndS": 519.469,
+      "texte": "important points from these interviews"
+    },
+    {
+      "tStartS": 519.479,
+      "tEndS": 521.07,
+      "texte": "that I wanted to sum up and these will"
+    },
+    {
+      "tStartS": 521.08,
+      "tEndS": 522.509,
+      "texte": "get you very close to achieving that"
+    },
+    {
+      "tStartS": 522.519,
+      "tEndS": 524.63,
+      "texte": "awesome HD 2D look but there are a"
+    },
+    {
+      "tStartS": 524.64,
+      "tEndS": 525.91,
+      "texte": "couple of more interesting details"
+    },
+    {
+      "tStartS": 525.92,
+      "tEndS": 527.35,
+      "texte": "mentioned that would just take too long"
+    },
+    {
+      "tStartS": 527.36,
+      "tEndS": 529.03,
+      "texte": "to cover here and I'll link all of my"
+    },
+    {
+      "tStartS": 529.04,
+      "tEndS": 531.07,
+      "texte": "sources in the description again if you"
+    },
+    {
+      "tStartS": 531.08,
+      "tEndS": 532.71,
+      "texte": "want to try your hand at this and learn"
+    },
+    {
+      "tStartS": 532.72,
+      "tEndS": 534.67,
+      "texte": "step by step how to make 2D 3D highways"
+    },
+    {
+      "tStartS": 534.68,
+      "tEndS": 536.19,
+      "texte": "like this by yourself check out my"
+    },
+    {
+      "tStartS": 536.2,
+      "tEndS": 538.11,
+      "texte": "17-hour course from the discount Link in"
+    },
+    {
+      "tStartS": 538.12,
+      "tEndS": 540.19,
+      "texte": "the description and as always thanks to"
+    },
+    {
+      "tStartS": 540.2,
+      "tEndS": 542.31,
+      "texte": "my awesome patrons"
+    },
+    {
+      "tStartS": 542.32,
+      "tEndS": 555.08,
+      "texte": "[Music]"
+    }
+  ]
+}

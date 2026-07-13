@@ -121,6 +121,21 @@ export async function runContractPath(ctx: RelayContext): Promise<RelayResult> {
 
     lastInspection = await inspectReady();
     if (lastInspection.ok) {
+      // (2026-07-14, trouvé en testant "3 apps complexes") MANAGER-QC des images sur
+      // le chemin CONTRAT : `checkAndRepairImages` était importé mais JAMAIS appelé ici
+      // (seul relay-agentic.ts l'utilisait) — un modèle sur ce chemin (ex. Qwythos, qui
+      // n'a NI outil chercher_image NI banque d'images pré-injectée) n'avait donc aucun
+      // filet pour ses URLs Pexels mal reconstruites. Même discipline que l'agentique :
+      // vérifie + répare via l'API Pexels, best-effort, ne bloque jamais la livraison.
+      if (process.env.ELEVE_IMAGE_CHECK !== "off") {
+        try {
+          const imgReport = await checkAndRepairImages(projectDir);
+          const line = formatImageCheck(imgReport);
+          if (line) push(`  ${line}`);
+        } catch {
+          /* le contrôle qualité des images ne casse jamais la livraison */
+        }
+      }
       // #104 Phase 2 — porte FONCTIONNELLE : un build vert ne suffit pas si l'app
       // est vide. Si la porte est active ET qu'un juge est fourni ET qu'il reste
       // des tentatives, on vérifie le score fonctionnel ; trop bas → on RELANCE
@@ -143,7 +158,13 @@ export async function runContractPath(ctx: RelayContext): Promise<RelayResult> {
       push(`✓ build vert — résolu par l'ÉLÈVE en ${attempt} tentative(s), coût 0`);
       return { resolvedBy: "eleve", attempts: attempt, success: true, inspection: lastInspection, axiom: false, costUsd: 0, log };
     }
-    lastError = `build cassé (${lastInspection.signal}) : ${lastInspection.detail.slice(-300)}`;
+    // (2026-07-14, trouvé sur "3 apps complexes" v2) — 300 caractères tronquait
+    // souvent le message CONCIS d'esbuild (ex. "Expected ']' but found '}'" +
+    // numéro de ligne) hors de la fenêtre, ne laissant que la stack trace Node
+    // bruyante qui le suit dans la sortie — l'Élève recevait alors un indice
+    // inexploitable pour se corriger lui-même. `detail` est déjà borné en amont
+    // (inspection.ts: 1500 caractères) ; on ne re-tronque plus dessus.
+    lastError = `build cassé (${lastInspection.signal}) : ${lastInspection.detail}`;
     push(`✗ inspection objective : ${lastInspection.signal}`);
   }
 

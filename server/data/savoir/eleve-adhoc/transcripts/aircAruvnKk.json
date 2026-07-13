@@ -1,0 +1,1504 @@
+{
+  "videoId": "aircAruvnKk",
+  "meta": {
+    "titre": "But what is a neural network? | Deep learning chapter 1",
+    "chaine": "3Blue1Brown",
+    "dureeS": 1120,
+    "publieeLe": "2017-10-05",
+    "description": "What are the neurons, why are there layers, and what is the math underlying it?\nHelp fund future projects: https://www.patreon.com/3blue1brown\nWritten/interactive form of this series: https://www.3blue1brown.com/topics/neural-networks\n\nAdditional funding for this project was provided by Amplify Partners\n\nFor those who want to learn more, I highly recommend the book by Michael Nielsen that introduces neural networks and deep learning: https://goo.gl/Zmczdy\n\nThere are two neat things about this book.  First, it's available for free, so consider joining me in making a donation to Nielsen if you get something out of it.  And second, it's centered around walking through some code and data, which you can download yourself, and which covers the same example that I introduced in this video.  Yay for active learning!\nhttps://github.com/mnielsen/neural-networks-and-deep-learning\n\nI also highly recommend Chris Olah's blog: http://colah.github.io/\n\nFor more videos, Welch Labs also has some great series on machine learning: \nhttps://youtu.be/i8D90DkCLhI\nhttps://youtu.be/bxe2T-V8XRs\n\nFor those of you looking to go *even* deeper, check out the text \"Deep Learning\" by Goodfellow, Bengio, and Courville.  \n\nAlso, the publication Distill is just utterly beautiful: https://distill.pub/\n\nLion photo by Kevin Pluck\n\nЗвуковая дорожка на русском языке: Влад Бурмистров.\n\nThanks to these viewers for their contributions to translations\nGerman: @fpgro\nHebrew: Omer Tuchfeld\nHungarian: Máté Kaszap\nItalian: @teobucci, Teo Bucci\n\n-----------------\nTimeline: \n0:00 - Introduction example\n1:07 - Series preview\n2:42 - What are neurons?\n3:35 - Introducing layers\n5:31 - Why layers?\n8:38 - Edge detection example\n11:34 - Counting weights and biases\n12:30 - How learning relates\n13:26 - Notation and linear algebra\n15:17 - Recap\n16:27 - Some final words\n17:03 - ReLU vs Sigmoid\n\nCorrection 14:45 - The final index on the bias vector should be \"k\"\n\n------------------\nAnimations largely made using manim, a scrappy open source python library.  https://github.com/3b1b/manim\n\nIf you want to check it out, I feel compelled to warn you that it's not the most well-documented tool, and has many other quirks you might expect in a library someone wrote with only their own use in mind.\n\nMusic by Vincent Rubinetti.\nDownload the music on Bandcamp:\nhttps://vincerubinetti.bandcamp.com/album/the-music-of-3blue1brown\n\nStream the music on Spotify:\nhttps://open.spotify.com/album/1dVyjwS8FBqXhRunaG5W5u\n\nIf you want to contribute translated subtitles or to help review those that have already been made by others and need approval, you can click the gear icon in the video and go to subtitles/cc, then \"add subtitles/cc\".  I really appreciate those who do this, as it helps make the lessons accessible to more people.\n------------------\n\n3blue1brown is a channel about animating math, in all senses of the word animate.  And you know the drill with YouTube, if you want to stay posted on new videos, subscribe, and click the bell to receive notifications (if you're into that).\n\nIf you are new to this channel and want to see more, a good place to start is this playlist: http://3b1b.co/recommended\n\nVarious social media stuffs:\nWebsite: https://www.3blue1brown.com\nTwitter: https://twitter.com/3Blue1Brown\nPatreon: https://patreon.com/3blue1brown\nFacebook: https://www.facebook.com/3blue1brown\nReddit: https://www.reddit.com/r/3Blue1Brown",
+    "chapitres": [
+      {
+        "t": 0,
+        "titre": "Introduction example"
+      },
+      {
+        "t": 67,
+        "titre": "Series preview"
+      },
+      {
+        "t": 162,
+        "titre": "What are neurons?"
+      },
+      {
+        "t": 215,
+        "titre": "Introducing layers"
+      },
+      {
+        "t": 331,
+        "titre": "Why layers?"
+      },
+      {
+        "t": 518,
+        "titre": "Edge detection example"
+      },
+      {
+        "t": 694,
+        "titre": "Counting weights and biases"
+      },
+      {
+        "t": 750,
+        "titre": "How learning relates"
+      },
+      {
+        "t": 806,
+        "titre": "Notation and linear algebra"
+      },
+      {
+        "t": 917,
+        "titre": "Recap"
+      },
+      {
+        "t": 987,
+        "titre": "Some final words"
+      },
+      {
+        "t": 1023,
+        "titre": "ReLU vs Sigmoid"
+      }
+    ]
+  },
+  "source": "subs-manuels",
+  "langue": "fr",
+  "segments": [
+    {
+      "tStartS": 4.22,
+      "tEndS": 5.4,
+      "texte": "Voici un 3."
+    },
+    {
+      "tStartS": 6.06,
+      "tEndS": 10.412,
+      "texte": "Il est griffonné et affiché avec une très basse résolution de 28×28 pixels."
+    },
+    {
+      "tStartS": 10.412,
+      "tEndS": 13.72,
+      "texte": "Mais votre cerveau reconnaît sans effort que c'est un 3."
+    },
+    {
+      "tStartS": 14.34,
+      "tEndS": 16.496,
+      "texte": "Prenez un instant pour admirer à quel point c'est"
+    },
+    {
+      "tStartS": 16.496,
+      "tEndS": 18.96,
+      "texte": "incroyable qu'un cerveau puisse faire ça si facilement."
+    },
+    {
+      "tStartS": 19.7,
+      "tEndS": 23.829,
+      "texte": "En fait, ces images – celle-ci, elle, et celle-la aussi – sont aussi identifiées"
+    },
+    {
+      "tStartS": 23.829,
+      "tEndS": 28.32,
+      "texte": "comme des 3, même si la valeur de chaque pixel varie énormément d'une image à l'autre."
+    },
+    {
+      "tStartS": 28.9,
+      "tEndS": 33.16,
+      "texte": "Les cellules photosensibles de vos yeux, qui s'activent en voyant ce 3,"
+    },
+    {
+      "tStartS": 33.16,
+      "tEndS": 36.94,
+      "texte": "diffèrent de celles qui s'activent quand vous voyez l'autre 3."
+    },
+    {
+      "tStartS": 37.52,
+      "tEndS": 41.287,
+      "texte": "Mais quelque chose, dans ce fabuleux cortex visuel qu'est le vôtre,"
+    },
+    {
+      "tStartS": 41.287,
+      "tEndS": 44.099,
+      "texte": "reconnaît ces trois comme exprimant la même idée,"
+    },
+    {
+      "tStartS": 44.099,
+      "tEndS": 48.26,
+      "texte": "tout en distinguant les autres images comme porteuses d'idées distinctes."
+    },
+    {
+      "tStartS": 49.22,
+      "tEndS": 54.944,
+      "texte": "Imaginez que je vous demande de coder un programme qui reçoit une grille de 28×28"
+    },
+    {
+      "tStartS": 54.944,
+      "tEndS": 59.537,
+      "texte": "pixels comme celle-ci et renvoie un nombre unique entre 0 et 10,"
+    },
+    {
+      "tStartS": 59.537,
+      "tEndS": 65.403,
+      "texte": "indiquant le chiffre détecté. La tâche passe de trivialement simple à terriblement"
+    },
+    {
+      "tStartS": 65.403,
+      "tEndS": 66.18,
+      "texte": "difficile."
+    },
+    {
+      "tStartS": 67.16,
+      "tEndS": 69.557,
+      "texte": "À part si vous vivez dans une grotte, je pense que je n'ai"
+    },
+    {
+      "tStartS": 69.557,
+      "tEndS": 71.912,
+      "texte": "pas besoin de vous convaincre de l'importance du machine"
+    },
+    {
+      "tStartS": 71.912,
+      "tEndS": 74.64,
+      "texte": "learning et des réseaux de neurones aujourd'hui et dans le futur,"
+    },
+    {
+      "tStartS": 75.12,
+      "tEndS": 79.084,
+      "texte": "Mais ce que je veux vous montrer ici, c'est ce qu'est réellement un réseau de neurones,"
+    },
+    {
+      "tStartS": 79.084,
+      "tEndS": 82.182,
+      "texte": "sans besoin de connaissances préalables, et vous aider à visualiser"
+    },
+    {
+      "tStartS": 82.182,
+      "tEndS": 84.46,
+      "texte": "son fonctionnement en tant qu'objet mathématique."
+    },
+    {
+      "tStartS": 85.02,
+      "tEndS": 89.55,
+      "texte": "J'espère que vous repartirez en comprenant la motivation de la structure de ces modèles"
+    },
+    {
+      "tStartS": 89.55,
+      "tEndS": 94.184,
+      "texte": "et en saisissant ce que ça veut dire quand on lit ou qu'on entend qu'un réseau « apprend"
+    },
+    {
+      "tStartS": 94.184,
+      "tEndS": 94.34,
+      "texte": "»."
+    },
+    {
+      "tStartS": 95.36,
+      "tEndS": 97.941,
+      "texte": "Cette vidéo se concentre uniquement sur l'aspect structurel"
+    },
+    {
+      "tStartS": 97.941,
+      "tEndS": 100.26,
+      "texte": "des réseaux et la suivante abordera l'apprentissage."
+    },
+    {
+      "tStartS": 100.96,
+      "tEndS": 103.431,
+      "texte": "Ce que nous allons faire, c'est assembler un réseau de"
+    },
+    {
+      "tStartS": 103.431,
+      "tEndS": 106.04,
+      "texte": "neurones qui pourra reconnaître des chiffres manuscrits."
+    },
+    {
+      "tStartS": 109.36,
+      "tEndS": 112.021,
+      "texte": "C'est l'exemple classique pour introduire le sujet,"
+    },
+    {
+      "tStartS": 112.021,
+      "tEndS": 114.472,
+      "texte": "et je m'en tiens à cette approche très connue,"
+    },
+    {
+      "tStartS": 114.472,
+      "tEndS": 118.907,
+      "texte": "car à la fin de ces deux vidéos je vous montrerai quelques bonnes ressources pour en"
+    },
+    {
+      "tStartS": 118.907,
+      "tEndS": 123.08,
+      "texte": "apprendre davantage et expérimenter par vous-même, sur votre propre ordinateur."
+    },
+    {
+      "tStartS": 125.04,
+      "tEndS": 127.982,
+      "texte": "Il existe de nombreuses variantes de réseaux de neurones,"
+    },
+    {
+      "tStartS": 127.982,
+      "tEndS": 131.439,
+      "texte": "et ces dernières années, la recherche sur ces variantes a explosé,"
+    },
+    {
+      "tStartS": 131.439,
+      "tEndS": 136.032,
+      "texte": "mais dans ces vidéos introductives, nous nous concentrons sur leur forme la plus simple,"
+    },
+    {
+      "tStartS": 136.032,
+      "tEndS": 139.18,
+      "texte": "la version ordinaire, dite \"plain vanilla\", sans fioritures."
+    },
+    {
+      "tStartS": 139.86,
+      "tEndS": 143.905,
+      "texte": "C'est vraiment un passage obligé pour comprendre ne serait-ce qu'une seule de ces"
+    },
+    {
+      "tStartS": 143.905,
+      "tEndS": 146.403,
+      "texte": "variantes modernes plus efficaces, et croyez-moi,"
+    },
+    {
+      "tStartS": 146.403,
+      "tEndS": 148.6,
+      "texte": "cette version est déjà bien assez complexe."
+    },
+    {
+      "tStartS": 149.12,
+      "tEndS": 152.644,
+      "texte": "Mais même dans cette plus simple forme, un reseau peut reconnaître des"
+    },
+    {
+      "tStartS": 152.644,
+      "tEndS": 156.52,
+      "texte": "chiffres manuscrits, et ça, c'est quand même plutôt cool pour un ordinateur."
+    },
+    {
+      "tStartS": 157.48,
+      "tEndS": 159.813,
+      "texte": "Aussi, on verra par la même occasion qu'il ne répond"
+    },
+    {
+      "tStartS": 159.813,
+      "tEndS": 162.28,
+      "texte": "pas non plus à 100% des attentes qu'on pourrait avoir."
+    },
+    {
+      "tStartS": 163.38,
+      "tEndS": 165.682,
+      "texte": "Comme leur nom l'indique, les réseaux de neurones"
+    },
+    {
+      "tStartS": 165.682,
+      "tEndS": 168.5,
+      "texte": "s'inspirent du fonctionnement du cerveau, mais simplifions."
+    },
+    {
+      "tStartS": 168.52,
+      "tEndS": 171.66,
+      "texte": "Que sont les neurones et comment sont-ils reliés ?"
+    },
+    {
+      "tStartS": 172.5,
+      "tEndS": 176.413,
+      "texte": "Pour l'instant, quand je dis « neurone », imaginez simplement quelque"
+    },
+    {
+      "tStartS": 176.413,
+      "tEndS": 180.44,
+      "texte": "chose qui contient un nombre, plus précisément un nombre entre 0 et 1."
+    },
+    {
+      "tStartS": 180.68,
+      "tEndS": 182.56,
+      "texte": "Ca n'est rien de plus que ça."
+    },
+    {
+      "tStartS": 183.78,
+      "tEndS": 189.039,
+      "texte": "Par exemple, le réseau débute avec un tas de neurones correspondant"
+    },
+    {
+      "tStartS": 189.039,
+      "tEndS": 194.22,
+      "texte": "aux 28×28 pixels de l'image d'entrée, soit 784 neurones au total."
+    },
+    {
+      "tStartS": 194.7,
+      "tEndS": 200.475,
+      "texte": "Chacun stocke un nombre représentant la valeur de gris d'un seul pixel,"
+    },
+    {
+      "tStartS": 200.475,
+      "tEndS": 204.38,
+      "texte": "allant de 0 (pour le noir) à 1 (pour du blanc)."
+    },
+    {
+      "tStartS": 205.3,
+      "tEndS": 208.182,
+      "texte": "Ce nombre dans le neurone est appelé son \"activation\","
+    },
+    {
+      "tStartS": 208.182,
+      "tEndS": 212.719,
+      "texte": "et l'image que vous devez avoir ici, c'est que chaque neurone est dit \"allumé\" quand"
+    },
+    {
+      "tStartS": 212.719,
+      "tEndS": 214.16,
+      "texte": "son activation est élevée."
+    },
+    {
+      "tStartS": 216.72,
+      "tEndS": 221.86,
+      "texte": "Ainsi, ces 784 neurones forment la première couche de notre réseau."
+    },
+    {
+      "tStartS": 226.5,
+      "tEndS": 229.757,
+      "texte": "Regardons directement la dernière couche: celle-ci a 10 neurones,"
+    },
+    {
+      "tStartS": 229.757,
+      "tEndS": 231.36,
+      "texte": "chacun représentant un chiffre."
+    },
+    {
+      "tStartS": 232.04,
+      "tEndS": 237.01,
+      "texte": "L'activation de ces neurones (encore un nombre entre 0 et 1) représente"
+    },
+    {
+      "tStartS": 237.01,
+      "tEndS": 242.12,
+      "texte": "à quel point le système pense que l'image correspond à un chiffre donné."
+    },
+    {
+      "tStartS": 243.04,
+      "tEndS": 247.496,
+      "texte": "Il y a aussi quelques couches entre, qu'on appelle les \"couches cachées\","
+    },
+    {
+      "tStartS": 247.496,
+      "tEndS": 252.868,
+      "texte": "dont le rôle dans le processus de reconnaissance doit pour l'instant vous paraître très"
+    },
+    {
+      "tStartS": 252.868,
+      "tEndS": 253.6,
+      "texte": "mystérieux."
+    },
+    {
+      "tStartS": 254.26,
+      "tEndS": 257.931,
+      "texte": "Dans ce réseau, j'ai choisi deux couches cachées avec 16 neurones chacune,"
+    },
+    {
+      "tStartS": 257.931,
+      "tEndS": 260.56,
+      "texte": "et qu'on se le dise c'est un choix assez arbitraire."
+    },
+    {
+      "tStartS": 261.02,
+      "tEndS": 263.426,
+      "texte": "Honnêtement, vous allez voir, j'ai choisi deux couches parce que"
+    },
+    {
+      "tStartS": 263.426,
+      "tEndS": 265.869,
+      "texte": "ça m'arrangeait pour expliquer l'architecture du réseau. Et 16 ?"
+    },
+    {
+      "tStartS": 265.869,
+      "tEndS": 268.2,
+      "texte": "Eh ben... c'était juste un nombre qui rendait bien à l'écran."
+    },
+    {
+      "tStartS": 268.78,
+      "tEndS": 272.34,
+      "texte": "En pratique, il existe de nombreuses possibilités d'expérimentation avec la structure."
+    },
+    {
+      "tStartS": 273.02,
+      "tEndS": 275.973,
+      "texte": "Le fonctionnement du réseau est simple : l'activation"
+    },
+    {
+      "tStartS": 275.973,
+      "tEndS": 278.48,
+      "texte": "d'une couche détermine celle de la suivante."
+    },
+    {
+      "tStartS": 279.2,
+      "tEndS": 283.781,
+      "texte": "Et bien sûr, le cœur du réseau en tant que mécanisme de traitement d'informations se"
+    },
+    {
+      "tStartS": 283.781,
+      "tEndS": 288.58,
+      "texte": "résume à comment l'activation d'une couche entraîne l'activation de la couche suivante."
+    },
+    {
+      "tStartS": 289.14,
+      "tEndS": 293.194,
+      "texte": "C'est censé être analogue aux réseaux neuronaux biologiques,"
+    },
+    {
+      "tStartS": 293.194,
+      "tEndS": 297.18,
+      "texte": "où l'activation de groupes de neurones en active d'autres."
+    },
+    {
+      "tStartS": 298.12,
+      "tEndS": 301.502,
+      "texte": "Le réseau que je vous montre ici, est déjà entraîné pour reconnaître des chiffres."
+    },
+    {
+      "tStartS": 301.502,
+      "tEndS": 303.4,
+      "texte": "Laissez-moi vous montrer ce que je veux dire."
+    },
+    {
+      "tStartS": 303.64,
+      "tEndS": 306.266,
+      "texte": "Ça veut dire que si vous lui donnez une image,"
+    },
+    {
+      "tStartS": 306.266,
+      "tEndS": 309.406,
+      "texte": "ça active tous les 784 neurones de la première couche,"
+    },
+    {
+      "tStartS": 309.406,
+      "tEndS": 312.774,
+      "texte": "en fonction de la luminosité de chaque pixel dans l'image."
+    },
+    {
+      "tStartS": 312.774,
+      "tEndS": 317.227,
+      "texte": "Ce schéma d'activations entraîne un motif spécifique dans la couche suivante,"
+    },
+    {
+      "tStartS": 317.227,
+      "tEndS": 322.08,
+      "texte": "puis dans la suivante, qui au final donne un dernier motif dans la couche de sortie."
+    },
+    {
+      "tStartS": 322.56,
+      "tEndS": 326.514,
+      "texte": "Le neurone le plus activé dans cette dernière couche détermine le chiffre,"
+    },
+    {
+      "tStartS": 326.514,
+      "tEndS": 329.4,
+      "texte": "pour ainsi dire \"reconnu\" par le réseau dans l'image."
+    },
+    {
+      "tStartS": 332.56,
+      "tEndS": 336.986,
+      "texte": "Et avant d'aborder les mathématiques derrière le passage d'une couche à la suivante,"
+    },
+    {
+      "tStartS": 336.986,
+      "tEndS": 340.675,
+      "texte": "ou encore l'entraînement, parlons de pourquoi on peut s'attendre a ce"
+    },
+    {
+      "tStartS": 340.675,
+      "tEndS": 343.52,
+      "texte": "que cette structure en couches agisse intelligemment."
+    },
+    {
+      "tStartS": 344.06,
+      "tEndS": 345.22,
+      "texte": "A quoi peut-on s'attendre, en fait ?"
+    },
+    {
+      "tStartS": 345.4,
+      "tEndS": 347.6,
+      "texte": "Que peut-on espérer qu'il se passe dans ces couches intermédiaires ?"
+    },
+    {
+      "tStartS": 348.92,
+      "tEndS": 351.476,
+      "texte": "Eh ben, lorsque vous ou moi reconnaissons des chiffres,"
+    },
+    {
+      "tStartS": 351.476,
+      "tEndS": 353.52,
+      "texte": "nous assemblons différentes formes simples."
+    },
+    {
+      "tStartS": 354.2,
+      "tEndS": 356.82,
+      "texte": "Par exemple, un 9 possède une boucle en haut et une ligne à droite."
+    },
+    {
+      "tStartS": 357.38,
+      "tEndS": 361.18,
+      "texte": "Un 8 a aussi une boucle en haut, mais également une boucle en bas."
+    },
+    {
+      "tStartS": 361.98,
+      "tEndS": 366.82,
+      "texte": "Un 4 se décompose essentiellement en trois lignes distinctes, et ainsi de suite."
+    },
+    {
+      "tStartS": 367.6,
+      "tEndS": 371.466,
+      "texte": "Dans un monde idéal, on pourrait espérer que chaque neurone de l'avant"
+    },
+    {
+      "tStartS": 371.466,
+      "tEndS": 374.779,
+      "texte": "dernière couche corresponde avec une de ces formes simples."
+    },
+    {
+      "tStartS": 374.779,
+      "tEndS": 377.374,
+      "texte": "Et qu'à chaque fois qu'on lui donne une image,"
+    },
+    {
+      "tStartS": 377.374,
+      "tEndS": 380.191,
+      "texte": "disons une boucle en haut comme dans un 8 ou un 9,"
+    },
+    {
+      "tStartS": 380.191,
+      "tEndS": 383.78,
+      "texte": "il y a certains neurones spécifiques qui s'activent presque à 1."
+    },
+    {
+      "tStartS": 384.5,
+      "tEndS": 387.104,
+      "texte": "Et je ne parle pas de cette exacte boucle de pixels,"
+    },
+    {
+      "tStartS": 387.104,
+      "tEndS": 391.56,
+      "texte": "mais que n'importe quel vague motif de boucle vers le haut de l'image active ce neurone."
+    },
+    {
+      "tStartS": 392.44,
+      "tEndS": 395.863,
+      "texte": "Ainsi, passer de la troisième à la dernière couche ne requiert qu'un"
+    },
+    {
+      "tStartS": 395.863,
+      "tEndS": 400.04,
+      "texte": "apprentissage de la combinaison de formes simples qui correspond à chaque chiffre."
+    },
+    {
+      "tStartS": 401,
+      "tEndS": 402.909,
+      "texte": "Bien sûr, cela ne fait que reporter le problème,"
+    },
+    {
+      "tStartS": 402.909,
+      "tEndS": 406.089,
+      "texte": "puisque comment pourrions-nous reconnaître ces formes ou même apprendre quelles"
+    },
+    {
+      "tStartS": 406.089,
+      "tEndS": 407.64,
+      "texte": "formes sont censées êtres les bonnes ?"
+    },
+    {
+      "tStartS": 408.06,
+      "tEndS": 411.165,
+      "texte": "Et je n'ai même pas encore expliqué comment une couche influence la suivante,"
+    },
+    {
+      "tStartS": 411.165,
+      "tEndS": 413.06,
+      "texte": "mais faites moi confiance, ça viendra ensuite."
+    },
+    {
+      "tStartS": 413.68,
+      "tEndS": 416.68,
+      "texte": "Reconnaître une boucle peut aussi se décomposer en sous-problèmes."
+    },
+    {
+      "tStartS": 417.28,
+      "tEndS": 422.78,
+      "texte": "Par exemple, on peut d'abord identifier les différents \"petits traits\" qui la composent"
+    },
+    {
+      "tStartS": 423.78,
+      "tEndS": 427.372,
+      "texte": "De la même façon, une longue ligne comme dans les chiffres 1,"
+    },
+    {
+      "tStartS": 427.372,
+      "tEndS": 430.434,
+      "texte": "4 ou 7 peut être vu comme une seule longue bordure,"
+    },
+    {
+      "tStartS": 430.434,
+      "tEndS": 434.32,
+      "texte": "ou bien alors comme l'assemblage de plusieurs traits plus petits."
+    },
+    {
+      "tStartS": 435.14,
+      "tEndS": 438.93,
+      "texte": "On peut donc peut-être espèrer que chaque neurone de"
+    },
+    {
+      "tStartS": 438.93,
+      "tEndS": 442.72,
+      "texte": "la deuxième couche corresponde à ces petits traits."
+    },
+    {
+      "tStartS": 443.54,
+      "tEndS": 446.427,
+      "texte": "Peut-être que lorsqu'une image comme celle-ci arrive,"
+    },
+    {
+      "tStartS": 446.427,
+      "tEndS": 450.731,
+      "texte": "elle active tous les neurones associés à 8 à 10 petits traits spécifiques qui,"
+    },
+    {
+      "tStartS": 450.731,
+      "tEndS": 454.708,
+      "texte": "à leur tour, activent les neurones associés avec \"une boucle en haut\" et"
+    },
+    {
+      "tStartS": 454.708,
+      "tEndS": 458.521,
+      "texte": "avec \"une longue ligne verticale à droite\", activant ainsi le neurone"
+    },
+    {
+      "tStartS": 458.521,
+      "tEndS": 459.72,
+      "texte": "correspondant à un 9."
+    },
+    {
+      "tStartS": 460.68,
+      "tEndS": 463.939,
+      "texte": "Que cela reflète réellement le fonctionnement final de notre reseau, ça,"
+    },
+    {
+      "tStartS": 463.939,
+      "tEndS": 467.968,
+      "texte": "c'est une autre histoire, que je traiterai une fois que nous aurons vu comment entraîner"
+    },
+    {
+      "tStartS": 467.968,
+      "tEndS": 470.277,
+      "texte": "ce réseau. Disons que c'est ce qu'on peut espérer,"
+    },
+    {
+      "tStartS": 470.277,
+      "tEndS": 472.54,
+      "texte": "une sorte de but avec cette structure en couches."
+    },
+    {
+      "tStartS": 473.16,
+      "tEndS": 476.79,
+      "texte": "De plus, imaginez l'utilité de pouvoir détecter des traits et"
+    },
+    {
+      "tStartS": 476.79,
+      "tEndS": 480.3,
+      "texte": "des motifs pour d'autres tâches de reconnaissance d'images"
+    },
+    {
+      "tStartS": 480.88,
+      "tEndS": 483.95,
+      "texte": "Et au-delà de la reconnaissance d'images, il y a des millions de tâches"
+    },
+    {
+      "tStartS": 483.95,
+      "tEndS": 487.28,
+      "texte": "complexes qui peuvent être décomposées en couches d'abstraction successives."
+    },
+    {
+      "tStartS": 488.04,
+      "tEndS": 492.009,
+      "texte": "Par exemple, la reconnaissance vocale extrait d'un audio brut des sons,"
+    },
+    {
+      "tStartS": 492.009,
+      "tEndS": 496.314,
+      "texte": "qui se combinent pour former des syllabes, qui elles-mêmes forment des mots,"
+    },
+    {
+      "tStartS": 496.314,
+      "tEndS": 500.06,
+      "texte": "qui eux-mêmes forment des phrases, puis des idées abstraites, etc."
+    },
+    {
+      "tStartS": 501.1,
+      "tEndS": 505.48,
+      "texte": "Mais revenons au fonctionnement de tout ça: imaginez concevoir comment s'y"
+    },
+    {
+      "tStartS": 505.48,
+      "tEndS": 509.92,
+      "texte": "prendre pour que l'activation d'une couche détermine celle de la suivante."
+    },
+    {
+      "tStartS": 510.86,
+      "tEndS": 515.457,
+      "texte": "L'objectif est d'avoir un mécanisme capable de combiner les pixels en traits,"
+    },
+    {
+      "tStartS": 515.457,
+      "tEndS": 518.98,
+      "texte": "ou les traits en motifs, ou encore les motifs en chiffres."
+    },
+    {
+      "tStartS": 519.44,
+      "tEndS": 524.955,
+      "texte": "Pour un exemple précis, supposons que ce neurone spécifique de la deuxième"
+    },
+    {
+      "tStartS": 524.955,
+      "tEndS": 530.62,
+      "texte": "couche doive détecter la présence d'un trait, disons, dans cette zone, ici."
+    },
+    {
+      "tStartS": 531.44,
+      "tEndS": 535.1,
+      "texte": "La question qu'on se pose c'est : quels paramètres le réseau doit-il avoir ?"
+    },
+    {
+      "tStartS": 535.64,
+      "tEndS": 539.647,
+      "texte": "Quels réglages vont permettre de potentiellement capter ce motif ou"
+    },
+    {
+      "tStartS": 539.647,
+      "tEndS": 543.474,
+      "texte": "n'importe quel autre motif de pixels, ou même de capter le fait"
+    },
+    {
+      "tStartS": 543.474,
+      "tEndS": 547.78,
+      "texte": "qu'une combinaison de traits peut former une boucle, et tout le reste ?"
+    },
+    {
+      "tStartS": 548.72,
+      "tEndS": 551.873,
+      "texte": "Et bien, pour cela, nous allons attribuer un poids à chaque"
+    },
+    {
+      "tStartS": 551.873,
+      "tEndS": 555.56,
+      "texte": "connexion entre notre neurone et les neurones de la première couche."
+    },
+    {
+      "tStartS": 556.32,
+      "tEndS": 557.7,
+      "texte": "Ces poids, ce sont juste des nombres."
+    },
+    {
+      "tStartS": 558.54,
+      "tEndS": 564.241,
+      "texte": "Ensuite, on prend chacune des activations, et on calcule leur somme pondérée,"
+    },
+    {
+      "tStartS": 564.241,
+      "tEndS": 565.5,
+      "texte": "selon ces poids."
+    },
+    {
+      "tStartS": 567.7,
+      "tEndS": 572.032,
+      "texte": "Je pense que c'est utile d'imaginer ces poids organisés dans une grille,"
+    },
+    {
+      "tStartS": 572.032,
+      "tEndS": 576.906,
+      "texte": "avec des pixels verts pour les poids positifs et rouges pour les poids négatifs,"
+    },
+    {
+      "tStartS": 576.906,
+      "tEndS": 581.78,
+      "texte": "et où la luminosité de chaque pixel donne une indication de leur valeur absolue."
+    },
+    {
+      "tStartS": 582.78,
+      "tEndS": 586.513,
+      "texte": "Maintenant, si on fixe à zéro presque tous les poids des pixels sauf"
+    },
+    {
+      "tStartS": 586.513,
+      "tEndS": 590.355,
+      "texte": "dans cette région qui nous intéresse, où on donne des poids positifs,"
+    },
+    {
+      "tStartS": 590.355,
+      "tEndS": 594.307,
+      "texte": "et bien la somme pondérée de toutes les valeurs des pixels correspondra"
+    },
+    {
+      "tStartS": 594.307,
+      "tEndS": 597.82,
+      "texte": "simplement à l'addition des valeurs des pixels de cette région."
+    },
+    {
+      "tStartS": 599.14,
+      "tEndS": 602.404,
+      "texte": "Et si vous voulez vraiment détecter un trait ici,"
+    },
+    {
+      "tStartS": 602.404,
+      "tEndS": 606.6,
+      "texte": "on peut utiliser des poids négatifs pour les pixels alentours."
+    },
+    {
+      "tStartS": 607.48,
+      "tEndS": 610.063,
+      "texte": "Ainsi, la somme sera maximale lorsque les pixels"
+    },
+    {
+      "tStartS": 610.063,
+      "tEndS": 612.7,
+      "texte": "centraux sont lumineux et les alentours sombres."
+    },
+    {
+      "tStartS": 614.26,
+      "tEndS": 619.048,
+      "texte": "A priori, calculer ce genre de somme pondérée peut donner n'importe quel nombre,."
+    },
+    {
+      "tStartS": 619.048,
+      "tEndS": 623.54,
+      "texte": "Mais pour ce réseau, on ne veut que des valeurs d'activations entre 0 et 1."
+    },
+    {
+      "tStartS": 624.12,
+      "tEndS": 628.13,
+      "texte": "Donc ce qui est fait couramment, c'est de de passer cette somme pondérée"
+    },
+    {
+      "tStartS": 628.13,
+      "tEndS": 632.14,
+      "texte": "dans une fonction qui vient comprimer la droite des réels entre 0 et 1."
+    },
+    {
+      "tStartS": 632.46,
+      "tEndS": 635.336,
+      "texte": "Et une fonction qui fait exactement ceci et qui est souvent utilisée,"
+    },
+    {
+      "tStartS": 635.336,
+      "tEndS": 637.42,
+      "texte": "c'est la fonction sigmoïde, ou courbe logistique."
+    },
+    {
+      "tStartS": 638,
+      "tEndS": 640.905,
+      "texte": "En gros, des entrées très négatives tendent vers 0,"
+    },
+    {
+      "tStartS": 640.905,
+      "tEndS": 644.777,
+      "texte": "tandis que des entrées positives tendent vers 1, et entre les deux,"
+    },
+    {
+      "tStartS": 644.777,
+      "tEndS": 646.6,
+      "texte": "on a une augmentation régulière"
+    },
+    {
+      "tStartS": 649.12,
+      "tEndS": 652.819,
+      "texte": "Ainsi, l'activation d'un neurone mesure en fait"
+    },
+    {
+      "tStartS": 652.819,
+      "tEndS": 656.36,
+      "texte": "à quel point la somme pondérée est positive."
+    },
+    {
+      "tStartS": 657.54,
+      "tEndS": 659.71,
+      "texte": "Cependant, on ne veut peut-être pas toujours que"
+    },
+    {
+      "tStartS": 659.71,
+      "tEndS": 661.88,
+      "texte": "le neurone s'active dès que la somme dépasse 0."
+    },
+    {
+      "tStartS": 662.28,
+      "tEndS": 666.36,
+      "texte": "Peut-être qu'on veut qu'il s'active uniquement si la somme dépasse, disons, 10."
+    },
+    {
+      "tStartS": 666.84,
+      "tEndS": 670.26,
+      "texte": "Autrement dit, on veut introduire un biais pour qu'il reste inactivé plus longtemps."
+    },
+    {
+      "tStartS": 671.38,
+      "tEndS": 674.548,
+      "texte": "Ainsi, on va simplement ajouter un autre nombre, ici -10,"
+    },
+    {
+      "tStartS": 674.548,
+      "tEndS": 678.493,
+      "texte": "à cette somme pondérée avant de passer par la fonction sigmoïde qui la"
+    },
+    {
+      "tStartS": 678.493,
+      "tEndS": 679.66,
+      "texte": "ramène entre 0 et 1."
+    },
+    {
+      "tStartS": 680.58,
+      "tEndS": 682.44,
+      "texte": "Ce nombre additionnel, c'est ce qu'on appelle: le biais."
+    },
+    {
+      "tStartS": 683.46,
+      "tEndS": 688.385,
+      "texte": "Donc les poids indiquent le motif détecté par ce neurone de la deuxième couche,"
+    },
+    {
+      "tStartS": 688.385,
+      "tEndS": 692.375,
+      "texte": "et le biais nous indique à quel point la somme doit être élevée"
+    },
+    {
+      "tStartS": 692.375,
+      "tEndS": 695.18,
+      "texte": "afin que le neurone ne soit vraiment activé."
+    },
+    {
+      "tStartS": 696.12,
+      "tEndS": 697.68,
+      "texte": "Et tout ça, c'est pour un seul neurone !"
+    },
+    {
+      "tStartS": 698.28,
+      "tEndS": 704.647,
+      "texte": "Chacun des autres neurones de cette couche est aussi connecté aux 784 neurones-pixels"
+    },
+    {
+      "tStartS": 704.647,
+      "tEndS": 710.94,
+      "texte": "de la première couche, et chacune de ces 784 connexions a son propre poids associé."
+    },
+    {
+      "tStartS": 711.6,
+      "tEndS": 714.73,
+      "texte": "De plus, chaque connexion possède un biais, un autre nombre qu'on ajoute"
+    },
+    {
+      "tStartS": 714.73,
+      "tEndS": 717.6,
+      "texte": "à la somme pondérée avant de la passer dans la fonction sigmoïde."
+    },
+    {
+      "tStartS": 718.11,
+      "tEndS": 719.54,
+      "texte": "Ca fait beaucoup, là, non ?"
+    },
+    {
+      "tStartS": 719.96,
+      "tEndS": 727.98,
+      "texte": "Pour cette couche cachée de 16 neurones, cela représente 784 fois 16 poids plus 16 biais."
+    },
+    {
+      "tStartS": 728.84,
+      "tEndS": 731.94,
+      "texte": "Et ce n'est que la connexion entre la première et la deuxième couche."
+    },
+    {
+      "tStartS": 732.52,
+      "tEndS": 734.691,
+      "texte": "Les connexions entre les autres couches comportent"
+    },
+    {
+      "tStartS": 734.691,
+      "tEndS": 737.34,
+      "texte": "également de nombreux poids et biais qui leur sont associés."
+    },
+    {
+      "tStartS": 738.34,
+      "tEndS": 743.8,
+      "texte": "Au total, ce réseau possède près de 13 000 poids et biais."
+    },
+    {
+      "tStartS": 743.8,
+      "tEndS": 749.96,
+      "texte": "13 000 boutons à tourner, et qui modulent le comportement global du réseau."
+    },
+    {
+      "tStartS": 751.04,
+      "tEndS": 754.424,
+      "texte": "Alors, quand on parle d'apprentissage, ça correspond en fait"
+    },
+    {
+      "tStartS": 754.424,
+      "tEndS": 757.864,
+      "texte": "à faire en sorte que l'ordinateur trouve seul le bon réglage"
+    },
+    {
+      "tStartS": 757.864,
+      "tEndS": 761.36,
+      "texte": "pour chacun de ces nombres afin de résoudre le problème posé."
+    },
+    {
+      "tStartS": 762.62,
+      "tEndS": 765.966,
+      "texte": "Une expérience de pensée à la fois marrante et effrayante,"
+    },
+    {
+      "tStartS": 765.966,
+      "tEndS": 770.984,
+      "texte": "ça serait d'imaginer essayer de paramétrer tous ces poids et tous ces biais à la main."
+    },
+    {
+      "tStartS": 770.984,
+      "tEndS": 774.907,
+      "texte": "Changer ces nombres pour que la deuxième couche détecte les traits,"
+    },
+    {
+      "tStartS": 774.907,
+      "tEndS": 776.58,
+      "texte": "la troisième les motifs etc."
+    },
+    {
+      "tStartS": 776.98,
+      "tEndS": 781.39,
+      "texte": "Personnellement, je trouve ça plus satisfaisant que de simplement voir le réseau"
+    },
+    {
+      "tStartS": 781.39,
+      "tEndS": 785.304,
+      "texte": "comme une boîte noire, car si le réseau ne fonctionne pas comme prévu,"
+    },
+    {
+      "tStartS": 785.304,
+      "tEndS": 788.447,
+      "texte": "si on a une intuition sur le rôle de ces poids et biais,"
+    },
+    {
+      "tStartS": 788.447,
+      "tEndS": 792.802,
+      "texte": "ça fait déjà un point de départ pour expérimenter et changer l'architecture du"
+    },
+    {
+      "tStartS": 792.802,
+      "tEndS": 794.18,
+      "texte": "réseau pour l'améliorer."
+    },
+    {
+      "tStartS": 794.96,
+      "tEndS": 799.115,
+      "texte": "Ou bien, lorsque le réseau marche, mais pas pour les raisons auxquelles on s'attendrait,"
+    },
+    {
+      "tStartS": 799.115,
+      "tEndS": 803.27,
+      "texte": "analyser ces paramètres est une très bonne manière de remettre en cause nos hypothèses,"
+    },
+    {
+      "tStartS": 803.27,
+      "tEndS": 805.82,
+      "texte": "et voir en entier l'ensemble des solutions possibles."
+    },
+    {
+      "tStartS": 806.84,
+      "tEndS": 810.68,
+      "texte": "D'ailleurs, la fonction qu'on voit ici, c'est un peu lourd à écrire, vous ne trouvez pas ?"
+    },
+    {
+      "tStartS": 812.5,
+      "tEndS": 817.14,
+      "texte": "Laissez-moi vous montrer une notation plus compacte pour représenter ces connexions."
+    },
+    {
+      "tStartS": 817.66,
+      "tEndS": 819.075,
+      "texte": "Le genre de notations que vous verrez forcément"
+    },
+    {
+      "tStartS": 819.075,
+      "tEndS": 820.52,
+      "texte": "si vous choisissez d'en lire plus sur ce sujet. 00:13:41,380 --&gt; 00:13:40,520 Organisons les activations d'une couche dans un vecteur colonne."
+    },
+    {
+      "tStartS": 821.38,
+      "tEndS": 826.377,
+      "texte": "Ensuite, disposons les poids dans une matrice,"
+    },
+    {
+      "tStartS": 826.377,
+      "tEndS": 834.307,
+      "texte": "où chaque ligne correspond aux connexions entre une couche et un neurone"
+    },
+    {
+      "tStartS": 834.307,
+      "tEndS": 838,
+      "texte": "spécifique de la couche suivante."
+    },
+    {
+      "tStartS": 838.54,
+      "tEndS": 842.279,
+      "texte": "Ca veut dire que prendre la somme pondérée des activations de"
+    },
+    {
+      "tStartS": 842.279,
+      "tEndS": 845.712,
+      "texte": "la première couche selon ces poids, correspond à un des"
+    },
+    {
+      "tStartS": 845.712,
+      "tEndS": 849.88,
+      "texte": "coefficients de la matrice produit de tout ce qu'on a à gauche ici."
+    },
+    {
+      "tStartS": 854,
+      "tEndS": 857.561,
+      "texte": "D'ailleurs, une grande partie du machine learning repose largement sur"
+    },
+    {
+      "tStartS": 857.561,
+      "tEndS": 861.275,
+      "texte": "une bonne maîtrise de l'algèbre linéaire, donc si vous voulez comprendre"
+    },
+    {
+      "tStartS": 861.275,
+      "tEndS": 864.886,
+      "texte": "les matrices et ce qu'une multiplication de matrice fait visuellement,"
+    },
+    {
+      "tStartS": 864.886,
+      "tEndS": 868.6,
+      "texte": "consultez ma série sur l'algèbre linéaire, en particulier le chapitre 3."
+    },
+    {
+      "tStartS": 869.24,
+      "tEndS": 875.545,
+      "texte": "Revenons à notre expression : au lieu d'ajouter le biais à chaque valeur séparément,"
+    },
+    {
+      "tStartS": 875.545,
+      "tEndS": 882.3,
+      "texte": "on regroupe tous ces biais dans un vecteur, que l'on ajoute ensuite au produit matriciel."
+    },
+    {
+      "tStartS": 883.28,
+      "tEndS": 887.325,
+      "texte": "Enfin, dernière étape, on va appliquer la fonction sigmoïde tout autour,"
+    },
+    {
+      "tStartS": 887.325,
+      "tEndS": 891.145,
+      "texte": "et ce que c'est censé vouloir dire c'est qu'on applique la fonction"
+    },
+    {
+      "tStartS": 891.145,
+      "tEndS": 894.74,
+      "texte": "sigmoïde à chaque composant du vecteur obtenu entre parenthèse."
+    },
+    {
+      "tStartS": 895.94,
+      "tEndS": 900.609,
+      "texte": "Ainsi, une fois la matrice de poids et les vecteurs exprimés symboliquement,"
+    },
+    {
+      "tStartS": 900.609,
+      "tEndS": 905.278,
+      "texte": "on peut décrire entièrement la transition des activations d'une couche à la"
+    },
+    {
+      "tStartS": 905.278,
+      "tEndS": 908.349,
+      "texte": "suivante de manière très concise, et très propre."
+    },
+    {
+      "tStartS": 908.349,
+      "tEndS": 912.957,
+      "texte": "Ce qui rend le code plus simple et rapide, car de nombreuses bibliothèques"
+    },
+    {
+      "tStartS": 912.957,
+      "tEndS": 915.66,
+      "texte": "optimisent enormément le produit matriciel."
+    },
+    {
+      "tStartS": 917.82,
+      "tEndS": 919.625,
+      "texte": "Vous vous souvenez quand j'ai dit plus tôt que ces neurone,"
+    },
+    {
+      "tStartS": 919.625,
+      "tEndS": 921.46,
+      "texte": "c'était simplement des objets qui contiennent des nombres ?"
+    },
+    {
+      "tStartS": 922.22,
+      "tEndS": 926.194,
+      "texte": "Eh bien les nombres spécifiques qu'ils contiennent dépendent de l'image"
+    },
+    {
+      "tStartS": 926.194,
+      "tEndS": 930.112,
+      "texte": "que vous lui donnez en entrée. Il est donc en fait plus juste de voir"
+    },
+    {
+      "tStartS": 930.112,
+      "tEndS": 933.191,
+      "texte": "chaque neurone comme une fonction qui prend en entrée,"
+    },
+    {
+      "tStartS": 933.191,
+      "tEndS": 937.165,
+      "texte": "les sorties de tous les neurones de la couche précédente et renvoie un"
+    },
+    {
+      "tStartS": 937.165,
+      "tEndS": 938.34,
+      "texte": "nombre entre 0 et 1."
+    },
+    {
+      "tStartS": 939.2,
+      "tEndS": 942.56,
+      "texte": "En fait, tout le réseau n'est rien d'autre qu'une fonction."
+    },
+    {
+      "tStartS": 942.56,
+      "tEndS": 947.06,
+      "texte": "Une fonction qui prend 784 nombres en entrées et renvoie 10 nombres en sortie."
+    },
+    {
+      "tStartS": 947.56,
+      "tEndS": 952.509,
+      "texte": "C'est une fonction ridiculement complexe qui implique 13 000 paramètres sous forme de"
+    },
+    {
+      "tStartS": 952.509,
+      "tEndS": 957.167,
+      "texte": "poids et de biais qui détectent des motifs, qui effectuent de nombreux produits"
+    },
+    {
+      "tStartS": 957.167,
+      "tEndS": 960.66,
+      "texte": "matriciels et plein d'applications de la fonction sigmoïde,"
+    },
+    {
+      "tStartS": 960.66,
+      "tEndS": 962.64,
+      "texte": "mais ça reste juste une fonction."
+    },
+    {
+      "tStartS": 963.4,
+      "tEndS": 966.66,
+      "texte": "D'une certaine manière, c'est même plutôt rassurant qu'elle soit aussi complexe."
+    },
+    {
+      "tStartS": 967.34,
+      "tEndS": 969.785,
+      "texte": "Si elle était plus simple, comment pourrions-nous"
+    },
+    {
+      "tStartS": 969.785,
+      "tEndS": 972.28,
+      "texte": "espérer qu'elle puisse reconnaître des chiffres ?"
+    },
+    {
+      "tStartS": 973.34,
+      "tEndS": 974.7,
+      "texte": "Et donc, comment cette fonction s'attaque à ce défi ?"
+    },
+    {
+      "tStartS": 975.08,
+      "tEndS": 977.243,
+      "texte": "Comment ce réseau apprend-il à ajuster ses poids"
+    },
+    {
+      "tStartS": 977.243,
+      "tEndS": 979.36,
+      "texte": "et biais simplement en observant des données ?"
+    },
+    {
+      "tStartS": 980.14,
+      "tEndS": 982.928,
+      "texte": "Eh bien, c'est ce que je vous montrerai dans la prochaine vidéo et je"
+    },
+    {
+      "tStartS": 982.928,
+      "tEndS": 986.12,
+      "texte": "creuserai aussi un peu plus sur ce que fait vraiment ce réseau en particulier."
+    },
+    {
+      "tStartS": 987.58,
+      "tEndS": 990.893,
+      "texte": "C'est à ce moment-là que je devrais dire \"Abonnez-vous pour rester"
+    },
+    {
+      "tStartS": 990.893,
+      "tEndS": 993.906,
+      "texte": "notifié quand je sors une nouvelle vidéo\" Mais franchement,"
+    },
+    {
+      "tStartS": 993.906,
+      "tEndS": 997.42,
+      "texte": "aucun de vous ne regarde vraiment ses notifications sur YouTube, si ?"
+    },
+    {
+      "tStartS": 998.02,
+      "tEndS": 1001.428,
+      "texte": "Enfait, je devrais plutôt dire \"Abonnez-vous pour que le réseau de neurones"
+    },
+    {
+      "tStartS": 1001.428,
+      "tEndS": 1004.699,
+      "texte": "qui gère l'algorithme de recommandations de YouTube soit amené à croire"
+    },
+    {
+      "tStartS": 1004.699,
+      "tEndS": 1007.88,
+      "texte": "que vous voulez que le contenu de cette chaîne vous soit recommandé\"."
+    },
+    {
+      "tStartS": 1008.56,
+      "tEndS": 1009.94,
+      "texte": "Bref, restés à l'affût pour plus de contenu."
+    },
+    {
+      "tStartS": 1010.76,
+      "tEndS": 1013.5,
+      "texte": "Merci beaucoup à tous ceux qui ont soutenu ces vidéos sur Patreon."
+    },
+    {
+      "tStartS": 1014,
+      "tEndS": 1017.336,
+      "texte": "J'ai été assez lent pour avancer dans la série sur les probabilités cet été,"
+    },
+    {
+      "tStartS": 1017.336,
+      "tEndS": 1019.662,
+      "texte": "mais je reprends après ce projet. Donc les patrons,"
+    },
+    {
+      "tStartS": 1019.662,
+      "tEndS": 1021.9,
+      "texte": "attendez-vous à avoir des nouvelles de ce côté-là."
+    },
+    {
+      "tStartS": 1023.6,
+      "tEndS": 1027.192,
+      "texte": "Pour finir, j'ai avec moi Lisha Li, qui a réalisé sa thèse sur les aspects"
+    },
+    {
+      "tStartS": 1027.192,
+      "tEndS": 1030.785,
+      "texte": "théorique du deep learning et qui travaille actuellement dans une société"
+    },
+    {
+      "tStartS": 1030.785,
+      "tEndS": 1034.62,
+      "texte": "appelée \"Amplify partners\" qui a gentiment aidé au financement de cette vidéo."
+    },
+    {
+      "tStartS": 1035.46,
+      "tEndS": 1039.12,
+      "texte": "Alors, Lisha, une chose sur laquelle j'aimerais revenir, c'est cette fonction sigmoïde."
+    },
+    {
+      "tStartS": 1039.7,
+      "tEndS": 1043.231,
+      "texte": "De ce que j'ai compris, les premiers réseaux de neurones l'utilisaient"
+    },
+    {
+      "tStartS": 1043.231,
+      "tEndS": 1046.662,
+      "texte": "pour ramener la somme pondérée entre 0 et 1, motivée par l'analogie"
+    },
+    {
+      "tStartS": 1046.662,
+      "tEndS": 1049.84,
+      "texte": "des neurones biologiques qui sont soit inactifs, soit activés."
+    },
+    {
+      "tStartS": 1050.28,
+      "tEndS": 1050.3,
+      "texte": "(Lisha) - Exactement"
+    },
+    {
+      "tStartS": 1050.56,
+      "tEndS": 1054.04,
+      "texte": "(3B1B) - Mais peu de réseaux modernes utilisent encore la sigmoïde."
+    },
+    {
+      "tStartS": 1054.32,
+      "tEndS": 1055.2,
+      "texte": "(Lisha) - Oui"
+    },
+    {
+      "tStartS": 1054.44,
+      "tEndS": 1055.54,
+      "texte": "(3B1B) - C'est un peu démodé, non ?"
+    },
+    {
+      "tStartS": 1055.76,
+      "tEndS": 1058.98,
+      "texte": "(Lisha) - Oui ou plutôt, ReLU est bien plus facile à entraîner."
+    },
+    {
+      "tStartS": 1059.4,
+      "tEndS": 1062.34,
+      "texte": "(3B1B) - Et ReLU, ça veut dire « Unité Linéaire Rectifiée », c'est ça ?"
+    },
+    {
+      "tStartS": 1062.68,
+      "tEndS": 1068.814,
+      "texte": "(Lisha) - Oui, c'est ce genre de fonction où vous prenez juste le maximum entre 0 et \"a\""
+    },
+    {
+      "tStartS": 1068.814,
+      "tEndS": 1074.669,
+      "texte": "où \"a\" est donné par ce que tu expliquais dans la vidéo, et c'est motivé, je pense,"
+    },
+    {
+      "tStartS": 1074.669,
+      "tEndS": 1080.663,
+      "texte": "partiellement par une analogie biologique avec comment les neurones sont soit activés"
+    },
+    {
+      "tStartS": 1080.663,
+      "tEndS": 1081.36,
+      "texte": "soit non,"
+    },
+    {
+      "tStartS": 1081.36,
+      "tEndS": 1086.194,
+      "texte": "et donc, s'ils passent un certain seuil on a la fonction identité mais sinon,"
+    },
+    {
+      "tStartS": 1086.194,
+      "tEndS": 1090.84,
+      "texte": "il ne sera tout simplement pas activé, c'est une sorte de simplification."
+    },
+    {
+      "tStartS": 1091.16,
+      "tEndS": 1094.613,
+      "texte": "L'utilisation de la fonction sigmoïde n'aide pas pour l'entraînement,"
+    },
+    {
+      "tStartS": 1094.613,
+      "tEndS": 1098.265,
+      "texte": "ou en tous cas c'est vraiment difficile à entraîner à un certain niveau,"
+    },
+    {
+      "tStartS": 1098.265,
+      "tEndS": 1102.518,
+      "texte": "et des gens ont simplement essayé ReLU et il se trouve que ça a marché vraiment bien"
+    },
+    {
+      "tStartS": 1102.518,
+      "tEndS": 1104.62,
+      "texte": "pour ces réseaux incroyablement profonds."
+    },
+    {
+      "tStartS": 1105.1,
+      "tEndS": 1105.64,
+      "texte": "(3B1B) - Ok ! Merci Lisha."
+    }
+  ]
+}

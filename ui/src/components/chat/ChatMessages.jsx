@@ -4,6 +4,7 @@ import { BrainCircuit, Sparkles } from "lucide-react";
 import ToolGroup from "../ToolGroup.jsx";
 import NocturnalReviewForm from "../NocturnalReviewForm.jsx";
 import { Message } from "./Message.jsx";
+import WireframeForkPicker from "./WireframeForkPicker.jsx";
 
 export default function ChatMessages({
   listRef,
@@ -23,6 +24,8 @@ export default function ChatMessages({
   onConfirmPlan,
   awaitingApply,
   onApplyFix,
+  wireframeFork,
+  onChooseWireframe,
 }) {
   return (
     <div ref={listRef} className="nice-scroll flex flex-1 flex-col gap-2.5 overflow-y-auto p-4">
@@ -96,6 +99,9 @@ export default function ChatMessages({
             ))}
           </div>
         </div>
+      )}
+      {wireframeFork && !busy && (
+        <WireframeForkPicker variants={wireframeFork.variants} onChoose={onChooseWireframe} />
       )}
       {awaitingPlanConfirm && !busy && (
         <div className="flex justify-center py-3">

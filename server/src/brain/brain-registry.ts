@@ -58,7 +58,9 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // générée, coût $0, 0 image cassée). Ce défaut n'intervient QUE si brain-registry.json
   // est absent/corrompu (repli de dernier recours) ; en usage normal, la valeur
   // vivante vient du fichier, éditable dans Réglages → Atelier des cerveaux.
-  codeur:        { provider: "ollama", model: "hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K", timeoutMs: 120_000 },
+  // (2026-07-14) Tag "qwythos-tools:q6" — mêmes poids, Modelfile réparé (tool-calling
+  // natif réel, vérifié) ; voir .env pour le détail de la découverte/preuve.
+  codeur:        { provider: "ollama", model: "qwythos-tools:q6", timeoutMs: 120_000 },
   vision:        { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 60_000 },
   designer_ux:   { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
   extracteur:    { provider: "claude", model: "haiku", timeoutMs: 30_000 },
