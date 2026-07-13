@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Boxes, FolderOpen, GraduationCap, Image as ImageIcon, LayoutGrid,
   Moon, Music2, Settings, Sun,
@@ -7,7 +7,11 @@ import { getTheme, toggleTheme } from "../theme.js";
 import { WINDOWS } from "../nav.js";
 
 // ─── Bouton icône primaire ────────────────────────────────────────────────────
-function SideBtn({ icon: Icon, label, haloColor, active = false, onClick, dataTour }) {
+// `badge` (2026-07-14, #168 suite) : petit compteur rouge en coin — visibilité
+// PROACTIVE d'un état qui attend une action (ex. lacunes de la forge auto en
+// attente de validation), sans obliger à naviguer dans Réglages pour le savoir.
+// Né d'un cas réel : une lacune bloquée 5 jours sans que personne ne le remarque.
+function SideBtn({ icon: Icon, label, haloColor, active = false, onClick, dataTour, badge = 0 }) {
   return (
     <div className="group relative w-full">
       <button
@@ -36,6 +40,14 @@ function SideBtn({ icon: Icon, label, haloColor, active = false, onClick, dataTo
           }}
           className={!active ? "group-hover:!text-accent-soft group-hover:[filter:drop-shadow(0_0_6px_rgba(124,92,255,0.45))]" : ""}
         />
+        {badge > 0 && (
+          <span
+            className="pointer-events-none absolute right-2 top-2 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[10px] font-bold leading-none text-white shadow"
+            title={`${badge} lacune(s) en attente de validation`}
+          >
+            {badge > 9 ? "9+" : badge}
+          </span>
+        )}
       </button>
       {/* Tooltip flottant */}
       <div
@@ -68,6 +80,27 @@ export default function Sidebar({
   const [theme, setThemeState] = useState(getTheme);
   const flipTheme = () => setThemeState(toggleTheme());
   const [expanded, setExpanded] = useState(false);
+
+  // (2026-07-14, #168 suite) Lacunes en attente de validation (forge auto) —
+  // poll léger, visible depuis l'Accueil sans entrer dans Réglages. À l'échec
+  // (backend pas encore levé), on n'affiche rien plutôt que de faire échouer l'UI.
+  const [pendingGaps, setPendingGaps] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    const poll = () => {
+      fetch("/api/gaps")
+        .then((r) => (r.ok ? r.json() : { gaps: [] }))
+        .then((d) => {
+          if (cancelled) return;
+          const n = Array.isArray(d.gaps) ? d.gaps.filter((g) => g.status === "proposed").length : 0;
+          setPendingGaps(n);
+        })
+        .catch(() => {});
+    };
+    poll();
+    const id = setInterval(poll, 60_000);
+    return () => { cancelled = true; clearInterval(id); };
+  }, []);
 
   return (
     // Conteneur pointer-events-none : il ne capte RIEN par défaut → le décor sous
@@ -144,9 +177,10 @@ export default function Sidebar({
         {/* Réglages */}
         <SideBtn
           icon={Settings}
-          label="Réglages"
+          label={pendingGaps > 0 ? `Réglages — ${pendingGaps} lacune(s) en attente` : "Réglages"}
           haloColor="#8e8e93"
           onClick={() => onSetScreen?.("reglages")}
+          badge={pendingGaps}
         />
         {/* Tutoriels */}
         <SideBtn

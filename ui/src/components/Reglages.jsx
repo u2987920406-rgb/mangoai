@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import {
   ArrowLeft, Activity, BarChart2, BarChart3, Brain, Clock, CreditCard,
   Hash, Moon, Rss, Satellite, Scissors, Settings, Webhook, Wrench, Wand2, Dna,
@@ -100,6 +100,23 @@ export default function Reglages({ onBack, onOpenProject }) {
   const firstId = groups[0].items[0].id;
   const [section, setSection] = useState(firstId);
 
+  // (2026-07-14, #168 suite) Même badge que le dock (Sidebar.jsx) sur l'item de
+  // nav "Lacunes à combler" — visible dès l'ouverture de Réglages, pas besoin de
+  // cliquer dedans pour savoir qu'il y a quelque chose en attente.
+  const [pendingGaps, setPendingGaps] = useState(0);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/gaps")
+      .then((r) => (r.ok ? r.json() : { gaps: [] }))
+      .then((d) => {
+        if (cancelled) return;
+        const n = Array.isArray(d.gaps) ? d.gaps.filter((g) => g.status === "proposed").length : 0;
+        setPendingGaps(n);
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   function renderSection() {
     switch (section) {
       case "atelier":   return <AtelierCerveaux onBack={onBack} />;
@@ -151,6 +168,7 @@ export default function Reglages({ onBack, onOpenProject }) {
               <div className="flex flex-col gap-0.5">
                 {g.items.map(({ id, label, icon: Icon }) => {
                   const active = section === id;
+                  const badge = id === "gaps" ? pendingGaps : 0;
                   return (
                     <button
                       key={id}
@@ -161,6 +179,11 @@ export default function Reglages({ onBack, onOpenProject }) {
                     >
                       <Icon size={15} className={`shrink-0 ${active ? "text-accent" : "text-faint"}`} />
                       <span className="truncate">{label}</span>
+                      {badge > 0 && (
+                        <span className="ml-auto flex h-4 min-w-[16px] items-center justify-center rounded-full bg-[#FF3B30] px-1 text-[10px] font-bold leading-none text-white">
+                          {badge > 9 ? "9+" : badge}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
