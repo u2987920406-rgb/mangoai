@@ -21,7 +21,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La photo montre plusieurs personnes travaillant sur des ordinateurs dans un bureau. La réponse (B) correspond. (A) ne mentionne qu'une seule femme, ce qui est incomplet. (C) décrit une action non visible. (D) mentionne des chaises empilées, ce qui ne correspond pas à la scène.",
     "transcript": "(A) A woman is typing on a laptop. (B) Several people are working at computers. (C) A man is answering a phone call. (D) Some chairs are stacked against the wall.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/3184357/pexels-photo-3184357.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3184357.jpeg"
   },
   {
     "id": "P1-M17-G02",
@@ -41,7 +41,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Sur le chantier, les travailleurs portent des casques de sécurité. (B) est donc correcte. (A) décrit un bureau, pas un chantier. (C) évoque une pause déjeuner non visible. (D) mentionne de la peinture, ce qui ne correspond pas à la scène.",
     "transcript": "(A) The workers are sitting at desks. (B) The workers are wearing safety helmets. (C) The workers are eating lunch outside. (D) The workers are painting a wall.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/38043248/pexels-photo-38043248.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/38043248.jpeg"
   },
   {
     "id": "P1-M17-G03",
@@ -61,7 +61,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La photo montre une femme qui présente des diapositives à un groupe réuni dans une salle de conférence. (A) est correcte. (B) est faux car les participants sont assis, ils ne partent pas. (C) décrit une réparation de projecteur, non visible. (D) est incorrect car la salle est occupée.",
     "transcript": "(A) A woman is presenting slides to a group. (B) The participants are leaving the room. (C) A man is fixing a projector. (D) The room is completely empty.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/18999470/pexels-photo-18999470.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/18999470.jpeg"
   },
   {
     "id": "P1-M17-G04",
@@ -81,7 +81,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Plusieurs collègues examinent des documents ensemble autour d'une table. (B) correspond. (A) décrit une personne qui dort, ce qui est inexact. (C) évoque une livraison, non présente. (D) mentionne l'arrosage de plantes, ce qui ne correspond pas.",
     "transcript": "(A) One person is sleeping at a desk. (B) Several colleagues are reviewing documents together. (C) A delivery person is dropping off packages. (D) Someone is watering the plants.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/7640447/pexels-photo-7640447.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7640447.jpeg"
   },
   {
     "id": "P1-M17-G05",
@@ -101,7 +101,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Les travailleurs assemblent un échafaudage sur le chantier. (A) est la bonne réponse. (B) décrit la conduite de camions, non visible. (C) évoque une cafétéria, hors contexte. (D) mentionne la lecture de journaux, ce qui ne correspond pas.",
     "transcript": "(A) The men are assembling scaffolding. (B) The men are driving trucks. (C) The men are sitting in a cafeteria. (D) The men are reading newspapers.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/12008095/pexels-photo-12008095.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12008095.jpeg"
   },
   {
     "id": "P1-M17-G06",
@@ -121,7 +121,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Un homme pointe vers un tableau blanc pendant une réunion. (A) est correcte. (B) est faux car les participants ne quittent pas la salle. (C) décrit le nettoyage du tableau, pas le pointage. (D) mentionne une poignée de main à la porte, non visible.",
     "transcript": "(A) A man is pointing at a whiteboard during a meeting. (B) Everyone is packing their bags to leave. (C) A woman is cleaning the whiteboard. (D) Two people are shaking hands at the door.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/7413916/pexels-photo-7413916.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7413916.jpeg"
   },
   {
     "id": "P1-M17-G07",
@@ -141,7 +141,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Les employés se tiennent debout et discutent dans un bureau. (A) correspond à la scène. (B) décrit une salle de sport, hors contexte. (C) évoque une cuisine, non visible. (D) mentionne un arrêt de bus, ce qui ne correspond pas.",
     "transcript": "(A) The employees are standing and talking together. (B) The employees are exercising in a gym. (C) The employees are cooking in a kitchen. (D) The employees are waiting at a bus stop.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/8101526/pexels-photo-8101526.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8101526.jpeg"
   },
   {
     "id": "P1-M17-G08",
@@ -161,7 +161,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Une grue soulève des matériaux de construction sur le chantier. (A) est la bonne réponse. (B) décrit un jardinage, hors contexte. (C) évoque un supermarché, non visible. (D) mentionne des enfants sur un terrain de jeu, ce qui ne correspond pas.",
     "transcript": "(A) A crane is lifting construction materials. (B) Workers are planting trees in a garden. (C) People are shopping in a supermarket. (D) Children are playing on a playground.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/8650017/pexels-photo-8650017.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8650017.jpeg"
   },
   {
     "id": "P2-M18-G01",
@@ -592,7 +592,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Hi Sandra, did you finish the quarterly sales report yet? W: Not yet. My computer crashed this morning and I lost the file I was working on. M: Oh no. Can you redo it by tomorrow afternoon? The director needs it for the meeting on Friday. W: I think so. I'll start over right after lunch and stay a bit late tonight if I have to.",
-    "image": "https://images.pexels.com/photos/7964513/pexels-photo-7964513.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7964513.jpeg"
   },
   {
     "id": "P3-M20-G02",
@@ -633,7 +633,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: James, the printer on the second floor isn't working again. M: Already? I just fixed it last week. Did you call the maintenance company? W: Not yet. I wanted to check with you first since you handled it last time. M: OK, I'll call them this afternoon. In the meantime, you can use the printer in the conference room.",
-    "image": "https://images.pexels.com/photos/7964429/pexels-photo-7964429.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7964429.jpeg"
   },
   {
     "id": "P3-M20-G03",
@@ -674,7 +674,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Maria, I heard the client visit has been moved from Wednesday to Thursday. W: Yes, they asked to reschedule because their flight was changed. I need to update the catering order. M: Good idea. Also, don't forget to inform the reception desk so they update the visitor log. W: I already sent them an e-mail this morning, but I'll double-check with them.",
-    "image": "https://images.pexels.com/photos/5378703/pexels-photo-5378703.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5378703.jpeg"
   },
   {
     "id": "P3-M20-G04",
@@ -715,7 +715,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: Tom, have you seen the new safety guidelines? We need to review them before next week. M: I saw the e-mail but I haven't read through everything yet. Is it urgent? W: Not extremely, but the training session is on Monday, so we should be prepared. M: All right, I'll read them over the weekend and we can discuss on Monday morning.",
-    "image": "https://images.pexels.com/photos/8761640/pexels-photo-8761640.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8761640.jpeg"
   },
   {
     "id": "P3-M20-G05",
@@ -756,7 +756,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Lisa, I'm trying to book a conference room for the product launch, but all the rooms are taken on the 15th. W: Have you tried the eighth floor? Room 8B is usually free in the afternoons. M: I checked, but it only seats ten people. We're expecting at least twenty. W: Then you should contact Facilities. They can sometimes set up the auditorium for smaller events.",
-    "image": "https://images.pexels.com/photos/8761299/pexels-photo-8761299.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8761299.jpeg"
   },
   {
     "id": "P3-M20-G06",
@@ -797,7 +797,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: Kevin, the delivery from our supplier didn't arrive this morning. M: That's strange. It was confirmed for today. Let me call the logistics company. W: Please do. The production team is waiting for those materials to start the new batch. M: Don't worry, I'll sort it out and let you know as soon as I hear back from them.",
-    "image": "https://images.pexels.com/photos/6169178/pexels-photo-6169178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6169178.jpeg"
   },
   {
     "id": "P3-M20-G07",
@@ -838,7 +838,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Rachel, I noticed the budget report still hasn't been submitted. It was due yesterday. W: I know, I'm sorry. I've been waiting on figures from the Tokyo office, but they just sent them over. M: Good. How long will it take you to finalize everything? W: If I focus on it all afternoon, I should have it on your desk by five o'clock.",
-    "image": "https://images.pexels.com/photos/7054415/pexels-photo-7054415.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7054415.jpeg"
   },
   {
     "id": "P3-M20-G08",
@@ -879,7 +879,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: David, I'm planning the office relocation next month. Can you help me coordinate with the movers? M: Of course. Have you already set a date for the move? W: Yes, the third Saturday of the month. We'll need to make sure all equipment is packed by Friday evening. M: No problem. I'll create a checklist and share it with the whole team by Wednesday.",
-    "image": "https://images.pexels.com/photos/7203701/pexels-photo-7203701.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7203701.jpeg"
   },
   {
     "id": "P3-M20-G09",
@@ -920,7 +920,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Hi Claire, I heard the software update caused some issues with the inventory system. W: Yes, several items are showing the wrong quantities. The IT department is looking into it. M: Should we pause new orders until it's fixed? I don't want to promise stock we don't have. W: Good idea. I'll send a notice to the sales team to hold off on confirming orders for the rest of the day.",
-    "image": "https://images.pexels.com/photos/4487383/pexels-photo-4487383.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/4487383.jpeg"
   },
   {
     "id": "P3-M20-G10",
@@ -961,7 +961,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: Brian, the air conditioning in meeting room A isn't working. It's really warm in there. M: I noticed that too. I already submitted a repair request to Facilities this morning. W: Great. But I have a client presentation there at two o'clock. What if it's not fixed by then? M: If it's not ready, we can move the presentation to room C. I'll check with Facilities at noon and let you know.",
-    "image": "https://images.pexels.com/photos/20314954/pexels-photo-20314954.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/20314954.jpeg"
   },
   {
     "id": "P7-M22-G01",
@@ -980,7 +980,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "L'e-mail annonce l'ajout de nouveaux plats sains au menu de la cafétéria. Les prix restent les mêmes, donc les autres options sont incorrectes.",
     "passage": "From: HR Department\nTo: All Employees\nSubject: New Cafeteria Menu\n\nStarting next Monday, the company cafeteria will offer a wider selection of healthy meals. Fresh salads, grilled fish, and vegetarian dishes will be added to the daily menu. Prices will remain the same as before. We hope these new options will help everyone eat better during the workday.",
-    "image": "https://images.pexels.com/photos/5506019/pexels-photo-5506019.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5506019.jpeg"
   },
   {
     "id": "P7-M22-G02",
@@ -999,7 +999,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "L'avis indique clairement que les employés doivent utiliser le parking des visiteurs sur Maple Street pendant les réparations.",
     "passage": "NOTICE\n\nThe parking lot behind Building B will be closed for repairs on Saturday, May 10. Employees who normally park there should use the visitor lot on Maple Street. The repairs are expected to take one day only. Normal parking will resume on Sunday, May 11.",
-    "image": "https://images.pexels.com/photos/12384336/pexels-photo-12384336.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12384336.jpeg"
   },
   {
     "id": "P7-M22-G03",
@@ -1018,7 +1018,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "Le memo précise que les ventes en Europe sont restées stables et qu'une réunion aura lieu pour discuter de stratégies visant à améliorer les performances européennes.",
     "passage": "MEMO\n\nTo: Sales Team\nFrom: Regional Manager\nDate: March 3\n\nOur first-quarter sales results show a 15% increase compared to last year. This growth was mainly driven by strong demand for our new software products in the Asian market. However, sales in Europe remained flat. We will discuss strategies to improve European performance at the next team meeting on March 12.",
-    "image": "https://images.pexels.com/photos/8555771/pexels-photo-8555771.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8555771.jpeg"
   },
   {
     "id": "P7-M22-G04",
@@ -1037,7 +1037,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "Le message indique que le système sera indisponible de 21h00 à 23h00, soit une durée de deux heures.",
     "passage": "From: IT Support\nTo: All Staff\nSubject: System Maintenance\n\nPlease be aware that the company e-mail system will be unavailable on Friday from 9:00 PM to 11:00 PM. During this time, routine maintenance will be performed. You will not be able to send or receive messages. The system will return to normal after 11:00 PM.",
-    "image": "https://images.pexels.com/photos/17489151/pexels-photo-17489151.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/17489151.jpeg"
   },
   {
     "id": "P7-M22-G05",
@@ -1056,7 +1056,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "Le passage décrit les efforts de Greenfield Manufacturing pour réduire sa consommation d'énergie et recycler ses déchets, dans le cadre d'un plan de développement durable. Les autres options déforment les chiffres ou les faits mentionnés.",
     "passage": "ANNUAL REPORT EXCERPT\n\nIn 2023, Greenfield Manufacturing reduced its energy costs by 20% through the installation of solar panels on its main factory roof. The company also recycled 80% of its industrial waste, up from 60% the previous year. These efforts are part of a five-year plan to make all production facilities fully sustainable by 2028.",
-    "image": "https://images.pexels.com/photos/29923348/pexels-photo-29923348.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/29923348.jpeg"
   },
   {
     "id": "P7-M22-G06",
@@ -1075,7 +1075,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "Le deuxième jour, les nouveaux employés recevront une formation pratique sur les outils logiciels utilisés dans leur travail quotidien. Les autres activités (politiques, rencontre des managers) ont lieu le premier jour.",
     "passage": "From: Training Coordinator\nTo: New Hires\nSubject: Orientation Schedule\n\nWelcome to the company! Your orientation will take place over two days. On Day 1, you will learn about company policies and meet your department managers. On Day 2, you will receive hands-on training with the software tools used in your daily work. Lunch will be provided on both days in the main conference room.",
-    "image": "https://images.pexels.com/photos/7581125/pexels-photo-7581125.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7581125.jpeg"
   },
   {
     "id": "P7-M22-G07",
@@ -1094,7 +1094,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "L'annonce présente l'ErgoSeat Pro, un fauteuil de bureau confortable en promotion à 129 $. Les autres options ne sont pas mentionnées.",
     "passage": "ADVERTISEMENT\n\nAre you looking for a comfortable office chair at an affordable price? The ErgoSeat Pro is now on sale for only $129. It features adjustable armrests, lumbar support, and a breathable mesh back. Free delivery is available for orders placed before April 30. Visit our Web site or call 1-800-SEAT-NOW to order.",
-    "image": "https://images.pexels.com/photos/36149083/pexels-photo-36149083.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/36149083.jpeg"
   },
   {
     "id": "P7-M22-G08",
@@ -1113,7 +1113,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "L'e-mail précise que les chefs de département doivent confirmer leur présence avant le 20 octobre afin que le comité puisse finaliser le nombre de couverts pour le traiteur.",
     "passage": "From: Event Planning Committee\nTo: All Department Heads\nSubject: Annual Charity Gala\n\nThis year's charity gala will be held on November 15 at the Grand Hotel downtown. Tickets are $50 per person, and all proceeds will go to the local children's hospital. Each department is asked to send at least five representatives. Please confirm your attendees with the committee by October 20 so we can finalize catering numbers.",
-    "image": "https://images.pexels.com/photos/35327677/pexels-photo-35327677.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/35327677.jpeg"
   },
   {
     "id": "P6-M24-G01",
@@ -1285,7 +1285,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur dit clairement « First, I'd like to review our sales results from the last quarter », ce qui indique que le premier sujet abordé est les résultats des ventes du dernier trimestre.",
     "transcript": "Good morning, everyone. First, I'd like to review our sales results from the last quarter. Then, we'll discuss the new marketing plan and answer any questions you may have.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/8463151/pexels-photo-8463151.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8463151.jpeg"
   },
   {
     "id": "P4-M21-G02",
@@ -1305,7 +1305,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur utilise le mot « However » pour signaler un changement, puis dit « let me introduce our new team leader, Ms. Park ». Elle présente donc la nouvelle chef d'équipe avant d'entrer dans les détails du projet informatique.",
     "transcript": "Thank you for joining today's briefing. I'll start with an update on the IT project. However, before we get into the details, let me introduce our new team leader, Ms. Park.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/3861924/pexels-photo-3861924.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3861924.jpeg"
   },
   {
     "id": "P4-M21-G03",
@@ -1325,7 +1325,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur dit « Finally, there will be time for questions at the end of the session ». Les questions auront donc lieu à la fin de la séance, après la présentation des modifications de la politique d'expédition.",
     "transcript": "This concludes the first part of my presentation. Next, I will explain the changes to our shipping policy. Finally, there will be time for questions at the end of the session.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/9034216/pexels-photo-9034216.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9034216.jpeg"
   },
   {
     "id": "P4-M21-G04",
@@ -1345,7 +1345,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le message dit clairement « remember to submit your travel expense forms to accounting by noon tomorrow ». Les chefs de département doivent donc remettre leurs formulaires de notes de frais de déplacement au service comptable.",
     "transcript": "Hi, this is a message for all department heads. First, please note that the monthly report is due this Friday. Second, remember to submit your travel expense forms to accounting by noon tomorrow.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/8872415/pexels-photo-8872415.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8872415.jpeg"
   },
   {
     "id": "P4-M21-G05",
@@ -1365,7 +1365,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur utilise « However » pour souligner le point le plus important : « all staff must wear their ID badges at all times ». Le port du badge d'identification en permanence est donc le point essentiel.",
     "transcript": "Welcome to today's safety briefing. I'll begin by explaining the emergency exit locations. Then, I'll talk about fire prevention procedures. However, the most important point is that all staff must wear their ID badges at all times.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/6285146/pexels-photo-6285146.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6285146.jpeg"
   },
   {
     "id": "P4-M21-G06",
@@ -1385,7 +1385,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur dit « After that, I'll share some comments from our clients ». Après les scores de satisfaction, elle partagera donc des commentaires spécifiques des clients.",
     "transcript": "Good afternoon. Today I'll present our customer feedback results. First, let's look at the overall satisfaction scores. After that, I'll share some specific comments from our clients.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/5716030/pexels-photo-5716030.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5716030.jpeg"
   },
   {
     "id": "P4-M21-G07",
@@ -1405,7 +1405,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur structure son discours avec « First », « Second » et « Finally ». Le deuxième point mentionné est « the new parking arrangements », c'est-à-dire les nouveaux aménagements de stationnement.",
     "transcript": "Thank you all for attending. I'll cover three items today. First, the office relocation schedule. Second, the new parking arrangements. Finally, I'll explain how to update your contact information in the company system.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/7218211/pexels-photo-7218211.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7218211.jpeg"
   },
   {
     "id": "P4-M21-G08",
@@ -1425,7 +1425,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le locuteur dit « However, due to a printing delay, the printed copies won't arrive until Wednesday ». Le retard des copies imprimées est dû à un problème d'impression.",
     "transcript": "This is a quick update for the sales team. First, our new product catalog will be available next Monday. However, due to a printing delay, the printed copies won't arrive until Wednesday. Please use the digital version in the meantime.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/7108454/pexels-photo-7108454.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7108454.jpeg"
   },
   {
     "id": "P5-M23-G01",
@@ -1656,7 +1656,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: I think we should hold the product launch at the downtown hotel. It's more convenient for most of our guests. M: I'd prefer the conference center near the airport. Parking is free there, and the rooms are larger. W: But the airport is too far for our local clients. How about we check the hotel's parking rates first? M: That's fair. If the hotel parking isn't too expensive, we can go with your choice.",
-    "image": "https://images.pexels.com/photos/7651648/pexels-photo-7651648.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7651648.jpeg"
   },
   {
     "id": "P3-M25-G02",
@@ -1692,7 +1692,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: I'd like to move the team meeting from Wednesday to Friday afternoon. That gives us more time to prepare the report. W: Friday afternoon doesn't work for me. I have a client visit scheduled. Could we do Thursday morning instead? M: Thursday morning is fine. I'll send out the updated calendar invite right away.",
-    "image": "https://images.pexels.com/photos/5918201/pexels-photo-5918201.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5918201.jpeg"
   },
   {
     "id": "P3-M25-G03",
@@ -1733,7 +1733,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: The new marketing campaign should focus on social media ads. That's where our younger customers spend their time. M: I understand your point, but I think we should also invest in print advertising. Many of our loyal customers still read trade magazines. W: I'm not convinced print is worth the cost. However, I'm willing to test a small print ad and compare the results. M: That sounds like a reasonable compromise. I'll draft a budget for a limited print run.",
-    "image": "https://images.pexels.com/photos/7964178/pexels-photo-7964178.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7964178.jpeg"
   },
   {
     "id": "P3-M25-G04",
@@ -1769,7 +1769,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: I really think we need to extend the project deadline by two weeks. The design team is still waiting for client feedback. W: Two weeks seems like too much. We promised the client a draft by the end of this month. Could one extra week be enough? M: One week might work if the client sends their comments by tomorrow. I'll call them this afternoon.",
-    "image": "https://images.pexels.com/photos/7581110/pexels-photo-7581110.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7581110.jpeg"
   },
   {
     "id": "P3-M25-G05",
@@ -1810,7 +1810,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: I'd like to order the new office furniture from Jensen's. Their prices are competitive and delivery is included. M: I was thinking we should go with Martel Office Supplies. We've worked with them for years and their quality is reliable. W: I know Martel is reliable, but Jensen's is offering a fifteen percent discount for first-time customers. That's hard to ignore. M: All right. Let's try Jensen's this time, but if there are any issues with delivery, we switch back to Martel.",
-    "image": "https://images.pexels.com/photos/20390772/pexels-photo-20390772.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/20390772.jpeg"
   },
   {
     "id": "P3-M25-G06",
@@ -1851,7 +1851,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Should we order lunch for the training session? I was thinking sandwiches from the deli across the street. W: Sandwiches are fine, but I'd prefer to order from the catering company we used last month. Their food was much better. M: That's true, the catering was excellent. But isn't it more expensive? Let me check the budget first. W: Sure. If it fits the budget, let's go with the caterer. If not, the deli is fine.",
-    "image": "https://images.pexels.com/photos/8353776/pexels-photo-8353776.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8353776.jpeg"
   },
   {
     "id": "P3-M25-G07",
@@ -1892,7 +1892,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: I think we should reduce the training budget next quarter. Online courses are much cheaper than in-person workshops. M: I disagree. Our staff learn better in face-to-face sessions. The engagement is much higher. W: I understand, but we need to cut costs somewhere. What if we keep one in-person workshop per quarter and move the rest online? M: That could work. One quarterly workshop would maintain team interaction while saving money.",
-    "image": "https://images.pexels.com/photos/7821731/pexels-photo-7821731.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7821731.jpeg"
   },
   {
     "id": "P3-M25-G08",
@@ -1933,7 +1933,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: I'd like to present the quarterly results at the board meeting myself. I've been working closely with the data. W: I appreciate that, but the director asked me to handle the presentation this time. He wants a consistent format. M: I see. In that case, could I at least review the slides before the meeting? I want to make sure the figures are accurate. W: Of course. I'll send you the draft by Wednesday so you have time to check everything.",
-    "image": "https://images.pexels.com/photos/8424553/pexels-photo-8424553.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8424553.jpeg"
   },
   {
     "id": "P3-M25-G09",
@@ -1974,7 +1974,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: I want to change our supplier for packaging materials. GreenPack offers biodegradable options, which aligns with our sustainability goals. M: I support the idea of going green, but GreenPack's prices are about twenty percent higher than our current supplier. W: I know it's more expensive, but we could start with a trial order for one product line. If customers respond well, we can expand. M: That makes sense. Let's start with the eco-friendly line and see how it goes.",
-    "image": "https://images.pexels.com/photos/13758314/pexels-photo-13758314.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/13758314.jpeg"
   },
   {
     "id": "P3-M25-G10",
@@ -2010,7 +2010,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: I think we should schedule the client call for Monday morning. That way we have the whole week to follow up. W: Monday morning is difficult. The client is in a different time zone, so it would be very early for them. How about Tuesday afternoon? M: Tuesday afternoon works. I'll confirm the time with the client and send a calendar invite to everyone.",
-    "image": "https://images.pexels.com/photos/7793930/pexels-photo-7793930.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7793930.jpeg"
   },
   {
     "id": "P4-M26-G01",
@@ -2030,7 +2030,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce mentionne « shoppers » et « checkout counters », ce qui indique clairement un magasin. C'est donc un employé du magasin qui parle.",
     "transcript": "Attention shoppers. The store will close in fifteen minutes. Please bring your items to the checkout counters on the first floor. Thank you for shopping with us today.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/5951182/pexels-photo-5951182.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5951182.jpeg"
   },
   {
     "id": "P4-M26-G02",
@@ -2050,7 +2050,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce dit « Please have your tickets ready before boarding », ce qui signifie que les passagers doivent préparer leurs billets, donc les montrer.",
     "transcript": "Attention passengers. The express train to Central Station will depart from Platform 3 in five minutes. Please have your tickets ready before boarding.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/20705525/pexels-photo-20705525.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/20705525.jpeg"
   },
   {
     "id": "P4-M26-G03",
@@ -2070,7 +2070,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce indique clairement « food and drinks are not allowed inside the hall ». La nourriture et les boissons sont donc interdites.",
     "transcript": "Good evening, everyone. Before the concert begins, please note that food and drinks are not allowed inside the hall. The performance will start in about ten minutes, so please take your seats now.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/32731350/pexels-photo-32731350.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/32731350.jpeg"
   },
   {
     "id": "P4-M26-G04",
@@ -2090,7 +2090,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce précise « It will reopen at one o'clock in the afternoon ». La salle rouvrira à treize heures.",
     "transcript": "This is a reminder for all library visitors. The second-floor reading room will be closed tomorrow morning for cleaning. It will reopen at one o'clock in the afternoon. We apologize for any inconvenience.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/31376296/pexels-photo-31376296.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/31376296.jpeg"
   },
   {
     "id": "P4-M26-G05",
@@ -2110,7 +2110,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce dit « The tour lasts about one hour ». La visite dure environ une heure.",
     "transcript": "Welcome to City Museum. Our guided tour starts at two o'clock at the main entrance. The tour lasts about one hour and is free for all visitors. No reservation is needed.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/38150086/pexels-photo-38150086.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/38150086.jpeg"
   },
   {
     "id": "P4-M26-G06",
@@ -2130,7 +2130,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce indique « The new departure time is seven thirty ». Le nouveau départ est à sept heures trente.",
     "transcript": "Attention, passengers on Flight 204 to Singapore. Due to bad weather, your flight has been delayed by two hours. The new departure time is seven thirty. Please check the departure boards for gate information.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/2833379/pexels-photo-2833379.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/2833379.png"
   },
   {
     "id": "P4-M26-G07",
@@ -2150,7 +2150,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce dit « please come to the reception desk on the ground floor to claim it ». Le propriétaire doit se rendre à la réception.",
     "transcript": "Hello, this is the front desk. A brown wallet was found in the lobby this morning. If anyone has lost a wallet, please come to the reception desk on the ground floor to claim it.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/7821349/pexels-photo-7821349.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7821349.jpeg"
   },
   {
     "id": "P4-M26-G08",
@@ -2170,7 +2170,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'annonce précise « You can sign up online or at the sports center on Maple Street ». L'inscription se fait en ligne ou au centre sportif.",
     "transcript": "Attention all runners. Registration for the Sunday marathon closes this Friday at six p.m. You can sign up online or at the sports center on Maple Street. The entry fee is twenty dollars per person.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/9855172/pexels-photo-9855172.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9855172.jpeg"
   },
   {
     "id": "P5-M27-G01",
@@ -2379,7 +2379,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 3,
     "explanation": "La climatisation du deuxième étage ne fonctionnera pas le 15 mars, ce qui rendra la zone inconfortable et probablement trop chaude. C'est pourquoi le personnel est invité à utiliser la salle de conférence du troisième étage.",
     "passage": "To: All Staff\nFrom: Janet Cole, Office Manager\nDate: March 12\nSubject: Air Conditioning Repair\n\nPlease note that the air conditioning on the second floor will not be working on Wednesday, March 15. A repair technician will be on-site from 9:00 A.M. to 1:00 P.M. to fix the problem. If your desk is on the second floor, you are welcome to use the third-floor conference room for the morning.",
-    "image": "https://images.pexels.com/photos/6033459/pexels-photo-6033459.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6033459.jpeg"
   },
   {
     "id": "P7-M28-G02",
@@ -2398,7 +2398,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "Le texte précise explicitement que le système de commande en ligne restera disponible pendant la fermeture. Les autres options ne sont pas mentionnées ou sont incorrectes.",
     "passage": "Greenfield Café will be closed on Monday, April 3, for staff training. We will reopen at our normal time, 7:00 A.M., on Tuesday, April 4. We apologize for any inconvenience and thank you for your continued support. Our online ordering system will still be available during the closure.",
-    "image": "https://images.pexels.com/photos/3964502/pexels-photo-3964502.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3964502.jpeg"
   },
   {
     "id": "P7-M28-G03",
@@ -2417,7 +2417,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "La réunion a été déplacée au 17 avril. David Park demande de préparer les rapports un jour plus tôt que d'habitude pour pouvoir les examiner avant la réunion. La réunion étant le 17, les rapports doivent être soumis au plus tard le 16 avril.",
     "passage": "Memo to Sales Team Members:\n\nOur quarterly sales meeting has been moved from April 10 to April 17. The meeting will still take place in Conference Room B from 2:00 P.M. to 4:00 P.M. Please prepare your monthly sales reports one day earlier than usual, as I will need to review them before the meeting.\n\n— David Park, Sales Director",
-    "image": "https://images.pexels.com/photos/8463151/pexels-photo-8463151.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8463151.jpeg"
   },
   {
     "id": "P7-M28-G04",
@@ -2436,7 +2436,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "L'e-mail indique clairement que M. Lopez doit apporter une pièce d'identité avec photo valide et son premier paiement pour récupérer sa clé.",
     "passage": "Dear Mr. Lopez,\n\nThank you for your interest in renting a storage unit at SafeStore. Your reserved unit, A-12, will be available starting May 1. The monthly fee is $85, due on the first day of each month. Please bring a valid photo ID and your first payment when you come to pick up your key.\n\nBest regards,\nSafeStore Customer Service",
-    "image": "https://images.pexels.com/photos/5759123/pexels-photo-5759123.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5759123.jpeg"
   },
   {
     "id": "P7-M28-G05",
@@ -2455,7 +2455,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 0,
     "explanation": "L'avis précise que les clients peuvent utiliser la salle de sport « gratuitement » pendant la fermeture de la piscine. Cela suggère que la salle de sport est normalement payante pour les clients, sinon la mention « free of charge » serait inutile.",
     "passage": "NOTICE TO ALL GUESTS\n\nThe hotel swimming pool will be closed for cleaning every Monday from 6:00 A.M. to 10:00 A.M. starting next week. During this time, guests may use the fitness center free of charge. The pool will reopen at 10:30 A.M. after a final safety inspection.\n\n— Riverside Hotel Management",
-    "image": "https://images.pexels.com/photos/15283660/pexels-photo-15283660.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/15283660.jpeg"
   },
   {
     "id": "P7-M28-G06",
@@ -2474,7 +2474,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 3,
     "explanation": "Le taux de participation cette année est de 92 %, contre 78 % l'an dernier. Cela signifie que moins d'employés ont participé au sondage l'année dernière par rapport à cette année.",
     "passage": "From: Maria Santos, HR Coordinator\nTo: All Department Heads\nSubject: Employee Survey Results\n\nThank you for encouraging your teams to complete the annual employee survey. We received responses from 92% of staff, up from 78% last year. The most common request was for more flexible start times. I will share the full report with you by Friday so we can discuss it at next week's leadership meeting.",
-    "image": "https://images.pexels.com/photos/9064715/pexels-photo-9064715.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9064715.jpeg"
   },
   {
     "id": "P7-M28-G07",
@@ -2493,7 +2493,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "Le texte indique qu'après la période promotionnelle, le tarif standard de 60 $ par mois s'appliquera. La réduction de 50 % ne concerne que les trois premiers mois.",
     "passage": "Special Offer for New Members!\n\nJoin City Fitness Club before June 30 and receive 50% off your first three months of membership. After the promotional period, the standard rate of $60 per month will apply. Members enjoy 24-hour access to all equipment, free group classes, and a personal training session.",
-    "image": "https://images.pexels.com/photos/6739958/pexels-photo-6739958.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6739958.jpeg"
   },
   {
     "id": "P7-M28-G08",
@@ -2512,7 +2512,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "L'e-mail précise que la commande a été envoyée en livraison express « sans frais supplémentaires » en raison d'un retard. Cela implique que la livraison express n'était pas prévue initialement ; sinon, l'entreprise n'aurait pas besoin de préciser qu'il n'y a pas de coût supplémentaire.",
     "passage": "Dear Valued Customer,\n\nYour order #4471 has shipped and will arrive on Thursday, June 8. Due to an unexpected delay at our warehouse, your order was sent using express delivery at no additional cost to you. You can track your package using the link below.\n\nThank you for your patience.\n— Nordic Home Goods",
-    "image": "https://images.pexels.com/photos/7363199/pexels-photo-7363199.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7363199.jpeg"
   },
   {
     "id": "P2-M29-G01",
@@ -2753,7 +2753,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Hi, Sarah. Do you have the quarterly sales report? I need to review it before the meeting. W: I just finished it. I'll email it to you in about ten minutes. M: Great. I also need the customer feedback summary. Could you send that too? W: Sure, I'll attach both files to the same email.",
-    "image": "https://images.pexels.com/photos/5918206/pexels-photo-5918206.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5918206.jpeg"
   },
   {
     "id": "P3-M30-G02",
@@ -2794,7 +2794,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: Tom, the printer on the second floor isn't working again. Can you check it? M: I already called the repair company. They'll send someone this afternoon. W: That's good. In the meantime, we can use the printer in the marketing department. M: Good idea. I'll let everyone know.",
-    "image": "https://images.pexels.com/photos/7964429/pexels-photo-7964429.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7964429.jpeg"
   },
   {
     "id": "P3-M30-G03",
@@ -2835,7 +2835,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: I'm planning to visit the Osaka branch next week. Can you book my flight for Monday morning? W: Monday morning flights are all full. The earliest available is Monday at 2 PM. M: That's too late. What about Tuesday morning? W: There are seats on the 7 AM flight. Should I book that one?",
-    "image": "https://images.pexels.com/photos/32223420/pexels-photo-32223420.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/32223420.jpeg"
   },
   {
     "id": "P3-M30-G04",
@@ -2876,7 +2876,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: Excuse me, I'm looking for the conference room. I have a job interview at 10. M: The conference room is down this hall, on the left. It's next to the cafeteria. W: Thank you. Is there a place where I can wait before 10? M: You can sit in the lobby. It's just past the reception desk.",
-    "image": "https://images.pexels.com/photos/1666667/pexels-photo-1666667.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/1666667.jpeg"
   },
   {
     "id": "P3-M30-G05",
@@ -2922,7 +2922,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Lisa, did you order the office supplies we discussed last week? W: Yes, I placed the order yesterday. But the notebooks won't arrive until Friday. M: That's a problem. We need them for the training session on Thursday. W: I'll call the supplier and ask them to deliver by Wednesday. M: Thanks. If they can't, I'll pick some up from the store downtown.",
-    "image": "https://images.pexels.com/photos/5594313/pexels-photo-5594313.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5594313.jpeg"
   },
   {
     "id": "P3-M30-G06",
@@ -2963,7 +2963,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: David, the client meeting has been moved from 2 PM to 3:30. Did you get my message? M: Yes, I saw your email. That works fine for me. I'll be back from lunch by then. W: Good. The client also asked if we could prepare the contract in advance. M: No problem. I'll have it ready by 2 PM.",
-    "image": "https://images.pexels.com/photos/7643871/pexels-photo-7643871.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7643871.jpeg"
   },
   {
     "id": "P3-M30-G07",
@@ -3004,7 +3004,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: I'm attending the trade show in Singapore next month. Do I need a visa? W: It depends on your passport. Let me check the company travel policy on the intranet. M: I have a French passport. I think I can enter without a visa for short trips. W: That's right. But you still need to fill out the travel request form and get it approved by your manager.",
-    "image": "https://images.pexels.com/photos/7567551/pexels-photo-7567551.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7567551.jpeg"
   },
   {
     "id": "P3-M30-G08",
@@ -3045,7 +3045,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: Kevin, have you finished the presentation for tomorrow's workshop? M: Almost. I just need to add two more slides about the survey results. W: Good. Don't forget to include the charts from the research team. M: I already added them. I'll send you the final version by 5 PM.",
-    "image": "https://images.pexels.com/photos/3862625/pexels-photo-3862625.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3862625.jpeg"
   },
   {
     "id": "P3-M30-G09",
@@ -3086,7 +3086,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "M: Hello, this is James Park from Greenfield Consulting. I'm calling about the invoice you sent us last week. W: Hi, Mr. Park. What seems to be the problem with the invoice? M: The total amount is higher than what we agreed on. I think there's a mistake in the shipping charges. W: Let me pull up your file. Yes, I see the issue. The shipping was calculated twice. I'll send you a corrected invoice today.",
-    "image": "https://images.pexels.com/photos/7877116/pexels-photo-7877116.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7877116.jpeg"
   },
   {
     "id": "P3-M30-G10",
@@ -3127,7 +3127,7 @@ export const INTERMEDIAIRE_GEN = [
       }
     ],
     "transcript": "W: I need to buy a new laptop for my home office. The old one keeps freezing during video calls. M: You should look at the models in the company catalog. Employees get a discount. W: Really? I didn't know that. How much is the discount? M: It's about 15% off. I can send you the link to the catalog if you want.",
-    "image": "https://images.pexels.com/photos/12968298/pexels-photo-12968298.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12968298.jpeg"
   },
   {
     "id": "P6-M31-G01",
@@ -3298,7 +3298,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "Dans l'e-mail, Mme Whitfield demande explicitement au personnel de soumettre ses demandes de fournitures avant vendredi midi. Les autres options ne correspondent pas au contenu du message.",
     "passage": "From: Dana Whitfield <dwhitfield@meridian.com>\nTo: All Staff\nSubject: Office Supply Orders\nDate: March 12\n\nPlease submit your office supply requests by Friday at noon. Include the item name, quantity, and department code. Orders received after the deadline will be processed the following week.\n\nThank you,\nDana Whitfield, Office Manager",
-    "image": "https://images.pexels.com/photos/6169133/pexels-photo-6169133.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6169133.jpeg"
   },
   {
     "id": "P7-M32-G02",
@@ -3317,7 +3317,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 0,
     "explanation": "Carlos précise que le résumé de la page 2 manque de détails et demande à Rachel d'ajouter un court paragraphe expliquant la variation trimestrielle. Les autres options sont incorrectes ou incomplètes.",
     "passage": "From: Carlos Mendez <cmendez@brightpath.co>\nTo: Rachel Kim\nSubject: Re: Budget Report Draft\nDate: April 3\n\nHi Rachel,\n\nI reviewed the draft you sent. The figures in Section 3 look good, but the summary on page 2 needs more detail. Could you add a short paragraph explaining the quarterly change? Please send the updated version by Wednesday.\n\nBest regards,\nCarlos",
-    "image": "https://images.pexels.com/photos/7054416/pexels-photo-7054416.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7054416.jpeg"
   },
   {
     "id": "P7-M32-G03",
@@ -3336,7 +3336,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "Mme Tanaka explique que la salle de réunion B est réservée pour une présentation client jeudi matin, ce qui rend la réparation urgente. Les autres options ne sont pas mentionnées dans le texte.",
     "passage": "From: Yuki Tanaka <ytanaka@northgate-logistics.com>\nTo: Facilities Department\nSubject: Air Conditioning Repair\nDate: June 18\n\nThe air conditioning in Meeting Room B has stopped working. The room is booked for a client presentation on Thursday morning, so the repair is urgent. Please send a technician as soon as possible and confirm the visit by e-mail.\n\nYuki Tanaka\nSales Coordinator",
-    "image": "https://images.pexels.com/photos/20314954/pexels-photo-20314954.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/20314954.jpeg"
   },
   {
     "id": "P7-M32-G04",
@@ -3355,7 +3355,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "Priya demande d'augmenter le nombre de plateaux d'apéritifs de 10 à 12 car le nombre d'invités est passé de 100 à 120. Le dessert reste inchangé et les plats végétariens sont déjà jugés excellents.",
     "passage": "From: Priya Sharma <psharma@evergreenfoods.com>\nTo: Marcus Lee\nSubject: Re: Catering for Annual Dinner\nDate: September 7\n\nHi Marcus,\n\nThank you for the updated menu. The vegetarian options look excellent. However, we now have 120 guests instead of 100, so please increase the number of appetizer platters from 10 to 12. The dessert order remains the same. Can you confirm the revised total cost by Friday?\n\nBest,\nPriya",
-    "image": "https://images.pexels.com/photos/29086309/pexels-photo-29086309.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/29086309.jpeg"
   },
   {
     "id": "P7-M32-G05",
@@ -3374,7 +3374,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 0,
     "explanation": "L'e-mail indique clairement que la date limite du projet Riverside a été déplacée du 15 mars au 22 mars. La date du 20 février correspond à l'envoi du message, pas à l'échéance.",
     "passage": "From: Thomas Berg <tberg@summit-architects.com>\nTo: All Project Teams\nSubject: Updated Project Schedule\nDate: February 20\n\nPlease note that the deadline for the Riverside project has been moved from March 15 to March 22. This change gives the design team one additional week to finalize the blueprints. All other project dates remain unchanged.\n\nThomas Berg\nProject Director",
-    "image": "https://images.pexels.com/photos/6615086/pexels-photo-6615086.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6615086.jpeg"
   },
   {
     "id": "P7-M32-G06",
@@ -3393,7 +3393,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 3,
     "explanation": "Amira propose à David de lui fournir le déjeuner s'il reste pour la journée complète. Les autres options ne sont pas mentionnées dans l'e-mail.",
     "passage": "From: Amira Hassan <ahassan@citylibrary.org>\nTo: David Porter\nSubject: Re: Volunteer Schedule for Book Sale\nDate: November 5\n\nHi David,\n\nThanks for volunteering for the Saturday book sale. We still need someone to cover the afternoon shift from 1:00 to 4:00. You are currently scheduled for the morning shift. Would you be available to stay for the full day? Lunch will be provided. Please let me know by Thursday.\n\nAmira",
-    "image": "https://images.pexels.com/photos/13687327/pexels-photo-13687327.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/13687327.jpeg"
   },
   {
     "id": "P7-M32-G07",
@@ -3412,7 +3412,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 2,
     "explanation": "L'e-mail précise qu'une session de formation aura lieu le vendredi à 10 heures dans le lobby de l'hôtel. Les autres lieux ne sont pas mentionnés.",
     "passage": "From: Sofia Romano <sromano@bellavista-hotel.com>\nTo: Guest Services Team\nSubject: New Check-in Procedure\nDate: July 1\n\nStarting Monday, all guests will receive their room keys at the front desk instead of from the concierge. Please make sure the key cards are prepared before each guest arrives. A short training session will be held on Friday at 10 A.M. in the lobby.\n\nSofia Romano\nFront Desk Supervisor",
-    "image": "https://images.pexels.com/photos/7820326/pexels-photo-7820326.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7820326.jpeg"
   },
   {
     "id": "P7-M32-G08",
@@ -3431,7 +3431,7 @@ export const INTERMEDIAIRE_GEN = [
     "answer": 1,
     "explanation": "Kevin explique que la commande a été retardée en raison d'une rupture de stock à l'entrepôt. Les articles manquants arriveront du fournisseur le 19 octobre. Les autres causes ne sont pas évoquées dans le message.",
     "passage": "From: Kevin O'Sullivan <kosullivan@harborline-shipping.com>\nTo: Linda Park\nSubject: Re: Shipment Delay – Order #4471\nDate: October 14\n\nHi Linda,\n\nI checked with the warehouse, and your order #4471 was delayed because of a stock shortage. The missing items will arrive from our supplier on October 19. We will pack and ship your order the same day, and you should receive it by October 21. I apologize for the inconvenience.\n\nKevin",
-    "image": "https://images.pexels.com/photos/12585837/pexels-photo-12585837.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12585837.jpeg"
   },
   {
     "id": "P4-M33-G01",
@@ -3451,7 +3451,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La présentatrice dit que le podcast porte sur les nouveaux gadgets et qu'aujourd'hui ils vont passer en revue trois montres connectées. La bonne réponse est donc 'New smart watches'.",
     "transcript": "Welcome to Tech Today, the weekly podcast about new gadgets. I'm your host, Karen Lee. Today, we'll review three smart watches and explain which one is best for runners.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/31213674/pexels-photo-31213674.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/31213674.jpeg"
   },
   {
     "id": "P4-M33-G02",
@@ -3471,7 +3471,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le présentateur conseille aux automobilistes d'utiliser le métro à cause de la fermeture de deux routes principales. La bonne réponse est 'Take the subway'.",
     "transcript": "This is City Traffic Radio. I'm Tom Harris with your evening update. Two main roads are closed due to heavy rain, so drivers should use the subway instead. We'll return with weather news in ten minutes.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/15426343/pexels-photo-15426343.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/15426343.jpeg"
   },
   {
     "id": "P4-M33-G03",
@@ -3491,7 +3491,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le présentateur dit qu'en premier ils parleront du tri du papier et du plastique, puis ensuite ils donneront des conseils pour réduire le gaspillage alimentaire. La bonne réponse est 'Reducing food waste'.",
     "transcript": "Thanks for listening to Green Living. I'm Mark Stone, and today's episode focuses on home recycling. First, we'll talk about sorting paper and plastic. Then, we'll share tips to reduce food waste at home.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/34406294/pexels-photo-34406294.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/34406294.jpeg"
   },
   {
     "id": "P4-M33-G04",
@@ -3511,7 +3511,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'animatrice dit qu'elle interviewe un propriétaire de petite entreprise qui a ouvert un café en moins de trois mois. La bonne réponse est 'A coffee shop owner'.",
     "transcript": "Hello, and welcome to Business Weekly. I'm your host, Anna Park. This week, we interview a small business owner who opened a coffee shop in less than three months. Stay tuned for some great advice.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/6612572/pexels-photo-6612572.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6612572.jpeg"
   },
   {
     "id": "P4-M33-G05",
@@ -3531,7 +3531,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La doctoresse dit qu'elle parlera de deux habitudes simples pour mieux dormir. La bonne réponse est 'Two'.",
     "transcript": "You're listening to Health Matters with Dr. Susan Hill. Today, we'll explain why sleep is important for your health. We'll also discuss two simple habits that can help you sleep better at night.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/7445144/pexels-photo-7445144.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7445144.jpeg"
   },
   {
     "id": "P4-M33-G06",
@@ -3551,7 +3551,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le présentateur dit qu'aujourd'hui ils vont visiter un musée célèbre à Paris. La bonne réponse est 'A museum in Paris'.",
     "transcript": "Good morning, and welcome to Travel Talk. I'm David Kim. In today's show, we'll visit a famous museum in Paris and learn about its most popular paintings. Let's get started right away.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/952590/pexels-photo-952590.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/952590.jpeg"
   },
   {
     "id": "P4-M33-G07",
@@ -3571,7 +3571,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La présentatrice dit qu'après avoir expliqué pourquoi il faut commencer tôt, elle comparera deux plans d'épargne courants proposés par les banques. La bonne réponse est 'Compare two savings plans'.",
     "transcript": "This is Money Tips Radio with Laura Brown. Today's topic is saving for retirement. We'll first explain why you should start early. After that, we'll compare two common savings plans offered by banks.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/33000309/pexels-photo-33000309.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/33000309.jpeg"
   },
   {
     "id": "P4-M33-G08",
@@ -3591,7 +3591,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Le présentateur dit que les auditeurs entendront deux agriculteurs locaux parler de leurs légumes frais. La bonne réponse est 'Their fresh vegetables'.",
     "transcript": "Welcome to Local Food News. I'm James Wilson. Today, we'll talk about a new farmers' market that opens this weekend downtown. We'll also hear from two local farmers about their fresh vegetables.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/2383314/pexels-photo-2383314.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/2383314.jpeg"
   },
   {
     "id": "P5-M34-G01",
@@ -3801,7 +3801,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La femme tape sur un ordinateur portable, donc (A) est correcte. (B), (C) et (D) décrivent des actions absentes de la scène.",
     "transcript": "(A) A woman is typing on a laptop. (B) A woman is answering the phone. (C) A woman is writing on a whiteboard. (D) A woman is reading a newspaper.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/806835/pexels-photo-806835.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/806835.jpeg"
   },
   {
     "id": "P1-M35-G02",
@@ -3821,7 +3821,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Un bus est arrêté à un arrêt de bus, donc (C) est correcte. (A) mentionne un train, (B) une descente de bus, et (D) un taxi, aucun ne correspond à la scène.",
     "transcript": "(A) Passengers are boarding a train. (B) People are getting off a bus. (C) A bus is parked at a bus stop. (D) A taxi is pulling into a driveway.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/26795596/pexels-photo-26795596.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/26795596.jpeg"
   },
   {
     "id": "P1-M35-G03",
@@ -3841,7 +3841,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'homme lit un menu assis à une table, donc (B) est correcte. (A), (C) et (D) décrivent d'autres activités de restaurant non présentes sur l'image.",
     "transcript": "(A) A man is cooking food in a kitchen. (B) A man is reading a menu at a table. (C) A man is paying the cashier. (D) A man is setting the table.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/970084/pexels-photo-970084.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/970084.jpeg"
   },
   {
     "id": "P1-M35-G04",
@@ -3861,7 +3861,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La femme choisit des produits sur un rayon de magasin, donc (C) est correcte. (A) et (D) concernent la caisse, et (B) des fleurs, aucun ne correspond à la scène.",
     "transcript": "(A) A woman is placing items on a checkout counter. (B) A woman is arranging flowers in a vase. (C) A woman is selecting products from a store shelf. (D) A woman is handing money to a cashier.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/27175527/pexels-photo-27175527.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/27175527.jpeg"
   },
   {
     "id": "P1-M35-G05",
@@ -3881,7 +3881,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Des personnes se tiennent debout sur un quai de gare, donc (A) est correcte. (B), (C) et (D) décrivent d'autres lieux et situations non visibles.",
     "transcript": "(A) People are standing on a train platform. (B) People are sitting in a waiting room. (C) People are walking through a parking lot. (D) People are crossing a street.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/3334329/pexels-photo-3334329.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3334329.jpeg"
   },
   {
     "id": "P1-M35-G06",
@@ -3901,7 +3901,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "L'homme porte des cartons dans un entrepôt, donc (B) est correcte. (A), (C) et (D) décrivent d'autres actions liées à la logistique mais non présentes sur l'image.",
     "transcript": "(A) A man is opening a delivery truck. (B) A man is carrying boxes in a warehouse. (C) A man is signing a delivery form. (D) A man is pushing a cart down a hallway.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/6169046/pexels-photo-6169046.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6169046.jpeg"
   },
   {
     "id": "P1-M35-G07",
@@ -3921,7 +3921,7 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "Un couple est en train de manger à une table de restaurant, donc (A) est correcte. (B), (C) et (D) décrivent d'autres moments du repas non visibles sur l'image.",
     "transcript": "(A) A couple is eating at a restaurant table. (B) A couple is ordering food at a counter. (C) A couple is walking into a restaurant. (D) A couple is paying for their meal.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/5086619/pexels-photo-5086619.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5086619.jpeg"
   },
   {
     "id": "P1-M35-G08",
@@ -3941,6 +3941,6 @@ export const INTERMEDIAIRE_GEN = [
     "explanation": "La femme essaie un manteau dans un magasin de vêtements, donc (B) est correcte. (A), (C) et (D) décrivent d'autres tâches de magasin non présentes sur la scène.",
     "transcript": "(A) A woman is folding clothes on a shelf. (B) A woman is trying on a coat in a clothing store. (C) A woman is handing a bag to a customer. (D) A woman is hanging garments on a rack.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/36730416/pexels-photo-36730416.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/36730416.jpeg"
   }
 ];

@@ -37,7 +37,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Hi, Sarah. Do you know where the marketing meeting will be held tomorrow? W: Yes, it's been moved to Conference Room B on the third floor. M: Oh, great. I thought it was still in Room A. Thanks for letting me know.",
-    "image": "https://images.pexels.com/photos/8463151/pexels-photo-8463151.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8463151.jpeg"
   },
   {
     "id": "P3-M07-G02",
@@ -73,7 +73,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: Tom, did you finish the quarterly sales report yet? M: Almost. I just need to add the charts and I'll send it to you by noon. W: Perfect. Mr. Lopez wants to review it before his two o'clock call.",
-    "image": "https://images.pexels.com/photos/7947996/pexels-photo-7947996.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7947996.jpeg"
   },
   {
     "id": "P3-M07-G03",
@@ -109,7 +109,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Jenny, I'm having trouble logging into the new inventory system. W: Have you tried resetting your password? IT sent an email about it this morning. M: I didn't see that email. Let me check my inbox right now.",
-    "image": "https://images.pexels.com/photos/8278847/pexels-photo-8278847.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8278847.jpeg"
   },
   {
     "id": "P3-M07-G04",
@@ -145,7 +145,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: Hi, Kevin. Are you joining the company lunch on Friday? M: I'd love to, but I have a client visit scheduled at the same time. W: That's too bad. We'll save you a plate if you can make it back in time.",
-    "image": "https://images.pexels.com/photos/3184187/pexels-photo-3184187.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3184187.jpeg"
   },
   {
     "id": "P3-M07-G05",
@@ -181,7 +181,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Maria, the printer on the second floor isn't working again. W: I already called the repair service. They said they'll come by tomorrow morning. M: Tomorrow? Could we use the one in the HR office for now?",
-    "image": "https://images.pexels.com/photos/8297818/pexels-photo-8297818.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8297818.jpeg"
   },
   {
     "id": "P3-M07-G06",
@@ -217,7 +217,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: David, have you booked your flight for the Singapore trip yet? M: Not yet. I'm waiting for approval from my manager first. W: You should hurry. The prices go up at the end of this week.",
-    "image": "https://images.pexels.com/photos/12955517/pexels-photo-12955517.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12955517.jpeg"
   },
   {
     "id": "P3-M07-G07",
@@ -253,7 +253,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Lisa, could you forward me the notes from yesterday's training session? W: Sure. But I only have the slides. The full notes will be posted on the company portal by Friday. M: That's fine. The slides should be enough to prepare my presentation.",
-    "image": "https://images.pexels.com/photos/7580644/pexels-photo-7580644.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7580644.jpeg"
   },
   {
     "id": "P3-M07-G08",
@@ -289,7 +289,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: Paul, the new office furniture is arriving on Monday. Can you help me arrange it? M: Sure, but I have a meeting until ten. How about after that? W: That works. The delivery is scheduled for nine, so everything should be unloaded by then.",
-    "image": "https://images.pexels.com/photos/7534224/pexels-photo-7534224.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7534224.jpeg"
   },
   {
     "id": "P3-M07-G09",
@@ -325,7 +325,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Rachel, I heard we're getting a new software system next month. W: Yes, and there will be two training sessions — one on March third and another on March fifth. M: I'll sign up for the fifth. I have a deadline on the third.",
-    "image": "https://images.pexels.com/photos/5530483/pexels-photo-5530483.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5530483.jpeg"
   },
   {
     "id": "P3-M07-G10",
@@ -361,7 +361,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: James, did you submit your expense report for last month's trip? M: I did, but the finance team asked me to include the original receipts. W: You'd better send those quickly. The deadline for reimbursement is this Friday.",
-    "image": "https://images.pexels.com/photos/5900070/pexels-photo-5900070.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5900070.jpeg"
   },
   {
     "id": "P1-M01-G01",
@@ -381,7 +381,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'homme est assis à son bureau et lit un document. Les autres options décrivent des actions (écrire sur un tableau, répondre au téléphone, ouvrir un classeur) qui ne correspondent pas à la scène.",
     "transcript": "(A) A man is reading a document at his desk. (B) A man is writing on a whiteboard. (C) A man is answering the phone. (D) A man is opening a filing cabinet.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/8370968/pexels-photo-8370968.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8370968.jpeg"
   },
   {
     "id": "P1-M01-G02",
@@ -401,7 +401,7 @@ export const DEBUTANT_GEN = [
     "explanation": "La femme tape sur le clavier d'un ordinateur portable. Les autres propositions mentionnent une imprimante, une présentation ou un téléphone, ce qui ne correspond pas à l'image.",
     "transcript": "(A) A woman is typing on a laptop. (B) A woman is fixing a printer. (C) A woman is presenting a slideshow. (D) A woman is talking on a smartphone.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/1181449/pexels-photo-1181449.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/1181449.jpeg"
   },
   {
     "id": "P1-M01-G03",
@@ -421,7 +421,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Pendant la réunion, un homme désigne un point sur l'écran de présentation. Les autres options impliquent de servir du café, de fermer les stores ou de distribuer des dossiers, ce qui n'est pas le cas.",
     "transcript": "(A) A man is pointing at a screen during a meeting. (B) A man is serving coffee to the attendees. (C) A man is closing the window blinds. (D) A man is handing out folders to the participants.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/9034216/pexels-photo-9034216.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9034216.jpeg"
   },
   {
     "id": "P1-M01-G04",
@@ -441,7 +441,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre des piétons marchant sur un trottoir en ville. Les autres choix décrivent des gens qui attendent, traversent un pont ou font du vélo, ce qui ne correspond pas à la scène.",
     "transcript": "(A) People are walking along a city street. (B) People are waiting at a bus stop. (C) People are crossing a bridge. (D) People are riding bicycles.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/19116703/pexels-photo-19116703.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/19116703.jpeg"
   },
   {
     "id": "P1-M01-G05",
@@ -461,7 +461,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Un client est en train de payer à la caisse du magasin. Les autres options décrivent un retour de produit, un essayage ou le rangement d'articles sur une étagère, ce qui n'est pas illustré.",
     "transcript": "(A) A customer is paying for an item at a counter. (B) A customer is returning a broken product. (C) A customer is trying on a coat. (D) A customer is arranging items on a shelf.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/3907161/pexels-photo-3907161.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3907161.jpeg"
   },
   {
     "id": "P1-M01-G06",
@@ -481,7 +481,7 @@ export const DEBUTANT_GEN = [
     "explanation": "La femme verse du café dans une tasse. Les autres propositions décrivent la vaisselle, l'utilisation d'un micro-ondes ou le fait de sortir une bouteille du réfrigérateur, ce qui ne correspond pas à l'action principale.",
     "transcript": "(A) A woman is pouring coffee into a mug. (B) A woman is washing dishes in the sink. (C) A woman is putting a cup in the microwave. (D) A woman is taking a bottle out of the refrigerator.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/27176513/pexels-photo-27176513.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/27176513.jpeg"
   },
   {
     "id": "P1-M01-G07",
@@ -501,7 +501,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'homme tape sur un clavier et fait face à deux écrans d'ordinateur. Les autres options décrivent le débranchement d'un écran, la réparation d'une tour d'ordinateur ou le réglage d'une chaise, ce qui n'est pas l'action montrée.",
     "transcript": "(A) A man is typing on a keyboard in front of two monitors. (B) A man is unplugging a monitor from the wall. (C) A man is repairing a computer tower. (D) A man is adjusting the height of his chair.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/4792729/pexels-photo-4792729.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/4792729.jpeg"
   },
   {
     "id": "P1-M01-G08",
@@ -521,7 +521,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Plusieurs personnes sont assises autour d'une table avec des ordinateurs portables. Les autres choix décrivent des personnes dans un ascenseur, en train de déjeuner ou marchant dans un couloir, ce qui ne correspond pas à l'image.",
     "transcript": "(A) People are sitting around a table with laptops. (B) People are standing in an elevator. (C) People are eating lunch in a cafeteria. (D) People are walking down a hallway.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/18999469/pexels-photo-18999469.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/18999469.jpeg"
   },
   {
     "id": "P1-M01-G10",
@@ -541,7 +541,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Une femme regarde des vêtements suspendus sur un présentoir. Les autres propositions décrivent le pliage de chemises, le paiement à la caisse ou l'emballage d'articles, ce qui ne correspond pas à la scène.",
     "transcript": "(A) A woman is looking at clothes on a rack. (B) A woman is folding shirts on a table. (C) A woman is paying at the cash register. (D) A woman is putting items into a shopping bag.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/19295116/pexels-photo-19295116.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/19295116.jpeg"
   },
   {
     "id": "P1-M02-G01",
@@ -561,7 +561,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre des cartons empilés sur le sol d'un entrepôt. Les options (B), (C) et (D) décrivent des scènes absentes de l'image : aucun chariot élévateur, aucune table de conférence, et les étagères ne sont pas vides.",
     "transcript": "(A) Boxes are stacked on the floor of a warehouse. (B) A woman is driving a forklift. (C) People are sitting at a conference table. (D) Shelves are completely empty.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/10834810/pexels-photo-10834810.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/10834810.jpeg"
   },
   {
     "id": "P1-M02-G02",
@@ -581,7 +581,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre des boîtes rangées sur des étagères métalliques. Les autres options décrivent une cuisine, un parking et une table avec des outils, qui ne correspondent pas à la scène.",
     "transcript": "(A) A man is cooking in a kitchen. (B) Boxes are organized on metal shelves. (C) Cars are parked in a parking lot. (D) Tools are scattered on a table.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/36126272/pexels-photo-36126272.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/36126272.jpeg"
   },
   {
     "id": "P1-M02-G03",
@@ -601,7 +601,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre un plan de cuisine en train d'être nettoyé. Les options (B), (C) et (D) décrivent un entrepôt, un parking en construction et une réparation d'étagère, scènes absentes de l'image.",
     "transcript": "(A) A kitchen counter is being cleaned. (B) A warehouse is full of boxes. (C) A parking lot is under construction. (D) A man is repairing a shelf.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/5591908/pexels-photo-5591908.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5591908.jpeg"
   },
   {
     "id": "P1-M02-G04",
@@ -621,7 +621,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre des voitures alignées dans un parking. Les autres options décrivent un entrepôt, une cuisine et un établi, qui ne correspondent pas à ce que l'on voit.",
     "transcript": "(A) Cars are lined up in a parking lot. (B) Boxes are stacked in a warehouse. (C) Pots are hanging in a kitchen. (D) Tools are laid out on a workbench.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/5231181/pexels-photo-5231181.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5231181.jpeg"
   },
   {
     "id": "P1-M02-G05",
@@ -641,7 +641,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre divers outils disposés sur une table. Les autres options décrivent une femme qui gare une voiture, des étagères en train d'être peintes et un chef en cuisine, scènes non présentes.",
     "transcript": "(A) A woman is parking a car. (B) Shelves are being painted. (C) Various tools are arranged on a table. (D) A chef is preparing food in a kitchen.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/4318810/pexels-photo-4318810.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/4318810.jpeg"
   },
   {
     "id": "P1-M02-G06",
@@ -661,7 +661,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre une femme en train de remuer quelque chose dans une casserole dans une cuisine. Les autres options décrivent un chargement de camion, des voitures et des outils au mur, absents de la scène.",
     "transcript": "(A) A woman is stirring something in a pot. (B) A man is loading boxes onto a truck. (C) Cars are driving through a parking lot. (D) Tools are hanging on a wall.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/7234501/pexels-photo-7234501.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7234501.jpeg"
   },
   {
     "id": "P1-M02-G07",
@@ -681,7 +681,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre un employé d'entrepôt en train de scanner un carton avec un appareil portable. Les autres options décrivent un cuisinier, un conducteur et un technicien, scènes non visibles.",
     "transcript": "(A) A worker is scanning a box with a handheld device. (B) A cook is chopping vegetables on a board. (C) A driver is getting into a car. (D) A technician is fixing a shelf.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/4483942/pexels-photo-4483942.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/4483942.jpeg"
   },
   {
     "id": "P1-M02-G08",
@@ -701,7 +701,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre un parking presque vide. Les autres options décrivent des étagères pleines, une rénovation de cuisine et une boîte à outils, qui ne correspondent pas à la scène.",
     "transcript": "(A) Shelves are fully stocked with products. (B) A parking lot is mostly empty. (C) A kitchen is being renovated. (D) Tools are organized in a toolbox.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/8936925/pexels-photo-8936925.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8936925.jpeg"
   },
   {
     "id": "P1-M02-G09",
@@ -721,7 +721,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre des produits disposés sur des étagères d'entrepôt. Les autres options décrivent une cuisine, des voitures et un marteau sur une table, scènes absentes.",
     "transcript": "(A) A man is washing dishes in a kitchen. (B) Cars are parked side by side. (C) Products are displayed on warehouse shelves. (D) A hammer is lying on a table.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/12234109/pexels-photo-12234109.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12234109.jpeg"
   },
   {
     "id": "P1-M02-G10",
@@ -741,7 +741,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'image montre des casseroles posées sur une cuisinière dans une cuisine. Les autres options décrivent un déchargement de camion, un parking entouré d'arbres et des tournevis sur une table, scènes non présentes.",
     "transcript": "(A) Boxes are being unloaded from a truck. (B) Pots are sitting on a kitchen stove. (C) A parking lot is surrounded by trees. (D) Screwdrivers are arranged neatly on a table.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/6375558/pexels-photo-6375558.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6375558.jpeg"
   },
   {
     "id": "P2-M03-G01",
@@ -1621,7 +1621,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'annonce indique clairement que tous les ordinateurs portables ont vingt pour cent de réduction pendant une journée. La bonne réponse est donc que les ordinateurs portables sont en soldes pour un jour.",
     "transcript": "Attention shoppers. Our electronics department is having a one-day sale. All laptops are twenty percent off until closing time tonight.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/17565491/pexels-photo-17565491.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/17565491.jpeg"
   },
   {
     "id": "P4-M08-G02",
@@ -1641,7 +1641,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Karen dit explicitement qu'elle appelle pour rappeler (remind) l'interlocuteur de sa réunion avec M. Lopez à deux heures. La bonne réponse est donc 'To remind the listener about a meeting'.",
     "transcript": "Hi, this is Karen from the front desk. I'm calling to remind you that your meeting with Mr. Lopez is at two o'clock in Conference Room B.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/7820310/pexels-photo-7820310.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7820310.jpeg"
   },
   {
     "id": "P4-M08-G03",
@@ -1661,7 +1661,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'annonce demande aux passagers du vol 412 de se rendre à la porte 22 pour l'embarquement. La bonne réponse est 'Go to Gate 22 to board'.",
     "transcript": "Welcome to Riverside Airport. Passengers on flight 412 to Chicago, please proceed to Gate 22 for boarding. The gate will close in fifteen minutes.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/2833379/pexels-photo-2833379.png?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/2833379.png"
   },
   {
     "id": "P4-M08-G04",
@@ -1681,7 +1681,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Le message demande aux employés du troisième étage de travailler sur un autre étage jusqu'à midi, car la climatisation sera réparée le matin. La bonne réponse est 'Work on a different floor until noon'.",
     "transcript": "This is a message for all employees. The air conditioning system on the third floor will be repaired tomorrow morning. Please work from another floor until noon.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/16026071/pexels-photo-16026071.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/16026071.jpeg"
   },
   {
     "id": "P4-M08-G05",
@@ -1701,7 +1701,7 @@ export const DEBUTANT_GEN = [
     "explanation": "M. Park explique que sa commande devait arriver vendredi dernier mais qu'il ne l'a pas reçue. Il signale donc une livraison en retard. La bonne réponse est 'To report a late delivery'.",
     "transcript": "Hello, this is David Park. I'm calling about my order number 883. It was supposed to arrive last Friday, but I haven't received it yet. Could someone call me back at 555-0192?",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/7363199/pexels-photo-7363199.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7363199.jpeg"
   },
   {
     "id": "P4-M08-G06",
@@ -1721,7 +1721,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'annonce précise que le parking du niveau un sera fermé pour le nettoyage (cleaning) de six à neuf heures dimanche matin. La bonne réponse est 'For cleaning'.",
     "transcript": "Attention please. The parking garage on Level One will be closed for cleaning from six to nine this Sunday morning. Please use the Level Two garage during that time.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/12641822/pexels-photo-12641822.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12641822.jpeg"
   },
   {
     "id": "P4-M08-G07",
@@ -1741,7 +1741,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Le message de la bibliothèque indique que le livre réservé est disponible et qu'il faut le récupérer dans les trois jours ouvrés. La bonne réponse est 'Pick up a reserved book within three days'.",
     "transcript": "Good afternoon, this is a message from City Library. The book you reserved, 'Marketing Strategies,' is now available for pickup. Please collect it within three business days.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/9572664/pexels-photo-9572664.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9572664.jpeg"
   },
   {
     "id": "P4-M08-G08",
@@ -1761,7 +1761,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'annonce précise que la cafétéria est ouverte pour le déjeuner, mais que la machine à café est temporairement hors service. La bonne réponse est 'The coffee machine'.",
     "transcript": "This is an announcement for all visitors. The cafeteria on the second floor is now open for lunch. However, the coffee machine is temporarily out of service. We apologize for the inconvenience.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/5506019/pexels-photo-5506019.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5506019.jpeg"
   },
   {
     "id": "P7-M09-G01",
@@ -1780,7 +1780,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "L'email indique clairement que la machine à café du deuxième étage est en panne. Janet Park informe donc le personnel de cette panne et donne des instructions temporaires.",
     "passage": "To: All Staff\nFrom: Janet Park, Office Manager\nSubject: Coffee Machine\n\nThe coffee machine on the second floor is broken. Please use the one in the first-floor kitchen until it is fixed. The repair company will come on Friday morning. Thank you for your patience.",
-    "image": "https://images.pexels.com/photos/4050463/pexels-photo-4050463.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/4050463.jpeg"
   },
   {
     "id": "P7-M09-G02",
@@ -1799,7 +1799,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "Lisa écrit : « to discuss the new marketing plan ». Le sujet de la rencontre est donc le nouveau plan marketing.",
     "passage": "To: Tom Bradley\nFrom: Lisa Chen\nSubject: Lunch Meeting\n\nHi Tom,\n\nI would like to have lunch with you next week to discuss the new marketing plan. Are you available on Tuesday or Wednesday? Please let me know which day works best for you. I will book a table at Bella's Restaurant.\n\nBest regards,\nLisa",
-    "image": "https://images.pexels.com/photos/7518950/pexels-photo-7518950.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7518950.jpeg"
   },
   {
     "id": "P7-M09-G03",
@@ -1818,7 +1818,7 @@ export const DEBUTANT_GEN = [
     "answer": 3,
     "explanation": "Le memo précise : « please dress formally when meeting clients ». Les employés doivent s'habiller de façon formelle lorsqu'ils rencontrent des clients.",
     "passage": "To: All Employees\nFrom: Human Resources\nSubject: Updated Dress Code\n\nStarting Monday, June 5, the company dress code will change. Employees may now wear smart casual clothes from Monday to Thursday. On Fridays, casual clothes such as jeans and sneakers are allowed. However, please dress formally when meeting clients.",
-    "image": "https://images.pexels.com/photos/5439476/pexels-photo-5439476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5439476.jpeg"
   },
   {
     "id": "P7-M09-G04",
@@ -1837,7 +1837,7 @@ export const DEBUTANT_GEN = [
     "answer": 1,
     "explanation": "Sarah demande à David : « Please check the supplies when they arrive and let me know if anything is missing. » Elle lui demande donc de vérifier les fournitures à leur réception.",
     "passage": "To: David Kim\nFrom: Sarah Lopez\nSubject: Office Supplies Order\n\nDavid,\n\nI have placed an order for office supplies. We need 20 boxes of paper, 10 pens, and 5 notebooks. The order should arrive by Wednesday. Please check the supplies when they arrive and let me know if anything is missing.\n\nSarah",
-    "image": "https://images.pexels.com/photos/7657973/pexels-photo-7657973.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7657973.jpeg"
   },
   {
     "id": "P7-M09-G05",
@@ -1856,7 +1856,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "Le memo indique que l'ascenseur principal ne fonctionnera pas « from 8:00 a.m. to 12:00 p.m. », soit de 8h à midi. La bonne réponse est donc cette plage horaire.",
     "passage": "To: All Staff\nFrom: Building Management\nSubject: Elevator Maintenance\n\nPlease be advised that the main elevator will not be in service on Saturday, July 8, from 8:00 a.m. to 12:00 p.m. The back elevator will still be available. We are sorry for any inconvenience.",
-    "image": "https://images.pexels.com/photos/29502230/pexels-photo-29502230.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/29502230.jpeg"
   },
   {
     "id": "P7-M09-G06",
@@ -1875,7 +1875,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "Robert écrit : « About 12 new employees will attend. » Environ 12 nouveaux employés assisteront à la session de formation.",
     "passage": "To: Maria Santos\nFrom: Robert White\nSubject: Training Session\n\nDear Maria,\n\nThank you for agreeing to lead the training session for new employees on August 15. The session will take place in Conference Room B from 2:00 p.m. to 4:00 p.m. About 12 new employees will attend. Please prepare a short presentation and some handouts.\n\nRobert",
-    "image": "https://images.pexels.com/photos/5324985/pexels-photo-5324985.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5324985.jpeg"
   },
   {
     "id": "P7-M09-G07",
@@ -1894,7 +1894,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "Le memo dit : « please call the IT help desk at extension 200. » En cas de problème, les employés doivent appeler le support informatique au poste 200.",
     "passage": "To: All Staff\nFrom: IT Department\nSubject: Password Reset\n\nAll employees must reset their computer passwords by the end of this week. To reset your password, go to the company website and click on \"My Account.\" If you have any problems, please call the IT help desk at extension 200.",
-    "image": "https://images.pexels.com/photos/8247921/pexels-photo-8247921.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8247921.jpeg"
   },
   {
     "id": "P7-M09-G08",
@@ -1913,7 +1913,7 @@ export const DEBUTANT_GEN = [
     "answer": 1,
     "explanation": "Le memo précise : « Late reports will not be accepted after September 25. » Les rapports envoyés après le 25 septembre ne seront pas acceptés.",
     "passage": "To: All Department Heads\nFrom: Finance Office\nSubject: Budget Reports\n\nPlease submit your department budget reports by Friday, September 22. Reports must be sent by email to finance@company.com. Late reports will not be accepted after September 25. If you need help with the report format, contact Paul Nguyen in the Finance Office.",
-    "image": "https://images.pexels.com/photos/6693647/pexels-photo-6693647.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6693647.jpeg"
   },
   {
     "id": "P5-M10-G01",
@@ -2139,7 +2139,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Hi, Sarah. I'm having trouble opening the quarterly report file you sent me. It says the format isn't supported. W: Oh, I'm sorry, Tom. I saved it in a new version of the software. Let me send you a PDF version instead. M: That would be great. I need to review it before the meeting this afternoon.",
-    "image": "https://images.pexels.com/photos/5717757/pexels-photo-5717757.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5717757.jpeg"
   },
   {
     "id": "P3-M11-G02",
@@ -2175,7 +2175,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: David, the printer on the second floor isn't working again. I need to print contracts for a client. M: Have you tried the one in the marketing department? It was fixed yesterday. W: No, I didn't know that. I'll go there right now. Thank you.",
-    "image": "https://images.pexels.com/photos/7014397/pexels-photo-7014397.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7014397.jpeg"
   },
   {
     "id": "P3-M11-G03",
@@ -2211,7 +2211,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Lisa, I won't be able to finish the presentation by Friday. I have too many client calls this week. W: That's okay. Can you finish it by Monday morning? The meeting is on Tuesday. M: Yes, Monday morning should be fine. I'll work on it over the weekend.",
-    "image": "https://images.pexels.com/photos/6476782/pexels-photo-6476782.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6476782.jpeg"
   },
   {
     "id": "P3-M11-G04",
@@ -2247,7 +2247,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: James, I've been trying to reach Mr. Tanaka all morning, but his line is always busy. M: He's been on a conference call with the Tokyo office since nine. Would you like me to leave him a message? W: Yes, please. Could you ask him to call me back about the shipping delay? It's quite urgent.",
-    "image": "https://images.pexels.com/photos/7580754/pexels-photo-7580754.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7580754.jpeg"
   },
   {
     "id": "P3-M11-G05",
@@ -2283,7 +2283,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Maria, the air conditioning in my office has stopped working. It's really uncomfortable. W: I'll contact the maintenance team right away. In the meantime, would you like to use the empty office on the third floor? M: That's very kind. But I have a video call in ten minutes, so I'll just stay here and manage for now.",
-    "image": "https://images.pexels.com/photos/6794970/pexels-photo-6794970.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6794970.jpeg"
   },
   {
     "id": "P3-M11-G06",
@@ -2319,7 +2319,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: Kevin, I noticed that the budget spreadsheet has some errors in the travel expenses section. M: Really? I thought I double-checked everything. Can you show me which numbers are wrong? W: Sure. Let's look at it together after lunch. I've marked the cells in red.",
-    "image": "https://images.pexels.com/photos/33175649/pexels-photo-33175649.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/33175649.jpeg"
   },
   {
     "id": "P3-M11-G07",
@@ -2355,7 +2355,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Helen, I just realized I double-booked two client meetings for Thursday at two o'clock. W: Oh no. Which client is more flexible? Maybe one of them can reschedule. M: Mr. Lopez might be flexible since he's local. Ms. Chen is flying in from Singapore, so I'd rather not change hers.",
-    "image": "https://images.pexels.com/photos/7580934/pexels-photo-7580934.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/7580934.jpeg"
   },
   {
     "id": "P3-M11-G08",
@@ -2391,7 +2391,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: Paul, I can't access the company database. It keeps asking for a new password. M: That's because the IT department updated the security policy. You need to create a new password with at least eight characters. W: Thanks. I'll do that now. I hope I don't forget it this time.",
-    "image": "https://images.pexels.com/photos/5082561/pexels-photo-5082561.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5082561.jpeg"
   },
   {
     "id": "P3-M11-G09",
@@ -2427,7 +2427,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "M: Anna, the supplier just called. They said the delivery of office chairs will be delayed by two weeks. W: That's a problem. The new employees start next Monday and they need desks and chairs. M: I could check with another supplier. There's one downtown that might have chairs in stock.",
-    "image": "https://images.pexels.com/photos/9300726/pexels-photo-9300726.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9300726.jpeg"
   },
   {
     "id": "P3-M11-G10",
@@ -2463,7 +2463,7 @@ export const DEBUTANT_GEN = [
       }
     ],
     "transcript": "W: Brian, I've been trying to book a conference room for next Wednesday, but they're all reserved. M: Have you checked the fifth floor? Room 502 is usually available in the afternoons. W: I only checked the third and fourth floors. Let me look at the fifth floor right away.",
-    "image": "https://images.pexels.com/photos/25857615/pexels-photo-25857615.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/25857615.jpeg"
   },
   {
     "id": "P6-M12-G01",
@@ -2672,7 +2672,7 @@ export const DEBUTANT_GEN = [
     "answer": 3,
     "explanation": "L'avis indique clairement que la salle de conférence du troisième étage sera fermée pour être peinte (« closed for painting »).",
     "passage": "NOTICE\nThe third-floor conference room will be closed for painting on Friday, June 14. Meetings scheduled for that day have been moved to Room 210 on the second floor. Please contact the facilities office with any questions.",
-    "image": "https://images.pexels.com/photos/20390772/pexels-photo-20390772.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/20390772.jpeg"
   },
   {
     "id": "P7-M13-G02",
@@ -2691,7 +2691,7 @@ export const DEBUTANT_GEN = [
     "answer": 3,
     "explanation": "L'annonce précise que le train partira du quai 4 et non du quai 2 comme annoncé précédemment. C'est donc le quai de départ qui a changé.",
     "passage": "PUBLIC ANNOUNCEMENT\nThe 10:15 AM train to Manchester will depart from Platform 4, not Platform 2 as previously announced. Passengers should allow extra time to reach the correct platform. We apologize for any inconvenience.",
-    "image": "https://images.pexels.com/photos/5868296/pexels-photo-5868296.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5868296.jpeg"
   },
   {
     "id": "P7-M13-G03",
@@ -2710,7 +2710,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "La publicité indique que les 50 premiers clients recevront un cadeau gratuit (« The first 50 customers will receive a free gift »).",
     "passage": "GRAND OPENING SALE\nBright Home Furniture is opening a new store on Oak Street! Visit us on Saturday, July 6, and enjoy 30% off all living room furniture. The first 50 customers will receive a free gift. Free parking is available behind the building.",
-    "image": "https://images.pexels.com/photos/3345876/pexels-photo-3345876.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/3345876.jpeg"
   },
   {
     "id": "P7-M13-G04",
@@ -2729,7 +2729,7 @@ export const DEBUTANT_GEN = [
     "answer": 3,
     "explanation": "L'avis précise que le service normal de la cafétéria reprendra le mardi 21 mai (« Normal cafeteria service will resume on Tuesday, May 21 »).",
     "passage": "NOTICE TO ALL EMPLOYEES\nThe company cafeteria will be closed on Monday, May 20, for equipment maintenance. Vending machines on the first floor will remain available. Normal cafeteria service will resume on Tuesday, May 21.",
-    "image": "https://images.pexels.com/photos/5016678/pexels-photo-5016678.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/5016678.jpeg"
   },
   {
     "id": "P7-M13-G05",
@@ -2748,7 +2748,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "L'avis recommande aux employés qui ont besoin d'eau pendant la coupure d'utiliser la cuisine au deuxième étage (« should use the kitchen on the second floor »).",
     "passage": "NOTICE\nDue to a water pipe repair, water service in the west wing of the building will be shut off on Wednesday from 9:00 AM to 1:00 PM. Restrooms on the east wing will remain open. Employees who need water during this time should use the kitchen on the second floor.",
-    "image": "https://images.pexels.com/photos/6419128/pexels-photo-6419128.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6419128.jpeg"
   },
   {
     "id": "P7-M13-G06",
@@ -2767,7 +2767,7 @@ export const DEBUTANT_GEN = [
     "answer": 2,
     "explanation": "L'annonce précise que le samedi, la bibliothèque fermera à 18h au lieu de 17h. Ce sont donc les horaires de fermeture du samedi qui changent. Les horaires du dimanche restent inchangés.",
     "passage": "PUBLIC ANNOUNCEMENT\nThe Central City Library will extend its weekend hours starting June 1. On Saturdays, the library will be open from 9:00 AM to 6:00 PM instead of closing at 5:00 PM. Sunday hours remain unchanged. Library cards can be renewed online at no cost.",
-    "image": "https://images.pexels.com/photos/6642520/pexels-photo-6642520.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6642520.jpeg"
   },
   {
     "id": "P7-M13-G07",
@@ -2786,7 +2786,7 @@ export const DEBUTANT_GEN = [
     "answer": 2,
     "explanation": "La publicité indique deux avantages pour les nouveaux membres qui s'inscrivent avant le 15 juillet : pas de frais d'inscription (économie de 50 $) et une séance d'entraînement personnel gratuite.",
     "passage": "SUMMER FITNESS SPECIAL\nJoin Riverside Gym before July 15 and pay no registration fee — a $50 savings! New members also receive one free personal training session. The gym is open daily from 5:00 AM to 11:00 PM. Call 555-0198 to schedule a tour.",
-    "image": "https://images.pexels.com/photos/6739958/pexels-photo-6739958.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6739958.jpeg"
   },
   {
     "id": "P7-M13-G08",
@@ -2805,7 +2805,7 @@ export const DEBUTANT_GEN = [
     "answer": 0,
     "explanation": "L'avis précise que les véhicules laissés dans le parking du bâtiment A après dimanche soir seront remorqués aux frais du propriétaire (« will be towed at the owner's expense »).",
     "passage": "NOTICE\nThe parking lot behind Building A will be resurfaced from Monday, August 12 through Wednesday, August 14. During this period, employees should park in the visitor lot on Maple Avenue or use the free shuttle from the downtown station. Vehicles left in the Building A lot after Sunday evening will be towed at the owner's expense.",
-    "image": "https://images.pexels.com/photos/11564532/pexels-photo-11564532.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/11564532.jpeg"
   },
   {
     "id": "P4-M14-G01",
@@ -2825,7 +2825,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Karen Lewis indique clairement que la commande a été retardée de deux jours (« your order has been delayed by two days »). La raison de l'appel est donc de signaler un retard de livraison.",
     "transcript": "Hi, this is Karen Lewis from the shipping department. I'm calling to let you know that your order has been delayed by two days. Please call me back at extension 3401 to confirm a new delivery date.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/6169643/pexels-photo-6169643.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6169643.jpeg"
   },
   {
     "id": "P4-M14-G02",
@@ -2845,7 +2845,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Tom Bradley demande explicitement à l'auditeur de lui envoyer par e-mail le numéro du modèle de l'imprimante (« Could you please email me the model number of your printer »).",
     "transcript": "Hello, this is Tom Bradley from IT Support. I tried to fix your printer this morning, but I need a replacement part. Could you please email me the model number of your printer so I can order it today?",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/12437643/pexels-photo-12437643.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/12437643.jpeg"
   },
   {
     "id": "P4-M14-G03",
@@ -2865,7 +2865,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Maria Gomez rappelle que le formulaire d'inscription aux avantages sociaux doit être rendu ce vendredi et demande de passer au bureau pour le déposer (« submit it »).",
     "transcript": "Good afternoon, this is Maria Gomez from Human Resources. I'm calling to remind you that your annual benefits enrollment form is due this Friday. Please stop by our office before 5 p.m. to submit it.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/8465066/pexels-photo-8465066.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/8465066.jpeg"
   },
   {
     "id": "P4-M14-G04",
@@ -2885,7 +2885,7 @@ export const DEBUTANT_GEN = [
     "explanation": "L'appelant se présente comme David Chen d'Apex Construction (« from Apex Construction »). C'est donc un représentant d'une entreprise de construction.",
     "transcript": "Hi, this is David Chen from Apex Construction. I'm returning your call about the kitchen renovation project. Could you please send me the updated floor plans by email so we can start the estimate?",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/36035073/pexels-photo-36035073.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/36035073.jpeg"
   },
   {
     "id": "P4-M14-G05",
@@ -2905,7 +2905,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Janet Park demande à l'auditeur de revoir le document joint et de lui envoyer les corrections d'ici mercredi (« review the attached document and send me any corrections »).",
     "transcript": "Hello, this is Janet Park from the accounting department. I noticed a small error in your expense report from last month. Could you review the attached document and send me any corrections by Wednesday? You can reach me at extension 2205 if you have questions.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/17065743/pexels-photo-17065743.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/17065743.jpeg"
   },
   {
     "id": "P4-M14-G06",
@@ -2944,7 +2944,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Lisa Murphy explique que le colis nécessite une signature et que le bureau ferme à midi. Elle propose deux options : venir le chercher avant 11h30 ou appeler pour une livraison à domicile (« pick it up before 11:30 or call us to arrange delivery to your home address »).",
     "transcript": "Good morning, this is Lisa Murphy from the front desk. A package arrived for you this morning, but it requires a signature. Unfortunately, our office closes at noon today. Please pick it up before 11:30 or call us to arrange delivery to your home address.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/6170188/pexels-photo-6170188.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6170188.jpeg"
   },
   {
     "id": "P4-M14-G08",
@@ -2964,7 +2964,7 @@ export const DEBUTANT_GEN = [
     "explanation": "James Wilson a préparé une proposition de menu et souhaite en discuter. Il demande à l'auditeur de le rappeler pour fixer un rendez-vous (« return my call at your convenience to set up a time »).",
     "transcript": "Hello, this is James Wilson from Wilson Catering. I'm following up on your inquiry about the company event next month. I've prepared a menu proposal and would like to go over it with you. Could you please return my call at your convenience to set up a time?",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/27025523/pexels-photo-27025523.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/27025523.jpeg"
   },
   {
     "id": "P1-M15-G01",
@@ -2984,7 +2984,7 @@ export const DEBUTANT_GEN = [
     "explanation": "La femme tape sur un ordinateur portable, donc (A) est correcte. (B) est incorrecte car il n'y a pas de journal. (C) est incorrecte car elle ne téléphone pas. (D) est incorrecte car elle n'écrit pas sur un tableau.",
     "transcript": "(A) A woman is typing on a laptop. (B) A woman is reading a newspaper. (C) A woman is answering the phone. (D) A woman is writing on a whiteboard.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/806835/pexels-photo-806835.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/806835.jpeg"
   },
   {
     "id": "P1-M15-G02",
@@ -3004,7 +3004,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Le bus est stationné au bord de la route, donc (B) est correcte. (A) est incorrecte car le bus n'est pas en mouvement sur une autoroute. (C) est incorrecte car on ne voit pas de chargement de bagages. (D) est incorrecte car il n'y a pas de pont.",
     "transcript": "(A) A bus is driving on a highway. (B) A bus is parked at the side of a road. (C) A bus is being loaded with luggage. (D) A bus is crossing a bridge.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/15275997/pexels-photo-15275997.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/15275997.jpeg"
   },
   {
     "id": "P1-M15-G03",
@@ -3024,7 +3024,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Les personnes sont assises à une table de restaurant en train de manger, donc (C) est correcte. (A) est incorrecte car personne ne cuisine. (B) est incorrecte car ils ne passent pas commande au comptoir. (D) est incorrecte car personne ne nettoie les tables.",
     "transcript": "(A) People are cooking in a kitchen. (B) People are ordering food at a counter. (C) People are eating at a restaurant table. (D) People are cleaning tables after a meal.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/2387675/pexels-photo-2387675.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/2387675.jpeg"
   },
   {
     "id": "P1-M15-G04",
@@ -3044,7 +3044,7 @@ export const DEBUTANT_GEN = [
     "explanation": "La femme pousse un chariot dans un supermarché, donc (C) est correcte. (A) est incorrecte car elle ne paie pas à la caisse. (B) est incorrecte car elle ne range pas d'articles sur une étagère. (D) est incorrecte car elle n'emballe pas les courses d'un client.",
     "transcript": "(A) A woman is paying at a cash register. (B) A woman is arranging items on a shelf. (C) A woman is pushing a shopping cart in a grocery store. (D) A woman is bagging groceries for a customer.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/4971951/pexels-photo-4971951.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/4971951.jpeg"
   },
   {
     "id": "P1-M15-G05",
@@ -3064,7 +3064,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Les hommes examinent des plans sur un chantier de construction, donc (B) est correcte. (A) est incorrecte car ils ne peignent pas un mur. (C) est incorrecte car ils ne chargent pas de matériaux sur un camion. (D) est incorrecte car ils ne réparent pas un toit.",
     "transcript": "(A) Some men are painting a wall. (B) Some men are reviewing blueprints at a construction site. (C) Some men are loading materials onto a truck. (D) Some men are repairing a roof.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/6285157/pexels-photo-6285157.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6285157.jpeg"
   },
   {
     "id": "P1-M15-G06",
@@ -3084,7 +3084,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Le train arrive sur le quai d'une gare, donc (A) est correcte. (B) est incorrecte car le train ne sort pas d'un tunnel. (C) est incorrecte car le train n'est pas en cours de lavage. (D) est incorrecte car il ne s'agit pas d'un garage.",
     "transcript": "(A) A train is arriving at a station platform. (B) A train is departing from a tunnel. (C) A train is being washed at a depot. (D) A train is parked inside a garage.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/9993828/pexels-photo-9993828.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/9993828.jpeg"
   },
   {
     "id": "P1-M15-G07",
@@ -3104,7 +3104,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Le serveur sert du café à un client, donc (C) est correcte. (A) est incorrecte car il ne fait pas la vaisselle. (B) est incorrecte car il ne dresse pas une table avec des serviettes. (D) est incorrecte car il ne balaye pas le sol.",
     "transcript": "(A) A waiter is washing dishes in a sink. (B) A waiter is setting a table with napkins. (C) A waiter is serving coffee to a customer. (D) A waiter is sweeping the floor of a cafe.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/11344658/pexels-photo-11344658.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/11344658.jpeg"
   },
   {
     "id": "P1-M15-G09",
@@ -3124,7 +3124,7 @@ export const DEBUTANT_GEN = [
     "explanation": "Les collègues tiennent une réunion autour d'une table avec un écran de présentation, donc (A) est correcte. (B) est incorrecte car ils ne déjeunent pas dans une cafétéria. (C) est incorrecte car ils n'empaquent pas de cartons. (D) est incorrecte car ils ne traversent pas un parking.",
     "transcript": "(A) Colleagues are having a meeting around a table with a presentation screen. (B) Colleagues are eating lunch in a cafeteria. (C) Colleagues are packing boxes in a warehouse. (D) Colleagues are walking through a parking lot.",
     "voiceGender": "female",
-    "image": "https://images.pexels.com/photos/6814342/pexels-photo-6814342.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/6814342.jpeg"
   },
   {
     "id": "P1-M15-G10",
@@ -3144,6 +3144,6 @@ export const DEBUTANT_GEN = [
     "explanation": "Les vélos sont stationnés dans un support sur un trottoir, donc (B) est correcte. (A) est incorrecte car personne ne pédale sur une piste cyclable. (C) est incorrecte car les vélos ne sont pas suspendus au plafond. (D) est incorrecte car les vélos ne sont pas en réparation dans un atelier.",
     "transcript": "(A) Bicycles are being ridden along a bike path. (B) Bicycles are parked in a rack on a sidewalk. (C) Bicycles are hanging from a ceiling hook. (D) Bicycles are being repaired in a shop.",
     "voiceGender": "male",
-    "image": "https://images.pexels.com/photos/30678898/pexels-photo-30678898.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
+    "image": "/assets/pexels/30678898.jpeg"
   }
 ];
