@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Yes I Can Toeic</string>
+    <string name="title_activity_main">Yes I Can Toeic</string>
+    <string name="package_name">com.yesicantoeic.app</string>
+    <string name="custom_url_scheme">com.yesicantoeic.app</string>
+</resources>

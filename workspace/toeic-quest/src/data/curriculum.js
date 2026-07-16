@@ -1,4 +1,4 @@
-// ─── TOEIC QUEST — Curriculum 1 an (52 modules) ──────────────────────────────
+// ─── YES I CAN TOEIC — Curriculum 1 an (52 modules) ──────────────────────────
 // Parcours pédagogique structuré vers le score 800+. Un module ≈ une semaine
 // (~2h : mini-leçon + 2-3 sessions + récap). Les 7 parties officielles du TOEIC
 // sont couvertes à CHAQUE niveau ; c'est la complexité (longueur audio,
@@ -13,7 +13,7 @@
 export const LEVELS = {
   debutant: { id: "debutant", name: "Débutant", emoji: "🌱", scoreRange: "350–550", color: "reading", weeks: "1–16" },
   intermediaire: { id: "intermediaire", name: "Intermédiaire", emoji: "🚀", scoreRange: "550–750", color: "listening", weeks: "17–36" },
-  avance: { id: "avance", name: "Avancé", emoji: "🏆", scoreRange: "750–900+", color: "mango", weeks: "37–52" },
+  avance: { id: "avance", name: "Avancé", emoji: "🏆", scoreRange: "750–900+", color: "accent-primary", weeks: "37–52" },
 };
 
 export const LEVEL_ORDER = { debutant: 0, intermediaire: 1, avance: 2 };
@@ -27,14 +27,14 @@ export const PART_NAME = {
 };
 
 // Couleur de thème par compétence (réutilise les tokens @theme de index.css).
-const SKILL_COLOR = { listening: "listening", reading: "reading", vocab: "vocab", mixed: "mango" };
+const SKILL_COLOR = { listening: "listening", reading: "reading", vocab: "vocab", mixed: "accent-primary" };
 
 function m(id, week, level, title, parts, skill, goal, tips, extra = {}) {
   return {
     id, week, level, title, parts, skill,
     goal, tips,
     emoji: extra.emoji || PART_EMOJI[parts[0]] || "🎯",
-    color: SKILL_COLOR[skill] || "mango",
+    color: SKILL_COLOR[skill] || "accent-primary",
     targetCount: extra.targetCount || (skill === "mixed" ? 30 : 24),
     prerequisites: extra.prerequisites !== undefined ? extra.prerequisites : (Number(id.slice(1)) > 1 ? ["M" + String(Number(id.slice(1)) - 1).padStart(2, "0")] : []),
     estMinutes: extra.estMinutes || 120,

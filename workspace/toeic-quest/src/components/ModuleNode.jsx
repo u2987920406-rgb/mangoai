@@ -32,7 +32,7 @@ export function ModuleNode({ module, progress, unlocked, playable, isNext, offse
           "relative flex items-center justify-center w-16 h-16 rounded-2xl text-2xl font-bold shrink-0 border-2 transition-all",
           !active && "bg-muted border-border text-muted-foreground cursor-not-allowed",
           active && "hover:scale-105",
-          isNext && active && "ring-4 ring-accent/40 animate-pulse-mango"
+          isNext && active && "ring-4 ring-accent/40 animate-pulse-accent"
         )}
         aria-label={module.title}
       >

@@ -56,7 +56,7 @@ export function ModuleScreen({ progress, moduleId, useTimer, onToggleTimer, onSt
           <div className="flex items-start gap-3 p-4 rounded-xl bg-accent/5 border border-accent/20">
             <Mascot mood="thinking" size={44} />
             <div>
-              <div className="text-xs font-bold uppercase tracking-wide text-accent-strong mb-1">Conseil de Mango</div>
+              <div className="text-xs font-bold uppercase tracking-wide text-accent-strong mb-1">Conseil</div>
               <p className="text-sm text-muted-foreground">{mod.tips}</p>
             </div>
           </div>

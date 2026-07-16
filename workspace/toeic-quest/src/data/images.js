@@ -1,4 +1,4 @@
-// ── Pexels image URLs for TOEIC QUEST ──────────────────────────────────────
+// ── Pexels image URLs for Yes I Can Toeic ──────────────────────────────────
 // Real photos from Pexels, mapped by topic key
 
 export const HERO_IMAGE = "/assets/pexels/5324855.jpeg";

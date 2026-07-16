@@ -24,7 +24,7 @@ function ScreenLoader() {
   );
 }
 
-// ─── TOEIC QUEST — App principale (routeur parcours) ─────────────────────────
+// ─── YES I CAN TOEIC — App principale (routeur parcours) ─────────────────────
 export default function App() {
   const progress = useProgress();
   const [route, setRoute] = useState({ name: "dashboard" });
@@ -37,10 +37,11 @@ export default function App() {
 
   // Démarre une session de module (questions injectées).
   const startModuleSession = useCallback((mod, size) => {
-    const questions = buildSession(mod.id, size);
+    const seenIds = progress.state.moduleProgress[mod.id]?.seenIds;
+    const questions = buildSession(mod.id, size, seenIds);
     setSessionCfg({ mode: mod.skill, moduleId: mod.id, size, questions, returnTo: { name: "module", moduleId: mod.id } });
     go("session");
-  }, [go]);
+  }, [go, progress.state.moduleProgress]);
 
   // Démarre un mode libre (3 modes historiques) — échantillon plafonné, pas la banque entière.
   const startFreeMode = useCallback((mode) => {
@@ -64,23 +65,24 @@ export default function App() {
   const handleRetry = useCallback(() => {
     if (!sessionCfg) { goHome(); return; }
     // Reconstruit une session fraîche (nouveau tirage, module OU mode libre).
-    const questions = sessionCfg.moduleId ? buildSession(sessionCfg.moduleId, sessionCfg.size) : buildFreeSession(sessionCfg.mode);
+    const seenIds = sessionCfg.moduleId ? progress.state.moduleProgress[sessionCfg.moduleId]?.seenIds : undefined;
+    const questions = sessionCfg.moduleId ? buildSession(sessionCfg.moduleId, sessionCfg.size, seenIds) : buildFreeSession(sessionCfg.mode);
     setSessionCfg({ ...sessionCfg, questions });
     setLastSession(null);
     go("session");
-  }, [sessionCfg, go, goHome]);
+  }, [sessionCfg, go, goHome, progress.state.moduleProgress]);
 
   const handlePlacementDone = useCallback((level) => go("curriculum", { level }), [go]);
 
   return (
     <div className="min-h-screen bg-background">
       {/* Top nav */}
-      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border">
+      <header className="sticky top-0 z-40 bg-background/80 backdrop-blur-md border-b border-border" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <div className="mx-auto max-w-5xl px-4 h-16 flex items-center justify-between gap-4">
-          <button onClick={goHome} aria-label="Accueil TOEIC Quest" className="flex items-center gap-2 shrink-0">
+          <button onClick={goHome} aria-label="Accueil Yes I Can Toeic" className="flex items-center gap-2 shrink-0">
             <Mascot mood="happy" size={36} />
             <span className="font-display font-bold text-lg hidden sm:block tracking-tight">
-              TOEIC<span className="text-accent-strong">QUEST</span>
+              Yes I Can <span className="text-accent-strong">Toeic</span>
             </span>
           </button>
 
@@ -93,6 +95,16 @@ export default function App() {
           {progress.state.streak > 0 && <StreakBadge streak={progress.state.streak} />}
         </div>
       </header>
+
+      {/* Alerte discrète : la progression n'a pas pu être sauvegardée (quota,
+          navigation privée, storage désactivé) — mieux que la perte silencieuse. */}
+      {progress.saveError && (
+        <div className="mx-auto max-w-5xl px-4 pt-3">
+          <div role="alert" className="rounded-xl bg-destructive/10 border border-destructive/25 text-destructive text-sm px-4 py-2.5">
+            Ta progression n'a pas pu être sauvegardée sur cet appareil — vérifie l'espace de stockage disponible ou désactive la navigation privée.
+          </div>
+        </div>
+      )}
 
       {/* Main content */}
       <main className="mx-auto max-w-5xl px-4">
@@ -163,9 +175,9 @@ export default function App() {
 
       {/* Footer */}
       {route.name === "dashboard" && (
-        <footer className="border-t border-border mt-8">
+        <footer className="border-t border-border mt-8" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
           <div className="mx-auto max-w-5xl px-4 py-6 text-center text-sm text-muted-foreground">
-            <p className="font-semibold">TOEIC QUEST — Préparation ludique au TOEIC</p>
+            <p className="font-semibold">Yes I Can Toeic — Préparation ludique au TOEIC</p>
             <p className="mt-1 text-xs">Vos données et vos images restent stockées localement sur votre navigateur.</p>
           </div>
         </footer>

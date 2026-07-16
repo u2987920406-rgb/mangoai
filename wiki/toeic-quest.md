@@ -1,14 +1,25 @@
 ---
 type: projet
-tags: [app, formation, toeic, gout, transmission]
-statut: livré (1er palier vérifié)
-sources: [statut.md 2026-06-30 (bg), limites.md L62-L64]
-maj: 2026-06-30
+tags: [app, formation, toeic, gout, transmission, client]
+statut: rebranding en cours (Phase 2/5 livrée) — livraison client à un jeune femme de 25 ans, web + mobile
+sources: [statut.md 2026-07-16, limites.md L62-L64/L115, historique.md Journal 2026-07-16]
+maj: 2026-07-16
 ---
 
-# TOEIC Quest
+# Yes I Can Toeic *(anciennement TOEIC Quest)*
 
-> Vraie **formation TOEIC sur un an** (vers le score 800+) : moteur bâti par Claude, **contenu rédigé par GLM (l'Élève)**, cohérence des images **jugée par le VL souverain**.
+> Vraie **formation TOEIC sur un an** (vers le score 800+) : moteur bâti par Claude, **contenu rédigé par GLM (l'Élève)**, cohérence des images **jugée par le VL souverain**. **Renommée et rebrandée en 2026-07-16** pour une livraison à un client payant (web + mobile via Capacitor) — voir section « Rebranding client » ci-dessous.
+
+## Rebranding client (2026-07-16, en cours)
+
+Raf livre ce produit à un client payant sous le nom **« Yes I Can Toeic »**, cible = jeune femme de 25 ans (enjeu carrière/mobilité internationale), ton « sérieux ET ludique ». Plan en 5 phases (`C:\Users\PC-DELL\.claude\plans\statut-stateless-glade.md`) :
+- **Phase 1 ✅ LIVRÉE** — 3 directions de maquettes explorées (Studio Confiance chaleureux → pastel aquarelle nacré → référence Dribbble "Flashlight App" par UIOVIA) ; direction finale tranchée : cartes blanches sur halo diffus dégradé, badges de couleur pleine par fonction (corail/ambre/cyan/violet), cadran à graduations, bouton orbe glossy.
+- **Phase 2 ✅ LIVRÉE** — rebranding réel appliqué : nom partout (`index.html`, `package.json`, `App.jsx`, `Dashboard.jsx`, README, tests), tokens `--mango`→`--accent-primary` + palette corail/ambre/cyan/violet (`index.css`), mascotte-mangue retirée et remplacée par un badge orbe glossy (`Mascot.jsx` réécrit, même API, 8 sites d'appel inchangés), clé `localStorage` migrée en reset simple (`yesicantoeic_progress_v1`). Vérifié : build vert, 4/4 tests Playwright verts, contrôle visuel Chrome OK.
+- **Phase 3 ✅ LIVRÉE** — biais de position corrigé (script de rééquilibrage), épuisement de nouveauté fixé (`seenIds`), 4 défauts de contenu corrigés à la source, `localStorage` durci (validation de forme + `schemaVersion` + `saveError`), 6 nouveaux fichiers de tests + profil mobile Playwright (36/36 verts), polices auto-hébergées, `safe-area-inset` posé. 2 défauts de contenu restants nécessitent une passe d'authoring (limites.md L130/L131).
+- **Phase 4 ✅ LIVRÉE (câblage)** — Capacitor installé, `android/`+`ios/` scaffoldés, icônes/splash générés (placeholder à remplacer par le vrai logo client), scripts `cap:sync`/`cap:android`/`cap:ios`. **Limite bloquante (L133)** : aucun toolchain natif (Java/Android SDK/Xcode) sur cette machine → build réel jamais testé, à faire par Raf sur un poste équipé.
+- **Phase 5 ✅ LIVRÉE** — `README.md` étendu (hébergement web, build/signature Android+iOS, coût réel Apple Developer 99$/an, checklist de retest).
+
+**Plan à 5 phases COMPLET côté ingénierie.** Ce qui reste est entre les mains de Raf : premier build natif réel (L133, aucun toolchain sur la machine de dev), décision sur les 229 images distantes (L132), 2 défauts de contenu nécessitant de l'authoring (L130/L131).
 
 ## Rôle
 

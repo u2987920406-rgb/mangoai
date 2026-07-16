@@ -1,4 +1,4 @@
-// ─── TOEIC QUEST — Façade de données (rétro-compatible) ──────────────────────
+// ─── YES I CAN TOEIC — Façade de données (rétro-compatible) ──────────────────
 // La banque réelle vit désormais dans data/bank/ (taguée level/part/moduleId/
 // skill/difficulty) et le parcours dans data/curriculum.js. Ce fichier RECONSTRUIT
 // l'API historique (QUESTIONS.{listening,reading,vocab}, MODE_INFO, BADGES,

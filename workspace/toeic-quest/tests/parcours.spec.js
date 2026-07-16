@@ -1,63 +1,13 @@
-// ─── Tests e2e — parcours réel TOEIC Quest ────────────────────────────────────
+// ─── Tests e2e — parcours réel Yes I Can Toeic ────────────────────────────────
 // Couvre : Dashboard → Placement (12 q) → verdict → Carte (verrouillage) →
 // Module → Session (feedback correct/incorrect) → Résultats (revue des erreurs)
 // → Diagnostic (maîtrise, reset) + modes libres plafonnés + persistance.
 // Assertions dures : zéro erreur console/pageerror, score ∈ [250, 990],
 // déverrouillage de niveau après bilan ≥ 75 %.
 import { test, expect } from "@playwright/test";
+import { STORAGE_KEY, trackErrors, playSession, readProgress } from "./helpers.js";
 
-const STORAGE_KEY = "toeicquest_progress_v1";
-
-// Collecte les erreurs console + pageerror. Les échecs de chargement d'images
-// distantes Pexels (contenu .gen encore en ligne) sont tolérés : l'app les gère
-// par fallback ; tout le reste fait échouer le test.
-function trackErrors(page) {
-  const errors = [];
-  page.on("console", (msg) => {
-    if (msg.type() !== "error") return;
-    const text = msg.text();
-    if (text.includes("images.pexels.com")) return;
-    errors.push(`[console] ${text}`);
-  });
-  page.on("pageerror", (err) => errors.push(`[pageerror] ${err.message}`));
-  return errors;
-}
-
-// Répond à la question affichée (correct=true → bonne réponse) puis vérifie le feedback.
-async function answer(page, { correct = true } = {}) {
-  const selector = `[data-testid="choice"][data-correct="${correct ? "true" : "false"}"]`;
-  await page.locator(selector).first().click();
-  const feedback = page.getByTestId("feedback");
-  await expect(feedback).toBeVisible();
-  await expect(feedback).toContainText(correct ? "Correct !" : "Pas tout à fait");
-}
-
-// Passe à la question suivante (ou aux résultats). Renvoie true si la session continue.
-async function next(page) {
-  const btn = page.getByRole("button", { name: /Question suivante|Voir les résultats/ });
-  const label = await btn.innerText();
-  await btn.click();
-  return label.includes("suivante");
-}
-
-// Joue la session entière ; wrongIndexes = index (0-based) des questions à rater.
-async function playSession(page, { wrongIndexes = [] } = {}) {
-  let i = 0;
-  let going = true;
-  while (going) {
-    await answer(page, { correct: !wrongIndexes.includes(i) });
-    going = await next(page);
-    i++;
-    if (i > 60) throw new Error("Session anormalement longue (plafonnement cassé ?)");
-  }
-  return i;
-}
-
-function readProgress(page) {
-  return page.evaluate((k) => JSON.parse(localStorage.getItem(k) || "null"), STORAGE_KEY);
-}
-
-test.describe("Parcours TOEIC Quest", () => {
+test.describe("Parcours Yes I Can Toeic", () => {
   test("parcours complet : placement → carte → module → session → revue → diagnostic", async ({ page }) => {
     const errors = trackErrors(page);
     await page.goto("/");
@@ -153,7 +103,7 @@ test.describe("Parcours TOEIC Quest", () => {
     await page.getByText("Carte du parcours", { exact: true }).click();
     await page.getByText("Débutant", { exact: true }).first().click();
     await expect(page.getByRole("heading", { name: "Niveau Débutant" })).toBeVisible();
-    // force: le nœud « à faire » pulse en continu (animate-pulse-mango) → jamais « stable » pour Playwright.
+    // force: le nœud « à faire » pulse en continu (animate-pulse-accent) → jamais « stable » pour Playwright.
     await page.getByRole("button", { name: "Bilan Débutant" }).click({ force: true });
     await page.getByTestId("start-session").click();
     await playSession(page); // 100 % ≥ 75 %

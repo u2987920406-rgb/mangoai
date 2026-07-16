@@ -12,12 +12,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Where will the marketing meeting take place?",
     "choices": [
-      "In Conference Room A",
       "In Conference Room B",
       "In the cafeteria",
-      "In the main lobby"
+      "In the main lobby",
+      "In Conference Room A"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "La femme dit : « it's been moved to Conference Room B on the third floor. » La réunion se tiendra donc dans la salle de conférence B.",
     "lines": [
       {
@@ -48,12 +48,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What does the man still need to do before sending the report?",
     "choices": [
+      "Schedule a meeting",
       "Call Mr. Lopez",
       "Add the charts",
-      "Print the document",
-      "Schedule a meeting"
+      "Print the document"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'homme dit : « I just need to add the charts and I'll send it to you by noon. » Il doit encore ajouter les graphiques.",
     "lines": [
       {
@@ -84,12 +84,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What does the woman suggest the man do?",
     "choices": [
-      "Call the IT department",
-      "Reset his password",
       "Use a different computer",
-      "Update his software"
+      "Update his software",
+      "Call the IT department",
+      "Reset his password"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "La femme demande : « Have you tried resetting your password? » Elle suggère à l'homme de réinitialiser son mot de passe.",
     "lines": [
       {
@@ -156,12 +156,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "When will the repair service come?",
     "choices": [
-      "This afternoon",
       "Tomorrow morning",
-      "Tomorrow afternoon",
-      "Next week"
+      "Next week",
+      "This afternoon",
+      "Tomorrow afternoon"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "La femme dit : « They said they'll come by tomorrow morning. » Le service de réparation viendra demain matin.",
     "lines": [
       {
@@ -192,12 +192,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What is the man waiting for before booking his flight?",
     "choices": [
-      "A discount code",
-      "Approval from his manager",
+      "His passport renewal",
       "A confirmation email",
-      "His passport renewal"
+      "A discount code",
+      "Approval from his manager"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'homme dit : « I'm waiting for approval from my manager first. » Il attend l'approbation de son responsable.",
     "lines": [
       {
@@ -228,12 +228,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What will the woman send to the man?",
     "choices": [
-      "The full notes",
       "The training slides",
-      "A presentation file",
-      "A link to the portal"
+      "A link to the portal",
+      "The full notes",
+      "A presentation file"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "La femme dit : « I only have the slides. » Elle n'a que les diapositives, c'est donc ce qu'elle va lui envoyer.",
     "lines": [
       {
@@ -264,12 +264,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "When will the man help arrange the furniture?",
     "choices": [
-      "Before nine o'clock",
-      "At ten o'clock",
       "After his meeting",
-      "On Tuesday morning"
+      "Before nine o'clock",
+      "On Tuesday morning",
+      "At ten o'clock"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "L'homme dit : « I have a meeting until ten. How about after that? » Il aidera après sa réunion, donc après dix heures.",
     "lines": [
       {
@@ -300,12 +300,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Which training session will the man attend?",
     "choices": [
+      "Both sessions",
       "March third",
       "March fifth",
-      "Both sessions",
       "He hasn't decided yet"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'homme dit : « I'll sign up for the fifth. » Il participera à la session du cinq mars.",
     "lines": [
       {
@@ -336,12 +336,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What did the finance team ask the man to provide?",
     "choices": [
+      "A copy of his ID",
       "His travel itinerary",
       "The original receipts",
-      "A copy of his ID",
       "An updated budget"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'homme dit : « the finance team asked me to include the original receipts. » L'équipe finance lui a demandé les reçus originaux.",
     "lines": [
       {
@@ -372,12 +372,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A man is reading a document at his desk.",
       "A man is writing on a whiteboard.",
       "A man is answering the phone.",
+      "A man is reading a document at his desk.",
       "A man is opening a filing cabinet."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "L'homme est assis à son bureau et lit un document. Les autres options décrivent des actions (écrire sur un tableau, répondre au téléphone, ouvrir un classeur) qui ne correspondent pas à la scène.",
     "transcript": "(A) A man is reading a document at his desk. (B) A man is writing on a whiteboard. (C) A man is answering the phone. (D) A man is opening a filing cabinet.",
     "voiceGender": "male",
@@ -392,12 +392,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is typing on a laptop.",
       "A woman is fixing a printer.",
-      "A woman is presenting a slideshow.",
-      "A woman is talking on a smartphone."
+      "A woman is typing on a laptop.",
+      "A woman is talking on a smartphone.",
+      "A woman is presenting a slideshow."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "La femme tape sur le clavier d'un ordinateur portable. Les autres propositions mentionnent une imprimante, une présentation ou un téléphone, ce qui ne correspond pas à l'image.",
     "transcript": "(A) A woman is typing on a laptop. (B) A woman is fixing a printer. (C) A woman is presenting a slideshow. (D) A woman is talking on a smartphone.",
     "voiceGender": "female",
@@ -412,12 +412,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A man is pointing at a screen during a meeting.",
       "A man is serving coffee to the attendees.",
-      "A man is closing the window blinds.",
-      "A man is handing out folders to the participants."
+      "A man is pointing at a screen during a meeting.",
+      "A man is handing out folders to the participants.",
+      "A man is closing the window blinds."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "Pendant la réunion, un homme désigne un point sur l'écran de présentation. Les autres options impliquent de servir du café, de fermer les stores ou de distribuer des dossiers, ce qui n'est pas le cas.",
     "transcript": "(A) A man is pointing at a screen during a meeting. (B) A man is serving coffee to the attendees. (C) A man is closing the window blinds. (D) A man is handing out folders to the participants.",
     "voiceGender": "male",
@@ -433,9 +433,9 @@ export const DEBUTANT_GEN = [
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
       "People are walking along a city street.",
-      "People are waiting at a bus stop.",
+      "People are riding bicycles.",
       "People are crossing a bridge.",
-      "People are riding bicycles."
+      "People are waiting at a bus stop."
     ],
     "answer": 0,
     "explanation": "L'image montre des piétons marchant sur un trottoir en ville. Les autres choix décrivent des gens qui attendent, traversent un pont ou font du vélo, ce qui ne correspond pas à la scène.",
@@ -454,8 +454,8 @@ export const DEBUTANT_GEN = [
     "choices": [
       "A customer is paying for an item at a counter.",
       "A customer is returning a broken product.",
-      "A customer is trying on a coat.",
-      "A customer is arranging items on a shelf."
+      "A customer is arranging items on a shelf.",
+      "A customer is trying on a coat."
     ],
     "answer": 0,
     "explanation": "Un client est en train de payer à la caisse du magasin. Les autres options décrivent un retour de produit, un essayage ou le rangement d'articles sur une étagère, ce qui n'est pas illustré.",
@@ -472,12 +472,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is pouring coffee into a mug.",
       "A woman is washing dishes in the sink.",
       "A woman is putting a cup in the microwave.",
-      "A woman is taking a bottle out of the refrigerator."
+      "A woman is taking a bottle out of the refrigerator.",
+      "A woman is pouring coffee into a mug."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "La femme verse du café dans une tasse. Les autres propositions décrivent la vaisselle, l'utilisation d'un micro-ondes ou le fait de sortir une bouteille du réfrigérateur, ce qui ne correspond pas à l'action principale.",
     "transcript": "(A) A woman is pouring coffee into a mug. (B) A woman is washing dishes in the sink. (C) A woman is putting a cup in the microwave. (D) A woman is taking a bottle out of the refrigerator.",
     "voiceGender": "female",
@@ -492,12 +492,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A man is typing on a keyboard in front of two monitors.",
+      "A man is adjusting the height of his chair.",
       "A man is unplugging a monitor from the wall.",
       "A man is repairing a computer tower.",
-      "A man is adjusting the height of his chair."
+      "A man is typing on a keyboard in front of two monitors."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "L'homme tape sur un clavier et fait face à deux écrans d'ordinateur. Les autres options décrivent le débranchement d'un écran, la réparation d'une tour d'ordinateur ou le réglage d'une chaise, ce qui n'est pas l'action montrée.",
     "transcript": "(A) A man is typing on a keyboard in front of two monitors. (B) A man is unplugging a monitor from the wall. (C) A man is repairing a computer tower. (D) A man is adjusting the height of his chair.",
     "voiceGender": "male",
@@ -514,8 +514,8 @@ export const DEBUTANT_GEN = [
     "choices": [
       "People are sitting around a table with laptops.",
       "People are standing in an elevator.",
-      "People are eating lunch in a cafeteria.",
-      "People are walking down a hallway."
+      "People are walking down a hallway.",
+      "People are eating lunch in a cafeteria."
     ],
     "answer": 0,
     "explanation": "Plusieurs personnes sont assises autour d'une table avec des ordinateurs portables. Les autres choix décrivent des personnes dans un ascenseur, en train de déjeuner ou marchant dans un couloir, ce qui ne correspond pas à l'image.",
@@ -532,12 +532,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is looking at clothes on a rack.",
       "A woman is folding shirts on a table.",
-      "A woman is paying at the cash register.",
-      "A woman is putting items into a shopping bag."
+      "A woman is putting items into a shopping bag.",
+      "A woman is looking at clothes on a rack.",
+      "A woman is paying at the cash register."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Une femme regarde des vêtements suspendus sur un présentoir. Les autres propositions décrivent le pliage de chemises, le paiement à la caisse ou l'emballage d'articles, ce qui ne correspond pas à la scène.",
     "transcript": "(A) A woman is looking at clothes on a rack. (B) A woman is folding shirts on a table. (C) A woman is paying at the cash register. (D) A woman is putting items into a shopping bag.",
     "voiceGender": "female",
@@ -552,12 +552,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "Boxes are stacked on the floor of a warehouse.",
       "A woman is driving a forklift.",
+      "Shelves are completely empty.",
       "People are sitting at a conference table.",
-      "Shelves are completely empty."
+      "Boxes are stacked on the floor of a warehouse."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "L'image montre des cartons empilés sur le sol d'un entrepôt. Les options (B), (C) et (D) décrivent des scènes absentes de l'image : aucun chariot élévateur, aucune table de conférence, et les étagères ne sont pas vides.",
     "transcript": "(A) Boxes are stacked on the floor of a warehouse. (B) A woman is driving a forklift. (C) People are sitting at a conference table. (D) Shelves are completely empty.",
     "voiceGender": "male",
@@ -573,11 +573,11 @@ export const DEBUTANT_GEN = [
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
       "A man is cooking in a kitchen.",
-      "Boxes are organized on metal shelves.",
+      "Tools are scattered on a table.",
       "Cars are parked in a parking lot.",
-      "Tools are scattered on a table."
+      "Boxes are organized on metal shelves."
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'image montre des boîtes rangées sur des étagères métalliques. Les autres options décrivent une cuisine, un parking et une table avec des outils, qui ne correspondent pas à la scène.",
     "transcript": "(A) A man is cooking in a kitchen. (B) Boxes are organized on metal shelves. (C) Cars are parked in a parking lot. (D) Tools are scattered on a table.",
     "voiceGender": "female",
@@ -592,12 +592,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A kitchen counter is being cleaned.",
-      "A warehouse is full of boxes.",
       "A parking lot is under construction.",
-      "A man is repairing a shelf."
+      "A man is repairing a shelf.",
+      "A warehouse is full of boxes.",
+      "A kitchen counter is being cleaned."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "L'image montre un plan de cuisine en train d'être nettoyé. Les options (B), (C) et (D) décrivent un entrepôt, un parking en construction et une réparation d'étagère, scènes absentes de l'image.",
     "transcript": "(A) A kitchen counter is being cleaned. (B) A warehouse is full of boxes. (C) A parking lot is under construction. (D) A man is repairing a shelf.",
     "voiceGender": "male",
@@ -613,9 +613,9 @@ export const DEBUTANT_GEN = [
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
       "Cars are lined up in a parking lot.",
-      "Boxes are stacked in a warehouse.",
+      "Tools are laid out on a workbench.",
       "Pots are hanging in a kitchen.",
-      "Tools are laid out on a workbench."
+      "Boxes are stacked in a warehouse."
     ],
     "answer": 0,
     "explanation": "L'image montre des voitures alignées dans un parking. Les autres options décrivent un entrepôt, une cuisine et un établi, qui ne correspondent pas à ce que l'on voit.",
@@ -633,11 +633,11 @@ export const DEBUTANT_GEN = [
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
       "A woman is parking a car.",
+      "A chef is preparing food in a kitchen.",
       "Shelves are being painted.",
-      "Various tools are arranged on a table.",
-      "A chef is preparing food in a kitchen."
+      "Various tools are arranged on a table."
     ],
-    "answer": 2,
+    "answer": 3,
     "explanation": "L'image montre divers outils disposés sur une table. Les autres options décrivent une femme qui gare une voiture, des étagères en train d'être peintes et un chef en cuisine, scènes non présentes.",
     "transcript": "(A) A woman is parking a car. (B) Shelves are being painted. (C) Various tools are arranged on a table. (D) A chef is preparing food in a kitchen.",
     "voiceGender": "male",
@@ -652,12 +652,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is stirring something in a pot.",
-      "A man is loading boxes onto a truck.",
+      "Tools are hanging on a wall.",
       "Cars are driving through a parking lot.",
-      "Tools are hanging on a wall."
+      "A woman is stirring something in a pot.",
+      "A man is loading boxes onto a truck."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "L'image montre une femme en train de remuer quelque chose dans une casserole dans une cuisine. Les autres options décrivent un chargement de camion, des voitures et des outils au mur, absents de la scène.",
     "transcript": "(A) A woman is stirring something in a pot. (B) A man is loading boxes onto a truck. (C) Cars are driving through a parking lot. (D) Tools are hanging on a wall.",
     "voiceGender": "female",
@@ -672,12 +672,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A worker is scanning a box with a handheld device.",
+      "A technician is fixing a shelf.",
       "A cook is chopping vegetables on a board.",
       "A driver is getting into a car.",
-      "A technician is fixing a shelf."
+      "A worker is scanning a box with a handheld device."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "L'image montre un employé d'entrepôt en train de scanner un carton avec un appareil portable. Les autres options décrivent un cuisinier, un conducteur et un technicien, scènes non visibles.",
     "transcript": "(A) A worker is scanning a box with a handheld device. (B) A cook is chopping vegetables on a board. (C) A driver is getting into a car. (D) A technician is fixing a shelf.",
     "voiceGender": "male",
@@ -692,12 +692,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "Shelves are fully stocked with products.",
-      "A parking lot is mostly empty.",
+      "Tools are organized in a toolbox.",
       "A kitchen is being renovated.",
-      "Tools are organized in a toolbox."
+      "A parking lot is mostly empty.",
+      "Shelves are fully stocked with products."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'image montre un parking presque vide. Les autres options décrivent des étagères pleines, une rénovation de cuisine et une boîte à outils, qui ne correspondent pas à la scène.",
     "transcript": "(A) Shelves are fully stocked with products. (B) A parking lot is mostly empty. (C) A kitchen is being renovated. (D) Tools are organized in a toolbox.",
     "voiceGender": "female",
@@ -712,12 +712,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A man is washing dishes in a kitchen.",
       "Cars are parked side by side.",
       "Products are displayed on warehouse shelves.",
-      "A hammer is lying on a table."
+      "A hammer is lying on a table.",
+      "A man is washing dishes in a kitchen."
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "L'image montre des produits disposés sur des étagères d'entrepôt. Les autres options décrivent une cuisine, des voitures et un marteau sur une table, scènes absentes.",
     "transcript": "(A) A man is washing dishes in a kitchen. (B) Cars are parked side by side. (C) Products are displayed on warehouse shelves. (D) A hammer is lying on a table.",
     "voiceGender": "male",
@@ -732,12 +732,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
+      "Screwdrivers are arranged neatly on a table.",
       "Boxes are being unloaded from a truck.",
       "Pots are sitting on a kitchen stove.",
-      "A parking lot is surrounded by trees.",
-      "Screwdrivers are arranged neatly on a table."
+      "A parking lot is surrounded by trees."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'image montre des casseroles posées sur une cuisinière dans une cuisine. Les autres options décrivent un déchargement de camion, un parking entouré d'arbres et des tournevis sur une table, scènes non présentes.",
     "transcript": "(A) Boxes are being unloaded from a truck. (B) Pots are sitting on a kitchen stove. (C) A parking lot is surrounded by trees. (D) Screwdrivers are arranged neatly on a table.",
     "voiceGender": "female",
@@ -752,11 +752,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "In the conference room on the second floor.",
+      "Yes, I attended the meeting.",
       "It starts at three o'clock.",
-      "Yes, I attended the meeting."
+      "In the conference room on the second floor."
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "La question demande un lieu (« Where »). La réponse A indique un endroit : la salle de conférence au deuxième étage. La B donne une heure et la C répond par oui/non, ce qui ne correspond pas à une question en « Where ».",
     "prompt": {
       "text": "Where is the staff meeting being held?",
@@ -772,11 +772,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "From platform nine.",
       "At 7:45 in the morning.",
-      "It takes about two hours."
+      "It takes about two hours.",
+      "From platform nine."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "La question demande l'heure de départ (« What time »). La réponse B donne une heure précise. La A indique un lieu et la C donne une durée, ce qui ne répond pas à la question.",
     "prompt": {
       "text": "What time does the train to Boston leave?",
@@ -792,11 +792,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
+      "Mr. Lee is in his office.",
       "Yes, I emailed it to him this morning.",
-      "The report is on the desk.",
-      "Mr. Lee is in his office."
+      "The report is on the desk."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "La question est une question fermée (« Did you... ») qui attend une réponse par oui ou non. La réponse A répond directement par « Yes » et ajoute une précision naturelle. Les réponses B et C donnent des informations sans répondre à la question.",
     "prompt": {
       "text": "Did you send the report to Mr. Lee?",
@@ -833,10 +833,10 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "Yes, I read about it.",
-      "Starting next Monday.",
-      "It's on the company website."
+      "It's on the company website.",
+      "Starting next Monday."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "La question demande un moment (« When »). La réponse B indique une date de début. La A répond par oui/non à une question qui n'est pas fermée, et la C indique un endroit où trouver l'information.",
     "prompt": {
       "text": "When does the new policy take effect?",
@@ -873,10 +873,10 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "The cafeteria is on the first floor.",
-      "I'd love to, but I have a meeting at noon.",
-      "We had pasta for lunch."
+      "We had pasta for lunch.",
+      "I'd love to, but I have a meeting at noon."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "La question est une invitation polie (« Would you like to... »). La réponse B décline naturellement avec une raison. La A indique un lieu et la C parle d'un repas passé, ce qui ne répond pas à l'invitation.",
     "prompt": {
       "text": "Would you like to join us for lunch?",
@@ -912,11 +912,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
+      "The reservation was canceled.",
       "There are three rooms available.",
-      "Sure, I'll book one right away.",
-      "The reservation was canceled."
+      "Sure, I'll book one right away."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "La question est une demande polie (« Can you... »). La réponse B accepte et indique une action immédiate. La A donne une information sur les salles sans répondre à la demande, et la C parle d'une annulation passée.",
     "prompt": {
       "text": "Can you reserve a conference room for tomorrow?",
@@ -933,8 +933,8 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "About two hours, I think.",
-      "It's in room 305.",
-      "Yes, the training was very useful."
+      "Yes, the training was very useful.",
+      "It's in room 305."
     ],
     "answer": 0,
     "explanation": "La question demande une durée (« How long »). La réponse A donne une durée approximative. La B indique un lieu et la C répond par oui/non à une question qui n'est pas fermée.",
@@ -952,9 +952,9 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "The proposal looks good.",
+      "I submitted the proposal yesterday.",
       "Actually, they moved it to next Wednesday.",
-      "I submitted the proposal yesterday."
+      "The proposal looks good."
     ],
     "answer": 1,
     "explanation": "La question est une question négative de confirmation (« Isn't... ») sur une date. La réponse B corrige l'information de manière naturelle. La A est un commentaire et la C parle d'une action passée sans répondre à la question de date.",
@@ -972,11 +972,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "The visit is scheduled for Thursday.",
       "You can use the visitor lot behind the building.",
+      "The visit is scheduled for Thursday.",
       "I usually drive to work."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "La question demande un lieu de stationnement (« Where »). La réponse B indique un endroit précis. La A donne un jour et la C est une habitude personnelle sans rapport avec la question.",
     "prompt": {
       "text": "Where should I park when I visit the branch office?",
@@ -1012,11 +1012,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "In the conference room.",
       "Probably around an hour.",
+      "In the conference room.",
       "No, I can't attend."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "« How long » interroge sur la durée. La réponse « Probably around an hour » donne une estimation de durée. Les autres options concernent le lieu ou la participation.",
     "prompt": {
       "text": "How long will the meeting last?",
@@ -1033,8 +1033,8 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "The blue one on the shelf.",
-      "It's due next week.",
-      "Yes, I filed it yesterday."
+      "Yes, I filed it yesterday.",
+      "It's due next week."
     ],
     "answer": 0,
     "explanation": "« Which » demande d'identifier un choix parmi plusieurs. La réponse « The blue one on the shelf » identifie le bon dossier. Les autres options répondent à une question de délai ou de confirmation.",
@@ -1053,8 +1053,8 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "About two hours.",
-      "It's going to Singapore.",
-      "No, it hasn't left yet."
+      "No, it hasn't left yet.",
+      "It's going to Singapore."
     ],
     "answer": 0,
     "explanation": "« How much time » interroge sur une durée restante. « About two hours » répond correctement. Les autres options concernent la destination ou l'état de l'envoi.",
@@ -1072,9 +1072,9 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "She ordered two hundred units.",
+      "Yes, she finalized it this morning.",
       "The one based in Osaka.",
-      "Yes, she finalized it this morning."
+      "She ordered two hundred units."
     ],
     "answer": 1,
     "explanation": "« Which supplier » demande d'identifier un fournisseur. « The one based in Osaka » désigne le fournisseur choisi. Les autres options répondent à une question de quantité ou de confirmation.",
@@ -1093,8 +1093,8 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "Since last Tuesday.",
-      "It's on the second floor.",
-      "No, I haven't called the technician."
+      "No, I haven't called the technician.",
+      "It's on the second floor."
     ],
     "answer": 0,
     "explanation": "« How long » avec le present perfect interroge sur le point de départ d'une période. « Since last Tuesday » indique depuis quand l'équipement est en panne. Les autres options concernent le lieu ou une action non effectuée.",
@@ -1112,9 +1112,9 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "The printer is out of paper.",
+      "Yes, I'll do it right away.",
       "Around thirty copies.",
-      "Yes, I'll do it right away."
+      "The printer is out of paper."
     ],
     "answer": 1,
     "explanation": "« How much more » demande une quantité restante à imprimer. « Around thirty copies » donne cette quantité. Les autres options évoquent un problème technique ou une confirmation d'action.",
@@ -1153,10 +1153,10 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
       "I've already sent the report.",
-      "About twenty minutes by taxi.",
-      "No, I haven't been there before."
+      "No, I haven't been there before.",
+      "About twenty minutes by taxi."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "« How long does it take » interroge sur la durée d'un trajet. « About twenty minutes by taxi » donne une estimation de durée. Les autres options concernent un rapport ou une absence d'expérience.",
     "prompt": {
       "text": "How long does it take to get to the client's office?",
@@ -1172,11 +1172,11 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "It was sent by air freight.",
       "Just under two hundred dollars.",
+      "It was sent by air freight.",
       "Yes, the customer paid it."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "« How much was » interroge sur un montant passé. « Just under two hundred dollars » donne ce montant. Les autres options portent sur le mode d'expédition ou la confirmation de paiement.",
     "prompt": {
       "text": "How much was the shipping fee for the last order?",
@@ -1212,9 +1212,9 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la meilleure réponse à la question entendue.",
     "choices": [
-      "He's in his office.",
+      "Yes, he signed for it.",
       "Since this morning.",
-      "Yes, he signed for it."
+      "He's in his office."
     ],
     "answer": 1,
     "explanation": "« How long » avec le present perfect interroge sur la durée d'attente. « Since this morning » indique le point de départ. Les autres options concernent le lieu ou la réception du colis.",
@@ -1233,11 +1233,11 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "manage",
-      "manager",
+      "managing",
       "management",
-      "managing"
+      "manager"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "On a besoin d'un nom pour compléter la phrase après « the ». « Manager » (le/la responsable) est le nom qui désigne la personne. « Management » est aussi un nom mais désigne la direction/l'équipe de direction, pas une personne.",
     "type": "fillblank",
     "sentence": "Ms. Tanaka has been the _____ of the marketing department for five years."
@@ -1251,12 +1251,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "apply",
+      "application",
       "applying",
-      "applicants",
-      "application"
+      "apply",
+      "applicants"
     ],
-    "answer": 2,
+    "answer": 3,
     "explanation": "Il faut un nom pluriel pour s'accorder avec « all » et désigner les personnes qui postulent. « Applicants » (les candidats) est correct. « Application » est le formulaire/dossier, pas la personne.",
     "type": "fillblank",
     "sentence": "All _____ for the sales position must submit a résumé by Friday."
@@ -1270,12 +1270,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "manager",
       "management",
       "manage",
-      "managed"
+      "managed",
+      "manager"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Après le verbe « help », on utilise la base verbale (infinitif sans « to »). « Manage » est donc le verbe correct. Les autres formes sont un nom ou un participe passé.",
     "type": "fillblank",
     "sentence": "The new software will help the team _____ inventory more efficiently."
@@ -1289,13 +1289,13 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
+      "management",
       "manage",
-      "manager",
-      "managers",
-      "management"
+      "managing",
+      "manager"
     ],
-    "answer": 3,
-    "explanation": "« Management » désigne ici la direction en tant qu'entité collective (singulier collectif). On dit « senior management » pour « la direction générale ». « Managers » serait possible grammaticalement, mais l'expression consacrée est « senior management ».",
+    "answer": 0,
+    "explanation": "« Management » désigne ici la direction en tant qu'entité collective (singulier collectif) : « senior management » = « la direction générale ». « Manage » et « managing » ne sont pas des noms utilisables comme sujet ici, et « manager » (singulier, sans article) ne convient pas après « Senior ».",
     "type": "fillblank",
     "sentence": "Senior _____ decided to postpone the product launch until next quarter."
   },
@@ -1309,11 +1309,11 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "apply",
-      "applicant",
       "application",
+      "applicant",
       "applying"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Il faut un adjectif/nom attributif pour qualifier « form ». « Application form » est le nom composé standard pour « formulaire de candidature ». Les autres options sont un verbe, un nom de personne ou un participe.",
     "type": "fillblank",
     "sentence": "Please complete the _____ form and return it to the human resources office."
@@ -1327,12 +1327,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "applying",
-      "application",
       "apply",
+      "application",
+      "applying",
       "applicant"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "Après le modal « should », on utilise la base verbale. « Apply » est le verbe correct. « Applying » est la forme en -ing, « application » est un nom, et « applicant » est une personne.",
     "type": "fillblank",
     "sentence": "Candidates who are interested in the position should _____ online before March 1."
@@ -1346,10 +1346,10 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "manager",
-      "management",
       "manage",
-      "managed"
+      "management",
+      "managed",
+      "manager"
     ],
     "answer": 1,
     "explanation": "Après le déterminant possessif « Mr. Lee's », il faut un nom. « Management » (la gestion/la direction) convient ici : « under someone's management » = « sous la direction de quelqu'un ».",
@@ -1366,11 +1366,11 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "apply",
-      "applicant",
       "application",
-      "applying"
+      "applying",
+      "applicant"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "Le sujet de la phrase est une personne qui a de l'expérience : il faut « applicant » (le/la candidat(e)). « Application » est le dossier, et « apply » est un verbe.",
     "type": "fillblank",
     "sentence": "The _____ for the administrative assistant job has previous experience in a law firm."
@@ -1384,8 +1384,8 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "manage",
       "managed",
+      "manage",
       "managing",
       "manager"
     ],
@@ -1403,12 +1403,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "applicants",
-      "applications",
       "applies",
-      "applying"
+      "applying",
+      "applicants",
+      "applications"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Il faut un nom pluriel pour désigner les personnes qualifiées qui seront invitées. « Applicants » (les candidats) est correct. « Applications » sont les dossiers, et « applies » n'est pas un nom.",
     "type": "fillblank",
     "sentence": "Only qualified _____ will be invited to interview for the position."
@@ -1422,12 +1422,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "launches",
       "launched",
+      "launches",
       "will launch",
       "has launched"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Le marqueur de temps « last week » indique une action terminée dans le passé. On utilise donc le prétérit simple « launched ».",
     "type": "fillblank",
     "sentence": "The marketing team _____ the new advertising campaign last week."
@@ -1442,12 +1442,12 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "had",
-      "has",
-      "will have",
-      "was having"
+      "have",
+      "was having",
+      "will have"
     ],
-    "answer": 2,
-    "explanation": "Le marqueur de temps « tomorrow » indique une action future. On utilise le futur simple « will have ».",
+    "answer": 3,
+    "explanation": "Le marqueur de temps « tomorrow » indique une action future : on utilise le futur simple « will have ». « have » (sans -s) est grammaticalement incorrect ici, le sujet « Ms. Tanaka » (3e personne du singulier) exige un accord.",
     "type": "fillblank",
     "sentence": "Ms. Tanaka _____ a meeting with the supplier tomorrow at 10 a.m."
   },
@@ -1460,12 +1460,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "operates",
-      "operated",
+      "will operate",
       "has operated",
-      "will operate"
+      "operates",
+      "operated"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Le marqueur « since 2015 » indique une action qui a commencé dans le passé et continue au présent. On utilise le present perfect « has operated ».",
     "type": "fillblank",
     "sentence": "Our company _____ in Singapore since 2015."
@@ -1479,12 +1479,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "checks",
-      "checked",
       "will check",
+      "checked",
+      "checks",
       "has checked"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "Le marqueur « every morning » indique une habitude ou une routine. On utilise le présent simple « checks ».",
     "type": "fillblank",
     "sentence": "Every morning, the receptionist _____ the incoming emails before 9 a.m."
@@ -1498,12 +1498,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
+      "will complete",
       "complete",
       "completed",
-      "had completed",
-      "will complete"
+      "had completed"
     ],
-    "answer": 2,
+    "answer": 3,
     "explanation": "Avec « by the time » + prétérit, l'action antérieure se met au past perfect « had completed », car elle s'est achevée avant l'arrivée du PDG.",
     "type": "fillblank",
     "sentence": "By the time the CEO arrived, the staff _____ the quarterly report."
@@ -1517,12 +1517,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "gives",
-      "gave",
       "is giving",
-      "will give"
+      "will give",
+      "gave",
+      "gives"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "Le contexte « is not available now » indique une action en cours au moment présent. On utilise le présent continu « is giving ».",
     "type": "fillblank",
     "sentence": "The conference room is not available now because the sales team _____ a presentation."
@@ -1536,12 +1536,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "speaks",
-      "spoke",
+      "has spoken",
       "was speaking",
-      "has spoken"
+      "spoke",
+      "speaks"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Une action en cours interrompue par une autre action passée se met au past continuous « was speaking ». « Yesterday » confirme le contexte passé.",
     "type": "fillblank",
     "sentence": "When Mr. Lopez called the office yesterday, the accountant _____ with a client."
@@ -1555,12 +1555,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "introduces",
       "introduced",
+      "will introduce",
       "has introduced",
-      "will introduce"
+      "introduces"
     ],
-    "answer": 3,
+    "answer": 1,
     "explanation": "Le marqueur « next month » indique une action future planifiée. On utilise le futur simple « will introduce ».",
     "type": "fillblank",
     "sentence": "Next month, the IT department _____ the new software system to all employees."
@@ -1574,12 +1574,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "produces",
-      "produced",
       "will produce",
-      "has produced"
+      "has produced",
+      "produced",
+      "produces"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "Le marqueur « last year » indique une action terminée dans le passé. On utilise le prétérit simple « produced ».",
     "type": "fillblank",
     "sentence": "Last year, the factory _____ 500 new units of the product."
@@ -1593,10 +1593,10 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
+      "will wait",
       "wait",
-      "waited",
       "have been waiting",
-      "will wait"
+      "waited"
     ],
     "answer": 2,
     "explanation": "Le marqueur « since 8 o'clock this morning » associé à une action qui continue au présent exige le present perfect continuous « have been waiting ».",
@@ -1612,12 +1612,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What is being announced?",
     "choices": [
+      "Shoppers can get a free laptop.",
       "The store is closing early tonight.",
-      "Laptops are on sale for one day.",
       "The electronics department is moving.",
-      "Shoppers can get a free laptop."
+      "Laptops are on sale for one day."
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'annonce indique clairement que tous les ordinateurs portables ont vingt pour cent de réduction pendant une journée. La bonne réponse est donc que les ordinateurs portables sont en soldes pour un jour.",
     "transcript": "Attention shoppers. Our electronics department is having a one-day sale. All laptops are twenty percent off until closing time tonight.",
     "voiceGender": "female",
@@ -1632,12 +1632,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Why is Karen calling?",
     "choices": [
+      "To introduce Mr. Lopez",
       "To cancel a meeting",
       "To reschedule a meeting",
-      "To remind the listener about a meeting",
-      "To introduce Mr. Lopez"
+      "To remind the listener about a meeting"
     ],
-    "answer": 2,
+    "answer": 3,
     "explanation": "Karen dit explicitement qu'elle appelle pour rappeler (remind) l'interlocuteur de sa réunion avec M. Lopez à deux heures. La bonne réponse est donc 'To remind the listener about a meeting'.",
     "transcript": "Hi, this is Karen from the front desk. I'm calling to remind you that your meeting with Mr. Lopez is at two o'clock in Conference Room B.",
     "voiceGender": "female",
@@ -1652,12 +1652,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What should passengers on flight 412 do?",
     "choices": [
-      "Wait at the main entrance",
       "Go to Gate 22 to board",
+      "Collect their luggage now",
       "Change their flight number",
-      "Collect their luggage now"
+      "Wait at the main entrance"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'annonce demande aux passagers du vol 412 de se rendre à la porte 22 pour l'embarquement. La bonne réponse est 'Go to Gate 22 to board'.",
     "transcript": "Welcome to Riverside Airport. Passengers on flight 412 to Chicago, please proceed to Gate 22 for boarding. The gate will close in fifteen minutes.",
     "voiceGender": "male",
@@ -1672,12 +1672,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What are employees on the third floor asked to do?",
     "choices": [
-      "Work from home all day",
-      "Stay on the third floor until noon",
+      "Repair the air conditioning themselves",
       "Work on a different floor until noon",
-      "Repair the air conditioning themselves"
+      "Work from home all day",
+      "Stay on the third floor until noon"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Le message demande aux employés du troisième étage de travailler sur un autre étage jusqu'à midi, car la climatisation sera réparée le matin. La bonne réponse est 'Work on a different floor until noon'.",
     "transcript": "This is a message for all employees. The air conditioning system on the third floor will be repaired tomorrow morning. Please work from another floor until noon.",
     "voiceGender": "male",
@@ -1693,11 +1693,11 @@ export const DEBUTANT_GEN = [
     "question": "What is the purpose of Mr. Park's call?",
     "choices": [
       "To place a new order",
-      "To report a late delivery",
+      "To cancel order 883",
       "To change his phone number",
-      "To cancel order 883"
+      "To report a late delivery"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "M. Park explique que sa commande devait arriver vendredi dernier mais qu'il ne l'a pas reçue. Il signale donc une livraison en retard. La bonne réponse est 'To report a late delivery'.",
     "transcript": "Hello, this is David Park. I'm calling about my order number 883. It was supposed to arrive last Friday, but I haven't received it yet. Could someone call me back at 555-0192?",
     "voiceGender": "male",
@@ -1712,12 +1712,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Why will Level One be closed on Sunday?",
     "choices": [
-      "For repairs",
-      "For cleaning",
+      "For security reasons",
       "For a special event",
-      "For security reasons"
+      "For repairs",
+      "For cleaning"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'annonce précise que le parking du niveau un sera fermé pour le nettoyage (cleaning) de six à neuf heures dimanche matin. La bonne réponse est 'For cleaning'.",
     "transcript": "Attention please. The parking garage on Level One will be closed for cleaning from six to nine this Sunday morning. Please use the Level Two garage during that time.",
     "voiceGender": "female",
@@ -1732,12 +1732,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What does the listener need to do?",
     "choices": [
-      "Return a book immediately",
       "Pick up a reserved book within three days",
+      "Return a book immediately",
       "Reserve another book online",
       "Pay a late fee at the library"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Le message de la bibliothèque indique que le livre réservé est disponible et qu'il faut le récupérer dans les trois jours ouvrés. La bonne réponse est 'Pick up a reserved book within three days'.",
     "transcript": "Good afternoon, this is a message from City Library. The book you reserved, 'Marketing Strategies,' is now available for pickup. Please collect it within three business days.",
     "voiceGender": "female",
@@ -1772,12 +1772,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What is the purpose of the email?",
     "choices": [
-      "To announce a new coffee machine",
       "To inform staff about a broken coffee machine",
+      "To announce a new coffee machine",
       "To ask staff to buy coffee",
       "To invite staff to a meeting on Friday"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'email indique clairement que la machine à café du deuxième étage est en panne. Janet Park informe donc le personnel de cette panne et donne des instructions temporaires.",
     "passage": "To: All Staff\nFrom: Janet Park, Office Manager\nSubject: Coffee Machine\n\nThe coffee machine on the second floor is broken. Please use the one in the first-floor kitchen until it is fixed. The repair company will come on Friday morning. Thank you for your patience.",
     "image": "https://images.pexels.com/photos/4050463/pexels-photo-4050463.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1792,9 +1792,9 @@ export const DEBUTANT_GEN = [
     "question": "What does Lisa want to discuss with Tom?",
     "choices": [
       "A new marketing plan",
-      "A restaurant reservation",
+      "A travel schedule",
       "A staff problem",
-      "A travel schedule"
+      "A restaurant reservation"
     ],
     "answer": 0,
     "explanation": "Lisa écrit : « to discuss the new marketing plan ». Le sujet de la rencontre est donc le nouveau plan marketing.",
@@ -1810,12 +1810,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "When must employees dress formally?",
     "choices": [
+      "During the summer months",
       "On Fridays only",
-      "When meeting clients",
       "From Monday to Thursday",
-      "During the summer months"
+      "When meeting clients"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "Le memo précise : « please dress formally when meeting clients ». Les employés doivent s'habiller de façon formelle lorsqu'ils rencontrent des clients.",
     "passage": "To: All Employees\nFrom: Human Resources\nSubject: Updated Dress Code\n\nStarting Monday, June 5, the company dress code will change. Employees may now wear smart casual clothes from Monday to Thursday. On Fridays, casual clothes such as jeans and sneakers are allowed. However, please dress formally when meeting clients.",
     "image": "https://images.pexels.com/photos/5439476/pexels-photo-5439476.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1830,11 +1830,11 @@ export const DEBUTANT_GEN = [
     "question": "What does Sarah ask David to do?",
     "choices": [
       "Place the order himself",
-      "Pay for the supplies",
       "Check the supplies when they arrive",
+      "Pay for the supplies",
       "Return the notebooks"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Sarah demande à David : « Please check the supplies when they arrive and let me know if anything is missing. » Elle lui demande donc de vérifier les fournitures à leur réception.",
     "passage": "To: David Kim\nFrom: Sarah Lopez\nSubject: Office Supplies Order\n\nDavid,\n\nI have placed an order for office supplies. We need 20 boxes of paper, 10 pens, and 5 notebooks. The order should arrive by Wednesday. Please check the supplies when they arrive and let me know if anything is missing.\n\nSarah",
     "image": "https://images.pexels.com/photos/7657973/pexels-photo-7657973.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1848,12 +1848,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "How long will the main elevator be out of service?",
     "choices": [
-      "All day Saturday",
       "From 8:00 a.m. to 12:00 p.m.",
-      "From 8:00 a.m. to 5:00 p.m.",
-      "The entire weekend"
+      "The entire weekend",
+      "All day Saturday",
+      "From 8:00 a.m. to 5:00 p.m."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Le memo indique que l'ascenseur principal ne fonctionnera pas « from 8:00 a.m. to 12:00 p.m. », soit de 8h à midi. La bonne réponse est donc cette plage horaire.",
     "passage": "To: All Staff\nFrom: Building Management\nSubject: Elevator Maintenance\n\nPlease be advised that the main elevator will not be in service on Saturday, July 8, from 8:00 a.m. to 12:00 p.m. The back elevator will still be available. We are sorry for any inconvenience.",
     "image": "https://images.pexels.com/photos/29502230/pexels-photo-29502230.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1867,12 +1867,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "How many new employees will attend the training?",
     "choices": [
-      "About 10",
       "About 12",
       "About 15",
+      "About 10",
       "About 20"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Robert écrit : « About 12 new employees will attend. » Environ 12 nouveaux employés assisteront à la session de formation.",
     "passage": "To: Maria Santos\nFrom: Robert White\nSubject: Training Session\n\nDear Maria,\n\nThank you for agreeing to lead the training session for new employees on August 15. The session will take place in Conference Room B from 2:00 p.m. to 4:00 p.m. About 12 new employees will attend. Please prepare a short presentation and some handouts.\n\nRobert",
     "image": "https://images.pexels.com/photos/5324985/pexels-photo-5324985.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1886,12 +1886,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What should employees do if they have problems resetting their password?",
     "choices": [
-      "Send an email to the IT Department",
       "Call the IT help desk at extension 200",
+      "Send an email to the IT Department",
       "Visit the IT office in person",
       "Ask a colleague for help"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Le memo dit : « please call the IT help desk at extension 200. » En cas de problème, les employés doivent appeler le support informatique au poste 200.",
     "passage": "To: All Staff\nFrom: IT Department\nSubject: Password Reset\n\nAll employees must reset their computer passwords by the end of this week. To reset your password, go to the company website and click on \"My Account.\" If you have any problems, please call the IT help desk at extension 200.",
     "image": "https://images.pexels.com/photos/8247921/pexels-photo-8247921.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1905,12 +1905,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What will happen if a report is submitted after September 25?",
     "choices": [
-      "It will be accepted with a warning",
-      "It will be returned to the department head",
+      "It will be sent to Paul Nguyen",
       "It will not be accepted",
-      "It will be sent to Paul Nguyen"
+      "It will be returned to the department head",
+      "It will be accepted with a warning"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Le memo précise : « Late reports will not be accepted after September 25. » Les rapports envoyés après le 25 septembre ne seront pas acceptés.",
     "passage": "To: All Department Heads\nFrom: Finance Office\nSubject: Budget Reports\n\nPlease submit your department budget reports by Friday, September 22. Reports must be sent by email to finance@company.com. Late reports will not be accepted after September 25. If you need help with the report format, contact Paul Nguyen in the Finance Office.",
     "image": "https://images.pexels.com/photos/6693647/pexels-photo-6693647.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -1924,12 +1924,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "by",
+      "before",
       "for",
       "during",
-      "before"
+      "by"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "« By » indique une échéance limite : le rapport doit être soumis au plus tard vendredi après-midi. « Before » exprimerait « avant » sans inclure le moment précis comme limite.",
     "type": "fillblank",
     "sentence": "The report must be submitted _____ Friday afternoon at the latest."
@@ -1943,13 +1943,13 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "for",
       "by",
+      "during",
       "on",
-      "during"
+      "for"
     ],
     "answer": 2,
-    "explanation": "On utilise « on » devant une date précise ou un jour (on June 15). « During » s'emploie avec une période plus large (during the morning), mais avec une date précise on préfère « on ».",
+    "explanation": "« On » s'emploie devant « the morning/afternoon/evening of + date précise » (« on the morning of June 15 »). Ce n'est pas la date elle-même qui suit directement la préposition ici, mais l'expression « the morning of » tout entière.",
     "type": "fillblank",
     "sentence": "The training session will be held _____ the morning of June 15."
   },
@@ -1962,12 +1962,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "by",
       "before",
+      "by",
       "for",
       "during"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "« Before » + gérondif indique une action qui doit se faire avant une autre : « avant de signer ». « By » exprimerait une limite, pas une antériorité d'action.",
     "type": "fillblank",
     "sentence": "Please review the contract carefully _____ signing it."
@@ -1981,12 +1981,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "for",
-      "by",
       "during",
-      "before"
+      "before",
+      "by",
+      "for"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "« For » indique ici le destinataire ou le bénéficiaire : la mise à jour sera disponible « pour » tous les employés.",
     "type": "fillblank",
     "sentence": "The new software update will be available _____ all employees next week."
@@ -2001,11 +2001,11 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "For",
-      "By",
       "During",
-      "Before"
+      "Before",
+      "By"
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "« During » signifie « pendant » et s'emploie avec un événement ou une période : « pendant la réunion ». Les responsables ont exprimé leurs préoccupations au cours de la réunion.",
     "type": "fillblank",
     "sentence": "_____ the meeting, several department heads raised concerns about the budget."
@@ -2019,12 +2019,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "by",
-      "before",
+      "during",
       "for",
-      "during"
+      "before",
+      "by"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "« Before » indique l'antériorité : les frais doivent être approuvés « avant » que le voyage ne commence. « By » marquerait une échéance, pas une séquence chronologique.",
     "type": "fillblank",
     "sentence": "All travel expenses must be approved _____ the trip begins."
@@ -2038,12 +2038,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "by",
-      "for",
       "during",
-      "before"
+      "by",
+      "before",
+      "for"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "« For » exprime la durée de l'extension : prolonger « pour » une semaine supplémentaire. « By » indiquerait l'écart (extended by a week est possible), mais « for » est l'usage standard pour une durée ajoutée.",
     "type": "fillblank",
     "sentence": "The company has decided to extend the deadline _____ one additional week."
@@ -2057,12 +2057,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "for",
-      "during",
       "by",
-      "before"
+      "before",
+      "during",
+      "for"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "« By » indique une échéance limite : les travaux seront terminés « d'ici » la fin du troisième trimestre. C'est l'usage standard pour exprimer un deadline.",
     "type": "fillblank",
     "sentence": "The renovation work will be completed _____ the end of the third quarter."
@@ -2076,12 +2076,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "For",
       "During",
-      "By",
-      "Before"
+      "Before",
+      "For",
+      "By"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "« During » signifie « pendant » : pendant la coupure de courant, les générateurs de secours ont maintenu les serveurs en marche. On décrit un événement qui se déroule au cours d'une période.",
     "type": "fillblank",
     "sentence": "_____ the power outage, the backup generators kept the servers running smoothly."
@@ -2095,12 +2095,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
+      "for",
       "by",
       "during",
-      "for",
       "before"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "« Eligible for » est une colocation fixe : « éligible à » ou « éligible pour » une prime de performance. « For » relie l'adjectif « eligible » au bénéfice auquel on a droit.",
     "type": "fillblank",
     "sentence": "Employees are eligible _____ a performance bonus after completing one year of service."
@@ -2150,12 +2150,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What does the man suggest the woman do?",
     "choices": [
-      "Call a repair service",
-      "Use a different printer",
+      "Print the contracts later",
       "Buy a new printer",
-      "Print the contracts later"
+      "Use a different printer",
+      "Call a repair service"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'homme suggère : « Have you tried the one in the marketing department? It was fixed yesterday. » Il propose d'utiliser une autre imprimante.",
     "lines": [
       {
@@ -2186,12 +2186,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "When will the man finish the presentation?",
     "choices": [
-      "By Friday",
       "By Monday morning",
+      "Over the next week",
       "By Tuesday",
-      "Over the next week"
+      "By Friday"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'homme dit : « Yes, Monday morning should be fine. » Il terminera la présentation d'ici lundi matin.",
     "lines": [
       {
@@ -2223,11 +2223,11 @@ export const DEBUTANT_GEN = [
     "question": "Why is Mr. Tanaka unavailable?",
     "choices": [
       "He is traveling to Tokyo.",
-      "He is on a conference call.",
+      "He is out of the office.",
       "He is in a meeting with clients.",
-      "He is out of the office."
+      "He is on a conference call."
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'homme explique : « He's been on a conference call with the Tokyo office since nine. » M. Tanaka est en conférence téléphonique.",
     "lines": [
       {
@@ -2258,12 +2258,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What will the man do?",
     "choices": [
-      "Move to the third floor",
-      "Wait for the maintenance team",
       "Cancel his video call",
-      "Fix the air conditioning himself"
+      "Fix the air conditioning himself",
+      "Wait for the maintenance team",
+      "Move to the third floor"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'homme dit : « I'll just stay here and manage for now. » Il reste dans son bureau et attend, refusant de changer de bureau.",
     "lines": [
       {
@@ -2295,11 +2295,11 @@ export const DEBUTANT_GEN = [
     "question": "What will the speakers do after lunch?",
     "choices": [
       "Print the spreadsheet",
-      "Review the errors together",
+      "Recalculate the budget",
       "Send the file to the manager",
-      "Recalculate the budget"
+      "Review the errors together"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "La femme dit : « Let's look at it together after lunch. » Ils examineront les erreurs ensemble après le déjeuner.",
     "lines": [
       {
@@ -2330,12 +2330,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Who will the man likely ask to reschedule?",
     "choices": [
+      "His manager",
       "Ms. Chen",
       "Mr. Lopez",
-      "Both clients",
-      "His manager"
+      "Both clients"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "L'homme dit : « Mr. Lopez might be flexible since he's local. » Il demandera probablement à M. Lopez de reporter son rendez-vous.",
     "lines": [
       {
@@ -2366,12 +2366,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Why does the woman need a new password?",
     "choices": [
-      "She forgot her old password",
       "The security policy was updated",
+      "She forgot her old password",
       "Her account was hacked",
       "The database is down"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'homme explique : « the IT department updated the security policy. » La femme doit créer un nouveau mot de passe à cause de la mise à jour de la politique de sécurité.",
     "lines": [
       {
@@ -2402,12 +2402,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What does the man offer to do?",
     "choices": [
-      "Call the supplier again",
       "Check with another supplier",
+      "Call the supplier again",
       "Delay the new employees' start date",
       "Order desks instead of chairs"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'homme dit : « I could check with another supplier. There's one downtown that might have chairs in stock. » Il propose de contacter un autre fournisseur.",
     "lines": [
       {
@@ -2438,12 +2438,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What did the woman forget to do?",
     "choices": [
+      "Reserve equipment for the meeting",
       "Book the room in advance",
-      "Check the fifth floor",
       "Ask her manager for approval",
-      "Reserve equipment for the meeting"
+      "Check the fifth floor"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "La femme dit : « I only checked the third and fourth floors. » Elle n'a pas vérifié le cinquième étage, où l'homme suggère que la salle 502 est disponible.",
     "lines": [
       {
@@ -2474,12 +2474,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "Therefore",
-      "However",
       "Although",
-      "Unless"
+      "However",
+      "Unless",
+      "Therefore"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "« Therefore » indique une conséquence logique : l'installation du logiciel entraîne l'obligation de formation. Les autres options ne créent pas ce lien de cause à effet.",
     "type": "fillblank",
     "sentence": "The new accounting software will be installed next week. _____, all employees must complete a short training session before using it."
@@ -2494,9 +2494,9 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "As a result",
-      "On the other hand",
+      "In spite of",
       "Even though",
-      "In spite of"
+      "On the other hand"
     ],
     "answer": 0,
     "explanation": "« As a result » exprime la conséquence : son expérience et son respect expliquent pourquoi elle a été choisie. Les autres connecteurs ne conviennent pas au sens de la phrase.",
@@ -2512,12 +2512,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "However",
-      "Therefore",
       "Similarly",
-      "For example"
+      "For example",
+      "However",
+      "Therefore"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "« However » introduit un contraste : lundi et mercredi sont libres, mais mardi est déjà pris. Les autres options ne marquent pas cette opposition.",
     "type": "fillblank",
     "sentence": "The conference room is available on Monday and Wednesday. _____, Tuesday is already reserved for the budget meeting."
@@ -2531,12 +2531,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
+      "unless",
       "but",
       "so",
-      "because",
-      "unless"
+      "because"
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "« But » introduit une opposition entre le fait qu'il y a eu plusieurs candidats et le constat qu'aucun ne remplissait toutes les conditions. Les autres conjonctions ne correspondent pas au sens.",
     "type": "fillblank",
     "sentence": "Several candidates were interviewed for the sales manager position, _____ none of them met all the required qualifications."
@@ -2551,9 +2551,9 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "since",
+      "therefore",
       "unless",
-      "although",
-      "therefore"
+      "although"
     ],
     "answer": 0,
     "explanation": "« Since » introduit la raison du prolongement de la date limite. « Unless », « although » et « therefore » ne conviennent pas au contexte de justification.",
@@ -2569,12 +2569,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "Otherwise",
-      "Therefore",
       "Nevertheless",
-      "Similarly"
+      "Similarly",
+      "Otherwise",
+      "Therefore"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "« Otherwise » signifie « sinon » et indique la conséquence si l'instruction n'est pas respectée. Les autres connecteurs n'expriment pas cette condition implicite.",
     "type": "fillblank",
     "sentence": "Please submit your expense reports by Friday. _____, late submissions will not be reimbursed until the following month."
@@ -2588,12 +2588,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "Although",
+      "Therefore",
       "Because",
-      "Since",
-      "Therefore"
+      "Although",
+      "Since"
     ],
-    "answer": 0,
+    "answer": 2,
     "explanation": "« Although » introduit une concession : le coût initial est élevé, mais l'investissement reste rentable à long terme. « Because » et « since » indiqueraient une cause, ce qui ne correspond pas.",
     "type": "fillblank",
     "sentence": "_____ the initial cost of the equipment is high, the long-term savings on energy bills make it a worthwhile investment."
@@ -2607,12 +2607,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "In addition",
       "However",
+      "Despite",
       "Instead",
-      "Despite"
+      "In addition"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "« In addition » ajoute une information complémentaire aux avantages déjà cités. « However » marquerait un contraste, et « Despite » est une préposition, pas un connecteur de phrase.",
     "type": "fillblank",
     "sentence": "The hotel offers free breakfast and a fitness center. _____, guests can enjoy discounted tickets to the nearby museum."
@@ -2626,12 +2626,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Choisissez la bonne réponse.",
     "choices": [
-      "yet",
-      "so",
       "because",
-      "if"
+      "so",
+      "if",
+      "yet"
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "« Yet » introduit un contraste entre la confirmation du fournisseur et l'absence de mouvement dans le suivi. « So » indiquerait une conséquence, ce qui ne correspond pas.",
     "type": "fillblank",
     "sentence": "The supplier confirmed that the shipment would arrive on Thursday, _____ the tracking information still shows no movement."
@@ -2646,8 +2646,8 @@ export const DEBUTANT_GEN = [
     "question": "Choisissez la bonne réponse.",
     "choices": [
       "In fact",
-      "However",
       "For example",
+      "However",
       "On the contrary"
     ],
     "answer": 0,
@@ -2664,12 +2664,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Why is the third-floor conference room closed?",
     "choices": [
-      "It is being painted.",
-      "It is too small for meetings.",
       "It is being cleaned.",
-      "It is under repair."
+      "It is too small for meetings.",
+      "It is under repair.",
+      "It is being painted."
     ],
-    "answer": 0,
+    "answer": 3,
     "explanation": "L'avis indique clairement que la salle de conférence du troisième étage sera fermée pour être peinte (« closed for painting »).",
     "passage": "NOTICE\nThe third-floor conference room will be closed for painting on Friday, June 14. Meetings scheduled for that day have been moved to Room 210 on the second floor. Please contact the facilities office with any questions.",
     "image": "https://images.pexels.com/photos/20390772/pexels-photo-20390772.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -2683,12 +2683,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What has changed about the 10:15 AM train?",
     "choices": [
+      "Its ticket price.",
       "Its departure time.",
       "Its destination.",
-      "Its departure platform.",
-      "Its ticket price."
+      "Its departure platform."
     ],
-    "answer": 2,
+    "answer": 3,
     "explanation": "L'annonce précise que le train partira du quai 4 et non du quai 2 comme annoncé précédemment. C'est donc le quai de départ qui a changé.",
     "passage": "PUBLIC ANNOUNCEMENT\nThe 10:15 AM train to Manchester will depart from Platform 4, not Platform 2 as previously announced. Passengers should allow extra time to reach the correct platform. We apologize for any inconvenience.",
     "image": "https://images.pexels.com/photos/5868296/pexels-photo-5868296.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -2702,12 +2702,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What is offered to the first 50 customers?",
     "choices": [
-      "A 30% discount on all items.",
       "A free gift.",
       "Free parking behind the building.",
-      "A free delivery service."
+      "A free delivery service.",
+      "A 30% discount on all items."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "La publicité indique que les 50 premiers clients recevront un cadeau gratuit (« The first 50 customers will receive a free gift »).",
     "passage": "GRAND OPENING SALE\nBright Home Furniture is opening a new store on Oak Street! Visit us on Saturday, July 6, and enjoy 30% off all living room furniture. The first 50 customers will receive a free gift. Free parking is available behind the building.",
     "image": "https://images.pexels.com/photos/3345876/pexels-photo-3345876.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -2722,11 +2722,11 @@ export const DEBUTANT_GEN = [
     "question": "When will the cafeteria reopen?",
     "choices": [
       "On Monday, May 20.",
-      "On Tuesday, May 21.",
       "On Wednesday, May 22.",
-      "On Friday, May 24."
+      "On Friday, May 24.",
+      "On Tuesday, May 21."
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'avis précise que le service normal de la cafétéria reprendra le mardi 21 mai (« Normal cafeteria service will resume on Tuesday, May 21 »).",
     "passage": "NOTICE TO ALL EMPLOYEES\nThe company cafeteria will be closed on Monday, May 20, for equipment maintenance. Vending machines on the first floor will remain available. Normal cafeteria service will resume on Tuesday, May 21.",
     "image": "https://images.pexels.com/photos/5016678/pexels-photo-5016678.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -2740,12 +2740,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What should employees in the west wing do if they need water during the shutdown?",
     "choices": [
-      "Use the restrooms on the east wing.",
       "Go to the kitchen on the second floor.",
-      "Wait until 1:00 PM.",
-      "Bring water from home."
+      "Use the restrooms on the east wing.",
+      "Bring water from home.",
+      "Wait until 1:00 PM."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'avis recommande aux employés qui ont besoin d'eau pendant la coupure d'utiliser la cuisine au deuxième étage (« should use the kitchen on the second floor »).",
     "passage": "NOTICE\nDue to a water pipe repair, water service in the west wing of the building will be shut off on Wednesday from 9:00 AM to 1:00 PM. Restrooms on the east wing will remain open. Employees who need water during this time should use the kitchen on the second floor.",
     "image": "https://images.pexels.com/photos/6419128/pexels-photo-6419128.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -2759,10 +2759,10 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What is changing starting June 1?",
     "choices": [
-      "Sunday opening hours.",
       "The cost of library cards.",
+      "The library's address.",
       "Saturday closing time.",
-      "The library's address."
+      "Sunday opening hours."
     ],
     "answer": 2,
     "explanation": "L'annonce précise que le samedi, la bibliothèque fermera à 18h au lieu de 17h. Ce sont donc les horaires de fermeture du samedi qui changent. Les horaires du dimanche restent inchangés.",
@@ -2778,10 +2778,10 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What benefit do new members receive if they join before July 15?",
     "choices": [
-      "A discount on monthly fees.",
       "Free personal training for one year.",
+      "Unlimited access to all classes.",
       "One free personal training session and no registration fee.",
-      "Unlimited access to all classes."
+      "A discount on monthly fees."
     ],
     "answer": 2,
     "explanation": "La publicité indique deux avantages pour les nouveaux membres qui s'inscrivent avant le 15 juillet : pas de frais d'inscription (économie de 50 $) et une séance d'entraînement personnel gratuite.",
@@ -2797,12 +2797,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What will happen to vehicles left in the Building A lot after Sunday evening?",
     "choices": [
-      "They will be moved to the visitor lot.",
       "They will be towed at the owner's expense.",
-      "They will be parked on Maple Avenue.",
-      "They will be covered by the shuttle service."
+      "They will be moved to the visitor lot.",
+      "They will be covered by the shuttle service.",
+      "They will be parked on Maple Avenue."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "L'avis précise que les véhicules laissés dans le parking du bâtiment A après dimanche soir seront remorqués aux frais du propriétaire (« will be towed at the owner's expense »).",
     "passage": "NOTICE\nThe parking lot behind Building A will be resurfaced from Monday, August 12 through Wednesday, August 14. During this period, employees should park in the visitor lot on Maple Avenue or use the free shuttle from the downtown station. Vehicles left in the Building A lot after Sunday evening will be towed at the owner's expense.",
     "image": "https://images.pexels.com/photos/11564532/pexels-photo-11564532.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940"
@@ -2817,11 +2817,11 @@ export const DEBUTANT_GEN = [
     "question": "Why is the caller contacting the listener?",
     "choices": [
       "To confirm a payment",
-      "To report a delivery delay",
       "To cancel an order",
+      "To report a delivery delay",
       "To request a price quote"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "Karen Lewis indique clairement que la commande a été retardée de deux jours (« your order has been delayed by two days »). La raison de l'appel est donc de signaler un retard de livraison.",
     "transcript": "Hi, this is Karen Lewis from the shipping department. I'm calling to let you know that your order has been delayed by two days. Please call me back at extension 3401 to confirm a new delivery date.",
     "voiceGender": "female",
@@ -2836,12 +2836,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What does the caller ask the listener to do?",
     "choices": [
-      "Bring the printer to the office",
-      "Call the supplier directly",
       "Email the printer model number",
-      "Pay for the replacement part"
+      "Bring the printer to the office",
+      "Pay for the replacement part",
+      "Call the supplier directly"
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "Tom Bradley demande explicitement à l'auditeur de lui envoyer par e-mail le numéro du modèle de l'imprimante (« Could you please email me the model number of your printer »).",
     "transcript": "Hello, this is Tom Bradley from IT Support. I tried to fix your printer this morning, but I need a replacement part. Could you please email me the model number of your printer so I can order it today?",
     "voiceGender": "male",
@@ -2856,10 +2856,10 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "What does the caller want the listener to do?",
     "choices": [
-      "Attend a training session",
+      "Update a contact list",
       "Submit a benefits form",
       "Schedule a meeting",
-      "Update a contact list"
+      "Attend a training session"
     ],
     "answer": 1,
     "explanation": "Maria Gomez rappelle que le formulaire d'inscription aux avantages sociaux doit être rendu ce vendredi et demande de passer au bureau pour le déposer (« submit it »).",
@@ -2876,12 +2876,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Who is the caller?",
     "choices": [
-      "An interior designer",
-      "A construction company representative",
       "A real estate agent",
-      "A furniture supplier"
+      "A furniture supplier",
+      "An interior designer",
+      "A construction company representative"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "L'appelant se présente comme David Chen d'Apex Construction (« from Apex Construction »). C'est donc un représentant d'une entreprise de construction.",
     "transcript": "Hi, this is David Chen from Apex Construction. I'm returning your call about the kitchen renovation project. Could you please send me the updated floor plans by email so we can start the estimate?",
     "voiceGender": "male",
@@ -2898,8 +2898,8 @@ export const DEBUTANT_GEN = [
     "choices": [
       "To schedule a meeting on Wednesday",
       "To review and correct a document",
-      "To approve a budget increase",
-      "To submit a new expense report"
+      "To submit a new expense report",
+      "To approve a budget increase"
     ],
     "answer": 1,
     "explanation": "Janet Park demande à l'auditeur de revoir le document joint et de lui envoyer les corrections d'ici mercredi (« review the attached document and send me any corrections »).",
@@ -2917,11 +2917,11 @@ export const DEBUTANT_GEN = [
     "question": "What is the purpose of the call?",
     "choices": [
       "To offer a job position",
-      "To arrange a follow-up interview",
       "To reject a job application",
-      "To discuss a marketing campaign"
+      "To discuss a marketing campaign",
+      "To arrange a follow-up interview"
     ],
-    "answer": 1,
+    "answer": 3,
     "explanation": "Robert King précise qu'il souhaite organiser un deuxième entretien (« I'd like to schedule a follow-up interview »). Le but de l'appel est donc d'arranger un entretien de suivi.",
     "transcript": "Hi, this is Robert King from King & Associates. I'm calling about the marketing position we discussed last week. I'd like to schedule a follow-up interview. Please give me a call back at 555-0192 to arrange a time that works for you.",
     "voiceGender": "male"
@@ -2935,12 +2935,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What must the listener do regarding the package?",
     "choices": [
-      "Sign for it online",
       "Pick it up before 11:30 or request home delivery",
+      "Ask a colleague to sign for it",
       "Wait until tomorrow to collect it",
-      "Ask a colleague to sign for it"
+      "Sign for it online"
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Lisa Murphy explique que le colis nécessite une signature et que le bureau ferme à midi. Elle propose deux options : venir le chercher avant 11h30 ou appeler pour une livraison à domicile (« pick it up before 11:30 or call us to arrange delivery to your home address »).",
     "transcript": "Good morning, this is Lisa Murphy from the front desk. A package arrived for you this morning, but it requires a signature. Unfortunately, our office closes at noon today. Please pick it up before 11:30 or call us to arrange delivery to your home address.",
     "voiceGender": "female",
@@ -2955,12 +2955,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "What does the caller want the listener to do?",
     "choices": [
+      "Visit the catering office in person",
       "Approve the menu immediately",
       "Return the call to arrange a time to review the proposal",
-      "Visit the catering office in person",
       "Send a guest list by email"
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "James Wilson a préparé une proposition de menu et souhaite en discuter. Il demande à l'auditeur de le rappeler pour fixer un rendez-vous (« return my call at your convenience to set up a time »).",
     "transcript": "Hello, this is James Wilson from Wilson Catering. I'm following up on your inquiry about the company event next month. I've prepared a menu proposal and would like to go over it with you. Could you please return my call at your convenience to set up a time?",
     "voiceGender": "male",
@@ -2975,12 +2975,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is typing on a laptop.",
       "A woman is reading a newspaper.",
-      "A woman is answering the phone.",
-      "A woman is writing on a whiteboard."
+      "A woman is typing on a laptop.",
+      "A woman is writing on a whiteboard.",
+      "A woman is answering the phone."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "La femme tape sur un ordinateur portable, donc (A) est correcte. (B) est incorrecte car il n'y a pas de journal. (C) est incorrecte car elle ne téléphone pas. (D) est incorrecte car elle n'écrit pas sur un tableau.",
     "transcript": "(A) A woman is typing on a laptop. (B) A woman is reading a newspaper. (C) A woman is answering the phone. (D) A woman is writing on a whiteboard.",
     "voiceGender": "female",
@@ -2995,12 +2995,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
+      "A bus is being loaded with luggage.",
       "A bus is driving on a highway.",
       "A bus is parked at the side of a road.",
-      "A bus is being loaded with luggage.",
       "A bus is crossing a bridge."
     ],
-    "answer": 1,
+    "answer": 2,
     "explanation": "Le bus est stationné au bord de la route, donc (B) est correcte. (A) est incorrecte car le bus n'est pas en mouvement sur une autoroute. (C) est incorrecte car on ne voit pas de chargement de bagages. (D) est incorrecte car il n'y a pas de pont.",
     "transcript": "(A) A bus is driving on a highway. (B) A bus is parked at the side of a road. (C) A bus is being loaded with luggage. (D) A bus is crossing a bridge.",
     "voiceGender": "male",
@@ -3015,10 +3015,10 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
+      "People are cleaning tables after a meal.",
       "People are cooking in a kitchen.",
-      "People are ordering food at a counter.",
       "People are eating at a restaurant table.",
-      "People are cleaning tables after a meal."
+      "People are ordering food at a counter."
     ],
     "answer": 2,
     "explanation": "Les personnes sont assises à une table de restaurant en train de manger, donc (C) est correcte. (A) est incorrecte car personne ne cuisine. (B) est incorrecte car ils ne passent pas commande au comptoir. (D) est incorrecte car personne ne nettoie les tables.",
@@ -3035,12 +3035,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is paying at a cash register.",
-      "A woman is arranging items on a shelf.",
       "A woman is pushing a shopping cart in a grocery store.",
-      "A woman is bagging groceries for a customer."
+      "A woman is paying at a cash register.",
+      "A woman is bagging groceries for a customer.",
+      "A woman is arranging items on a shelf."
     ],
-    "answer": 2,
+    "answer": 0,
     "explanation": "La femme pousse un chariot dans un supermarché, donc (C) est correcte. (A) est incorrecte car elle ne paie pas à la caisse. (B) est incorrecte car elle ne range pas d'articles sur une étagère. (D) est incorrecte car elle n'emballe pas les courses d'un client.",
     "transcript": "(A) A woman is paying at a cash register. (B) A woman is arranging items on a shelf. (C) A woman is pushing a shopping cart in a grocery store. (D) A woman is bagging groceries for a customer.",
     "voiceGender": "male",
@@ -3055,12 +3055,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "Some men are painting a wall.",
       "Some men are reviewing blueprints at a construction site.",
-      "Some men are loading materials onto a truck.",
-      "Some men are repairing a roof."
+      "Some men are repairing a roof.",
+      "Some men are painting a wall.",
+      "Some men are loading materials onto a truck."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Les hommes examinent des plans sur un chantier de construction, donc (B) est correcte. (A) est incorrecte car ils ne peignent pas un mur. (C) est incorrecte car ils ne chargent pas de matériaux sur un camion. (D) est incorrecte car ils ne réparent pas un toit.",
     "transcript": "(A) Some men are painting a wall. (B) Some men are reviewing blueprints at a construction site. (C) Some men are loading materials onto a truck. (D) Some men are repairing a roof.",
     "voiceGender": "female",
@@ -3077,8 +3077,8 @@ export const DEBUTANT_GEN = [
     "choices": [
       "A train is arriving at a station platform.",
       "A train is departing from a tunnel.",
-      "A train is being washed at a depot.",
-      "A train is parked inside a garage."
+      "A train is parked inside a garage.",
+      "A train is being washed at a depot."
     ],
     "answer": 0,
     "explanation": "Le train arrive sur le quai d'une gare, donc (A) est correcte. (B) est incorrecte car le train ne sort pas d'un tunnel. (C) est incorrecte car le train n'est pas en cours de lavage. (D) est incorrecte car il ne s'agit pas d'un garage.",
@@ -3095,12 +3095,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A waiter is washing dishes in a sink.",
-      "A waiter is setting a table with napkins.",
+      "A waiter is sweeping the floor of a cafe.",
       "A waiter is serving coffee to a customer.",
-      "A waiter is sweeping the floor of a cafe."
+      "A waiter is washing dishes in a sink.",
+      "A waiter is setting a table with napkins."
     ],
-    "answer": 2,
+    "answer": 1,
     "explanation": "Le serveur sert du café à un client, donc (C) est correcte. (A) est incorrecte car il ne fait pas la vaisselle. (B) est incorrecte car il ne dresse pas une table avec des serviettes. (D) est incorrecte car il ne balaye pas le sol.",
     "transcript": "(A) A waiter is washing dishes in a sink. (B) A waiter is setting a table with napkins. (C) A waiter is serving coffee to a customer. (D) A waiter is sweeping the floor of a cafe.",
     "voiceGender": "female",
@@ -3115,12 +3115,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "Colleagues are having a meeting around a table with a presentation screen.",
       "Colleagues are eating lunch in a cafeteria.",
-      "Colleagues are packing boxes in a warehouse.",
-      "Colleagues are walking through a parking lot."
+      "Colleagues are having a meeting around a table with a presentation screen.",
+      "Colleagues are walking through a parking lot.",
+      "Colleagues are packing boxes in a warehouse."
     ],
-    "answer": 0,
+    "answer": 1,
     "explanation": "Les collègues tiennent une réunion autour d'une table avec un écran de présentation, donc (A) est correcte. (B) est incorrecte car ils ne déjeunent pas dans une cafétéria. (C) est incorrecte car ils n'empaquent pas de cartons. (D) est incorrecte car ils ne traversent pas un parking.",
     "transcript": "(A) Colleagues are having a meeting around a table with a presentation screen. (B) Colleagues are eating lunch in a cafeteria. (C) Colleagues are packing boxes in a warehouse. (D) Colleagues are walking through a parking lot.",
     "voiceGender": "female",
@@ -3135,12 +3135,12 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "Bicycles are being ridden along a bike path.",
       "Bicycles are parked in a rack on a sidewalk.",
       "Bicycles are hanging from a ceiling hook.",
+      "Bicycles are being ridden along a bike path.",
       "Bicycles are being repaired in a shop."
     ],
-    "answer": 1,
+    "answer": 0,
     "explanation": "Les vélos sont stationnés dans un support sur un trottoir, donc (B) est correcte. (A) est incorrecte car personne ne pédale sur une piste cyclable. (C) est incorrecte car les vélos ne sont pas suspendus au plafond. (D) est incorrecte car les vélos ne sont pas en réparation dans un atelier.",
     "transcript": "(A) Bicycles are being ridden along a bike path. (B) Bicycles are parked in a rack on a sidewalk. (C) Bicycles are hanging from a ceiling hook. (D) Bicycles are being repaired in a shop.",
     "voiceGender": "male",

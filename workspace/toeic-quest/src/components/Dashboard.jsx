@@ -24,7 +24,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
           <div className="flex flex-col sm:flex-row items-center gap-6">
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2">
-                <Badge className="bg-primary/10 text-primary border-0">TOEIC QUEST</Badge>
+                <Badge className="bg-primary/10 text-primary border-0">YES I CAN TOEIC</Badge>
               </div>
               <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-balance">
                 {state.totalSessions === 0 ? "Bienvenue, futur champion du TOEIC." : "Bon retour, champion."}

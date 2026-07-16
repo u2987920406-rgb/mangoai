@@ -67,15 +67,26 @@ export function isModulePlayable(moduleId) {
   return availableForModule(moduleId) >= MIN_PLAYABLE;
 }
 
+// Écarte les questions déjà vues (`seenIds`) d'un pool, MAIS seulement si le
+// reste suffit encore à couvrir `n` — sinon on préfère rejouer plutôt que de
+// livrer une session tronquée (repli complet, comportement historique).
+function preferUnseen(pool, seenIds, n) {
+  if (!seenIds || !seenIds.length) return pool;
+  const seen = new Set(seenIds);
+  const unseen = pool.filter((q) => !seen.has(q.id));
+  return unseen.length >= n ? unseen : pool;
+}
+
 // Construit une session de `n` questions pour un module.
-//  - module normal : questions du module, mélangées.
+//  - module normal : questions du module, mélangées (dé-priorise les questions
+//    déjà vues via `seenIds` quand le pool restant est assez large).
 //  - module « mixed » (bilan/examen) : échantillon réparti sur les parties du niveau.
-export function buildSession(moduleId, n = 10) {
+export function buildSession(moduleId, n = 10, seenIds = []) {
   const mod = getModule(moduleId);
   if (!mod) return [];
 
   if (drawsFromLevel(mod)) {
-    const pool = levelPool(mod);
+    const pool = preferUnseen(levelPool(mod), seenIds, n);
     // Répartit en visant la diversité des parties, puis complète au hasard.
     const byPart = {};
     for (const q of shuffle(pool)) {
@@ -92,7 +103,8 @@ export function buildSession(moduleId, n = 10) {
     return picked.slice(0, n);
   }
 
-  return shuffle(getByModule(moduleId)).slice(0, n);
+  const pool = preferUnseen(getByModule(moduleId), seenIds, n);
+  return shuffle(pool).slice(0, n);
 }
 
 // ── Session « mode libre » : échantillon PLAFONNÉ (jamais la banque entière) ──

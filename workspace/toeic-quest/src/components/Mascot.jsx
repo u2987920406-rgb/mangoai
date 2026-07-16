@@ -1,79 +1,53 @@
-// ─── Mascotte TOEIC QUEST — Mango le personnage ──────────────────────────────
-// Un petit personnage mangue stylisé en SVG qui réagit selon l'humeur.
+// ─── Badge d'ambiance — orbe glossy dégradé corail/ambre ─────────────────────
+// Remplace l'ancienne mascotte-mangue : un repère visuel léger et cohérent avec
+// l'identité "Yes I Can Toeic" (cartes blanches, halo diffus, orbes glossy),
+// sans personnage anthropomorphe. Même signature (mood/size/className) que
+// l'ancien composant pour ne rien casser dans les 8 sites d'appel existants.
+
+const MOOD_GLYPH = {
+  happy: "M 34 52 L 46 64 L 70 38",
+  excited: "M 34 52 L 46 64 L 70 38",
+  sad: "M 36 40 v 24 M 64 40 v 24",
+  thinking: "M 36 52 h 12 M 52 52 h 12 M 68 52 h 8",
+  celebrating: "M 52 30 L 58 46 L 75 46 L 61 56 L 66 73 L 52 62 L 38 73 L 43 56 L 29 46 L 46 46 Z",
+};
+
+const MOOD_GRADIENT = {
+  happy: ["#ff8a6e", "#ff6f57"],
+  excited: ["#ffb648", "#ff8a6e"],
+  sad: ["#c7bfc9", "#a89fb0"],
+  thinking: ["#9a8cf2", "#7c6ce0"],
+  celebrating: ["#ffb648", "#ff6f57"],
+};
 
 export function Mascot({ mood = "happy", size = 120, className = "" }) {
-  const eyeY = mood === "happy" ? 58 : mood === "sad" ? 62 : 58;
-  const mouthPath = {
-    happy: "M 55 78 Q 70 92 85 78",
-    excited: "M 52 76 Q 70 100 88 76",
-    sad: "M 55 88 Q 70 74 85 88",
-    thinking: "M 58 82 L 82 82",
-    celebrating: "M 50 74 Q 70 105 90 74",
-  };
-
-  const cheekOpacity = mood === "happy" || mood === "excited" || mood === "celebrating" ? 0.5 : 0;
+  const [from, to] = MOOD_GRADIENT[mood] || MOOD_GRADIENT.happy;
+  const glyph = MOOD_GLYPH[mood] || MOOD_GLYPH.happy;
+  const gradientId = `orbGradient-${mood}`;
   const bounceClass = mood === "excited" || mood === "celebrating" ? "animate-bounce-in" : "";
 
   return (
     <div className={`inline-block ${bounceClass} ${className}`} style={{ width: size, height: size }}>
-      <svg viewBox="0 0 140 140" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
-        {/* Leaf on top */}
-        <path d="M 70 18 Q 60 5 50 8 Q 55 18 62 22 Q 55 12 70 18 Q 85 12 78 22 Q 85 18 90 8 Q 80 5 70 18" fill="#4ade80" />
-        <path d="M 70 18 L 70 28" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" />
-
-        {/* Body — mango shape */}
-        <ellipse cx="70" cy="78" rx="48" ry="52" fill="#F2A33C" />
-        <ellipse cx="70" cy="78" rx="48" ry="52" fill="url(#mangoGradient)" />
-        {/* Highlight */}
-        <ellipse cx="52" cy="58" rx="14" ry="20" fill="#fff" opacity="0.25" />
-
-        {/* Cheeks */}
-        <circle cx="42" cy="78" r="7" fill="#E8624A" opacity={cheekOpacity} />
-        <circle cx="98" cy="78" r="7" fill="#E8624A" opacity={cheekOpacity} />
-
-        {/* Eyes */}
-        {mood === "thinking" ? (
-          <>
-            <line x1="50" y1={eyeY} x2="62" y2={eyeY} stroke="#3c3c3c" strokeWidth="3" strokeLinecap="round" />
-            <line x1="78" y1={eyeY} x2="90" y2={eyeY} stroke="#3c3c3c" strokeWidth="3" strokeLinecap="round" />
-          </>
-        ) : mood === "sad" ? (
-          <>
-            <path d={`M 50 ${eyeY + 4} Q 56 ${eyeY - 2} 62 ${eyeY + 4}`} stroke="#3c3c3c" strokeWidth="3" fill="none" strokeLinecap="round" />
-            <path d={`M 78 ${eyeY + 4} Q 84 ${eyeY - 2} 90 ${eyeY + 4}`} stroke="#3c3c3c" strokeWidth="3" fill="none" strokeLinecap="round" />
-          </>
-        ) : (
-          <>
-            <circle cx="56" cy={eyeY} r="5" fill="#3c3c3c" />
-            <circle cx="84" cy={eyeY} r="5" fill="#3c3c3c" />
-            <circle cx="58" cy={eyeY - 2} r="1.5" fill="#fff" />
-            <circle cx="86" cy={eyeY - 2} r="1.5" fill="#fff" />
-          </>
-        )}
-
-        {/* Mouth */}
-        <path d={mouthPath[mood] || mouthPath.happy} stroke="#3c3c3c" strokeWidth="3" fill="none" strokeLinecap="round" />
-
-        {/* Arms for celebrating */}
-        {(mood === "celebrating" || mood === "excited") && (
-          <>
-            <path d="M 22 70 Q 15 55 18 45" stroke="#F2A33C" strokeWidth="6" fill="none" strokeLinecap="round" />
-            <path d="M 118 70 Q 125 55 122 45" stroke="#F2A33C" strokeWidth="6" fill="none" strokeLinecap="round" />
-          </>
-        )}
-
+      <svg viewBox="0 0 104 104" width={size} height={size} fill="none" xmlns="http://www.w3.org/2000/svg">
         <defs>
-          <linearGradient id="mangoGradient" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#F8B850" />
-            <stop offset="100%" stopColor="#E89530" />
+          <linearGradient id={gradientId} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={from} />
+            <stop offset="100%" stopColor={to} />
           </linearGradient>
         </defs>
+        <circle cx="52" cy="52" r="48" fill={`url(#${gradientId})`} />
+        <ellipse cx="38" cy="34" rx="16" ry="10" fill="#fff" opacity="0.28" />
+        {mood === "celebrating" ? (
+          <path d={glyph} fill="#fff" opacity="0.95" />
+        ) : (
+          <path d={glyph} stroke="#fff" strokeWidth="6" strokeLinecap="round" strokeLinejoin="round" fill="none" opacity="0.95" />
+        )}
       </svg>
     </div>
   );
 }
 
-// ─── Message de la mascotte ──────────────────────────────────────────────────
+// ─── Message avec le badge d'ambiance ─────────────────────────────────────────
 export function MascotMessage({ mood, message, size = 100 }) {
   return (
     <div className="flex items-end gap-3">

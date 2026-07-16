@@ -1,5 +1,54 @@
 @import "tailwindcss";
 
+/* ── Polices auto-hébergées (public/fonts/) — plus de dépendance réseau à
+   fonts.googleapis.com, requis pour un fonctionnement hors-ligne (Capacitor).
+   Fichiers variables (axe wght complet par fichier) : un seul @font-face par
+   famille/subset couvre tout l'intervalle de graisses utilisé (400-900). ── */
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Fraunces";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/fraunces-latin-ext.woff2") format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/nunito-1.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/nunito-2.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/nunito-3.woff2") format("woff2");
+}
+@font-face {
+  font-family: "Nunito";
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url("/fonts/nunito-4.woff2") format("woff2");
+}
+
 /* ── Tokens shadcn/ui → Tailwind v4 ──────────────────────────────────────── */
 @theme {
   --color-background: hsl(var(--background));
@@ -22,8 +71,11 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
-  --color-mango: hsl(var(--mango));
+  --color-accent-primary: hsl(var(--accent-primary));
   --color-coral: hsl(var(--coral));
+  --color-amber: hsl(var(--amber));
+  --color-cyan: hsl(var(--cyan));
+  --color-violet: hsl(var(--violet));
   --color-listening: hsl(var(--listening));
   --color-reading: hsl(var(--reading));
   --color-vocab: hsl(var(--vocab));
@@ -33,13 +85,16 @@
   --radius-xl: calc(var(--radius) + 4px);
 }
 
-/* ── Variables CSS : thème TOEIC QUEST ───────────────────────────────────── */
+/* ── Variables CSS : thème YES I CAN TOEIC ───────────────────────────────── */
 @layer base {
   :root {
-    /* Mango accents */
-    --mango: 33 89% 60%;
-    --coral: 12 78% 56%;
-    /* Mode colors */
+    /* Accents de marque — famille corail (halo diffus, badges par fonction) */
+    --accent-primary: 11 92% 66%;
+    --coral: 8 88% 60%;
+    --amber: 36 100% 65%;
+    --cyan: 193 66% 57%;
+    --violet: 243 78% 76%;
+    /* Mode colors (indicateurs pédagogiques d'exercice, indépendants de la marque) */
     --listening: 199 83% 54%;
     --reading: 122 64% 40%;
     --vocab: 33 89% 60%;
@@ -57,11 +112,11 @@
     --secondary-foreground: 210 10% 23%;
     --muted: 210 16% 95%;
     --muted-foreground: 210 8% 45%;
-    --accent: 33 89% 60%;
-    /* Texte foncé sur l'orange vif = contraste AA (≈6.8:1) tout en gardant la vivacité */
+    --accent: 11 92% 66%;
+    /* Texte foncé sur le corail vif = contraste AA tout en gardant la vivacité */
     --accent-foreground: 210 10% 18%;
-    /* Orange foncé pour le TEXTE accent sur fond clair (liens « Jouer → », badges) — AA sur blanc */
-    --accent-strong: 27 95% 36%;
+    /* Corail foncé pour le TEXTE accent sur fond clair (liens « Jouer → », badges) — AA sur blanc */
+    --accent-strong: 9 70% 38%;
     --destructive: 0 78% 56%;
     --destructive-foreground: 0 0% 100%;
     --border: 210 16% 90%;
@@ -120,7 +175,7 @@
   from { opacity: 0; transform: translateX(40px); }
   to { opacity: 1; transform: translateX(0); }
 }
-@keyframes pulse-mango {
+@keyframes pulse-accent {
   0%, 100% { transform: scale(1); }
   50% { transform: scale(1.05); }
 }
@@ -155,7 +210,7 @@
 .animate-scale-in { animation: scaleIn 0.4s ease-out both; }
 .animate-bounce-in { animation: bounceIn 0.6s ease-out both; }
 .animate-slide-in-right { animation: slideInRight 0.4s ease-out both; }
-.animate-pulse-mango { animation: pulse-mango 2s ease-in-out infinite; }
+.animate-pulse-accent { animation: pulse-accent 2s ease-in-out infinite; }
 .animate-shake { animation: shake 0.4s ease-in-out; }
 .animate-pop { animation: pop 0.3s ease-out; }
 .animate-float { animation: float 3s ease-in-out infinite; }
@@ -196,7 +251,7 @@
 ::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground) / 0.6); }
 
 /* Focus visible */
-:focus-visible { outline: 2px solid hsl(var(--mango)); outline-offset: 2px; }
+:focus-visible { outline: 2px solid hsl(var(--accent-primary)); outline-offset: 2px; }
 
 /* ── Accessibilité : motion réduite ─────────────────────────────────────────
    Toute la chorégraphie (stagger, confettis, pulses) se désactive proprement. */
