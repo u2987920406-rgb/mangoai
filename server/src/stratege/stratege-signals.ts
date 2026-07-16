@@ -15,6 +15,8 @@
 export type BlockerClass =
   | "none" // pas de blocage (build vert + finish, rien à signaler)
   | "missing-dependency" // build : module/import introuvable
+  | "local-import-mismatch" // (2026-07-14) build : import/export LOCAL incohérent entre
+  // 2 fichiers écrits par l'Élève lui-même (fichier importé inexistant, ou export manquant)
   | "knowledge-gap" // build : usage d'API/lib erroné, sans s'être documenté
   | "wrong-tool" // tâtonnement sur le mauvais outil (run_command shell en boucle)
   | "repetitive-failure" // build cassé + réécritures en boucle sans résoudre l'erreur
@@ -27,6 +29,7 @@ export type BlockerClass =
 export const REMEDY_BY_CLASS: Record<BlockerClass, string> = {
   "none": "—",
   "missing-dependency": "add_dependency(<module>)",
+  "local-import-mismatch": "corrige l'import/export exact (fichier + symbole nommés dans le diagnostic)",
   "knowledge-gap": "chercher_web / lire_document / procédure #75",
   "wrong-tool": "réorienter vers read_file/edit_file (pas de shell pour lire)",
   "repetitive-failure": "changer d'approche : lire l'erreur exacte, se documenter (chercher_web) ou déléguer — ne pas re-patcher au hasard",
@@ -85,6 +88,31 @@ export function missingModuleName(detail: string): string | null {
   return null;
 }
 
+/** (2026-07-14) Détail d'une incohérence d'import/export LOCALE — 2 vraies erreurs Rollup
+ *  observées en réel (orbital-control, 2 échecs consécutifs) : un fichier importé qui
+ *  n'existe pas (`Could not resolve "./X" from "Y"`), ou une exportation absente
+ *  (`"X" is not exported by "Y", imported by "Z"`). PAS le même cas que missing-dependency
+ *  (un paquet npm) — `missingModuleName` exclut déjà les chemins relatifs/./ pour cette
+ *  raison, ce qui laissait ces erreurs tomber en « ambiguous » sans être jamais nommées. */
+export interface LocalImportMismatch {
+  kind: "unresolved" | "missing-export";
+  symbol?: string; // pour missing-export : le nom exporté manquant
+  target: string; // le fichier concerné (à corriger)
+  importer?: string; // le fichier qui importe, si l'erreur le précise
+}
+
+export function localImportMismatch(detail: string): LocalImportMismatch | null {
+  const exp = /["']([^"']+)["']\s+is not exported by\s+["']([^"']+)["'](?:,\s*imported by\s+["']([^"']+)["'])?/i.exec(detail);
+  if (exp) return { kind: "missing-export", symbol: exp[1], target: exp[2] as string, importer: exp[3] };
+
+  const unresolved =
+    /Could not resolve ["'](\.[^"']+)["'](?:\s+from\s+["']([^"']+)["'])?/i.exec(detail) ??
+    /Failed to resolve import ["'](\.[^"']+)["']\s+from\s+["']([^"']+)["']/i.exec(detail);
+  if (unresolved) return { kind: "unresolved", target: unresolved[1] as string, importer: unresolved[2] };
+
+  return null;
+}
+
 /** Signature d'une erreur d'USAGE (API mal employée) — pointe un manque de doc. */
 function looksLikeUsageError(detail: string): boolean {
   return /is not a function|is not defined|has no exported member|is not exported|TypeError:|undefined is not/i.test(detail);
@@ -120,6 +148,23 @@ export function diagnose(s: BlockerSymptoms): Diagnosis {
         evidence: "erreur de build : module/import introuvable",
         remedy: `add_dependency('${mod}')`,
         detail: mod,
+      };
+    }
+    const local = localImportMismatch(detail);
+    if (local) {
+      const cause =
+        local.kind === "missing-export"
+          ? `« ${local.importer ?? "un fichier"} » importe « ${local.symbol} » depuis « ${local.target} », mais ce fichier ne l'exporte pas`
+          : `« ${local.importer ?? "un fichier"} » importe « ${local.target} », qui n'existe pas`;
+      return {
+        blocker: "local-import-mismatch",
+        cause,
+        evidence:
+          local.kind === "missing-export"
+            ? `"${local.symbol}" is not exported by "${local.target}"`
+            : `Could not resolve "${local.target}"`,
+        remedy: REMEDY_BY_CLASS["local-import-mismatch"],
+        detail: local.target,
       };
     }
     // tâtonnement shell pour lire (Windows) : run_command répété

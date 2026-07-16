@@ -54,6 +54,7 @@ import { registerPerimeterRoutes } from "./perimeter-routes.js";
 import { loadPlan, replaceIncrements, markIncrementDone, loadFluxCounts } from "./project-plan.js";
 import { registerStripeRoutes } from "./stripe.js";
 import { registerCronRoutes } from "./cron-scheduler.js";
+import { registerControlBoardRoutes } from "./control-board-routes.js";
 import { registerMetricsDashboardRoutes } from "./metrics-dashboard.js";
 import { registerNotesRAGRoutes } from "./notes-rag.js";
 import { registerMultiProjectRoutes } from "./multi-project.js";
@@ -84,6 +85,7 @@ import { registerEstheteRoutes } from "./esthete-routes.js";
 import { ensureEstheteAgent } from "./esthete-agent.js";
 import { registerSelfEvolutionRoutes } from "./self/self-evolution-routes.js";
 import { startTasteNocturnalScheduler } from "./taste/taste-nocturnal.js";
+import { startBlackboardDecayScheduler } from "./kernel/kernel-blackboard-decay.js";
 import { prewarmVision } from "./vision-prewarm.js";
 import { sweepOrphanPreviews } from "./preview-sweep.js";
 import { lanIPv4s } from "./net.js";
@@ -197,6 +199,7 @@ registerFormationRoutes(app); // #181 É3 — POST /api/formation { sujet } (fir
 registerPerimeterRoutes(app);
 registerStripeRoutes(app);
 registerCronRoutes(app);
+registerControlBoardRoutes(app);
 registerMetricsDashboardRoutes(app);
 registerNotesRAGRoutes(app);
 registerAutoAblationRoutes(app);
@@ -243,6 +246,8 @@ const httpServer = app.listen(PORT, HOST, () => {
   void prewarmVision();
   // Curation de goût nocturne (#149 v2) — scheduler opt-in (config.enabled défaut false).
   startTasteNocturnalScheduler();
+  // Decay mémoire du Blackboard (harnais-2027 §2) — no-op tant que BLACKBOARD_TTL=off.
+  startBlackboardDecayScheduler();
   restoreAgents().catch((e) => console.warn("[agent-factory] restoreAgents:", e));
   // (Un, 2026-07-03) U4 — A0.2 : manifeste des magasins mémoire fichiers
   // (workspace/.memory-manifest.json). ensureManifest se gate déjà elle-même sur

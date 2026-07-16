@@ -4,6 +4,7 @@ import {
   parseStrategeClass,
   refinedDiagnosis,
   reclassifyAmbiguous,
+  consultRungWithVote,
   buildStrategeSystem,
   buildStrategeUser,
   BRAIN_CATALOGUE,
@@ -123,6 +124,46 @@ console.log("\n[8] prompts — catalogue fermé + symptômes injectés");
   check("user inclut la tâche", usr.includes("carte interactive"));
   check("user inclut la sortie de build", usr.includes("weird failure"));
   check("user borne le détail de build (≤ ~500)", buildStrategeUser({ ...SYMPTOMS, buildDetail: "x".repeat(5000) }).length < 1000);
+}
+
+console.log("\n[9] consultRungWithVote — self-consistency (N tirages + vote)");
+{
+  // 2/3 votes identiques (knowledge-gap) l'emportent sur 1 minoritaire (wrong-tool).
+  const { fn, calls } = fakeDispatch([
+    "CLASSE: knowledge-gap\nA",
+    "CLASSE: wrong-tool\nB",
+    "CLASSE: knowledge-gap\nC",
+  ]);
+  const r = await consultRungWithVote("stratege", "barreau 1 (local)", SYMPTOMS, fn, 3);
+  check("majorité 2/3 l'emporte", r.diagnosis?.blocker === "knowledge-gap");
+  check("3 appels en self-consistency", calls.length === 3);
+
+  // Égalité stricte (1 vs 1 vs 1, ou 1 vs 1 avec un null) → pas de majorité claire → null.
+  const { fn: fn2 } = fakeDispatch(["CLASSE: knowledge-gap\nA", "CLASSE: wrong-tool\nB", "CLASSE: inconnu"]);
+  const r2 = await consultRungWithVote("stratege", "barreau 1 (local)", SYMPTOMS, fn2, 3);
+  check("égalité (1/1, le reste inconnu) → null, pas de choix arbitraire", r2.diagnosis === null);
+
+  // Tous inconnus → null.
+  const { fn: fn3 } = fakeDispatch(["CLASSE: inconnu", "CLASSE: inconnu", "CLASSE: inconnu"]);
+  const r3 = await consultRungWithVote("stratege", "barreau 1 (local)", SYMPTOMS, fn3, 3);
+  check("aucune classe reconnue → null", r3.diagnosis === null);
+}
+
+console.log("\n[10] reclassifyAmbiguous — selfConsistency opt-in, défaut inchangé");
+{
+  // Défaut (selfConsistency absent) : UN SEUL appel, comportement historique préservé.
+  const { fn, calls } = fakeDispatch(["CLASSE: knowledge-gap\ndoc manquante"]);
+  const d = await reclassifyAmbiguous(SYMPTOMS, { dispatch: fn });
+  check("sans l'option, toujours 1 seul appel (pas de régression)", calls.length === 1);
+  check("diagnostic correct malgré l'ajout de l'option", d?.blocker === "knowledge-gap");
+
+  // Opt-in : 3 appels sur le barreau 1, vote de majorité.
+  const { fn: fnVote, calls: callsVote } = fakeDispatch([
+    "CLASSE: wandering\nA", "CLASSE: wandering\nB", "CLASSE: knowledge-gap\nC",
+  ]);
+  const dVote = await reclassifyAmbiguous(SYMPTOMS, { dispatch: fnVote, selfConsistency: true, voteN: 3 });
+  check("selfConsistency: true → 3 appels sur le barreau 1", callsVote.length === 3);
+  check("vote de majorité appliqué (2/3 wandering)", dVote?.blocker === "wandering");
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} stratege-brain : ${pass} ok, ${fail} ko`);

@@ -14,7 +14,7 @@ import "dotenv/config";
 // vraiment ce que tu fais (jamais recommandé).
 if (!process.env.ELEVE_CLOSURE_GATE) process.env.ELEVE_CLOSURE_GATE = "on";
 
-import { runFormationFabrique, realFabriqueDeps } from "../src/formation-fabrique.js";
+import { runFormationFabrique, realFabriqueDeps } from "../src/formation/formation-fabrique.js";
 
 function argFlag(args: string[], name: string): string | undefined {
   const pfx = `--${name}=`;

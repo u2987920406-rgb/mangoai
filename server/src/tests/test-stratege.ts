@@ -20,6 +20,10 @@ console.log("[1] routage par classe");
   const mdNo = route(diag("missing-dependency"), newStrategeState());
   check("missing-dependency sans detail → escalate", mdNo.kind === "escalate");
 
+  const lim = route({ ...diag("local-import-mismatch"), cause: "App.jsx importe X depuis Y, mais Y ne l'exporte pas" }, newStrategeState());
+  check("local-import-mismatch → nudge", lim.kind === "nudge");
+  check("… nudge cite la cause précise (fichier + symbole)", lim.kind === "nudge" && lim.nudge.includes("App.jsx importe X depuis Y"));
+
   const kg = route(diag("knowledge-gap"), newStrategeState());
   check("knowledge-gap → nudge (documente)", kg.kind === "nudge" && /chercher_web/.test(kg.nudge));
 

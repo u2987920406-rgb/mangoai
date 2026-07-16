@@ -85,6 +85,17 @@ export function installedNudge(pkg: string): string {
   return `✅ STRATÈGE — j'ai installé « ${pkg} » pour toi. L'import est maintenant résolu : reprends, vérifie le build et appelle \`finish\`.`;
 }
 
+/** (2026-07-14) Import/export LOCAL incohérent (2 fichiers écrits par l'Élève lui-même
+ *  ne s'accordent pas) — remède ULTRA-PRÉCIS au lieu du nudge générique "ambiguous" :
+ *  nomme exactement le fichier + le symbole en cause (déjà extraits par `diagnose()`),
+ *  pas de devinette à faire pour le modèle. */
+export function localImportNudge(d: Diagnosis): string {
+  return (
+    `⚠ STRATÈGE — ${d.cause}. Ouvre le(s) fichier(s) concerné(s), ajoute l'export manquant ` +
+    `(ou corrige l'import s'il visait autre chose), vérifie le build, puis appelle \`finish\`.`
+  );
+}
+
 /** (2026-07-14) Remise en question — le blocage RÉCIDIVE malgré le remède standard déjà
  *  appliqué. On ne redemande PAS la même chose : on nomme explicitement l'historique des
  *  tentatives (accumulation de connaissance dans le run) et on exige un ANGLE différent,
@@ -134,6 +145,8 @@ export function route(d: Diagnosis, state: StrategeState, opts: { planReminder?:
     case "missing-dependency":
       if (!d.detail) return { kind: "escalate", reason: "module manquant non identifié" };
       return { kind: "install-dependency", pkg: d.detail, nudge: installedNudge(d.detail) };
+    case "local-import-mismatch":
+      return { kind: "nudge", label: "corrige l'import/export local", nudge: localImportNudge(d) };
     case "knowledge-gap":
       return { kind: "nudge", label: "documente-toi (web)", nudge: knowledgeNudge() };
     case "plateau-iterations":

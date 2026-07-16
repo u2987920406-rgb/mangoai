@@ -136,6 +136,11 @@ export interface ReclassifyOpts {
   rung2?: AgentId;
   /** true → barreau 2 (cloud) autorisé si le barreau 1 échoue. Défaut false (souverain). */
   escalateCloud?: boolean;
+  /** true → barreau 1 consulté en self-consistency (N tirages + vote) au lieu d'un tir
+   *  unique. Défaut false (comportement inchangé). Coût marginal nul en local. */
+  selfConsistency?: boolean;
+  /** Nombre de tirages si `selfConsistency` est activé. Défaut 3. */
+  voteN?: number;
 }
 
 interface RungOutcome {
@@ -162,6 +167,39 @@ async function consultRung(
 }
 
 /**
+ * Self-consistency (inspiré de `harnais-2027/src/core/strategies.ts`, réimplémenté sans
+ * dépendance) : N tirages PARALLÈLES du même barreau, vote de majorité sur la CLASSE
+ * (catalogue fermé → vote trivial, pas de comparaison de texte libre). Annule les
+ * hallucinations ponctuelles d'un petit cerveau local — coût marginal nul en local ($0).
+ * Repli `null` (reste ambigu) si aucune classe n'obtient une majorité STRICTE (ties inclus)
+ * — un vote qui ne tranche pas ne doit jamais choisir arbitrairement.
+ */
+export async function consultRungWithVote(
+  agentId: AgentId,
+  label: string,
+  s: BlockerSymptoms,
+  dispatch: StrategeDispatch,
+  n = 3,
+): Promise<RungOutcome> {
+  const k = Math.max(1, n);
+  const outcomes = await Promise.all(
+    Array.from({ length: k }, () => consultRung(agentId, label, s, dispatch)),
+  );
+  const counts = new Map<BlockerClass, number>();
+  for (const o of outcomes) {
+    if (!o.diagnosis) continue;
+    counts.set(o.diagnosis.blocker, (counts.get(o.diagnosis.blocker) ?? 0) + 1);
+  }
+  if (counts.size === 0) return { diagnosis: null, source: label };
+  const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+  const [winnerClass, winnerCount] = sorted[0];
+  const runnerUpCount = sorted[1]?.[1] ?? 0;
+  if (winnerCount <= runnerUpCount) return { diagnosis: null, source: label }; // égalité → pas de majorité claire
+  const winning = outcomes.find((o) => o.diagnosis?.blocker === winnerClass)!;
+  return { diagnosis: winning.diagnosis, source: label };
+}
+
+/**
  * Reclasse un blocage AMBIGU via l'échelle d'escalade bornée. Renvoie un Diagnosis raffiné
  * (classe routable) ou null (= reste ambigu → escalade normale d'eleve.ts). Au plus DEUX
  * appels de cerveau (un par barreau). Ne lève jamais.
@@ -169,8 +207,10 @@ async function consultRung(
 export async function reclassifyAmbiguous(s: BlockerSymptoms, opts: ReclassifyOpts = {}): Promise<Diagnosis | null> {
   const dispatch = opts.dispatch ?? realDispatch;
   const rung1 = opts.rung1 ?? "stratege";
-  // Barreau 1 — LOCAL $0.
-  const r1 = await consultRung(rung1, "barreau 1 (local)", s, dispatch);
+  // Barreau 1 — LOCAL $0. Self-consistency opt-in (N tirages + vote) sinon tir unique.
+  const r1 = opts.selfConsistency
+    ? await consultRungWithVote(rung1, "barreau 1 (local)", s, dispatch, opts.voteN)
+    : await consultRung(rung1, "barreau 1 (local)", s, dispatch);
   if (r1.diagnosis) return r1.diagnosis;
   // Barreau 2 — cloud supérieur, opt-in (coût marginal). Configurable.
   if (!opts.escalateCloud) return null;

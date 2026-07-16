@@ -77,6 +77,10 @@ L'audit ci-dessus recense « quelle fonction utilise quel cerveau ». Un second 
 
 **Règle retenue** (mémoire `feedback_souverainete_sans_regression`) : le critère de succès n'est pas « le cerveau local tourne techniquement » mais **« aucune régression de qualité/fiabilité perçue »** face à Claude — chaque capacité de vérification côté Claude doit avoir un équivalent côté Élève, sans attendre que Raf le remarque en l'utilisant. Détail complet → `historique.md`, journal 2026-07-11/12.
 
+## Suite 2026-07-14/15 (SOUV-C) — cerveau FRONTIÈRE cloud validé en réel, crédit restauré
+
+Le point 3 des « Prochaines pierres » (validation live 100 % locale) restait bloqué côté cerveau frontière : `glm-5.2:cloud`/`qwen3.5:cloud` étaient câblés depuis SOUV-A (2026-07-10) mais **inutilisables**, la limite hebdomadaire Ollama Cloud étant atteinte. Une fois le crédit rechargé, 2 apps produites cette nuit de bout en bout par le pipeline avec Élève **glm-5.2:cloud**, Stratège et Gardien dans la boucle : `caravan` (Gardien rejette 1 fois sur artisanat/typo, corrigé, clôture OK) et `strata` (Gardien rejette 1 fois sur intention 0/100 malgré build+design OK, réécrit avec brief cristallisé, clôture OK). Un 3ᵉ run trouvé dans le même dossier (`orbital-control`) est un échec antérieur non repris — exclu du bilan. **Confirme que la plomberie souveraine (Niveau 1) tient aussi avec un cerveau FRONTIÈRE fort**, pas seulement avec un petit modèle local — la souveraineté n'implique pas de sacrifier la qualité si le cerveau routé est assez fort. Détail → `historique.md` journal 2026-07-14/15.
+
 ## Prochaines pierres (pour fermer la frontière 🔴)
 
 1. **Compaction / review / Lab** → router via `getBrain()` + `<FEATURE>_PROVIDER` (même patron que le Niveau 2) — gain net, faible risque.

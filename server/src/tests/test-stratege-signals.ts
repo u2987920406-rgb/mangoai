@@ -1,6 +1,6 @@
 // Tests Phase 0 du Stratège (#164) — le diagnostic déterministe nomme correctement
 // les blocages RÉELS rencontrés. 100 % pur (aucun modèle, aucun réseau).
-import { diagnose, missingModuleName, REMEDY_BY_CLASS, type BlockerSymptoms } from "../stratege/stratege-signals.js";
+import { diagnose, missingModuleName, localImportMismatch, REMEDY_BY_CLASS, type BlockerSymptoms } from "../stratege/stratege-signals.js";
 
 let pass = 0;
 let fail = 0;
@@ -95,6 +95,40 @@ check("none → formatDiagnosis vide", REMEDY_BY_CLASS["none"] === "—");
   check("… missing-dependency garde la priorité malgré 5 écritures", dep.blocker === "missing-dependency");
   const wt = diagnose({ buildOk: false, finished: false, stuck: false, iterations: 14, buildDetail: "boom", toolNames: ["run_command", "run_command", "run_command", "edit_file", "edit_file", "write_file", "edit_file", "edit_file"] });
   check("… wrong-tool garde la priorité (run_command en rafale)", wt.blocker === "wrong-tool");
+}
+
+// ── local-import-mismatch (2026-07-14) — cas RÉELS orbital-control (2 échecs consécutifs) ─
+{
+  // Cas 1, vécu la veille : import d'un fichier local inexistant.
+  const css = localImportMismatch(`Could not resolve "./SatelliteDetail.css" from "src/components/SatelliteDetail.jsx"`);
+  check("import CSS local introuvable → kind unresolved", css?.kind === "unresolved");
+  check("… cible extraite", css?.target === "./SatelliteDetail.css");
+  check("… fichier importeur extrait", css?.importer === "src/components/SatelliteDetail.jsx");
+
+  // Cas 2, vécu ce soir : export manquant dans un fichier local.
+  const exp = localImportMismatch(`"getFilteredAndSortedSatellites" is not exported by "src/data/satellites.js", imported by "src/App.jsx".`);
+  check("export local manquant → kind missing-export", exp?.kind === "missing-export");
+  check("… symbole extrait", exp?.symbol === "getFilteredAndSortedSatellites");
+  check("… fichier cible extrait", exp?.target === "src/data/satellites.js");
+  check("… fichier importeur extrait", exp?.importer === "src/App.jsx");
+
+  // Non-régression : une erreur de PAQUET npm (relative-path exclu) reste hors de ce détecteur.
+  check("dépendance npm ('react-router-dom') non capturée ici", localImportMismatch(`Failed to resolve import "react-router-dom" from "src/App.jsx"`) === null);
+  check("texte sans rapport → null", localImportMismatch("SyntaxError: Unexpected token") === null);
+
+  // Câblage dans diagnose() — priorité juste après missing-dependency.
+  const dCss = diagnose({ ...ok, buildOk: false, finished: false, buildDetail: `Could not resolve "./SatelliteDetail.css" from "src/components/SatelliteDetail.jsx"` });
+  check("diagnose() → local-import-mismatch (fichier introuvable)", dCss.blocker === "local-import-mismatch");
+  check("… cause nomme le fichier ET la cible", dCss.cause.includes("SatelliteDetail.jsx") && dCss.cause.includes("./SatelliteDetail.css"));
+  check("… detail = la cible (pour usage futur)", dCss.detail === "./SatelliteDetail.css");
+
+  const dExp = diagnose({ ...ok, buildOk: false, finished: false, buildDetail: `"getFilteredAndSortedSatellites" is not exported by "src/data/satellites.js", imported by "src/App.jsx".` });
+  check("diagnose() → local-import-mismatch (export manquant)", dExp.blocker === "local-import-mismatch");
+  check("… cause nomme le symbole ET les 2 fichiers", dExp.cause.includes("getFilteredAndSortedSatellites") && dExp.cause.includes("src/data/satellites.js") && dExp.cause.includes("src/App.jsx"));
+
+  // missing-dependency garde la priorité (paquet npm, pas un bug de cohérence locale).
+  const dPkg = diagnose({ ...ok, buildOk: false, finished: false, buildDetail: `Cannot find module 'leaflet'` });
+  check("missing-dependency garde la priorité sur local-import-mismatch", dPkg.blocker === "missing-dependency");
 }
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} stratege-signals : ${pass} pass, ${fail} fail`);

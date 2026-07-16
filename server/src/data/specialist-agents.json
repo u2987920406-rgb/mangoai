@@ -30,7 +30,7 @@
     ],
     "provider": "ollama",
     "createdByAgent": "systeme",
-    "createdAt": "2026-07-13T18:59:56.238Z",
+    "createdAt": "2026-07-15T23:30:08.897Z",
     "model": "glm-5.2:cloud",
     "timeoutMs": 120000,
     "mode": "action",
@@ -48,6 +48,10 @@
         "teste_parcours",
         "finish"
       ]
+    },
+    "stats": {
+      "consulted": 1,
+      "wins": 0
     }
   }
 ]
