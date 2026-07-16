@@ -3,58 +3,54 @@ import { XPBar, ScoreDisplay, Reveal } from "./Gamification.jsx";
 import { Card, CardContent } from "./ui/card.jsx";
 import { Button } from "./ui/button.jsx";
 import { Badge } from "./ui/badge.jsx";
+import { ModuleNode } from "./ModuleNode.jsx";
 import { MODE_INFO, BADGES } from "../data/questions.js";
-import { nextRecommendedModule, getModule, LEVELS } from "../data/curriculum.js";
-import { FREE_SESSION_SIZE } from "../data/bank/index.js";
-import { TargetIcon, MapIcon, ChartIcon, ArrowRightIcon, CheckIcon } from "./icons.jsx";
+import { nextRecommendedModule, getModule, LEVELS, modulesForLevel, isModuleUnlocked } from "../data/curriculum.js";
+import { isModulePlayable, FREE_SESSION_SIZE } from "../data/bank/index.js";
+import { TargetIcon, ArrowRightIcon, CheckIcon, ChartIcon } from "./icons.jsx";
 
-export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDiagnostic, onOpenModule }) {
+export function Dashboard({ progress, onStartMode, onOpenParcours, onPlacement, onDiagnostic, onOpenModule }) {
   const { state, level, xpInLevel, xpForNext } = progress;
   const earnedBadges = BADGES.filter((b) => state.badges.includes(b.id));
   const recentSessions = state.sessionHistory.slice(0, 5);
   const next = nextRecommendedModule(state);
 
-  const mascotMood = state.streak >= 3 ? "excited" : "happy";
+  // ── Aperçu du parcours : le module suivant + son contexte immédiat (1 avant,
+  //    2 après) — assez pour voir "où j'en suis" sans ouvrir la carte complète.
+  const currentLevel = state.unlockedLevel || "debutant";
+  const levelMods = modulesForLevel(currentLevel);
+  const nextIdx = next ? levelMods.findIndex((m) => m.id === next.id) : -1;
+  const previewStart = nextIdx > 0 ? nextIdx - 1 : 0;
+  const preview = nextIdx >= 0 ? levelMods.slice(previewStart, previewStart + 4) : levelMods.slice(0, 4);
+  const doneInLevel = levelMods.filter((m) => state.moduleProgress?.[m.id]?.completed).length;
 
   return (
     <div className="space-y-6 pb-8 pt-4">
-      {/* Hero */}
+      {/* Bandeau d'accueil compact — score et salutation, sans écraser le parcours en dessous */}
       <Reveal>
-        <div className="relative overflow-hidden rounded-3xl border border-border bg-gradient-to-br from-primary/5 via-accent/5 to-coral/5 p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="flex-1 space-y-4">
-              <div className="flex items-center gap-2">
-                <Badge className="bg-primary/10 text-primary border-0">YES I CAN TOEIC</Badge>
-              </div>
-              <h1 className="font-display text-3xl sm:text-5xl font-bold tracking-tight text-balance">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border bg-gradient-to-br from-primary/5 via-accent/5 to-coral/5 p-5">
+          <div className="flex items-center gap-4">
+            <Mascot mood={state.streak >= 3 ? "excited" : "happy"} size={52} />
+            <div>
+              <h1 className="font-display text-xl sm:text-2xl font-bold text-balance">
                 {state.totalSessions === 0 ? "Bienvenue, futur champion du TOEIC." : "Bon retour, champion."}
               </h1>
-              <p className="text-muted-foreground text-lg">
-                Une vraie formation TOEIC sur un an : 7 parties officielles, 3 niveaux, des conversations,
-                vers le score <span className="font-bold text-foreground">800+</span>.
-              </p>
-              <div className="flex flex-wrap gap-4 items-center">
-                <ScoreDisplay score={state.estimatedScore} size="md" />
-                <div className="h-12 w-px bg-border" />
-                <div className="text-center">
-                  <div className="text-2xl font-extrabold">{state.totalSessions}</div>
-                  <div className="text-xs text-muted-foreground">Sessions</div>
-                </div>
-                <div className="h-12 w-px bg-border" />
-                <div className="text-center">
-                  <div className="text-2xl font-extrabold">{earnedBadges.length}</div>
-                  <div className="text-xs text-muted-foreground">Badges</div>
-                </div>
+              <p className="text-sm text-muted-foreground">Vers le score <span className="font-bold text-foreground">800+</span>.</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4 sm:gap-6 pl-2 sm:pl-0">
+            <ScoreDisplay score={state.estimatedScore} size="sm" />
+            {state.streak > 0 && (
+              <div className="text-center">
+                <div className="text-lg font-extrabold">{state.streak} 🔥</div>
+                <div className="text-xs text-muted-foreground">jours</div>
               </div>
-            </div>
-            <div className="hidden sm:block">
-              <Mascot mood={mascotMood} size={140} className="animate-float" />
-            </div>
+            )}
           </div>
         </div>
       </Reveal>
 
-      {/* Invitation au test de placement (si non fait) */}
+      {/* Invitation au test de placement — prioritaire tant qu'il n'est pas fait */}
       {!state.placementDone && (
         <Reveal delay={80}>
           <Card className="border-2 border-accent/40 bg-accent/5">
@@ -72,77 +68,79 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
         </Reveal>
       )}
 
-      {/* XP Bar */}
-      <Reveal delay={100}>
-        <Card><CardContent className="pt-6"><XPBar level={level} xpInLevel={xpInLevel} xpForNext={xpForNext} /></CardContent></Card>
+      {/* ── SECTION PRINCIPALE : le parcours (52 semaines) ── */}
+      <Reveal delay={120}>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-xl font-bold">Ton parcours</h2>
+          <Badge variant="secondary">{LEVELS[currentLevel].name} · {doneInLevel}/{levelMods.length} modules</Badge>
+        </div>
+        <Card className="border-2 border-accent/25">
+          <CardContent className="pt-6 space-y-5">
+            <XPBar level={level} xpInLevel={xpInLevel} xpForNext={xpForNext} />
+            <div className="space-y-4 pt-1">
+              {preview.map((mod) => (
+                <ModuleNode
+                  key={mod.id}
+                  module={mod}
+                  progress={state.moduleProgress?.[mod.id]}
+                  unlocked={isModuleUnlocked(mod, state)}
+                  playable={isModulePlayable(mod.id)}
+                  isNext={next?.id === mod.id}
+                  offset="left"
+                  onClick={(m) => onOpenModule(m.id)}
+                />
+              ))}
+            </div>
+            <Button onClick={onOpenParcours} variant="outline" className="w-full justify-center gap-1.5">
+              Voir tout le parcours (52 semaines) <ArrowRightIcon size={14} />
+            </Button>
+          </CardContent>
+        </Card>
       </Reveal>
 
-      {/* CTA parcours */}
-      <div className="grid gap-4 sm:grid-cols-3">
-        <Reveal delay={150}>
-          <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full border-2 border-accent/30 bg-accent/5">
-            <CardContent className="pt-6 h-full flex flex-col" onClick={() => next && onOpenModule(next.id)}>
-              <div className="text-3xl mb-2">{next ? next.emoji : "🚀"}</div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Continuer le parcours</div>
-              <div className="font-bold text-lg leading-tight mt-0.5">{next ? next.title : "Tout est complété !"}</div>
-              {next && <div className="text-sm text-muted-foreground mt-1">{LEVELS[next.level].name} · Semaine {next.week}</div>}
-              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform flex items-center gap-1">Reprendre <ArrowRightIcon size={14} /></div>
-            </CardContent>
-          </Card>
-        </Reveal>
-        <Reveal delay={200}>
-          <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full">
-            <CardContent className="pt-6 h-full flex flex-col" onClick={onContinue}>
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-listening/10 text-listening mb-3">
-                <MapIcon size={22} />
+      {/* ── Outils secondaires — clairement en retrait, jamais en concurrence visuelle avec le parcours ── */}
+      <Reveal delay={220}>
+        <h2 className="text-xs font-bold uppercase tracking-wide text-muted-foreground mb-3">Autres outils</h2>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="group cursor-pointer hover:shadow-md transition-all">
+            <CardContent className="py-4 flex items-center gap-3" onClick={onDiagnostic}>
+              <div className="flex items-center justify-center w-10 h-10 rounded-xl bg-vocab/10 text-accent-strong shrink-0">
+                <ChartIcon size={18} />
               </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Carte du parcours</div>
-              <div className="font-bold text-lg mt-0.5">52 semaines, 3 niveaux</div>
-              <div className="text-sm text-muted-foreground mt-1">Visualise toute ta progression.</div>
-              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform flex items-center gap-1">Ouvrir <ArrowRightIcon size={14} /></div>
-            </CardContent>
-          </Card>
-        </Reveal>
-        <Reveal delay={250}>
-          <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all h-full">
-            <CardContent className="pt-6 h-full flex flex-col" onClick={onDiagnostic}>
-              <div className="flex items-center justify-center w-11 h-11 rounded-2xl bg-vocab/10 text-accent-strong mb-3">
-                <ChartIcon size={22} />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs text-muted-foreground uppercase tracking-wide">Diagnostic</div>
+                <div className="font-bold text-sm">Forces & faiblesses</div>
               </div>
-              <div className="text-xs text-muted-foreground uppercase tracking-wide">Diagnostic</div>
-              <div className="font-bold text-lg mt-0.5">Forces & faiblesses</div>
-              <div className="text-sm text-muted-foreground mt-1">Ta maîtrise des 7 parties TOEIC.</div>
-              <div className="mt-auto pt-3 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform flex items-center gap-1">Analyser <ArrowRightIcon size={14} /></div>
+              <ArrowRightIcon size={14} className="text-muted-foreground group-hover:translate-x-1 transition-transform shrink-0" />
             </CardContent>
           </Card>
-        </Reveal>
-      </div>
 
-      {/* Entraînement libre (3 modes historiques) */}
-      <Reveal delay={300}>
-        <h2 className="text-xl font-bold mb-3">Entraînement libre</h2>
+          <Card>
+            <CardContent className="py-4">
+              <div className="text-xs text-muted-foreground uppercase tracking-wide mb-2">Entraînement libre</div>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(MODE_INFO).map(([key, info]) => (
+                  <div
+                    key={key}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => onStartMode(key)}
+                    onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && onStartMode(key)}
+                    className="group flex items-center gap-1.5 pl-2.5 pr-3 py-1.5 rounded-full bg-muted hover:bg-accent/10 transition-colors cursor-pointer"
+                  >
+                    <span className="text-base">{info.emoji}</span>
+                    <h3 className="font-semibold text-sm">{info.name}</h3>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </Reveal>
-      <div className="grid gap-4 sm:grid-cols-3">
-        {Object.entries(MODE_INFO).map(([key, info], i) => (
-          <Reveal key={key} delay={320 + i * 80}>
-            <Card className="group cursor-pointer hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-              <CardContent className="pt-6" onClick={() => onStartMode(key)}>
-                <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">{info.emoji}</div>
-                <h3 className="font-bold text-lg mb-1">{info.name}</h3>
-                <p className="text-sm text-muted-foreground mb-3">{info.description}</p>
-                <div className="flex items-center justify-between">
-                  <Badge variant="secondary" className="tabular-nums">{FREE_SESSION_SIZE} questions · banque de {info.count}</Badge>
-                  <span className="flex items-center gap-1 text-accent-strong font-bold text-sm group-hover:translate-x-1 transition-transform">Jouer <ArrowRightIcon size={14} /></span>
-                </div>
-              </CardContent>
-            </Card>
-          </Reveal>
-        ))}
-      </div>
 
       {/* Badges */}
       {earnedBadges.length > 0 && (
-        <Reveal delay={400}>
+        <Reveal delay={280}>
           <h2 className="text-xl font-bold mb-3">Badges débloqués ({earnedBadges.length}/{BADGES.length})</h2>
           <div className="flex flex-wrap gap-3">
             {earnedBadges.map((badge) => (
@@ -157,7 +155,7 @@ export function Dashboard({ progress, onStartMode, onContinue, onPlacement, onDi
 
       {/* Sessions récentes */}
       {recentSessions.length > 0 && (
-        <Reveal delay={450}>
+        <Reveal delay={320}>
           <h2 className="text-xl font-bold mb-3">Sessions récentes</h2>
           <div className="space-y-2">
             {recentSessions.map((s, i) => {

@@ -19,7 +19,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 1,
     "explanation": "L'homme tient et lit un journal. Les autres options décrivent des actions (écrire, boire, téléphoner) qui ne correspondent pas à la scène.",
-    "transcript": "(A) A man is writing on a notebook. (B) A man is reading a newspaper. (C) A man is drinking from a cup. (D) A man is talking on the phone.",
+    "transcript": "(A) A man is drinking from a cup. (B) A man is reading a newspaper. (C) A man is writing on a notebook. (D) A man is talking on the phone.",
     "voiceGender": "male",
     "image": "/assets/pexels/7255449.jpeg"
   },
@@ -39,7 +39,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 0,
     "explanation": "La femme pointe du doigt le tableau blanc, elle n'efface ni n'écrit. Le tableau est déjà accroché au mur.",
-    "transcript": "(A) A woman is erasing a whiteboard. (B) A woman is pointing at a whiteboard. (C) A woman is writing on a whiteboard. (D) A woman is hanging a whiteboard.",
+    "transcript": "(A) A woman is pointing at a whiteboard. (B) A woman is hanging a whiteboard. (C) A woman is writing on a whiteboard. (D) A woman is erasing a whiteboard.",
     "voiceGender": "female",
     "image": "/assets/pexels/5324935.jpeg"
   },
@@ -59,7 +59,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 2,
     "explanation": "L'homme est debout, adossé au mur, les bras croisés. Il n'est ni assis, ni ne lève la main, ni ne marche.",
-    "transcript": "(A) A man is standing with his arms crossed. (B) A man is sitting on the floor. (C) A man is raising his hand. (D) A man is walking down the hall.",
+    "transcript": "(A) A man is sitting on the floor. (B) A man is raising his hand. (C) A man is standing with his arms crossed. (D) A man is walking down the hall.",
     "voiceGender": "male",
     "image": "/assets/pexels/5945327.jpeg"
   },
@@ -79,7 +79,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 0,
     "explanation": "La femme tient un parapluie ouvert au-dessus de sa tête. Elle ne le plie pas, ne l'achète pas et ne le répare pas.",
-    "transcript": "(A) A woman is folding an umbrella. (B) A woman is buying an umbrella. (C) A woman is carrying an open umbrella. (D) A woman is repairing an umbrella.",
+    "transcript": "(A) A woman is carrying an open umbrella. (B) A woman is buying an umbrella. (C) A woman is repairing an umbrella. (D) A woman is folding an umbrella.",
     "voiceGender": "female",
     "image": "/assets/pexels/13765506.jpeg"
   },
@@ -99,7 +99,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 0,
     "explanation": "Des personnes sont assises sur un banc d'arrêt de bus. Aucun bus n'est présent, elles ne traversent pas et il n'y a pas de voiture.",
-    "transcript": "(A) People are getting on a bus. (B) People are sitting at a bus stop. (C) People are crossing the street. (D) People are loading luggage into a car.",
+    "transcript": "(A) People are sitting at a bus stop. (B) People are loading luggage into a car. (C) People are crossing the street. (D) People are getting on a bus.",
     "voiceGender": "male",
     "image": "/assets/pexels/15320891.jpeg"
   },
@@ -119,7 +119,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 2,
     "explanation": "Le chef porte une cuillère à sa bouche pour goûter. Il ne lave pas, ne coupe pas et ne remue pas un plat.",
-    "transcript": "(A) A chef is washing a pot. (B) A chef is cutting vegetables. (C) A chef is stirring a pot. (D) A chef is tasting food from a spoon.",
+    "transcript": "(A) A chef is washing a pot. (B) A chef is stirring a pot. (C) A chef is tasting food from a spoon. (D) A chef is cutting vegetables.",
     "voiceGender": "female",
     "image": "/assets/pexels/6050299.jpeg"
   },
@@ -139,7 +139,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 3,
     "explanation": "L'homme est penché pour nouer son lacet de chaussure. Il ne court pas, n'est pas assis sur un banc et ne fait pas d'étirements.",
-    "transcript": "(A) A man is jogging through the park. (B) A man is tying his shoelace. (C) A man is sitting on a bench. (D) A man is stretching his arms.",
+    "transcript": "(A) A man is stretching his arms. (B) A man is sitting on a bench. (C) A man is jogging through the park. (D) A man is tying his shoelace.",
     "voiceGender": "male",
     "image": "/assets/pexels/8939893.jpeg"
   },
@@ -159,7 +159,7 @@ export const AVANCE_GEN = [
     ],
     "answer": 1,
     "explanation": "La femme tient un arrosoir et arrose les plantes. Elle ne plante rien, ne tond pas la pelouse et ne récolte pas de légumes.",
-    "transcript": "(A) A woman is planting flowers. (B) A woman is watering plants. (C) A woman is cutting the grass. (D) A woman is picking vegetables.",
+    "transcript": "(A) A woman is picking vegetables. (B) A woman is watering plants. (C) A woman is cutting the grass. (D) A woman is planting flowers.",
     "voiceGender": "female",
     "image": "/assets/pexels/4920248.jpeg"
   },

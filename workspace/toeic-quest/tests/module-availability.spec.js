@@ -10,7 +10,7 @@
 //  2. e2e léger : le module le moins fourni du curriculum (8 questions, tout
 //     près du seuil) s'affiche bien comme JOUABLE, pas comme verrouillé.
 import { test, expect } from "@playwright/test";
-import { CURRICULUM, LEVELS } from "../src/data/curriculum.js";
+import { CURRICULUM } from "../src/data/curriculum.js";
 import { availableForModule, isModulePlayable, MIN_PLAYABLE } from "../src/data/bank/index.js";
 import { trackErrors, seedProgress } from "./helpers.js";
 
@@ -45,8 +45,7 @@ test.describe("Disponibilité des modules", () => {
     const errors = trackErrors(page);
     await seedProgress(page, unlockChainFor(lowest.m.id));
     await page.goto("/");
-    await page.getByText("Carte du parcours", { exact: true }).click();
-    await page.getByText(LEVELS[lowest.m.level].name, { exact: true }).first().click();
+    await page.getByRole("button", { name: /Voir tout le parcours/ }).click();
     await page.getByRole("button", { name: new RegExp(lowest.m.title) }).click({ force: true });
 
     const startBtn = page.getByTestId("start-session");

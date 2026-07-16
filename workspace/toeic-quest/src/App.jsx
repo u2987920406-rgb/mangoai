@@ -10,7 +10,6 @@ import { getModule } from "./data/curriculum.js";
 const named = (p, key) => lazy(() => p().then((m) => ({ default: m[key] })));
 const SessionPlay = named(() => import("./components/SessionPlay.jsx"), "SessionPlay");
 const SessionResult = named(() => import("./components/SessionResult.jsx"), "SessionResult");
-const LevelSelect = named(() => import("./components/LevelSelect.jsx"), "LevelSelect");
 const CurriculumMap = named(() => import("./components/CurriculumMap.jsx"), "CurriculumMap");
 const ModuleScreen = named(() => import("./components/ModuleScreen.jsx"), "ModuleScreen");
 const PlacementTest = named(() => import("./components/PlacementTest.jsx"), "PlacementTest");
@@ -115,15 +114,11 @@ export default function App() {
           <Dashboard
             progress={progress}
             onStartMode={startFreeMode}
-            onContinue={() => go("levelSelect")}
+            onOpenParcours={() => go("curriculum", { level: progress.state.unlockedLevel || "debutant" })}
             onPlacement={() => go("placement")}
             onDiagnostic={() => go("diagnostic")}
             onOpenModule={openModule}
           />
-        )}
-
-        {route.name === "levelSelect" && (
-          <LevelSelect progress={progress} onPickLevel={(level) => go("curriculum", { level })} onBack={goHome} />
         )}
 
         {route.name === "curriculum" && (
@@ -132,7 +127,7 @@ export default function App() {
             level={route.level || progress.state.unlockedLevel || "debutant"}
             onOpenModule={(mod) => openModule(mod.id)}
             onChangeLevel={(level) => go("curriculum", { level })}
-            onBack={() => go("levelSelect")}
+            onBack={goHome}
           />
         )}
 

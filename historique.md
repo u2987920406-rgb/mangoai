@@ -3673,3 +3673,54 @@ Zéro git (règle absolue du projet : aucune opération git sans permission expl
 **Raf demande ensuite (mi-tour, pendant le commit) : « localiser les 229 images ».** Décision tranchée : tout localiser (pas de tri par module). Script jetable : 205 URLs distantes uniques trouvées sur les 3 banques (moins que 229 à cause de doublons inter-fichiers), 202 téléchargées (3 déjà présentes), **0 échec**, 227 références réécrites vers `/assets/pexels/<id>.jpeg`. 1 image `.png` ratée par la regex du 1er passage (seul le suffixe `.jpeg` était couvert) — rattrapée manuellement (`2833379.png`, présente en double dans `debutant.gen.js` et `intermediaire.gen.js`). **Zéro référence distante restante** (grep vide sur les 3 fichiers). Dossier `public/assets/pexels/` : 60 Mo au total — poids réel à budgéter pour l'installation Capacitor, noté dans `limites.md` L132 (✅ résolue). Build vert, 36/36 tests toujours verts après. Pas encore commité (nouveau travail après le commit `57329d0`, en attente d'une nouvelle instruction explicite de Raf par cohérence avec la règle git absolue du projet).
 
 Zéro git au-delà du commit explicitement demandé par Raf (règle absolue du projet : aucune opération git sans permission explicite, même en mode automatique).
+
+## Journal — 2026-07-16 (suite) : `toeic-quest` — 2 bugs trouvés en test réel par Raf, corrigés
+
+Raf teste l'app en réel (capture d'écran, module M01 Photos) et signale deux problèmes :
+
+1. **Auto-lecture audio non désirée** — `SessionPlay.jsx` lançait l'audio automatiquement 350ms après
+   l'affichage de chaque question (`useEffect` + `setTimeout(playAudio, 350)`, gardé par `playedRef`).
+   Retiré entièrement (effect + ref) : l'utilisateur doit désormais cliquer sur ▶ lui-même.
+
+2. **Régression réelle, introduite par MOI-MÊME** (script de rééquilibrage des réponses, plus tôt le
+   même jour) : l'audio annonçait « (A) » pour une phrase affichée sous une autre lettre à l'écran.
+   Cause : les questions P1 portent un champ `transcript` qui énumère indépendamment
+   « (A) ... (B) ... (C) ... (D) ... » — mon script de rééquilibrage n'a permuté que `choices`+`answer`,
+   jamais audité que `transcript` encodait AUSSI l'ordre des choix, dans une chaîne de texte libre non
+   structurée. Résultat : 52 questions (28 débutant, 16 intermédiaire, 8 avancé) avec un transcript figé
+   sur l'ordre PRÉ-mélange. Corrigé par un script jetable qui régénère `transcript` directement depuis
+   `choices` (source de vérité unique, déjà dans le bon ordre affiché) pour toute question dont le
+   transcript matche `/^\(A\)/`. **Leçon consignée `limites.md` L134** : un script qui réordonne un champ
+   doit auditer TOUS les champs dérivés de cet ordre, pas seulement le champ visé — le grep initial sur
+   "choices"/"answer" ne pouvait pas voir que `transcript` encodait la même information ailleurs, en texte
+   libre.
+
+Build vert, 36/36 tests toujours verts après les deux fixes. Pas encore commité (nouveau travail après
+`15d8e47`, en attente d'une instruction explicite de Raf).
+
+Zéro git (règle absolue du projet : aucune opération git sans permission explicite de Raf).
+
+## Journal — 2026-07-16 (suite) : `toeic-quest` — restructuration UX (le parcours devient la section principale)
+
+**Retour de Raf après test réel** : « le user flow n'est pas très instinctif, c'est un peu brouillon, on ne sait pas où cliquer ni pourquoi. Les sections sont trop mélangées. La section principale est le parcours sur plusieurs semaines. »
+
+**Diagnostic.** L'ancien Dashboard empilait 7 sections de poids visuel quasi égal : hero (score/stats) → CTA placement → carte XP séparée → 3 cartes de même taille ("Continuer le parcours" / "Carte du parcours" / "Diagnostic") → section "Entraînement libre" (3 cartes de plus, concept différent) → badges → sessions récentes. Le parcours structuré (le cœur du produit) n'était qu'une carte parmi d'autres, à égalité avec le diagnostic. Y accéder demandait en plus 2 clics : Dashboard → "Carte du parcours" → `LevelSelect` (3 cartes de niveau) → clic sur un niveau → enfin la vraie carte (`CurriculumMap`).
+
+**Restructuration** :
+- **`Dashboard.jsx`** réécrit : bandeau d'accueil compact (mascotte+titre+score, une seule ligne) → CTA placement (inchangé) → **section "Ton parcours" dominante et unique** : barre XP + aperçu réel de 4 modules autour du prochain (réutilise `ModuleNode`, le même composant que la carte complète) + bouton "Voir tout le parcours (52 semaines)" → section "Autres outils" clairement étiquetée et visuellement en retrait (Diagnostic + Entraînement libre, cartes plus petites) → badges/sessions récentes inchangés en bas.
+- **Navigation simplifiée** : `LevelSelect.jsx` **supprimé** (détour devenu inutile) — le bouton "Voir tout le parcours" saute directement vers `CurriculumMap` pour le niveau débloqué de l'utilisateur (0 clic intermédiaire au lieu de 2). Le "← Niveaux" de `CurriculumMap` devient "← Accueil". Le changement de niveau (explorer un autre niveau déjà débloqué) reste possible via les boutons prev/next déjà présents dans l'en-tête de `CurriculumMap` — aucune capacité perdue.
+- **Textes testés préservés à l'identique** ("Bienvenue, futur champion du TOEIC.", "Bon retour, champion.", "Sessions récentes", "Forces & faiblesses", les 3 `<h3>` de mode libre) — seule la mise en page change. 4 fichiers de tests (`bilan-echec`, `module-availability`, `timer-expiry`, `parcours` test "bilan ≥75%") mis à jour pour remplacer l'ancienne séquence "Carte du parcours"→clic niveau par un clic unique sur "Voir tout le parcours".
+
+**Faux positif trouvé et corrigé en route** : 1er passage de tests → 2 échecs sur `storage-corruption.spec.js` (`getByText("NaN")` détectait "1 élément"). Pas un bug produit : `getByText` en chaîne est insensible à la casse par défaut, et le nouvel aperçu du parcours affiche désormais "À faire maintenant" sur le Dashboard — "mainte-NAN-t" contient la sous-chaîne "nan", confondue avec "NaN". Corrigé en passant `page.getByText(/NaN/)` (regex sans flag `i`, donc sensible à la casse) au lieu de la chaîne.
+
+**Vérifié en réel** : build vert, **36/36 tests verts**, contrôle visuel Chrome complet (parcours visible immédiatement sans clic, bouton "Voir tout le parcours" fonctionnel, section "Autres outils" bien en retrait visuel, audio toujours sans auto-lecture).
+
+**2 régressions réelles trouvées par Raf en testant l'app pour de vrai** (pas par les tests automatisés — leçon reconnue : "as-tu testé l'app ??") :
+1. **Clic sur un module = rien ne se passe.** `ModuleNode.jsx` appelle `onClick(module)` (objet complet), mais dans `Dashboard.jsx` le nouvel aperçu de parcours câblait `onClick={onOpenModule}` directement — `onOpenModule` (= `openModule` d'`App.jsx`) attend un `moduleId` (chaîne), pas un objet. Résultat : `go("module", {moduleId: <objet>})` puis `getModule(moduleId)` échoue silencieusement → écran "Module introuvable." (`CurriculumMap.jsx` faisait déjà le bon wrapping `onClick={(mod) => openModule(mod.id)}` dans `App.jsx` — seul le nouveau chemin Dashboard avait le bug). Corrigé : `onClick={(m) => onOpenModule(m.id)}` dans `Dashboard.jsx`.
+2. **Niveaux "Intermédiaire"/"Avancé" invisibles.** Le sélecteur de niveau de `CurriculumMap.jsx` masquait complètement le bouton du niveau suivant tant qu'il n'était pas débloqué (`idx < levelIds.length - 1 && LEVEL_ORDER[...] <= ...`) — régression par rapport à `LevelSelect` (supprimé) qui affichait toujours les 3 niveaux avec leur état. Corrigé : le bouton du niveau suivant s'affiche toujours, désactivé + icône cadenas s'il est verrouillé, au lieu de disparaître.
+
+Reproduit et vérifié en réel via Chrome (pas seulement relu dans le code) : clic sur "Photos du quotidien" ouvre bien l'écran du module, badge "🔒 Intermédiaire" visible et grisé sur la carte du niveau Débutant. Build vert, 36/36 tests Playwright toujours verts après le fix.
+
+Pas encore commité (nouveau travail après `15d8e47`, en attente d'une instruction explicite de Raf).
+
+Zéro git (règle absolue du projet : aucune opération git sans permission explicite de Raf).

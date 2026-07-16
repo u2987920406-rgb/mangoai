@@ -25,7 +25,6 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
   const [timerActive, setTimerActive] = useState(useTimer);
   const [timeUp, setTimeUp] = useState(false);
   const audioRef = useRef(null);          // contrôleur de lecture en cours
-  const playedRef = useRef(false);
 
   const q = questions[currentIdx];
   const modeInfo = MODE_INFO[mode] || { emoji: "🎯" };
@@ -61,21 +60,14 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
     }
   }, [q, isConversation, isPrompt, isTalk, stopAudio]);
 
-  // Réinitialise l'état à chaque nouvelle question + auto-lecture audio.
+  // Réinitialise l'état à chaque nouvelle question. Pas de lecture automatique
+  // de l'audio : l'utilisateur doit cliquer sur ▶ lui-même (demande de Raf,
+  // 2026-07-16 — l'auto-lecture surprenait/gênait).
   useEffect(() => {
-    playedRef.current = false;
     setShowTranscript(!speechSupported());
     setImgFailed(false);
     setActiveLine(-1);
   }, [currentIdx]);
-
-  useEffect(() => {
-    if (hasAudio && q && !playedRef.current) {
-      playedRef.current = true;
-      const t = setTimeout(playAudio, 350);
-      return () => clearTimeout(t);
-    }
-  }, [q, hasAudio, playAudio]);
 
   // Nettoyage à la sortie.
   useEffect(() => () => stopAudio(), [stopAudio]);

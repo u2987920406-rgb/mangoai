@@ -1,8 +1,8 @@
 ---
 type: projet
 tags: [app, formation, toeic, gout, transmission, client]
-statut: rebranding en cours (Phase 2/5 livrée) — livraison client à un jeune femme de 25 ans, web + mobile
-sources: [statut.md 2026-07-16, limites.md L62-L64/L115, historique.md Journal 2026-07-16]
+statut: 5/5 phases livrées + durcissement post-livraison (bugs audio, restructuration UX) — bloqué sur build natif (L133)
+sources: [statut.md 2026-07-16, limites.md L62-L64/L115/L130-L134, historique.md Journal 2026-07-16]
 maj: 2026-07-16
 ---
 
@@ -19,7 +19,16 @@ Raf livre ce produit à un client payant sous le nom **« Yes I Can Toeic »**, 
 - **Phase 4 ✅ LIVRÉE (câblage)** — Capacitor installé, `android/`+`ios/` scaffoldés, icônes/splash générés (placeholder à remplacer par le vrai logo client), scripts `cap:sync`/`cap:android`/`cap:ios`. **Limite bloquante (L133)** : aucun toolchain natif (Java/Android SDK/Xcode) sur cette machine → build réel jamais testé, à faire par Raf sur un poste équipé.
 - **Phase 5 ✅ LIVRÉE** — `README.md` étendu (hébergement web, build/signature Android+iOS, coût réel Apple Developer 99$/an, checklist de retest).
 
-**Plan à 5 phases COMPLET côté ingénierie.** Ce qui reste est entre les mains de Raf : premier build natif réel (L133, aucun toolchain sur la machine de dev), décision sur les 229 images distantes (L132), 2 défauts de contenu nécessitant de l'authoring (L130/L131).
+**Plan à 5 phases COMPLET côté ingénierie.** Ce qui reste est entre les mains de Raf : premier build natif réel (L133, aucun toolchain sur la machine de dev), 2 défauts de contenu nécessitant de l'authoring (L130/L131).
+
+## Durcissement post-livraison (2026-07-16, en test réel par Raf)
+
+Après le plan à 5 phases, Raf a testé l'app en conditions réelles (mobile, capture d'écran) et remonté 3 retours, tous traités :
+- **229 images Pexels distantes localisées** — script jetable, 202 téléchargées + 1 rattrapée manuellement, 0 référence distante restante (L132 ✅ résolue). Poids réel du dossier `public/assets/pexels/` : 60 Mo (à budgéter pour l'install Capacitor).
+- **2 bugs audio** : (1) auto-lecture non désirée retirée de `SessionPlay.jsx` (l'utilisateur doit cliquer ▶) ; (2) régression auto-introduite par le script de rééquilibrage de la Phase 3 — le champ `transcript` encode aussi l'ordre des choix en texte libre `(A)(B)(C)(D)`, jamais audité lors du rééquilibrage → 52 questions désynchronisées, corrigées par régénération du transcript depuis `choices`. Leçon générale consignée L134 : un script qui réordonne un champ doit auditer tous les champs dérivés du même ordre.
+- **Restructuration UX** (« la section principale est le parcours sur plusieurs semaines ») : `Dashboard.jsx` réécrit pour que le parcours 52 semaines (XP + aperçu de 4 modules + bouton "Voir tout le parcours") domine visuellement, Diagnostic/Entraînement libre démotés en section "Autres outils" clairement étiquetée. `LevelSelect.jsx` supprimé — un hop de navigation en moins (Dashboard→CurriculumMap direct au lieu de Dashboard→LevelSelect→CurriculumMap).
+
+36/36 tests Playwright verts après chaque correction. Commits `57329d0` (Phases 1-5) + `15d8e47` (localisation images) faits avec permission explicite de Raf ; le durcissement post-livraison (bugs audio + restructuration UX) n'est pas encore commité, en attente d'instruction.
 
 ## Rôle
 

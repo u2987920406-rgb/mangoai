@@ -19,7 +19,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 1,
     "explanation": "La photo montre plusieurs personnes travaillant sur des ordinateurs dans un bureau. La réponse (B) correspond. (A) ne mentionne qu'une seule femme, ce qui est incomplet. (C) décrit une action non visible. (D) mentionne des chaises empilées, ce qui ne correspond pas à la scène.",
-    "transcript": "(A) A woman is typing on a laptop. (B) Several people are working at computers. (C) A man is answering a phone call. (D) Some chairs are stacked against the wall.",
+    "transcript": "(A) Some chairs are stacked against the wall. (B) Several people are working at computers. (C) A woman is typing on a laptop. (D) A man is answering a phone call.",
     "voiceGender": "female",
     "image": "/assets/pexels/3184357.jpeg"
   },
@@ -39,7 +39,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 3,
     "explanation": "Sur le chantier, les travailleurs portent des casques de sécurité. (B) est donc correcte. (A) décrit un bureau, pas un chantier. (C) évoque une pause déjeuner non visible. (D) mentionne de la peinture, ce qui ne correspond pas à la scène.",
-    "transcript": "(A) The workers are sitting at desks. (B) The workers are wearing safety helmets. (C) The workers are eating lunch outside. (D) The workers are painting a wall.",
+    "transcript": "(A) The workers are painting a wall. (B) The workers are eating lunch outside. (C) The workers are sitting at desks. (D) The workers are wearing safety helmets.",
     "voiceGender": "male",
     "image": "/assets/pexels/38043248.jpeg"
   },
@@ -59,7 +59,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 2,
     "explanation": "La photo montre une femme qui présente des diapositives à un groupe réuni dans une salle de conférence. (A) est correcte. (B) est faux car les participants sont assis, ils ne partent pas. (C) décrit une réparation de projecteur, non visible. (D) est incorrect car la salle est occupée.",
-    "transcript": "(A) A woman is presenting slides to a group. (B) The participants are leaving the room. (C) A man is fixing a projector. (D) The room is completely empty.",
+    "transcript": "(A) The room is completely empty. (B) A man is fixing a projector. (C) A woman is presenting slides to a group. (D) The participants are leaving the room.",
     "voiceGender": "female",
     "image": "/assets/pexels/18999470.jpeg"
   },
@@ -79,7 +79,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 0,
     "explanation": "Plusieurs collègues examinent des documents ensemble autour d'une table. (B) correspond. (A) décrit une personne qui dort, ce qui est inexact. (C) évoque une livraison, non présente. (D) mentionne l'arrosage de plantes, ce qui ne correspond pas.",
-    "transcript": "(A) One person is sleeping at a desk. (B) Several colleagues are reviewing documents together. (C) A delivery person is dropping off packages. (D) Someone is watering the plants.",
+    "transcript": "(A) Several colleagues are reviewing documents together. (B) A delivery person is dropping off packages. (C) Someone is watering the plants. (D) One person is sleeping at a desk.",
     "voiceGender": "male",
     "image": "/assets/pexels/7640447.jpeg"
   },
@@ -99,7 +99,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 3,
     "explanation": "Les travailleurs assemblent un échafaudage sur le chantier. (A) est la bonne réponse. (B) décrit la conduite de camions, non visible. (C) évoque une cafétéria, hors contexte. (D) mentionne la lecture de journaux, ce qui ne correspond pas.",
-    "transcript": "(A) The men are assembling scaffolding. (B) The men are driving trucks. (C) The men are sitting in a cafeteria. (D) The men are reading newspapers.",
+    "transcript": "(A) The men are driving trucks. (B) The men are sitting in a cafeteria. (C) The men are reading newspapers. (D) The men are assembling scaffolding.",
     "voiceGender": "male",
     "image": "/assets/pexels/12008095.jpeg"
   },
@@ -119,7 +119,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 3,
     "explanation": "Un homme pointe vers un tableau blanc pendant une réunion. (A) est correcte. (B) est faux car les participants ne quittent pas la salle. (C) décrit le nettoyage du tableau, pas le pointage. (D) mentionne une poignée de main à la porte, non visible.",
-    "transcript": "(A) A man is pointing at a whiteboard during a meeting. (B) Everyone is packing their bags to leave. (C) A woman is cleaning the whiteboard. (D) Two people are shaking hands at the door.",
+    "transcript": "(A) Two people are shaking hands at the door. (B) A woman is cleaning the whiteboard. (C) Everyone is packing their bags to leave. (D) A man is pointing at a whiteboard during a meeting.",
     "voiceGender": "female",
     "image": "/assets/pexels/7413916.jpeg"
   },
@@ -139,7 +139,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 1,
     "explanation": "Les employés se tiennent debout et discutent dans un bureau. (A) correspond à la scène. (B) décrit une salle de sport, hors contexte. (C) évoque une cuisine, non visible. (D) mentionne un arrêt de bus, ce qui ne correspond pas.",
-    "transcript": "(A) The employees are standing and talking together. (B) The employees are exercising in a gym. (C) The employees are cooking in a kitchen. (D) The employees are waiting at a bus stop.",
+    "transcript": "(A) The employees are waiting at a bus stop. (B) The employees are standing and talking together. (C) The employees are cooking in a kitchen. (D) The employees are exercising in a gym.",
     "voiceGender": "male",
     "image": "/assets/pexels/8101526.jpeg"
   },
@@ -159,7 +159,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 1,
     "explanation": "Une grue soulève des matériaux de construction sur le chantier. (A) est la bonne réponse. (B) décrit un jardinage, hors contexte. (C) évoque un supermarché, non visible. (D) mentionne des enfants sur un terrain de jeu, ce qui ne correspond pas.",
-    "transcript": "(A) A crane is lifting construction materials. (B) Workers are planting trees in a garden. (C) People are shopping in a supermarket. (D) Children are playing on a playground.",
+    "transcript": "(A) Workers are planting trees in a garden. (B) A crane is lifting construction materials. (C) Children are playing on a playground. (D) People are shopping in a supermarket.",
     "voiceGender": "female",
     "image": "/assets/pexels/8650017.jpeg"
   },
@@ -3799,7 +3799,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 1,
     "explanation": "La femme tape sur un ordinateur portable, donc (A) est correcte. (B), (C) et (D) décrivent des actions absentes de la scène.",
-    "transcript": "(A) A woman is typing on a laptop. (B) A woman is answering the phone. (C) A woman is writing on a whiteboard. (D) A woman is reading a newspaper.",
+    "transcript": "(A) A woman is answering the phone. (B) A woman is typing on a laptop. (C) A woman is reading a newspaper. (D) A woman is writing on a whiteboard.",
     "voiceGender": "female",
     "image": "/assets/pexels/806835.jpeg"
   },
@@ -3819,7 +3819,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 2,
     "explanation": "Un bus est arrêté à un arrêt de bus, donc (C) est correcte. (A) mentionne un train, (B) une descente de bus, et (D) un taxi, aucun ne correspond à la scène.",
-    "transcript": "(A) Passengers are boarding a train. (B) People are getting off a bus. (C) A bus is parked at a bus stop. (D) A taxi is pulling into a driveway.",
+    "transcript": "(A) Passengers are boarding a train. (B) A taxi is pulling into a driveway. (C) A bus is parked at a bus stop. (D) People are getting off a bus.",
     "voiceGender": "male",
     "image": "/assets/pexels/26795596.jpeg"
   },
@@ -3839,7 +3839,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 0,
     "explanation": "L'homme lit un menu assis à une table, donc (B) est correcte. (A), (C) et (D) décrivent d'autres activités de restaurant non présentes sur l'image.",
-    "transcript": "(A) A man is cooking food in a kitchen. (B) A man is reading a menu at a table. (C) A man is paying the cashier. (D) A man is setting the table.",
+    "transcript": "(A) A man is reading a menu at a table. (B) A man is setting the table. (C) A man is paying the cashier. (D) A man is cooking food in a kitchen.",
     "voiceGender": "female",
     "image": "/assets/pexels/970084.jpeg"
   },
@@ -3859,7 +3859,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 0,
     "explanation": "La femme choisit des produits sur un rayon de magasin, donc (C) est correcte. (A) et (D) concernent la caisse, et (B) des fleurs, aucun ne correspond à la scène.",
-    "transcript": "(A) A woman is placing items on a checkout counter. (B) A woman is arranging flowers in a vase. (C) A woman is selecting products from a store shelf. (D) A woman is handing money to a cashier.",
+    "transcript": "(A) A woman is selecting products from a store shelf. (B) A woman is placing items on a checkout counter. (C) A woman is arranging flowers in a vase. (D) A woman is handing money to a cashier.",
     "voiceGender": "male",
     "image": "/assets/pexels/27175527.jpeg"
   },
@@ -3879,7 +3879,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 2,
     "explanation": "Des personnes se tiennent debout sur un quai de gare, donc (A) est correcte. (B), (C) et (D) décrivent d'autres lieux et situations non visibles.",
-    "transcript": "(A) People are standing on a train platform. (B) People are sitting in a waiting room. (C) People are walking through a parking lot. (D) People are crossing a street.",
+    "transcript": "(A) People are walking through a parking lot. (B) People are sitting in a waiting room. (C) People are standing on a train platform. (D) People are crossing a street.",
     "voiceGender": "female",
     "image": "/assets/pexels/3334329.jpeg"
   },
@@ -3899,7 +3899,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 3,
     "explanation": "L'homme porte des cartons dans un entrepôt, donc (B) est correcte. (A), (C) et (D) décrivent d'autres actions liées à la logistique mais non présentes sur l'image.",
-    "transcript": "(A) A man is opening a delivery truck. (B) A man is carrying boxes in a warehouse. (C) A man is signing a delivery form. (D) A man is pushing a cart down a hallway.",
+    "transcript": "(A) A man is pushing a cart down a hallway. (B) A man is opening a delivery truck. (C) A man is signing a delivery form. (D) A man is carrying boxes in a warehouse.",
     "voiceGender": "male",
     "image": "/assets/pexels/6169046.jpeg"
   },
@@ -3919,7 +3919,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 2,
     "explanation": "Un couple est en train de manger à une table de restaurant, donc (A) est correcte. (B), (C) et (D) décrivent d'autres moments du repas non visibles sur l'image.",
-    "transcript": "(A) A couple is eating at a restaurant table. (B) A couple is ordering food at a counter. (C) A couple is walking into a restaurant. (D) A couple is paying for their meal.",
+    "transcript": "(A) A couple is paying for their meal. (B) A couple is walking into a restaurant. (C) A couple is eating at a restaurant table. (D) A couple is ordering food at a counter.",
     "voiceGender": "female",
     "image": "/assets/pexels/5086619.jpeg"
   },
@@ -3939,7 +3939,7 @@ export const INTERMEDIAIRE_GEN = [
     ],
     "answer": 0,
     "explanation": "La femme essaie un manteau dans un magasin de vêtements, donc (B) est correcte. (A), (C) et (D) décrivent d'autres tâches de magasin non présentes sur la scène.",
-    "transcript": "(A) A woman is folding clothes on a shelf. (B) A woman is trying on a coat in a clothing store. (C) A woman is handing a bag to a customer. (D) A woman is hanging garments on a rack.",
+    "transcript": "(A) A woman is trying on a coat in a clothing store. (B) A woman is handing a bag to a customer. (C) A woman is folding clothes on a shelf. (D) A woman is hanging garments on a rack.",
     "voiceGender": "male",
     "image": "/assets/pexels/36730416.jpeg"
   }

@@ -18,8 +18,7 @@ test("bilan < 75 % : le niveau Intermédiaire reste verrouillé", async ({ page 
   });
   await page.goto("/");
 
-  await page.getByText("Carte du parcours", { exact: true }).click();
-  await page.getByText("Débutant", { exact: true }).first().click();
+  await page.getByRole("button", { name: /Voir tout le parcours/ }).click();
   await expect(page.getByRole("heading", { name: "Niveau Débutant" })).toBeVisible();
   await page.getByRole("button", { name: "Bilan Débutant" }).click({ force: true });
   await page.getByTestId("start-session").click();

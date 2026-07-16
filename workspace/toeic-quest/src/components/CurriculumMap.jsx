@@ -4,6 +4,7 @@ import { ModuleNode } from "./ModuleNode.jsx";
 import { ScoreDisplay } from "./Gamification.jsx";
 import { Button } from "./ui/button.jsx";
 import { Badge } from "./ui/badge.jsx";
+import { LockIcon } from "./icons.jsx";
 import { cn } from "../lib/utils.js";
 
 // Carte de parcours « 1 an » : chemin vertical type Duolingo pour un niveau.
@@ -19,13 +20,19 @@ export function CurriculumMap({ progress, level, onOpenModule, onChangeLevel, on
     <div className="py-6 space-y-6">
       {/* En-tête */}
       <div className="flex items-center justify-between gap-4">
-        <Button variant="ghost" size="sm" onClick={onBack}>← Niveaux</Button>
+        <Button variant="ghost" size="sm" onClick={onBack}>← Accueil</Button>
         <div className="flex items-center gap-2">
           {idx > 0 && (
             <Button variant="outline" size="sm" onClick={() => onChangeLevel(levelIds[idx - 1])}>← {LEVELS[levelIds[idx - 1]].name}</Button>
           )}
-          {idx < levelIds.length - 1 && LEVEL_ORDER[levelIds[idx + 1]] <= LEVEL_ORDER[state.unlockedLevel || "debutant"] && (
-            <Button variant="outline" size="sm" onClick={() => onChangeLevel(levelIds[idx + 1])}>{LEVELS[levelIds[idx + 1]].name} →</Button>
+          {idx < levelIds.length - 1 && (
+            LEVEL_ORDER[levelIds[idx + 1]] <= LEVEL_ORDER[state.unlockedLevel || "debutant"] ? (
+              <Button variant="outline" size="sm" onClick={() => onChangeLevel(levelIds[idx + 1])}>{LEVELS[levelIds[idx + 1]].name} →</Button>
+            ) : (
+              <Button variant="outline" size="sm" disabled className="gap-1.5 text-muted-foreground">
+                <LockIcon size={12} /> {LEVELS[levelIds[idx + 1]].name}
+              </Button>
+            )
           )}
         </div>
       </div>

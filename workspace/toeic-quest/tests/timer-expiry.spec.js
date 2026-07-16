@@ -11,8 +11,7 @@ test("timer d'examen : expiration termine la session proprement", async ({ page 
   await page.clock.install();
   await page.goto("/");
 
-  await page.getByText("Carte du parcours", { exact: true }).click();
-  await page.getByText("Débutant", { exact: true }).first().click();
+  await page.getByRole("button", { name: /Voir tout le parcours/ }).click();
   await expect(page.getByRole("heading", { name: "Niveau Débutant" })).toBeVisible();
   // force: le nœud « à faire » pulse en continu (animate-pulse-accent) → jamais « stable » pour Playwright.
   await page.getByRole("button", { name: /Photos du quotidien/ }).click({ force: true });

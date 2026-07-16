@@ -14,7 +14,10 @@ test.describe("localStorage corrompu — forme invalide", () => {
 
     // Repli propre : dashboard par défaut (0 session), pas de NaN affiché.
     await expect(page.getByRole("heading", { name: /Bienvenue, futur champion/ })).toBeVisible();
-    await expect(page.getByText("NaN", { exact: false })).toHaveCount(0);
+    // Regex SANS le flag "i" → recherche sensible à la casse : évite un faux
+    // positif sur "mainteNANt" (getByText en chaîne est insensible à la casse
+    // par défaut et confondait "NaN" avec la fin du mot "maintenant").
+    await expect(page.getByText(/NaN/)).toHaveCount(0);
 
     const prog = await readProgress(page);
     expect(prog.totalSessions).toBe(0);
