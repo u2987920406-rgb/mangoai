@@ -3721,6 +3721,32 @@ Zéro git (règle absolue du projet : aucune opération git sans permission expl
 
 Reproduit et vérifié en réel via Chrome (pas seulement relu dans le code) : clic sur "Photos du quotidien" ouvre bien l'écran du module, badge "🔒 Intermédiaire" visible et grisé sur la carte du niveau Débutant. Build vert, 36/36 tests Playwright toujours verts après le fix.
 
-Pas encore commité (nouveau travail après `15d8e47`, en attente d'une instruction explicite de Raf).
+Commité par Raf sous `50b65eb` (les 5 fichiers `server/` non liés, déjà modifiés en parallèle par ailleurs, ont été volontairement exclus du commit — jamais mélanger du travail non lié).
+
+## Journal — 2026-07-17 : `toeic-quest` — enrichissement massif du contenu (46 modules régénérés via agents Claude)
+
+**Retour de Raf après test réel** : « les modules par semaine ne contiennent pas assez de contenu... je le finis en 5mn... il faudrait plus d'exercices... pour avoir matière au moins tous les 2/3 jours. » Diagnostic confirmé : chaque module ne portait que ~8-12 questions réelles contre un `targetCount` visé de 24 dans `curriculum.js`, et le déblocage du module suivant n'est pas gaté par le calendrier (`isModuleUnlocked` ne vérifie que les prérequis, jamais une date) — un utilisateur motivé traverse tout le parcours en une session, à l'opposé de l'esprit "1 an, 2h/semaine" du produit.
+
+Raf a choisi l'option "génération complète", avec deux contraintes explicites données en cours de route : **ne pas utiliser GLM-5.2** (rate-limité côté Ollama Cloud ce jour-là) et **utiliser l'écosystème Claude** (agents, pas un LLM externe) pour rédiger le contenu. Plan formalisé et approuvé (`C:\Users\PC-DELL\.claude\plans\statut-stateless-glade.md`).
+
+**Pipeline construit** :
+- `server/scripts/toeic-content-lib.ts` (nouveau) — extrait de `run-toeic-content.ts` toute la logique déterministe réutilisable (schémas `PART_INSTRUCTIONS` par partie P1-P7D, `validate`, `finalize` avec image Pexels réelle, `writeBank`), zéro appel LLM. Comptages visés relevés de 8-12 à 20-24 par module sur les 46 specs (15 Débutant + 19 Intermédiaire + 12 Avancé, hors modules bilan/examen qui piochent dans le pool de niveau à l'exécution).
+- Rédaction du contenu par **agents Claude** (`Agent` tool, `general-purpose`, plusieurs par message), chacun recevant le prompt exact de `buildPrompt(spec)` et renvoyant l'array JSON brut par module — substituant directement GLM sans toucher à Ollama.
+- `server/scripts/assemble-toeic-content.ts` (nouveau) — lit le JSON par module, `validate()`+`finalize()` (image Pexels réelle), accumule et écrit les 3 banques `.gen.js` finales.
+
+**Bugs de contenu récurrents trouvés et corrigés à la main** en cours de rédaction (classe de bug systémique : l'explication textuelle nomme le bon choix mais le champ `answer` pointe ailleurs — le modèle se corrige mentalement sans mettre à jour l'index) : M19, M30 (conversations à 3 locuteurs, confusion d'attribution), M39 (troncature), M43 (10/22 items incohérents réponse/explication — le pire cas rencontré), M44 (contradiction explicite dans le texte d'explication), M47 (virgules traînantes invalidant le JSON strict). Chaque cas corrigé en confrontant l'`answer` au texte de l'explication elle-même (source de vérité fiable même quand l'index est faux).
+
+**Résultat** : 344 (Débutant) + 434 (Intermédiaire) + 271 (Avancé) = **1049 questions**, contre ~377 avant (**×2.8**). Chaque module porte désormais 20-25 questions.
+
+**Passes de qualité post-génération** (leçons L134/biais déjà connues de ce projet, réappliquées proactivement) :
+1. **Rééquilibrage du biais de position des réponses** (`rebalance-toeic-answers.ts`, nouveau) — distribution mesurée avant correction fortement biaisée vers l'index 1 (jusqu'à 49 % des réponses sur certains niveaux) malgré une consigne de génération demandant une répartition égale. Permutation déterministe (PRNG à seed fixe) ramenant chaque niveau à une distribution quasi plate par nombre de choix (ex. Débutant : 90/90/90/74 sur 344).
+2. **Resynchronisation `transcript`/`choices` (P1)** — leçon L134 (régression du 2026-07-16) délibérément revérifiée : les 137 questions Part 1 (Photos) portent un champ `transcript` qui énumère `(A)...(B)...(C)...(D)...` en texte libre, INDÉPENDANT du tableau `choices` — le script de rééquilibrage ne touche que `choices`/`answer`. Les 137 transcripts ont été régénérés directement depuis `choices` (source de vérité, déjà dans le bon ordre) avant que le bug ne puisse se reproduire.
+3. **Localisation des images** (`localize-toeic-images.mjs`, nouveau) — 435 URLs Pexels distantes issues de la nouvelle génération (`finalize()` interroge Pexels en direct), téléchargées vers `public/assets/pexels/<id>.jpeg` et réécrites dans les 3 banques. 365 téléchargées, 52 déjà en cache (IDs recoupant l'ancien lot L132), 0 échec, 0 URL distante restante.
+
+**Vérifications** : build Vite vert, **36/36 tests Playwright verts** (desktop + mobile). Contrôle visuel réel dans Chrome non disponible cette session (extension navigateur non connectée) — vérification de substitution faite par comptage programmatique direct des banques : tous les modules à 20-25 questions, aucune régression de structure. **Limite honnête** : le contrôle visuel humain en conditions réelles reste à faire par Raf ou lors d'une prochaine session avec l'extension connectée.
+
+**Limites du registre mises à jour** : L131 (`toeic-quest` M05 — fausse diversité lexicale manage*/apply*) **résolue** par la régénération (vocabulaire désormais varié : director, budget, communication, logistics...). L130 (zéro question difficulté 3) reste **ouverte** — hors périmètre de cette passe, les instructions de génération plafonnent toujours à difficulté 2.
+
+Pas commité — 3 nouveaux scripts (`toeic-content-lib.ts`, `assemble-toeic-content.ts`, `rebalance-toeic-answers.ts`, `localize-toeic-images.mjs`) + 3 banques `.gen.js` réécrites, en attente d'instruction explicite de Raf. Les 6 fichiers `server/` non liés déjà modifiés en parallèle (brain-dispatch, brain-registry, etc.) restent volontairement hors scope de tout commit lié à ce travail.
 
 Zéro git (règle absolue du projet : aucune opération git sans permission explicite de Raf).

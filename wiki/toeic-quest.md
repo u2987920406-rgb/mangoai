@@ -1,9 +1,9 @@
 ---
 type: projet
 tags: [app, formation, toeic, gout, transmission, client]
-statut: 5/5 phases livrées + durcissement post-livraison (bugs audio, restructuration UX) — bloqué sur build natif (L133)
-sources: [statut.md 2026-07-16, limites.md L62-L64/L115/L130-L134, historique.md Journal 2026-07-16]
-maj: 2026-07-16
+statut: 5/5 phases livrées + durcissement post-livraison + enrichissement contenu ×2.8 (1049 questions) — bloqué sur build natif (L133)
+sources: [statut.md 2026-07-17, limites.md L62-L64/L115/L130-L134, historique.md Journal 2026-07-16/17]
+maj: 2026-07-17
 ---
 
 # Yes I Can Toeic *(anciennement TOEIC Quest)*
@@ -28,7 +28,18 @@ Après le plan à 5 phases, Raf a testé l'app en conditions réelles (mobile, c
 - **2 bugs audio** : (1) auto-lecture non désirée retirée de `SessionPlay.jsx` (l'utilisateur doit cliquer ▶) ; (2) régression auto-introduite par le script de rééquilibrage de la Phase 3 — le champ `transcript` encode aussi l'ordre des choix en texte libre `(A)(B)(C)(D)`, jamais audité lors du rééquilibrage → 52 questions désynchronisées, corrigées par régénération du transcript depuis `choices`. Leçon générale consignée L134 : un script qui réordonne un champ doit auditer tous les champs dérivés du même ordre.
 - **Restructuration UX** (« la section principale est le parcours sur plusieurs semaines ») : `Dashboard.jsx` réécrit pour que le parcours 52 semaines (XP + aperçu de 4 modules + bouton "Voir tout le parcours") domine visuellement, Diagnostic/Entraînement libre démotés en section "Autres outils" clairement étiquetée. `LevelSelect.jsx` supprimé — un hop de navigation en moins (Dashboard→CurriculumMap direct au lieu de Dashboard→LevelSelect→CurriculumMap).
 
-36/36 tests Playwright verts après chaque correction. Commits `57329d0` (Phases 1-5) + `15d8e47` (localisation images) faits avec permission explicite de Raf ; le durcissement post-livraison (bugs audio + restructuration UX) n'est pas encore commité, en attente d'instruction.
+36/36 tests Playwright verts après chaque correction. Commits `57329d0` (Phases 1-5) + `15d8e47` (localisation images) + `50b65eb` (bugs audio + restructuration UX) faits avec permission explicite de Raf.
+
+## Enrichissement du contenu (2026-07-17) — 46 modules régénérés via agents Claude
+
+Retour de Raf : « je le finis en 5mn... il faudrait plus d'exercices... pour avoir matière tous les 2/3 jours. » Chaque module ne portait que ~8-12 questions réelles contre un `targetCount` visé de 24, et le déblocage n'est pas gaté par le calendrier — le parcours se traverse en une session. Contraintes explicites de Raf : ne pas utiliser GLM-5.2 (rate-limité) ni Ollama — utiliser l'écosystème Claude (agents) pour rédiger le contenu.
+
+- **Pipeline** : `toeic-content-lib.ts` (extrait la logique déterministe de `run-toeic-content.ts` — schémas, `validate`, `finalize`, `writeBank`, zéro appel LLM) + génération par agents Claude (`Agent` tool, substitue directement GLM) + `assemble-toeic-content.ts` (assemble/valide/écrit les banques).
+- **Résultat** : 344+434+271 = **1049 questions** (vs ~377, ×2.8), chaque module à 20-25 questions.
+- **Qualité post-génération** : rééquilibrage du biais de position des réponses (`rebalance-toeic-answers.ts`), resynchronisation des 137 `transcript` P1 depuis `choices` (leçon L134 réappliquée proactivement, avant régression), localisation de 435 nouvelles images Pexels (`localize-toeic-images.mjs`).
+- **Bugs de contenu récurrents** : dans plusieurs modules (M19, M30, M39, M43, M44, M47), l'explication textuelle nomme le bon choix mais le champ `answer` pointait ailleurs — corrigé à la main module par module en confrontant `answer` au texte de l'explication.
+- **L131 résolue** (M05 — fausse diversité lexicale) ; **L130 reste ouverte** (zéro difficulté 3, hors scope de cette passe).
+- Build vert, 36/36 tests verts. Contrôle visuel Chrome non disponible cette session (extension déconnectée) — substitué par un comptage programmatique direct des banques. **Non commité**, en attente d'instruction de Raf.
 
 ## Rôle
 
