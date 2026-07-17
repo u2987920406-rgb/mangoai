@@ -17,8 +17,8 @@ export const AVANCE_GEN = [
       "The man is standing beside the bench, tying his shoe.",
       "The man is placing his foot on the bench to tie his shoe."
     ],
-    "answer": 3,
-    "explanation": "(A) faux : il n'est pas assis, son pied est posé sur le banc. (B) faux : il n'est pas à genoux au sol. (C) faux : il n'est pas simplement debout à côté, son pied est surélevé sur le banc.",
+    "answer": 0,
+    "explanation": "La bonne réponse correspond exactement à la scène : l'homme est assis sur le banc, penché en avant, en train de nouer son lacet. (B) faux : il n'est pas à genoux au sol. (C) faux : il n'est pas debout à côté du banc, il est assis dessus. (D) faux : son pied reste au sol, il n'est pas posé sur le banc.",
     "transcript": "(A) The man is sitting on the bench while tying his shoe. (B) The man is kneeling on the ground to tie his shoe. (C) The man is standing beside the bench, tying his shoe. (D) The man is placing his foot on the bench to tie his shoe.",
     "voiceGender": "male",
     "image": "/assets/pexels/7879911.jpeg"
@@ -38,7 +38,7 @@ export const AVANCE_GEN = [
       "The chef is cutting vegetables on a board."
     ],
     "answer": 2,
-    "explanation": "(A) faux : il n'y a pas d'évier ni de lavage dans la scène. (C) faux : il n'y a pas de casserole sur une cuisinière visible. (D) faux : il ne coupe pas de légumes, il dresse déjà l'assiette.",
+    "explanation": "(A) faux : il n'y a pas d'évier ni de lavage dans la scène. (B) faux : il n'y a pas de casserole sur une cuisinière visible. (D) faux : il ne coupe pas de légumes, il dresse déjà l'assiette.",
     "transcript": "(A) The chef is washing vegetables in the sink. (B) The chef is stirring a pot on the stove. (C) The chef is arranging food on a plate. (D) The chef is cutting vegetables on a board.",
     "voiceGender": "female",
     "image": "/assets/pexels/36430149.jpeg"
@@ -58,7 +58,7 @@ export const AVANCE_GEN = [
       "The cyclists are riding in single file across the bridge."
     ],
     "answer": 3,
-    "explanation": "(A) faux : ils ne roulent pas côte à côte mais l'un derrière l'autre. (B) faux : ils sont sur leurs vélos, pas en train de les pousser. (D) faux : ils sont en mouvement, pas arrêtés.",
+    "explanation": "(A) faux : ils ne roulent pas côte à côte mais l'un derrière l'autre. (B) faux : ils sont sur leurs vélos, pas en train de les pousser. (C) faux : ils sont en mouvement, pas arrêtés.",
     "transcript": "(A) The cyclists are riding side by side across the bridge. (B) The cyclists are walking their bicycles across the bridge. (C) The cyclists have stopped on the bridge to look at the view. (D) The cyclists are riding in single file across the bridge.",
     "voiceGender": "male",
     "image": "/assets/pexels/15273077.jpeg"
@@ -73,13 +73,13 @@ export const AVANCE_GEN = [
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
       "The woman is trimming plants on the balcony.",
-      "The woman is watering plants on the balcony.",
+      "The woman is drinking from a mug on the balcony.",
       "The woman is repotting a plant on the balcony.",
-      "The woman is picking up a fallen plant on the balcony."
+      "The woman is typing on a laptop on the balcony."
     ],
     "answer": 1,
-    "explanation": "(A) faux : elle n'utilise pas de sécateur, elle tient un arrosoir. (B) faux : il n'y a pas de terre ni de rempotage visible. (D) faux : aucune plante n'est tombée au sol.",
-    "transcript": "(A) The woman is trimming plants on the balcony. (B) The woman is watering plants on the balcony. (C) The woman is repotting a plant on the balcony. (D) The woman is picking up a fallen plant on the balcony.",
+    "explanation": "La bonne réponse correspond exactement à la scène : la femme est assise sur le rebord du balcon, tenant une tasse. (A) faux : elle n'utilise pas de sécateur. (C) faux : il n'y a pas de terre ni de rempotage visible. (D) faux : aucun ordinateur portable n'est présent dans l'image.",
+    "transcript": "(A) The woman is trimming plants on the balcony. (B) The woman is drinking from a mug on the balcony. (C) The woman is repotting a plant on the balcony. (D) The woman is typing on a laptop on the balcony.",
     "voiceGender": "female",
     "image": "/assets/pexels/5138173.jpeg"
   },
@@ -98,7 +98,7 @@ export const AVANCE_GEN = [
       "A worker is operating the forklift while boxes are stacked nearby."
     ],
     "answer": 3,
-    "explanation": "(B) faux : les caisses ne sont pas chargées sur le chariot, elles sont déjà empilées à côté. (C) faux : il n'y a pas de déchargement vers une étagère. (D) faux : un chariot élévateur est bien présent dans la scène.",
+    "explanation": "(A) faux : les caisses ne sont pas chargées sur le chariot, elles sont déjà empilées à côté. (B) faux : il n'y a pas de déchargement vers une étagère. (C) faux : un chariot élévateur est bien présent dans la scène.",
     "transcript": "(A) Workers are loading boxes onto a forklift by hand. (B) A worker is unloading boxes from the forklift onto a shelf. (C) Workers are stacking boxes on the floor without a forklift. (D) A worker is operating the forklift while boxes are stacked nearby.",
     "voiceGender": "male",
     "image": "/assets/pexels/34002079.jpeg"
@@ -138,7 +138,7 @@ export const AVANCE_GEN = [
       "The mechanic is working beneath a car raised on a lift."
     ],
     "answer": 3,
-    "explanation": "(A) faux : il n'est pas debout à côté, il travaille en dessous. (B) faux : il n'est pas allongé sur un chariot au sol, la voiture est surélevée par un pont élévateur. (D) faux : ce n'est pas le capot qui est ouvert, il travaille sous le véhicule.",
+    "explanation": "(A) faux : il n'est pas debout à côté, il travaille en dessous. (B) faux : il n'est pas allongé sur un chariot au sol, la voiture est surélevée par un pont élévateur. (C) faux : ce n'est pas le capot qui est ouvert, il travaille sous le véhicule.",
     "transcript": "(A) The mechanic is standing beside the car checking the tires. (B) The mechanic is lying on a creeper under the car. (C) The mechanic is opening the hood of the car. (D) The mechanic is working beneath a car raised on a lift.",
     "voiceGender": "male",
     "image": "/assets/pexels/5276374.jpeg"
@@ -158,7 +158,7 @@ export const AVANCE_GEN = [
       "The vendor is picking fruit from a crate."
     ],
     "answer": 0,
-    "explanation": "(A) faux : le fruit n'est pas en train d'être mis dans un sac. (B) faux : ce n'est pas un rangement sur table mais une pesée. (D) faux : il ne prend pas de fruit dans une caisse, il pèse déjà le fruit.",
+    "explanation": "(B) faux : le fruit n'est pas en train d'être mis dans un sac. (C) faux : ce n'est pas un rangement sur table mais une pesée. (D) faux : il ne prend pas de fruit dans une caisse, il pèse déjà le fruit.",
     "transcript": "(A) The vendor is weighing fruit on a scale. (B) The vendor is bagging fruit for a customer. (C) The vendor is arranging fruit on a display table. (D) The vendor is picking fruit from a crate.",
     "voiceGender": "female",
     "image": "/assets/pexels/37072909.jpeg"
@@ -178,7 +178,7 @@ export const AVANCE_GEN = [
       "The teacher is raising her hand at the front."
     ],
     "answer": 2,
-    "explanation": "(A) faux : ce ne sont pas tous les élèves qui lèvent la main, seulement une partie. (C) faux : plusieurs mains sont bien levées. (D) faux : c'est l'enseignante qui pointe un élève, elle ne lève pas la main elle-même.",
+    "explanation": "(A) faux : ce ne sont pas tous les élèves qui lèvent la main, seulement une partie. (B) faux : plusieurs mains sont bien levées. (D) faux : c'est l'enseignante qui pointe un élève, elle ne lève pas la main elle-même.",
     "transcript": "(A) All of the students have their hands raised. (B) None of the students have their hands raised. (C) Some of the students have their hands raised. (D) The teacher is raising her hand at the front.",
     "voiceGender": "male",
     "image": "/assets/pexels/12716111.jpeg"
@@ -218,7 +218,7 @@ export const AVANCE_GEN = [
       "The woman is talking on the phone by the train window."
     ],
     "answer": 1,
-    "explanation": "(A) faux : son regard est baissé sur son livre, pas tourné vers l'extérieur. (B) faux : elle n'a pas les yeux fermés, elle est en train de lire. (D) faux : aucun téléphone n'est visible dans la scène.",
+    "explanation": "(A) faux : son regard est baissé sur son livre, pas tourné vers l'extérieur. (C) faux : elle n'a pas les yeux fermés, elle est en train de lire. (D) faux : aucun téléphone n'est visible dans la scène.",
     "transcript": "(A) The woman is looking out the train window. (B) The woman is reading a book near the train window. (C) The woman is sleeping against the train window. (D) The woman is talking on the phone by the train window.",
     "voiceGender": "female",
     "image": "/assets/pexels/13271202.jpeg"
@@ -238,7 +238,7 @@ export const AVANCE_GEN = [
       "The workers are measuring the concrete slab with a tool."
     ],
     "answer": 0,
-    "explanation": "(A) faux : le béton est déjà coulé, ils sont en train de le lisser, pas de le verser. (C) faux : il n'y a pas de marteau-piqueur, ni de démolition. (D) faux : aucun instrument de mesure n'est utilisé dans la scène.",
+    "explanation": "(B) faux : le béton est déjà coulé, ils sont en train de le lisser, pas de le verser. (C) faux : il n'y a pas de marteau-piqueur, ni de démolition. (D) faux : aucun instrument de mesure n'est utilisé dans la scène.",
     "transcript": "(A) The workers are smoothing wet concrete with a trowel. (B) The workers are pouring concrete into a mold. (C) The workers are removing old concrete with a jackhammer. (D) The workers are measuring the concrete slab with a tool.",
     "voiceGender": "male",
     "image": "/assets/pexels/37121352.jpeg"
@@ -258,7 +258,7 @@ export const AVANCE_GEN = [
       "The receptionist is filing papers in a cabinet."
     ],
     "answer": 2,
-    "explanation": "(A) faux : ses mains ne sont pas sur le clavier, elle tient le téléphone. (B) faux : aucun visiteur ne reçoit de document dans la scène. (C) faux : il n'y a pas de classeur ni de rangement de papiers visible.",
+    "explanation": "(A) faux : ses mains ne sont pas sur le clavier, elle tient le téléphone. (B) faux : aucun visiteur ne reçoit de document dans la scène. (D) faux : il n'y a pas de classeur ni de rangement de papiers visible.",
     "transcript": "(A) The receptionist is typing on the computer. (B) The receptionist is handing a document to a visitor. (C) The receptionist is answering the phone at the desk. (D) The receptionist is filing papers in a cabinet.",
     "voiceGender": "female",
     "image": "/assets/pexels/7820322.jpeg"
@@ -278,7 +278,7 @@ export const AVANCE_GEN = [
       "The fisherman is casting a net into the river."
     ],
     "answer": 3,
-    "explanation": "(A) faux : il n'utilise pas de canne à moulinet, il lance un filet. (C) faux : aucune réparation de bateau n'apparaît dans la scène. (D) faux : il est debout en train de lancer, pas assis sur la berge.",
+    "explanation": "(A) faux : il n'utilise pas de canne à moulinet, il lance un filet. (B) faux : aucune réparation de bateau n'apparaît dans la scène. (C) faux : il est debout en train de lancer, pas assis sur la berge.",
     "transcript": "(A) The fisherman is reeling in a fishing line. (B) The fisherman is repairing his boat by the river. (C) The fisherman is sitting on the riverbank with a rod. (D) The fisherman is casting a net into the river.",
     "voiceGender": "male",
     "image": "/assets/pexels/6710835.jpeg"
@@ -298,7 +298,7 @@ export const AVANCE_GEN = [
       "The librarian is reading a book at a table."
     ],
     "answer": 0,
-    "explanation": "(A) faux : elle n'est pas au comptoir, elle est près des étagères. (B) faux : il n'y a pas de chariot de livres retournés dans la scène. (D) faux : elle est debout en train d'atteindre un rayon, pas assise à lire.",
+    "explanation": "(B) faux : elle n'est pas au comptoir, elle est près des étagères. (C) faux : il n'y a pas de chariot de livres retournés dans la scène. (D) faux : elle est debout en train d'atteindre un rayon, pas assise à lire.",
     "transcript": "(A) The librarian is reaching for a book on a high shelf. (B) The librarian is checking out books at the counter. (C) The librarian is sorting returned books into a cart. (D) The librarian is reading a book at a table.",
     "voiceGender": "female",
     "image": "/assets/pexels/37726703.jpeg"
@@ -318,7 +318,7 @@ export const AVANCE_GEN = [
       "The painter is cleaning brushes in the sink."
     ],
     "answer": 0,
-    "explanation": "(A) faux : il n'est pas en train de mélanger la peinture, il applique déjà avec le rouleau. (B) faux : aucun ruban de masquage n'apparaît sur les bords. (C) faux : il n'y a pas d'évier ni de nettoyage de pinceaux dans la scène.",
+    "explanation": "(B) faux : il n'est pas en train de mélanger la peinture, il applique déjà avec le rouleau. (C) faux : aucun ruban de masquage n'apparaît sur les bords. (D) faux : il n'y a pas d'évier ni de nettoyage de pinceaux dans la scène.",
     "transcript": "(A) The painter is rolling paint onto the wall from a ladder. (B) The painter is mixing paint in a bucket on the floor. (C) The painter is taping the edges of the wall before painting. (D) The painter is cleaning brushes in the sink.",
     "voiceGender": "male",
     "image": "/assets/pexels/5691471.jpeg"
@@ -338,7 +338,7 @@ export const AVANCE_GEN = [
       "The hikers are setting up a tent near the footbridge."
     ],
     "answer": 1,
-    "explanation": "(A) faux : ils sont en train de marcher, pas appuyés sur la rambarde pour se reposer. (B) faux : il n'y a pas d'arbre tombé, ils utilisent un pont en bois. (D) faux : aucune tente n'est montée dans la scène.",
+    "explanation": "(A) faux : ils sont en train de marcher, pas appuyés sur la rambarde pour se reposer. (C) faux : il n'y a pas d'arbre tombé, ils utilisent un pont en bois. (D) faux : aucune tente n'est montée dans la scène.",
     "transcript": "(A) The hikers are resting on the footbridge railing. (B) The hikers are crossing a wooden footbridge over a stream. (C) The hikers are climbing over a fallen tree in the forest. (D) The hikers are setting up a tent near the footbridge.",
     "voiceGender": "female",
     "image": "/assets/pexels/9160315.jpeg"
@@ -398,7 +398,7 @@ export const AVANCE_GEN = [
       "The gardener is trimming the hedge with shears."
     ],
     "answer": 3,
-    "explanation": "(A) faux : il n'y a pas de tondeuse, seulement des cisailles pour la haie. (C) faux : aucune plantation de fleurs n'apparaît dans la scène. (D) faux : il n'y a pas de râteau ni de feuilles ramassées.",
+    "explanation": "(A) faux : il n'y a pas de tondeuse, seulement des cisailles pour la haie. (B) faux : aucune plantation de fleurs n'apparaît dans la scène. (C) faux : il n'y a pas de râteau ni de feuilles ramassées.",
     "transcript": "(A) The gardener is mowing the lawn near the hedge. (B) The gardener is planting flowers along the hedge. (C) The gardener is raking leaves beside the hedge. (D) The gardener is trimming the hedge with shears.",
     "voiceGender": "male",
     "image": "/assets/pexels/5027619.jpeg"
@@ -415,11 +415,11 @@ export const AVANCE_GEN = [
       "A woman is writing on the whiteboard while others listen.",
       "A man is distributing handouts to the team.",
       "The team is shaking hands around the table.",
-      "A woman is pointing at a screen while the team takes notes."
+      "A man is pointing at the whiteboard while the team listens."
     ],
     "answer": 3,
-    "explanation": "(A) faux : elle ne parle pas devant un tableau blanc mais devant un écran, et elle pointe plutôt qu'elle n'écrit. (B) faux : aucun document n'est distribué dans la scène. (C) faux : personne ne se serre la main autour de la table.",
-    "transcript": "(A) A woman is writing on the whiteboard while others listen. (B) A man is distributing handouts to the team. (C) The team is shaking hands around the table. (D) A woman is pointing at a screen while the team takes notes.",
+    "explanation": "La bonne réponse correspond exactement à la scène : un homme en costume désigne le tableau blanc pendant que ses collègues l'écoutent. (A) faux : ce n'est pas une femme qui écrit au tableau, et personne n'écrit à cet instant. (B) faux : aucun document n'est distribué. (C) faux : personne ne se serre la main autour de la table.",
+    "transcript": "(A) A woman is writing on the whiteboard while others listen. (B) A man is distributing handouts to the team. (C) The team is shaking hands around the table. (D) A man is pointing at the whiteboard while the team listens.",
     "voiceGender": "female",
     "image": "/assets/pexels/7698712.jpeg"
   },
@@ -438,7 +438,7 @@ export const AVANCE_GEN = [
       "The delivery driver is scanning a package at the doorstep."
     ],
     "answer": 3,
-    "explanation": "(A) faux : il ne porte qu'un seul colis, pas plusieurs boîtes. (B) faux : il ne frappe pas à la porte, il scanne le colis avec un appareil. (D) faux : il ne recharge pas la camionnette, il est déjà devant la porte.",
+    "explanation": "(A) faux : il ne porte qu'un seul colis, pas plusieurs boîtes. (B) faux : il ne frappe pas à la porte, il scanne le colis avec un appareil. (C) faux : il ne recharge pas la camionnette, il est déjà devant la porte.",
     "transcript": "(A) The delivery driver is carrying multiple boxes up the steps. (B) The delivery driver is knocking on the door with a package. (C) The delivery driver is loading boxes back into the van. (D) The delivery driver is scanning a package at the doorstep.",
     "voiceGender": "male",
     "image": "/assets/pexels/6407624.jpeg"

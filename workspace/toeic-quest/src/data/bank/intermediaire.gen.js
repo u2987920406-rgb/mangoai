@@ -12,14 +12,14 @@ export const INTERMEDIAIRE_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A woman is filing papers into a cabinet while a man talks on the phone.",
-      "A man is typing on a computer while a woman talks on the phone.",
-      "A woman is typing on a computer while a man talks on the phone nearby.",
-      "Two women are talking on the phone at the same desk."
+      "A woman is filing papers into a cabinet nearby.",
+      "A woman is typing on a computer at the desk.",
+      "A woman is talking on the phone while her colleague reviews some notes.",
+      "The two women are shaking hands across the desk."
     ],
     "answer": 2,
-    "explanation": "La bonne réponse (A) correspond exactement à la scène : une femme tape sur un ordinateur pendant qu'un homme téléphone à proximité. (B) est presque vraie mais remplace la frappe au clavier par le classement de documents, action absente de l'image. (C) inverse les rôles homme/femme, ce qui est faux. (D) élimine l'homme et invente une deuxième femme au téléphone, ce qui ne correspond pas à la scène.",
-    "transcript": "(A) A woman is filing papers into a cabinet while a man talks on the phone. (B) A man is typing on a computer while a woman talks on the phone. (C) A woman is typing on a computer while a man talks on the phone nearby. (D) Two women are talking on the phone at the same desk.",
+    "explanation": "La bonne réponse correspond exactement à la scène : une femme parle au téléphone pendant que sa collègue consulte des notes en buvant un café. Les autres phrases décrivent des actions absentes de l'image (classement, ordinateur, poignée de main).",
+    "transcript": "(A) A woman is filing papers into a cabinet nearby. (B) A woman is typing on a computer at the desk. (C) A woman is talking on the phone while her colleague reviews some notes. (D) The two women are shaking hands across the desk.",
     "voiceGender": "female",
     "image": "/assets/pexels/8101569.jpeg"
   },
@@ -38,7 +38,7 @@ export const INTERMEDIAIRE_GEN = [
       "A crane operator is stepping out of the cab."
     ],
     "answer": 0,
-    "explanation": "La réponse (B) est correcte : deux ouvriers transportent ensemble une poutre en bois sur le chantier. (A) montre une échelle présente sur le site mais personne n'y descend. (C) décrit une action de peinture totalement absente de la scène de construction. (D) mentionne une grue et son opérateur, éléments plausibles sur un chantier mais qui ne figurent pas dans cette image précise.",
+    "explanation": "La réponse (A) est correcte : deux ouvriers transportent ensemble une poutre en bois sur le chantier. (B) montre une échelle présente sur le site mais personne n'y descend. (C) décrit une action de peinture totalement absente de la scène de construction. (D) mentionne une grue et son opérateur, éléments plausibles sur un chantier mais qui ne figurent pas dans cette image précise.",
     "transcript": "(A) Two workers are carrying a wooden beam across the site. (B) A worker is climbing down a ladder. (C) A worker is painting a wall. (D) A crane operator is stepping out of the cab.",
     "voiceGender": "male",
     "image": "/assets/pexels/8664753.jpeg"
@@ -54,12 +54,12 @@ export const INTERMEDIAIRE_GEN = [
     "choices": [
       "Everyone is standing around the table.",
       "The presenter is sitting down while others stand.",
-      "A man is pointing at a screen while colleagues take notes.",
+      "A woman is pointing at a screen while colleagues take notes.",
       "The colleagues are shaking hands."
     ],
     "answer": 2,
-    "explanation": "(C) est correcte : un homme désigne l'écran de présentation pendant que ses collègues prennent des notes. (A) est fausse car seuls certains sont debout, pas tout le monde à table. (B) inverse la posture : c'est le présentateur qui est debout, pas assis. (D) décrit une poignée de main qui n'apparaît pas dans cette réunion de travail.",
-    "transcript": "(A) Everyone is standing around the table. (B) The presenter is sitting down while others stand. (C) A man is pointing at a screen while colleagues take notes. (D) The colleagues are shaking hands.",
+    "explanation": "La bonne réponse correspond exactement à la scène : une femme désigne l'écran de présentation pendant que ses collègues prennent des notes. (A) est fausse car seule la présentatrice est debout devant l'écran. (B) inverse la posture : c'est elle qui est debout, pas assise. (D) décrit une poignée de main absente de cette réunion de travail.",
+    "transcript": "(A) Everyone is standing around the table. (B) The presenter is sitting down while others stand. (C) A woman is pointing at a screen while colleagues take notes. (D) The colleagues are shaking hands.",
     "voiceGender": "male",
     "image": "/assets/pexels/17713946.jpeg"
   },
@@ -78,7 +78,7 @@ export const INTERMEDIAIRE_GEN = [
       "Workers are loading boxes onto a truck."
     ],
     "answer": 2,
-    "explanation": "(D) correspond précisément à la scène : un ouvrier portant des lunettes de protection examine une pièce sur le tapis roulant. (A) invente un balayage du sol qui n'a pas lieu. (B) parle de réparation par deux techniciciens alors qu'un seul ouvrier inspecte une pièce. (C) montre un chargement de camion, action extérieure à l'atelier montré ici.",
+    "explanation": "(C) correspond précisément à la scène : un ouvrier portant des lunettes de protection examine une pièce sur le tapis roulant. (A) invente un balayage du sol qui n'a pas lieu. (B) parle de réparation par deux techniciciens alors qu'un seul ouvrier inspecte une pièce. (D) montre un chargement de camion, action extérieure à l'atelier montré ici.",
     "transcript": "(A) A worker is sweeping the factory floor. (B) Machines are being repaired by two technicians. (C) A worker in goggles is inspecting a part on the conveyor belt. (D) Workers are loading boxes onto a truck.",
     "voiceGender": "female",
     "image": "/assets/pexels/16368437.jpeg"
@@ -98,7 +98,7 @@ export const INTERMEDIAIRE_GEN = [
       "A forklift operator is lifting a pallet of boxes."
     ],
     "answer": 3,
-    "explanation": "(A) décrit fidèlement l'action centrale : le cariste soulève une palette de cartons. (B) est fausse car les caisses sont manipulées avec le chariot élévateur, pas à la main. (C) déplace la scène à l'extérieur alors qu'elle se déroule dans l'entrepôt. (D) contredit l'image en affirmant que le chariot est vide et à l'arrêt, alors qu'il est en train de lever une charge.",
+    "explanation": "(D) décrit fidèlement l'action centrale : le cariste soulève une palette de cartons. (A) est fausse car les caisses sont manipulées avec le chariot élévateur, pas à la main. (B) déplace la scène à l'extérieur alors qu'elle se déroule dans l'entrepôt. (C) contredit l'image en affirmant que le chariot est vide et à l'arrêt, alors qu'il est en train de lever une charge.",
     "transcript": "(A) Workers are stacking boxes by hand without a forklift. (B) A worker is driving a forklift outside the warehouse. (C) The forklift is parked and empty. (D) A forklift operator is lifting a pallet of boxes.",
     "voiceGender": "male",
     "image": "/assets/pexels/1267324.jpeg"
@@ -138,7 +138,7 @@ export const INTERMEDIAIRE_GEN = [
       "Students are working in small groups outside."
     ],
     "answer": 0,
-    "explanation": "(C) décrit bien la scène : l'enseignant écrit au tableau pendant que des élèves lèvent la main. (A) contredit l'image, personne ne quitte la salle. (B) place le professeur assis à corriger des copies, ce qui n'est pas l'action montrée. (D) déplace la scène à l'extérieur en petits groupes, ce qui est faux ici.",
+    "explanation": "(A) décrit bien la scène : l'enseignant écrit au tableau pendant que des élèves lèvent la main. (B) contredit l'image, personne ne quitte la salle. (C) place le professeur assis à corriger des copies, ce qui n'est pas l'action montrée. (D) déplace la scène à l'extérieur en petits groupes, ce qui est faux ici.",
     "transcript": "(A) A teacher is writing on the whiteboard while students raise their hands. (B) Students are leaving the classroom. (C) The teacher is sitting at a desk grading papers. (D) Students are working in small groups outside.",
     "voiceGender": "male",
     "image": "/assets/pexels/5905554.jpeg"
@@ -158,7 +158,7 @@ export const INTERMEDIAIRE_GEN = [
       "Luggage is being placed on a cart by hand."
     ],
     "answer": 0,
-    "explanation": "(D) correspond à l'action précise : un agent scanne le billet d'un passager au comptoir. (A) est fausse car la scène se déroule à l'enregistrement, pas à l'embarquement dans l'avion. (B) invente un pilote absent de l'image. (C) décrit des bagages posés à la main, alors qu'ils circulent sur le tapis roulant à l'arrière-plan.",
+    "explanation": "(A) correspond à l'action précise : un agent scanne le billet d'un passager au comptoir. (B) est fausse car la scène se déroule à l'enregistrement, pas à l'embarquement dans l'avion. (C) invente un pilote absent de l'image. (D) décrit des bagages posés à la main, alors qu'ils circulent sur le tapis roulant à l'arrière-plan.",
     "transcript": "(A) A staff member is scanning a passenger's ticket at the counter. (B) Passengers are boarding a plane directly. (C) A pilot is greeting passengers at the gate. (D) Luggage is being placed on a cart by hand.",
     "voiceGender": "female",
     "image": "/assets/pexels/5955444.jpeg"
@@ -178,7 +178,7 @@ export const INTERMEDIAIRE_GEN = [
       "A chef is washing dishes at the sink."
     ],
     "answer": 1,
-    "explanation": "(A) reflète exactement la scène : le chef dresse une assiette pendant que le serveur vient la chercher. (B) inverse les rôles en faisant cuisiner le serveur. (C) suggère une fermeture et un nettoyage, contredisant l'activité en cours. (D) invente une vaisselle qui n'est pas l'action représentée.",
+    "explanation": "(B) reflète exactement la scène : le chef dresse une assiette pendant que le serveur vient la chercher. (A) inverse les rôles en faisant cuisiner le serveur. (C) suggère une fermeture et un nettoyage, contredisant l'activité en cours. (D) invente une vaisselle qui n'est pas l'action représentée.",
     "transcript": "(A) A waiter is cooking at the stove. (B) A chef is plating food while a waiter picks up the dish. (C) The chefs are cleaning the kitchen after closing. (D) A chef is washing dishes at the sink.",
     "voiceGender": "male",
     "image": "/assets/pexels/262978.jpeg"
@@ -198,7 +198,7 @@ export const INTERMEDIAIRE_GEN = [
       "A carpenter is sanding a chair by hand."
     ],
     "answer": 2,
-    "explanation": "(B) est correcte : un menuisier prend une mesure pendant qu'un autre utilise la scie. (A) montre une table déjà finie qu'on peint, action absente ici. (C) fait référence au balayage de la sciure, qui n'est pas ce que font les ouvriers dans cette scène active. (D) invente un ponçage de chaise qui ne correspond pas à l'image.",
+    "explanation": "(C) est correcte : un menuisier prend une mesure pendant qu'un autre utilise la scie. (A) montre une table déjà finie qu'on peint, action absente ici. (B) fait référence au balayage de la sciure, qui n'est pas ce que font les ouvriers dans cette scène active. (D) invente un ponçage de chaise qui ne correspond pas à l'image.",
     "transcript": "(A) A carpenter is painting a finished table. (B) The workers are sweeping sawdust into a bin. (C) One carpenter measures a board while another operates a saw. (D) A carpenter is sanding a chair by hand.",
     "voiceGender": "female",
     "image": "/assets/pexels/37178416.jpeg"
@@ -218,7 +218,7 @@ export const INTERMEDIAIRE_GEN = [
       "A scientist is pouring liquid into a sink."
     ],
     "answer": 0,
-    "explanation": "(C) décrit fidèlement l'action principale : un scientifique observe un échantillon au microscope. (A) invente une écriture au tableau absente du laboratoire. (B) montre une poignée de main qui ne se produit pas dans cette scène de recherche. (D) fait référence à un versement de liquide dans un évier, action non représentée ici.",
+    "explanation": "(A) décrit fidèlement l'action principale : un scientifique observe un échantillon au microscope. (B) invente une écriture au tableau absente du laboratoire. (C) montre une poignée de main qui ne se produit pas dans cette scène de recherche. (D) fait référence à un versement de liquide dans un évier, action non représentée ici.",
     "transcript": "(A) A scientist is examining a sample through a microscope. (B) A scientist is writing on a whiteboard. (C) Two scientists are shaking hands over a table. (D) A scientist is pouring liquid into a sink.",
     "voiceGender": "male",
     "image": "/assets/pexels/4033151.jpeg"
@@ -238,7 +238,7 @@ export const INTERMEDIAIRE_GEN = [
       "Customers are lined up outside the store."
     ],
     "answer": 2,
-    "explanation": "(D) est la description exacte : un employé réapprovisionne un rayon pendant que des clients regardent les produits. (A) invente une cabine d'essayage absente du magasin. (B) place la caisse comme vide, ce qui contredit l'activité en cours. (C) déplace les clients à l'extérieur, alors qu'ils se trouvent dans les rayons.",
+    "explanation": "(C) est la description exacte : un employé réapprovisionne un rayon pendant que des clients regardent les produits. (A) invente une cabine d'essayage absente du magasin. (B) place la caisse comme vide, ce qui contredit l'activité en cours. (D) déplace les clients à l'extérieur, alors qu'ils se trouvent dans les rayons.",
     "transcript": "(A) A customer is trying on clothes in a fitting room. (B) The cashier is counting money at an empty register. (C) An employee is restocking items on a shelf while customers browse. (D) Customers are lined up outside the store.",
     "voiceGender": "female",
     "image": "/assets/pexels/5486161.jpeg"
@@ -258,7 +258,7 @@ export const INTERMEDIAIRE_GEN = [
       "A vendor is arranging fruit on a stand while a customer points at it."
     ],
     "answer": 3,
-    "explanation": "(A) correspond à la scène : le vendeur dispose les fruits pendant qu'un client les désigne du doigt. (B) invente un départ du marché avec un panier, action non montrée. (C) suggère une fermeture des étals, contraire à l'activité de vente en cours. (D) décrit une dégustation qui n'apparaît pas dans l'image.",
+    "explanation": "(D) correspond à la scène : le vendeur dispose les fruits pendant qu'un client les désigne du doigt. (A) invente un départ du marché avec un panier, action non montrée. (B) suggère une fermeture des étals, contraire à l'activité de vente en cours. (C) décrit une dégustation qui n'apparaît pas dans l'image.",
     "transcript": "(A) A customer is carrying a basket away from the market. (B) Vendors are packing up their stalls. (C) A customer is tasting a sample of fruit. (D) A vendor is arranging fruit on a stand while a customer points at it.",
     "voiceGender": "male",
     "image": "/assets/pexels/13679554.jpeg"
@@ -278,7 +278,7 @@ export const INTERMEDIAIRE_GEN = [
       "A librarian is shelving books while patrons read at tables."
     ],
     "answer": 3,
-    "explanation": "(B) décrit correctement la scène : le bibliothécaire range des livres pendant que des usagers lisent aux tables. (A) invente un emprunt au comptoir, action absente. (C) contredit l'ambiance calme d'une bibliothèque en évoquant du bruit. (D) est fausse car le bibliothécaire est actif parmi les rayons, pas assis seul à un bureau.",
+    "explanation": "(D) décrit correctement la scène : le bibliothécaire range des livres pendant que des usagers lisent aux tables. (A) invente un emprunt au comptoir, action absente. (B) contredit l'ambiance calme d'une bibliothèque en évoquant du bruit. (C) est fausse car le bibliothécaire est actif parmi les rayons, pas assis seul à un bureau.",
     "transcript": "(A) A patron is checking out books at the counter. (B) Patrons are talking loudly near the entrance. (C) A librarian is sitting alone at a desk. (D) A librarian is shelving books while patrons read at tables.",
     "voiceGender": "female",
     "image": "/assets/pexels/11599620.jpeg"
@@ -298,7 +298,7 @@ export const INTERMEDIAIRE_GEN = [
       "Everyone in the gym is sitting down resting."
     ],
     "answer": 0,
-    "explanation": "(C) correspond à la scène complète : le coach assiste un pratiquant qui soulève des poids pendant que d'autres courent sur des tapis. (A) est fausse car c'est un client, pas l'entraîneur, qui soulève les poids. (B) invente une séance d'étirement en cercle absente. (D) contredit l'image en affirmant que tout le monde est assis à se reposer.",
+    "explanation": "(A) correspond à la scène complète : le coach assiste un pratiquant qui soulève des poids pendant que d'autres courent sur des tapis. (B) est fausse car c'est un client, pas l'entraîneur, qui soulève les poids. (C) invente une séance d'étirement en cercle absente. (D) contredit l'image en affirmant que tout le monde est assis à se reposer.",
     "transcript": "(A) A trainer is spotting a person lifting weights while others run on treadmills. (B) The trainer is lifting weights alone. (C) People are stretching in a circle. (D) Everyone in the gym is sitting down resting.",
     "voiceGender": "male",
     "image": "/assets/pexels/4853338.jpeg"
@@ -318,7 +318,7 @@ export const INTERMEDIAIRE_GEN = [
       "Passengers are sleeping on benches."
     ],
     "answer": 0,
-    "explanation": "(D) décrit fidèlement la scène : le contrôleur vérifie les billets pendant que les voyageurs attendent sur le quai. (A) confond le train avec un bus, erreur de véhicule. (B) invente un nettoyage des portes, action absente. (C) exagère en affirmant que les passagers dorment, alors qu'ils sont debout à attendre.",
+    "explanation": "(A) décrit fidèlement la scène : le contrôleur vérifie les billets pendant que les voyageurs attendent sur le quai. (B) confond le train avec un bus, erreur de véhicule. (C) invente un nettoyage des portes, action absente. (D) exagère en affirmant que les passagers dorment, alors qu'ils sont debout à attendre.",
     "transcript": "(A) A conductor is checking tickets while passengers wait on the platform. (B) Passengers are boarding a bus. (C) A conductor is cleaning the train doors. (D) Passengers are sleeping on benches.",
     "voiceGender": "female",
     "image": "/assets/pexels/19212982.jpeg"
@@ -338,7 +338,7 @@ export const INTERMEDIAIRE_GEN = [
       "Workers are feeding animals in a barn."
     ],
     "answer": 1,
-    "explanation": "(A) correspond exactement : les fermiers chargent des caisses de légumes dans le camion. (B) place l'action sur le labourage au tracteur, alors qu'un tracteur est visible mais inactif à l'arrière-plan. (C) invente une cueillette de fruits en hauteur, absente de la scène. (D) déplace l'action dans une grange avec des animaux, ce qui n'est pas représenté.",
+    "explanation": "(B) correspond exactement : les fermiers chargent des caisses de légumes dans le camion. (A) place l'action sur le labourage au tracteur, alors qu'un tracteur est visible mais inactif à l'arrière-plan. (C) invente une cueillette de fruits en hauteur, absente de la scène. (D) déplace l'action dans une grange avec des animaux, ce qui n'est pas représenté.",
     "transcript": "(A) A farmer is plowing the field with a tractor alone. (B) Farmers are loading crates of vegetables onto a truck. (C) Farmers are harvesting fruit from trees. (D) Workers are feeding animals in a barn.",
     "voiceGender": "male",
     "image": "/assets/pexels/9798995.jpeg"
@@ -358,7 +358,7 @@ export const INTERMEDIAIRE_GEN = [
       "The speaker is sitting among the audience."
     ],
     "answer": 0,
-    "explanation": "(B) décrit correctement la scène : l'orateur gesticule au pupitre pendant que le public écoute. (A) contredit l'image, le public est assis et attentif, pas en train de partir. (C) évoque une préparation avant l'événement, alors que la conférence est déjà en cours. (D) inverse la position de l'orateur, qui se trouve au pupitre et non parmi le public.",
+    "explanation": "(A) décrit correctement la scène : l'orateur gesticule au pupitre pendant que le public écoute. (B) contredit l'image, le public est assis et attentif, pas en train de partir. (C) évoque une préparation avant l'événement, alors que la conférence est déjà en cours. (D) inverse la position de l'orateur, qui se trouve au pupitre et non parmi le public.",
     "transcript": "(A) A speaker is gesturing at the podium while the audience listens. (B) The audience is leaving the auditorium. (C) People are setting up chairs before the event. (D) The speaker is sitting among the audience.",
     "voiceGender": "female",
     "image": "/assets/pexels/20733081.jpeg"
@@ -378,7 +378,7 @@ export const INTERMEDIAIRE_GEN = [
       "A supervisor reviews a blueprint while workers pour concrete nearby."
     ],
     "answer": 3,
-    "explanation": "(C) est la description exacte : le superviseur consulte un plan pendant que les ouvriers coulent du béton à proximité. (A) invente une démolition absente du chantier. (B) déplace la scène dans un bureau, alors qu'elle se déroule en extérieur sur le chantier. (D) décrit une peinture de façade qui ne correspond pas à cette étape de construction.",
+    "explanation": "(D) est la description exacte : le superviseur consulte un plan pendant que les ouvriers coulent du béton à proximité. (A) invente une démolition absente du chantier. (B) déplace la scène dans un bureau, alors qu'elle se déroule en extérieur sur le chantier. (C) décrit une peinture de façade qui ne correspond pas à cette étape de construction.",
     "transcript": "(A) Workers are demolishing a wall. (B) A supervisor is signing paperwork in an office. (C) Workers are painting the building exterior. (D) A supervisor reviews a blueprint while workers pour concrete nearby.",
     "voiceGender": "male",
     "image": "/assets/pexels/7937752.jpeg"
@@ -398,7 +398,7 @@ export const INTERMEDIAIRE_GEN = [
       "Agents are having lunch at their desks."
     ],
     "answer": 0,
-    "explanation": "(D) correspond fidèlement à la scène : le superviseur circule entre les rangées d'agents équipés de casques. (A) invente des employés debout en train de s'étirer, absent de l'image. (B) est fausse car le superviseur est en mouvement, pas assis seul. (C) évoque une pause déjeuner qui contredit l'activité de travail visible.",
+    "explanation": "(A) correspond fidèlement à la scène : le superviseur circule entre les rangées d'agents équipés de casques. (B) invente des employés debout en train de s'étirer, absent de l'image. (C) est fausse car le superviseur est en mouvement, pas assis seul. (D) évoque une pause déjeuner qui contredit l'activité de travail visible.",
     "transcript": "(A) A supervisor walks between rows of agents wearing headsets. (B) Agents are standing up stretching. (C) A supervisor is sitting at a desk alone. (D) Agents are having lunch at their desks.",
     "voiceGender": "female",
     "image": "/assets/pexels/8866764.jpeg"
@@ -418,7 +418,7 @@ export const INTERMEDIAIRE_GEN = [
       "A baker is decorating a cake alone."
     ],
     "answer": 1,
-    "explanation": "(A) décrit fidèlement les deux actions simultanées : un boulanger enfourne le pain pendant qu'un autre pétrit la pâte. (B) inverse les rôles en faisant cuisiner un client. (C) suggère une fermeture, contraire à l'activité de préparation en cours. (D) réduit la scène à une seule personne décorant un gâteau, ce qui n'est pas représenté.",
+    "explanation": "(B) décrit fidèlement les deux actions simultanées : un boulanger enfourne le pain pendant qu'un autre pétrit la pâte. (A) inverse les rôles en faisant cuisiner un client. (C) suggère une fermeture, contraire à l'activité de préparation en cours. (D) réduit la scène à une seule personne décorant un gâteau, ce qui n'est pas représenté.",
     "transcript": "(A) A customer is baking bread behind the counter. (B) A baker slides a tray of bread into the oven while another kneads dough. (C) The bakers are closing the shop for the day. (D) A baker is decorating a cake alone.",
     "voiceGender": "male",
     "image": "/assets/pexels/30918892.jpeg"
@@ -438,7 +438,7 @@ export const INTERMEDIAIRE_GEN = [
       "The truck is parked empty with no workers nearby."
     ],
     "answer": 2,
-    "explanation": "(B) est correcte : un employé scanne un code-barres pendant que d'autres chargent des cartons dans le camion. (A) inverse l'action en parlant de déchargement par le chauffeur seul. (C) déplace la scène à l'intérieur pour du tri de courrier, ce qui n'est pas montré. (D) contredit l'image en affirmant que le camion est vide et sans personne autour.",
+    "explanation": "(C) est correcte : un employé scanne un code-barres pendant que d'autres chargent des cartons dans le camion. (A) inverse l'action en parlant de déchargement par le chauffeur seul. (B) déplace la scène à l'intérieur pour du tri de courrier, ce qui n'est pas montré. (D) contredit l'image en affirmant que le camion est vide et sans personne autour.",
     "transcript": "(A) A driver is unloading the truck alone. (B) Workers are sorting mail indoors. (C) A worker scans a barcode while others load boxes onto the truck. (D) The truck is parked empty with no workers nearby.",
     "voiceGender": "female",
     "image": "/assets/pexels/6169676.jpeg"
@@ -9331,9 +9331,10 @@ export const INTERMEDIAIRE_GEN = [
       "A man is cleaning windows with a squeegee."
     ],
     "answer": 2,
-    "explanation": "La bonne réponse (A) correspond à la scène : un homme examine une machine dans une usine. (B) parle d'un vélo et d'un garage, absents de l'image. (C) évoque un camion et des cartons, non présents. (D) mentionne des vitres et une raclette, éléments non représentés.",
+    "explanation": "La bonne réponse (C) correspond à la scène : un homme examine une machine dans une usine. (A) parle d'un vélo et d'un garage, absents de l'image. (B) évoque un camion et des cartons, non présents. (D) mentionne des vitres et une raclette, éléments non représentés.",
     "transcript": "(A) A man is repairing a bicycle in a garage. (B) A man is loading boxes onto a truck. (C) A man is inspecting a machine on a factory floor. (D) A man is cleaning windows with a squeegee.",
-    "voiceGender": "male"
+    "voiceGender": "male",
+    "image": "/assets/pexels/2760241.jpeg"
   },
   {
     "id": "P1-M35-G02",
@@ -9350,7 +9351,7 @@ export const INTERMEDIAIRE_GEN = [
       "Travelers are pulling suitcases through a parking lot."
     ],
     "answer": 0,
-    "explanation": "Ici l'image montre des passagers assis dans un salon d'aéroport, donc (B) est correct. (A) décrit un embarquement en train, absent. (C) évoque un bus et un contrôleur, non présents. (D) parle d'un parking, non visible dans la scène.",
+    "explanation": "Ici l'image montre des passagers assis dans un salon d'aéroport, donc (A) est correct. (B) décrit un embarquement en train, absent. (C) évoque un bus et un contrôleur, non présents. (D) parle d'un parking, non visible dans la scène.",
     "transcript": "(A) Passengers are waiting in an airport lounge. (B) Passengers are boarding a train at a platform. (C) A conductor is checking tickets outside a bus. (D) Travelers are pulling suitcases through a parking lot.",
     "voiceGender": "female",
     "image": "/assets/pexels/37164527.jpeg"
@@ -9370,7 +9371,7 @@ export const INTERMEDIAIRE_GEN = [
       "A waiter is clearing empty plates from a counter."
     ],
     "answer": 0,
-    "explanation": "La scène montre un serveur apportant des plats à une table, donc (C) est exact. (A) situe l'action en cuisine, ce qui n'est pas montré. (B) parle d'un paiement à la caisse, absent. (D) évoque le débarrassage d'assiettes, action différente de celle représentée.",
+    "explanation": "La scène montre un serveur apportant des plats à une table, donc (A) est exact. (B) situe l'action en cuisine, ce qui n'est pas montré. (C) parle d'un paiement à la caisse, absent. (D) évoque le débarrassage d'assiettes, action différente de celle représentée.",
     "transcript": "(A) A waiter is serving dishes to customers at a table. (B) A chef is chopping vegetables in a kitchen. (C) Customers are paying at a cash register. (D) A waiter is clearing empty plates from a counter.",
     "voiceGender": "male",
     "image": "/assets/pexels/25809277.jpeg"
@@ -9390,9 +9391,10 @@ export const INTERMEDIAIRE_GEN = [
       "A shopkeeper is arranging a store window."
     ],
     "answer": 2,
-    "explanation": "L'image montre une femme qui regarde des vêtements suspendus sur un portant, ce qui valide (D). (A) parle de chaussures essayées, non représenté. (B) décrit une caissière au comptoir, absente. (C) évoque une vitrine, élément non visible ici.",
+    "explanation": "L'image montre une femme qui regarde des vêtements suspendus sur un portant, ce qui valide (C). (A) parle de chaussures essayées, non représenté. (B) décrit une caissière au comptoir, absente. (D) évoque une vitrine, élément non visible ici.",
     "transcript": "(A) A woman is trying on shoes in a shop. (B) A cashier is scanning items at checkout. (C) A woman is browsing clothes on a rack. (D) A shopkeeper is arranging a store window.",
-    "voiceGender": "female"
+    "voiceGender": "female",
+    "image": "/assets/pexels/5717886.jpeg"
   },
   {
     "id": "P1-M35-G05",
@@ -9409,7 +9411,7 @@ export const INTERMEDIAIRE_GEN = [
       "A worker is operating a crane from a control cabin."
     ],
     "answer": 1,
-    "explanation": "La photo montre des ouvriers casqués transportant des planches, ce qui confirme (A). (B) évoque une peinture intérieure, non montrée. (C) parle de creuser une tranchée, action absente. (D) décrit une grue actionnée depuis une cabine, non présente dans l'image.",
+    "explanation": "La photo montre des ouvriers casqués transportant des planches, ce qui confirme (B). (A) évoque une peinture intérieure, non montrée. (C) parle de creuser une tranchée, action absente. (D) décrit une grue actionnée depuis une cabine, non présente dans l'image.",
     "transcript": "(A) A worker is painting a wall indoors. (B) Workers wearing helmets are carrying wooden planks at a construction site. (C) Workers are digging a trench with shovels. (D) A worker is operating a crane from a control cabin.",
     "voiceGender": "male"
   },
@@ -9428,7 +9430,7 @@ export const INTERMEDIAIRE_GEN = [
       "Cyclists are parking their bikes at a rack."
     ],
     "answer": 2,
-    "explanation": "Les cyclistes roulent sur une piste cyclable dédiée en ville, ce qui correspond à (A). (B) décrit une réparation de crevaison, non visible. (C) parle de coureurs sur un pont, personnes différentes. (D) évoque un stationnement de vélos, action non représentée.",
+    "explanation": "Les cyclistes roulent sur une piste cyclable dédiée en ville, ce qui correspond à (C). (A) décrit une réparation de crevaison, non visible. (B) parle de coureurs sur un pont, personnes différentes. (D) évoque un stationnement de vélos, action non représentée.",
     "transcript": "(A) A cyclist is repairing a flat tire on the sidewalk. (B) A group of runners is jogging across a bridge. (C) Cyclists are riding along a designated bike lane in the city. (D) Cyclists are parking their bikes at a rack.",
     "voiceGender": "female"
   },
@@ -9447,7 +9449,7 @@ export const INTERMEDIAIRE_GEN = [
       "A family is watching television in the living room."
     ],
     "answer": 0,
-    "explanation": "La famille est en train de dîner ensemble à table, ce qui valide (B). (A) décrit la mise en place de la table, étape antérieure. (C) évoque la vaisselle à l'évier, non montrée. (D) parle de la télévision au salon, scène différente.",
+    "explanation": "La famille est en train de dîner ensemble à table, ce qui valide (A). (B) décrit la mise en place de la table, étape antérieure. (C) évoque la vaisselle à l'évier, non montrée. (D) parle de la télévision au salon, scène différente.",
     "transcript": "(A) A family is eating dinner together at a dining table. (B) A family is setting the table for a meal. (C) A woman is washing dishes in the sink. (D) A family is watching television in the living room.",
     "voiceGender": "male"
   },
@@ -9466,7 +9468,7 @@ export const INTERMEDIAIRE_GEN = [
       "A delivery worker is unloading crates from a van."
     ],
     "answer": 1,
-    "explanation": "Le vendeur dispose des fruits sur son étal, ce qui correspond à (A). (B) attribue l'action à un client, ce n'est pas le cas. (C) parle de légumes pesés sur une balance, non montré. (D) évoque des caisses déchargées d'une camionnette, absent de la scène.",
+    "explanation": "Le vendeur dispose des fruits sur son étal, ce qui correspond à (B). (A) attribue l'action à un client, ce n'est pas le cas. (C) parle de légumes pesés sur une balance, non montré. (D) évoque des caisses déchargées d'une camionnette, absent de la scène.",
     "transcript": "(A) A customer is picking fruit from a basket. (B) A vendor is arranging fruit at a market stall. (C) A vendor is weighing vegetables on a scale. (D) A delivery worker is unloading crates from a van.",
     "voiceGender": "female"
   },
@@ -9485,7 +9487,7 @@ export const INTERMEDIAIRE_GEN = [
       "A manager is presenting a chart on a whiteboard."
     ],
     "answer": 1,
-    "explanation": "Les collègues discutent d'un projet autour d'une table de réunion, ce qui valide (C). (A) décrit une poignée de main dans un couloir, non montrée. (B) évoque un classement de documents, absent. (D) parle d'une présentation sur tableau blanc, non représentée ici.",
+    "explanation": "Les collègues discutent d'un projet autour d'une table de réunion, ce qui valide (B). (A) décrit une poignée de main dans un couloir, non montrée. (C) évoque un classement de documents, absent. (D) parle d'une présentation sur tableau blanc, non représentée ici.",
     "transcript": "(A) Colleagues are shaking hands in a hallway. (B) Colleagues are discussing a project around a conference table. (C) An employee is filing documents in a cabinet. (D) A manager is presenting a chart on a whiteboard.",
     "voiceGender": "male",
     "image": "/assets/pexels/8463163.jpeg"
@@ -9505,7 +9507,7 @@ export const INTERMEDIAIRE_GEN = [
       "People are seated on a bench waiting at a bus stop."
     ],
     "answer": 3,
-    "explanation": "Les personnes sont assises sur un banc à un arrêt de bus, ce qui confirme (B). (A) mentionne la pluie et une descente de bus, non montrées. (C) parle d'un chauffeur consultant un horaire, absent. (D) évoque une course pour attraper un bus, action non représentée.",
+    "explanation": "Les personnes sont assises sur un banc à un arrêt de bus, ce qui confirme (D). (A) mentionne la pluie et une descente de bus, non montrées. (B) parle d'un chauffeur consultant un horaire, absent. (C) évoque une course pour attraper un bus, action non représentée.",
     "transcript": "(A) Passengers are getting off a bus in the rain. (B) A driver is checking the bus schedule posted on a pole. (C) People are running to catch a departing bus. (D) People are seated on a bench waiting at a bus stop.",
     "voiceGender": "female"
   },
@@ -9524,7 +9526,7 @@ export const INTERMEDIAIRE_GEN = [
       "A baker is loading trays into an oven."
     ],
     "answer": 2,
-    "explanation": "Le boulanger pétrit la pâte sur un plan de travail fariné, ce qui valide (B). (A) décrit un glaçage de gâteau, non montré. (C) parle d'une vitrine de pains, absente. (D) évoque l'enfournement de plateaux, action différente.",
+    "explanation": "Le boulanger pétrit la pâte sur un plan de travail fariné, ce qui valide (C). (A) décrit un glaçage de gâteau, non montré. (B) parle d'une vitrine de pains, absente. (D) évoque l'enfournement de plateaux, action différente.",
     "transcript": "(A) A baker is decorating a cake with icing. (B) A baker is arranging bread loaves in a display case. (C) A baker is kneading dough on a floured counter. (D) A baker is loading trays into an oven.",
     "voiceGender": "male"
   },
@@ -9562,7 +9564,7 @@ export const INTERMEDIAIRE_GEN = [
       "A mechanic is filling out a repair invoice at a desk."
     ],
     "answer": 2,
-    "explanation": "Le mécanicien répare le moteur sous le capot, ce qui valide (B). (A) décrit un changement de pneu en extérieur, non montré. (C) évoque un lavage au tuyau, absent. (D) parle de facturation à un bureau, scène différente.",
+    "explanation": "Le mécanicien répare le moteur sous le capot, ce qui valide (C). (A) décrit un changement de pneu en extérieur, non montré. (B) évoque un lavage au tuyau, absent. (D) parle de facturation à un bureau, scène différente.",
     "transcript": "(A) A mechanic is changing a tire outdoors. (B) A mechanic is washing a car with a hose. (C) A mechanic is repairing an engine under the hood of a car. (D) A mechanic is filling out a repair invoice at a desk.",
     "voiceGender": "male"
   },
@@ -9581,7 +9583,7 @@ export const INTERMEDIAIRE_GEN = [
       "A waiter is pouring wine for a couple at a terrace table."
     ],
     "answer": 3,
-    "explanation": "Le serveur verse du vin pour le couple sur la terrasse, ce qui confirme (B). (A) décrit la lecture des menus, étape antérieure. (C) parle d'un paiement à l'intérieur, lieu différent. (D) évoque un couple qui passe sans s'arrêter, contraire à la scène assise.",
+    "explanation": "Le serveur verse du vin pour le couple sur la terrasse, ce qui confirme (D). (A) décrit la lecture des menus, étape antérieure. (B) parle d'un paiement à l'intérieur, lieu différent. (C) évoque un couple qui passe sans s'arrêter, contraire à la scène assise.",
     "transcript": "(A) A couple is reading menus at an outdoor café terrace. (B) A couple is paying the bill inside a restaurant. (C) A couple is walking past a café without stopping. (D) A waiter is pouring wine for a couple at a terrace table.",
     "voiceGender": "female"
   },
@@ -9600,7 +9602,7 @@ export const INTERMEDIAIRE_GEN = [
       "A taxi driver is waiting in line at a taxi stand."
     ],
     "answer": 1,
-    "explanation": "Le chauffeur de taxi charge les bagages dans le coffre, ce qui valide (C). (A) décrit l'ouverture de la portière, action différente. (B) parle d'une consultation de carte, non montrée. (D) évoque une attente à une station de taxis, scène non représentée.",
+    "explanation": "Le chauffeur de taxi charge les bagages dans le coffre, ce qui valide (B). (A) décrit l'ouverture de la portière, action différente. (C) parle d'une consultation de carte, non montrée. (D) évoque une attente à une station de taxis, scène non représentée.",
     "transcript": "(A) A taxi driver is opening the car door for a passenger. (B) A taxi driver is loading luggage into the trunk. (C) A taxi driver is checking a map on his phone. (D) A taxi driver is waiting in line at a taxi stand.",
     "voiceGender": "male"
   },
@@ -9619,7 +9621,7 @@ export const INTERMEDIAIRE_GEN = [
       "A customer is trying on a jacket in front of a mirror."
     ],
     "answer": 0,
-    "explanation": "Le tailleur mesure le tissu au comptoir pour un client, ce qui correspond à (D). (A) décrit une découpe aux ciseaux, non montrée. (B) parle du repassage d'un costume, absent. (C) évoque un client essayant une veste devant un miroir, scène différente.",
+    "explanation": "Le tailleur mesure le tissu au comptoir pour un client, ce qui correspond à (A). (B) décrit une découpe aux ciseaux, non montrée. (C) parle du repassage d'un costume, absent. (D) évoque un client essayant une veste devant un miroir, scène différente.",
     "transcript": "(A) A tailor is measuring fabric at the counter for a customer. (B) A tailor is cutting fabric with scissors. (C) A tailor is ironing a finished suit. (D) A customer is trying on a jacket in front of a mirror.",
     "voiceGender": "female"
   },
@@ -9638,7 +9640,7 @@ export const INTERMEDIAIRE_GEN = [
       "Passengers are boarding a ferry at the dock."
     ],
     "answer": 3,
-    "explanation": "Les passagers montent à bord du ferry sur le quai, ce qui valide (B). (A) décrit un débarquement, action inverse. (C) parle d'un membre d'équipage détachant une corde, non montré. (D) évoque un ferry qui s'éloigne du port, scène différente.",
+    "explanation": "Les passagers montent à bord du ferry sur le quai, ce qui valide (D). (A) décrit un débarquement, action inverse. (B) parle d'un membre d'équipage détachant une corde, non montré. (C) évoque un ferry qui s'éloigne du port, scène différente.",
     "transcript": "(A) Passengers are disembarking from a ferry onto the dock. (B) A crew member is untying the ferry's rope from the dock. (C) A ferry is sailing away from the harbor. (D) Passengers are boarding a ferry at the dock.",
     "voiceGender": "male"
   },
@@ -9657,7 +9659,7 @@ export const INTERMEDIAIRE_GEN = [
       "An electrician is packing tools into a toolbox."
     ],
     "answer": 2,
-    "explanation": "L'électricien teste les fils sur un tableau de commande, ce qui confirme (A). (B) décrit une échelle pour atteindre une lampe, non montrée. (C) parle d'un perçage de mur, absent. (D) évoque le rangement d'outils, action différente.",
+    "explanation": "L'électricien teste les fils sur un tableau de commande, ce qui confirme (C). (A) décrit une échelle pour atteindre une lampe, non montrée. (B) parle d'un perçage de mur, absent. (D) évoque le rangement d'outils, action différente.",
     "transcript": "(A) An electrician is climbing a ladder to reach a lamp. (B) An electrician is drilling a hole in a wall. (C) An electrician is testing wires on a control panel. (D) An electrician is packing tools into a toolbox.",
     "voiceGender": "female"
   },
@@ -9695,7 +9697,7 @@ export const INTERMEDIAIRE_GEN = [
       "Commuters are standing and holding onto rails in a subway car."
     ],
     "answer": 3,
-    "explanation": "Les passagers sont debout, tenant les barres d'appui dans le métro, ce qui confirme (C). (A) décrit des personnes assises lisant, non montré. (B) parle du passage des tourniquets, absent. (D) évoque l'achat d'un ticket à une borne, scène différente.",
+    "explanation": "Les passagers sont debout, tenant les barres d'appui dans le métro, ce qui confirme (D). (A) décrit des personnes assises lisant, non montré. (B) parle du passage des tourniquets, absent. (C) évoque l'achat d'un ticket à une borne, scène différente.",
     "transcript": "(A) Commuters are sitting and reading newspapers on the subway. (B) Commuters are exiting through subway turnstiles. (C) A commuter is buying a ticket from a vending machine. (D) Commuters are standing and holding onto rails in a subway car.",
     "voiceGender": "female"
   },
@@ -9714,7 +9716,7 @@ export const INTERMEDIAIRE_GEN = [
       "A barista is wiping down tables in the café."
     ],
     "answer": 0,
-    "explanation": "Le barista prépare un espresso à la machine, ce qui valide (D). (A) décrit le moulinage de grains, non montré. (B) parle d'un client passant commande, absent de l'image. (C) évoque le nettoyage des tables, action différente.",
+    "explanation": "Le barista prépare un espresso à la machine, ce qui valide (A). (B) décrit le moulinage de grains, non montré. (C) parle d'un client passant commande, absent de l'image. (D) évoque le nettoyage des tables, action différente.",
     "transcript": "(A) A barista is preparing an espresso at the machine. (B) A barista is grinding coffee beans behind the counter. (C) A customer is ordering at the counter. (D) A barista is wiping down tables in the café.",
     "voiceGender": "male"
   },
@@ -9733,7 +9735,7 @@ export const INTERMEDIAIRE_GEN = [
       "A worker is labeling boxes at a workstation."
     ],
     "answer": 0,
-    "explanation": "L'ouvrier conduit un chariot élévateur pour empiler des palettes, ce qui correspond à (B). (A) décrit un scan de codes-barres, non montré. (C) parle du balayage du sol, absent. (D) évoque l'étiquetage de cartons à un poste, scène différente.",
+    "explanation": "L'ouvrier conduit un chariot élévateur pour empiler des palettes, ce qui correspond à (A). (B) décrit un scan de codes-barres, non montré. (C) parle du balayage du sol, absent. (D) évoque l'étiquetage de cartons à un poste, scène différente.",
     "transcript": "(A) A worker is operating a forklift to stack pallets. (B) A worker is scanning barcodes with a handheld device. (C) A worker is sweeping the warehouse floor. (D) A worker is labeling boxes at a workstation.",
     "voiceGender": "female"
   }

@@ -36,10 +36,10 @@ distantes, tolérés avec repli). Prérequis une seule fois : `npx playwright in
 
 ## Notes
 
-- Les images du cœur de l'app (hero, thèmes, questions curées, placement) sont **locales**
-  (`public/assets/pexels/`). Les questions générées (`src/data/bank/*.gen.js`) référencent
-  encore des images Pexels distantes, avec repli propre hors-ligne (décision de localisation complète
-  en attente — poids d'app vs couverture, voir le plan de livraison).
+- Toutes les images (hero, thèmes, questions curées, placement, banques `.gen.js`) sont
+  **100 % locales** (`public/assets/pexels/`, 601 fichiers, ~160 Mo) — zéro référence Pexels
+  distante, l'app fonctionne entièrement hors-ligne dès le premier chargement du service worker
+  (voir section PWA ci-dessous).
 - Typographie : Fraunces (display) + Nunito (body), **auto-hébergées** (`public/fonts/`,
   déclarées dans `src/index.css`) — fonctionne hors-ligne (requis pour le wrap Capacitor).
 
@@ -57,6 +57,28 @@ Configuration identique sur les trois :
 - **Dossier à publier** : `dist`
 - Déploiement automatique à chaque push si le dépôt est connecté au service (git non configuré dans ce
   repo pour l'instant — à faire au moment de choisir l'hébergeur).
+
+**Déployé en production sur Netlify (2026-07-17)** : `npx netlify-cli deploy --build --prod --dir=dist`
+(après `netlify login`). URL : https://starlit-florentine-e5d927.netlify.app (nom de sous-domaine
+aléatoire — à personnaliser depuis Site settings → Change site name sur le dashboard Netlify). Pas
+encore relié à un dépôt Git → chaque mise à jour nécessite de relancer la commande de déploiement
+manuellement depuis ce dossier.
+
+### PWA (app installable, sans store)
+
+L'app est une **Progressive Web App** (`vite-plugin-pwa`, manifeste + service worker généré
+au build). Une fois hébergée en HTTPS (ou testée en local via `npm run preview`), le navigateur
+propose d'installer l'app comme une vraie application (icône sur l'écran d'accueil/bureau,
+plein écran, fonctionne hors-ligne après la première visite — le shell JS/CSS est précaché,
+les 601 images Pexels locales sont mises en cache à l'usage). Aucune installation manuelle,
+aucun store, aucun compte développeur nécessaire — c'est la voie la plus rapide pour une
+"app à installer" utilisable dès la mise en ligne du site.
+
+- Vérifier après un changement : `npm run build && npm run preview`, puis DevTools →
+  Application → Manifest/Service Workers pour confirmer l'installabilité.
+- L'icône/splash sont les mêmes placeholders que Capacitor (`public/assets/icons/`) — à
+  remplacer par le vrai logo client en même temps que ceux de Capacitor (voir
+  « Identité visuelle » ci-dessous).
 
 ### Mobile (Capacitor)
 

@@ -1,7 +1,7 @@
 ---
 type: projet
-tags: [app, formation, toeic, gout, transmission, client]
-statut: 5/5 phases livrées + durcissement post-livraison + enrichissement contenu ×2.8 (1049 questions) — bloqué sur build natif (L133)
+tags: [app, formation, toeic, gout, transmission, client, pwa, deploiement]
+statut: 5/5 phases livrées + enrichissement contenu ×2.8 (1049 questions) + PWA installable + déployée en production (Netlify) — bloqué sur build natif Android/iOS (L133)
 sources: [statut.md 2026-07-17, limites.md L62-L64/L115/L130-L134, historique.md Journal 2026-07-16/17]
 maj: 2026-07-17
 ---
@@ -40,6 +40,15 @@ Retour de Raf : « je le finis en 5mn... il faudrait plus d'exercices... pour av
 - **Bugs de contenu récurrents** : dans plusieurs modules (M19, M30, M39, M43, M44, M47), l'explication textuelle nomme le bon choix mais le champ `answer` pointait ailleurs — corrigé à la main module par module en confrontant `answer` au texte de l'explication.
 - **L131 résolue** (M05 — fausse diversité lexicale) ; **L130 reste ouverte** (zéro difficulté 3, hors scope de cette passe).
 - Build vert, 36/36 tests verts. Contrôle visuel Chrome non disponible cette session (extension déconnectée) — substitué par un comptage programmatique direct des banques. **Non commité**, en attente d'instruction de Raf.
+
+## PWA + déploiement web (2026-07-17)
+
+Suite à un test réel de Raf (bouton play/pause, photos tronquées corrigées via `aspect-[3/2]`, un distracteur P1 ambigu corrigé), Raf a demandé les options d'export (web/APK/iOS/app installable) et la fiabilité de la sauvegarde.
+
+- **PWA câblée** : `vite-plugin-pwa` (manifest complet + service worker `generateSW`, précache du shell, `CacheFirst` runtime pour les 601 images locales). Bug latent trouvé en configurant : les icônes `.webp` étaient en réalité des PNG mal étiquetés (magic bytes) — renommées `.png`. Build + 36/36 tests toujours verts.
+- **Déployée en production sur Netlify** (compte de Raf, OAuth navigateur) : **https://starlit-florentine-e5d927.netlify.app**. Pas de dépôt Git relié — mise à jour = relancer `netlify deploy --prod`.
+- **Sauvegarde** : confirmée automatique (`localStorage`, à chaque session) mais locale à l'appareil, pas de cloud/sync — communiqué clairement à Raf.
+- **APK Android / iOS** : toujours bloqués sur cette machine (L133) — Capacitor scaffoldé mais jamais buildé, nécessite un poste avec Android Studio (APK) ou un Mac+Xcode (iOS, catégoriquement impossible sous Windows).
 
 ## Rôle
 

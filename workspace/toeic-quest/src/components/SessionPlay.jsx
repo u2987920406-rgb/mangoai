@@ -8,7 +8,7 @@ import { cn } from "../lib/utils.js";
 import { QUESTIONS, MODE_INFO, XP_PER_CORRECT, xpForResults } from "../data/questions.js";
 import { PART_EMOJI } from "../data/curriculum.js";
 import { speakLine, speakSequence, cancelSpeech, speechSupported } from "../lib/speech.js";
-import { PlayIcon, StarIcon, CheckIcon, XIcon, BulbIcon } from "./icons.jsx";
+import { PlayIcon, PauseIcon, StarIcon, CheckIcon, XIcon, BulbIcon } from "./icons.jsx";
 
 // ─── Session de jeu — générique (modes libres ET modules du parcours) ─────────
 // props : questions? (injectées) · mode · moduleId? · onFinish · useTimer · timerSeconds
@@ -22,6 +22,7 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
   const [showTranscript, setShowTranscript] = useState(() => !speechSupported());
   const [imgFailed, setImgFailed] = useState(false);
   const [activeLine, setActiveLine] = useState(-1);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [timerActive, setTimerActive] = useState(useTimer);
   const [timeUp, setTimeUp] = useState(false);
   const audioRef = useRef(null);          // contrôleur de lecture en cours
@@ -43,22 +44,32 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
     audioRef.current = null;
     cancelSpeech();
     setActiveLine(-1);
+    setIsPlaying(false);
   }, []);
 
   const playAudio = useCallback(() => {
     if (!q) return;
     stopAudio();
+    setIsPlaying(true);
     if (isConversation) {
       audioRef.current = speakSequence(q.lines, {
         onLineStart: (i) => setActiveLine(i),
-        onDone: () => setActiveLine(-1),
+        onDone: () => { setActiveLine(-1); setIsPlaying(false); },
       });
     } else if (isPrompt) {
-      audioRef.current = speakLine(q.prompt.text, { gender: q.prompt.gender || "female" });
+      audioRef.current = speakLine(q.prompt.text, { gender: q.prompt.gender || "female", onEnd: () => setIsPlaying(false) });
     } else if (isTalk) {
-      audioRef.current = speakLine(q.transcript, { gender: q.voiceGender || "female" });
+      audioRef.current = speakLine(q.transcript, { gender: q.voiceGender || "female", onEnd: () => setIsPlaying(false) });
     }
   }, [q, isConversation, isPrompt, isTalk, stopAudio]);
+
+  // Bouton unique lecture/pause : en cours de lecture, un clic arrête l'audio
+  // (pause/resume SpeechSynthesis n'est pas fiable inter-navigateurs, cf. watchdog
+  // ci-dessus) — un second clic relance depuis le début.
+  const toggleAudio = useCallback(() => {
+    if (isPlaying) stopAudio();
+    else playAudio();
+  }, [isPlaying, stopAudio, playAudio]);
 
   // Réinitialise l'état à chaque nouvelle question. Pas de lecture automatique
   // de l'audio : l'utilisateur doit cliquer sur ▶ lui-même (demande de Raf,
@@ -67,6 +78,7 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
     setShowTranscript(!speechSupported());
     setImgFailed(false);
     setActiveLine(-1);
+    setIsPlaying(false);
   }, [currentIdx]);
 
   // Nettoyage à la sortie.
@@ -158,11 +170,11 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
         <CardContent className="pt-6 space-y-4">
           {/* Image de contexte */}
           {q.image && !imgFailed && (
-            <div className="rounded-xl overflow-hidden mb-2">
+            <div className="rounded-xl overflow-hidden mb-2 aspect-[3/2]">
               <img
                 src={q.image}
                 alt="Contexte de la question"
-                className="w-full h-48 object-cover"
+                className="w-full h-full object-cover"
                 loading="lazy"
                 onError={() => setImgFailed(true)}
               />
@@ -180,14 +192,15 @@ export function SessionPlay({ mode, moduleId = null, questions: injected, onFini
               <Button
                 size="icon"
                 className="rounded-full bg-listening text-white hover:bg-listening/90 shrink-0"
-                onClick={playAudio}
-                aria-label="Écouter l'audio"
+                onClick={toggleAudio}
+                aria-label={isPlaying ? "Mettre en pause" : "Écouter l'audio"}
+                data-testid="audio-toggle"
               >
-                <PlayIcon size={16} />
+                {isPlaying ? <PauseIcon size={16} /> : <PlayIcon size={16} />}
               </Button>
               <div className="flex-1">
                 <div className="text-sm font-medium">{isConversation ? "Écoutez la conversation" : "Écoutez l'audio"}</div>
-                <div className="text-xs text-muted-foreground">Cliquez pour réécouter</div>
+                <div className="text-xs text-muted-foreground">{isPlaying ? "Cliquez pour mettre en pause" : "Cliquez pour réécouter"}</div>
               </div>
               <Button variant="ghost" size="sm" onClick={() => setShowTranscript((s) => !s)}>
                 {showTranscript ? "Cacher" : "Transcript"}

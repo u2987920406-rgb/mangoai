@@ -850,7 +850,7 @@ export const DEBUTANT_GEN = [
       "The colleagues are having a meeting around a table."
     ],
     "answer": 3,
-    "explanation": "Les collègues sont réunis autour d'une table, ce qui correspond à (B). Peindre, dormir ou quitter le bâtiment ne correspondent pas à la scène de réunion.",
+    "explanation": "Les collègues sont réunis autour d'une table, ce qui correspond à (D). Peindre, dormir ou quitter le bâtiment ne correspondent pas à la scène de réunion.",
     "transcript": "(A) The workers are painting a wall. (B) A man is sleeping on a chair. (C) The employees are leaving the building. (D) The colleagues are having a meeting around a table.",
     "voiceGender": "male",
     "image": "/assets/pexels/1181738.jpeg"
@@ -870,7 +870,7 @@ export const DEBUTANT_GEN = [
       "Pedestrians are crossing a busy street."
     ],
     "answer": 3,
-    "explanation": "Des piétons traversent une rue animée, ce qui correspond à (C). La rue n'est pas vide, il n'y a pas de démolition, et les voitures ne sont pas garées sur le trottoir.",
+    "explanation": "Des piétons traversent une rue animée, ce qui correspond à (D). La rue n'est pas vide, il n'y a pas de démolition, et les voitures ne sont pas garées sur le trottoir.",
     "transcript": "(A) The street is completely empty. (B) Cars are parked on the sidewalk. (C) A building is being demolished. (D) Pedestrians are crossing a busy street.",
     "voiceGender": "female",
     "image": "/assets/pexels/16456831.jpeg"
@@ -890,7 +890,7 @@ export const DEBUTANT_GEN = [
       "A delivery truck is unloading boxes."
     ],
     "answer": 1,
-    "explanation": "Le commerçant range des articles sur une étagère, ce qui correspond à (D). Il n'y a ni paiement, ni camion de livraison, ni magasin fermé visible.",
+    "explanation": "Le commerçant range des articles sur une étagère, ce qui correspond à (B). Il n'y a ni paiement, ni camion de livraison, ni magasin fermé visible.",
     "transcript": "(A) A customer is paying with cash. (B) A shopkeeper is arranging items on a shelf. (C) The shop is closed for the day. (D) A delivery truck is unloading boxes.",
     "voiceGender": "male",
     "image": "/assets/pexels/14280805.jpeg"
@@ -924,14 +924,14 @@ export const DEBUTANT_GEN = [
     "difficulty": 1,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "The two men are arguing loudly.",
-      "The two men are carrying boxes upstairs.",
-      "The two men are shaking hands in a lobby.",
-      "The two men are sitting in separate rooms."
+      "The two women are arguing loudly.",
+      "The two women are carrying boxes upstairs.",
+      "The two women are shaking hands in a lobby.",
+      "The two women are sitting in separate rooms."
     ],
     "answer": 2,
-    "explanation": "Les deux hommes se serrent la main dans un hall, ce qui correspond à (B). Ils ne se disputent pas, ne portent pas de cartons et ne sont pas séparés.",
-    "transcript": "(A) The two men are arguing loudly. (B) The two men are carrying boxes upstairs. (C) The two men are shaking hands in a lobby. (D) The two men are sitting in separate rooms.",
+    "explanation": "Les deux femmes se serrent la main dans un hall, ce qui correspond au bon choix. Elles ne se disputent pas, ne portent pas de cartons et ne sont pas séparées.",
+    "transcript": "(A) The two women are arguing loudly. (B) The two women are carrying boxes upstairs. (C) The two women are shaking hands in a lobby. (D) The two women are sitting in separate rooms.",
     "voiceGender": "male",
     "image": "/assets/pexels/5717499.jpeg"
   },
@@ -950,7 +950,7 @@ export const DEBUTANT_GEN = [
       "A customer is riding a bicycle past the stall."
     ],
     "answer": 0,
-    "explanation": "Un client choisit des fruits sur un étal, ce qui correspond à (C). Le vendeur ne ferme pas boutique, ne charge pas de camion, et personne ne fait de vélo.",
+    "explanation": "Un client choisit des fruits sur un étal, ce qui correspond à (A). Le vendeur ne ferme pas boutique, ne charge pas de camion, et personne ne fait de vélo.",
     "transcript": "(A) A customer is picking fruit from a stall. (B) The vendor is closing his stall for the night. (C) The vendor is loading a truck with vegetables. (D) A customer is riding a bicycle past the stall.",
     "voiceGender": "female",
     "image": "/assets/pexels/13679554.jpeg"
@@ -970,7 +970,7 @@ export const DEBUTANT_GEN = [
       "A woman is making a phone call outside."
     ],
     "answer": 1,
-    "explanation": "La femme range des documents dans un classeur, ce qui correspond à (D). Elle n'est ni au téléphone dehors, ni en train d'arroser des plantes, ni de répondre à des emails.",
+    "explanation": "La femme range des documents dans un classeur, ce qui correspond à (B). Elle n'est ni au téléphone dehors, ni en train d'arroser des plantes, ni de répondre à des emails.",
     "transcript": "(A) A woman is answering emails at her desk. (B) A woman is filing documents in a cabinet. (C) A woman is watering office plants. (D) A woman is making a phone call outside.",
     "voiceGender": "male",
     "image": "/assets/pexels/8466229.jpeg"
@@ -990,7 +990,7 @@ export const DEBUTANT_GEN = [
       "The workers are directing traffic."
     ],
     "answer": 2,
-    "explanation": "Les ouvriers portent des casques sur un chantier, ce qui correspond à (A). Ils ne déjeunent pas, ne peignent pas de clôture et ne dirigent pas la circulation.",
+    "explanation": "Les ouvriers portent des casques sur un chantier, ce qui correspond à (C). Ils ne déjeunent pas, ne peignent pas de clôture et ne dirigent pas la circulation.",
     "transcript": "(A) The workers are having lunch in a park. (B) The workers are painting a fence white. (C) The workers are wearing helmets at a construction site. (D) The workers are directing traffic.",
     "voiceGender": "female",
     "image": "/assets/pexels/32753869.jpeg"
@@ -1010,7 +1010,7 @@ export const DEBUTANT_GEN = [
       "The customer is browsing shelves alone."
     ],
     "answer": 0,
-    "explanation": "La caissière scanne des articles au comptoir, ce qui correspond à (C). Elle ne ferme pas la caisse, et le client n'essaie pas de vêtements ni ne parcourt les rayons seul.",
+    "explanation": "La caissière scanne des articles au comptoir, ce qui correspond à (A). Elle ne ferme pas la caisse, et le client n'essaie pas de vêtements ni ne parcourt les rayons seul.",
     "transcript": "(A) The cashier is scanning items at the counter. (B) The cashier is closing the cash register. (C) The customer is trying on clothes. (D) The customer is browsing shelves alone.",
     "voiceGender": "male",
     "image": "/assets/pexels/12935051.jpeg"
@@ -1024,14 +1024,14 @@ export const DEBUTANT_GEN = [
     "difficulty": 2,
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
-      "A man is erasing the whiteboard completely.",
+      "A man is talking on the phone.",
       "A man is writing on a whiteboard during a meeting.",
       "A man is sitting quietly in the corner.",
       "A man is handing out papers to the team."
     ],
     "answer": 1,
-    "explanation": "L'homme écrit sur un tableau blanc pendant une réunion, ce qui correspond à (D). Il n'efface rien, ne reste pas assis dans un coin, et ne distribue pas de papiers.",
-    "transcript": "(A) A man is erasing the whiteboard completely. (B) A man is writing on a whiteboard during a meeting. (C) A man is sitting quietly in the corner. (D) A man is handing out papers to the team.",
+    "explanation": "L'homme écrit sur un tableau blanc pendant une réunion, ce qui correspond à (B). Il n'efface rien, ne reste pas assis dans un coin, et ne distribue pas de papiers.",
+    "transcript": "(A) A man is talking on the phone. (B) A man is writing on a whiteboard during a meeting. (C) A man is sitting quietly in the corner. (D) A man is handing out papers to the team.",
     "voiceGender": "female",
     "image": "/assets/pexels/8101766.jpeg"
   },
@@ -1050,7 +1050,7 @@ export const DEBUTANT_GEN = [
       "A resident is opening a window."
     ],
     "answer": 1,
-    "explanation": "Le livreur porte un colis jusqu'à la porte, ce qui correspond à (A). Il ne conduit pas de taxi, personne ne signe de bail ni n'ouvre de fenêtre.",
+    "explanation": "Le livreur porte un colis jusqu'à la porte, ce qui correspond à (B). Il ne conduit pas de taxi, personne ne signe de bail ni n'ouvre de fenêtre.",
     "transcript": "(A) A delivery man is driving a taxi. (B) A delivery man is carrying a package to the door. (C) A resident is signing a lease. (D) A resident is opening a window.",
     "voiceGender": "male",
     "image": "/assets/pexels/7706562.jpeg"
@@ -1070,7 +1070,7 @@ export const DEBUTANT_GEN = [
       "The street is being repaved by workers."
     ],
     "answer": 2,
-    "explanation": "Les voitures sont arrêtées à un feu rouge, ce qui correspond à (D). Elles ne roulent pas vite, il n'y a ni agent de circulation ni travaux de voirie.",
+    "explanation": "Les voitures sont arrêtées à un feu rouge, ce qui correspond à (C). Elles ne roulent pas vite, il n'y a ni agent de circulation ni travaux de voirie.",
     "transcript": "(A) The cars are speeding through a green light. (B) A traffic officer is directing pedestrians only. (C) Cars are stopped at a red traffic light. (D) The street is being repaved by workers.",
     "voiceGender": "female",
     "image": "/assets/pexels/9513110.jpeg"
@@ -1090,7 +1090,7 @@ export const DEBUTANT_GEN = [
       "A woman is giving a presentation in front of a screen."
     ],
     "answer": 3,
-    "explanation": "La femme fait une présentation devant un écran, ce qui correspond à (B). Elle ne répare rien, ne prend pas de notes en silence et ne quitte pas la salle.",
+    "explanation": "La femme fait une présentation devant un écran, ce qui correspond à (D). Elle ne répare rien, ne prend pas de notes en silence et ne quitte pas la salle.",
     "transcript": "(A) A woman is repairing a projector. (B) A woman is taking notes silently. (C) A woman is leaving the meeting room. (D) A woman is giving a presentation in front of a screen.",
     "voiceGender": "male",
     "image": "/assets/pexels/6476783.jpeg"
@@ -1110,7 +1110,7 @@ export const DEBUTANT_GEN = [
       "The barista is closing the shop early."
     ],
     "answer": 0,
-    "explanation": "Le barista prépare du café derrière le comptoir, ce qui correspond à (D). Il ne nettoie pas les vitres, ne ferme pas la boutique, et le paiement ne se fait pas dehors.",
+    "explanation": "Le barista prépare du café derrière le comptoir, ce qui correspond à (A). Il ne nettoie pas les vitres, ne ferme pas la boutique, et le paiement ne se fait pas dehors.",
     "transcript": "(A) The barista is preparing coffee behind the counter. (B) The barista is cleaning the windows. (C) A customer is paying by phone outside. (D) The barista is closing the shop early.",
     "voiceGender": "female",
     "image": "/assets/pexels/5865195.jpeg"
@@ -1130,7 +1130,7 @@ export const DEBUTANT_GEN = [
       "A man is walking down a hallway carrying a briefcase."
     ],
     "answer": 3,
-    "explanation": "L'homme marche dans un couloir avec une mallette, ce qui correspond à (A). Il ne dort pas, ne grimpe pas à une échelle, et n'est pas dans un ascenseur.",
+    "explanation": "L'homme marche dans un couloir avec une mallette, ce qui correspond à (D). Il ne dort pas, ne grimpe pas à une échelle, et n'est pas dans un ascenseur.",
     "transcript": "(A) A man is sitting at his desk asleep. (B) A man is climbing a ladder. (C) A man is answering a phone call in an elevator. (D) A man is walking down a hallway carrying a briefcase.",
     "voiceGender": "male",
     "image": "/assets/pexels/7870052.jpeg"
@@ -1150,7 +1150,7 @@ export const DEBUTANT_GEN = [
       "The team is brainstorming with sticky notes on a wall."
     ],
     "answer": 3,
-    "explanation": "L'équipe fait un brainstorming avec des notes autocollantes sur un mur, ce qui correspond à (B). Ils n'emballent rien, ne regardent pas de vidéo et ne mangent pas de gâteau.",
+    "explanation": "L'équipe fait un brainstorming avec des notes autocollantes sur un mur, ce qui correspond à (D). Ils n'emballent rien, ne regardent pas de vidéo et ne mangent pas de gâteau.",
     "transcript": "(A) The team is packing boxes for a move. (B) The team is watching a video together. (C) The team is eating cake at a party. (D) The team is brainstorming with sticky notes on a wall.",
     "voiceGender": "female",
     "image": "/assets/pexels/4623462.jpeg"
@@ -1170,7 +1170,7 @@ export const DEBUTANT_GEN = [
       "A woman is standing under a tree, dry."
     ],
     "answer": 1,
-    "explanation": "La femme traverse la rue avec un parapluie, ce qui correspond à (A). Elle ne lit pas assise sur un banc, ne prend pas le bus, et n'est pas sous un arbre à l'abri.",
+    "explanation": "La femme traverse la rue avec un parapluie, ce qui correspond à (B). Elle ne lit pas assise sur un banc, ne prend pas le bus, et n'est pas sous un arbre à l'abri.",
     "transcript": "(A) A woman is sitting on a bench reading. (B) A woman is crossing the street holding an umbrella. (C) A woman is riding a bus alone. (D) A woman is standing under a tree, dry.",
     "voiceGender": "male",
     "image": "/assets/pexels/12348815.jpeg"
@@ -1190,7 +1190,7 @@ export const DEBUTANT_GEN = [
       "The shop owner is sweeping the sidewalk."
     ],
     "answer": 1,
-    "explanation": "Le commerçant accroche une pancarte 'ouvert' à la porte, ce qui correspond à (C). Il ne ferme pas à clé, ne compte pas d'argent, et ne balaie pas le trottoir.",
+    "explanation": "Le commerçant accroche une pancarte 'ouvert' à la porte, ce qui correspond à (B). Il ne ferme pas à clé, ne compte pas d'argent, et ne balaie pas le trottoir.",
     "transcript": "(A) The shop owner is locking the door for the night. (B) The shop owner is hanging an open sign on the door. (C) The shop owner is counting cash at the register. (D) The shop owner is sweeping the sidewalk.",
     "voiceGender": "female",
     "image": "/assets/pexels/4473094.jpeg"
@@ -1250,7 +1250,7 @@ export const DEBUTANT_GEN = [
       "A visitor is signing a guest book alone."
     ],
     "answer": 2,
-    "explanation": "La réceptionniste répond au téléphone à l'accueil, ce qui correspond à (D). Le bureau n'est pas vide, elle ne tape pas sans téléphone, et aucun visiteur ne signe seul un registre.",
+    "explanation": "La réceptionniste répond au téléphone à l'accueil, ce qui correspond à (C). Le bureau n'est pas vide, elle ne tape pas sans téléphone, et aucun visiteur ne signe seul un registre.",
     "transcript": "(A) The receptionist is leaving the front desk empty. (B) The receptionist is typing without a phone. (C) The receptionist is answering the phone at the front desk. (D) A visitor is signing a guest book alone.",
     "voiceGender": "male",
     "image": "/assets/pexels/7820322.jpeg"
@@ -1270,7 +1270,7 @@ export const DEBUTANT_GEN = [
       "A worker is inspecting a computer screen."
     ],
     "answer": 1,
-    "explanation": "L'ouvrier empile des cartons avec un chariot élévateur, ce qui correspond à (A). L'entrepôt n'est pas vide, il ne charge pas de voiture et n'inspecte pas d'écran.",
+    "explanation": "L'ouvrier empile des cartons avec un chariot élévateur, ce qui correspond à (B). L'entrepôt n'est pas vide, il ne charge pas de voiture et n'inspecte pas d'écran.",
     "transcript": "(A) A worker is sweeping an empty warehouse. (B) A worker is stacking boxes with a forklift. (C) A worker is loading a passenger car. (D) A worker is inspecting a computer screen.",
     "voiceGender": "female",
     "image": "/assets/pexels/4487382.jpeg"
@@ -1330,7 +1330,7 @@ export const DEBUTANT_GEN = [
       "Boxes are scattered on the floor."
     ],
     "answer": 1,
-    "explanation": "L'image montre des étagères d'entrepôt bien remplies, ce qui correspond à (A). (B) mentionne une échelle absente de la scène, (C) contredit l'état rempli des étagères, et (D) décrit un désordre qui n'est pas visible.",
+    "explanation": "L'image montre des étagères d'entrepôt bien remplies, ce qui correspond à (B). (A) mentionne une échelle absente de la scène, (C) contredit l'état rempli des étagères, et (D) décrit un désordre qui n'est pas visible.",
     "transcript": "(A) A worker is climbing a ladder. (B) Some shelves are fully stocked. (C) The shelves have been left empty. (D) Boxes are scattered on the floor.",
     "voiceGender": "male",
     "image": "/assets/pexels/10284048.jpeg"
@@ -1390,7 +1390,7 @@ export const DEBUTANT_GEN = [
       "A gate blocks the entrance."
     ],
     "answer": 1,
-    "explanation": "Le parking apparaît vide de véhicules, ce qui confirme (D). (A) affirme le contraire, (B) décrit des travaux inexistants, et (C) mentionne un portail qui n'est pas dans le champ.",
+    "explanation": "Le parking apparaît vide de véhicules, ce qui confirme (B). (A) affirme le contraire, (C) décrit des travaux inexistants, et (D) mentionne un portail qui n'est pas dans le champ.",
     "transcript": "(A) Several cars are parked in a row. (B) The parking lot is empty. (C) The parking lot is being repaved. (D) A gate blocks the entrance.",
     "voiceGender": "female",
     "image": "/assets/pexels/33030941.jpeg"
@@ -1410,7 +1410,7 @@ export const DEBUTANT_GEN = [
       "The table is covered with a cloth."
     ],
     "answer": 2,
-    "explanation": "Des outils sont posés sur une table, correspondant à (B). (A) contredit leur visibilité, (C) introduit une personne absente, et (D) décrit un tissu qui ne figure pas sur la table.",
+    "explanation": "Des outils sont posés sur une table, correspondant à (C). (A) contredit leur visibilité, (B) introduit une personne absente, et (D) décrit un tissu qui ne figure pas sur la table.",
     "transcript": "(A) The tools have been put away in a drawer. (B) A man is holding a hammer. (C) Tools are laid out on a table. (D) The table is covered with a cloth.",
     "voiceGender": "male",
     "image": "/assets/pexels/5846253.jpeg"
@@ -1430,7 +1430,7 @@ export const DEBUTANT_GEN = [
       "The floor has just been cleaned."
     ],
     "answer": 2,
-    "explanation": "Un employé empile des boîtes dans une allée, ce qui correspond à (A). (B) exagère l'obstruction, (C) déplace la scène à l'extérieur, et (D) évoque un nettoyage non visible.",
+    "explanation": "Un employé empile des boîtes dans une allée, ce qui correspond à (C). (A) exagère l'obstruction, (B) déplace la scène à l'extérieur, et (D) évoque un nettoyage non visible.",
     "transcript": "(A) The aisle is completely blocked by machinery. (B) A worker is unloading a truck outside. (C) Boxes are being stacked in an aisle. (D) The floor has just been cleaned.",
     "voiceGender": "female",
     "image": "/assets/pexels/4483862.jpeg"
@@ -1450,7 +1450,7 @@ export const DEBUTANT_GEN = [
       "The kitchen island has stools next to it."
     ],
     "answer": 3,
-    "explanation": "Des tabourets sont placés à côté de l'îlot de cuisine, ce qui correspond à (B). (A) suppose la présence de personnes assises, (C) déplace les tabourets contre un mur, et (D) mentionne un réfrigérateur ouvert non visible.",
+    "explanation": "Des tabourets sont placés à côté de l'îlot de cuisine, ce qui correspond à (D). (A) suppose la présence de personnes assises, (B) déplace les tabourets contre un mur, et (C) mentionne un réfrigérateur ouvert non visible.",
     "transcript": "(A) People are seated around the kitchen island. (B) The stools have been stacked against the wall. (C) A refrigerator door is left open. (D) The kitchen island has stools next to it.",
     "voiceGender": "male",
     "image": "/assets/pexels/7587864.jpeg"
@@ -1510,7 +1510,7 @@ export const DEBUTANT_GEN = [
       "The worker is carrying an empty crate."
     ],
     "answer": 1,
-    "explanation": "Un employé scanne le code-barres d'une boîte, ce qui correspond à (A). (B) contredit la présence d'étiquettes, (C) introduit une machine absente, et (D) décrit une caisse vide non montrée.",
+    "explanation": "Un employé scanne le code-barres d'une boîte, ce qui correspond à (B). (A) contredit la présence d'étiquettes, (C) introduit une machine absente, et (D) décrit une caisse vide non montrée.",
     "transcript": "(A) The boxes have no labels at all. (B) A worker is scanning a barcode on a box. (C) A machine is sealing the boxes automatically. (D) The worker is carrying an empty crate.",
     "voiceGender": "female",
     "image": "/assets/pexels/4483942.jpeg"
@@ -1530,7 +1530,7 @@ export const DEBUTANT_GEN = [
       "Someone is drying a plate with a towel."
     ],
     "answer": 1,
-    "explanation": "Des assiettes sont empilées dans l'évier, ce qui correspond à (C). (A) contredit cette accumulation, (B) et (D) décrivent des actions ou objets non visibles dans la scène.",
+    "explanation": "Des assiettes sont empilées dans l'évier, ce qui correspond à (B). (A) contredit cette accumulation, (C) et (D) décrivent des actions ou objets non visibles dans la scène.",
     "transcript": "(A) The sink is completely empty. (B) Dishes are stacked in the sink. (C) A dishwasher is being installed. (D) Someone is drying a plate with a towel.",
     "voiceGender": "male",
     "image": "/assets/pexels/3787027.jpeg"
@@ -1570,7 +1570,7 @@ export const DEBUTANT_GEN = [
       "A man is repairing an engine."
     ],
     "answer": 1,
-    "explanation": "Une boîte à outils ouverte contient plusieurs tournevis, ce qui correspond à (D). (A) contredit l'état ouvert, (B) déplace les objets au sol, et (C) introduit une action non représentée.",
+    "explanation": "Une boîte à outils ouverte contient plusieurs tournevis, ce qui correspond à (B). (A) contredit l'état ouvert, (C) déplace les objets au sol, et (D) introduit une action non représentée.",
     "transcript": "(A) The toolbox is closed and locked. (B) An open toolbox holds several screwdrivers. (C) Screwdrivers are scattered across the floor. (D) A man is repairing an engine.",
     "voiceGender": "male",
     "image": "/assets/pexels/5317152.jpeg"
@@ -1590,7 +1590,7 @@ export const DEBUTANT_GEN = [
       "Empty pallets are piled near the exit."
     ],
     "answer": 1,
-    "explanation": "Un employé pousse un transpalette, ce qui correspond à (A). (B) contredit l'éclairage visible, tandis que (C) et (D) décrivent des éléments absents de la scène.",
+    "explanation": "Un employé pousse un transpalette, ce qui correspond à (B). (A) contredit l'éclairage visible, tandis que (C) et (D) décrivent des éléments absents de la scène.",
     "transcript": "(A) The warehouse lights have been turned off. (B) A worker is pushing a pallet jack. (C) A supervisor is reviewing paperwork at a desk. (D) Empty pallets are piled near the exit.",
     "voiceGender": "female",
     "image": "/assets/pexels/4487382.jpeg"
@@ -1630,7 +1630,7 @@ export const DEBUTANT_GEN = [
       "Several booths are stacked with boxes."
     ],
     "answer": 2,
-    "explanation": "Un préposé perçoit un ticket au guichet, ce qui correspond à (B). (A) contredit sa présence, tandis que (C) et (D) décrivent des situations non représentées.",
+    "explanation": "Un préposé perçoit un ticket au guichet, ce qui correspond à (C). (A) contredit sa présence, tandis que (B) et (D) décrivent des situations non représentées.",
     "transcript": "(A) The ticket booth is unoccupied. (B) A car is being towed away. (C) An attendant is collecting a ticket at the booth. (D) Several booths are stacked with boxes.",
     "voiceGender": "female",
     "image": "/assets/pexels/12794444.jpeg"
@@ -1650,7 +1650,7 @@ export const DEBUTANT_GEN = [
       "The table has been cleared of all items."
     ],
     "answer": 2,
-    "explanation": "Des clés et pinces sont disposées par taille sur la table, ce qui correspond à (A). Les autres options décrivent des actions ou états qui ne correspondent pas à l'image.",
+    "explanation": "Des clés et pinces sont disposées par taille sur la table, ce qui correspond à (C). Les autres options décrivent des actions ou états qui ne correspondent pas à l'image.",
     "transcript": "(A) The tools are being sharpened on a grinder. (B) A drawer full of tools has been left open. (C) Wrenches and pliers are arranged by size on the table. (D) The table has been cleared of all items.",
     "voiceGender": "male",
     "image": "/assets/pexels/37634609.jpeg"
@@ -1670,7 +1670,7 @@ export const DEBUTANT_GEN = [
       "A forklift is parked inside the dock."
     ],
     "answer": 0,
-    "explanation": "Les portes du quai de chargement sont ouvertes mais aucun camion n'est présent, ce qui correspond à (B). Les autres options supposent la présence de véhicules ou de travailleurs non visibles.",
+    "explanation": "Les portes du quai de chargement sont ouvertes mais aucun camion n'est présent, ce qui correspond à (A). Les autres options supposent la présence de véhicules ou de travailleurs non visibles.",
     "transcript": "(A) The loading dock doors are open with no trucks present. (B) Trucks are lined up at the loading dock. (C) Workers are loading crates onto a truck. (D) A forklift is parked inside the dock.",
     "voiceGender": "female",
     "image": "/assets/pexels/16924265.jpeg"
@@ -1690,7 +1690,7 @@ export const DEBUTANT_GEN = [
       "A chef is plating a dish on the counter."
     ],
     "answer": 3,
-    "explanation": "Un chef dresse un plat sur le comptoir, ce qui correspond à (B). (A) contredit cette activité, tandis que (C) et (D) décrivent des actions non montrées.",
+    "explanation": "Un chef dresse un plat sur le comptoir, ce qui correspond à (D). (A) contredit cette activité, tandis que (B) et (C) décrivent des actions non montrées.",
     "transcript": "(A) The counter is bare and unused. (B) Ingredients are being stored in a cabinet. (C) A waiter is carrying dishes out of the kitchen. (D) A chef is plating a dish on the counter.",
     "voiceGender": "male",
     "image": "/assets/pexels/36430149.jpeg"
@@ -1710,7 +1710,7 @@ export const DEBUTANT_GEN = [
       "The garage is under construction."
     ],
     "answer": 1,
-    "explanation": "Des voitures montent une rampe dans un parking à étages, ce qui correspond à (A). Les autres options décrivent des situations qui ne sont pas représentées dans l'image.",
+    "explanation": "Des voitures montent une rampe dans un parking à étages, ce qui correspond à (B). Les autres options décrivent des situations qui ne sont pas représentées dans l'image.",
     "transcript": "(A) The ramp is closed for maintenance. (B) Cars are driving up a ramp in a parking garage. (C) Pedestrians are walking across the ramp. (D) The garage is under construction.",
     "voiceGender": "female",
     "image": "/assets/pexels/4082033.jpeg"
@@ -1730,7 +1730,7 @@ export const DEBUTANT_GEN = [
       "The tools have been placed inside a toolbox."
     ],
     "answer": 1,
-    "explanation": "Un mètre ruban et un marteau reposent sur une table en bois, ce qui correspond à (A). Les autres options décrivent des éléments ou actions absents de la scène.",
+    "explanation": "Un mètre ruban et un marteau reposent sur une table en bois, ce qui correspond à (B). Les autres options décrivent des éléments ou actions absents de la scène.",
     "transcript": "(A) The table has been painted a bright color. (B) A measuring tape and hammer rest on a wooden table. (C) A carpenter is sawing a plank of wood. (D) The tools have been placed inside a toolbox.",
     "voiceGender": "male",
     "image": "/assets/pexels/5484721.jpeg"
@@ -1750,7 +1750,7 @@ export const DEBUTANT_GEN = [
       "A ladder leans against the empty shelf."
     ],
     "answer": 1,
-    "explanation": "L'étagère n'est que partiellement remplie de boîtes, ce qui correspond à (C). (A) exagère le remplissage, tandis que (B) et (D) décrivent des éléments non présents dans l'image.",
+    "explanation": "L'étagère n'est que partiellement remplie de boîtes, ce qui correspond à (B). (A) exagère le remplissage, tandis que (C) et (D) décrivent des éléments non présents dans l'image.",
     "transcript": "(A) The shelving unit is fully stocked from top to bottom. (B) The shelving unit is only partially filled with boxes. (C) Workers are assembling a new shelving unit. (D) A ladder leans against the empty shelf.",
     "voiceGender": "female",
     "image": "/assets/pexels/11114142.jpeg"
@@ -7024,7 +7024,7 @@ export const DEBUTANT_GEN = [
       "The mechanic is painting a wall."
     ],
     "answer": 1,
-    "explanation": "La phrase (A) correspond car le mécanicien répare un moteur. (B), (C) et (D) décrivent des actions absentes de la scène (laver, faire du vélo, peindre).",
+    "explanation": "La phrase (B) correspond car le mécanicien répare un moteur. (A), (C) et (D) décrivent des actions absentes de la scène (laver, faire du vélo, peindre).",
     "transcript": "(A) The mechanic is washing a car. (B) The mechanic is repairing an engine. (C) The mechanic is riding a bicycle. (D) The mechanic is painting a wall.",
     "voiceGender": "male",
     "image": "/assets/pexels/4116221.jpeg"
@@ -7044,7 +7044,7 @@ export const DEBUTANT_GEN = [
       "The passengers are boarding a train."
     ],
     "answer": 3,
-    "explanation": "(B) décrit correctement les passagers montant dans le train. Les autres options évoquent des actions qui ne figurent pas dans l'image (décharger, dormir, peindre).",
+    "explanation": "(D) décrit correctement les passagers montant dans le train. Les autres options évoquent des actions qui ne figurent pas dans l'image (décharger, dormir, peindre).",
     "transcript": "(A) The passengers are unloading luggage from a car. (B) The passengers are sleeping on benches. (C) The passengers are painting the platform. (D) The passengers are boarding a train.",
     "voiceGender": "female",
     "image": "/assets/pexels/37164527.jpeg"
@@ -7064,7 +7064,7 @@ export const DEBUTANT_GEN = [
       "The waiter is serving a plate of food."
     ],
     "answer": 3,
-    "explanation": "Le serveur pose une assiette devant le client, ce qui correspond à (C). (A) suggère qu'il débarrasse, (B) qu'il prend la commande, (D) qu'il cuisine — aucune de ces actions n'est visible.",
+    "explanation": "Le serveur pose une assiette devant le client, ce qui correspond à (D). (A) suggère qu'il débarrasse, (B) qu'il prend la commande, (C) qu'il cuisine — aucune de ces actions n'est visible.",
     "transcript": "(A) The waiter is clearing the table. (B) The waiter is taking an order. (C) The waiter is cooking in the kitchen. (D) The waiter is serving a plate of food.",
     "voiceGender": "male",
     "image": "/assets/pexels/25809277.jpeg"
@@ -7104,7 +7104,7 @@ export const DEBUTANT_GEN = [
       "The workers are having a meeting around a table."
     ],
     "answer": 3,
-    "explanation": "Les employés sont assis autour d'une table en réunion, ce qui correspond à (B). Les autres options décrivent des lieux ou activités différents.",
+    "explanation": "Les employés sont assis autour d'une table en réunion, ce qui correspond à (D). Les autres options décrivent des lieux ou activités différents.",
     "transcript": "(A) The workers are shaking hands outside. (B) The workers are exercising in a gym. (C) The workers are loading boxes onto a truck. (D) The workers are having a meeting around a table.",
     "voiceGender": "male",
     "image": "/assets/pexels/8463163.jpeg"
@@ -7124,7 +7124,7 @@ export const DEBUTANT_GEN = [
       "The driver is sleeping in the seat."
     ],
     "answer": 2,
-    "explanation": "Le chauffeur vérifie le billet d'un passager, donc (A) convient. Les autres actions décrivent des situations non présentes dans l'image.",
+    "explanation": "Le chauffeur vérifie le billet d'un passager, donc (C) convient. Les autres actions décrivent des situations non présentes dans l'image.",
     "transcript": "(A) The driver is fixing a flat tire. (B) The driver is sweeping the bus floor. (C) The driver is checking a passenger's ticket. (D) The driver is sleeping in the seat.",
     "voiceGender": "female",
     "image": "/assets/pexels/14557978.jpeg"
@@ -7164,7 +7164,7 @@ export const DEBUTANT_GEN = [
       "The cashier is pushing a shopping cart."
     ],
     "answer": 2,
-    "explanation": "La caissière scanne des articles, ce qui correspond exactement à (B). Les autres actions ne sont pas illustrées dans la scène.",
+    "explanation": "La caissière scanne des articles, ce qui correspond exactement à (C). Les autres actions ne sont pas illustrées dans la scène.",
     "transcript": "(A) The cashier is stocking shelves. (B) The cashier is counting money in a safe. (C) The cashier is scanning groceries. (D) The cashier is pushing a shopping cart.",
     "voiceGender": "female",
     "image": "/assets/pexels/8422728.jpeg"
@@ -7184,7 +7184,7 @@ export const DEBUTANT_GEN = [
       "The worker is wearing a hard hat at a construction site."
     ],
     "answer": 3,
-    "explanation": "L'ouvrier porte un casque de chantier, ce qui correspond à (C). Les autres phrases mentionnent des actions qui ne sont pas visibles.",
+    "explanation": "L'ouvrier porte un casque de chantier, ce qui correspond à (D). Les autres phrases mentionnent des actions qui ne sont pas visibles.",
     "transcript": "(A) The worker is climbing a ladder. (B) The worker is operating machinery. (C) The worker is drinking coffee on a break. (D) The worker is wearing a hard hat at a construction site.",
     "voiceGender": "male",
     "image": "/assets/pexels/37499254.jpeg"
@@ -7204,7 +7204,7 @@ export const DEBUTANT_GEN = [
       "A man is riding a bicycle down the street."
     ],
     "answer": 3,
-    "explanation": "L'homme roule à vélo dans la rue, ce qui correspond à (A). Les autres options décrivent des activités différentes non représentées.",
+    "explanation": "L'homme roule à vélo dans la rue, ce qui correspond à (D). Les autres options décrivent des activités différentes non représentées.",
     "transcript": "(A) A man is repairing a bicycle. (B) A man is walking a dog. (C) A man is parking a car. (D) A man is riding a bicycle down the street.",
     "voiceGender": "female",
     "image": "/assets/pexels/24917427.jpeg"
@@ -7224,7 +7224,7 @@ export const DEBUTANT_GEN = [
       "The customers are waiting in line to pay."
     ],
     "answer": 0,
-    "explanation": "Les clients regardent des vêtements sur un présentoir, ce qui correspond à (C). Les autres actions (plier, essayer, faire la queue) ne sont pas montrées.",
+    "explanation": "Les clients regardent des vêtements sur un présentoir, ce qui correspond à (A). Les autres actions (plier, essayer, faire la queue) ne sont pas montrées.",
     "transcript": "(A) The customers are browsing a clothing rack. (B) The customers are folding clothes. (C) The customers are trying on jackets. (D) The customers are waiting in line to pay.",
     "voiceGender": "male",
     "image": "/assets/pexels/8387127.jpeg"
@@ -7244,7 +7244,7 @@ export const DEBUTANT_GEN = [
       "The pilot is checking tickets at the gate."
     ],
     "answer": 2,
-    "explanation": "Le pilote est assis dans le cockpit, ce qui correspond à (B). Les autres phrases décrivent des tâches effectuées par d'autres membres du personnel, non par le pilote ici.",
+    "explanation": "Le pilote est assis dans le cockpit, ce qui correspond à (C). Les autres phrases décrivent des tâches effectuées par d'autres membres du personnel, non par le pilote ici.",
     "transcript": "(A) The pilot is boarding passengers. (B) The pilot is loading luggage. (C) The pilot is sitting in the cockpit. (D) The pilot is checking tickets at the gate.",
     "voiceGender": "female",
     "image": "/assets/pexels/17284874.jpeg"
@@ -7264,7 +7264,7 @@ export const DEBUTANT_GEN = [
       "The chef is placing an order by phone."
     ],
     "answer": 0,
-    "explanation": "Le chef dresse un plat en cuisine, ce qui correspond à (D). Les autres actions ne correspondent pas à ce que montre l'image.",
+    "explanation": "Le chef dresse un plat en cuisine, ce qui correspond à (A). Les autres actions ne correspondent pas à ce que montre l'image.",
     "transcript": "(A) The chef is plating a dish in the kitchen. (B) The chef is washing vegetables. (C) The chef is reading a menu. (D) The chef is placing an order by phone.",
     "voiceGender": "male",
     "image": "/assets/pexels/36430088.jpeg"
@@ -7284,7 +7284,7 @@ export const DEBUTANT_GEN = [
       "People are getting into a taxi."
     ],
     "answer": 2,
-    "explanation": "Les gens attendent à l'arrêt de bus, ce qui correspond à (A). Les autres phrases décrivent des scènes de transport différentes.",
+    "explanation": "Les gens attendent à l'arrêt de bus, ce qui correspond à (C). Les autres phrases décrivent des scènes de transport différentes.",
     "transcript": "(A) People are crossing a bridge. (B) People are riding bicycles together. (C) People are waiting at a bus stop. (D) People are getting into a taxi.",
     "voiceGender": "female",
     "image": "/assets/pexels/28377781.jpeg"
@@ -7304,7 +7304,7 @@ export const DEBUTANT_GEN = [
       "The worker is cleaning the floor."
     ],
     "answer": 2,
-    "explanation": "L'employé empile des cartons à l'aide d'un chariot élévateur, ce qui correspond à (B). Les autres actions ne sont pas visibles dans la scène.",
+    "explanation": "L'employé empile des cartons à l'aide d'un chariot élévateur, ce qui correspond à (C). Les autres actions ne sont pas visibles dans la scène.",
     "transcript": "(A) The worker is unloading a delivery truck. (B) The worker is signing a document. (C) The worker is stacking boxes with a forklift. (D) The worker is cleaning the floor.",
     "voiceGender": "male",
     "image": "/assets/pexels/4487382.jpeg"
@@ -7324,7 +7324,7 @@ export const DEBUTANT_GEN = [
       "The couple is walking into the restaurant."
     ],
     "answer": 0,
-    "explanation": "Le couple dîne à la lueur des chandelles, ce qui correspond à (D). Les autres phrases décrivent des moments qui ne sont pas représentés ici.",
+    "explanation": "Le couple dîne à la lueur des chandelles, ce qui correspond à (A). Les autres phrases décrivent des moments qui ne sont pas représentés ici.",
     "transcript": "(A) The couple is dining by candlelight. (B) The couple is ordering drinks at a bar. (C) The couple is paying the bill. (D) The couple is walking into the restaurant.",
     "voiceGender": "female",
     "image": "/assets/pexels/36353801.jpeg"
@@ -7344,7 +7344,7 @@ export const DEBUTANT_GEN = [
       "The conductor is selling tickets."
     ],
     "answer": 0,
-    "explanation": "Le contrôleur se tient simplement sur le quai, ce qui correspond à (B). Les autres actions ne sont pas illustrées dans l'image.",
+    "explanation": "Le contrôleur se tient simplement sur le quai, ce qui correspond à (A). Les autres actions ne sont pas illustrées dans l'image.",
     "transcript": "(A) The conductor is standing on the platform. (B) The conductor is announcing a delay. (C) The conductor is repairing the tracks. (D) The conductor is selling tickets.",
     "voiceGender": "male",
     "image": "/assets/pexels/16843692.jpeg"
@@ -7364,7 +7364,7 @@ export const DEBUTANT_GEN = [
       "The vendor is arranging fruit at a market stall."
     ],
     "answer": 3,
-    "explanation": "Le vendeur dispose des fruits sur son étal, ce qui correspond à (A). Les autres phrases décrivent des activités qui n'apparaissent pas dans la scène.",
+    "explanation": "Le vendeur dispose des fruits sur son étal, ce qui correspond à (D). Les autres phrases décrivent des activités qui n'apparaissent pas dans la scène.",
     "transcript": "(A) The vendor is delivering groceries by bike. (B) The vendor is closing the shop. (C) The vendor is counting cash in an office. (D) The vendor is arranging fruit at a market stall.",
     "voiceGender": "female",
     "image": "/assets/pexels/13679554.jpeg"
@@ -7384,7 +7384,7 @@ export const DEBUTANT_GEN = [
       "The engineer is training new staff."
     ],
     "answer": 2,
-    "explanation": "L'ingénieur examine une machine sur le site de production, ce qui correspond à (D). Les autres actions n'apparaissent pas dans l'image.",
+    "explanation": "L'ingénieur examine une machine sur le site de production, ce qui correspond à (C). Les autres actions n'apparaissent pas dans l'image.",
     "transcript": "(A) The engineer is drawing blueprints. (B) The engineer is repairing a computer. (C) The engineer is inspecting machinery on the factory floor. (D) The engineer is training new staff.",
     "voiceGender": "male",
     "image": "/assets/pexels/32845692.jpeg"
@@ -7399,13 +7399,13 @@ export const DEBUTANT_GEN = [
     "question": "Sélectionnez la phrase qui décrit le mieux l'image.",
     "choices": [
       "The woman is returning an item to the shelf.",
-      "The woman is pushing a shopping cart down the aisle.",
+      "The woman is sitting inside the shopping cart.",
       "The woman is comparing prices with a phone.",
       "The woman is paying with a card at checkout."
     ],
     "answer": 1,
-    "explanation": "La femme pousse un chariot dans une allée du supermarché, ce qui correspond à (A). Les autres phrases décrivent des étapes différentes des courses.",
-    "transcript": "(A) The woman is returning an item to the shelf. (B) The woman is pushing a shopping cart down the aisle. (C) The woman is comparing prices with a phone. (D) The woman is paying with a card at checkout.",
+    "explanation": "La femme est assise à l'intérieur du chariot en train de manger, ce qui correspond au bon choix. Les autres phrases décrivent des étapes différentes des courses, absentes de la scène.",
+    "transcript": "(A) The woman is returning an item to the shelf. (B) The woman is sitting inside the shopping cart. (C) The woman is comparing prices with a phone. (D) The woman is paying with a card at checkout.",
     "voiceGender": "female",
     "image": "/assets/pexels/7976823.jpeg"
   },
@@ -7424,7 +7424,7 @@ export const DEBUTANT_GEN = [
       "The driver is reading a map."
     ],
     "answer": 0,
-    "explanation": "Le chauffeur ouvre la portière pour le passager, ce qui correspond à (B). Les autres actions décrivent des tâches non visibles dans l'image.",
+    "explanation": "Le chauffeur ouvre la portière pour le passager, ce qui correspond à (A). Les autres actions décrivent des tâches non visibles dans l'image.",
     "transcript": "(A) The driver is opening the car door for a passenger. (B) The driver is loading luggage into the trunk. (C) The driver is refueling the taxi. (D) The driver is reading a map.",
     "voiceGender": "male",
     "image": "/assets/pexels/13801675.jpeg"
@@ -7444,7 +7444,7 @@ export const DEBUTANT_GEN = [
       "The barista is serving pastries."
     ],
     "answer": 1,
-    "explanation": "Le barista prépare un café derrière le comptoir, ce qui correspond à (C). Les autres actions ne correspondent pas à ce que montre l'image.",
+    "explanation": "Le barista prépare un café derrière le comptoir, ce qui correspond à (B). Les autres actions ne correspondent pas à ce que montre l'image.",
     "transcript": "(A) The barista is cleaning the counter. (B) The barista is making coffee behind the counter. (C) The barista is taking a payment. (D) The barista is serving pastries.",
     "voiceGender": "female",
     "image": "/assets/pexels/5865195.jpeg"
@@ -7464,7 +7464,7 @@ export const DEBUTANT_GEN = [
       "The delivery man is ringing a doorbell."
     ],
     "answer": 1,
-    "explanation": "Le livreur porte un colis vers une porte, ce qui correspond à (D). Les autres phrases décrivent des actions absentes de la scène.",
+    "explanation": "Le livreur porte un colis vers une porte, ce qui correspond à (B). Les autres phrases décrivent des actions absentes de la scène.",
     "transcript": "(A) The delivery man is loading a van. (B) The delivery man is carrying a package to a door. (C) The delivery man is signing a receipt. (D) The delivery man is ringing a doorbell.",
     "voiceGender": "male",
     "image": "/assets/pexels/7706562.jpeg"

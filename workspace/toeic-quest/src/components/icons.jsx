@@ -26,6 +26,10 @@ export const PlayIcon = (p) => (
   <Base {...p} filled><path d="M7 4.5v15a.8.8 0 0 0 1.2.7l12-7.5a.8.8 0 0 0 0-1.4l-12-7.5A.8.8 0 0 0 7 4.5Z" stroke="none" /></Base>
 );
 
+export const PauseIcon = (p) => (
+  <Base {...p} filled><rect x="6" y="4.5" width="4" height="15" rx="1" stroke="none" /><rect x="14" y="4.5" width="4" height="15" rx="1" stroke="none" /></Base>
+);
+
 export const StarIcon = ({ filled = true, ...p }) => (
   <Base {...p} filled={filled}>
     <path d="M12 2.5l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.3l-5.8 3.1 1.1-6.5L2.6 9.3l6.5-.9L12 2.5Z" stroke={filled ? "none" : "currentColor"} />
