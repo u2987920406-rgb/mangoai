@@ -25,7 +25,7 @@ console.log("\n[1] readProfile — full-local réel : registre complet et valide
 {
   const p = readProfile("full-local");
   check("full-local lu", p !== null);
-  check("13 rôles présents", p !== null && AGENT_IDS.every((id) => !!p[id]?.provider));
+  check(`${AGENT_IDS.length} rôles présents`, p !== null && AGENT_IDS.every((id) => !!p[id]?.provider));
   check("tous en ollama localOnly", p !== null && AGENT_IDS.every((id) => p[id].provider === "ollama" && p[id].localOnly === true));
   check("profil inexistant → null", readProfile("nope-inexistant") === null);
 }

@@ -181,6 +181,12 @@
     "test-eleve-gate": {
       "tier": "offline"
     },
+    "test-eleve-gate-constants": {
+      "tier": "offline"
+    },
+    "test-eleve-gate-images": {
+      "tier": "offline"
+    },
     "test-eleve-gate-pedago": {
       "tier": "offline"
     },
@@ -381,6 +387,9 @@
       "tier": "offline"
     },
     "test-mangoqa": {
+      "tier": "offline"
+    },
+    "test-mangoqa-active": {
       "tier": "offline"
     },
     "test-mangoqa-observer": {

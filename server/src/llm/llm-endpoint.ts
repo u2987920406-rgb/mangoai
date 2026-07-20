@@ -31,9 +31,10 @@ export interface ProviderPreset {
   apiKeyEnv: string;
 }
 
-/** Presets OpenAI-compat pour deepseek / mistral / groq. Source unique de vérité
- *  (llm-engine ré-exporte cette constante — l'API publique reste inchangée). */
-export const PROVIDER_PRESETS: Record<"deepseek" | "mistral" | "groq", ProviderPreset> = {
+/** Presets OpenAI-compat pour deepseek / mistral / groq / openrouter. Source
+ *  unique de vérité (llm-engine ré-exporte cette constante — l'API publique
+ *  reste inchangée). */
+export const PROVIDER_PRESETS: Record<"deepseek" | "mistral" | "groq" | "openrouter", ProviderPreset> = {
   deepseek: {
     baseURL: "https://api.deepseek.com/v1",
     defaultModel: "deepseek-chat",
@@ -48,6 +49,13 @@ export const PROVIDER_PRESETS: Record<"deepseek" | "mistral" | "groq", ProviderP
     baseURL: "https://api.groq.com/openai/v1",
     defaultModel: "llama-3.3-70b-versatile",
     apiKeyEnv: "GROQ_API_KEY",
+  },
+  openrouter: {
+    // Tencent Hunyuan Hy3 gratuit (fenêtre limitée, cf. limites.md) — modèle par
+    // défaut du preset ; surchageable via AskLLMOptions.model comme les autres.
+    baseURL: "https://openrouter.ai/api/v1",
+    defaultModel: "tencent/hy3:free",
+    apiKeyEnv: "OPENROUTER_API_KEY",
   },
 };
 
@@ -79,7 +87,7 @@ function overrideKeyFrom(apiKeyEnv?: string): string {
 //    resolveLitellmEndpoint / le repli inline d'askLLM+askOpenAI. Inclut
 //    LLM_OPENAI_URL / LLM_OPENAI_KEY. url = base BRUTE (askOpenAI normalise). ──
 function resolveEngine(provider: LLMProvider, overrides: EndpointOverrides): { url: string; key: string } {
-  if (provider === "deepseek" || provider === "mistral" || provider === "groq") {
+  if (provider === "deepseek" || provider === "mistral" || provider === "groq" || provider === "openrouter") {
     const preset = PROVIDER_PRESETS[provider];
     const url = overrides.baseUrl ?? preset.baseURL;
     const key = overrideKeyFrom(overrides.apiKeyEnv)
@@ -107,7 +115,7 @@ function resolveEleve(provider: LLMProvider, overrides: EndpointOverrides): { ur
   const eleveApiKey = process.env.ELEVE_API_KEY?.trim() ?? "";
   const fallbackUrl = overrides.baseUrl?.trim() || eleveApiUrl;
   const fallbackKey = (overrides.apiKeyEnv ? process.env[overrides.apiKeyEnv] : undefined)?.trim() || eleveApiKey;
-  if (provider === "deepseek" || provider === "mistral" || provider === "groq") {
+  if (provider === "deepseek" || provider === "mistral" || provider === "groq" || provider === "openrouter") {
     const p = PROVIDER_PRESETS[provider];
     return { url: normalizeCompletionsUrl(p.baseURL), key: (process.env[p.apiKeyEnv] ?? fallbackKey).trim() };
   }

@@ -35,20 +35,22 @@ Le dossier `wiki/` est une **couche de synthèse interconnectée** par-dessus le
 
 **Avant de lancer un script long/autonome** (`run-*-apps.ts`, `run-mango-nuit.ts`, tout test `_prove-*` en conditions réelles, tout run sans supervision continue) : dérouler `PRELAUNCH_CHECKLIST.md` (racine du repo). Née d'un oubli réel (2026-07-14) : câblage modèle vérifié à fond mais MangoQA — dépendance d'EXÉCUTION, pas de config — mort sans que ce soit contrôlé avant le lancement. La checklist couvre : services externes vivants (Ollama, MangoQA), cohérence des 3 registres modèle, cohérence prompt↔chemin réellement emprunté (contrat vs agentique), capacité VRAM, hygiène du run (état nettoyé, filet de reprise posé).
 
-## ⚠️ Vérification anti-serveur-orphelin (IMPÉRATIF à chaque démarrage du backend)
+## ⚠️ Vérification anti-serveur-orphelin (IMPÉRATIF à chaque démarrage du backend ET de l'UI)
 
-**Avant de lancer le backend Express (port 3000), TOUJOURS vérifier qu'aucun process orphelin ne squatte le port.** Cette erreur s'est produite plusieurs fois : la session automatique nocturne de Raf laisse un `node` mort-vivant sur le port 3000 dans une session non-interactive. Tous ses spawns (npm/git/vite) échouent alors avec des codes obscurs (`3221225794` / `0xC0000142`, `git init` qui plante), ce qui bloque toute génération d'app.
+**Avant de lancer le backend Express (port 3000) OU l'UI Vite (port 5173), TOUJOURS vérifier qu'aucun process orphelin ne squatte le port.** Cette erreur s'est produite plusieurs fois : la session automatique nocturne de Raf laisse un `node` mort-vivant sur le port 3000 dans une session non-interactive. Tous ses spawns (npm/git/vite) échouent alors avec des codes obscurs (`3221225794` / `0xC0000142`, `git init` qui plante), ce qui bloque toute génération d'app.
 
-**Procédure obligatoire avant chaque lancement backend :**
+**Incident réel du 2026-07-20 — le même problème sur le port 5173** : un `vite` orphelin d'une app générée (`toeic-quest`, lancé sans `--port` explicite) est tombé sur le premier port libre = **5173**, exactement le port que `desktop/src-tauri/tauri.conf.json` charge EN DUR (`devUrl`). Résultat : lancer l'app desktop Tauri affichait `toeic-quest` au lieu de MangoOS — silencieux, aucune erreur, juste le mauvais contenu. **Le port 5173 (UI) doit être vérifié avec la MÊME discipline que le port 3000**, avant tout lancement UI et avant tout lancement de l'app desktop Tauri.
+
+**Procédure obligatoire avant chaque lancement backend/UI/Tauri :**
 
 ```powershell
-$conns = Get-NetTCPConnection -LocalPort 3000 -State Listen -ErrorAction SilentlyContinue
-if (-not $conns) { "PORT 3000 LIBRE" }
+$conns = Get-NetTCPConnection -LocalPort 3000,5173 -State Listen -ErrorAction SilentlyContinue
+if (-not $conns) { "PORTS 3000/5173 LIBRES" }
 else { $conns | ForEach-Object { Get-Process -Id $_.OwningProcess } | Format-Table Id,ProcessName,StartTime,SessionId }
 ```
 
-- **Port libre** → lancer le backend normalement.
-- **Listener présent** → c'est presque toujours un orphelin de la run nocturne. Le tuer (`Stop-Process -Id <PID> -Force`) **puis** lancer un backend FRAIS dans la session active. Ne jamais essayer de réutiliser le serveur orphelin (sa session est morte, ses spawns échoueront).
+- **Ports libres** → lancer normalement.
+- **Listener présent** → vérifier la `CommandLine` du process (`Get-CimInstance Win32_Process -Filter "ProcessId=<PID>"`) avant de tuer : si c'est un orphelin d'une AUTRE app (ex. `workspace/<autre-projet>/node_modules/.bin/vite`), le tuer sans hésiter. Si c'est un vrai backend/UI MangoOS de la session active, ne pas le tuer par erreur. Puis lancer un process FRAIS dans la session active — ne jamais réutiliser un orphelin (sa session est morte, ses spawns échoueront).
 
 ## Comment accéder à l'historique
 

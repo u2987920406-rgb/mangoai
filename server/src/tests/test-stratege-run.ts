@@ -12,7 +12,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 
-const { runStrategistCycle, maybeRunStrategistCycle, gatherSignals } = await import("../stratege/stratege-run.js")
+const { runStrategistCycle, maybeRunStrategistCycle, gatherSignals, shouldRunPeriodicCycle, periodicIntervalMs } = await import("../stratege/stratege-run.js")
 const { loadStrategistState, saveStrategistState } = await import("../stratege/stratege-store.js")
 import type { Signal, StrategistState } from "../stratege/stratege-global-model.js"
 
@@ -146,6 +146,30 @@ console.log("\n[4] Un collecteur throw → les autres survivent (fail-open par c
   check("le cycle a quand même 2 signaux (des collecteurs sains)", (res?.signals.length ?? 0) === 2)
   check("collectorErrors = 1 remonté dans le résultat", res?.collectorErrors === 1)
   try { fs.rmSync(TMP, { force: true }) } catch { /* */ }
+}
+
+console.log("\n[5] shouldRunPeriodicCycle — greffe périodique (évaluation portage Atlas, 2026-07-20)")
+{
+  check("les 2 gates OFF → jamais", shouldRunPeriodicCycle(NOW, 0, 60_000, false, false) === false)
+  check("STRATEGE_PERIODIC OFF seul → jamais (même si STRATEGE_GLOBAL ON)",
+    shouldRunPeriodicCycle(NOW, 0, 60_000, false, true) === false)
+  check("STRATEGE_GLOBAL OFF seul → jamais (dépendance de gates, comme collectDemandesGated)",
+    shouldRunPeriodicCycle(NOW, 0, 60_000, true, false) === false)
+  check("les 2 gates ON, jamais tourné (lastRun=0) → tourne immédiatement (pas d'attente au 1er tick)",
+    shouldRunPeriodicCycle(NOW, 0, 60_000, true, true) === true)
+  check("les 2 gates ON, intervalle pas écoulé → pas encore",
+    shouldRunPeriodicCycle(NOW, NOW - 30_000, 60_000, true, true) === false)
+  check("les 2 gates ON, intervalle tout juste écoulé → tourne",
+    shouldRunPeriodicCycle(NOW, NOW - 60_000, 60_000, true, true) === true)
+  check("les 2 gates ON, largement dépassé → tourne",
+    shouldRunPeriodicCycle(NOW, NOW - 3_600_000, 60_000, true, true) === true)
+
+  check("periodicIntervalMs — défaut 25 min sans override", periodicIntervalMs({}) === 25 * 60 * 1000)
+  check("periodicIntervalMs — override valide honoré", periodicIntervalMs({ STRATEGE_PERIODIC_INTERVAL_MS: "600000" }) === 600_000)
+  check("periodicIntervalMs — override sous le plancher 60s → ignoré, repli défaut",
+    periodicIntervalMs({ STRATEGE_PERIODIC_INTERVAL_MS: "1000" }) === 25 * 60 * 1000)
+  check("periodicIntervalMs — override non numérique → ignoré, repli défaut",
+    periodicIntervalMs({ STRATEGE_PERIODIC_INTERVAL_MS: "pas-un-nombre" }) === 25 * 60 * 1000)
 }
 
 console.log(`\n${pass} pass, ${fail} fail`)

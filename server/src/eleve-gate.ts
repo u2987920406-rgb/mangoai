@@ -22,6 +22,8 @@ import { getPlan, formatPlanReminder } from "./eleve-plan.js";
 import { scanFilesForBalance, formatBalanceRaison, type BalanceFinding } from "./layout-balance.js";
 import { runProjectTests, type TestRun } from "./inspection.js";
 import { checkPedagoReel, type PedagoVerdict } from "./eleve-gate-pedago.js";
+import { checkImagesReel, type ImagesVerdict } from "./eleve-gate-images.js";
+import { checkConstantsReel, type ConstantsVerdict } from "./eleve-gate-constants.js";
 import { flag } from "./flags.js";
 import { publishGateVerdict } from "./kernel/kernel-design-events.js";
 
@@ -50,6 +52,13 @@ export interface GateVerdict {
   // (projet de formation). Absent en gate OFF → verdict byte-identique à avant ce volet.
   pedago?: PedagoVerdict;
   pedagoOk?: boolean;
+  // (L114+L116) Volet IMAGES — présent SEULEMENT si ELEVE_GATE_IMAGES=on. Absent en gate
+  // OFF → verdict byte-identique à avant ce volet (même contrat que pedago/pedagoOk).
+  images?: ImagesVerdict;
+  imagesOk?: boolean;
+  // (L117) Volet CONSTANTES — présent SEULEMENT si ELEVE_GATE_CONSTANTS=on.
+  constants?: ConstantsVerdict;
+  constantsOk?: boolean;
   // (axiome 17, 2026-07-08 — expérience #183) « la clôture doit atteindre le signal le
   // plus HAUT ATTEIGNABLE, pas le plus commode. » Un script de test RÉEL existe mais
   // ELEVE_GATE_TESTS=off → un signal plus fiable que le seul build était disponible et
@@ -87,6 +96,12 @@ export interface GateDeps {
   /** (#181 É4) Volet PÉDAGO (gated ELEVE_GATE_PEDAGO). Optionnel : absent → volet sauté
    *  (comportement historique). Ne lève jamais côté implémentation réelle. */
   checkPedago?: (projectDir: string) => Promise<PedagoVerdict>;
+  /** (L114+L116) Volet IMAGES (gated ELEVE_GATE_IMAGES). Optionnel : absent → volet
+   *  sauté (comportement historique). Ne lève jamais côté implémentation réelle. */
+  checkImages?: (projectDir: string) => Promise<ImagesVerdict>;
+  /** (L117) Volet CONSTANTES (gated ELEVE_GATE_CONSTANTS). Optionnel : absent → volet
+   *  sauté (comportement historique). Ne lève jamais côté implémentation réelle. */
+  checkConstants?: (projectDir: string) => Promise<ConstantsVerdict>;
   /** (axiome 17) Un script `test` RÉEL (≠ placeholder npm par défaut) existe-t-il dans
    *  package.json ? Sert UNIQUEMENT à signaler un signal disponible non exploité — ne
    *  lève jamais, best-effort. */
@@ -171,6 +186,8 @@ const realGateDeps: GateDeps = {
   scanPlaceholders: realScanPlaceholders,
   runTests: (dir) => runProjectTests(dir),
   checkPedago: (dir) => checkPedagoReel(dir),
+  checkImages: (dir) => checkImagesReel(dir),
+  checkConstants: (dir) => checkConstantsReel(dir),
   hasTestScript: hasRealTestScript,
 };
 
@@ -337,6 +354,33 @@ export async function runClosureGate(
   }
   const pedagoOk = !pedago || pedago.ok;
 
+  // 7. IMAGES (L114+L116, opt-in ELEVE_GATE_IMAGES, défaut OFF) — CADRAGE (image tronquée/
+  // mal cadrée) + CONTEXTE (image hors-sujet par rapport au texte adjacent), un regard VL
+  // ciblé distinct de la critique de goût. Gate OFF ou deps.checkImages absent → jamais
+  // appelé, verdict byte-identique (pas de champ `images`/`imagesOk`).
+  let images: ImagesVerdict | undefined;
+  if (flag("ELEVE_GATE_IMAGES") && deps.checkImages) {
+    try {
+      images = await deps.checkImages(projectDir);
+    } catch {
+      images = undefined;
+    }
+  }
+  const imagesOk = !images || images.ok;
+
+  // 8. CONSTANTES (L117, opt-in ELEVE_GATE_CONSTANTS, défaut OFF) — sanity-check déterministe
+  // (0 réseau/LLM) des vitesses orbitales planétaires déclarées vs une table curée. Gate OFF
+  // ou deps.checkConstants absent → jamais appelé, verdict byte-identique.
+  let constants: ConstantsVerdict | undefined;
+  if (flag("ELEVE_GATE_CONSTANTS") && deps.checkConstants) {
+    try {
+      constants = await deps.checkConstants(projectDir);
+    } catch {
+      constants = undefined;
+    }
+  }
+  const constantsOk = !constants || constants.ok;
+
   const raisons: string[] = [];
   if (!intentOk) {
     const m = intent.manques.length ? intent.manques.map((x) => `  - ${x}`).join("\n") : "  - la demande n'est pas couverte";
@@ -356,6 +400,12 @@ export async function runClosureGate(
   }
   if (pedago && !pedago.ok) {
     raisons.push(...pedago.raisons);
+  }
+  if (images && !images.ok) {
+    raisons.push(...images.raisons);
+  }
+  if (constants && !constants.ok) {
+    raisons.push(...constants.raisons);
   }
   if (design) {
     // Goût : seulement si FIABLE (L28) ET hors mode observe (L34). Un goût observé/non-scoré
@@ -389,10 +439,12 @@ export async function runClosureGate(
     );
   }
   const verdict: GateVerdict = {
-    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks && pedagoOk,
+    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks && pedagoOk && imagesOk && constantsOk,
     intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance,
     placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, dualSkip, testsRan, testsOk, tests, raisons,
     ...(pedago ? { pedago, pedagoOk } : {}),
+    ...(images ? { images, imagesOk } : {}),
+    ...(constants ? { constants, constantsOk } : {}),
     ...(signalGap ? { signalGap } : {}),
   };
   // (2026-07-11) publie le verdict COMPLET du Gardien sur le Bus — MangoQA
@@ -443,7 +495,7 @@ export function evaluateGate(
   if (verdict.ok) return { action: "ok" };
   if (gateRelances >= max) return { action: "laisse-passer" };
 
-  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && (verdict.pedagoOk ?? true) && verdict.tasteScored && !verdict.tasteOk;
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && (verdict.pedagoOk ?? true) && (verdict.imagesOk ?? true) && (verdict.constantsOk ?? true) && verdict.tasteScored && !verdict.tasteOk;
   const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
   if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
     return { action: "laisse-passer" };

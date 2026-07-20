@@ -68,6 +68,13 @@ export interface PedagoOptions {
   longueurMin?: number;
   /** Nombre de mots max toléré par phrase (lisibilité). Défaut 40. */
   motsParPhraseMax?: number;
+  /** Nombre minimal d'items QCM avant de juger un biais de position significatif
+   *  (sous ce seuil, la distribution est trop petite pour être fiable). Défaut 5. */
+  minQcmPourBiais?: number;
+  /** Part max tolérée (0..1) de la position la plus fréquente de la bonne réponse
+   *  parmi les QCM d'un même module, au-delà de laquelle on flag un biais
+   *  (L115 — quiz observé où la bonne réponse restait systématiquement en position « a »). Défaut 0.5. */
+  maxPartPositionBiais?: number;
 }
 
 export interface PedagoVerdict {
@@ -78,6 +85,7 @@ export interface PedagoVerdict {
   ordreOk: boolean;
   sourcesOk: boolean;
   lisibiliteOk: boolean;
+  biaisPositionOk: boolean;
   exactitudeOk: boolean;
   /** true = étage 3 non exécuté (aucune affirmation exploitable / juge muet) → ne pénalise pas. */
   exactitudeSautee: boolean;
@@ -92,6 +100,7 @@ function verdictNeutre(applicable: boolean): PedagoVerdict {
     ordreOk: true,
     sourcesOk: true,
     lisibiliteOk: true,
+    biaisPositionOk: true,
     exactitudeOk: true,
     exactitudeSautee: true,
     raisons: [],
@@ -225,6 +234,47 @@ function checkLisibilite(
     );
   }
 
+  return raisons;
+}
+
+// ---------------------------------------------------------------------------
+// Étage 2e — BIAIS DE POSITION de la bonne réponse (L115, limites.md)
+// ---------------------------------------------------------------------------
+// Observé sur `toeic-quest` refondu : la bonne réponse restait en position "a"
+// (index 0) à travers tout le quiz — biais de génération jamais contrôlé,
+// exploitable par bourrinage. Détecte ce même biais pour les QCM générés via
+// la fabrique #181 (Item.type === "qcm", champ `reponse` = index de la bonne
+// réponse dans `choix`) : au-delà d'un seuil d'items, une position dominante
+// (ex. toujours 0) déclenche un nudge de relance.
+
+function checkBiaisPosition(
+  banks: Record<string, Item[]>,
+  opts: Required<Pick<PedagoOptions, "minQcmPourBiais" | "maxPartPositionBiais">>,
+): string[] {
+  const raisons: string[] = [];
+  for (const [moduleId, items] of Object.entries(banks)) {
+    const qcms = items.filter((it) => it.type === "qcm");
+    if (qcms.length < opts.minQcmPourBiais) continue;
+
+    const parPosition = new Map<number, number>();
+    for (const it of qcms) {
+      parPosition.set(it.reponse, (parPosition.get(it.reponse) ?? 0) + 1);
+    }
+    let positionDominante = 0;
+    let count = 0;
+    for (const [pos, n] of parPosition) {
+      if (n > count) { positionDominante = pos; count = n; }
+    }
+    const part = count / qcms.length;
+    if (part > opts.maxPartPositionBiais) {
+      const lettre = String.fromCharCode(97 + positionDominante); // 0→a, 1→b, ...
+      raisons.push(
+        `BIAIS DE POSITION — module « ${moduleId} » : ${count}/${qcms.length} QCM (${Math.round(part * 100)}%) ` +
+          `ont leur bonne réponse en position « ${lettre} » (index ${positionDominante}). ` +
+          `Mélange l'ordre de \`choix\` à la génération (Fisher-Yates, seed déterministe) pour éviter un biais exploitable par bourrinage.`,
+      );
+    }
+  }
   return raisons;
 }
 
@@ -366,6 +416,8 @@ export async function checkPedago(
   const nEchantillon = Math.max(1, opts.nEchantillon ?? 10);
   const seuilSupport = opts.seuilSupport ?? 0.7;
   const seed = opts.seed ?? seedFromString(manifest.sujet);
+  const minQcmPourBiais = opts.minQcmPourBiais ?? 5;
+  const maxPartPositionBiais = opts.maxPartPositionBiais ?? 0.5;
 
   const banks: Record<string, Item[]> = {};
   for (const mod of manifest.curriculum.modules) {
@@ -380,6 +432,7 @@ export async function checkPedago(
   const raisonsOrdre = checkOrdre(manifest.curriculum, banks);
   const raisonsSources = checkSources(banks);
   const raisonsLisibilite = checkLisibilite(banks, { longueurMin, motsParPhraseMax });
+  const raisonsBiaisPosition = checkBiaisPosition(banks, { minQcmPourBiais, maxPartPositionBiais });
 
   let exactitude: { ok: boolean; sautee: boolean; raisons: string[] };
   try {
@@ -393,6 +446,7 @@ export async function checkPedago(
     ...raisonsOrdre,
     ...raisonsSources,
     ...raisonsLisibilite,
+    ...raisonsBiaisPosition,
     ...exactitude.raisons,
   ];
 
@@ -403,6 +457,7 @@ export async function checkPedago(
     ordreOk: raisonsOrdre.length === 0,
     sourcesOk: raisonsSources.length === 0,
     lisibiliteOk: raisonsLisibilite.length === 0,
+    biaisPositionOk: raisonsBiaisPosition.length === 0,
     exactitudeOk: exactitude.ok,
     exactitudeSautee: exactitude.sautee,
     raisons,

@@ -14,6 +14,8 @@
 //   - 'deepseek' → DeepSeek API (OpenAI-compat) — DEEPSEEK_API_KEY
 //   - 'mistral'  → Mistral API (OpenAI-compat) — MISTRAL_API_KEY
 //   - 'groq'     → Groq API (OpenAI-compat)    — GROQ_API_KEY
+//   - 'openrouter' → OpenRouter (OpenAI-compat) — OPENROUTER_API_KEY, défaut
+//                  tencent/hy3:free (fenêtre gratuite limitée, cf. limites.md)
 //   - 'litellm'  → proxy LiteLLM (OpenAI-compat) ouvrant 100+ modèles d'un coup
 //                  via un seul endpoint — LITELLM_BASE_URL (défaut localhost:4000),
 //                  LITELLM_MODEL, LITELLM_API_KEY. Le proxy gère le routage et le
@@ -35,7 +37,7 @@ export { PROVIDER_PRESETS } from './llm-endpoint.js'
 import { claudeQuery, openAiChat, CLAUDE_QUERY_TIMEOUT_MS } from './llm-transport.js'
 export { subscriptionEnv } from './llm-transport.js'
 
-export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'litellm'
+export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'openrouter' | 'litellm'
 
 export interface AskLLMOptions {
   provider?: LLMProvider
@@ -68,7 +70,7 @@ export interface AskLLMOptions {
  * 6 valeurs valides. `envValue` = la variable dédiée d'une feature. */
 export function resolveProvider(envValue?: string, fallback: LLMProvider = 'claude'): LLMProvider {
   const raw = (envValue ?? process.env.LLM_PROVIDER ?? '').trim().toLowerCase()
-  const valid: LLMProvider[] = ['claude', 'ollama', 'openai', 'deepseek', 'mistral', 'groq', 'litellm']
+  const valid: LLMProvider[] = ['claude', 'ollama', 'openai', 'deepseek', 'mistral', 'groq', 'openrouter', 'litellm']
   return (valid.includes(raw as LLMProvider) ? raw : fallback) as LLMProvider
 }
 
@@ -90,7 +92,7 @@ export interface EndpointOverrides {
  * est bien présente dans l'env — sinon fail-open, on retombe sur le repli
  * historique (jamais de crash pour une var d'env absente). */
 export function resolvePresetEndpoint(
-  provider: 'deepseek' | 'mistral' | 'groq',
+  provider: 'deepseek' | 'mistral' | 'groq' | 'openrouter',
   overrides: EndpointOverrides = {},
 ): { baseURL: string; key: string } {
   // T1 : adaptateur mince → résolveur unique (famille 'engine'). url = base BRUTE
@@ -111,7 +113,7 @@ export function resolveLitellmEndpoint(overrides: EndpointOverrides = {}): { bas
 function defaultModel(provider: LLMProvider): string {
   if (provider === 'claude') return process.env.LLM_CLAUDE_MODEL ?? 'sonnet'
   if (provider === 'ollama') return process.env.OLLAMA_SUMMARY_MODEL ?? process.env.ELEVE_MODEL ?? 'gemma4:12b'
-  if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq') {
+  if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq' || provider === 'openrouter') {
     return PROVIDER_PRESETS[provider].defaultModel
   }
   if (provider === 'litellm') return process.env.LITELLM_MODEL ?? 'gpt-4o-mini'
@@ -192,7 +194,7 @@ export async function askLLM(system: string, user: string, opts: AskLLMOptions =
   const timeoutMs = opts.timeoutMs ?? 180_000
   const { imageBase64, imageMimeType } = opts
   if (provider === 'ollama') return askOllama(system, user, { model, timeoutMs, imageBase64, baseUrl: opts.baseUrl })
-  if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq') {
+  if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq' || provider === 'openrouter') {
     const preset = PROVIDER_PRESETS[provider]
     const { baseURL, key } = resolvePresetEndpoint(provider, { baseUrl: opts.baseUrl, apiKeyEnv: opts.apiKeyEnv })
     if (!key) throw new Error(`Clé manquante pour le provider "${provider}" (${preset.apiKeyEnv} dans server/.env).`)

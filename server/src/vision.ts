@@ -12,6 +12,49 @@ import { z } from "zod";
 import { createSdkMcpServer, tool } from "@anthropic-ai/claude-agent-sdk";
 import { chromium, type Browser } from "playwright";
 import { publishDesignReference } from "./kernel/kernel-design-events.js";
+import {
+  type RgbaPixel,
+  cssColorToHex,
+  dedupeColors,
+  quantizePixels,
+  bucketKeyToHex,
+  topColorsFromBuckets,
+  ambianceDescriptor,
+} from "./vision-colors.js";
+import {
+  isCloneableUrl,
+  type ScrapedPage,
+  processScraped,
+  decodeHtmlEntities,
+  extractTextFromHtml,
+  SCRAPE_MAX_TEXT,
+  SCRAPE_MAX_LINKS,
+} from "./vision-webtext.js";
+// Re-exporté pour que les fichiers qui importent déjà `from "./vision.js"` (33 au
+// moment du découpage #190 tâche #6) restent inchangés — vision.ts était à 1317
+// lignes, plusieurs sous-domaines mélangés ; l'analyse couleur pure a été extraite
+// dans vision-colors.ts, testable isolément.
+export {
+  type RgbaPixel,
+  cssColorToHex,
+  dedupeColors,
+  quantizePixels,
+  bucketKeyToHex,
+  topColorsFromBuckets,
+  luminosityLabel,
+  saturationLabel,
+  temperatureLabel,
+  ambianceDescriptor,
+} from "./vision-colors.js";
+export {
+  isCloneableUrl,
+  type ScrapedPage,
+  processScraped,
+  decodeHtmlEntities,
+  extractTextFromHtml,
+  SCRAPE_MAX_TEXT,
+  SCRAPE_MAX_LINKS,
+} from "./vision-webtext.js";
 
 export const SNAPSHOTS_DIR_NAME = ".snapshots";
 
@@ -43,45 +86,6 @@ let budget = BUDGET_ELITE;
 let counter = 0;
 let browser: Browser | null = null;
 let idleTimer: NodeJS.Timeout | null = null;
-
-// ── Sharingan color helpers (pure — exported for unit tests) ─────────────────
-
-/** Converts a CSS color string (rgb/rgba/hex) to a lowercase #rrggbb hex, or
- *  null for transparent/invalid/default values. Pure → unit-testable. */
-export function cssColorToHex(color: string): string | null {
-  if (!color) return null;
-  const s = color.trim();
-  if (s === "transparent" || s === "initial" || s === "inherit" || s === "none" || s === "currentColor") return null;
-  const m = s.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)(?:\s*,\s*([\d.]+))?\s*\)/);
-  if (m) {
-    const a = m[4] !== undefined ? parseFloat(m[4]) : 1;
-    if (a === 0) return null; // fully transparent
-    return `#${[parseInt(m[1]), parseInt(m[2]), parseInt(m[3])].map((n) => n.toString(16).padStart(2, "0")).join("")}`;
-  }
-  if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toLowerCase();
-  if (/^#[0-9a-fA-F]{3}$/.test(s)) return `#${s[1]}${s[1]}${s[2]}${s[2]}${s[3]}${s[3]}`.toLowerCase();
-  return null;
-}
-
-function _isNearBlack(hex: string): boolean {
-  return parseInt(hex.slice(1, 3), 16) < 12 && parseInt(hex.slice(3, 5), 16) < 12 && parseInt(hex.slice(5, 7), 16) < 12;
-}
-function _isNearWhite(hex: string): boolean {
-  return parseInt(hex.slice(1, 3), 16) > 243 && parseInt(hex.slice(3, 5), 16) > 243 && parseInt(hex.slice(5, 7), 16) > 243;
-}
-
-/** Deduplicates CSS color strings, filters near-black/near-white, sorts by
- *  frequency, returns up to 8 design colors as #rrggbb hex. Pure → unit-testable. */
-export function dedupeColors(rawColors: string[]): string[] {
-  const freq = new Map<string, number>();
-  for (const c of rawColors) {
-    const hex = cssColorToHex(c);
-    if (!hex || hex.length !== 7) continue;
-    if (_isNearBlack(hex) || _isNearWhite(hex)) continue;
-    freq.set(hex, (freq.get(hex) ?? 0) + 1);
-  }
-  return [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8).map(([h]) => h);
-}
 
 /** Called at the start of each /api/chat turn: binds the tool to the active
  * project, sets the snapshot budget for the chosen effort mode, resets the
@@ -448,24 +452,6 @@ function text(message: string, isError = false) {
 const CLONE_VIEWPORT = { width: 1280, height: 900 };
 const CLONE_MAX_HEIGHT = 5000; // stay well under Anthropic's image limits
 
-// Accepts only public http(s) URLs — blocks localhost/private ranges so the tool
-// can't be turned against the user's own preview/backend (light SSRF hygiene).
-// Pure → unit-testable.
-export function isCloneableUrl(s: string): boolean {
-  let u: URL;
-  try {
-    u = new URL((s ?? "").trim());
-  } catch {
-    return false;
-  }
-  if (u.protocol !== "http:" && u.protocol !== "https:") return false;
-  const h = u.hostname.toLowerCase();
-  if (h === "localhost" || h.endsWith(".local") || h === "::1") return false;
-  if (/^(127\.|10\.|0\.0\.0\.0|169\.254\.|192\.168\.)/.test(h)) return false;
-  if (/^172\.(1[6-9]|2\d|3[01])\./.test(h)) return false;
-  return true;
-}
-
 /** Full-page screenshot of an external website (JPEG). Reuses getBrowser(). */
 export async function captureExternal(url: string): Promise<{ buf: Buffer; height: number }> {
   const b = await getBrowser();
@@ -530,36 +516,6 @@ const cloneTool = tool(
 // seul chargement de page rend le texte (pour répondre) ET, en option, l'image
 // (pour le layout). Bien plus puissant qu'un screenshot pour « aspirer des infos
 // et les retranscrire en local » → Claude synthétise ensuite la réponse.
-export const SCRAPE_MAX_TEXT = 16_000; // caractères — borne le coût en tokens
-export const SCRAPE_MAX_LINKS = 60;
-
-export interface ScrapedPage {
-  title: string;
-  text: string;
-  links: { href: string; label: string }[];
-  truncated: boolean;
-}
-
-/** Post-traitement PUR du brut extrait du DOM (→ testable sans réseau) :
- * tronque le texte à la borne, dédoublonne les liens par href, écarte les
- * `javascript:`/href vides, et plafonne le nombre. */
-export function processScraped(
-  rawText: string,
-  rawLinks: { href: string; label: string }[],
-): { text: string; links: { href: string; label: string }[]; truncated: boolean } {
-  const truncated = rawText.length > SCRAPE_MAX_TEXT;
-  const text = truncated ? rawText.slice(0, SCRAPE_MAX_TEXT) : rawText;
-  const seen = new Set<string>();
-  const links: { href: string; label: string }[] = [];
-  for (const l of rawLinks) {
-    if (!l.href || l.href.startsWith("javascript:") || seen.has(l.href)) continue;
-    seen.add(l.href);
-    links.push(l);
-    if (links.length >= SCRAPE_MAX_LINKS) break;
-  }
-  return { text, links, truncated };
-}
-
 // ── Lecture LÉGÈRE (sans navigateur) — 2026-07-13 ───────────────────────────
 // Constat en conditions réelles (Raf, ludum.fr) : un simple GET HTTP passe en
 // 200 là où le MÊME contenu, lu via Chromium headless, se prend un 403 — le
@@ -578,93 +534,6 @@ const LIGHT_FETCH_UA =
 const LIGHT_FETCH_TIMEOUT_MS = 8_000;
 const LIGHT_FETCH_MAX_BYTES = 5_000_000; // pages HTML légitimes tiennent large dedans
 const MIN_TEXT_FOR_LIGHT_FETCH = 200; // sous ce seuil : probablement une coquille JS-only
-
-/** Décode les entités HTML courantes (nommées + numériques). PUR. */
-export function decodeHtmlEntities(s: string): string {
-  return (s ?? "")
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;|&apos;/gi, "'")
-    .replace(/&#(\d+);/g, (_, d: string) => String.fromCharCode(Number(d)))
-    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCharCode(parseInt(h, 16)));
-}
-
-/** Extrait titre + texte visible + liens d'un HTML brut, SANS navigateur (pas de
- * JS exécuté — un getter statique, comme un robot d'indexation). PUR, testable
- * sans réseau. `baseUrl` résout les liens relatifs. */
-export function extractTextFromHtml(html: string, baseUrl: string): { title: string; text: string; links: { href: string; label: string }[] } {
-  // `<textarea>` retiré au même titre : des sites y planquent des payloads JS
-  // (masqués en `display:none`, ex. ludum.fr) — un regex n'a pas la cascade CSS
-  // pour le savoir, donc autant l'écarter comme du bruit non-éditorial.
-  const cleaned = (html ?? "")
-    .replace(/<script[\s\S]*?<\/script>/gi, " ")
-    .replace(/<style[\s\S]*?<\/style>/gi, " ")
-    .replace(/<textarea[\s\S]*?<\/textarea>/gi, " ")
-    .replace(/<!--[\s\S]*?-->/g, " ");
-
-  const titleMatch = cleaned.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  const title = titleMatch ? decodeHtmlEntities(titleMatch[1]).replace(/\s+/g, " ").trim() : "";
-
-  const links: { href: string; label: string }[] = [];
-  const linkRe = /<a\s+[^>]*href=["']([^"'#][^"']*)["'][^>]*>([\s\S]*?)<\/a>/gi;
-  let m: RegExpExecArray | null;
-  while ((m = linkRe.exec(cleaned))) {
-    let href: string;
-    try {
-      href = new URL(m[1], baseUrl).toString();
-    } catch {
-      continue;
-    }
-    const label = decodeHtmlEntities(m[2].replace(/<[^>]+>/g, " ")).replace(/\s+/g, " ").trim();
-    links.push({ href, label });
-  }
-
-  // (2026-07-13, cas réel ludum.fr) — le CHROME de page (menu, en-tête, pied de
-  // page, panneaux latéraux) est presque toujours du bruit, jamais ce qu'on est
-  // venu lire ; sur les gros sites e-commerce il peut à lui seul remplir toute
-  // la fenêtre de texte (`SCRAPE_MAX_TEXT`) avant que le contenu réel n'ait sa
-  // chance. On le retire du flux narratif (pas des LIENS, extraits juste avant :
-  // un lien de menu reste un lien valide).
-  const withoutChrome = cleaned
-    .replace(/<nav[\s\S]*?<\/nav>/gi, " ")
-    .replace(/<header[\s\S]*?<\/header>/gi, " ")
-    .replace(/<footer[\s\S]*?<\/footer>/gi, " ")
-    .replace(/<aside[\s\S]*?<\/aside>/gi, " ");
-
-  // Contenu PRINCIPAL en priorité : la balise sémantique <main>/<article> (quand
-  // présente — cas courant, y compris ludum.fr) porte le contenu qu'on cherche
-  // vraiment. On le met en TÊTE du texte renvoyé pour qu'il survive à la
-  // troncature en aval, puis le reste de la page suit en second (contexte
-  // secondaire) — sans le dupliquer.
-  let primaryHtml = "";
-  let bodyHtml = withoutChrome;
-  const mainMatch = withoutChrome.match(/<main[\s\S]*?<\/main>/i) ?? withoutChrome.match(/<article[\s\S]*?<\/article>/i);
-  if (mainMatch && mainMatch.index !== undefined) {
-    primaryHtml = mainMatch[0];
-    bodyHtml = withoutChrome.slice(0, mainMatch.index) + withoutChrome.slice(mainMatch.index + mainMatch[0].length);
-  }
-
-  const toPlainText = (fragment: string): string => {
-    const withBreaks = fragment.replace(/<\/(p|div|li|h[1-6]|tr|br)>/gi, "\n").replace(/<br\s*\/?>/gi, "\n");
-    const stripped = withBreaks.replace(/<[^>]+>/g, " ");
-    return decodeHtmlEntities(stripped)
-      .replace(/[ \t]+/g, " ")
-      .replace(/\n[ \t]+/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  };
-
-  const primaryText = primaryHtml ? toPlainText(primaryHtml) : "";
-  const restText = toPlainText(bodyHtml);
-  // Seuil bas (juste anti-vide, pas anti-court) : un <main> non-vide est déjà un
-  // signal de pertinence bien plus fort qu'une absence de balise sémantique.
-  const text = primaryText.length > 20 ? `${primaryText}\n\n${restText}`.trim() : restText;
-
-  return { title, text, links };
-}
 
 /** Tente une lecture LÉGÈRE (fetch nu, sans navigateur). `null` si indisponible
  * (réseau, non-HTML, contenu trop volumineux, ou texte trop court) — l'appelant
@@ -1082,90 +951,6 @@ const IMAGE_MIME: Record<string, string> = {
   ".webp": "image/webp",
   ".gif": "image/gif",
 };
-
-/** RGBA pixel data from sampling an image via Playwright canvas (64×64 grid). */
-export interface RgbaPixel {
-  r: number;
-  g: number;
-  b: number;
-  a: number;
-}
-
-/** Quantizes a list of RGBA pixels using 5-bit buckets per channel.
- *  Returns a map of bucket-key → frequency, ignoring fully-transparent pixels.
- *  Pure → unit-testable. */
-export function quantizePixels(pixels: RgbaPixel[]): Map<string, number> {
-  const freq = new Map<string, number>();
-  for (const { r, g, b, a } of pixels) {
-    if (a < 10) continue; // ignore near-transparent
-    // 5-bit bucket: shift right by 3 → 0-31 range per channel
-    const key = `${r >> 3},${g >> 3},${b >> 3}`;
-    freq.set(key, (freq.get(key) ?? 0) + 1);
-  }
-  return freq;
-}
-
-/** Converts a quantization bucket key back to a #rrggbb hex string.
- *  Mid-point of the bucket is used (shift left 3, add 4 for centre).
- *  Pure → unit-testable. */
-export function bucketKeyToHex(key: string): string {
-  const [rb, gb, bb] = key.split(",").map(Number);
-  const r = Math.min(255, (rb << 3) + 4);
-  const g = Math.min(255, (gb << 3) + 4);
-  const b = Math.min(255, (bb << 3) + 4);
-  return `#${[r, g, b].map((n) => n.toString(16).padStart(2, "0")).join("")}`;
-}
-
-/** Picks the top-N most frequent non-black/non-white buckets, returns hex strings.
- *  Pure → unit-testable. */
-export function topColorsFromBuckets(freq: Map<string, number>, topN = 8): string[] {
-  return [...freq.entries()]
-    .sort((a, b) => b[1] - a[1])
-    .map(([key]) => bucketKeyToHex(key))
-    .filter((hex) => !_isNearBlack(hex) && !_isNearWhite(hex))
-    .slice(0, topN);
-}
-
-/** Describes the luminosity of a pixel list: "clair" if avg luminance > 0.55,
- *  "sombre" otherwise. Pure → unit-testable. */
-export function luminosityLabel(pixels: RgbaPixel[]): "clair" | "sombre" {
-  if (pixels.length === 0) return "clair";
-  let sum = 0;
-  for (const { r, g, b } of pixels) {
-    // Relative luminance (perceptual, 0-1)
-    sum += (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-  }
-  return sum / pixels.length > 0.55 ? "clair" : "sombre";
-}
-
-/** Describes the saturation of a pixel list: "vif" if avg saturation > 0.25,
- *  "sourd" otherwise. Pure → unit-testable. */
-export function saturationLabel(pixels: RgbaPixel[]): "vif" | "sourd" {
-  if (pixels.length === 0) return "sourd";
-  let sum = 0;
-  for (const { r, g, b } of pixels) {
-    const max = Math.max(r, g, b) / 255;
-    const min = Math.min(r, g, b) / 255;
-    sum += max === 0 ? 0 : (max - min) / max;
-  }
-  return sum / pixels.length > 0.25 ? "vif" : "sourd";
-}
-
-/** Describes the colour temperature of a pixel list: "chaud" if avg R ≥ avg B,
- *  "froid" otherwise. Returns "chaud" for an empty list (neutral default).
- *  Pure → unit-testable. */
-export function temperatureLabel(pixels: RgbaPixel[]): "chaud" | "froid" {
-  if (pixels.length === 0) return "chaud";
-  let sumR = 0, sumB = 0;
-  for (const { r, b } of pixels) { sumR += r; sumB += b; }
-  return sumR / pixels.length >= sumB / pixels.length ? "chaud" : "froid";
-}
-
-/** Combines the three perceptual labels into a short descriptor string.
- *  Pure → unit-testable. */
-export function ambianceDescriptor(pixels: RgbaPixel[]): string {
-  return `${luminosityLabel(pixels)} · ${saturationLabel(pixels)} · ${temperatureLabel(pixels)}`;
-}
 
 /** Samples an image file via Playwright canvas (64×64 grid) and returns RGBA pixels.
  *  Uses getBrowser() — NOT pure (browser required), not exported for tests. */

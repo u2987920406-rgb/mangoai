@@ -18,6 +18,7 @@ import type { Express, Request, Response } from "express"
 import { appendHistory } from "../history.js"
 import { flag } from "../flags.js"
 import { loadStrategistState, saveStrategistState } from "./stratege-store.js"
+import { startStrategistPeriodicScheduler } from "./stratege-run.js"
 import type { BriefingItem, ItemStatus, StrategistState } from "./stratege-global-model.js"
 
 // ————————————————————————————————————————————————————————————————
@@ -81,6 +82,11 @@ export function registerStrategeRoutes(app: Express): void {
   app.post("/api/stratege/:id/accepte", mutate("accepte"))
   app.post("/api/stratege/:id/rejette", mutate("rejette"))
   app.post("/api/stratege/:id/reporte", mutate("reporte"))
+
+  // 3ᵉ point de greffe (STRATEGE_PERIODIC, dépend de STRATEGE_GLOBAL) — patron
+  // identique à `startNocturnalScheduler` appelé en fin de `registerNocturnalRoutes`
+  // (nocturnal.ts). Gate-first : 0 I/O au-delà d'un appel `flag()` par minute si OFF.
+  startStrategistPeriodicScheduler()
 }
 
 // ————————————————————————————————————————————————————————————————

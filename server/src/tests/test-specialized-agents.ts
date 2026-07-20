@@ -68,6 +68,18 @@ const mockDeps: RelayDeps = {
     // Réponse minimale valide (contrat mangoos)
     return "<mangoos><summary>ok</summary></mangoos>";
   },
+  // BUG RÉEL trouvé en vérif live (2026-07-20) : les profils uxui/layout routent
+  // via le MOTEUR AGENTIQUE (relay.ts L87, cfg.callProfile.agentic), un chemin
+  // DISTINCT du contrat qui ignore totalement `deps.askEleve` — sans ce mock,
+  // le test "sans réseau" faisait un VRAI appel Ollama (modèle gemma4:12b,
+  // désinstallé depuis 2026-07-14 → HTTP 404). `agenticPost` est le hook injecté
+  // par ce chemin-là (relay-agentic.ts L214) ; réponse minimale sans tool call
+  // → la boucle agentique se termine immédiatement en "succès".
+  agenticPost: async (messages) => {
+    const sys = messages.find((m) => m.role === "system")?.content;
+    if (typeof sys === "string") capturedSystem.push(sys);
+    return { content: "<mangoos><summary>ok</summary></mangoos>" };
+  },
   inspect: async () => mockOkInspection,
   ensureDeps: async () => {},
   escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),

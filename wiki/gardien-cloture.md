@@ -2,8 +2,8 @@
 type: entité
 tags: [eleve, gate, qa, gout, intention, boucle-agentique]
 statut: livré
-sources: ["#161", "nuit 2026-07-03"]
-maj: 2026-07-03
+sources: ["#161", "nuit 2026-07-03", "#190 (2026-07-19)"]
+maj: 2026-07-19
 ---
 
 # Gardien-clôture (gate goût/QA/intention)
@@ -24,6 +24,9 @@ Le seul filet IMPOSÉ dans la boucle agentique (`runRelay`→`buildAgentic`) ét
 | **Goût + QA** | `eleve-gate.ts` → `critiqueScreen` #152 | UN regard : `critiqueScreen` renvoie le score de goût (multi-lentilles, ancré sur le **goût appris** via `buildJudgeContext` #149) ET les mesures **WCAG/charte** (`measureDesign` #111, déjà incluses). |
 | **Structure** (2026-06-28) | `layout-balance.ts` `findUncentered` (PUR) | 4ᵉ volet **déterministe** (comme la QA WCAG, pas le VL bruité) : scanne les fichiers écrits et repère tout conteneur à largeur max (`max-w-*` / `max-width` fixe) **sans centrage** (`mx-auto`/`margin:auto`) = contenu collé à gauche. Ignore les petits `max-w`, l'asymétrie voulue (`ml`/`mr-auto`) et les blocs auto-positionnés. `balanceOk`+`balance[]` au verdict ; opt-out `ELEVE_GATE_BALANCE`. Répond au biais « collé à gauche ». **Aussi câblée TOUJOURS ACTIVE dans la boucle de build** (`eleve.ts`, sur build-vert+finish, $0/sans cloud) — donc le filet anti-« collé à gauche » tourne par défaut **sans** l'opt-in du Gardien (L54 ✅). |
 | **Orchestration** | `eleve-gate.ts` `runClosureGate` | Agrège → `raisons[]` (manques + correctifs priorisés + écarts WCAG + blocs non centrés). `buildGateNudge` (préfixe le plan #160), `evaluateGate` (décision pure ; la structure est un signal FIABLE → relance comme l'intention/WCAG, hors anti-thrash goût). |
+| **Images** (2026-07-19) | `eleve-gate-images.ts`, gate `ELEVE_GATE_IMAGES` (opt-in) | Répond à L114 (pertinence sémantique image↔contexte) + L116 (images tronquées/mal cadrées) — item #190. Capture l'écran final et demande un verdict VL CIBLÉ, prompt court fermé sur 2 lignes (`CADRAGE:`/`CONTEXTE:` OK/PROBLEME) — pas la critique de goût multi-lentilles (leçon L34 : un petit VL répond vide si le prompt est trop long avec une image). Fail-open : capture indisponible ou réponse illisible → volet neutre. |
+| **Constantes** (2026-07-19) | `eleve-gate-constants.ts`, gate `ELEVE_GATE_CONSTANTS` (opt-in) | Répond à L117 (constante physique fausse, ex. vitesse orbitale de Saturne dans `systeme-solaire`) — item #190. Portée délibérément étroite et 100% souveraine ($0, zéro réseau/LLM) : table curée des vitesses orbitales planétaires (IAU/NASA), extraction par heuristique texte dans le code généré, tolérance 20%. Non applicable si aucune constante planétaire détectée → neutre. |
+| **Biais de position** (2026-07-19) | étage `checkBiaisPosition` dans le volet PÉDAGO existant (`eleve-gate-pedago.ts`) | Répond à L115 (quiz généré avec la bonne réponse toujours à la même position, ex. "a" sur `toeic-quest`) — item #190. Flag une position dominante >50% sur ≥5 QCM d'un module. |
 
 **⚠ Anti-récursion (capital)** : le Gardien appelle `critiqueScreen` (critique en **lecture**), JAMAIS `runDesignCoach` (qui rappellerait `runRelay`). La **correction est faite par la boucle `runRelay` existante** (nudge/relances). Le Gardien critique, le moteur corrige.
 

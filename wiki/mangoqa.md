@@ -2,8 +2,8 @@
 type: entite
 tags: [architecture, qa, audit]
 statut: actif
-sources: [statut, fondation, historique, SOUV-B]
-maj: 2026-07-12
+sources: [statut, fondation, historique, SOUV-B, "audit 17/20 (2026-07-19)"]
+maj: 2026-07-19
 ---
 
 # MangoQA
@@ -24,7 +24,11 @@ Contrôle qualité en arrière-plan. Il lit le flux du [[kernel]] (exporté en `
 
 5. **🧩 Auditeur de Suite** (#138, Tier 0 livré 2026-06-21) — dimension **cross-app**, **déterministe zéro LLM**, **jamais bloquante** (`blocking:false`). Là où l'Auditeur de Flux regarde UNE app, celui-ci juge la **cohérence du graphe de données entre apps** d'une [[composer-os]] suite : il lit les manifests `.mangoapp.json` (qui lit/écrit quelle collection, quelle forme) et applique le contrat de données. `src/suite-eye/` (`audit.ts` pur + `runner.ts` I/O) → écrit `<workspace>/.mangoqa/suite-observations.json` ; CLI `run-suite-eye.ts <workspaceDir>`. **Mesuré (dur)** = **conflit de schéma** (même collection+champ déclaré avec des types de base incompatibles entre apps → un lecteur mal-typera CERTAINEMENT la donnée). **Convergence (questions)** = collection lue sans écrivain (seedée ailleurs ?), écrite sans lecteur (orpheline ?), app en silo (ne partage avec personne). Complète les 3 garde-fous de la donnée partagée (SSE sync · ACL accès · schéma forme) par un **regard d'ensemble**. Tests 29/29 ; validé sur le workspace réel (2 apps, collection `tasks`, graphe cohérent). **Reste** : surfacer le rapport dans la fenêtre Suite de MangoOS (intégration, comme `mangoqa.ts` surface le flux).
 
-⚠ **Bug chokidar documenté** : le signal de phase doit être écrit via Node.js, pas PowerShell/MINGW.
+⚠ **Bug chokidar** — **fiabilisé 2026-07-19** : les écritures via PowerShell/Bash MINGW ne déclenchent pas toujours l'événement chokidar sous Windows. `watch-fallback.ts` (nouveau) ajoute un scan périodique de secours (15s défaut) qui relit le disque directement, en complément de chokidar (toujours le chemin primaire). **2 vrais bugs trouvés en lançant MangoQA en réel** (pas juste en tests avec fs simulé) lors de la mise en place : (a) le scan appelait `fs.statSync().isFile()` sans `existsSync()` d'abord — lève une exception sur un chemin absent (le cas normal), ce qui **crashait tout le process** au 1er scan ; (b) sans protection, le fallback rejouait TOUS les signaux périmés déjà sur disque à chaque redémarrage (chokidar a `ignoreInitial:true` exprès pour ça, le fallback ne l'avait pas) → salve d'audits Claude rétroactifs en cascade sur des dizaines de vieux projets. Les deux corrigés (`filterChangedSignals`, filtre pur basé sur mtime) et re-vérifiés en conditions réelles.
+
+**Détection de vivacité** (`isMangoQaActive()`, côté MangoOS `server/src/mangoqa.ts`) — clarifié 2026-07-19 : la fonction vérifiait déjà correctement la fraîcheur du heartbeat (5 min), l'audit initial l'accusait à tort. Le vrai trou était l'absence de test dessus (comblé, 8 cas) — pas un bug de détection.
+
+**Visage 2, fenêtre glissante** (2026-07-19) : `observer.ts` gagne `windowDays`+`now` (module reste pur — l'appelant fournit `now`, pas d'horloge implicite), `observer-runner.ts` branché pour réellement la passer à `analyzeEvents` (avant : le champ `ts` d'`ObserverEvent` existait mais n'était jamais exploité, l'agrégation restait globale malgré la doc qui promettait une fenêtre). Défaut 30j, override `QA_OBSERVER_WINDOW_DAYS`.
 
 ## MangoQA nourri en vraies données de production (SOUV-B, 2026-07-12)
 

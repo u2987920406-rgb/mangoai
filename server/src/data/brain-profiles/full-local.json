@@ -11,5 +11,7 @@
   "chercheur":     { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 90000, "localOnly": true },
   "juge":          { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true },
   "stratege":      { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 90000, "localOnly": true },
-  "forgeron":      { "provider": "ollama", "model": "qwen2.5-coder:14b", "timeoutMs": 120000, "localOnly": true }
+  "forgeron":      { "provider": "ollama", "model": "qwen2.5-coder:14b", "timeoutMs": 120000, "localOnly": true },
+  "routeur":       { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 20000, "localOnly": true },
+  "accueil":       { "provider": "ollama", "model": "gemma4:12b", "timeoutMs": 60000, "localOnly": true }
 }

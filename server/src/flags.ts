@@ -214,6 +214,11 @@ export const FLAGS = {
     default: false,
     description: "Stratège global proactif (#176 É4, stratege-run.ts) : en FIN de lot nocturne (nocturnal.ts), lance UN cycle déterministe collecteurs (É2) → synthesize (É1) → advanceState → prune+save (data/strategist-state.json, É3) qui agrège les signaux cross-projet/cross-session (QA, Bus, traces, réutilisation, blocages, lacunes, hygiène mémoire) en un briefing conseil borné. PUSH, jamais bloquant, jamais d'action auto (Raf décide). Fail-open TOTAL : un échec du Stratège n'affecte JAMAIS le lot nocturne (déjà terminé). OFF → le cycle n'est jamais lancé (maybeRunStrategistCycle retourne false avant tout I/O), lot nocturne byte-identique. Lançable aussi en CLI : npx tsx src/stratege-run.ts.",
   },
+  STRATEGE_PERIODIC: {
+    env: "STRATEGE_PERIODIC",
+    default: false,
+    description: "3ᵉ point de greffe du Stratège global, basse fréquence (#176, stratege-run.ts::startStrategistPeriodicScheduler) — évaluation portage Atlas (harnais-2027) du 2026-07-20 : le seul concept qu'Atlas a et MangoOS n'avait pas était la cognition continue (penser entre deux sessions), mais son tick 5s/idleThought~15s (≥240 appels LLM/h) est disproportionné sur une machine mono-GPU — DÉLIBÉRÉMENT PAS reproduit. Ici : `setInterval` DÉDIÉ (pas de greffe sur cron-scheduler.ts, contrat différent) qui vérifie chaque minute si `STRATEGE_PERIODIC_INTERVAL_MS` (défaut 25 min) s'est écoulé depuis le dernier cycle, et lance alors le MÊME spine $0/déterministe que les 2 autres points de greffe (collecteurs→synthesize→advanceState→save) — aucun nouveau coût LLM. DÉPEND de STRATEGE_GLOBAL (les deux doivent être ON). OFF (défaut) → `shouldRunPeriodicCycle` retourne toujours false, comportement byte-identique aux 2 points de greffe existants (nocturne + démarrage session).",
+  },
   STRATEGE_QUESTION_DEMANDE: {
     env: "STRATEGE_QUESTION_DEMANDE",
     default: false,
@@ -248,6 +253,18 @@ export const FLAGS = {
     env: "ELEVE_CONTEXT_CHAINE",
     default: false,
     description: "Complément de ELEVE_CONTEXT_LOOP : ne juge plus un seul mot isolé mais la COHÉRENCE JOINTE de plusieurs termes ambigus consécutifs d'un brief (chaine-ambigue.ts) — demande explicite de Raf : « si dès le départ on part dans le mauvais sens, tout ce qui en découle est faux ». Détecte 0-4 termes candidats (petit appel LLM), retourne \"coherente\" directe SANS juge si <2 termes trouvés, sinon un juge tranche coherente/incoherente/incertaine (jamais un score thresholdé). Contrairement à ELEVE_CONTEXT_LOOP (purement observationnel), ce gate a un effet borné et réversible : SEUL un verdict \"incoherente\" PARSÉ (jamais un timeout/erreur/incertaine) vide `templateSection` avant l'assemblage du prompt système (index.ts, juste avant domainTemplateSection) — l'Élève retombe alors sur le prompt générique, chemin déjà sûr et existant. `createProject`, le scaffold technique et la réponse SSE du tour ne sont JAMAIS affectés. OFF (défaut) → analyserChaineEnAmontDuGabarit retourne immédiatement {suppressDomain:false, rapport:null}, aucune I/O, templateSection calculé exactement comme avant.",
+  },
+  // ── L114/L116 (limites.md) — volet IMAGES du Gardien de clôture ───────────
+  ELEVE_GATE_IMAGES: {
+    env: "ELEVE_GATE_IMAGES",
+    default: false,
+    description: "Volet IMAGES du Gardien de clôture (eleve-gate-images.ts, L114+L116) : capture l'écran final et demande à un VL un verdict CIBLÉ sur deux défauts qu'aucun gate existant n'inspecte — CADRAGE (image tronquée/mal cadrée/sujet hors-champ) et CONTEXTE (image réelle mais sémantiquement hors-sujet par rapport au texte adjacent). Fail-open comme tout le Gardien : capture indisponible ou réponse VL illisible → volet neutre, ne pénalise jamais. OFF (défaut) → deps.checkImages jamais appelé, aucun champ images/imagesOk dans le verdict, comportement byte-identique.",
+  },
+  // ── L117 (limites.md) — volet CONSTANTES du Gardien de clôture ────────────
+  ELEVE_GATE_CONSTANTS: {
+    env: "ELEVE_GATE_CONSTANTS",
+    default: false,
+    description: "Volet CONSTANTES du Gardien de clôture (eleve-gate-constants.ts, L117) : incident déclencheur `systeme-solaire` (vitesse orbitale de Saturne fausse, jamais détectée). Portée étroite et 100% souveraine ($0, zéro réseau/LLM) : extrait par heuristique texte les vitesses orbitales planétaires déclarées dans le code généré et les compare à une table curée (IAU/NASA), tolérance 20%. Non applicable (aucune constante détectée) → neutre, ne pénalise pas. OFF (défaut) → deps.checkConstants jamais appelé, aucun champ constants/constantsOk dans le verdict, comportement byte-identique.",
   },
 } as const satisfies Record<string, FlagSpec>;
 

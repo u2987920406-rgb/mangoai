@@ -20,12 +20,23 @@ import "dotenv/config"
 //   - Fin de lot nocturne (nocturnal.ts) : après le lot, gaté STRATEGE_GLOBAL,
 //     fail-open — via `maybeRunStrategistCycle` ci-dessous (jamais un throw du
 //     Stratège ne fait échouer le lot ; le lot est DÉJÀ terminé quand on l'appelle).
-//   - Cron/scheduler : POINT D'EXTENSION documenté, non câblé. `cron-scheduler.ts`
-//     est un registre de TÂCHES agentiques par projet (CronTask → runRelay), pas
-//     un registre de callbacks périodiques génériques ; y greffer un appel système
-//     dénaturerait son contrat. Le déclencheur nocturne (D6) couvre le besoin PUSH ;
-//     un opérateur qui veut un rythme propre lance le CLI via un heartbeat cron
-//     (mécanisme de reprise déjà utilisé par Raf) — aucune infra nouvelle.
+//   - Démarrage de session : `maybeInjectStrategeBriefing` (stratege-routes.ts).
+//   - Périodique, basse fréquence (2026-07-20, évaluation portage Atlas) : 3ᵉ
+//     point de greffe, gaté `STRATEGE_PERIODIC` (dépend de `STRATEGE_GLOBAL`,
+//     défaut OFF). Ancien commentaire ici recommandait de greffer sur
+//     `cron-scheduler.ts` — DÉLIBÉRÉMENT ÉCARTÉ : ce registre est un contrat de
+//     TÂCHES agentiques par projet (CronTask → runRelay), pas de callbacks
+//     génériques ; y greffer un appel système dénaturerait son contrat (raison
+//     déjà documentée). `startStrategistPeriodicScheduler` pose son PROPRE
+//     `setInterval`, patron identique à `startNocturnalScheduler` (nocturnal.ts) :
+//     dédié, isolé, gate-first (0 I/O si OFF). Inspiré de la cognition continue
+//     d'Atlas (`harnais-2027`, cortex.ts) mais volontairement à fréquence BASSE
+//     (~25 min, pas ~15s) : le tick 5s/idleThought~15s d'Atlas coûterait ≥240
+//     appels LLM/heure — disproportionné sur une machine mono-GPU où le VRAM est
+//     déjà une contrainte connue (limites.md L22/L23/L50), et va à l'encontre de
+//     la décision D6 déjà prise (« jamais de notification en cours de tâche »).
+//     Le spine appelé reste le MÊME (`runStrategistCycle`, $0, déterministe,
+//     8 capteurs fail-open) — aucun nouveau coût LLM introduit par ce greffon.
 
 import { flag } from "../flags.js"
 import {
@@ -173,6 +184,71 @@ export async function maybeRunStrategistCycle(
     log(`[stratege-run] cycle du Stratège en échec (ignoré, lot déjà terminé) : ${(err as Error)?.message ?? err}`)
     return false
   }
+}
+
+// ————————————————————————————————————————————————————————————————
+// Greffe PÉRIODIQUE basse fréquence (STRATEGE_PERIODIC, dépend de STRATEGE_GLOBAL).
+// ————————————————————————————————————————————————————————————————
+
+/** Intervalle par défaut entre deux cycles périodiques (25 min). Override
+ *  `STRATEGE_PERIODIC_INTERVAL_MS` (tests / réglage fin), borné à ≥60s pour
+ *  éviter un rythme accidentellement agressif. */
+export function periodicIntervalMs(env: NodeJS.ProcessEnv = process.env): number {
+  const raw = Number(env.STRATEGE_PERIODIC_INTERVAL_MS)
+  return Number.isFinite(raw) && raw >= 60_000 ? raw : 25 * 60 * 1000
+}
+
+/**
+ * Décision PURE : faut-il lancer un cycle périodique maintenant ? PAS de lecture
+ * d'env/flag ici (deps explicites) — testable sans horloge réelle. `lastRun=0`
+ * (jamais tourné) déclenche toujours si les gates sont ON (comportement voulu :
+ * le tout premier tick après activation ne doit pas attendre un intervalle plein).
+ */
+export function shouldRunPeriodicCycle(
+  now: number,
+  lastRun: number,
+  intervalMs: number,
+  gatePeriodicOn: boolean,
+  gateGlobalOn: boolean,
+): boolean {
+  if (!gatePeriodicOn || !gateGlobalOn) return false
+  return now - lastRun >= intervalMs
+}
+
+let lastPeriodicRunAt = 0
+
+/** Remet le suivi interne à zéro (tests uniquement — évite un état partagé entre cas). */
+export function resetPeriodicScheduleForTests(): void {
+  lastPeriodicRunAt = 0
+}
+
+/**
+ * Pose un `setInterval` DÉDIÉ (patron `startNocturnalScheduler`, nocturnal.ts) —
+ * PAS de greffe sur `cron-scheduler.ts` (contrat différent, cf. commentaire
+ * d'en-tête). Vérifie toutes les 60s si un cycle périodique est dû ; gate OFF →
+ * la vérification elle-même ne coûte qu'un appel `flag()` (0 I/O du spine).
+ * Fail-open total : une erreur du cycle est avalée (même garde que
+ * `maybeRunStrategistCycle`), jamais un throw ne remonte au timer.
+ */
+export function startStrategistPeriodicScheduler(
+  run: () => Promise<unknown> = runStrategistCycle,
+  log: (msg: string) => void = (m) => console.warn(m),
+): void {
+  const tick = () => {
+    const due = shouldRunPeriodicCycle(
+      Date.now(),
+      lastPeriodicRunAt,
+      periodicIntervalMs(),
+      flag("STRATEGE_PERIODIC"),
+      flag("STRATEGE_GLOBAL"),
+    )
+    if (!due) return
+    lastPeriodicRunAt = Date.now()
+    run().catch((err) => {
+      log(`[stratege-run] cycle périodique en échec (ignoré) : ${(err as Error)?.message ?? err}`)
+    })
+  }
+  setInterval(tick, 60 * 1000) // vérifie chaque minute ; ne déclenche qu'au bout de periodicIntervalMs
 }
 
 // ————————————————————————————————————————————————————————————————

@@ -96,5 +96,19 @@
     "createdAt": "2026-07-16T00:51:21.959Z",
     "updatedAt": "2026-07-16T00:51:59.737Z",
     "lastForgeAttemptAt": "2026-07-16T00:51:21.969Z"
+  },
+  {
+    "id": "gap_1784186646076_repetitive-failure",
+    "sig": "repetitive-failure",
+    "title": "repetitive-failure",
+    "blocker": "repetitive-failure",
+    "detail": "",
+    "task": "Retouche VEILLEUR. Retour de Raf : « fonctionne mais très minimaliste, manque d'options de paramètres ». Ajoute des réglages RÉELS par habitude (couleur au choix, icône/emoji, objectif hebdomadaire en jours), une vue réglages globale (rappel quotidien on/off — juste l'état, pas besoin de vraie notification système), SANS perdre la sobriété visuelle qui faisait sa force — pas de gamification criarde, reste calme et net.\n\nRègles : ne casse RIEN de ce qui fonctionne déjà (build vert, mécaniques existantes). Vérifie avec check_build ET teste_parcours avant de considérer la retouche terminée. Vraie",
+    "status": "proposed",
+    "hits": 1,
+    "forgeAttempts": 1,
+    "createdAt": "2026-07-16T07:24:06.076Z",
+    "updatedAt": "2026-07-16T07:24:14.950Z",
+    "lastForgeAttemptAt": "2026-07-16T07:24:06.085Z"
   }
 ]

@@ -57,6 +57,7 @@ const RATE_LIMITS: Record<LLMProvider, number> = {
   deepseek: 20,
   mistral: 20,
   groq: 30,
+  openrouter: 20,
   litellm: 999,
 }
 

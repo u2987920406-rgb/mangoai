@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-07-02
+maj: 2026-07-19
 ---
 
 # Index du wiki MangoOS
@@ -77,6 +77,7 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 | [[conductor]] | Conductor (Sakana, ICLR 2026) : coordinateur 7 B entraîné par RL qui écrit un workflow en langage naturel (qui·quoi·contexte) + récursion test-time — horizon d'expressivité du Stratège #164 | ✅ écrite |
 | [[speculation-agentique]] | Speculative decoding (DeepSpec) transposé aux ACTIONS : le frugal drafte une séquence, on accepte le préfixe valide (worktree isolé, verify = build réel de l'app), on escalade à la divergence — **prouvé END-TO-END sur une vraie app** (71 tests, zéro GPU) ; résidu = DeepSpec littéral cloud-GPU — #171 | ✅ écrite |
 | [[harnais]] | Le « Harnais » (Flavien Chevret) : l'armature autour d'un LLM interchangeable (skills/scripts/templates/secrets/boucles) = la thèse MangoOS formalisée ↔ comparatif + 2 trous à combler : templates infra back #169 · coffre-fort de secrets #170 | ✅ écrite |
+| [[atlas-harnais-2027]] | Atlas (`harnais-2027`) : repo perso de Raf, cortex cognitif souverain 100% Ollama, "NayaOS"="MangoOS" dans son code — audit 12/20→plan 17/20 (2026-07-19), 2 vrais bugs MangoQA trouvés en vérif live pendant l'audit | ✅ écrite |
 
 ## Pistes de pages futures
 

@@ -61,7 +61,7 @@ function lecon(moduleId: string, id: string, contenu: string, sources: string[])
   } as Item;
 }
 
-function qcm(moduleId: string, id: string): Item {
+function qcm(moduleId: string, id: string, reponse = 0): Item {
   return {
     id,
     moduleId,
@@ -70,8 +70,8 @@ function qcm(moduleId: string, id: string): Item {
     type: "qcm",
     question: "Question ?",
     choix: ["a", "b", "c", "d"],
-    reponse: 0,
-    explication: "car a est correct",
+    reponse,
+    explication: "car la réponse est correcte",
   } as Item;
 }
 
@@ -172,6 +172,35 @@ async function run() {
     const items = [lecon("m1", "m1-l1", contenuLong, ["https://ex.com/a"])];
     const v = await checkPedago("/proj", baseDeps({ loadManifest: () => m, loadBank: () => items }));
     check("lisibiliteOk=false (phrase longue)", v.lisibiliteOk === false);
+  }
+
+  console.log("\n[7b] BIAIS DE POSITION — 5 QCM/5 avec la bonne réponse en position 'a'");
+  {
+    const c = curriculum(["m1"]);
+    const m = manifest(c);
+    const items = Array.from({ length: 5 }, (_, i) => qcm("m1", `m1-qcm-${i}`, 0));
+    const v = await checkPedago("/proj", baseDeps({ loadManifest: () => m, loadBank: () => items }));
+    check("biaisPositionOk=false", v.biaisPositionOk === false);
+    check("raison BIAIS DE POSITION présente", v.raisons.some((r) => r.startsWith("BIAIS DE POSITION")));
+    check("cite la position « a »", v.raisons.some((r) => r.includes("position « a »")));
+    check("cite 5/5 (100%)", v.raisons.some((r) => r.includes("5/5") && r.includes("100%")));
+    check("ok=false", v.ok === false);
+  }
+  {
+    console.log("  (contrôle : positions équilibrées 0/1/2/3 sur 4 QCM → biaisPositionOk=true)");
+    const c = curriculum(["m1"]);
+    const m = manifest(c);
+    const items = [qcm("m1", "q0", 0), qcm("m1", "q1", 1), qcm("m1", "q2", 2), qcm("m1", "q3", 3), qcm("m1", "q4", 0)];
+    const v = await checkPedago("/proj", baseDeps({ loadManifest: () => m, loadBank: () => items }));
+    check("biaisPositionOk=true (2/5=40% < seuil 50%)", v.biaisPositionOk === true);
+  }
+  {
+    console.log("  (contrôle : sous le seuil minQcmPourBiais (défaut 5) → pas de faux positif)");
+    const c = curriculum(["m1"]);
+    const m = manifest(c);
+    const items = [qcm("m1", "q0", 0), qcm("m1", "q1", 0), qcm("m1", "q2", 0), qcm("m1", "q3", 0)]; // 4 < 5
+    const v = await checkPedago("/proj", baseDeps({ loadManifest: () => m, loadBank: () => items }));
+    check("biaisPositionOk=true (échantillon trop petit)", v.biaisPositionOk === true);
   }
 
   console.log("\n[8] EXACTITUDE — juge fake « non supporté » sur 3/10 affirmations");
@@ -330,6 +359,7 @@ async function run() {
             ordreOk: true,
             sourcesOk: true,
             lisibiliteOk: true,
+            biaisPositionOk: true,
             exactitudeOk: true,
             exactitudeSautee: true,
             raisons: ["COUVERTURE — module m2 sans item"],
@@ -355,7 +385,7 @@ async function run() {
         "/ws",
         "vitrine",
         {},
-        gateDeps({ checkPedago: async () => ({ ok: true, applicable: false, couvertureOk: true, ordreOk: true, sourcesOk: true, lisibiliteOk: true, exactitudeOk: true, exactitudeSautee: true, raisons: [] }) }),
+        gateDeps({ checkPedago: async () => ({ ok: true, applicable: false, couvertureOk: true, ordreOk: true, sourcesOk: true, lisibiliteOk: true, biaisPositionOk: true, exactitudeOk: true, exactitudeSautee: true, raisons: [] }) }),
       );
       check("ok=true (non applicable)", v.ok === true);
       check("pedagoOk=true", v.pedagoOk === true);
