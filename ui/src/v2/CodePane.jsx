@@ -13,7 +13,7 @@ const Preview = lazy(() => import("../Preview.jsx"));
 
 const PROJECT_KEY = "mangoos.v2.codeProject"; // clé DISTINCTE de mangoos.v2.project (Builder)
 
-export default function CodePane() {
+export default function CodePane({ onBack = () => {} }) {
   const [enabled, setEnabled] = useState(null); // null = pas encore su
   const [project, setProject] = useState(() => {
     try {
@@ -48,6 +48,9 @@ export default function CodePane() {
   if (!enabled) {
     return (
       <div className="flex h-full flex-col">
+        <div className="flex items-center gap-3 border-b border-edge px-6 py-4 shrink-0">
+          <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={onBack}>Accueil</Button>
+        </div>
         <EmptyState
           icon={<Code2 size={30} />}
           title="Section Code désactivée"
@@ -61,11 +64,9 @@ export default function CodePane() {
   return (
     <div className="flex h-full min-h-0 flex-col">
       <div className="flex items-center gap-3 border-b border-edge px-6 py-4 shrink-0">
-        {project && (
-          <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={backToPicker}>
-            Changer de projet
-          </Button>
-        )}
+        <Button variant="ghost" size="sm" icon={<ArrowLeft size={14} />} onClick={project ? backToPicker : onBack}>
+          {project ? "Changer de projet" : "Accueil"}
+        </Button>
         <div>
           <h1 className="text-lg font-semibold text-ink">Code</h1>
           <p className="text-xs text-dim">

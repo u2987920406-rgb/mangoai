@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
 import {
-  Boxes, FolderOpen, GraduationCap, Image as ImageIcon, LayoutGrid,
+  Boxes, Code2, FolderOpen, GraduationCap, Image as ImageIcon, LayoutGrid,
   Moon, Music2, Settings, Sun,
 } from "lucide-react";
 import { getTheme, toggleTheme } from "../theme.js";
-import { WINDOWS } from "../nav.js";
+import { SCREENS, WINDOWS } from "../nav.js";
 
 // ─── Bouton icône primaire ────────────────────────────────────────────────────
 // `badge` (2026-07-14, #168 suite) : petit compteur rouge en coin — visibilité
@@ -102,6 +102,18 @@ export default function Sidebar({
     return () => { cancelled = true; clearInterval(id); };
   }, []);
 
+  // #193 — l'icône Code ne s'affiche QUE si le gate serveur est actif (Raf a
+  // décidé le 2026-07-21 de ne pas l'utiliser pour l'instant : icône masquée,
+  // code dormant en place plutôt que retiré). Un seul appel au montage suffit
+  // (le gate ne change qu'au redémarrage backend, pas en cours de session).
+  const [codeSectionEnabled, setCodeSectionEnabled] = useState(false);
+  useEffect(() => {
+    fetch("/api/flags/code-section")
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((d) => setCodeSectionEnabled(Boolean(d?.enabled)))
+      .catch(() => {});
+  }, []);
+
   return (
     // Conteneur pointer-events-none : il ne capte RIEN par défaut → le décor sous
     // le bord droit reste cliquable/atteignable. Seules la poignée et le dock
@@ -162,6 +174,18 @@ export default function Sidebar({
           onClick={onOpenSuite}
           dataTour="suite"
         />
+
+        {/* Code — #193, chat frontière sur projets locaux externes au workspace.
+            Masquée si le gate serveur CODE_SECTION est off (dormant, pas retiré). */}
+        {codeSectionEnabled && (
+          <SideBtn
+            icon={Code2}
+            label="Code — projets locaux, cerveau frontière"
+            haloColor="#0A84FF"
+            onClick={() => onSetScreen?.(SCREENS.CODE)}
+            dataTour="code"
+          />
+        )}
 
         {/* Launcher — toutes les apps */}
         <SideBtn

@@ -13,6 +13,9 @@ export const SCREENS = Object.freeze({
   CONTROLEUR: "controleur",
   METRICS: "metrics",
   REGLAGES: "reglages",
+  // #193 — section Code : chat agentique frontière-only sur des projets locaux
+  // externes au workspace. Voir docs/plan-193-section-code.md.
+  CODE: "code",
 });
 
 /** Types de fenêtres flottantes ouvertes via `openWindow({ type })`. */

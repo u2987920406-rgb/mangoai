@@ -25,6 +25,9 @@ const MetricsDashboard= lazy(() => import("./components/MetricsDashboard.jsx"));
 const Tutorial        = lazy(() => import("./components/Tutorial.jsx"));
 const Radar           = lazy(() => import("./components/Radar.jsx"));
 const Reglages        = lazy(() => import("./components/Reglages.jsx"));
+// #193 — section Code (docs/plan-193-section-code.md), portée depuis le shell v2
+// (gelé, jamais monté en prod — cf. main.jsx) vers le vrai shell de prod.
+const CodePane         = lazy(() => import("./v2/CodePane.jsx"));
 import { useToasts } from "./hooks/useToasts.js";
 import { useTutorial } from "./hooks/useTutorial.js";
 import { useBackendServer } from "./hooks/useBackendServer.js";
@@ -284,6 +287,7 @@ export default function App() {
       onOpenProject={(name, entry) => openProject(name, { origin: "nocturnal", task: entry?.task ?? null, nocturnal: entry ? { id: entry.id, reviewed: Boolean(entry.reviewed) } : null })}
     />
   );
+  if (screen === SCREENS.CODE) panelContent = <CodePane onBack={() => setScreen(SCREENS.HOME)} />;
 
   if (onboardingNeeded) {
     return <Onboarding onDone={() => setOnboardingNeeded(false)} />;
