@@ -69,8 +69,7 @@
       "tier": "offline"
     },
     "test-brain-dispatch": {
-      "tier": "broken",
-      "reason": "1/38 échec déterministe — assertion « 14 agents présents » obsolète (drift du registre d’agents)"
+      "tier": "offline"
     },
     "test-brain-endpoints": {
       "tier": "offline"
@@ -85,8 +84,7 @@
       "tier": "offline"
     },
     "test-brain-profile": {
-      "tier": "broken",
-      "reason": "crash déterministe ERR_INVALID_ARG_TYPE à test-brain-profile.ts:52 — applyProfile(\"full-local\") ne rend pas de backupPath, readFileSync(undefined) ; échoue dès « full-local lu »"
+      "tier": "offline"
     },
     "test-brain-runtime": {
       "tier": "offline"

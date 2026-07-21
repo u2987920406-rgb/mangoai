@@ -3908,4 +3908,18 @@ Commit/push MangoOS : `908c31a`.
 
 **Leçon retenue** : un test qui se déclare "sans réseau" doit toujours passer un `profile`/`eleveModel` EXPLICITE — jamais hériter de l'ambiant. C'est la 2e régression du jour causée par un couplage implicite au cerveau global configuré (la 1ère : `deps.askEleve` bypass, cf. journal précédent) — signal qu'il faudrait un garde-fou générique (lint/convention) plutôt que de continuer à les trouver une par une. Noté comme piste d'amélioration, pas encore fait.
 
+Commit/push MangoOS : `17d815e`.
+
+## Journal — 2026-07-21 (suite 3) : ré-audit MangoOS/MangoQA + 1re piste appliquée (tests broken→offline)
+
+**Ré-audit** (fork dédié, lecture seule) : **MangoOS 17.5/20** (était 15/20 le 19/07 — tsc propre, 221 fichiers de test, régressions du jour trouvées et corrigées = bon signal QA). **MangoQA 15/20** (inchangé — code/tests excellents, 115/115, mais **aucun process MangoQA vivant au moment du contrôle**, même mode de défaillance déjà pénalisant le 19/07).
+
+**Piste #1 appliquée immédiatement** (XS, vérifiée avant application) : `test-brain-profile` (15/15) et `test-brain-dispatch` (38/38) étaient marqués `"tier":"broken"` dans `test-manifest.json` avec des raisons **périmées** (correction faite le 19/07, jamais reflétée dans le manifeste) — 53 assertions réelles étaient invisibles du signal CI sans raison. Repassées en `"tier":"offline"`. `test-specialist-agentic` (24/27) re-vérifié en réel : toujours authentiquement cassé (P3 : gate action/conseil désaligné) — laissé en `broken`, pas une fausse alarme.
+
+**Pistes restantes vers 18.5/20 (non appliquées ce tour, par ordre de rentabilité)** :
+- **[M]** Corriger `test-specialist-agentic` P3 (`specialist-agentic.ts`) — impact MangoOS +0.3
+- **[S]** Watchdog MangoQA (relance auto si mort) — LE plus rentable pour MangoQA, s'attaque à la cause racine récurrente plutôt qu'au symptôme — impact MangoQA +1.5
+- **[L]** Reprendre la fermeture de `limites.md` (54 ouvertes, commencer par les 🟢 "codable en interne") — impact MangoOS +0.5-1, graduel
+- **[S]** Garde-fou documenté : toute modif de `eleve/relay-config.ts`/`eleve/provider.ts` doit relancer `test-relay.ts` avant commit — évite la récidive de la classe de bug trouvée 2× aujourd'hui
+
 Commit/push MangoOS en attente (prochaine sauvegarde).
