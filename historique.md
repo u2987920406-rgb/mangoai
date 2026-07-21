@@ -4001,3 +4001,16 @@ Passage au point 0 (vérification standalone Tauri) ensuite.
 **Livrable concret pour Raf** : l'app desktop installée et fonctionnelle existe maintenant à `C:\Users\PC-DELL\AppData\Local\mangoos-desktop\app.exe` — prête à tester visuellement, ou à désinstaller (`uninstall.exe` dans le même dossier) s'il préfère repartir de zéro plus tard.
 
 Passage au point 1 (ré-audit final) ensuite.
+
+## Journal — 2026-07-21 (suite 8) : plan multi-points clos — ré-audit final
+
+**Point 1 (ré-audit)** — fork dédié, lecture seule, comparé explicitement à la base du matin (17.5/20 MangoOS, 15/20 MangoQA) :
+- **MangoOS : 18/20** (+0.5). Vérifié en réel : `tsc` propre (server+ui), 5 suites ciblées vertes (`test-external-projects` 21/21, `test-eleve-gate` 66/66, `test-relay`, `test-brain-dispatch` 38/38, `test-brain-profile` 15/15), `docs/plan-193-section-code.md` cohérent avec le code, `CODE_SECTION` bien resté OFF. Delta modeste malgré un chantier conséquent : les points 3/2 corrigent de vrais problèmes avec des fixes vérifiés, mais le point 0 a ajouté 2 NOUVELLES limites (L135/L136) — net stable sur le compte de dette ouverte (54, réconcilié : 52 après les fermetures L127/L128 du matin + 2 nouvelles ce soir), donc pas de baisse mécanique malgré le travail réel.
+- **MangoQA : 15/20** (inchangé). Aucun changement de code MangoQA dans ce lot. Fait nouveau non comptant pour la note mais réel : L136 (double instance possible coque+watchdog) est un risque de fiabilité additionnel pour l'usage via l'app desktop, documenté, pas corrigé.
+- **139/139 tests MangoQA confirmés** (vitest run direct).
+
+**Synthèse du fork** : *« Journée solide et honnête plutôt que spectaculaire. Le vrai gain n'est pas le score mais la densité de vérité ajoutée au repo : 4 vrais bugs trouvés en testant en conditions réelles dans la même journée, plus 2 nouvelles limites honnêtes documentées. Rien n'a été gonflé. »*
+
+**Plan multi-points clos.** Points 3/2/0/1 livrés et vérifiés. Point 5 explicitement non exécuté (bloqué sur l'absence de liste de Raf). Cron heartbeat défensif (`faa75fd8`) supprimé. Tout commité et poussé : `0492f02` (point 3), `5de2696` (point 2), `4046ce8` (point 0).
+
+**Reste à la charge de Raf** : valider visuellement l'app desktop installée (`%LOCALAPPDATA%\mangoos-desktop\app.exe`) ; décider s'il active `CODE_SECTION=on` pour utiliser la section Code ; donner sa liste pour le point 5 (refonte UI) quand il sera prêt.
