@@ -24,6 +24,25 @@ export const SUGGESTED = {
 // Badge de capability Ollama (vision/tools/thinking…).
 export const CAP_LABEL = { vision: "vision", tools: "outils", thinking: "raisonne", completion: "texte" };
 
+// Ce que fait chaque agent, en une phrase concrète (affiché à côté du nom dans l'Atelier).
+export const AGENT_DESC = {
+  orchestrateur: "il ordonne les étapes d'une mission et répartit le travail entre agents",
+  architecte:    "il conçoit la structure d'un projet avant que le code ne s'écrive",
+  codeur:        "il écrit et modifie le code — c'est l'Élève, les mains qui codent",
+  vision:        "il regarde les captures d'écran et juge le rendu visuel",
+  designer_ux:   "il propose la mise en page, les couleurs, l'ergonomie",
+  extracteur:    "il aspire un site existant et en extrait la structure réutilisable",
+  testeur:       "il fait tourner l'app et vérifie que le parcours fonctionne",
+  auditeur:      "il relit le code produit et traque les régressions",
+  optimiseur:    "il resserre le code déjà fonctionnel (perf, taille, clarté)",
+  chercheur:     "il va chercher des infos ou des images sur le web",
+  juge:          "il note un rendu ou tranche entre deux versions",
+  stratege:      "il observe l'activité globale et pousse des conseils proactifs",
+  forgeron:      "il forge de nouveaux agents spécialisés pour combler une lacune",
+  routeur:       "il choisit quel agent/cerveau traite une requête donnée",
+  accueil:       "il gère le premier échange avec l'utilisateur",
+};
+
 export function fmtBytes(n) {
   if (!n) return "";
   const gb = n / 1e9;

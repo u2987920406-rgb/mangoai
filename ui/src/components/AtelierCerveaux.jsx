@@ -5,7 +5,7 @@ import Header from "./atelier/Header.jsx";
 import AddModelModal from "./atelier/AddModelModal.jsx";
 import { InlineConfirm, InlineToast } from "./atelier/InlineFeedback.jsx";
 import CapBadge from "./atelier/CapBadge.jsx";
-import { PROVIDERS, FIELD_CLS } from "./atelier/constants.js";
+import { PROVIDERS, FIELD_CLS, AGENT_DESC } from "./atelier/constants.js";
 
 // #162 — « L'Atelier des cerveaux ». L'UI qui donne à Raf le pouvoir que Claude
 // avait à la main : voir chaque agent, choisir son modèle, parcourir/télécharger
@@ -178,6 +178,9 @@ export default function AtelierCerveaux({ onBack }) {
                   <div className="flex items-center gap-2.5">
                     <Cpu size={17} className="shrink-0 text-faint" />
                     <span className="text-[13px] font-semibold text-ink">{id}</span>
+                    {AGENT_DESC[id] && (
+                      <span className="text-[12px] text-faint">— {AGENT_DESC[id]}</span>
+                    )}
                     <span className={`rounded px-1.5 py-0.5 text-[10px] ${local ? "bg-accent/15 text-accent" : "bg-edge-soft text-faint"}`}>
                       {local ? "local" : "cloud"}
                     </span>

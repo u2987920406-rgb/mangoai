@@ -51,7 +51,12 @@ export interface RuntimeFallback {
 export function globalFallback(): RuntimeFallback {
   const c = getBrain("codeur");
   const model = (c.model ?? "").trim() || ELEVE_MODEL;
-  const provider = c.provider ?? envProvider();
+  // Normaliser comme syncEleveFromBrainRegistry : "claude" (ou tout provider non-Élève)
+  // est ignoré → repli .env ; seuls "ollama" et les compat OpenAI sont valides ici.
+  const rawProv = c.provider ?? "";
+  const provider: LLMProvider = rawProv === "ollama" ? "ollama"
+    : (rawProv && rawProv !== "claude") ? "openai" as LLMProvider
+    : envProvider();
   // C1-P0 — le registre (server/data/brain-registry.json) peut porter un endpoint
   // custom (baseUrl + NOM de variable d'env pour la clé). Absents aujourd'hui →
   // undefined ici, donc AUCUN changement de comportement (repli .env inchangé,

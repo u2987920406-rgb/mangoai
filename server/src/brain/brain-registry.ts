@@ -111,8 +111,13 @@ export const EXPECTED_CAPS: Partial<Record<AgentId, string[]>> = {
   vision: ["vision"],
 }
 
+// (2026-07-20) 'openrouter' AJOUTÉ — il était géré par le type LLMProvider et le
+// routeur askLLM (preset tencent/hy3:free) MAIS OUBLIÉ ici : conséquence,
+// coerceConfig rejetait 'openrouter' et retombait silencieusement sur le défaut
+// du rôle (un autre provider). Tout registre pointant sur openrouter était donc
+// neutralisé au chargement. Aligné sur le type LLMProvider (llm-engine.ts:40).
 const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
-  ["claude", "ollama", "openai", "deepseek", "mistral", "groq", "litellm"],
+  ["claude", "ollama", "openai", "deepseek", "mistral", "groq", "openrouter", "litellm"],
 )
 
 /** Dossier des profils de cerveau (C4) : registres COMPLETS pré-remplis

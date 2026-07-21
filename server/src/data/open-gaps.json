@@ -66,7 +66,7 @@
     "hits": 1,
     "forgeAttempts": 1,
     "createdAt": "2026-07-13T21:58:34.877Z",
-    "updatedAt": "2026-07-14T21:36:03.983Z",
+    "updatedAt": "2026-07-20T16:09:55.959Z",
     "lastForgeAttemptAt": "2026-07-13T21:58:34.905Z"
   },
   {
@@ -76,12 +76,13 @@
     "blocker": "wandering",
     "detail": "",
     "task": "Retouche DÉRIVE. Retour de Raf : « bof bof, l'idée est bonne mais ça manque de développement ». Développe le jeu en profondeur SANS casser la logique existante : ajoute 3-4 événements aléatoires supplémentaires variés et distincts (pas de répétition), enrichis la mise en scène visuelle de chaque jauge et événement (icônes, transitions, réactions visuelles au changement d'état), et rends les choix plus incarnés (texte plus vivant, pas juste des boutons plats).\n\nRègles : ne casse RIEN de ce qui fonctionne déjà (build vert, mécaniques existantes). Vérifie avec check_build ET teste_parcours avant ",
-    "status": "proposed",
+    "status": "forged",
     "hits": 1,
     "forgeAttempts": 1,
     "createdAt": "2026-07-16T00:47:15.207Z",
-    "updatedAt": "2026-07-16T00:47:29.732Z",
-    "lastForgeAttemptAt": "2026-07-16T00:47:15.218Z"
+    "updatedAt": "2026-07-20T16:10:36.893Z",
+    "lastForgeAttemptAt": "2026-07-16T00:47:15.218Z",
+    "agentId": "sa_1784563798055_0_enrichisseur-de-profondeur"
   },
   {
     "id": "gap_1784163081959_plateau-iterations",
@@ -105,10 +106,38 @@
     "detail": "",
     "task": "Retouche VEILLEUR. Retour de Raf : « fonctionne mais très minimaliste, manque d'options de paramètres ». Ajoute des réglages RÉELS par habitude (couleur au choix, icône/emoji, objectif hebdomadaire en jours), une vue réglages globale (rappel quotidien on/off — juste l'état, pas besoin de vraie notification système), SANS perdre la sobriété visuelle qui faisait sa force — pas de gamification criarde, reste calme et net.\n\nRègles : ne casse RIEN de ce qui fonctionne déjà (build vert, mécaniques existantes). Vérifie avec check_build ET teste_parcours avant de considérer la retouche terminée. Vraie",
     "status": "proposed",
+    "hits": 2,
+    "forgeAttempts": 2,
+    "createdAt": "2026-07-16T07:24:06.076Z",
+    "updatedAt": "2026-07-20T18:25:02.384Z",
+    "lastForgeAttemptAt": "2026-07-20T16:15:18.881Z"
+  },
+  {
+    "id": "gap_1784564233596_wrong-tool",
+    "sig": "wrong-tool",
+    "title": "wrong-tool",
+    "blocker": "wrong-tool",
+    "detail": "",
+    "task": "go",
+    "status": "proposed",
     "hits": 1,
     "forgeAttempts": 1,
-    "createdAt": "2026-07-16T07:24:06.076Z",
-    "updatedAt": "2026-07-16T07:24:14.950Z",
-    "lastForgeAttemptAt": "2026-07-16T07:24:06.085Z"
+    "createdAt": "2026-07-20T16:17:13.596Z",
+    "updatedAt": "2026-07-20T16:17:29.453Z",
+    "lastForgeAttemptAt": "2026-07-20T16:17:13.609Z"
+  },
+  {
+    "id": "gap_1784564312709_wandering",
+    "sig": "wandering",
+    "title": "wandering",
+    "blocker": "wandering",
+    "detail": "",
+    "task": "go",
+    "status": "proposed",
+    "hits": 1,
+    "forgeAttempts": 1,
+    "createdAt": "2026-07-20T16:18:32.709Z",
+    "updatedAt": "2026-07-20T18:26:10.619Z",
+    "lastForgeAttemptAt": "2026-07-20T16:18:32.721Z"
   }
 ]

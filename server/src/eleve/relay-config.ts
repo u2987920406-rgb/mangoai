@@ -60,11 +60,15 @@ export function resolveRelayConfig(
   const callFileBudget = Number(process.env.ELEVE_FILE_BUDGET ?? callProfile.caps.fileBudget);
   const callFileMax    = Number(process.env.ELEVE_FILE_MAX    ?? callProfile.caps.fileMax);
   const callCaps       = { axiomCap: callAxiomCap, axiomFiles: callProfile.axiomFiles, fileBudget: callFileBudget, fileMax: callFileMax };
-  // Si le modèle de l'appel diffère du modèle global, enveloppe avec le bon modèle.
+  // Enveloppe TOUJOURS avec le modèle/provider/endpoint de l'appel — y compris
+  // quand ils coïncident avec les globaux. L'ancien code ne ré-appliquait
+  // `callEndpoint` (qui porte baseUrl + apiKeyEnv, ex. OPENROUTER_API_KEY) QUE si
+  // le modèle différait du global ; dès que le cerveau de l'appel ÉTAIT le global
+  // (ex. ELEVE_MODEL=tencent/hy3:free via openrouter), il retombait sur deps.askEleve
+  // qui lit ELEVE_API_KEY (.env) → clé vide → « Clé API Élève manquante » (HTTP 500).
+  // On applique donc systématiquement l'endpoint fourni (undefined = repli .env identique).
   const callAskEleve: (sys: string, usr: string) => Promise<string> =
-    callModel !== ELEVE_MODEL || callProvider !== ELEVE_PROVIDER_DEFAULT
-      ? (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint)
-      : deps.askEleve;
+    (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint);
   const maitreModel = opts.maitreModel ?? "sonnet";
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
   const functionalMin = opts.functionalMin ?? Number(process.env.RELAY_FUNCTIONAL_MIN ?? 5);

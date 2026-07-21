@@ -3833,3 +3833,36 @@ Suite directe de l'audit du 2026-07-19. Raf demande, avec le recul acquis sur la
 **Ce qui n'a délibérément PAS été porté** : le tick 5s/idleThought~15s tel quel, `KnowledgeGraph`/`VectorStore`/`Consolidation` (doublon Blackboard), gouvernance/sandbox/audit-log (doublon Gardien+#180+MangoQA), l'outil navigateur interactif d'Atlas (fenêtre Chrome visible, auto-clic résultat — hors-sujet pour un outil de codegen, à réévaluer séparément si un besoin précis apparaît).
 
 `statut.md` mis à jour (entrée "Où on en est"), `wiki/stratege-global.md` (§ É7bis) et `wiki/atlas-harnais-2027.md` (§ Décision d'intégration) mis à jour, entrée `wiki/log.md`. Zéro git.
+
+## Journal — 2026-07-20 (suite) : hy3:free (Hunyuan-3 via OpenRouter) branché comme cerveau principal de tous les rôles
+
+**Demande.** Raf (session) : « connecte hy3:free (celui qu'on utilise actuellement) avec le provider Nous Research comme cerveau ». Clarifié ensuite : via OpenRouter (`tencent/hy3:free`, déjà câblé), sur TOUS les rôles.
+
+**État au départ.** Le provider `openrouter` existait déjà (`llm-endpoint.ts` `PROVIDER_PRESETS.openrouter` → `tencent/hy3:free`, `OPENROUTER_API_KEY` dans `.env`), mais il était volontairement NON branché dans `brain-registry.json` (le registre vivant partagé). Le registre était sur `ollama` (glm-5.2:cloud / qwen3.5:cloud) hérité de la session.
+
+**Changements.**
+1. **Bug trouvé et corrigé** — `server/src/brain/brain-registry.ts` : `VALID_PROVIDERS` (ligne ~114) listait `claude/ollama/openai/deepseek/mistral/groq/litellm` mais **OMETTAIT `openrouter`**, alors que le type `LLMProvider` et le routeur `askLLM` le géraient. Conséquence : `coerceConfig` rejetait silencieusement `provider:"openrouter"` et retombait sur le défaut du rôle → **tout registre pointant sur openrouter était neutralisé au chargement** sans erreur. Aligné sur `LLMProvider` (ajout de `"openrouter"`).
+2. **`server/src/data/brain-registry.json` réécrit** : les 15 rôles (orchestrateur/architecte/codeur/vision/designer_ux/extracteur/testeur/auditeur/optimiseur/chercheur/juge/stratege/forgeron/routeur/accueil) → `provider:"openrouter"`, `model:"tencent/hy3:free"`, `apiKeyEnv:"OPENROUTER_API_KEY"`, `baseUrl:"https://openrouter.ai/api/v1"`, timeouts conservés. `vision` garde un fallback `claude/haiku`.
+3. **`.env` resynchronisé** (registre #2/#3 de la doc) : `ELEVE_PROVIDER=openrouter`, `ELEVE_MODEL=tencent/hy3:free`. `ELEVE_API_URL`/`ELEVE_API_KEY` NON durcis dans `.env` (le registre porte `baseUrl`+`apiKeyEnv` → `syncEleveFromBrainRegistry()` les lit en live, c'est la source unique).
+
+**Piège Élève évité.** L'Élève (`runRelay`/`askEleveDispatch`) ne passe PAS par `askLLM` avec `openrouter` : il route via le provider générique `openai` + `ELEVE_API_URL`. Sans `baseUrl` dans le rôle `codeur`, `ELEVE_API_URL` serait resté `https://api.deepseek.com/v1` (défaut) → hy3 envoyé vers DeepSeek = échec. Le `baseUrl:"https://openrouter.ai/api/v1"` sur `codeur` corrige ça (`syncEleveFromBrainRegistry` le reporte dans `ELEVE_API_URL`).
+
+**Vérifié en réel (pas de self-report).**
+- `tsc --noEmit` : exit 0.
+- `GET /api/brain-registry` (backend frais) : sert bien `openrouter`/`tencent/hy3:free` + `baseUrl` sur tous les rôles.
+- Chaîne Élève complète : `syncEleveFromBrainRegistry()` → `ELEVE_MODEL=tencent/hy3:free`, `ELEVE_API_URL=https://openrouter.ai/api/v1`, clé OpenRouter lue → `askEleveDispatch("...capitale de l'Italie ?")` → « La capitale de l'Italie est Rome. » (5 s, HTTP 200).
+- Test brut OpenRouter : à `max_tokens=64` le modèle renvoie `content:null` + `finish_reason:"length"` (hy3 est un modèle de type reasoning qui écrit d'abord son raisonnement) ; à `max_tokens=512` le `content` se remplit correctement. `askLLM` MangoOS utilise `maxTokens` défaut 1024 → OK.
+
+**Risques assumés.** hy3:free est un PETIT modèle (pas fiable en boucle agentique/outils — le registre force `agentic` seulement pour GLM) ; à surveiller en réel sur une génération d'app complète. Fenêtre gratuite OpenRouter ~expire 2026-07-21 (cf. `limites.md`) — au-delà, le modèle ne répondra plus et il faudra rebasculer (vers Ollama cloud ou Claude). MangoQA continue en parallèle (non bloquant), c'est le filet de contrôle.
+
+**Services relancés** : backend MangoOS (port 3000) redémarré pour prendre le `.env` hy3 ; UI Vite 5173 (session Raf) et MangoQA (PID 12004) étaient déjà actifs et conservés. Zéro git (règle projet).
+
+## Journal — 2026-07-20 (soir) : Atelier des cerveaux — description à côté de chaque rôle
+
+**Demande.** Raf, depuis une capture d'écran de l'Atelier des cerveaux : ajouter un exemple/description à côté de chaque nom d'agent (« orchestrateur : il ordonne… »).
+
+**Changement.** `ui/src/components/atelier/constants.js` : nouvelle map `AGENT_DESC` — une phrase concrète par rôle pour les 15 `AgentId` (orchestrateur, architecte, codeur, vision, designer_ux, extracteur, testeur, auditeur, optimiseur, chercheur, juge, stratege, forgeron, routeur, accueil). `ui/src/components/AtelierCerveaux.jsx` : import de `AGENT_DESC`, rendu juste après le nom de l'agent (`<span className="text-[12px] text-faint">— {AGENT_DESC[id]}</span>`), avant les badges local/cloud/vision.
+
+**Vérifié.** Lecture visuelle du JSX modifié (pas de build lancé, changement JS pur non typé, cohérent avec le style des autres badges de la ligne).
+
+Zéro git — sauvegarde fichiers uniquement (`save`), Raf reprend demain soir.
