@@ -3879,4 +3879,19 @@ Zéro git — sauvegarde fichiers uniquement (`save`), Raf reprend demain soir.
 
 **Vérifié en réel** : `test-relay.ts` 0 échec (était 8), `test-specialized-agents.ts` 0 échec (était 5), `test-nocturnal-repair.ts` (3e et dernier consommateur de `RelayDeps`) 13/13, `tsc --noEmit` propre. Les 3 suites qui touchent `runRelay`/`RelayDeps` sont maintenant toutes vertes.
 
-Commit/push MangoOS en attente (prochaine sauvegarde).
+Commit/push MangoOS : `8f9c7c8`.
+
+## Journal — 2026-07-21 (suite) : reconnexion du registre à glm-5.2:cloud (codeur) / qwen3.5:cloud (vision+juge) via Ollama
+
+**Demande.** Raf : reconnecter le pipeline MangoOS à glm-5.2:cloud et qwen3.5:cloud (Ollama), pour toute opération en attente — fenêtre gratuite OpenRouter/hy3:free proche de son expiration (cf. `limites.md`, notée la veille ~2026-07-21).
+
+**Vérifié avant bascule.** Ollama vivant (`GET /api/tags`), `glm-5.2:cloud` et `qwen3.5:cloud` répondent tous les deux en réel (`POST /api/chat` direct, réponse "OK" pour chacun).
+
+**Changements.**
+- `server/src/data/brain-registry.json` : les 15 rôles repassent sur `provider:"ollama"`, plus de `baseUrl`/`apiKeyEnv` (superflus pour ollama, propres à openrouter). `codeur`/`orchestrateur`/`architecte`/etc. → `glm-5.2:cloud` (workhorse agentique, cf. profil `glmProfile.agentic=true`) ; `vision` et `juge` → `qwen3.5:cloud` (même split que `brain-profiles/cloud-actuel.json`, cohérent avec le rôle vision/jugement).
+- `server/.env` : `ELEVE_PROVIDER=ollama`, `ELEVE_MODEL=glm-5.2:cloud`.
+- Backend (port 3000) redémarré proprement (vérifié : le process tué était bien `tsx src/index.ts` de MangoOS, pas un orphelin — process frais relancé ensuite) pour que `syncEleveFromBrainRegistry()` (appelé une fois au chargement du module `eleve/provider.ts`) reprenne la nouvelle valeur — un simple GET sur `/api/brain-registry` lit le fichier à chaud mais NE resynchronise PAS les constantes `ELEVE_MODEL`/`ELEVE_PROVIDER_DEFAULT` déjà chargées en mémoire.
+
+**Vérifié en réel (pas de self-report)** : script jetable dans `server/src/` (supprimé après usage) important directement `askEleveDispatch` + les constantes → `ELEVE_MODEL = glm-5.2:cloud`, `ELEVE_PROVIDER_DEFAULT = ollama`, réponse réelle de l'Élève : « Rome. » à « capitale de l'Italie ? ». Chaîne confirmée bout-en-bout, $0 (Ollama Cloud gratuit sur ces deux modèles).
+
+Commit/push MangoOS en attente (prochaine sauvegarde de ce tour).
