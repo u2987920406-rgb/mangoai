@@ -1,6 +1,14 @@
 // Socle provider de l'Élève + transport chat fin (extraits de eleve.ts, chantier
 // archi #3). FEUILLE bas-niveau : ce module n'importe AUCUN autre sous-module
 // eleve/ — il est importé transversalement par contract/escalade/relay.
+//
+// ⚠ GARDE-FOU (2026-07-21) : toute modification de ce fichier OU de
+// `relay-config.ts` doit relancer `npx tsx src/tests/test-relay.ts` avant commit —
+// PAS juste `tsc`. Deux régressions réelles le même jour ont montré que ce
+// couple de fichiers peut casser silencieusement l'injection `deps.askEleve`
+// (tests censés être « sans réseau » qui se mettent à appeler le cerveau
+// configuré en vrai) sans qu'aucune erreur de type ne le signale — le bug ne se
+// voit qu'à l'exécution.
 import { resolveProfile } from "../models/profile.js";
 import { type LLMProvider } from "../llm/llm-engine.js";
 import { getBrain } from "../brain/brain-registry.js";

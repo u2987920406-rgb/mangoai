@@ -568,8 +568,7 @@
       "tier": "offline"
     },
     "test-specialist-agentic": {
-      "tier": "broken",
-      "reason": "3/27 échecs déterministes — gate P3 runAgentic (action→EXÉCUTE / conseil→CONSEIL) ne se comporte pas comme asserté"
+      "tier": "offline"
     },
     "test-specialist-agents": {
       "tier": "offline"

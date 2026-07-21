@@ -122,7 +122,11 @@ const agentAction: SpecialistAgent = {
   let ranAgentic = false
   let ranAdvice = false
   const runAgentic = async (_id: string, _t: string) => { ranAgentic = true; return { ok: true, text: "j'ai agi" } }
-  const run = async (_id: string, _t: string) => { ranAdvice = true; return { ok: true, text: "conseil" } }
+  // Texte de conseil réaliste (≥ MIN_ADVICE_CHARS=20) — un mock trop court ("conseil", 7
+  // caractères) se ferait rejeter par isUsableAdvice en mode conseil (comportement VOULU,
+  // cf. test-specialist-delegate.ts [3d]) ; ce bloc teste le ROUTAGE action/conseil, pas le
+  // plancher de longueur, donc le mock doit rester au-dessus du seuil pour ne pas s'y heurter.
+  const run = async (_id: string, _t: string) => { ranAdvice = true; return { ok: true, text: "voici un conseil détaillé" } }
 
   // mode action + runAgentic fourni (gate on) → délègue l'EXÉCUTION
   const r1 = await consultSpecialist({ task: "refactor le composant", blockage: "plateau", min: 1 },
@@ -133,13 +137,13 @@ const agentAction: SpecialistAgent = {
   ranAgentic = false; ranAdvice = false
   const r2 = await consultSpecialist({ task: "refactor le composant", blockage: "plateau", min: 1 },
     { load: () => [actionAgent], run })
-  check("P3 : action sans runAgentic (gate off) → CONSEIL (run)", !ranAgentic && ranAdvice && r2?.advice === "conseil")
+  check("P3 : action sans runAgentic (gate off) → CONSEIL (run)", !ranAgentic && ranAdvice && r2?.advice === "voici un conseil détaillé")
 
   // agent conseil + runAgentic dispo → reste CONSEIL (mode ≠ action)
   ranAgentic = false; ranAdvice = false
   const r3 = await consultSpecialist({ task: "refactor le composant", blockage: "plateau", min: 1 },
     { load: () => [conseilAgent], run, runAgentic })
-  check("P3 : agent conseil (même si runAgentic dispo) → CONSEIL", !ranAgentic && ranAdvice && r3?.advice === "conseil")
+  check("P3 : agent conseil (même si runAgentic dispo) → CONSEIL", !ranAgentic && ranAdvice && r3?.advice === "voici un conseil détaillé")
 }
 
 console.log(`\nspecialist-agentic (#175) : ${pass}/${pass + fail}`)

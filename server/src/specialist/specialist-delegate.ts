@@ -163,7 +163,15 @@ export function isUsableAdvice(
     }
   }
   if (REFUSAL_HINTS.some((re) => re.test(t))) return { usable: false, reason: "refus détecté dans la réponse" }
-  if (t.length < MIN_ADVICE_CHARS) return { usable: false, reason: "réponse trop courte pour être un conseil exploitable" }
+  // Le plancher de longueur ne vaut que pour le CONSEIL (prose d'analyse — une réponse
+  // trop brève y trahit un refus poli ou un "ok" creux, cf. historique de ce fichier).
+  // En mode ACTION, le texte est un compte-rendu bref d'exécution ("corrigé", "fait") —
+  // sa brièveté ne dit rien de son utilité, le VRAI signal est ailleurs (le code changé,
+  // le build). Bug réel trouvé le 2026-07-21 : ce plancher rejetait silencieusement TOUTE
+  // délégation action réussie dont le compte-rendu tient en moins de 20 caractères.
+  if (mode === "conseil" && t.length < MIN_ADVICE_CHARS) {
+    return { usable: false, reason: "réponse trop courte pour être un conseil exploitable" }
+  }
   return { usable: true }
 }
 

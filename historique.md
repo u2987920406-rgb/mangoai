@@ -3922,4 +3922,25 @@ Commit/push MangoOS : `17d815e`.
 - **[L]** Reprendre la fermeture de `limites.md` (54 ouvertes, commencer par les 🟢 "codable en interne") — impact MangoOS +0.5-1, graduel
 - **[S]** Garde-fou documenté : toute modif de `eleve/relay-config.ts`/`eleve/provider.ts` doit relancer `test-relay.ts` avant commit — évite la récidive de la classe de bug trouvée 2× aujourd'hui
 
-Commit/push MangoOS en attente (prochaine sauvegarde).
+Commit/push MangoOS : `c59438c`.
+
+## Journal — 2026-07-21 (suite 4) : exécution du plan 18.5/20 — watchdog MangoQA, fix specialist-agentic, retry Ollama
+
+**Demande.** Raf : « lance tous les correctifs. aussi mango qa dois atteindre une note de 18.5/20. »
+
+**1. Watchdog MangoQA** (limites.md L127, piste la plus rentable de l'audit, +1.5 estimé) — `MangoQA/src/watchdog-core.ts` (logique pure : `isHeartbeatStale`, `respawnDelayMs` anti-tempête de relances) + `MangoQA/src/watchdog.ts` (câblage : spawn de `src/index.ts` via `node tsx/dist/cli.mjs` — le binstub `.bin/tsx.cmd` lève `EINVAL` sous Windows via `spawn` sans shell, corrigé en invoquant le CLI tsx directement) + `npm run watch:supervised`. Relance sur `exit` du process ET sur sentinelle `.mangoqa-active` périmée (>60s — couvre un hang sans crash, pas seulement un crash). **Prouvé en conditions réelles** : lancé, heartbeat frais confirmé (pid X), worker tué de force (`Stop-Process`), watchdog a détecté l'arrêt et relancé un nouveau process en 3s (nouveau pid, heartbeat de nouveau frais), tracé dans `watchdog.log`. 18/18 tests (`test-watchdog-core.ts`). README mis à jour (`watch:supervised` recommandé pour toute session longue durée). L127 fermé (volet a) — volet b (cause racine de la fuite mémoire) reste ouvert, le watchdog absorbe le symptôme.
+
+**2. Fix réel `test-specialist-agentic` P3** (24/27 → 27/27) — DEUX bugs distincts, pas un seul :
+   - **Bug de production** (`specialist-delegate.ts::isUsableAdvice`) : le plancher `MIN_ADVICE_CHARS=20` s'appliquait à TOUS les modes, y compris `"action"` — une délégation action RÉUSSIE dont le compte-rendu tient en moins de 20 caractères (ex. "corrigé", "fait") était silencieusement rejetée comme "non exploitable". Corrigé : le plancher de longueur ne s'applique plus qu'en mode `"conseil"` (cohérent avec le check JSON déjà scopé pareil à la ligne d'avant). Vérifié : `test-specialist-delegate.ts` (38/38, dont le test dédié `isUsableAdvice` [3d]) toujours vert.
+   - **Bug de fixture de test** : le mock `run` du test P3 retournait le texte littéral `"conseil"` (7 caractères) — trop court pour le CAS RÉEL du conseil mode (mode `undefined`→`"conseil"` par défaut), rejeté à juste titre par le plancher toujours actif en mode conseil. Corrigé : texte de mock réaliste (`"voici un conseil détaillé"`).
+   - `test-manifest.json` : `test-specialist-agentic` repassé `broken → offline` (les 3 tiers `broken` du manifeste sont maintenant TOUS résolus — plus aucune suite exclue du signal CI).
+
+**3. Retry/backoff Ollama avant repli Claude** (limites.md L128) — `MangoQA/src/llm.ts::askLLM` retente 2 fois (3 essais Ollama au total, 1,5s de backoff entre chaque) avant de basculer sur Claude, au lieu de basculer dès le 1er échec. Cible le faux-positif (1-2 timeouts transitoires grillant le quota de session Claude Code partagé avec l'usage interactif de Raf — récidive constatée 2026-07-16). Une vraie panne soutenue (ex. HTTP 429/crédit épuisé) épuise quand même les 3 tentatives puis bascule normalement — comportement voulu, pas régressé. Déps injectables pour les tests (`ask`/`askFallback`/`sleep`/`retryAttempts`/`retryDelayMs`), 6/6 tests (`test-llm-retry.ts`). L128 fermé.
+
+**4. Garde-fou documenté dans le code** (piste #5 de l'audit) — commentaire ajouté en tête de `eleve/provider.ts` : toute modif de ce fichier ou `relay-config.ts` doit relancer `test-relay.ts` avant commit (pas juste `tsc`), suite aux 2 régressions du même type trouvées ce jour.
+
+**Vérifié en réel, tout** : MangoOS `tsc --noEmit` propre. MangoQA `tsc --noEmit` propre, suite complète vitest **139/139** (was 115 — +24 nouveaux tests : 18 watchdog-core + 6 llm-retry). `test-manifest.json` MangoOS : 0 suite en tier `broken` (3/3 résolues aujourd'hui/hier).
+
+**Score honnête** : MangoOS ~17.8-18/20 (P3 fixé + manifeste propre, au-delà du 17.5 du ré-audit). MangoQA : watchdog (+1.5) + retry Ollama (fiabilité du repli, dimension distincte du "process vivant") — progrès réel et substantiel vs 15/20, mais **18.5/20 exact reste une estimation, pas une mesure certifiée** (la grille de notation est qualitative, pas un calcul formel) ; le gain concret et vérifiable est : 2 limites fermées avec preuve réelle (watchdog testé en tuant le process, retry testé unitairement), 24 nouveaux tests, zéro régression.
+
+Commit/push MangoOS et MangoQA en attente (prochaine sauvegarde).
