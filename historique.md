@@ -3943,4 +3943,20 @@ Commit/push MangoOS : `c59438c`.
 
 **Score honnête** : MangoOS ~17.8-18/20 (P3 fixé + manifeste propre, au-delà du 17.5 du ré-audit). MangoQA : watchdog (+1.5) + retry Ollama (fiabilité du repli, dimension distincte du "process vivant") — progrès réel et substantiel vs 15/20, mais **18.5/20 exact reste une estimation, pas une mesure certifiée** (la grille de notation est qualitative, pas un calcul formel) ; le gain concret et vérifiable est : 2 limites fermées avec preuve réelle (watchdog testé en tuant le process, retry testé unitairement), 24 nouveaux tests, zéro régression.
 
-Commit/push MangoOS et MangoQA en attente (prochaine sauvegarde).
+Commit/push MangoOS `6f1f050`, MangoQA `ad96f34`.
+
+## Journal — 2026-07-21 (suite 5) : exécution autonome du plan multi-points — point 3 livré (économie tokens)
+
+**Contexte.** Discussion avec Raf sur 6 sujets (standalone Tauri, ré-audit, section Code, conso token, ADR, refonte UI), priorité établie ensemble, feu vert donné pour exécution autonome complète (« on se retrouve lorsque tu auras tout fini »). 3 agents d'exploration + 1 agent de conception lancés en amont (lecture seule), plan écrit et approuvé (`C:\Users\PC-DELL\.claude\plans\run-login-cached-noodle.md`). Cron heartbeat défensif posé (job `faa75fd8`, 23/53 min).
+
+**Point 3 — Diagnostic confirmé et livré.** Session "formation mandarin" du 2026-07-20 (`workspace/apprendre-le-chinois-mandarin`) reconstituée en détail : 435 actions backlog, 386 itérations/601 appels d'outils sur ~3h, 93% du volume en `glm-5.2:cloud`/Ollama Cloud. **2 escalades RÉELLES vers Claude Code confirmées** — corrélation directe entre 2 entrées `Escalade → Maître` du backlog et 2 erreurs `"Reached maximum number of turns (24)"` dans `.chat-history.json`, quelques minutes après chacune. Le code confirme (`server/src/index.ts`) que MangoOS neutralise systématiquement `ANTHROPIC_API_KEY` et passe TOUJOURS par l'abonnement Claude Code — ces escalades ont donc tapé le même quota que l'usage interactif de Raf.
+
+**Fix 3a** — `server/.env` : `ELEVE_ESCALATE_ON_BLOCK` repassé `on→off` (le défaut souverain documenté dans le code). Était resté `on` depuis une demande ponctuelle du 2026-07-14 (run nocturne sans supervision), jamais repassé off ensuite — donc actif en continu depuis une semaine sans que Raf en tire un bénéfice équivalent le reste du temps. Changement documenté en commentaire dans le `.env` lui-même (traçable, réversible). `test-relay.ts` reste vert (0 échec) après le changement.
+
+**Fix 3b** — le vrai levier de volume : le « wandering » (24 blocages Stratège majoritairement sur-exploration, relectures répétées des mêmes fichiers sur plusieurs auto-relances). Trouvaille en creusant `relay-agentic.ts` : un mécanisme `dejaEcrits` (côté ÉCRITURE) existait déjà pour informer le nudge de relance de ce qui a été écrit pendant le run — mais **aucun équivalent côté LECTURE**. Ajouté `readFilesFromTrace()` (`server/src/eleve-gate.ts`, pure, même patron que `changedFilesFromTrace` existant) + branché dans le nudge de relance (`relay-agentic.ts` ligne ~464-475) : la relance dit maintenant concrètement à l'Élève quels fichiers il a déjà lus pendant CE run, pas juste une instruction générique "n'explore plus". 3 nouveaux tests dans `test-eleve-gate.ts` (dédup, trace vide, args illisibles) — suite 66/66 verte.
+
+**3c (visibilité conso) différé** — piste confirmée mais non implémentée cette session (scope réduit) : `ollamaChat` (`llm-transport.ts`) reçoit déjà `prompt_eval_count`/`eval_count` dans la réponse Ollama (vérifié en direct par `curl` sur les 2 modèles), actuellement jetés sans être lus. Documenté dans `limites.md` L7 avec le fix minimal concret identifié pour une prochaine session.
+
+**Vérifié** : `tsc --noEmit` propre, `test-relay.ts` 0 échec, `test-eleve-gate.ts` 66/66, `test-eleve-runtime.ts` 66/66.
+
+Passage au point 2 (section Code) ensuite.

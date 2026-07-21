@@ -7,6 +7,7 @@ import {
   runClosureGate,
   evaluateGate,
   changedFilesFromTrace,
+  readFilesFromTrace,
   buildGateNudge,
   scanFilesForPlaceholders,
   hasRealTestScript,
@@ -72,6 +73,22 @@ async function run() {
       ]),
     );
     check("seulement write/edit, dédupliqués", files.length === 2 && files.includes("src/A.jsx") && files.includes("src/B.jsx"));
+  }
+
+  console.log("\n[1b] readFilesFromTrace (PUR) — anti-wandering (2026-07-21)");
+  {
+    const files = readFilesFromTrace(
+      trace([
+        ["read_file", '{"path":"src/App.jsx"}'],
+        ["write_file", '{"path":"src/A.jsx","content":"x"}'],
+        ["read_file", '{"path":"src/App.jsx"}'], // doublon
+        ["read_file", '{"path":"src/Home.jsx"}'],
+        ["list_files", '{"dir":"src"}'],
+      ]),
+    );
+    check("seulement read_file, dédupliqués", files.length === 2 && files.includes("src/App.jsx") && files.includes("src/Home.jsx"));
+    check("trace vide → tableau vide", readFilesFromTrace([]).length === 0);
+    check("args illisibles → sauté sans lever", readFilesFromTrace(trace([["read_file", "{pas du json"]])).length === 0);
   }
 
   console.log("\n[2] runClosureGate — tout OK");

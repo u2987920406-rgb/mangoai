@@ -33,7 +33,7 @@ import {
   executorLadder, nextExecutorRung, isBrainInadequate, brainEscalationNudge, formatExecutorEscalation,
   type ExecRung,
 } from "../stratege/stratege-escalate.js";
-import { runClosureGate, evaluateGate, changedFilesFromTrace } from "../eleve-gate.js";
+import { runClosureGate, evaluateGate, changedFilesFromTrace, readFilesFromTrace } from "../eleve-gate.js";
 import { appendBacklog } from "../project-backlog.js";
 import { measureProjectDesign, measureSummary } from "../design/design-metrics.js";
 import { flag } from "../flags.js";
@@ -466,6 +466,14 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         const dejaEcrits = changedFilesFromTrace(result.toolTrace);
         if (dejaEcrits.length) {
           nudge += `\n\nDéjà écrit pendant ce run (pars de l'EXISTANT, ne refais rien de zéro) : ${dejaEcrits.slice(0, 30).join(", ")}`;
+        }
+        // (2026-07-21, diagnostic conso token — "formation mandarin") même patron côté
+        // LECTURE : sans ce rappel, chaque relance relit les mêmes fichiers depuis zéro
+        // (observé : ~10 fichiers relus en boucle sur plusieurs relances). buildRelanceNudge
+        // dit déjà "n'explore plus" en général ; on rend ça CONCRET avec la vraie liste.
+        const dejaLus = readFilesFromTrace(result.toolTrace);
+        if (dejaLus.length) {
+          nudge += `\n\nDéjà LU pendant ce run (ne les relis PAS sauf besoin précis d'un détail) : ${dejaLus.slice(0, 30).join(", ")}`;
         }
       }
       try {

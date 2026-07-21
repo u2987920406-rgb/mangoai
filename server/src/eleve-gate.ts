@@ -206,6 +206,26 @@ export function changedFilesFromTrace(trace: Array<{ name: string; args: string 
   return [...new Set(out)];
 }
 
+/** Fichiers lus via `read_file` pendant CE run (trace de la tentative qui vient de
+ *  s'arrêter). Trouvé en diagnostic de conso token (2026-07-21, session "formation
+ *  mandarin") : chaque auto-relance repart d'une exploration VIERGE — l'Élève relit
+ *  en boucle les mêmes fichiers sur plusieurs relances (Auto-relance 2/10, 3/10…)
+ *  sans jamais savoir ce qu'il a déjà vu. `changedFilesFromTrace` avait déjà ce
+ *  patron côté ÉCRITURE (relay-agentic.ts) ; ce pendant côté LECTURE comble le trou. */
+export function readFilesFromTrace(trace: Array<{ name: string; args: string }>): string[] {
+  const out: string[] = [];
+  for (const t of trace) {
+    if (t.name !== "read_file") continue;
+    try {
+      const a = JSON.parse(t.args) as { path?: unknown };
+      if (typeof a.path === "string" && a.path.trim()) out.push(a.path.trim());
+    } catch {
+      /* trace illisible : on saute */
+    }
+  }
+  return [...new Set(out)];
+}
+
 /** Exécute le Gardien : intention + goût + QA. Ne lève jamais. */
 export async function runClosureGate(
   projectDir: string,
