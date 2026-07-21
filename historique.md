@@ -4026,3 +4026,16 @@ Passage au point 1 (ré-audit final) ensuite.
 **Code laissé en place, dormant** (décision explicite de Raf, pas un oubli) : tout le travail du point 2 reste dans le repo, gaté OFF, réactivable en un `CODE_SECTION=on` si Raf change d'avis plus tard — rien supprimé, rien à recoder.
 
 **Leçon retenue pour la suite** : quand une exploration s'appuie sur un commentaire de code affirmant qu'un mécanisme est « accessible » ou « branché », vérifier le point d'entrée RÉEL (ici `main.jsx`) plutôt que de faire confiance au commentaire local du fichier concerné — un commentaire peut devenir périmé sans que le fichier lui-même soit retouché.
+
+## Journal — 2026-07-21 (suite 10) : ré-audit post-fix + risque structurel trouvé (6 composants v2/ orphelins)
+
+**Demande de Raf** : « lance l'audit, on verra demain pour la refonte. »
+
+**Ré-audit** (fork dédié, lecture seule), comparé à la base de 18/20 (MangoOS) et 15/20 (MangoQA) d'avant le fix du shell :
+- **MangoOS : 18.5/20** (+0.5). Vérifié en réel : `tsc` propre (server+ui), `npm run build` réussi, `CODE_SECTION` bien désactivé (commenté), icône Sidebar réellement conditionnée par le fetch du gate (pas en dur). Le fork juge le delta net-positif — pas juste "corriger sa propre erreur du jour" mais un cycle de vérification qui a fonctionné comme prévu (Raf teste visuellement → écart détecté immédiatement → corrigé en quelques minutes → re-vérifié en réel). Le vrai gain : la découverte du point d'entrée de prod réel (`main.jsx`), une information qui manquait avant et qui aurait pu piéger n'importe quel futur travail UI.
+- **MangoQA : 15/20** (inchangé).
+- **Limites ouvertes : 54, stable** (ce changement n'en ferme ni n'en ouvre).
+
+**Risque structurel trouvé (pas corrigé, documenté)** — `limites.md` L137 : en cherchant s'il restait d'autres angles morts de la même famille, le fork a trouvé que **6 autres composants `ui/src/v2/`** (`AccueilPane`, `AppsPane`, `BuilderPane`, `ConversationsPane`, `ImageCreatorPane`, `ProjectsManager`, `ShellV2` lui-même) restent orphelins — jamais montés par `App.jsx`, atteignables seulement via le `?v2` mort. Rien de cassé aujourd'hui, mais c'est exactement le piège qui vient d'arriver à `CodePane.jsx`. Décision à prendre par Raf (pas un chantier de code) : supprimer `ui/src/v2/` si le shell v2 est abandonné pour de bon, ou réactiver `?v2` s'il veut le garder vivant — l'état actuel (ni l'un ni l'autre) est ce qui a piégé le point 2.
+
+**Suite** : refonte UI (point 5) remise à demain, comme demandé par Raf.
