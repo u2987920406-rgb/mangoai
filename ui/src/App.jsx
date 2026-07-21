@@ -27,7 +27,7 @@ const Radar           = lazy(() => import("./components/Radar.jsx"));
 const Reglages        = lazy(() => import("./components/Reglages.jsx"));
 // #193 — section Code (docs/plan-193-section-code.md), portée depuis le shell v2
 // (gelé, jamais monté en prod — cf. main.jsx) vers le vrai shell de prod.
-const CodePane         = lazy(() => import("./v2/CodePane.jsx"));
+const CodePane         = lazy(() => import("./components/CodePane.jsx"));
 import { useToasts } from "./hooks/useToasts.js";
 import { useTutorial } from "./hooks/useTutorial.js";
 import { useBackendServer } from "./hooks/useBackendServer.js";

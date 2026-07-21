@@ -6,12 +6,12 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Code2, ArrowLeft } from "lucide-react";
 import { Button, EmptyState, cx, TEXT } from "../design";
-import ExternalProjectPicker from "../components/ExternalProjectPicker.jsx";
+import ExternalProjectPicker from "./ExternalProjectPicker.jsx";
 
 const Chat = lazy(() => import("../Chat.jsx"));
 const Preview = lazy(() => import("../Preview.jsx"));
 
-const PROJECT_KEY = "mangoos.v2.codeProject"; // clé DISTINCTE de mangoos.v2.project (Builder)
+const PROJECT_KEY = "mangoos.codeProject"; // clé DISTINCTE de mangoos.project (Workspace)
 
 export default function CodePane({ onBack = () => {} }) {
   const [enabled, setEnabled] = useState(null); // null = pas encore su

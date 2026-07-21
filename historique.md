@@ -4039,3 +4039,13 @@ Passage au point 1 (ré-audit final) ensuite.
 **Risque structurel trouvé (pas corrigé, documenté)** — `limites.md` L137 : en cherchant s'il restait d'autres angles morts de la même famille, le fork a trouvé que **6 autres composants `ui/src/v2/`** (`AccueilPane`, `AppsPane`, `BuilderPane`, `ConversationsPane`, `ImageCreatorPane`, `ProjectsManager`, `ShellV2` lui-même) restent orphelins — jamais montés par `App.jsx`, atteignables seulement via le `?v2` mort. Rien de cassé aujourd'hui, mais c'est exactement le piège qui vient d'arriver à `CodePane.jsx`. Décision à prendre par Raf (pas un chantier de code) : supprimer `ui/src/v2/` si le shell v2 est abandonné pour de bon, ou réactiver `?v2` s'il veut le garder vivant — l'état actuel (ni l'un ni l'autre) est ce qui a piégé le point 2.
 
 **Suite** : refonte UI (point 5) remise à demain, comme demandé par Raf.
+
+## Journal — 2026-07-22 : fermeture de L137 — dossier `ui/src/v2/` supprimé sur demande de Raf
+
+**Demande** : « corrige les risque » (référence à L137, le risque structurel trouvé la veille).
+
+**Fait** : `CodePane.jsx` déplacé de `ui/src/v2/` vers `ui/src/components/CodePane.jsx` (imports internes corrigés — `./ExternalProjectPicker.jsx` au lieu de `../components/...`, clé localStorage renommée `mangoos.codeProject` sans le résidu `.v2.`). Import mis à jour dans `App.jsx`. Le dossier `ui/src/v2/` supprimé EN ENTIER ensuite (les 7 fichiers réellement morts : `AccueilPane.jsx`, `AppsPane.jsx`, `BuilderPane.jsx`, `ConversationsPane.jsx`, `ImageCreatorPane.jsx`, `ProjectsManager.jsx`, `ShellV2.jsx`). Commentaire périmé de `main.jsx` mis à jour pour refléter la suppression plutôt que la simple mise en dormance.
+
+**Vérifié en réel** : grep de tout le repo `ui/src` confirmant zéro référence restante à `v2/` (hors le commentaire historique de `main.jsx`) ; `tsc --noEmit` propre ; `npm run build` réussi (le chunk `CodePane-*.js` apparaît bien dans le bundle, les anciens chunks `ShellV2`/`AccueilPane`/`BuilderPane`/etc. de `v2/` ont disparu du build, confirmant qu'ils étaient bien du code mort exclu par le bundler) ; serveur de dev relancé, `GET /src/components/CodePane.jsx` → 200 (nouveau chemin servi correctement).
+
+L137 fermé. Plus aucun composant UI orphelin dans le repo.
