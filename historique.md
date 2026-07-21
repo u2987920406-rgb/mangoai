@@ -3980,3 +3980,24 @@ Passage au point 2 (section Code) ensuite.
 **Vérifié, tout** : `tsc --noEmit` propre (server ET ui), `test-external-projects` 21/21, `test-brain-profile` 15/15, `test-brain-dispatch` 38/38, `test-mango-app-contract` et `test-finition` (consommateurs d'`agent.ts`) toujours verts.
 
 Passage au point 0 (vérification standalone Tauri) ensuite.
+
+## Journal — 2026-07-21 (suite 7) : exécution autonome du plan multi-points — point 0 livré (standalone Tauri vérifié en réel)
+
+**Contexte.** Suite directe du point 2. Question de Raf : « MangoOS peut-il tourner définitivement en local sans repasser par ce terminal ? Puis-je l'utiliser 100% avec le Tauri ? »
+
+**Fait, réellement, pas en théorie :**
+1. **Premier `tauri build` de l'histoire du repo** — `desktop/src-tauri/target/` ne contenait avant que `debug/`. Compilation release complète (6 min 47s, dépendances Rust + Tauri from scratch), **2 bundles produits** : `mangoos-desktop_0.1.0_x64_en-US.msi` et `mangoos-desktop_0.1.0_x64-setup.exe`.
+2. **Installation silencieuse réelle** (`/S` via PowerShell `Start-Process` — Git Bash mangle l'argument `/S` en `S:/`, contournement trouvé et documenté). Installé dans `%LOCALAPPDATA%\mangoos-desktop\`, enregistré proprement dans le registre de désinstallation Windows.
+3. **Lancement de l'exécutable INSTALLÉ** (pas depuis un terminal de dev) après avoir fermé tous les process manuels (backend/UI) — **preuve directe** : `app.exe` a spawné LUI-MÊME le backend Node ET le serveur Vite, les deux répondant réellement en HTTP 200, sans AUCUNE commande de dev de ma part.
+4. **2 vrais bugs/limites trouvés en testant, pas en lisant le code** :
+   - **L135 (nouveau)** : un `app.exe` tué de force (simulant un crash, pas un « Quitter » propre) laisse backend+UI+MangoQA tourner en orphelins sur les ports — le code de nettoyage (`shutdown_sidecar`/`taskkill /T /F`) n'est câblé que sur les événements fenêtre-fermée/tray-quitter, jamais sur une mort inattendue du parent. C'est exactement le mode de panne que la procédure anti-orphelin manuelle de `CLAUDE.md` couvre déjà — mais pas automatiquement côté coque.
+   - **L136 (nouveau)** : la coque desktop lance SA PROPRE instance MangoQA sans vérifier si une autre tourne déjà — 2 instances simultanées constatées en réel (mon watchdog terminal + celle de la coque), toutes deux écrivant la même sentinelle en course. Contourné manuellement pendant la vérif (watchdog arrêté avant de lancer la coque).
+5. **L89 mis à jour** : le volet Windows de l'empaquetage cross-OS passe de « mécanique connue, jamais exercée » à **prouvé en réel** — reste ouvert seulement pour macOS/Linux (jamais testés, aucune machine dispo).
+
+**Limite honnête assumée** : impossible depuis ce terminal de confirmer visuellement le rendu de la fenêtre, l'icône du tray, ou l'ergonomie réelle — seule une vérification process/port était possible. Raf doit confirmer visuellement à son retour.
+
+**Nettoyage** : toutes les données de test supprimées, environnement de dev normal (backend+UI+watchdog MangoQA) relancé propre à la fin. **Effet de bord accidentel signalé honnêtement** : un `grep` trop large sur les process vite a tué au passage le serveur Vite d'Atlas (`harnais-2027`, repo perso non-MangoOS) — facilement relançable par Raf, mais pas intentionnel.
+
+**Livrable concret pour Raf** : l'app desktop installée et fonctionnelle existe maintenant à `C:\Users\PC-DELL\AppData\Local\mangoos-desktop\app.exe` — prête à tester visuellement, ou à désinstaller (`uninstall.exe` dans le même dossier) s'il préfère repartir de zéro plus tard.
+
+Passage au point 1 (ré-audit final) ensuite.
