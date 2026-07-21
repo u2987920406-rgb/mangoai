@@ -3894,4 +3894,18 @@ Commit/push MangoOS : `8f9c7c8`.
 
 **Vérifié en réel (pas de self-report)** : script jetable dans `server/src/` (supprimé après usage) important directement `askEleveDispatch` + les constantes → `ELEVE_MODEL = glm-5.2:cloud`, `ELEVE_PROVIDER_DEFAULT = ollama`, réponse réelle de l'Élève : « Rome. » à « capitale de l'Italie ? ». Chaîne confirmée bout-en-bout, $0 (Ollama Cloud gratuit sur ces deux modèles).
 
-Commit/push MangoOS en attente (prochaine sauvegarde de ce tour).
+Commit/push MangoOS : `908c31a`.
+
+## Journal — 2026-07-21 (suite 2) : 2e régression trouvée — `test-relay.ts` dépendait du cerveau AMBIANT, pas mocké comme prétendu
+
+**Contexte.** La suite complète `npm run test:offline` (lancée en fond) revient avec `test-relay — timeout`. En relançant `test-relay.ts` seul pour confirmer, échec RÉEL et net (pas un timeout) : le test [A] ("L'Élève réussit du premier coup", censé être 100% mocké) déclenche un vrai run agentique — 15 itérations d'outils réels (`npm install`, `vite --port`, édition de CSS, `vois_ecran`...) — et échoue car le mock `deps.askEleve` n'est jamais appelé.
+
+**Cause.** `test-relay.ts` déclare en en-tête "DÉTERMINISTE... sans réseau ni coût", mais 7 de ses cas (A, B, C, D, D2, E1, E2) ne passaient JAMAIS `profile` explicitement dans `runRelay(...)` — ils héritaient donc du profil AMBIANT `PROFILE = resolveProfile(ELEVE_MODEL)` (`eleve/provider.ts`). Tant que `ELEVE_MODEL` pointait vers un modèle non-agentic (gemma4:12b, hy3:free), ça passait par le chemin CONTRAT (mock honoré) sans que personne ne s'en aperçoive. La reconnexion du jour vers `glm-5.2:cloud` (profil `agentic:true`) a fait basculer ces 7 tests sur le moteur AGENTIQUE réel — un couplage caché à un état global mutable (`.env`/registre), pas une vraie déterminisme.
+
+**Fix** (`server/src/tests/test-relay.ts`) : ajout d'un `const nonAgentic = resolveProfile("gemma4:12b")` explicite, passé en `profile:` aux 7 cas A/B/C/D/D2/E1/E2. Les cas F1-F4c et G gardaient déjà `profile: glm` explicite (agentic assumé) — inchangés. Le fichier ne dépend plus du cerveau live configuré, conforme à ce qu'il prétend être.
+
+**Vérifié en réel** : `test-relay.ts` 0 échec (relancé 2×, stable), `tsc --noEmit` propre, `test-specialized-agents.ts` et `test-nocturnal-repair.ts` (les 2 autres consommateurs de `RelayDeps`) toujours verts.
+
+**Leçon retenue** : un test qui se déclare "sans réseau" doit toujours passer un `profile`/`eleveModel` EXPLICITE — jamais hériter de l'ambiant. C'est la 2e régression du jour causée par un couplage implicite au cerveau global configuré (la 1ère : `deps.askEleve` bypass, cf. journal précédent) — signal qu'il faudrait un garde-fou générique (lint/convention) plutôt que de continuer à les trouver une par une. Noté comme piste d'amélioration, pas encore fait.
+
+Commit/push MangoOS en attente (prochaine sauvegarde).

@@ -47,6 +47,15 @@ async function deterministic(): Promise<void> {
   console.log("DÉTERMINISTE — logique d'orchestration (executeContract réel)");
   line();
 
+  // Profil explicite NON-agentic pour les tests A-E2 (chemin contrat, mock
+  // deps.askEleve) — trouvé en régression réelle le 2026-07-21 : sans ce
+  // profil explicite, ces tests héritaient du profil AMBIANT (résolu depuis
+  // ELEVE_MODEL, cf. provider.ts::PROFILE), qui bascule sur le moteur
+  // AGENTIQUE (réseau réel, mock ignoré) dès que le cerveau global configuré
+  // est agentic (ex. glm-5.2:cloud). Ce fichier se déclare pourtant "sans
+  // réseau ni coût" — ne doit JAMAIS dépendre du cerveau live configuré.
+  const nonAgentic = resolveProfile("gemma4:12b");
+
   // A) L'Élève réussit du premier coup
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-A-"));
@@ -56,7 +65,7 @@ async function deterministic(): Promise<void> {
       ensureDeps: noEnsure,
       escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2 }, deps);
     console.log("\n  [A] Élève compétent :");
     check("résolu par l'Élève", r.resolvedBy === "eleve");
     check("en 1 tentative, succès, coût 0", r.attempts === 1 && r.success && r.costUsd === 0);
@@ -80,7 +89,7 @@ async function deterministic(): Promise<void> {
         return { axiom: true, costUsd: 0.12, codeChanged: true };
       },
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2 }, deps);
     console.log("\n  [B] Élève en échec, gate=on → escalade :");
     check("escalade déclenchée après 2 échecs", escalated && r.attempts === 2);
     check("résolu par le Maître", r.resolvedBy === "maitre" && r.success);
@@ -103,7 +112,7 @@ async function deterministic(): Promise<void> {
         return { axiom: true, costUsd: 0.08, codeChanged: true };
       },
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps);
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2 }, deps);
     console.log("\n  [C] Réponse hors-contrat, gate=on → escalade :");
     check("rejet répété → escalade → Maître", r.resolvedBy === "maitre" && r.success);
     if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
@@ -122,7 +131,7 @@ async function deterministic(): Promise<void> {
       ensureDeps: noEnsure,
       escalate: async () => { escalateCalls++; return { axiom: false, costUsd: 0.05, codeChanged: false }; }, // le Maître ne corrige pas
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 1 }, deps);
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 1 }, deps);
     console.log("\n  [D] Échec des deux étages, gate=on :");
     check("resolvedBy = none, success = false", r.resolvedBy === "none" && !r.success);
     check("Maître bien appelé (gate=on)", escalateCalls === 1);
@@ -142,7 +151,7 @@ async function deterministic(): Promise<void> {
       ensureDeps: noEnsure,
       escalate: async () => { escalateCalls++; return { axiom: false, costUsd: 0.05, codeChanged: false }; },
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 1 }, deps);
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 1 }, deps);
     console.log("\n  [D2] Échec total, gate OFF (défaut) → échec honnête, zéro Claude :");
     check("resolvedBy = none, success = false", r.resolvedBy === "none" && !r.success);
     check("costUsd = 0 (aucun coût Claude)", r.costUsd === 0);
@@ -163,7 +172,7 @@ async function deterministic(): Promise<void> {
       escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
       judge: async () => { judgeCalls++; return { fonctionnel: 2, note: "template vide" }; },
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 2, functionalGate: true, functionalMin: 5 }, deps);
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2, functionalGate: true, functionalMin: 5 }, deps);
     console.log("\n  [E1] Build vert mais fonctionnel bas → porte relance :");
     check("juge appelé (porte active)", judgeCalls === 1);
     check("2 tentatives Élève (la porte a forcé un 2e tour)", eleveCalls === 2 && r.attempts === 2);
@@ -181,7 +190,7 @@ async function deterministic(): Promise<void> {
       escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
       judge: async () => { judgeCalls++; return { fonctionnel: 1, note: "vide" }; },
     };
-    const r = await runRelay("tâche", dir, { maxEleveAttempts: 2 }, deps); // gate non passé → OFF
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2 }, deps); // gate non passé → OFF
     console.log("\n  [E2] Porte OFF par défaut → comportement historique :");
     check("succès dès la 1re tentative", eleveCalls === 1 && r.attempts === 1 && r.success);
     check("juge JAMAIS appelé (porte inerte)", judgeCalls === 0);
