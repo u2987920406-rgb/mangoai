@@ -44,7 +44,7 @@ export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "extracteur" | "testeur" | "auditeur"
   | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron" | "routeur"
-  | "accueil"
+  | "accueil" | "codeur_frontiere"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -98,6 +98,14 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // MODEL_MAP nécessaire) → comportement identique au repli historique tant que Raf
   // n'a rien choisi dans la popup. Pas d'EXPECTED_CAPS : choix libre assumé (limites.md).
   accueil:       { provider: "claude", model: "sonnet", timeoutMs: 60_000 },
+  // #193 — le cerveau FRONTIÈRE dédié de la section Code (jamais l'Élève souverain,
+  // jamais un repli .env) : lu SERVEUR-CÔTÉ par /api/code-chat (code-route.ts), le
+  // client ne peut jamais le contourner. Distinct de `codeur` (Élève, sémantique
+  // opposée — souverain local/cloud). Défaut = le tier Claude le plus capable
+  // disponible via l'abonnement, réassignable à chaud dans l'Atelier comme tout
+  // cerveau, mais toujours filtré contre ALLOWED_MODELS côté route (repli "opus"
+  // si le registre pointe vers un modèle non-Claude).
+  codeur_frontiere: { provider: "claude", model: "opus", timeoutMs: 120_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]

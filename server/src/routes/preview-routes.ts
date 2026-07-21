@@ -6,6 +6,7 @@ import path from "node:path";
 import fs from "node:fs";
 import { projectDir, projectExists } from "../projects.js";
 import { saveUpload } from "../uploads.js";
+import { externalHistoryDir } from "./code-route.js";
 import { isPreviewing, startPreview, previewList } from "../preview.js";
 import { snapZone } from "../vision.js";
 import { isAgentBusy } from "../agent/agent-lock.js";
@@ -24,7 +25,11 @@ app.post(
   express.raw({ type: () => true, limit: "26mb" }),
   (req, res) => {
     try {
-      const dir = projectDir(req.params.name);
+      // #193 — même branche additive que /api/history/:name : un projet externe
+      // n'est jamais dans workspace/. On garde la même philosophie que l'historique
+      // (rien n'atterrit dans le dépôt de l'utilisateur, tout reste côté MangoOS).
+      const name = req.params.name;
+      const dir = name.startsWith("ext:") ? externalHistoryDir(name.slice(4)) : projectDir(name);
       fs.mkdirSync(dir, { recursive: true });
       const relPath = saveUpload(dir, String(req.query.filename ?? ""), req.body as Buffer);
       res.json({ path: relPath });

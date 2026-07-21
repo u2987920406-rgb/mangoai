@@ -73,5 +73,10 @@
     "provider": "claude",
     "model": "sonnet",
     "timeoutMs": 60000
+  },
+  "codeur_frontiere": {
+    "provider": "claude",
+    "model": "opus",
+    "timeoutMs": 120000
   }
 }

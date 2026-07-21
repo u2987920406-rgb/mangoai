@@ -8,6 +8,7 @@ import { ZipArchive } from "archiver";
 import type { Express, Request, Response } from "express";
 import { appendHistory, loadHistory } from "./history.js";
 import { projectDir, projectExists } from "./projects.js";
+import { externalHistoryDir } from "./routes/code-route.js";
 import { ASSETS_DIR_NAME } from "./uploads.js";
 import { SNAPSHOTS_DIR_NAME } from "./vision.js";
 import { safeDiffPath } from "./vision-diff.js";
@@ -17,6 +18,14 @@ export function registerProjectIORoutes(app: Express, isAgentBusy: () => boolean
   // Persisted chat history of a project (empty for unknown/new projects)
   app.get("/api/history/:name", (req: Request, res: Response) => {
     const name = req.params["name"] as string;
+    // #193 — section Code : un projet externe n'est jamais dans workspace/, cette
+    // branche additive redirige vers son dossier d'historique dédié AVANT la
+    // résolution workspace. Zéro changement sur la branche existante ci-dessous
+    // (aucune collision possible : projectDir() ne produit jamais de nom avec ":").
+    if (name.startsWith("ext:")) {
+      res.json({ messages: loadHistory(externalHistoryDir(name.slice(4))) });
+      return;
+    }
     if (!projectExists(name)) {
       res.json({ messages: [] });
       return;

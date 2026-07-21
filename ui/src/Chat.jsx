@@ -44,6 +44,10 @@ export default function Chat({
   onReviewed = () => {},
   buildRequest = null,
   onBuildConsumed = () => {},
+  // #193 — section Code : route serveur alternative (le corps envoyé reste
+  // identique, code-route.ts dérive externalProjectId de projectName lui-même
+  // — zéro changement de forme de body ici). Défaut = comportement inchangé.
+  apiPath = "/api/chat",
 }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
@@ -385,7 +389,7 @@ export default function Chat({
       // travail côté serveur (Claude ET Élève).
       const controller = new AbortController();
       abortRef.current = controller;
-      const res = await fetch("/api/chat", {
+      const res = await fetch(apiPath, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,

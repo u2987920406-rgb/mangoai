@@ -134,6 +134,14 @@ export async function* runAgent(
   clientMode?: boolean,
   // Curseur de style 0→100 (% du goût personnel ; 100 = défaut plein style).
   styleStrength?: number,
+  // #193 — section Code (docs/plan-193-section-code.md) : remplace ENTIÈREMENT
+  // assembleSystemPrompt() par ce texte. Le prompt système standard injecte des
+  // blocs de personnalité MangoOS (goût/axiomes/design-system/identité de marque,
+  // via assembleSystemPrompt) pensés pour construire DANS workspace/ — hors-sujet
+  // pour déboguer un dépôt EXTERNE quelconque. Présent → tous les blocs de
+  // contexte "goût" ci-dessous sont sautés (jamais calculés, pas juste ignorés :
+  // ce sont des I/O — notes/composants/skills — inutiles pour ce chemin).
+  systemPromptOverride?: string,
 ): AsyncGenerator<AgentEvent> {
   const effectiveModel = model ?? DEFAULT_MODEL;
   const effectiveMode = mode ?? DEFAULT_MODE;
@@ -151,72 +159,79 @@ export async function* runAgent(
   // Finition is frozen: no web research allowed.
   // Esthetique is a polish phase on an existing project: no web research needed.
   const webTools = effectiveMode === "elite" || effectiveMode === "nocturne" || effectiveMode === "projet" || effectiveMode === "compose" ? ["WebSearch", "WebFetch"] : effectiveMode === "mvp" ? ["WebSearch"] : [];
-  // Idée #61 vague 2 — recall des notes personnelles pertinentes à ce tour
-  // (sémantique Ollama, repli mots-clés ; "" si aucune note). Best-effort : ne
-  // doit jamais empêcher un tour de démarrer.
+  // #193 — section Code : AUCUN bloc de personnalité MangoOS calculé (ni lu, ni
+  // ignoré ensuite — carrément pas d'I/O) quand systemPromptOverride est fourni.
   let notesSection = "";
-  try {
-    notesSection = await relevantNotesSection(prompt);
-  } catch {
-    notesSection = "";
-  }
-  // Idée #74 — constellations: un signal de contexte détecté sur la demande
-  // injecte un pack de règles coordonnées AVANT la génération. Détection pure et
-  // synchrone (sur le prompt), "" quand rien ne se déclenche. Best-effort.
   let constellationsBlock = "";
-  try {
-    constellationsBlock = constellationsSection(prompt, inferProjectType(prompt), WORKSPACE_DIR);
-  } catch {
-    constellationsBlock = "";
-  }
-  // Nuit 2026-07-03 — template de DOMAINE (bibliothèque locale server/templates/*.md) :
-  // squelette + contraintes design du domaine détecté sur la demande. "" si non détecté.
   let templateBlock = "";
-  try {
-    templateBlock = domainTemplateSection(prompt);
-  } catch {
-    templateBlock = "";
-  }
-  // Idée #75 — mémoire procédurale : récupère (sémantique + repli mots-clés) les
-  // démarches de résolution passées qui matchent CETTE demande, "" si aucune.
-  // Best-effort, n'embed que la requête (les procédures sont pré-indexées).
   let proceduresBlock = "";
-  try {
-    proceduresBlock = await proceduresPromptSection(WORKSPACE_DIR, prompt);
-  } catch {
-    proceduresBlock = "";
-  }
-  // Idée #99 — Perfect Plan : contrat de démarrage (synchrone, lecture JSON).
-  const perfectPlanBlock = (() => { try { return perfectPlanSection(projectDir); } catch { return ""; } })();
-  // Idée #118 — réinjection des artefacts : avant de coder, on cherche dans le
-  // Blackboard les palettes déjà créées proches de la CIBLE de ce projet (celle du
-  // Perfect Plan) et on les rappelle à l'agent (réutiliser > réinventer). Synchrone
-  // et pur (embedding = histogramme RGB, pas d'Ollama). "" si pas de cible/aucune.
-  const artifactsBlock = (() => {
-    try {
-      const targetColors = paletteFromContract(loadContract(projectDir));
-      const project = projectDir.split(/[\\/]/).filter(Boolean).pop() ?? "";
-      return relevantArtifactsSection(project, targetColors);
-    } catch {
-      return "";
-    }
-  })();
-  // Idée #119 — réinjection « même façon » des composants & blueprints. Composants :
-  // tri sémantique Blackboard (repli mots-clés), async best-effort ; remplace le dump
-  // complet par les plus pertinents. Blueprints : rappel du type détecté (synchrone).
+  let perfectPlanBlock = "";
+  let artifactsBlock = "";
   let componentsBlock = "";
-  try {
-    componentsBlock = await relevantComponentsSection(prompt, WORKSPACE_DIR);
-  } catch {
-    componentsBlock = "";
-  }
-  const blueprintHint = (() => { try { return blueprintHintSection(prompt); } catch { return ""; } })();
-  // Idée #120 — skills pertinents (même mécanisme que les composants), async best-effort.
+  let blueprintHint = "";
   let skillsBlock = "";
-  try {
-    skillsBlock = await relevantSkillsSection(prompt);
-  } catch {
-    skillsBlock = "";
+  if (!systemPromptOverride) {
+    // Idée #61 vague 2 — recall des notes personnelles pertinentes à ce tour
+    // (sémantique Ollama, repli mots-clés ; "" si aucune note). Best-effort : ne
+    // doit jamais empêcher un tour de démarrer.
+    try {
+      notesSection = await relevantNotesSection(prompt);
+    } catch {
+      notesSection = "";
+    }
+    // Idée #74 — constellations: un signal de contexte détecté sur la demande
+    // injecte un pack de règles coordonnées AVANT la génération. Détection pure et
+    // synchrone (sur le prompt), "" quand rien ne se déclenche. Best-effort.
+    try {
+      constellationsBlock = constellationsSection(prompt, inferProjectType(prompt), WORKSPACE_DIR);
+    } catch {
+      constellationsBlock = "";
+    }
+    // Nuit 2026-07-03 — template de DOMAINE (bibliothèque locale server/templates/*.md) :
+    // squelette + contraintes design du domaine détecté sur la demande. "" si non détecté.
+    try {
+      templateBlock = domainTemplateSection(prompt);
+    } catch {
+      templateBlock = "";
+    }
+    // Idée #75 — mémoire procédurale : récupère (sémantique + repli mots-clés) les
+    // démarches de résolution passées qui matchent CETTE demande, "" si aucune.
+    // Best-effort, n'embed que la requête (les procédures sont pré-indexées).
+    try {
+      proceduresBlock = await proceduresPromptSection(WORKSPACE_DIR, prompt);
+    } catch {
+      proceduresBlock = "";
+    }
+    // Idée #99 — Perfect Plan : contrat de démarrage (synchrone, lecture JSON).
+    perfectPlanBlock = (() => { try { return perfectPlanSection(projectDir); } catch { return ""; } })();
+    // Idée #118 — réinjection des artefacts : avant de coder, on cherche dans le
+    // Blackboard les palettes déjà créées proches de la CIBLE de ce projet (celle du
+    // Perfect Plan) et on les rappelle à l'agent (réutiliser > réinventer). Synchrone
+    // et pur (embedding = histogramme RGB, pas d'Ollama). "" si pas de cible/aucune.
+    artifactsBlock = (() => {
+      try {
+        const targetColors = paletteFromContract(loadContract(projectDir));
+        const project = projectDir.split(/[\\/]/).filter(Boolean).pop() ?? "";
+        return relevantArtifactsSection(project, targetColors);
+      } catch {
+        return "";
+      }
+    })();
+    // Idée #119 — réinjection « même façon » des composants & blueprints. Composants :
+    // tri sémantique Blackboard (repli mots-clés), async best-effort ; remplace le dump
+    // complet par les plus pertinents. Blueprints : rappel du type détecté (synchrone).
+    try {
+      componentsBlock = await relevantComponentsSection(prompt, WORKSPACE_DIR);
+    } catch {
+      componentsBlock = "";
+    }
+    blueprintHint = (() => { try { return blueprintHintSection(prompt); } catch { return ""; } })();
+    // Idée #120 — skills pertinents (même mécanisme que les composants), async best-effort.
+    try {
+      skillsBlock = await relevantSkillsSection(prompt);
+    } catch {
+      skillsBlock = "";
+    }
   }
   try {
     const q = query({
@@ -243,7 +258,7 @@ export async function* runAgent(
           // Coque Souple: the append is assembled from named blocks following
           // the scenario (= effort mode). Behavior-constant vs the old inline
           // concatenation (verified byte-for-byte).
-          append: assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, templateSection: templateBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
+          append: systemPromptOverride ?? assembleSystemPrompt({ mode: effectiveMode, model: effectiveModel, projectDir, tutorial: tutorial ?? undefined, notesSection, constellationsSection: constellationsBlock, templateSection: templateBlock, proceduresSection: proceduresBlock, clientMode, styleStrength, perfectPlanSection: perfectPlanBlock, artifactsSection: artifactsBlock, componentsSection: componentsBlock, blueprintHintSection: blueprintHint, skillsSection: skillsBlock }),
         },
         ...(sessionId ? { resume: sessionId } : {}),
       },

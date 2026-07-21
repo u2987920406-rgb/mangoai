@@ -8,6 +8,7 @@ import {
   BookOpen, Lightbulb, FileText, Palette, Settings, Sun, Moon, Search,
   Sparkles, Home as HomeIcon, Mic, Command, HelpCircle, MessagesSquare,
   Activity, Ghost, SwatchBook, Inbox, X, ArrowLeft, PanelLeftClose, PanelLeft,
+  Code2,
 } from "lucide-react";
 import { lazy, Suspense } from "react";
 import { getTheme, toggleTheme } from "../theme.js";
@@ -17,6 +18,9 @@ import { AppStateProvider, useAppState } from "../state/AppState";
 
 // C3 — l'App Builder RÉEL (Chat + Preview de la 1.0) monté dans le panneau du shell.
 const BuilderPane = lazy(() => import("./BuilderPane.jsx"));
+// #193 — section Code : chat agentique frontière-only sur des projets locaux EXTERNES
+// au workspace (gate CODE_SECTION, docs/plan-193-section-code.md).
+const CodePane = lazy(() => import("./CodePane.jsx"));
 // Accueil conversationnel (home-chat 1.0 + graduation vers l'atelier).
 const AccueilPane = lazy(() => import("./AccueilPane.jsx"));
 // Toutes les autres sections : vraies apps 1.0 fusionnées (onglets) + vrai Réglages.
@@ -48,6 +52,12 @@ const SECTIONS = [
       { id: "projets",  label: "Projets",      icon: Boxes,      desc: "Gros projets (Kanban incrémental) et suites d'apps — ex Multi-Projet + OS d'apps." },
       { id: "image",    label: "Image",        icon: ImageIcon,  desc: "Création d'images." },
       { id: "music",    label: "Music",        icon: Music2,     desc: "Création musicale." },
+    ],
+  },
+  {
+    id: "code", label: "Code",
+    items: [
+      { id: "code", label: "Code", icon: Code2, desc: "Débogage et construction agentique sur tes projets locaux — cerveau frontière, toujours." },
     ],
   },
   {
@@ -504,6 +514,7 @@ function ShellV2Inner() {
                   : active === "conversations" ? <ConversationsPane />
                   : active === "composants" ? <VitrinePane />
                   : active === "builder" ? <BuilderPane />
+                  : active === "code" ? <CodePane />
                   : <AppsPane sectionId={active} />}
               </Suspense>
             </ErrorBoundary>

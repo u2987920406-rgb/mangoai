@@ -21,6 +21,8 @@ server/data/prompt-evolution-config.json
 server/data/curation-ledger.json
 server/data/curation-tuning.json
 server/data/desktop-grants.json
+server/data/external-projects.json
+server/data/external-history/
 
 # Registre des cerveaux mesurés (#135 Phase E) — runtime, jamais versionné
 .brains/

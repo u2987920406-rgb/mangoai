@@ -3960,3 +3960,23 @@ Commit/push MangoOS `6f1f050`, MangoQA `ad96f34`.
 **Vérifié** : `tsc --noEmit` propre, `test-relay.ts` 0 échec, `test-eleve-gate.ts` 66/66, `test-eleve-runtime.ts` 66/66.
 
 Passage au point 2 (section Code) ensuite.
+
+## Journal — 2026-07-21 (suite 6) : exécution autonome du plan multi-points — point 2 livré (section Code)
+
+**Contexte.** Suite directe du point 3. Le plan approuvé (`C:\Users\PC-DELL\.claude\plans\run-login-cached-noodle.md`) détaillait 6 étapes précises issues d'un agent de conception (exploration réelle du code + décisions D1-D3 argumentées). Détail complet des décisions et du plan → `docs/plan-193-section-code.md` (nouveau, suit la convention `docs/plan-<N>-<slug>.md` existante, `#193` = prochain numéro libre).
+
+**Livré, dans l'ordre du plan :**
+1. **Gate + rôle** : `CODE_SECTION` (`flags.ts`, défaut off) + rôle `codeur_frontiere` (`brain-registry.ts`, 16e rôle). Régression trouvée et corrigée au passage : les profils `full-local.json`/`cloud-actuel.json` (Atelier des cerveaux) ne listaient que 15 rôles — `applyProfile` crashait (même classe de bug que celle fermée le 19/07 pour `routeur`/`accueil`, revenue avec ce nouveau rôle). `test-brain-dispatch.ts` avait aussi une assertion "15 agents" à mettre à jour (16 désormais) — mise à jour, pas supprimée.
+2. **Registre de projets externes** : `external-projects.ts` (nouveau, registre séparé, pont avec `perimeter.ts::addGrantToFile` au même geste) + routes (`external-projects-routes.ts`) + 21 tests. Vérifié en réel : `POST /api/external-projects` crée bien l'entrée dans **les deux** fichiers (`external-projects.json` ET `desktop-grants.json`).
+3. **Route de chat frontière** : `code-route.ts` (`POST /api/code-chat`). Complément trouvé en implémentant (pas prévu par l'exploration) : `runAgent` (`agent.ts`) n'exposait AUCUN moyen d'injecter un prompt système custom, toujours `assembleSystemPrompt(...)` (les axiomes de goût MangoOS). Ajouté un paramètre optionnel `systemPromptOverride` — présent → tous les blocs de contexte « goût » sont sautés ENTIÈREMENT (zéro I/O inutile), défaut `undefined` = byte-identique pour tous les appelants existants. **Vérifié en réel avec de VRAIS appels Claude** : l'agent lit un fichier du dossier EXTERNE (pas workspace), donne une analyse correcte (risque de division par zéro détecté), modèle frontière réel utilisé (`contextWindow:1000000`, coût facturé $0.16-0.49), **continuité de session prouvée** (2e tour se souvient du 1er verbatim).
+4. **Branches additives** `ext:` sur `/api/history/:name` et `/api/upload/:name` — **bug réel trouvé en vérif live** : `atomicWriteFileSync` (safe-io.ts) ne crée pas le dossier parent (vrai pour workspace/, jamais vrai pour ce nouveau dossier dédié) → `ENOENT` au 1er tour. Corrigé (`mkdirSync` avant écriture). Reconfirmé après fix : historique persiste et se relit correctement via la VRAIE route que `Chat.jsx` utilisera.
+5. **UI** : `ExternalProjectPicker.jsx` (calqué sur `Coffres.jsx`), `CodePane.jsx`, `Chat.jsx` (+prop `apiPath`, défaut inchangé), `ShellV2.jsx` (nouveau groupe de nav top-level `code`, distinct d'Accueil). `tsc --noEmit` propre, `npm run build` propre (2158 modules, aucune régression de taille anormale).
+6. **Documentation** : `docs/plan-193-section-code.md` complet (Contexte, D1-D4, plan coché, risques honnêtes, Phase 2 explicite).
+
+**Limite honnête assumée** : vérification UI = `tsc`/build propres + module servi sans erreur par Vite dev, mais **aucun clic réel dans un navigateur** (session terminal, pas de GUI) — la confirmation visuelle reste à faire par Raf.
+
+**Nettoyage post-vérif** : toutes les données de test supprimées (`external-projects.json`/`desktop-grants.json` revenus à `[]`, dossier `_verif-code-chat` et `external-history` supprimés), `CODE_SECTION` repassé OFF dans `.env` (décision explicite de Raf nécessaire pour l'activer), backend redémarré propre.
+
+**Vérifié, tout** : `tsc --noEmit` propre (server ET ui), `test-external-projects` 21/21, `test-brain-profile` 15/15, `test-brain-dispatch` 38/38, `test-mango-app-contract` et `test-finition` (consommateurs d'`agent.ts`) toujours verts.
+
+Passage au point 0 (vérification standalone Tauri) ensuite.

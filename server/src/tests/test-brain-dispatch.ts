@@ -37,7 +37,7 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("15 agents présents (dont stratege #164 P3 + forgeron La Forge + routeur #182 D2 + accueil #182 D3)", AGENT_IDS.length === 15 && Object.keys(def).length === 15);
+    check("16 agents présents (dont stratege #164 P3 + forgeron La Forge + routeur #182 D2 + accueil #182 D3 + codeur_frontiere #193)", AGENT_IDS.length === 16 && Object.keys(def).length === 16);
     check("défaut stratege = qwythos-tools:q6 LOCAL ($0, barreau 1)", def.stratege.provider === "ollama" && def.stratege.model === "qwythos-tools:q6");
     check("défaut forgeron = claude/opus (le meilleur raisonneur, acte rare)", def.forgeron.provider === "claude" && def.forgeron.model === "opus");
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");

@@ -51,6 +51,8 @@ import { registerMangoQaRoutes } from "./mangoqa.js";
 import { registerStrategeRoutes } from "./stratege/stratege-routes.js";
 import { registerFormationRoutes } from "./formation/formation-routes.js";
 import { registerPerimeterRoutes } from "./perimeter-routes.js";
+import { registerExternalProjectsRoutes } from "./routes/external-projects-routes.js";
+import { registerCodeRoute } from "./routes/code-route.js";
 import { loadPlan, replaceIncrements, markIncrementDone, loadFluxCounts } from "./project-plan.js";
 import { registerStripeRoutes } from "./stripe.js";
 import { registerCronRoutes } from "./cron-scheduler.js";
@@ -197,6 +199,8 @@ registerMangoQaRoutes(app);
 registerStrategeRoutes(app);
 registerFormationRoutes(app); // #181 É3 — POST /api/formation { sujet } (fire-and-forget, verrou agent-lock)
 registerPerimeterRoutes(app);
+registerExternalProjectsRoutes(app);
+registerCodeRoute(app);
 registerStripeRoutes(app);
 registerCronRoutes(app);
 registerControlBoardRoutes(app);

@@ -266,6 +266,12 @@ export const FLAGS = {
     default: false,
     description: "Volet CONSTANTES du Gardien de clôture (eleve-gate-constants.ts, L117) : incident déclencheur `systeme-solaire` (vitesse orbitale de Saturne fausse, jamais détectée). Portée étroite et 100% souveraine ($0, zéro réseau/LLM) : extrait par heuristique texte les vitesses orbitales planétaires déclarées dans le code généré et les compare à une table curée (IAU/NASA), tolérance 20%. Non applicable (aucune constante détectée) → neutre, ne pénalise pas. OFF (défaut) → deps.checkConstants jamais appelé, aucun champ constants/constantsOk dans le verdict, comportement byte-identique.",
   },
+  // ── #193 — Section « Code » (2026-07-21, demande Raf) ─────────────────────
+  CODE_SECTION: {
+    env: "CODE_SECTION",
+    default: false,
+    description: "Section « Code » (docs/plan-193-section-code.md) : chat agentique frontière-only sur des projets LOCAUX EXTERNES au workspace MangoOS — distinct de l'Accueil (léger, cerveau rapide) et du Builder (workspace, souverain). OFF (défaut) → /api/code-chat et /api/external-projects renvoient 403/réponses inertes, nav UI affiche un état désactivé explicite. Aucun effet sur /api/chat, /api/home-chat, workspace/ ou projects.ts.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

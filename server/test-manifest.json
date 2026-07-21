@@ -267,6 +267,9 @@
     "test-esthete-routes": {
       "tier": "offline"
     },
+    "test-external-projects": {
+      "tier": "offline"
+    },
     "test-finition": {
       "tier": "offline"
     },
