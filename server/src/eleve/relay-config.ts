@@ -60,15 +60,21 @@ export function resolveRelayConfig(
   const callFileBudget = Number(process.env.ELEVE_FILE_BUDGET ?? callProfile.caps.fileBudget);
   const callFileMax    = Number(process.env.ELEVE_FILE_MAX    ?? callProfile.caps.fileMax);
   const callCaps       = { axiomCap: callAxiomCap, axiomFiles: callProfile.axiomFiles, fileBudget: callFileBudget, fileMax: callFileMax };
-  // Enveloppe TOUJOURS avec le modèle/provider/endpoint de l'appel — y compris
-  // quand ils coïncident avec les globaux. L'ancien code ne ré-appliquait
-  // `callEndpoint` (qui porte baseUrl + apiKeyEnv, ex. OPENROUTER_API_KEY) QUE si
-  // le modèle différait du global ; dès que le cerveau de l'appel ÉTAIT le global
-  // (ex. ELEVE_MODEL=tencent/hy3:free via openrouter), il retombait sur deps.askEleve
-  // qui lit ELEVE_API_KEY (.env) → clé vide → « Clé API Élève manquante » (HTTP 500).
-  // On applique donc systématiquement l'endpoint fourni (undefined = repli .env identique).
-  const callAskEleve: (sys: string, usr: string) => Promise<string> =
-    (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint);
+  // N'enveloppe QUE si l'appel s'écarte des globaux (modèle, provider OU
+  // endpoint). Sinon `deps.askEleve` reste la source — c'est ce qui rend le
+  // relais injectable/testable (mock offline dans les tests, `askEleveDispatch`
+  // tel quel en prod : `defaultRelayDeps.askEleve = askEleveDispatch`, donc
+  // aucune différence de comportement réel quand tout est déjà par défaut).
+  // Piège corrigé le 2026-07-20 : `callEndpoint` (baseUrl + apiKeyEnv, ex.
+  // OPENROUTER_API_KEY) doit à lui seul déclencher l'enveloppe même si le
+  // modèle/provider COÏNCIDENT avec le global — sinon `deps.askEleve` (qui
+  // ignore `callEndpoint`) retombe sur `ELEVE_API_KEY` (.env) → clé vide →
+  // « Clé API Élève manquante ». Un `callEndpoint` défini bat toujours le
+  // raccourci deps.askEleve, qu'il coïncide ou non avec les globaux.
+  const usesGlobalDefaults = callModel === ELEVE_MODEL && callProvider === ELEVE_PROVIDER_DEFAULT && !callEndpoint;
+  const callAskEleve: (sys: string, usr: string) => Promise<string> = usesGlobalDefaults
+    ? deps.askEleve
+    : (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint);
   const maitreModel = opts.maitreModel ?? "sonnet";
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
   const functionalMin = opts.functionalMin ?? Number(process.env.RELAY_FUNCTIONAL_MIN ?? 5);

@@ -3866,3 +3866,17 @@ Suite directe de l'audit du 2026-07-19. Raf demande, avec le recul acquis sur la
 **Vérifié.** Lecture visuelle du JSX modifié (pas de build lancé, changement JS pur non typé, cohérent avec le style des autres badges de la ligne).
 
 Zéro git — sauvegarde fichiers uniquement (`save`), Raf reprend demain soir.
+
+## Journal — 2026-07-21 : régression relay-config.ts trouvée + corrigée (8 échecs test-relay.ts, pas seulement test-specialized-agents.ts)
+
+**Contexte.** Reprise de l'investigation laissée ouverte sur `test-specialized-agents.ts` (5 échecs, diagnostiqués la veille comme « bypass de `deps.askEleve` par le chemin contrat »). En creusant `relay-config.ts` (modifié la veille dans le cadre du branchement hy3:free), la vraie cause s'avère PLUS LARGE que prévu.
+
+**Bug réel.** Le correctif hy3:free avait rendu `callAskEleve` **inconditionnellement** égal à `askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint)` — un vrai appel réseau, **plus jamais** `deps.askEleve`. Avant ce correctif, `deps.askEleve` était utilisé quand `callModel`/`callProvider` correspondaient aux globaux. Conséquence vérifiée en relançant `test-relay.ts` (jusque-là 100% vert) : **8 échecs** ("Clé API Élève manquante"), pas seulement le test déjà connu — la mock-injection de `deps.askEleve` était cassée pour TOUT le chemin contrat.
+
+**Fix** (`server/src/eleve/relay-config.ts`) : restauré un routage conditionnel — `usesGlobalDefaults = callModel === ELEVE_MODEL && callProvider === ELEVE_PROVIDER_DEFAULT && !callEndpoint`. Si vrai → `deps.askEleve` (injectable, byte-identique en prod car `defaultRelayDeps.askEleve = askEleveDispatch`). Sinon → dispatch explicite. Le `!callEndpoint` est ce qui préserve la correction hy3 d'origine (un `baseUrl`/`apiKeyEnv` de registre doit gagner même si le modèle coïncide avec le global).
+
+**`test-specialized-agents.ts`** : en plus du fix ci-dessus, retiré le `eleveModel: "gemma4:12b"` (modèle décommissionné, non pertinent — le test vérifie la surcharge de PROFIL, pas de modèle) et le mock `agenticPost` devenu inutile (fausse piste de la veille).
+
+**Vérifié en réel** : `test-relay.ts` 0 échec (était 8), `test-specialized-agents.ts` 0 échec (était 5), `test-nocturnal-repair.ts` (3e et dernier consommateur de `RelayDeps`) 13/13, `tsc --noEmit` propre. Les 3 suites qui touchent `runRelay`/`RelayDeps` sont maintenant toutes vertes.
+
+Commit/push MangoOS en attente (prochaine sauvegarde).
