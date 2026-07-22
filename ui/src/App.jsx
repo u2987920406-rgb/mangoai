@@ -21,14 +21,12 @@ import { SCREENS, WINDOWS, isScreen } from "./nav.js";
 // sont montés DANS l'écran Réglages (Reglages.jsx), plus en écrans `screen` ici.
 const ControleurPanel = lazy(() => import("./components/QAPanel.jsx"));
 const MetricsDashboard= lazy(() => import("./components/MetricsDashboard.jsx"));
-const Tutorial        = lazy(() => import("./components/Tutorial.jsx"));
 const Radar           = lazy(() => import("./components/Radar.jsx"));
 const Reglages        = lazy(() => import("./components/Reglages.jsx"));
 // #193 — section Code (docs/plan-193-section-code.md), portée depuis le shell v2
 // (gelé, jamais monté en prod — cf. main.jsx) vers le vrai shell de prod.
 const CodePane         = lazy(() => import("./components/CodePane.jsx"));
 import { useToasts } from "./hooks/useToasts.js";
-import { useTutorial } from "./hooks/useTutorial.js";
 import { useBackendServer } from "./hooks/useBackendServer.js";
 import { useProjectDelivery } from "./hooks/useProjectDelivery.js";
 import { useVersions } from "./hooks/useVersions.js";
@@ -115,16 +113,6 @@ export default function App() {
     requestFix,
     resetForProject: resetPreview,
   } = usePreview({ screen, projectName, pushToast, onRequestFix: setPendingPrompt });
-  const {
-    active: tutorialActive,
-    id: tutorialId,
-    nextId: tutorialNextId,
-    start: startTutorial,
-    enterContext: enterTutorialContext,
-    exit: exitTutorial,
-    startNext: startNextTutorial,
-    complete: completeTutorial,
-  } = useTutorial({ setScreen, pushToast });
   const {
     status: backendStatus,
     starting: backendStarting, // (Un, 2026-07-03) U7 — garde anti double-clic « Démarrer »
@@ -246,22 +234,8 @@ export default function App() {
     setScreen(SCREENS.HOME);
   }
 
-  const tutorialOverlay =
-    tutorialActive && tutorialId != null ? (
-      <Suspense fallback={null}>
-        <Tutorial
-          id={tutorialId}
-          onComplete={completeTutorial}
-          onExit={exitTutorial}
-          onStartNext={startNextTutorial}
-          onContext={enterTutorialContext}
-        />
-      </Suspense>
-    ) : null;
-
   const globalChrome = (
     <>
-      {tutorialOverlay}
       <Toasts toasts={toasts} onDismiss={dismissToast} />
       <ConfirmModal config={confirmCfg} onClose={() => setConfirmCfg(null)} />
       <WindowManager
@@ -275,17 +249,11 @@ export default function App() {
   );
 
   // Panneaux plein-écran (lazy). Les outils système (Billing/Cron/Métriques/…)
-  // vivent dans Réglages ; `metrics` reste routé ici car le tutoriel #9 y mène
-  // (enterTutorialContext("metrics")) ; `controleur` est ouvert par le rail projet.
+  // vivent dans Réglages ; `controleur` est ouvert par le rail projet.
   let panelContent = null;
   if (screen === SCREENS.CONTROLEUR) panelContent = <ControleurPanel projectName={projectName} onBack={() => setScreen(SCREENS.WORKSPACE)} />;
   if (screen === SCREENS.METRICS) panelContent = <MetricsDashboard onBack={() => setScreen(SCREENS.HOME)} />;
-  if (screen === SCREENS.REGLAGES) panelContent = (
-    <Reglages
-      onBack={() => setScreen(SCREENS.HOME)}
-      onOpenProject={(name, entry) => openProject(name, { origin: "nocturnal", task: entry?.task ?? null, nocturnal: entry ? { id: entry.id, reviewed: Boolean(entry.reviewed) } : null })}
-    />
-  );
+  if (screen === SCREENS.REGLAGES) panelContent = <Reglages onBack={() => setScreen(SCREENS.HOME)} />;
   if (screen === SCREENS.CODE) panelContent = <CodePane onBack={() => setScreen(SCREENS.HOME)} />;
 
   if (onboardingNeeded) {
@@ -313,8 +281,6 @@ export default function App() {
         return openWindow({ type: WINDOWS.DOCS, title: "Générateur de docs", width: 900, height: 680 });
       case WINDOWS.PROMPTLAB:
         return openWindow({ type: WINDOWS.PROMPTLAB, title: "Prompt Lab", width: 1000, height: 680 });
-      case WINDOWS.DESIGN:
-        return openWindow({ type: WINDOWS.DESIGN, title: "Design Review", width: 1000, height: 720, props: { projectName } });
       case WINDOWS.TASTE:
         return openWindow({ type: WINDOWS.TASTE, title: "Variantes de goût", width: 1120, height: 780, props: { projectName } });
       case WINDOWS.MULTI:
@@ -381,8 +347,6 @@ export default function App() {
             onOpenApp={openAppWindow}
             onOpenSidePanel={() => setSidePanelOpen(true)}
             onOpenSettings={() => setScreen(SCREENS.REGLAGES)}
-            onStartTutorial={startTutorial}
-            nextTutorialId={tutorialNextId}
             model={model}
             onModel={(m) => { setModel(m); localStorage.setItem("mangoos.model", m); }}
           />
@@ -455,7 +419,6 @@ export default function App() {
                 showThinking={showThinking}
                 onChatMode={handleChatMode}
                 onToast={pushToast}
-                tutorialId={tutorialActive ? tutorialId : null}
                 clientMode={clientMode}
                 styleStrength={styleStrength}
                 buildRequest={buildRequest}

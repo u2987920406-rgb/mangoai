@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import {
-  ArrowLeft, Activity, BarChart2, BarChart3, Brain, Clock, CreditCard,
-  Hash, Moon, Rss, Satellite, Scissors, Settings, Webhook, Wrench, Wand2, Dna,
+  ArrowLeft, Activity, BarChart2, BarChart3, Brain, CreditCard,
+  Hash, Rss, Satellite, Scissors, Settings, Wrench, Wand2, Dna,
   FolderLock,
 } from "lucide-react";
 import { NEUTRAL } from "../neutral.js";
@@ -10,8 +10,6 @@ import { NEUTRAL } from "../neutral.js";
 const Brains           = lazy(() => import("./Brains.jsx"));
 const AtelierCerveaux  = lazy(() => import("./AtelierCerveaux.jsx"));
 const Billing          = lazy(() => import("./Billing.jsx"));
-const CronManager      = lazy(() => import("./CronManager.jsx"));
-const NocturnalReview  = lazy(() => import("./NocturnalReview.jsx"));
 const Metrics          = lazy(() => import("./Metrics.jsx"));
 const Traces           = lazy(() => import("./Traces.jsx"));
 const MetricsDashboard = lazy(() => import("./MetricsDashboard.jsx"));
@@ -21,7 +19,6 @@ const Veille           = lazy(() => import("./Veille.jsx"));
 const Tokenizer        = lazy(() => import("./Tokenizer.jsx"));
 const AtelierMango     = lazy(() => import("./AtelierMango.jsx"));
 const AutoEvolution    = lazy(() => import("./AutoEvolution.jsx"));
-const HooksPanel       = lazy(() => import("./HooksPanel.jsx"));
 const Coffres          = lazy(() => import("./Coffres.jsx"));
 
 // Catégories de la sous-navigation (groupées). NEUTRAL masque les diagnostics Kernel.
@@ -43,14 +40,6 @@ function buildGroups() {
     {
       title: "Sécurité",
       items: [{ id: "coffres", label: "Coffres", icon: FolderLock }],
-    },
-    {
-      title: "Automatisation",
-      items: [
-        { id: "cron", label: "Tâches planifiées", icon: Clock },
-        { id: "hooks", label: "Hooks", icon: Webhook },
-        { id: "nocturnal", label: "Review nocturne", icon: Moon },
-      ],
     },
     ...(NEUTRAL ? [] : [{
       title: "Diagnostics Kernel",
@@ -95,7 +84,7 @@ function PaneLoader() {
   );
 }
 
-export default function Reglages({ onBack, onOpenProject }) {
+export default function Reglages({ onBack }) {
   const groups = buildGroups();
   const firstId = groups[0].items[0].id;
   const [section, setSection] = useState(firstId);
@@ -125,9 +114,6 @@ export default function Reglages({ onBack, onOpenProject }) {
       case "gaps":      return <AutoEvolution onBack={onBack} />;
       case "billing":   return <Billing onBack={onBack} />;
       case "coffres":   return <Coffres />;
-      case "cron":      return <CronManager onBack={onBack} />;
-      case "hooks":     return <HooksPanel onBack={onBack} />;
-      case "nocturnal": return <NocturnalReview onBack={onBack} onOpenProject={onOpenProject} />;
       case "dashboard": return <MetricsDashboard onBack={onBack} />;
       case "ablation":  return <AutoAblation onBack={onBack} />;
       case "radar":     return <Radar onBack={onBack} />;

@@ -10,11 +10,9 @@ import { slugify } from "../slugify.js";
 import { WINDOWS } from "../nav.js";
 
 const AgentFactory      = lazy(() => import("./AgentFactory.jsx"));
-const Guide             = lazy(() => import("./Guide.jsx"));
 const Ideation          = lazy(() => import("./Ideation.jsx"));
 const DocGenerator      = lazy(() => import("./DocGenerator.jsx"));
 const PromptLab         = lazy(() => import("./PromptLab.jsx"));
-const DesignReview      = lazy(() => import("./DesignReview.jsx"));
 const MultiProject      = lazy(() => import("./MultiProject.jsx"));
 const SuperAgentBuilder = lazy(() => import("./SuperAgentBuilder.jsx"));
 const SuiteWindow       = lazy(() => import("./SuiteWindow.jsx"));
@@ -229,13 +227,6 @@ function WindowContent({ win, onClose }) {
   if (win.type === WINDOWS.PROJECTS) {
     return <ProjectsWindow win={win} onClose={onClose} />;
   }
-  if (win.type === WINDOWS.GUIDE) {
-    return (
-      <Suspense fallback={<PanelLoader />}>
-        <Guide />
-      </Suspense>
-    );
-  }
   if (win.type === WINDOWS.IDEATION) {
     return (
       <Suspense fallback={<PanelLoader />}>
@@ -264,13 +255,6 @@ function WindowContent({ win, onClose }) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <PromptLab onBack={() => onClose(win.id)} />
-      </Suspense>
-    );
-  }
-  if (win.type === WINDOWS.DESIGN) {
-    return (
-      <Suspense fallback={<PanelLoader />}>
-        <DesignReview onBack={() => onClose(win.id)} projectName={win.props?.projectName} />
       </Suspense>
     );
   }

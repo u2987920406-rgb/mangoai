@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
   Bot, ChevronRight, Download, FileText, FlaskConical, FolderOpen,
-  GitBranch, GraduationCap, HelpCircle, Image as ImageIcon, Layers,
-  Lightbulb, Menu, MessageSquare, Moon, Music2, Network, Palette,
+  GitBranch, Image as ImageIcon, Layers,
+  Lightbulb, Menu, MessageSquare, Moon, Music2, Network,
   Plus, Settings, Sliders, Sparkles, Sun, Trash2, Wand2, Boxes,
 } from "lucide-react";
 import ConfirmDelete from "../ConfirmDelete.jsx";
@@ -20,8 +20,6 @@ export default function HamburgerMenu({
   onOpenApp,
   onOpenSidePanel,
   onOpenSettings,
-  onStartTutorial,
-  nextTutorialId,
   inputRef,
   conversations = [],
   onLoadConversation,
@@ -59,9 +57,7 @@ export default function HamburgerMenu({
     { icon: Layers, label: "Multi-Projet", run: () => onOpenApp?.("multi") },
     { icon: FileText, label: "Doc", run: () => onOpenApp?.("docs") },
     { icon: FlaskConical, label: "Prompt Lab", run: () => onOpenApp?.("promptlab") },
-    { icon: Palette, label: "Design Review", run: () => onOpenApp?.("design") },
     { icon: Wand2, label: "Variantes de goût", run: () => onOpenApp?.("taste") },
-    { icon: HelpCircle, label: "Aide", run: () => onOpenWindow?.({ type: WINDOWS.GUIDE, title: "Aide", width: 740, height: 600 }) },
     { icon: Sliders, label: "Éditeur visuel", run: () => onOpenSidePanel?.() },
   ];
 
@@ -175,7 +171,7 @@ export default function HamburgerMenu({
               </>
             )}
 
-            {/* Système — ex-dock latéral droit (Réglages/Tutoriels/Thème) */}
+            {/* Système — ex-dock latéral droit (Réglages/Thème) */}
             <div className="border-t border-edge" />
             <button
               onClick={() => { onOpenSettings?.(); setOpen(false); }}
@@ -183,14 +179,6 @@ export default function HamburgerMenu({
             >
               <Settings size={14} className="shrink-0 text-faint" />
               Réglages
-            </button>
-            <button
-              onClick={() => { if (nextTutorialId != null) onStartTutorial?.(nextTutorialId); setOpen(false); }}
-              disabled={nextTutorialId == null}
-              className="flex w-full items-center gap-2.5 px-3 py-2.5 text-[13px] text-dim hover:bg-edge-soft transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
-            >
-              <GraduationCap size={14} className="shrink-0 text-faint" />
-              {nextTutorialId != null ? `Tutoriel ${nextTutorialId}/10` : "Tutoriels (terminés)"}
             </button>
             <button
               onClick={flipTheme}

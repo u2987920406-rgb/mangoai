@@ -11,8 +11,6 @@ export default function IdleScreen({
   onOpenApp,
   onOpenSidePanel,
   onOpenSettings,
-  onStartTutorial,
-  nextTutorialId,
   inputRef,
   conversations,
   onLoadConversation,
@@ -44,8 +42,6 @@ export default function IdleScreen({
         onOpenApp={onOpenApp}
         onOpenSidePanel={onOpenSidePanel}
         onOpenSettings={onOpenSettings}
-        onStartTutorial={onStartTutorial}
-        nextTutorialId={nextTutorialId}
         inputRef={inputRef}
         conversations={conversations}
         onLoadConversation={onLoadConversation}
