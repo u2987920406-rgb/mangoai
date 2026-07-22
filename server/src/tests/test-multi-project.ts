@@ -6,7 +6,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { multiProjectPromptSection } from "../multi-project.js";
+import { multiProjectPromptSection, isMultiProjectEnabled, setMultiProjectEnabled } from "../multi-project.js";
 
 import { line, makeCheck } from "./test-util.js";
 let failures = 0;
@@ -108,6 +108,19 @@ function touch(base: string, rel: string): void {
 
   } finally {
     fs.rmSync(tmp, { recursive: true, force: true });
+  }
+
+  // #196 — le gate opt-in : OFF par défaut, activable/désactivable par projet.
+  const gateTmp = fs.mkdtempSync(path.join(os.tmpdir(), "mp-gate-test-"));
+  try {
+    console.log("\n  [7] Gate opt-in (isMultiProjectEnabled/setMultiProjectEnabled) :");
+    check("false par défaut (aucun marqueur)", !isMultiProjectEnabled(gateTmp));
+    setMultiProjectEnabled(gateTmp, true);
+    check("true après activation", isMultiProjectEnabled(gateTmp));
+    setMultiProjectEnabled(gateTmp, false);
+    check("false après désactivation", !isMultiProjectEnabled(gateTmp));
+  } finally {
+    fs.rmSync(gateTmp, { recursive: true, force: true });
   }
 
   line("═");

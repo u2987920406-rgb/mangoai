@@ -28,7 +28,7 @@ import { hasBackend } from "./backend-generator.js";
 import { COMPONENTS_RULES, componentsPromptSection } from "./components.js";
 import { LAYOUTS_RULES } from "./layouts.js";
 import { REFERENCES_RULES, referencesPromptSection } from "./references.js";
-import { MULTI_PROJECT_RULES, multiProjectPromptSection } from "./multi-project.js";
+import { MULTI_PROJECT_RULES, multiProjectPromptSection, isMultiProjectEnabled } from "./multi-project.js";
 import { superAgentPromptSection } from "./super-agent-builder.js";
 import { preferencesPromptSection } from "./preferences.js";
 import { recoveryPromptSection } from "./orchestrator.js";
@@ -541,8 +541,14 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // user's other projects and adapts it instead of starting from scratch.
   // Distinct from .components (curated) — these are living, unfiltered project files.
   // Returns "" when there are no other projects → block is silently absent.
+  // #196 — devenu opt-in (Raf, 2026-07-22) : tournait avant sur CHAQUE build de
+  // TOUS les projets sans exception (jusqu'à 40 fichiers scannés à chaque tour,
+  // même sans besoin de réutilisation) ; gate via isMultiProjectEnabled (marqueur
+  // .multi-project.json, toggle dans le Workspace). OFF par défaut.
   multiProject: (ctx) =>
-    MULTI_PROJECT_RULES + multiProjectPromptSection(WORKSPACE_DIR, path.basename(ctx.projectDir)),
+    isMultiProjectEnabled(ctx.projectDir)
+      ? MULTI_PROJECT_RULES + multiProjectPromptSection(WORKSPACE_DIR, path.basename(ctx.projectDir))
+      : "",
   // Idée #40 Phase 3 — super-agent métier matché au sujet du projet (nom +
   // mémoire). Injecte l'expertise du domaine (avocat, SEO, nutrition…) en
   // contexte de haut niveau. Returns "" when no agent matches → no pollution

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Briefcase, BrainCircuit, ClipboardCheck, Download, Eye, EyeOff,
-  GitFork, Hammer, History, Loader2, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2,
+  GitFork, Hammer, History, Layers, Loader2, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2,
 } from "lucide-react";
 import Knowledge from "./Knowledge.jsx";
 import BuildReview from "./BuildReview.jsx";
@@ -94,6 +94,39 @@ function StylePanel({ value = 100, onChange, clientMode = false }) {
           fichiers du client. Désactive-le pour utiliser le curseur.
         </p>
       )}
+    </div>
+  );
+}
+
+// ─── Panneau Multi-Projet (#196 — opt-in par projet) ────────────────────────────
+function MultiProjectPanel({ enabled = false, onToggle, onOpenBrowser }) {
+  return (
+    <div className="flex flex-col gap-4 p-3">
+      <p className="text-[12px] leading-relaxed text-dim">
+        Quand c'est activé, chaque tour de construction scanne tes AUTRES projets pour repérer du
+        code réutilisable (composants, hooks, utils) avant d'en recoder. Utile pour une suite
+        d'apps liées ; coûte du contexte pour rien sur un projet isolé — reste désactivé par
+        défaut.
+      </p>
+      <button
+        onClick={() => onToggle?.(!enabled)}
+        className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-[13px] font-medium transition-colors ${
+          enabled
+            ? "border-accent/40 bg-accent/10 text-accent-soft"
+            : "border-edge text-dim hover:border-faint hover:text-ink"
+        }`}
+      >
+        Réutilisation cross-projets
+        <span className={`rounded-full px-2 py-0.5 text-[11px] ${enabled ? "bg-accent/20 text-accent-soft" : "bg-edge-soft text-faint"}`}>
+          {enabled ? "Activé" : "Désactivé"}
+        </span>
+      </button>
+      <button
+        onClick={onOpenBrowser}
+        className="rounded-lg border border-edge px-3 py-2 text-[12px] text-dim hover:border-faint hover:text-ink transition-colors"
+      >
+        Parcourir la bibliothèque multi-projets
+      </button>
     </div>
   );
 }
@@ -303,6 +336,9 @@ export default function WorkspaceTools({
   onBuildIncrement,
   planRefresh = 0,
   agentBusy = false,
+  multiProjectEnabled = false,
+  onMultiProject,
+  onOpenMultiProjectBrowser,
   // Ids d'outils à MASQUER (le shell 2.0 trie son rail — ex. ["memoire","mangoqa","mirror","thinking"]).
   hidden = [],
 }) {
@@ -332,6 +368,10 @@ export default function WorkspaceTools({
         {show("perfectPlan") && <RailBtn icon={Sparkles} label="Perfect Plan" active={active === "perfectPlan" || Boolean(perfectPlanContract)} onClick={() => toggle("perfectPlan")} />}
         {/* #139 Gros Projet — le Kanban de pages/stages du chantier */}
         {show("chantier") && <RailBtn icon={Hammer} label="Chantier (Gros Projet)" active={active === "chantier"} onClick={() => toggle("chantier")} />}
+        {/* #196 — Multi-Projet : opt-in par projet (auto OFF par défaut) */}
+        {show("multiproject") && onMultiProject && (
+          <RailBtn icon={Layers} label="Multi-Projet" active={active === "multiproject" || multiProjectEnabled} onClick={() => toggle("multiproject")} />
+        )}
 
         <Sep />
 
@@ -379,6 +419,15 @@ export default function WorkspaceTools({
           {active === "style" && (
             <PanelShell title="Dosage de style" onClose={close}>
               <StylePanel value={styleStrength} onChange={onStyleStrength} clientMode={clientMode} />
+            </PanelShell>
+          )}
+          {active === "multiproject" && (
+            <PanelShell title="Multi-Projet" onClose={close}>
+              <MultiProjectPanel
+                enabled={multiProjectEnabled}
+                onToggle={onMultiProject}
+                onOpenBrowser={() => { close(); onOpenMultiProjectBrowser?.(); }}
+              />
             </PanelShell>
           )}
           {active === "versions" && (

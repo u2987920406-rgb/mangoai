@@ -101,6 +101,9 @@ export default function App() {
   const [styleStrength, setStyleStrength] = useState(100); // curseur 0→100 % du goût Mango
   const [onboardingNeeded, setOnboardingNeeded] = useState(false);
   const [perfectPlanContract, setPerfectPlanContract] = useState(null);
+  // #196 — Multi-Projet : opt-in par projet (marqueur serveur, pas localStorage —
+  // doit être lisible par scenario.ts au moment de bâtir le prompt système).
+  const [multiProjectEnabled, setMultiProjectEnabled] = useState(false);
   const { windows, openWindow, closeWindow, focusWindow, moveWindow, resizeWindow } = useWindowManager();
   const { toasts, pushToast, dismissToast } = useToasts();
   const {
@@ -193,6 +196,23 @@ export default function App() {
       .then((d) => setPerfectPlanContract(d))
       .catch(() => setPerfectPlanContract(null));
   }, [screen, projectName]);
+
+  useEffect(() => {
+    if (screen !== SCREENS.WORKSPACE || !projectName.trim()) { setMultiProjectEnabled(false); return; }
+    fetch(`/api/multi-project/status/${encodeURIComponent(projectName)}`)
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((d) => setMultiProjectEnabled(Boolean(d.enabled)))
+      .catch(() => setMultiProjectEnabled(false));
+  }, [screen, projectName]);
+
+  function handleMultiProject(val) {
+    setMultiProjectEnabled(val);
+    fetch(`/api/multi-project/status/${encodeURIComponent(projectName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: val }),
+    }).catch(() => {});
+  }
 
   async function openProject(name, { template: tpl = "", prompt = null, origin = null, task = null, nocturnal = null, contract = null } = {}) {
     if (contract) {
@@ -328,6 +348,9 @@ export default function App() {
     onBuildIncrement: buildIncrement,
     planRefresh,
     agentBusy: chatBusy,
+    multiProjectEnabled,
+    onMultiProject: handleMultiProject,
+    onOpenMultiProjectBrowser: () => openAppWindow(WINDOWS.MULTI),
   };
 
   return (

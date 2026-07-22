@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Bot, ChevronRight, Download, FileText, FolderOpen,
-  GitBranch, Image as ImageIcon, Layers,
+  GitBranch, Image as ImageIcon,
   Lightbulb, Menu, MessageSquare, Moon, Music2,
   Plus, Settings, Sliders, Sparkles, Sun, Trash2, Wand2, Boxes,
 } from "lucide-react";
@@ -53,7 +53,6 @@ export default function HamburgerMenu({
   const tools = [
     { icon: Bot, label: "Agent Factory", run: () => onOpenWindow?.({ type: WINDOWS.AGENT_FACTORY, title: "Agent Factory", width: 1100, height: 700 }) },
     { icon: Lightbulb, label: "Ideation", run: () => onOpenApp?.("ideation") },
-    { icon: Layers, label: "Multi-Projet", run: () => onOpenApp?.("multi") },
     { icon: FileText, label: "Doc", run: () => onOpenApp?.("docs") },
     { icon: Wand2, label: "Variantes de goût", run: () => onOpenApp?.("taste") },
     { icon: Sliders, label: "Éditeur visuel", run: () => onOpenSidePanel?.() },

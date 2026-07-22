@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { resolveProvider } from './llm/llm-engine.js'
 import { getBrain } from './kernel.js'
+import { projectDir } from './projects.js'
 
 const WORKSPACE_DIR = path.join(process.cwd(), '..', 'workspace')
 
@@ -12,6 +13,28 @@ const DATA_DIR = path.join(process.cwd(), '..', 'server', 'data')
 const INDEX_FILE = path.join(DATA_DIR, 'multi-project-index.json')
 
 const EXCLUDED_DIRS = new Set(['node_modules', '.mango', 'dist', '.git', '.cache', '.next', '.nuxt'])
+
+// #196 — la réutilisation cross-projet (MULTI_PROJECT_RULES + multiProjectPromptSection)
+// tournait AUTOMATIQUEMENT sur chaque build, pour tous les projets sans exception
+// (jusqu'à 40 fichiers d'autres projets scannés à chaque tour). Sur demande de Raf
+// (2026-07-22), devient opt-in : marqueur persistant par projet, même patron que
+// `.perfect-plan.json`/`.ideation.json`. OFF par défaut → 0 changement pour les
+// projets existants tant que Raf n'active rien.
+const MULTI_PROJECT_FLAG_FILE = '.multi-project.json'
+
+export function isMultiProjectEnabled(dir: string): boolean {
+  try {
+    const raw = fs.readFileSync(path.join(dir, MULTI_PROJECT_FLAG_FILE), 'utf8')
+    return Boolean((JSON.parse(raw) as { enabled?: boolean }).enabled)
+  } catch {
+    return false
+  }
+}
+
+export function setMultiProjectEnabled(dir: string, enabled: boolean): void {
+  fs.mkdirSync(dir, { recursive: true })
+  atomicWriteFileSync(path.join(dir, MULTI_PROJECT_FLAG_FILE), JSON.stringify({ enabled }, null, 2))
+}
 
 // Sous-dossiers de src/ à scanner (relatifs à src/)
 const SRC_SUBDIRS = ['components', 'hooks', 'utils', 'services', 'types', 'lib']
@@ -575,5 +598,19 @@ export function registerMultiProjectRoutes(app: Express): void {
     }))
 
     res.json({ results })
+  })
+
+  // GET /api/multi-project/status/:name — le toggle du Workspace lit ceci.
+  app.get('/api/multi-project/status/:name', (req: Request, res: Response) => {
+    const name = req.params['name'] as string
+    res.json({ enabled: isMultiProjectEnabled(projectDir(name)) })
+  })
+
+  // POST /api/multi-project/status/:name { enabled } — pose/retire le marqueur.
+  app.post('/api/multi-project/status/:name', (req: Request, res: Response) => {
+    const name = req.params['name'] as string
+    const enabled = Boolean((req.body as { enabled?: unknown })?.enabled)
+    setMultiProjectEnabled(projectDir(name), enabled)
+    res.json({ ok: true, enabled })
   })
 }
