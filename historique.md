@@ -4221,3 +4221,14 @@ Bonus trouvé au passage : la fenêtre flottante « Nouveau projet » (App Build
 - `ui/src/Preview.jsx` : `flex` → `hidden ... sm:flex` (pas de place pour un 3ᵉ panneau sur téléphone ; réapparaît intact dès `sm:`).
 
 **Vérifié EN RÉEL, PAS juste en théorie** : Playwright à 390px AVANT (3 captures montrant les coupures) puis APRÈS (plus aucune coupure — en-tête complet avec troncature propre du nom de projet, rail lisible, actions complètes) ; capture desktop 1280px APRÈS pour confirmer ZÉRO régression (brand complet, labels texte, jauge/coût, bouton supprimer, panneau Preview — tout identique à avant). `tsc --noEmit` propre, `npm test` (ui) 77/77, `npm run build` propre. Captures avant/après envoyées à Raf.
+
+## Journal — 2026-07-22 (suite 11) : accès LAN (WiFi maison) activé pour l'UI
+
+**Question de Raf** : « je peux utiliser MangoOS sur mon tél à distance ? » — suite naturelle après le fix mobile. Réponse honnête en 2 couches : sur le WiFi maison, presque déjà là (le backend écoute déjà sur `0.0.0.0` depuis #149 v2, seule l'UI Vite manquait) ; depuis n'importe où (4G, hors de la maison) — non, et volontairement (architecture souveraine mono-machine) : il manquerait un tunnel (Tailscale) ET une authentification (zéro auth aujourd'hui — exposer publiquement sans mot de passe donnerait accès à n'importe qui aux sessions Claude Code/outils d'agent/coûts API). **Décision de Raf** : juste le WiFi maison pour l'instant.
+
+**Fait** :
+- `ui/vite.config.js` : `server.host: true` (écoute sur toutes les interfaces réseau, pas juste localhost). Le proxy `/api` continue de fonctionner sans changement — il tourne dans le process Vite SUR LE PC, donc atteint `localhost:3000` normalement même quand un navigateur distant (le téléphone) parle à l'IP LAN de la machine — zéro souci CORS, le navigateur voit tout comme same-origin.
+
+**Vérifié EN RÉEL** : Vite affiche désormais `Network: http://192.168.1.2:5173/` au démarrage (avant : seulement `Local: http://localhost:5173/`). Testé avec `curl` depuis cette IP LAN — UI : 200, `/api/projects` via le proxy : 200, `/api/gaps` renvoie de vraies données. `tsc --noEmit` propre, `npm run build` propre.
+
+**Limite honnête, pas encore ouverte comme entrée `limites.md`** (à faire si Raf confirme vouloir l'accès distant complet un jour) : aucune authentification n'existe sur MangoOS aujourd'hui — l'accès LAN reste sûr car limité au réseau WiFi privé de la maison, mais toute extension future vers un accès vraiment distant (Tailscale ou autre) DOIT s'accompagner d'un mot de passe avant d'être activée.
