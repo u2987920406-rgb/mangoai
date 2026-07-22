@@ -39,7 +39,6 @@ import { registerCurationEffectRoutes } from "./kernel/kernel-curation-effect.js
 import { startChatTurn, finishChatTurn } from "./kernel/kernel-chat-bridge.js";
 import { publishDesignReference, publishDesignProduced, buildProducedDesign, paletteFromContract } from "./kernel/kernel-design-events.js";
 import { verifierChoixGabaritEnArrierePlan, analyserChaineEnAmontDuGabarit } from "./eleve-context-hook.js";
-import { registerTokenizerRoutes } from "./tokenizer.js";
 import { registerIdeationRoutes } from "./ideation.js";
 import { registerVeilleRoutes } from "./veille.js";
 import { registerModelRouterRoutes } from "./model-router.js";
@@ -69,12 +68,10 @@ import { registerPromptEvolutionRoutes } from "./prompt-evolution.js";
 import { registerAbHarnessRoutes } from "./ab-harness.js";
 import { registerRadarRoutes } from "./radar.js";
 import { registerBuildReviewRoutes } from "./build-review-routes.js";
-import { registerBrainRoutes } from "./brain/brain-routes.js";
 import { registerBrainDispatchRoutes } from "./brain/brain-dispatch-routes.js";
 import { registerOllamaRoutes } from "./ollama-routes.js";
 import { registerTasteRoutes } from "./taste/taste-routes.js";
 import { registerDesignCoachRoutes } from "./design/design-coach-routes.js";
-import { registerSelfRoutes } from "./self/self-routes.js";
 import { registerSpecialistRoutes } from "./specialist/specialist-routes.js";
 import { registerEstheteRoutes } from "./esthete-routes.js";
 import { ensureEstheteAgent } from "./esthete-agent.js";
@@ -157,12 +154,10 @@ registerCouncilSkillsRoutes(app);
 registerBackendServerRoutes(app);
 registerProjectIORoutes(app, () => isAgentBusy());
 registerFeedbackRoutes(app);
-registerBrainRoutes(app);
 registerBrainDispatchRoutes(app);
 registerOllamaRoutes(app);
 registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
-registerSelfRoutes(app); // Atelier de Mango — auto-amélioration (barreaux 1-4)
 registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
 ensureEstheteAgent(); // Agent système « Esthète » — seed idempotent au boot (sidebar Design)
 registerEstheteRoutes(app); // Chat conversationnel de l'Esthète (voit la preview, retouche)
@@ -179,7 +174,6 @@ registerSuiteRoutes(app);
 registerTraceRoutes(app);
 registerReuseRoutes(app);
 registerCurationEffectRoutes(app);
-registerTokenizerRoutes(app);
 registerIdeationRoutes(app);
 registerVeilleRoutes(app);
 registerModelRouterRoutes(app);

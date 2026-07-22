@@ -8,7 +8,7 @@ process.env.OPEN_GAPS_FILE = TMP
 
 const {
   gapSignature, coversGap, recordUncoveredGap, loadGaps, listOpenGaps, markGap, getGap,
-  evictOverflow, recordForgeAttempt, forgeAttemptsExhausted,
+  evictOverflow, recordForgeAttempt, forgeAttemptsExhausted, gapValueScore,
 } = await import("../self/self-evolution.js")
 
 let pass = 0, fail = 0
@@ -128,6 +128,44 @@ console.log("\n[6] recordForgeAttempt + forgeAttemptsExhausted (revue Fable #1)"
   const g3 = getGap(id)!
   check("plafond atteint (3 >= 3) → épuisé", forgeAttemptsExhausted(g3, 3) === true)
   check("recordForgeAttempt id inconnu → null, ne lève pas", recordForgeAttempt("inconnu") === null)
+  reset()
+}
+
+console.log("\n[7] gapValueScore (2026-07-22, demande de Raf — chiffrer si une lacune vaut le coup)")
+{
+  const NOW = 1_700_000_000_000 // référence fixe pour des calculs de fraîcheur déterministes
+  const day = 86_400_000
+  const mk = (over: Partial<OpenGapLike>): OpenGapLike => ({
+    id: "g", sig: "g", title: "t", blocker: "b", detail: "d", task: "",
+    status: "proposed", hits: 1, forgeAttempts: 0,
+    createdAt: new Date(NOW).toISOString(), updatedAt: new Date(NOW).toISOString(),
+    ...over,
+  })
+
+  check("borné [0,100] : jamais négatif", gapValueScore(mk({ hits: 1, forgeAttempts: 5, updatedAt: new Date(NOW - 60 * day).toISOString() }), NOW) >= 0)
+  check("borné [0,100] : jamais > 100", gapValueScore(mk({ hits: 99, forgeAttempts: 0 }), NOW) <= 100)
+  check("récurrence : hits=1 fraîche → 20", gapValueScore(mk({ hits: 1, forgeAttempts: 0 }), NOW) === 20)
+  check("récurrence plafonnée à 5 : hits=5 == hits=99", gapValueScore(mk({ hits: 5 }), NOW) === gapValueScore(mk({ hits: 99 }), NOW))
+  check("plus de récurrence → score plus haut", gapValueScore(mk({ hits: 3 }), NOW) > gapValueScore(mk({ hits: 1 }), NOW))
+  check("échecs déjà tentés → pénalité", gapValueScore(mk({ hits: 3, forgeAttempts: 2 }), NOW) < gapValueScore(mk({ hits: 3, forgeAttempts: 0 }), NOW))
+  check(
+    "staleness : vieille de 45j → moins bien notée que fraîche, à hits égal",
+    gapValueScore(mk({ hits: 3, updatedAt: new Date(NOW - 45 * day).toISOString() }), NOW)
+      < gapValueScore(mk({ hits: 3, updatedAt: new Date(NOW).toISOString() }), NOW),
+  )
+  check("ne lève pas sur updatedAt invalide", Number.isFinite(gapValueScore(mk({ updatedAt: "n'importe quoi" }), NOW)))
+
+  console.log("\n[8] listOpenGaps trie par valeur, pas juste par fréquence")
+  reset()
+  // « fréquente-mais-tentée » : 5 hits mais 4 échecs déjà + vieille de 45j → basse valeur malgré le score brut de hits.
+  recordUncoveredGap({ blocker: "frequente-mais-tentee", detail: "d1", task: "t" }, { agents: [], now: NOW - 45 * day })
+  const gapA = getGap(loadGaps()[0]!.id)!
+  for (let i = 0; i < 4; i++) recordForgeAttempt(gapA.id, NOW - 45 * day)
+  // « fraiche-et-jamais-tentee » : 2 hits seulement mais fraîche et jamais retentée → devrait passer devant.
+  recordUncoveredGap({ blocker: "fraiche-et-jamais-tentee", detail: "d2", task: "t" }, { agents: [], now: NOW })
+  recordUncoveredGap({ blocker: "fraiche-et-jamais-tentee", detail: "d2", task: "t" }, { agents: [], now: NOW })
+  const open = listOpenGaps(NOW)
+  check("la lacune FRAÎCHE passe devant la lacune FRÉQUENTE-MAIS-ÉPUISÉE", open[0]!.blocker === "fraiche-et-jamais-tentee")
   reset()
 }
 

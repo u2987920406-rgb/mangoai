@@ -216,11 +216,38 @@ export function getGap(id: string): OpenGap | undefined {
   return loadGaps().find((g) => g.id === id)
 }
 
-/** Lacunes à traiter (proposed/forging), les plus fréquentes d'abord. */
-export function listOpenGaps(): OpenGap[] {
+/**
+ * (2026-07-22, demande de Raf) Score de valeur 0-100 : « ça vaut le coup de forger un
+ * agent pour cette lacune ? ». Aucune mesure de bénéfice réel n'existe (on ne sait pas
+ * ce qu'un agent aurait évité) — ce score est un PROXY délibérément simple à partir de
+ * 3 signaux déjà collectés, pas une prédiction. PUR / testable / ne lève jamais :
+ *   - récurrence (`hits`) : un blocage qui revient plusieurs fois est un vrai motif,
+ *     pas un accident isolé → poids dominant, plafonné à 5 récurrences (rendements
+ *     décroissants au-delà).
+ *   - échecs déjà tentés (`forgeAttempts`) : si l'auto-forge (ou une tentative manuelle)
+ *     a déjà échoué sans combler la lacune, chaque échec baisse la confiance que retenter
+ *     suffira — pénalité, plafonnée à 5 tentatives.
+ *   - fraîcheur (`updatedAt`) : une lacune qui n'a plus été rencontrée depuis longtemps
+ *     est probablement devenue non pertinente (le contexte qui l'a produite a changé,
+ *     ex. la génération nocturne — source principale historique — s'est arrêtée) →
+ *     pénalité de staleness au-delà de 14 puis 30 jours.
+ */
+export function gapValueScore(gap: OpenGap, now: number = Date.now()): number {
+  const recurrence = Math.min(gap.hits, 5) * 20
+  const failurePenalty = Math.min(gap.forgeAttempts ?? 0, 5) * 12
+  const daysSinceUpdate = (now - new Date(gap.updatedAt).getTime()) / 86_400_000
+  const staleness = daysSinceUpdate > 30 ? 20 : daysSinceUpdate > 14 ? 10 : 0
+  return Math.max(0, Math.min(100, recurrence - failurePenalty - staleness))
+}
+
+/** Lacunes à traiter (proposed/forging), les plus VALABLES d'abord (score, puis fréquence
+ *  en départage) — pas juste les plus fréquentes : une lacune fréquente mais déjà tentée
+ *  3 fois sans succès et vieille de 2 mois ne doit pas dominer une lacune fraîche et jamais
+ *  retentée. */
+export function listOpenGaps(now: number = Date.now()): OpenGap[] {
   return loadGaps()
     .filter((g) => g.status === "proposed" || g.status === "forging")
-    .sort((a, b) => b.hits - a.hits)
+    .sort((a, b) => gapValueScore(b, now) - gapValueScore(a, now) || b.hits - a.hits)
 }
 
 /** Change le statut d'une lacune (+ agentId optionnel). Renvoie la lacune màj ou null. */

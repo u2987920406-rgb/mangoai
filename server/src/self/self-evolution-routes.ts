@@ -7,13 +7,17 @@
 //   POST   /api/gaps/:id/dismiss  → { ok }              (rejette la lacune)
 
 import type { Express, Request, Response } from "express"
-import { listOpenGaps, getGap, markGap } from "./self-evolution.js"
+import { listOpenGaps, getGap, markGap, gapValueScore } from "./self-evolution.js"
 import { forgeForGap } from "../agent/agent-forge.js"
 import { autoForgeConfig } from "./self-evolution-autoforge.js"
 
 export function registerSelfEvolutionRoutes(app: Express): void {
+  // #196 — chaque lacune porte désormais un `valueScore` (0-100, calculé À CHAUD, pas
+  // stocké) : récurrence − échecs déjà tentés − fraîcheur. Sert à Raf pour juger d'un
+  // coup d'œil si valider une forge vaut le coût, plutôt qu'à l'estime.
   app.get("/api/gaps", (_req: Request, res: Response) => {
-    res.json({ gaps: listOpenGaps() })
+    const gaps = listOpenGaps().map((g) => ({ ...g, valueScore: gapValueScore(g) }))
+    res.json({ gaps })
   })
 
   // Config du disjoncteur de la forge auto (#168 tranche 2), lecture seule → l'UI affiche

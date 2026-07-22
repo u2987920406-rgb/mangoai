@@ -1,13 +1,12 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import {
-  ArrowLeft, Activity, BarChart2, BarChart3, Brain, CreditCard,
-  Hash, Rss, Satellite, Scissors, Settings, Wrench, Wand2, Dna,
+  ArrowLeft, Activity, BarChart2, BarChart3, CreditCard,
+  Rss, Satellite, Scissors, Settings, Wrench, Dna,
   FolderLock,
 } from "lucide-react";
 import { NEUTRAL } from "../neutral.js";
 
 // Composants système existants — réutilisés tels quels (code-split)
-const Brains           = lazy(() => import("./Brains.jsx"));
 const AtelierCerveaux  = lazy(() => import("./AtelierCerveaux.jsx"));
 const Billing          = lazy(() => import("./Billing.jsx"));
 const Metrics          = lazy(() => import("./Metrics.jsx"));
@@ -16,8 +15,6 @@ const MetricsDashboard = lazy(() => import("./MetricsDashboard.jsx"));
 const AutoAblation     = lazy(() => import("./AutoAblation.jsx"));
 const Radar            = lazy(() => import("./Radar.jsx"));
 const Veille           = lazy(() => import("./Veille.jsx"));
-const Tokenizer        = lazy(() => import("./Tokenizer.jsx"));
-const AtelierMango     = lazy(() => import("./AtelierMango.jsx"));
 const AutoEvolution    = lazy(() => import("./AutoEvolution.jsx"));
 const Coffres          = lazy(() => import("./Coffres.jsx"));
 
@@ -28,8 +25,6 @@ function buildGroups() {
       title: "Intelligence",
       items: [
         { id: "atelier", label: "Atelier des cerveaux", icon: Wrench },
-        { id: "brains", label: "Cerveaux", icon: Brain },
-        { id: "self", label: "Atelier de Mango", icon: Wand2 },
         { id: "gaps", label: "Lacunes à combler", icon: Dna },
       ],
     },
@@ -55,7 +50,6 @@ function buildGroups() {
       items: [
         { id: "radar", label: "Radar IA", icon: Satellite },
         { id: "veille", label: "Veille IA", icon: Rss },
-        { id: "tokenizer", label: "Tokeniseur", icon: Hash },
       ],
     },
   ];
@@ -109,8 +103,6 @@ export default function Reglages({ onBack }) {
   function renderSection() {
     switch (section) {
       case "atelier":   return <AtelierCerveaux onBack={onBack} />;
-      case "brains":    return <Brains onBack={onBack} />;
-      case "self":      return <AtelierMango onBack={onBack} />;
       case "gaps":      return <AutoEvolution onBack={onBack} />;
       case "billing":   return <Billing onBack={onBack} />;
       case "coffres":   return <Coffres />;
@@ -118,7 +110,6 @@ export default function Reglages({ onBack }) {
       case "ablation":  return <AutoAblation onBack={onBack} />;
       case "radar":     return <Radar onBack={onBack} />;
       case "veille":    return <Veille onBack={onBack} />;
-      case "tokenizer": return <Tokenizer onBack={onBack} />;
       case "metrics":
         return (
           <div className="flex h-full flex-col">

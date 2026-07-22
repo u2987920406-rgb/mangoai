@@ -16,6 +16,23 @@ function timeAgo(iso) {
   return `il y a ${days} j`;
 }
 
+// #196 — score de valeur 0-100 (récurrence − échecs déjà tentés − fraîcheur), calculé
+// côté serveur (self-evolution.ts::gapValueScore). Vert = vaut le coup, rouge = probablement pas.
+function ValueScoreBadge({ score }) {
+  const tone =
+    score >= 60 ? "border-[#34C759]/30 bg-[#34C759]/12 text-[#34C759]" :
+    score >= 30 ? "border-[#FFCC00]/30 bg-[#FFCC00]/12 text-[#E0A800]" :
+    "border-[#FF3B30]/30 bg-[#FF3B30]/12 text-[#FF3B30]";
+  return (
+    <span
+      title="Score de valeur : récurrence du blocage − tentatives déjà échouées − ancienneté. Un proxy, pas une mesure du bénéfice réel."
+      className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-semibold ${tone}`}
+    >
+      {score}%
+    </span>
+  );
+}
+
 export default function AutoEvolution({ onBack }) {
   const [gaps, setGaps] = useState([]);
   const [config, setConfig] = useState(null);
@@ -146,6 +163,7 @@ export default function AutoEvolution({ onBack }) {
                         <span className="inline-flex items-center gap-1 rounded-full border border-[#FF9500]/30 bg-[#FF9500]/12 px-2 py-0.5 text-[11px] font-medium text-[#FF9500]">
                           {g.blocker}
                         </span>
+                        <ValueScoreBadge score={g.valueScore ?? 0} />
                         {g.hits > 1 && <span className="rounded-full bg-edge-soft px-2 py-0.5 text-[11px] text-dim">×{g.hits} rencontres</span>}
                         {g.status === "forging" && <span className="inline-flex items-center gap-1 text-[11px] text-[#E0A800]"><Loader2 size={11} className="animate-spin" /> forge…</span>}
                         <span className="ml-auto text-[11px] text-faint">{timeAgo(g.createdAt)}</span>
