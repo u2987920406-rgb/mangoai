@@ -1,6 +1,10 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import type { Express, Request, Response } from 'express'
 import { resolveProvider } from './llm/llm-engine.js'
 import { getBrain } from './kernel.js'
+import { projectDir } from './projects.js'
+import { atomicWriteFileSync } from './safe-io.js'
 
 interface IdeationResult {
   wireframe: string      // ASCII art de la page principale (max 50 chars de large)
@@ -9,6 +13,24 @@ interface IdeationResult {
   pages: string[]        // Liste des écrans/pages
   summary: string        // Description en 2 phrases
   techStack: string[]    // Stack technique suggérée
+}
+
+// #196 — étape d'ideation devenue obligatoire avant le premier build d'un projet
+// (demande de Raf, 2026-07-22 : « aucun projet ne doit être lancé sans plan
+// d'ideation concret »). Marqueur persistant par projet, même patron que
+// `.perfect-plan.json` (perfect-plan.ts::hasContract/loadContract).
+const IDEATION_FILE = '.ideation.json'
+
+export function hasIdeation(dir: string): boolean {
+  return fs.existsSync(path.join(dir, IDEATION_FILE))
+}
+
+export function saveIdeation(dir: string, result: IdeationResult): void {
+  fs.mkdirSync(dir, { recursive: true })
+  atomicWriteFileSync(
+    path.join(dir, IDEATION_FILE),
+    JSON.stringify({ ...result, createdAt: new Date().toISOString() }, null, 2),
+  )
 }
 
 const SYSTEM_PROMPT =
@@ -58,5 +80,21 @@ export function registerIdeationRoutes(app: Express): void {
         res.status(500).json({ error: message })
       }
     }
+  })
+
+  // GET /api/ideation/status/:name — le gate côté chat interroge ceci avant le
+  // premier tour Construire d'un projet neuf.
+  app.get('/api/ideation/status/:name', (req: Request, res: Response) => {
+    const name = req.params['name'] as string
+    res.json({ done: hasIdeation(projectDir(name)) })
+  })
+
+  // POST /api/ideation/save/:name — appelé quand l'utilisateur valide un plan
+  // (« Passer au code ») ; pose le marqueur qui lève le gate définitivement pour
+  // ce projet.
+  app.post('/api/ideation/save/:name', (req: Request, res: Response) => {
+    const name = req.params['name'] as string
+    saveIdeation(projectDir(name), req.body as IdeationResult)
+    res.json({ ok: true })
   })
 }

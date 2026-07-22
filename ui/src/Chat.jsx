@@ -8,6 +8,7 @@ import {
 } from "./components/chat/helpers.js";
 import ChatMessages from "./components/chat/ChatMessages.jsx";
 import ChatComposer from "./components/chat/ChatComposer.jsx";
+import Ideation from "./components/Ideation.jsx";
 import { useExternalBusy } from "./hooks/useExternalBusy.js";
 import { useVoiceInput } from "./hooks/useVoiceInput.js";
 import { useSnapCapture } from "./hooks/useSnapCapture.js";
@@ -73,6 +74,22 @@ export default function Chat({
   // (type: "wireframe-fork") sur un NOUVEAU projet en mode Élite, avant toute
   // construction. null = aucune fourche en attente.
   const [wireframeFork, setWireframeFork] = useState(null);
+  // #196 — Ideation obligatoire. `ideationDone` par défaut à true (fail-open :
+  // un projet déjà entamé, ou une panne réseau sur le fetch de statut, ne doit
+  // jamais bloquer). `ideationGateText` non-null = le gate est affiché à la
+  // place du chat, avec ce texte comme description de départ.
+  const [ideationDone, setIdeationDone] = useState(true);
+  const [ideationGateText, setIdeationGateText] = useState(null);
+
+  useEffect(() => {
+    if (apiPath !== "/api/chat" || !projectName.trim()) { setIdeationDone(true); return; }
+    let cancelled = false;
+    fetch(`/api/ideation/status/${encodeURIComponent(projectName)}`)
+      .then((r) => (r.ok ? r.json() : { done: true }))
+      .then((d) => { if (!cancelled) setIdeationDone(Boolean(d.done)); })
+      .catch(() => { if (!cancelled) setIdeationDone(true); });
+    return () => { cancelled = true; };
+  }, [projectName, apiPath]);
 
   const push = (msg) => {
     setMessages((prev) => [...prev, { id: uid(), ...msg }]);
@@ -327,6 +344,18 @@ export default function Chat({
     // Auto-prompts (fix requests) never carry attachments
     const files = typeof textArg === "string" ? [] : attachments;
     if ((!typed && files.length === 0) || busy) return;
+    // #196 — Ideation obligatoire : le tout premier tour Construire d'un projet
+    // neuf (aucun historique, aucun `.ideation.json`) est intercepté AVANT le
+    // fetch réel — la description tapée sert de point de départ au plan
+    // d'ideation, qui doit être validé avant que le code ne démarre. Ne
+    // s'applique qu'au chat workspace normal (pas à la section Code, ni aux
+    // projets déjà entamés, ni aux auto-prompts internes).
+    if (isUserSend && apiPath === "/api/chat" && activeAction === "construire" && !ideationDone && messages.length === 0) {
+      setInput("");
+      if (inputRef.current) inputRef.current.style.height = "auto";
+      setIdeationGateText(typed);
+      return;
+    }
     // #139 Gros Projet : un build d'incrément force mode "projet" et joint l'id
     // de l'incrément (réconcilié côté serveur après commit).
     const turnMode = opts?.modeOverride ?? mode;
@@ -625,6 +654,30 @@ export default function Chat({
     abortRef.current?.abort();
     fetch("/api/stop", { method: "POST" }).catch(() => {});
   };
+
+  // #196 — Gate obligatoire : remplace le chat par le plan d'ideation tant que
+  // le premier tour Construire de ce projet n'a pas été validé.
+  if (ideationGateText !== null) {
+    return (
+      <section className="flex w-2/5 min-w-[360px] flex-col border-r border-edge bg-panel">
+        <Ideation
+          initialDescription={ideationGateText}
+          onBack={() => setIdeationGateText(null)}
+          onValidated={(result) => {
+            fetch(`/api/ideation/save/${encodeURIComponent(projectName)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(result),
+            }).catch(() => {});
+            setIdeationDone(true);
+            const text = ideationGateText;
+            setIdeationGateText(null);
+            requestAnimationFrame(() => send(text, { modeOverride: "elite" }));
+          }}
+        />
+      </section>
+    );
+  }
 
   return (
     <section className="flex w-2/5 min-w-[360px] flex-col border-r border-edge bg-panel">

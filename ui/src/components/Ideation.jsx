@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowRight, Package } from "lucide-react";
 
 const APP_TYPES = [
@@ -37,8 +37,11 @@ function Swatch({ hex }) {
   );
 }
 
-export default function Ideation({ onBack, onStartCoding }) {
-  const [description, setDescription] = useState("");
+// #196 — `initialDescription`/`onValidated` : usage additif pour le gate
+// obligatoire (Chat.jsx, avant le 1er tour Construire d'un projet neuf). La
+// fenêtre autonome (HamburgerMenu → onBack/onStartCoding) reste inchangée.
+export default function Ideation({ onBack, onStartCoding, initialDescription = "", onValidated }) {
+  const [description, setDescription] = useState(initialDescription);
   const [appType, setAppType] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -69,8 +72,17 @@ export default function Ideation({ onBack, onStartCoding }) {
     }
   }
 
+  // Gate obligatoire : la description arrive déjà tapée (le message Construire
+  // de l'utilisateur) → on génère tout de suite, pas la peine de re-cliquer.
+  useEffect(() => {
+    if (initialDescription.trim()) handleGenerate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   function handleStartCoding() {
-    if (onStartCoding) {
+    if (onValidated) {
+      onValidated(result);
+    } else if (onStartCoding) {
       onStartCoding(description);
     } else {
       navigator.clipboard.writeText(description).then(() => {
@@ -235,7 +247,7 @@ export default function Ideation({ onBack, onStartCoding }) {
               >
                 {copied ? "Description copiée ✓" : (
                   <>
-                    Passer au code
+                    {onValidated ? "Valider et construire" : "Passer au code"}
                     <ArrowRight size={16} />
                   </>
                 )}

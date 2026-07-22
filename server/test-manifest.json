@@ -294,6 +294,9 @@
     "test-home-scratch": {
       "tier": "offline"
     },
+    "test-ideation-gate": {
+      "tier": "offline"
+    },
     "test-insights": {
       "tier": "offline"
     },
