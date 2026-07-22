@@ -68,7 +68,6 @@ import { publishDesignReference, publishDesignProduced, buildProducedDesign, pal
 import { loadContract } from "../perfect-plan.js";
 import { generateLexique } from "../lexique.js";
 import { verifierChoixGabaritEnArrierePlan, analyserChaineEnAmontDuGabarit } from "../eleve-context-hook.js";
-import { registerPromptLabRoutes } from "../promptlab.js";
 import { registerTokenizerRoutes } from "../tokenizer.js";
 import { registerIdeationRoutes } from "../ideation.js";
 import { registerVeilleRoutes } from "../veille.js";

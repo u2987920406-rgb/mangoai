@@ -4118,3 +4118,19 @@ Les 8 autres (Super Agent, Ideation, Multi-Projet, Doc, Prompt Lab, Design Revie
 - **Non touché délibérément** : `NocturnalReviewForm.jsx` (partagé avec `BuildReview.jsx`, feature distincte et active dans le Workspace — review de build par projet, pas génération nocturne) et la route `GET /api/hooks` dans `system-routes.ts` (lecture seule, mutualisée dans un fichier plus large, aucun `.hooks/hooks.json` actif donc totalement inerte). Le fil `nocturnalEntry` dans `App.jsx`/`Chat.jsx`/`ChatMessages.jsx` (review inline dans le chat d'un projet généré la nuit) devient orphelin de fait — plus jamais alimenté puisque son seul déclencheur (l'ancien écran) a disparu — mais laissé en l'état (code mort inerte, pas de fichier composant orphelin, hors scope de ce lot).
 
 **Vérifié en réel** : `tsc --noEmit` propre (server+ui), `npm test` (ui) 77/77, `npm run build` réussi (chunks `CronManager-*`/`HooksPanel-*`/`NocturnalReview-*` absents), tests backend directement concernés tous verts : `test-cron-breaker` 20/20, `test-nocturnal` 28/28, `test-nocturnal-budget-qa` 46/46, `test-nocturnal-repair` 13/13, `test-nocturnal-review` 16/16.
+
+## Journal — 2026-07-22 (suite 5) : réponses de Raf au triage — Super Agent + Prompt Lab retirés, Doc gardé, Tokeniseur déjà satisfait, Ideation à concevoir
+
+**Réponses de Raf** (via questions ciblées) : garder seulement **Doc** parmi les 3 outils incertains (Super Agent + Prompt Lab retirés) ; **Tokeniseur** : la jauge `ContextGauge` déjà présente à l'Accueil et dans le Workspace suffit, rien à faire ; **Ideation** : étape BLOQUANTE avant génération (le plan de conception doit être validé avant que le code démarre) — approche confirmée, implémentation à faire en suite ; commit/push du lot précédent autorisé.
+
+**Fait — Super Agent + Prompt Lab retirés** :
+- `HamburgerMenu.jsx` : 2 entrées retirées de la cascade Outils (Doc conservé).
+- `App.jsx`/`WindowManager.jsx` : cases `WINDOWS.PROMPTLAB`/`WINDOWS.SUPERAGENT` retirés, lazy imports `PromptLab`/`SuperAgentBuilder` retirés.
+- `nav.js` : `WINDOWS.PROMPTLAB`/`WINDOWS.SUPERAGENT` retirés de l'énum (aucune référence dans `nav.test.js`, vérifié).
+- `ui/src/components/{PromptLab,SuperAgentBuilder}.jsx` **supprimés** (seuls consommateurs, vérifié par grep).
+- `server/src/promptlab.ts` **supprimé en entier** (unique export = `registerPromptLabRoutes`, aucun usage automatique) — `server/src/index.ts` et `routes/chat-route.ts` (import mort, jamais appelé) nettoyés en conséquence.
+- **Trouvaille importante, à valeur de confirmation pour Raf** : `server/src/super-agent-builder.ts` **N'A PAS été supprimé** — 2 de ses 3 exports (`superAgentPromptSection`, `matchAgentToProject`) sont déjà utilisés AUTOMATIQUEMENT dans `scenario.ts` (bloc `superAgent` injecté dans le prompt système de chaque génération, tous modes) et `orchestrator.ts`. Seul `registerSuperAgentRoutes` (l'écran manuel de création d'agent) a été retiré d'`index.ts`. Ça confirme exactement l'intuition de Raf : la capacité de "matcher un agent au projet" tournait déjà en coulisses, l'écran manuel n'ajoutait rien.
+
+**Vérifié en réel** : `tsc --noEmit` propre (server+ui), `npm test` (ui) 77/77, `npm run build` réussi (chunks `PromptLab-*`/`SuperAgentBuilder-*` absents), `test-scenario` (vérifie le bloc `superAgent` du prompt système) toujours vert.
+
+**Reste à faire** : Ideation obligatoire (implémentation de l'étape bloquante avant génération, conception à dérouler) ; Multi-Projet en option par projet (pas encore scopé, en attente).

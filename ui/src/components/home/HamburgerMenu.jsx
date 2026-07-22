@@ -1,8 +1,8 @@
 import { useState } from "react";
 import {
-  Bot, ChevronRight, Download, FileText, FlaskConical, FolderOpen,
+  Bot, ChevronRight, Download, FileText, FolderOpen,
   GitBranch, Image as ImageIcon, Layers,
-  Lightbulb, Menu, MessageSquare, Moon, Music2, Network,
+  Lightbulb, Menu, MessageSquare, Moon, Music2,
   Plus, Settings, Sliders, Sparkles, Sun, Trash2, Wand2, Boxes,
 } from "lucide-react";
 import ConfirmDelete from "../ConfirmDelete.jsx";
@@ -52,11 +52,9 @@ export default function HamburgerMenu({
   // vitrines manuelles jamais ouvertes, du contenu déjà utilisé en coulisses.
   const tools = [
     { icon: Bot, label: "Agent Factory", run: () => onOpenWindow?.({ type: WINDOWS.AGENT_FACTORY, title: "Agent Factory", width: 1100, height: 700 }) },
-    { icon: Network, label: "Super Agent", run: () => onOpenApp?.("superagent") },
     { icon: Lightbulb, label: "Ideation", run: () => onOpenApp?.("ideation") },
     { icon: Layers, label: "Multi-Projet", run: () => onOpenApp?.("multi") },
     { icon: FileText, label: "Doc", run: () => onOpenApp?.("docs") },
-    { icon: FlaskConical, label: "Prompt Lab", run: () => onOpenApp?.("promptlab") },
     { icon: Wand2, label: "Variantes de goût", run: () => onOpenApp?.("taste") },
     { icon: Sliders, label: "Éditeur visuel", run: () => onOpenSidePanel?.() },
   ];

@@ -12,9 +12,7 @@ import { WINDOWS } from "../nav.js";
 const AgentFactory      = lazy(() => import("./AgentFactory.jsx"));
 const Ideation          = lazy(() => import("./Ideation.jsx"));
 const DocGenerator      = lazy(() => import("./DocGenerator.jsx"));
-const PromptLab         = lazy(() => import("./PromptLab.jsx"));
 const MultiProject      = lazy(() => import("./MultiProject.jsx"));
-const SuperAgentBuilder = lazy(() => import("./SuperAgentBuilder.jsx"));
 const SuiteWindow       = lazy(() => import("./SuiteWindow.jsx"));
 const TasteGallery      = lazy(() => import("./TasteGallery.jsx"));
 
@@ -251,24 +249,10 @@ function WindowContent({ win, onClose }) {
       </Suspense>
     );
   }
-  if (win.type === WINDOWS.PROMPTLAB) {
-    return (
-      <Suspense fallback={<PanelLoader />}>
-        <PromptLab onBack={() => onClose(win.id)} />
-      </Suspense>
-    );
-  }
   if (win.type === WINDOWS.MULTI) {
     return (
       <Suspense fallback={<PanelLoader />}>
         <MultiProject onBack={() => onClose(win.id)} />
-      </Suspense>
-    );
-  }
-  if (win.type === WINDOWS.SUPERAGENT) {
-    return (
-      <Suspense fallback={<PanelLoader />}>
-        <SuperAgentBuilder onBack={() => onClose(win.id)} projectName={win.props?.projectName} />
       </Suspense>
     );
   }

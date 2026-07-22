@@ -39,7 +39,6 @@ import { registerCurationEffectRoutes } from "./kernel/kernel-curation-effect.js
 import { startChatTurn, finishChatTurn } from "./kernel/kernel-chat-bridge.js";
 import { publishDesignReference, publishDesignProduced, buildProducedDesign, paletteFromContract } from "./kernel/kernel-design-events.js";
 import { verifierChoixGabaritEnArrierePlan, analyserChaineEnAmontDuGabarit } from "./eleve-context-hook.js";
-import { registerPromptLabRoutes } from "./promptlab.js";
 import { registerTokenizerRoutes } from "./tokenizer.js";
 import { registerIdeationRoutes } from "./ideation.js";
 import { registerVeilleRoutes } from "./veille.js";
@@ -59,7 +58,6 @@ import { registerControlBoardRoutes } from "./control-board-routes.js";
 import { registerMetricsDashboardRoutes } from "./metrics-dashboard.js";
 import { registerMultiProjectRoutes } from "./multi-project.js";
 import { registerAutoAblationRoutes } from "./auto-ablation.js";
-import { registerSuperAgentRoutes } from "./super-agent-builder.js";
 import { registerKnowledgeStoresRoutes } from "./knowledge-stores-routes.js";
 import { registerLibraryRoutes } from "./library-routes.js";
 import { registerCouncilSkillsRoutes } from "./council-skills-routes.js";
@@ -178,7 +176,6 @@ registerSharedDataRoutes(app);
 
 registerSuiteRoutes(app);
 
-registerPromptLabRoutes(app);
 registerTraceRoutes(app);
 registerReuseRoutes(app);
 registerCurationEffectRoutes(app);
@@ -200,7 +197,6 @@ registerControlBoardRoutes(app);
 registerMetricsDashboardRoutes(app);
 registerAutoAblationRoutes(app);
 registerMultiProjectRoutes(app);
-registerSuperAgentRoutes(app);
 registerRadarRoutes(app);
 registerPromptEvolutionRoutes(app);
 registerAbHarnessRoutes(app);

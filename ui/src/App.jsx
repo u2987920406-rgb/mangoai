@@ -279,14 +279,10 @@ export default function App() {
         });
       case WINDOWS.DOCS:
         return openWindow({ type: WINDOWS.DOCS, title: "Générateur de docs", width: 900, height: 680 });
-      case WINDOWS.PROMPTLAB:
-        return openWindow({ type: WINDOWS.PROMPTLAB, title: "Prompt Lab", width: 1000, height: 680 });
       case WINDOWS.TASTE:
         return openWindow({ type: WINDOWS.TASTE, title: "Variantes de goût", width: 1120, height: 780, props: { projectName } });
       case WINDOWS.MULTI:
         return openWindow({ type: WINDOWS.MULTI, title: "Multi-Projet", width: 1000, height: 720 });
-      case WINDOWS.SUPERAGENT:
-        return openWindow({ type: WINDOWS.SUPERAGENT, title: "Super Agent Builder", width: 900, height: 700, props: { projectName } });
       case WINDOWS.SUITE:
         // #138 OS d'apps — fenêtre Suite : liste les apps composables et leur
         // donnée partagée. `onOpen` = openProject pour le bouton Ouvrir.
