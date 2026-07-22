@@ -22,10 +22,8 @@ export const SCREENS = Object.freeze({
 export const WINDOWS = Object.freeze({
   PROJECTS: "projects",
   SUITE: "suite",
-  ARTIFACTS: "artifacts",
   GUIDE: "guide",
   IDEATION: "ideation",
-  NOTES: "notes",
   DOCS: "docs",
   PROMPTLAB: "promptlab",
   DESIGN: "design",

@@ -10,10 +10,8 @@ import { slugify } from "../slugify.js";
 import { WINDOWS } from "../nav.js";
 
 const AgentFactory      = lazy(() => import("./AgentFactory.jsx"));
-const Artifacts         = lazy(() => import("./Artifacts.jsx"));
 const Guide             = lazy(() => import("./Guide.jsx"));
 const Ideation          = lazy(() => import("./Ideation.jsx"));
-const NotesRAG          = lazy(() => import("./NotesRAG.jsx"));
 const DocGenerator      = lazy(() => import("./DocGenerator.jsx"));
 const PromptLab         = lazy(() => import("./PromptLab.jsx"));
 const DesignReview      = lazy(() => import("./DesignReview.jsx"));
@@ -231,13 +229,6 @@ function WindowContent({ win, onClose }) {
   if (win.type === WINDOWS.PROJECTS) {
     return <ProjectsWindow win={win} onClose={onClose} />;
   }
-  if (win.type === WINDOWS.ARTIFACTS) {
-    return (
-      <Suspense fallback={<PanelLoader />}>
-        <Artifacts />
-      </Suspense>
-    );
-  }
   if (win.type === WINDOWS.GUIDE) {
     return (
       <Suspense fallback={<PanelLoader />}>
@@ -252,13 +243,6 @@ function WindowContent({ win, onClose }) {
           onBack={() => onClose(win.id)}
           onStartCoding={(desc) => { win.props?.onStartCoding?.(desc); onClose(win.id); }}
         />
-      </Suspense>
-    );
-  }
-  if (win.type === WINDOWS.NOTES) {
-    return (
-      <Suspense fallback={<PanelLoader />}>
-        <NotesRAG onBack={() => onClose(win.id)} onToast={win.props?.onToast} />
       </Suspense>
     );
   }

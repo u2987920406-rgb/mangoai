@@ -3,7 +3,7 @@ import {
   Bot, ChevronRight, Download, FileText, FlaskConical, FolderOpen,
   GitBranch, GraduationCap, HelpCircle, Image as ImageIcon, Layers,
   Lightbulb, Menu, MessageSquare, Moon, Music2, Network, Palette,
-  Plus, Settings, Sliders, Sparkles, Sun, Trash2, Wand2, Boxes, BookOpen,
+  Plus, Settings, Sliders, Sparkles, Sun, Trash2, Wand2, Boxes,
 } from "lucide-react";
 import ConfirmDelete from "../ConfirmDelete.jsx";
 import { getTheme, toggleTheme } from "../../theme.js";
@@ -48,17 +48,19 @@ export default function HamburgerMenu({
   ];
 
   // « Outils » — cascade vers les fenêtres flottantes secondaires (ex-Launcher).
+  // Notes & RAG et Artefacts retirés le 2026-07-22 (demande de Raf) : leur valeur
+  // est déjà réinjectée AUTOMATIQUEMENT à chaque tour agentique (agent.ts::runAgent
+  // — relevantNotesSection/relevantArtifactsSection), ces 2 écrans n'étaient que des
+  // vitrines manuelles jamais ouvertes, du contenu déjà utilisé en coulisses.
   const tools = [
     { icon: Bot, label: "Agent Factory", run: () => onOpenWindow?.({ type: WINDOWS.AGENT_FACTORY, title: "Agent Factory", width: 1100, height: 700 }) },
     { icon: Network, label: "Super Agent", run: () => onOpenApp?.("superagent") },
     { icon: Lightbulb, label: "Ideation", run: () => onOpenApp?.("ideation") },
     { icon: Layers, label: "Multi-Projet", run: () => onOpenApp?.("multi") },
-    { icon: BookOpen, label: "Notes & RAG", run: () => onOpenApp?.("notes") },
     { icon: FileText, label: "Doc", run: () => onOpenApp?.("docs") },
     { icon: FlaskConical, label: "Prompt Lab", run: () => onOpenApp?.("promptlab") },
     { icon: Palette, label: "Design Review", run: () => onOpenApp?.("design") },
     { icon: Wand2, label: "Variantes de goût", run: () => onOpenApp?.("taste") },
-    { icon: Sparkles, label: "Artefacts", run: () => onOpenWindow?.({ type: WINDOWS.ARTIFACTS, title: "Artefacts · Blackboard", width: 780, height: 600 }) },
     { icon: HelpCircle, label: "Aide", run: () => onOpenWindow?.({ type: WINDOWS.GUIDE, title: "Aide", width: 740, height: 600 }) },
     { icon: Sliders, label: "Éditeur visuel", run: () => onOpenSidePanel?.() },
   ];

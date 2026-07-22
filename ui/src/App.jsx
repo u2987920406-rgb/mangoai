@@ -309,8 +309,6 @@ export default function App() {
           type: WINDOWS.IDEATION, title: "Ideation", width: 900, height: 680,
           props: { onStartCoding: (desc) => openProject(slugify(desc), { prompt: desc }) },
         });
-      case WINDOWS.NOTES:
-        return openWindow({ type: WINDOWS.NOTES, title: "Notes & RAG", width: 960, height: 680, props: { onToast: pushToast } });
       case WINDOWS.DOCS:
         return openWindow({ type: WINDOWS.DOCS, title: "Générateur de docs", width: 900, height: 680 });
       case WINDOWS.PROMPTLAB:

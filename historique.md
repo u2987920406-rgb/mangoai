@@ -4068,4 +4068,24 @@ L137 fermé. Plus aucun composant UI orphelin dans le repo.
 
 **Reste à faire (point 5, suite)** : Raf doit valider visuellement le nouveau menu (je ne peux pas voir l'écran) ; l'inventaire numéroté #10-47 du tour précédent contient encore des composants FEATURE (pas juste des points de nav) sur lesquels Raf n'a pas encore tranché garder/couper — ce tour n'a traité que la duplication de NAVIGATION, pas le contenu de chaque outil.
 
+## Journal — 2026-07-22 (suite 2) : retrait de Notes & RAG et Artefacts (déjà automatiques)
+
+**Question de Raf** : « la section Outils est-elle déjà utilisée automatiquement lors de la génération d'app ? Je n'ai jamais eu besoin de les utiliser individuellement. Si certains peuvent être intégrés automatiquement à la boucle agentique, fais-le. »
+
+**Vérification** (fork dédié, 10 outils passés en revue avec preuves fichier:fonction) : **2 des 12 outils étaient déjà 100% automatiques** — leur écran manuel n'était qu'une vitrine du même contenu déjà réinjecté à chaque tour agentique :
+- **Notes & RAG** : `notes-rag.ts::relevantNotesSection()` (appelée dans `agent.ts::runAgent`) lit le même fichier `data/notes.jsonl` que l'écran manuel.
+- **Artefacts** : `kernel-artifacts.ts::relevantArtifactsSection()` (idem, appelée dans `agent.ts::runAgent`) lit le même Blackboard que l'écran manuel.
+
+Les 8 autres (Super Agent, Ideation, Multi-Projet, Doc, Prompt Lab, Design Review, Variantes de goût, Aide, Éditeur visuel) n'ont AUCUNE automatisation sensée à ajouter : décisions humaines délibérées, outils pré-build, ou intrinsèquement manuels (souris/clic). Design Review et Variantes de goût partagent partiellement leur moteur avec le Gardien automatique, mais leur volet manuel (comparaison multi-variantes) est distinct, pas redondant.
+
+**Fait** (Raf a confirmé « oui » à la retaille) : Notes & RAG et Artefacts retirés — pas juste du menu, en entier, pour ne pas recréer le problème L137 (composant reachable-by-nothing) :
+- `HamburgerMenu.jsx` : 2 entrées retirées de la cascade Outils.
+- `WindowManager.jsx` : lazy imports + cases `WINDOWS.NOTES`/`WINDOWS.ARTIFACTS` retirés.
+- `App.jsx` : case `WINDOWS.NOTES` retiré du switch `openAppWindow`.
+- `nav.js` : `WINDOWS.NOTES`/`WINDOWS.ARTIFACTS` retirés de l'énum.
+- `ui/src/components/NotesRAG.jsx` et `Artifacts.jsx` **supprimés** (seuls consommateurs de `/api/notes`/`/api/artifacts`, vérifié par grep — aucun autre écran n'en dépend).
+- `server/src/index.ts` : `registerNotesRAGRoutes(app)`/`registerArtifactRoutes(app)` retirés (routes UI mortes) — **`installArtifactStore` et `relevantNotesSection`/`relevantArtifactsSection` INTACTS**, c'est le chemin automatique, jamais touché.
+
+**Vérifié en réel** : `tsc --noEmit` propre (server+ui), `npm test` (ui) 77/77, `test-kernel-artifacts` 39/39 + `test-notes` 22/22 (server, confirment que la partie automatique n'est pas cassée), `npm run build` réussi — les chunks `NotesRAG-*.js`/`Artifacts-*.js` ont disparu du bundle (code mort éliminé).
+
 **Validation visuelle faite** (Playwright, `chromium` msedge, jetable) : capture du menu envoyée par `SendUserFile` sur le téléphone de Raf — validé (« ok parfait »). Audit de suivi demandé (« fait-le et montre-moi la v2 ») : script de vérification à 3 tailles d'écran (desktop 1280px/tablette 820px/mobile 390px) — Accueil+menu, Réglages ouvert depuis le menu, « Mes projets » (fenêtre App Builder). Tout fonctionne, responsive intact aux 3 tailles. **1 point trouvé, pré-existant, pas une régression** : `404` sur `GET /api/versions/mon-app` à chaque chargement de l'Accueil (`useVersions` appelé avec le nom de projet par défaut `"mon-app"`, fictif, indépendant de l'écran actif) — confirmé via `git diff` que ce code n'a pas été touché par le commit `a1ff0a0`. Non bloquant (silencieux, aucun impact visible), pas encore ouvert comme limite formelle (à faire si Raf le juge prioritaire).
