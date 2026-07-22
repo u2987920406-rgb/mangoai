@@ -1,13 +1,22 @@
 import { useCallback } from "react";
+import { ArrowLeft } from "lucide-react";
+import { useIsMobile } from "../hooks/useIsMobile.js";
 
 const MIN_W = 400;
 const MIN_H = 280;
 
+// #196 (2026-07-22, Raf en vrai sur son téléphone via l'accès LAN) — ces
+// fenêtres flottantes (App Builder, Ideation, Agent Factory…) ont une
+// taille/position desktop fixe (ex. 820×560px), toujours en pixels absolus :
+// sur un écran de 390px, ça déborde entièrement, hors d'atteinte au toucher.
+// Sur mobile, la fenêtre devient PLEIN ÉCRAN (pas de drag/resize — inutile et
+// non tactile de toute façon, aucun handler onTouch n'existait déjà).
 export default function Window({ win, onClose, onFocus, onMove, onResize, children }) {
   const { id, title, x, y, width, height, zIndex } = win;
+  const isMobile = useIsMobile();
 
   const handleTitleMouseDown = useCallback((e) => {
-    if (e.button !== 0) return;
+    if (isMobile || e.button !== 0) return;
     e.preventDefault();
     onFocus(id);
     const startMX = e.clientX;
@@ -25,7 +34,7 @@ export default function Window({ win, onClose, onFocus, onMove, onResize, childr
     };
     document.addEventListener("mousemove", mm);
     document.addEventListener("mouseup", mu);
-  }, [id, x, y, onFocus, onMove]);
+  }, [isMobile, id, x, y, onFocus, onMove]);
 
   const handleResizeMouseDown = useCallback((e) => {
     if (e.button !== 0) return;
@@ -48,24 +57,40 @@ export default function Window({ win, onClose, onFocus, onMove, onResize, childr
 
   return (
     <div
-      className="fixed flex flex-col overflow-hidden rounded-xl border border-edge bg-panel shadow-2xl pointer-events-auto"
-      style={{ left: x, top: y, width, height, zIndex }}
+      className={
+        isMobile
+          ? "fixed inset-0 flex flex-col overflow-hidden bg-panel pointer-events-auto"
+          : "fixed flex flex-col overflow-hidden rounded-xl border border-edge bg-panel shadow-2xl pointer-events-auto"
+      }
+      style={isMobile ? { zIndex } : { left: x, top: y, width, height, zIndex }}
       onMouseDown={() => onFocus(id)}
     >
       {/* Barre de titre */}
       <div
         className="flex shrink-0 select-none items-center gap-2 border-b border-edge bg-panel px-3 py-2"
-        style={{ cursor: "move" }}
+        style={isMobile ? undefined : { cursor: "move" }}
         onMouseDown={handleTitleMouseDown}
       >
-        {/* Bouton fermer (style macOS) */}
-        <button
-          onMouseDown={(e) => e.stopPropagation()}
-          onClick={() => onClose(id)}
-          className="h-3 w-3 flex-shrink-0 rounded-full bg-[#ff5f57] hover:brightness-90 transition-all"
-          title="Fermer"
-        />
+        {isMobile ? (
+          // Cible tactile ≥44px (pas le point macOS de 12px, illisible/inatteignable au doigt).
+          <button
+            onClick={() => onClose(id)}
+            className="-ml-1.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-dim hover:text-ink transition-colors"
+            title="Fermer"
+          >
+            <ArrowLeft size={18} />
+          </button>
+        ) : (
+          <button
+            onMouseDown={(e) => e.stopPropagation()}
+            onClick={() => onClose(id)}
+            className="h-3 w-3 flex-shrink-0 rounded-full bg-[#ff5f57] hover:brightness-90 transition-all"
+            title="Fermer"
+          />
+        )}
         <span className="flex-1 truncate text-center text-[13px] font-medium text-ink">{title}</span>
+        {/* Fantôme de la même largeur que le bouton retour, pour garder le titre centré */}
+        {isMobile && <span className="w-10 shrink-0" />}
       </div>
 
       {/* Contenu */}
@@ -73,7 +98,8 @@ export default function Window({ win, onClose, onFocus, onMove, onResize, childr
         {children}
       </div>
 
-      {/* Poignée de redimensionnement */}
+      {/* Poignée de redimensionnement (desktop uniquement — plein écran sur mobile, rien à redimensionner) */}
+      {!isMobile && (
       <div
         className="absolute bottom-0 right-0 h-4 w-4 cursor-se-resize pointer-events-auto z-10"
         onMouseDown={handleResizeMouseDown}
@@ -88,6 +114,7 @@ export default function Window({ win, onClose, onFocus, onMove, onResize, childr
           />
         </svg>
       </div>
+      )}
     </div>
   );
 }
