@@ -85,6 +85,7 @@ import { registerCronRoutes } from "../cron-scheduler.js";
 import { registerMetricsDashboardRoutes } from "../metrics-dashboard.js";
 import { registerNotesRAGRoutes } from "../notes-rag.js";
 import { registerMultiProjectRoutes } from "../multi-project.js";
+import { isLoopDesignEnabled, runDesignLoop } from "../design-loop.js";
 import { registerAutoAblationRoutes } from "../auto-ablation.js";
 import { registerDesignReviewRoutes } from "../design/design-review.js";
 import { registerSuperAgentRoutes } from "../super-agent-builder.js";
@@ -763,6 +764,19 @@ app.post("/api/chat", async (req, res) => {
       ...(relayMeta.current ? { resolvedBy: relayMeta.current.resolvedBy } : {}),
       ...(turn.some((e) => e.role === "error") ? { error: "turn ended with error" } : {}),
     });
+    // #196 (2026-07-23) — Loop Design v1 : après un tour Construire réussi, SI le
+    // projet l'a activée (opt-in, .loop-design.json), un cycle audit→correction→
+    // comparaison tourne dans le MÊME flux SSE, à la suite du tour principal.
+    // Jamais sur Discuter/Planifier, jamais sur le Mode Miroir, jamais sans preview.
+    if (
+      projectName !== MIRROR_PROJECT &&
+      (chosenMode === "elite" || chosenMode === "mvp") &&
+      !turn.some((e) => e.role === "error") &&
+      getPreviewUrl() &&
+      isLoopDesignEnabled(projectDir(projectName))
+    ) {
+      await runDesignLoop(projectDir(projectName), getPreviewUrl()!, projectType, { send });
+    }
     send({ type: "done" });
     res.end();
   }

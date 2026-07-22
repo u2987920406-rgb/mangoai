@@ -19,8 +19,10 @@ const COMPONENT_RE = /\.(jsx|tsx)$/i;
 const IGNORE = /(^|\/)(node_modules|\.git|dist|build|\.vite)(\/|$)/;
 const MAX_FILES = 200;
 
-/** Liste bornée des fichiers style/composants du projet (hors IGNORE). Pure. */
-function scanFiles(root: string): { css: string[]; components: string[] } {
+/** Liste bornée des fichiers style/composants du projet (hors IGNORE). Pure.
+ *  Exportée (2026-07-23) pour réutilisation par design-loop.ts — même scan,
+ *  pas de duplication. */
+export function scanFiles(root: string): { css: string[]; components: string[] } {
   const css: string[] = [];
   const components: string[] = [];
   const walk = (dir: string, depth: number): void => {
@@ -40,7 +42,7 @@ function scanFiles(root: string): { css: string[]; components: string[] } {
   return { css, components };
 }
 
-function readSafe(p: string): string {
+export function readSafe(p: string): string {
   try { return fs.readFileSync(p, "utf8"); } catch { return ""; }
 }
 

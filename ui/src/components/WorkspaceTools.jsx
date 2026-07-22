@@ -1,7 +1,7 @@
 import { useState } from "react";
 import {
   Briefcase, BrainCircuit, ClipboardCheck, Download, Eye, EyeOff,
-  GitFork, Hammer, History, Layers, Loader2, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2,
+  GitFork, Hammer, History, Layers, Loader2, Repeat, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2,
 } from "lucide-react";
 import Knowledge from "./Knowledge.jsx";
 import BuildReview from "./BuildReview.jsx";
@@ -126,6 +126,33 @@ function MultiProjectPanel({ enabled = false, onToggle, onOpenBrowser }) {
         className="rounded-lg border border-edge px-3 py-2 text-[12px] text-dim hover:border-faint hover:text-ink transition-colors"
       >
         Parcourir la bibliothèque multi-projets
+      </button>
+    </div>
+  );
+}
+
+// ─── Panneau Loop Design (#196 — opt-in par projet) ─────────────────────────────
+function LoopDesignPanel({ enabled = false, onToggle }) {
+  return (
+    <div className="flex flex-col gap-4 p-3">
+      <p className="text-[12px] leading-relaxed text-dim">
+        Quand c'est activé, après chaque build Construire réussi, MangoOS audite le design
+        (contraste, palette, typo), corrige les écarts, puis compare AVANT/APRÈS pour vérifier que
+        c'est vraiment mieux — jusqu'à 3 cycles, jamais de clôture automatique : ça s'arrête et
+        t'attend dans le chat. Reste désactivé par défaut.
+      </p>
+      <button
+        onClick={() => onToggle?.(!enabled)}
+        className={`flex items-center justify-between rounded-lg border px-3 py-2.5 text-[13px] font-medium transition-colors ${
+          enabled
+            ? "border-accent/40 bg-accent/10 text-accent-soft"
+            : "border-edge text-dim hover:border-faint hover:text-ink"
+        }`}
+      >
+        Loop Design après build
+        <span className={`rounded-full px-2 py-0.5 text-[11px] ${enabled ? "bg-accent/20 text-accent-soft" : "bg-edge-soft text-faint"}`}>
+          {enabled ? "Activé" : "Désactivé"}
+        </span>
       </button>
     </div>
   );
@@ -339,6 +366,8 @@ export default function WorkspaceTools({
   multiProjectEnabled = false,
   onMultiProject,
   onOpenMultiProjectBrowser,
+  loopDesignEnabled = false,
+  onLoopDesign,
   // Ids d'outils à MASQUER (le shell 2.0 trie son rail — ex. ["memoire","mangoqa","mirror","thinking"]).
   hidden = [],
 }) {
@@ -371,6 +400,10 @@ export default function WorkspaceTools({
         {/* #196 — Multi-Projet : opt-in par projet (auto OFF par défaut) */}
         {show("multiproject") && onMultiProject && (
           <RailBtn icon={Layers} label="Multi-Projet" active={active === "multiproject" || multiProjectEnabled} onClick={() => toggle("multiproject")} />
+        )}
+        {/* #196 — Loop Design : opt-in par projet (auto OFF par défaut) */}
+        {show("loopdesign") && onLoopDesign && (
+          <RailBtn icon={Repeat} label="Loop Design" active={active === "loopdesign" || loopDesignEnabled} onClick={() => toggle("loopdesign")} />
         )}
 
         <Sep />
@@ -428,6 +461,11 @@ export default function WorkspaceTools({
                 onToggle={onMultiProject}
                 onOpenBrowser={() => { close(); onOpenMultiProjectBrowser?.(); }}
               />
+            </PanelShell>
+          )}
+          {active === "loopdesign" && (
+            <PanelShell title="Loop Design" onClose={close}>
+              <LoopDesignPanel enabled={loopDesignEnabled} onToggle={onLoopDesign} />
             </PanelShell>
           )}
           {active === "versions" && (

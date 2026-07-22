@@ -104,6 +104,9 @@ export default function App() {
   // #196 — Multi-Projet : opt-in par projet (marqueur serveur, pas localStorage —
   // doit être lisible par scenario.ts au moment de bâtir le prompt système).
   const [multiProjectEnabled, setMultiProjectEnabled] = useState(false);
+  // #196 — Loop Design : opt-in par projet, même patron (marqueur serveur lu par
+  // chat-route.ts après chaque tour Construire).
+  const [loopDesignEnabled, setLoopDesignEnabled] = useState(false);
   const { windows, openWindow, closeWindow, focusWindow, moveWindow, resizeWindow } = useWindowManager();
   const { toasts, pushToast, dismissToast } = useToasts();
   const {
@@ -208,6 +211,23 @@ export default function App() {
   function handleMultiProject(val) {
     setMultiProjectEnabled(val);
     fetch(`/api/multi-project/status/${encodeURIComponent(projectName)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled: val }),
+    }).catch(() => {});
+  }
+
+  useEffect(() => {
+    if (screen !== SCREENS.WORKSPACE || !projectName.trim()) { setLoopDesignEnabled(false); return; }
+    fetch(`/api/loop-design/status/${encodeURIComponent(projectName)}`)
+      .then((r) => (r.ok ? r.json() : { enabled: false }))
+      .then((d) => setLoopDesignEnabled(Boolean(d.enabled)))
+      .catch(() => setLoopDesignEnabled(false));
+  }, [screen, projectName]);
+
+  function handleLoopDesign(val) {
+    setLoopDesignEnabled(val);
+    fetch(`/api/loop-design/status/${encodeURIComponent(projectName)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ enabled: val }),
@@ -351,6 +371,8 @@ export default function App() {
     multiProjectEnabled,
     onMultiProject: handleMultiProject,
     onOpenMultiProjectBrowser: () => openAppWindow(WINDOWS.MULTI),
+    loopDesignEnabled,
+    onLoopDesign: handleLoopDesign,
   };
 
   return (
