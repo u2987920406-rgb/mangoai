@@ -25,7 +25,7 @@ import { recallProcedure, distillProcedure, learnedHint } from "../stratege/stra
 import { reclassifyAmbiguous, formatReclassify } from "../stratege/stratege-brain.js";
 import { consultSpecialist, buildDelegateNudge, buildForgedResumeNudge } from "../specialist/specialist-delegate.js";
 import { runSpecialistAgentic } from "../specialist/specialist-agentic.js";
-import { recordUncoveredGap, markGap, getGap, recordForgeAttempt, forgeAttemptsExhausted } from "../self/self-evolution.js";
+import { recordUncoveredGap, markGap, getGap, recordForgeAttempt, forgeAttemptsExhausted, gapValueScore } from "../self/self-evolution.js";
 import { loadSpecialists, recordSpecialistWin } from "../specialist/specialist-agents.js";
 import { forgeForGap } from "../agent/agent-forge.js";
 import { autoForgeConfig, newAutoForgeState, canAutoForge, recordAutoForge, resolveGapBlockers, isTransientBlocker, type AutoForgeState } from "../self/self-evolution-autoforge.js";
@@ -324,6 +324,14 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // lacune, cross-run — sans lui, une lacune dont la forge échoue re-dépense de l'Opus à
     // CHAQUE run, indéfiniment (autoForgeState est neuf à chaque run, rien d'autre ne freine).
     const maxForgeAttempts = Math.max(0, Math.floor(Number(process.env.SELF_EVOLVE_MAX_FORGE_ATTEMPTS ?? 3)) || 3);
+    // #196 (2026-07-22, demande de Raf) — SELF_EVOLVE_MIN_SCORE : la forge auto n'attend plus
+    // seulement le disjoncteur de coût, elle attend aussi que `gapValueScore` (récurrence −
+    // échecs − fraîcheur) dépasse ce seuil. Défaut 60 = ~3 récurrences fraîches sans échec
+    // préalable (min(3,5)×20 − 0 − 0 = 60) : on ne grille plus la tentative auto sur la toute
+    // première rencontre d'un blocage jamais confirmé récurrent. Le bouton manuel « Forger
+    // l'agent » reste, lui, TOUJOURS disponible quel que soit le score — ce seuil ne borne que
+    // le chemin SANS clic.
+    const minAutoForgeScore = Math.max(0, Math.min(100, Number(process.env.SELF_EVOLVE_MIN_SCORE ?? 60) || 60));
     const strategeState: StrategeState = newStrategeState();
     // #164 Phase 2 — APPRENTISSAGE (gaté `ELEVE_STRATEGE_LEARN`, défaut off) : un remède qui
     // DÉBLOQUE est distillé en procédure #75 ; au prochain blocage du même type on la RAPPELLE.
@@ -523,7 +531,9 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
             // par défaut. Refus → on reste en tranche 1 (la lacune attend la validation de Raf).
             const decision = canAutoForge(autoForgeCfg, autoForgeState, undefined, loadSpecialists().length);
             const attemptsLeft = !forgeAttemptsExhausted(g.gap, maxForgeAttempts);
-            if (decision.allow && g.gap.status === "proposed" && attemptsLeft) {
+            const gapScore = gapValueScore(g.gap);
+            const scoreOk = gapScore >= minAutoForgeScore;
+            if (decision.allow && g.gap.status === "proposed" && attemptsLeft && scoreOk) {
               push(`  🛡️ Disjoncteur : ${decision.reason} → forge auto…`);
               markGap(g.gap.id, "forging");
               recordForgeAttempt(g.gap.id);
@@ -569,6 +579,8 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
               }
             } else if (decision.allow && g.gap.status === "proposed" && !attemptsLeft) {
               push(`  🧬 Plafond de ${maxForgeAttempts} tentative(s) de forge atteint pour cette lacune → validation manuelle requise dans l'Atelier`);
+            } else if (decision.allow && g.gap.status === "proposed" && attemptsLeft && !scoreOk) {
+              push(`  🧬 Lacune notée (score ${gapScore}% < seuil ${minAutoForgeScore}%) — attend plus de récurrence avant la forge auto ; forçable dans l'Atelier`);
             } else if (g.isNew) {
               push(`  🧬 Forge à valider dans l'Atelier (${decision.reason})`);
             }
