@@ -21,7 +21,6 @@ export const SCREENS = Object.freeze({
 /** Types de fenêtres flottantes ouvertes via `openWindow({ type })`. */
 export const WINDOWS = Object.freeze({
   PROJECTS: "projects",
-  LAUNCHER: "launcher",
   SUITE: "suite",
   ARTIFACTS: "artifacts",
   GUIDE: "guide",

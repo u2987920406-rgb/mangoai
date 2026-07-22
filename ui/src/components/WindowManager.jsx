@@ -1,8 +1,8 @@
 import { Suspense, lazy, useState, useEffect } from "react";
 import {
-  BookOpen, Bot, Boxes, FileText, FlaskConical, FolderOpen, FolderPlus, HelpCircle,
-  Image as ImageIcon, Layers, Lightbulb, Music2, Network, Palette,
-  Plus, Search, Sliders, Sparkles, Star, Trash2, Wand2,
+  FolderOpen, FolderPlus,
+  Image as ImageIcon, Music2,
+  Plus, Search, Star, Trash2,
 } from "lucide-react";
 import Window from "./Window.jsx";
 import ConfirmDelete from "./ConfirmDelete.jsx";
@@ -227,74 +227,9 @@ function ProjectsWindow({ win, onClose }) {
   );
 }
 
-// ─── Launcher — grille de toutes les apps & outils ────────────────────────────
-const LAUNCHER_SECTIONS = [
-  {
-    title: "Apps",
-    items: [
-      { id: "projects",   label: "App Builder",   icon: FolderOpen,   run: (a) => a.onOpenProjects?.() },
-      { id: "suite",      label: "OS d'apps",     icon: Boxes,        run: (a) => a.onOpenApp?.("suite") },
-      { id: "image",      label: "Image Creator", icon: ImageIcon,    run: (a) => a.onOpenWindow?.({ type: WINDOWS.IMAGE_CREATOR, title: "Image Creator", width: 900, height: 640 }) },
-      { id: "music",      label: "Music Creator", icon: Music2,       run: (a) => a.onOpenWindow?.({ type: WINDOWS.MUSIC_CREATOR, title: "Music Creator", width: 900, height: 640 }) },
-      { id: "agent",      label: "Agent Factory", icon: Bot,          run: (a) => a.onOpenWindow?.({ type: WINDOWS.AGENT_FACTORY, title: "Agent Factory", width: 1100, height: 700 }) },
-      { id: "superagent", label: "Super Agent",   icon: Network,      run: (a) => a.onOpenApp?.("superagent") },
-      { id: "ideation",   label: "Ideation",      icon: Lightbulb,    run: (a) => a.onOpenApp?.("ideation") },
-      { id: "multi",      label: "Multi-Projet",  icon: Layers,       run: (a) => a.onOpenApp?.("multi") },
-      { id: "notes",      label: "Notes & RAG",   icon: BookOpen,     run: (a) => a.onOpenApp?.("notes") },
-      { id: "docs",       label: "Doc",           icon: FileText,     run: (a) => a.onOpenApp?.("docs") },
-      { id: "promptlab",  label: "Prompt Lab",    icon: FlaskConical, run: (a) => a.onOpenApp?.("promptlab") },
-      { id: "design",     label: "Design Review", icon: Palette,      run: (a) => a.onOpenApp?.("design") },
-      { id: "taste",      label: "Variantes de goût", icon: Wand2,    run: (a) => a.onOpenApp?.("taste") },
-    ],
-  },
-  {
-    title: "Outils",
-    items: [
-      { id: "artifacts", label: "Artefacts",      icon: Sparkles,   run: (a) => a.onOpenWindow?.({ type: WINDOWS.ARTIFACTS, title: "Artefacts · Blackboard", width: 780, height: 600 }) },
-      { id: "guide",     label: "Aide",           icon: HelpCircle, run: (a) => a.onOpenWindow?.({ type: WINDOWS.GUIDE, title: "Aide", width: 740, height: 600 }) },
-      { id: "editor",    label: "Éditeur visuel", icon: Sliders,    run: (a) => a.onOpenSidePanel?.() },
-    ],
-  },
-];
-
-function LauncherWindow({ win, onClose }) {
-  const actions = win.props?.actions ?? {};
-  return (
-    <div className="flex h-full flex-col gap-5 overflow-y-auto nice-scroll p-5">
-      {LAUNCHER_SECTIONS.map((section) => (
-        <div key={section.title}>
-          <p className="mb-2 px-1 text-[10px] font-semibold uppercase tracking-widest text-faint">
-            {section.title}
-          </p>
-          <div className="grid grid-cols-4 gap-2.5">
-            {section.items.map(({ id, label, icon: Icon, run }) => (
-              <button
-                key={id}
-                onClick={() => { run(actions); onClose(win.id); }}
-                className="group flex flex-col items-center gap-2 rounded-xl border border-edge bg-bg px-3 py-4
-                           hover:border-accent/50 hover:bg-raised transition-colors"
-              >
-                <span className="flex h-11 w-11 items-center justify-center rounded-xl border border-accent/15 bg-accent/[0.07] text-accent-soft transition-colors group-hover:bg-accent/15">
-                  <Icon size={20} />
-                </span>
-                <span className="text-center text-[12px] leading-tight text-dim group-hover:text-ink transition-colors">
-                  {label}
-                </span>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 function WindowContent({ win, onClose }) {
   if (win.type === WINDOWS.PROJECTS) {
     return <ProjectsWindow win={win} onClose={onClose} />;
-  }
-  if (win.type === WINDOWS.LAUNCHER) {
-    return <LauncherWindow win={win} onClose={onClose} />;
   }
   if (win.type === WINDOWS.ARTIFACTS) {
     return (

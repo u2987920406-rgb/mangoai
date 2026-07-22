@@ -4049,3 +4049,21 @@ Passage au point 1 (ré-audit final) ensuite.
 **Vérifié en réel** : grep de tout le repo `ui/src` confirmant zéro référence restante à `v2/` (hors le commentaire historique de `main.jsx`) ; `tsc --noEmit` propre ; `npm run build` réussi (le chunk `CodePane-*.js` apparaît bien dans le bundle, les anciens chunks `ShellV2`/`AccueilPane`/`BuilderPane`/etc. de `v2/` ont disparu du build, confirmant qu'ils étaient bien du code mort exclu par le bundler) ; serveur de dev relancé, `GET /src/components/CodePane.jsx` → 200 (nouveau chemin servi correctement).
 
 L137 fermé. Plus aucun composant UI orphelin dans le repo.
+
+## Journal — 2026-07-22 (suite) : point 5 (refonte UI) — début, consolidation en menu unique
+
+**Demande de Raf** (après inventaire numéroté des 47 composants navigables) : « le but n'étant de ne pas avoir de doublon et avoir un menu unique que regroupe tous ce qui est nécessaire sous le menu hamburger uniquement. »
+
+**Diagnostic** : 3 surfaces de navigation redondantes coexistaient — le dock latéral droit (`Sidebar.jsx`, toujours monté globalement dans `App.jsx`), le menu hamburger de l'Accueil (`HamburgerMenu.jsx`), et la grille Launcher « Toutes les apps » (`WindowManager.jsx::LAUNCHER_SECTIONS`). Les 3 exposaient en grande partie les MÊMES destinations (App Builder, Suite, Image/Music Creator apparaissaient dans les 3 ; Agent Factory/Ideation/Notes/etc. dans 2 des 3).
+
+**Fait** :
+- `HamburgerMenu.jsx` réécrit en point d'entrée UNIQUE : reprend toutes les destinations des 3 anciennes surfaces sans doublon, organisées en 2 cascades (« Nouveau projet » : App Builder/Suite/Image/Music ; « Outils » : Agent Factory/Super Agent/Ideation/Multi-Projet/Notes & RAG/Doc/Prompt Lab/Design Review/Variantes de goût/Artefacts/Aide/Éditeur visuel), plus Mes projets, Conversations récentes, et — nouveauté portée depuis le dock — Réglages/Tutoriels/Thème clair-sombre en items plats.
+- `Sidebar.jsx` **supprimé** (plus jamais monté nulle part).
+- `LAUNCHER_SECTIONS`/`LauncherWindow` retirés de `WindowManager.jsx` (+ nettoyage des imports d'icônes devenus inutiles), `WINDOWS.LAUNCHER` retiré de `nav.js`, `nav.test.js` mis à jour en conséquence.
+- `Home.jsx`/`IdleScreen.jsx`/`App.jsx` : props enrichies (`onOpenApp`, `onOpenSidePanel`, `onStartTutorial`, `nextTutorialId`) pour que le hamburger, seul, ait accès à tout ce qu'avaient le dock et le launcher.
+
+**Décision d'architecture assumée** : le hamburger reste scopé à l'écran Accueil (pas remonté en overlay global sur tous les écrans) — depuis le Workspace/Réglages/etc., le bouton « Accueil » du `Header.jsx` existant y ramène. Ça satisfait « un menu unique » (chaque destination n'a plus qu'UN SEUL point d'accès dans tout le repo) sans le risque d'un rework de layout global.
+
+**Vérifié en réel** : `tsc --noEmit` propre, `npm test` (vitest) **77/77**, `npm run build` réussi (bundle principal 412→407,89 Ko, cohérent avec le retrait de code mort). Correction méthodologique en cours de route : un test par `curl` sur le chemin de `Sidebar.jsx` renvoyait 200 — pas une preuve de survie du fichier, Vite sert son fallback SPA (`index.html`) sur toute route inconnue en dev ; `tsc`/`build`/tests restent les preuves fiables ici, pas une requête HTTP brute sur un chemin de module.
+
+**Reste à faire (point 5, suite)** : Raf doit valider visuellement le nouveau menu (je ne peux pas voir l'écran) ; l'inventaire numéroté #10-47 du tour précédent contient encore des composants FEATURE (pas juste des points de nav) sur lesquels Raf n'a pas encore tranché garder/couper — ce tour n'a traité que la duplication de NAVIGATION, pas le contenu de chaque outil.

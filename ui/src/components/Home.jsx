@@ -10,7 +10,7 @@ import ConversationThread from "./home/ConversationThread.jsx";
 import ContextGauge from "./ContextGauge.jsx";
 
 /* ── Page d'accueil ──────────────────────────────────────────────────────── */
-export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLauncher, onOpenSettings, model = "sonnet", onModel }) {
+export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenApp, onOpenSidePanel, onOpenSettings, onStartTutorial, nextTutorialId, model = "sonnet", onModel }) {
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [thinking, setThinking] = useState(false);
@@ -264,7 +264,11 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       <IdleScreen
         onOpenWindow={onOpenWindow}
         onOpenAppBuilder={onOpenAppBuilder}
-        onOpenLauncher={onOpenLauncher}
+        onOpenApp={onOpenApp}
+        onOpenSidePanel={onOpenSidePanel}
+        onOpenSettings={onOpenSettings}
+        onStartTutorial={onStartTutorial}
+        nextTutorialId={nextTutorialId}
         inputRef={inputRef}
         conversations={conversations}
         onLoadConversation={loadConversation}
@@ -297,7 +301,11 @@ export default function Home({ onOpen, onOpenWindow, onOpenAppBuilder, onOpenLau
       <HamburgerMenu
         onOpenWindow={onOpenWindow}
         onOpenAppBuilder={onOpenAppBuilder}
-        onOpenLauncher={onOpenLauncher}
+        onOpenApp={onOpenApp}
+        onOpenSidePanel={onOpenSidePanel}
+        onOpenSettings={onOpenSettings}
+        onStartTutorial={onStartTutorial}
+        nextTutorialId={nextTutorialId}
         inputRef={inputRef}
         conversations={conversations}
         onLoadConversation={loadConversation}

@@ -4,7 +4,6 @@ import Chat from "./Chat.jsx";
 import Preview from "./Preview.jsx";
 import Home from "./components/Home.jsx";
 import Header from "./components/Header.jsx";
-import Sidebar from "./components/Sidebar.jsx";
 import WorkspaceTools from "./components/WorkspaceTools.jsx";
 import Toasts from "./components/Toast.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
@@ -333,33 +332,6 @@ export default function App() {
     }
   };
 
-  // Ouvre le Launcher (grille de toutes les apps & outils)
-  const openLauncher = () => openWindow({
-    type: WINDOWS.LAUNCHER,
-    title: "Toutes les apps",
-    width: 720,
-    height: 560,
-    props: {
-      actions: {
-        onOpenProjects: openProjectsWindow,
-        onOpenWindow: openWindow,
-        onOpenApp: openAppWindow,
-        onOpenSidePanel: () => setSidePanelOpen(true),
-      },
-    },
-  });
-
-  // Dock latéral droit — apps headline + Launcher + Réglages + Tutoriels + Thème
-  const sidebarProps = {
-    onOpenProjects: openProjectsWindow,
-    onOpenWindow: openWindow,
-    onOpenLauncher: openLauncher,
-    onOpenSuite: () => openAppWindow("suite"),
-    onSetScreen: setScreen,
-    onStartTutorial: startTutorial,
-    nextTutorialId: tutorialNextId,
-  };
-
   // Outils contextuels du projet — rail VS-Code dans le workspace
   const workspaceToolsProps = {
     projectName,
@@ -400,8 +372,6 @@ export default function App() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-bg">
-      <Sidebar {...sidebarProps} />
-
       <div className="flex min-w-0 flex-1 flex-col overflow-hidden">
         {panelContent ? (
           <Suspense fallback={<PanelLoader />}>{panelContent}</Suspense>
@@ -410,8 +380,11 @@ export default function App() {
             onOpen={openProject}
             onOpenWindow={openWindow}
             onOpenAppBuilder={openProjectsWindow}
-            onOpenLauncher={openLauncher}
+            onOpenApp={openAppWindow}
+            onOpenSidePanel={() => setSidePanelOpen(true)}
             onOpenSettings={() => setScreen(SCREENS.REGLAGES)}
+            onStartTutorial={startTutorial}
+            nextTutorialId={tutorialNextId}
             model={model}
             onModel={(m) => { setModel(m); localStorage.setItem("mangoos.model", m); }}
           />

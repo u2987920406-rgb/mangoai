@@ -25,7 +25,6 @@ describe("nav — écrans", () => {
 describe("nav — fenêtres", () => {
   it("expose les types de fenêtres, dont la Suite (#138)", () => {
     expect(WINDOWS.SUITE).toBe("suite");
-    expect(WINDOWS.LAUNCHER).toBe("launcher");
     expect(windowValues()).toContain("projects");
   });
   it("isWindowType valide un type connu et rejette l'inconnu", () => {

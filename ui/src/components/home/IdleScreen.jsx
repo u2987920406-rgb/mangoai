@@ -8,7 +8,11 @@ import HamburgerMenu from "./HamburgerMenu.jsx";
 export default function IdleScreen({
   onOpenWindow,
   onOpenAppBuilder,
-  onOpenLauncher,
+  onOpenApp,
+  onOpenSidePanel,
+  onOpenSettings,
+  onStartTutorial,
+  nextTutorialId,
   inputRef,
   conversations,
   onLoadConversation,
@@ -37,7 +41,11 @@ export default function IdleScreen({
       <HamburgerMenu
         onOpenWindow={onOpenWindow}
         onOpenAppBuilder={onOpenAppBuilder}
-        onOpenLauncher={onOpenLauncher}
+        onOpenApp={onOpenApp}
+        onOpenSidePanel={onOpenSidePanel}
+        onOpenSettings={onOpenSettings}
+        onStartTutorial={onStartTutorial}
+        nextTutorialId={nextTutorialId}
         inputRef={inputRef}
         conversations={conversations}
         onLoadConversation={onLoadConversation}
