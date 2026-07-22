@@ -186,6 +186,12 @@ check("clause CONTEXTE D'ABORD présente en Élite", elite.includes("CONTEXTE D'
 check("clause CONTEXTE D'ABORD présente en MVP", mvp.includes("CONTEXTE D'ABORD"));
 check("clause CONTEXTE D'ABORD absente en Discuter (conseil, pas build)", !discuss.includes("CONTEXTE D'ABORD"));
 
+// #196 (2026-07-22, incident réel « Open Design ») — garde-fou terme ambigu : Discuter doit
+// demander une précision avant de chercher sur un terme générique, plutôt que de deviner sur
+// le 1er résultat Google. Propre à Discuter (pas un mode de build).
+check("clause TERME GÉNÉRIQUE/AMBIGU présente en Discuter", discuss.includes("TERME GÉNÉRIQUE/AMBIGU"));
+check("clause TERME GÉNÉRIQUE/AMBIGU absente en build Élite (hors-sujet, pas de recherche web à l'aveugle en build)", !elite.includes("TERME GÉNÉRIQUE/AMBIGU"));
+
 // Curseur de style — clause de DOSAGE entre 1 et 99 %, absente à 0/100/mode client.
 const blend50 = assembleSystemPrompt({ mode: "elite", model: "eleve", projectDir: dir, styleStrength: 50 });
 const blend100 = assembleSystemPrompt({ mode: "elite", model: "eleve", projectDir: dir, styleStrength: 100 });
