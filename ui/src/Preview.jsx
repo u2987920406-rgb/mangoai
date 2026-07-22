@@ -72,7 +72,7 @@ export default function Preview({
   }, [inspecting]);
 
   return (
-    <section data-tour="preview" className="flex min-w-0 flex-1 flex-col bg-bg">
+    <section data-tour="preview" className="hidden min-w-0 flex-1 flex-col bg-bg sm:flex">
       {/* Browser-style toolbar */}
       <div className="flex h-11 shrink-0 items-center gap-2.5 border-b border-edge px-3.5">
         <span

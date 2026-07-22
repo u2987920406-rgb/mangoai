@@ -4202,3 +4202,22 @@ Les 8 autres (Super Agent, Ideation, Multi-Projet, Doc, Prompt Lab, Design Revie
 - `server/src/eleve/relay-agentic.ts` : nouvelle constante `minAutoForgeScore` (env `SELF_EVOLVE_MIN_SCORE`, défaut 60) ; la condition qui déclenche la forge auto (`decision.allow && status==="proposed" && attemptsLeft`) gagne un 4ᵉ garde `&& scoreOk` (`gapValueScore(g.gap) >= minAutoForgeScore`). Nouveau message de log explicite quand le score est l'unique frein (« lacune notée, attend plus de récurrence »), pour que le run reste lisible sur POURQUOI la forge n'a pas tiré.
 
 **Vérifié en réel** : `tsc --noEmit` propre, et surtout **tous les tests qui exercent ce chemin exact** repassés au vert après la modif : `test-self-evolution-autoforge` 37/37, `test-self-evolution` 35/35, `test-relay` (boucle complète Élève→Maître, scénarios d'escalade) vert, `test-brain-dispatch` 38/38 (zone voisine, vérifiée par prudence).
+
+## Journal — 2026-07-22 (suite 10) : responsivité mobile du Workspace (comparaison avec hermes-webui)
+
+**Contexte** : Raf a testé `hermes-webui` (interface web tierce pour un agent Hermès) et demandé si MangoOS pouvait offrir les mêmes fonctions. Comparaison faite en lisant le vrai README (pas de suppositions) : la plupart des fonctions existent déjà côté MangoOS sous une forme différente (streaming SSE, cartes d'outils/sous-agents, réflexion repliable, jauge contexte/coût, profils multi-cerveaux, slash commands + panneau Skills, escalade Élève→Maître = leur « invoquer Claude Code »). Vrais manques identifiés : édition inline + régénération d'un message passé, recherche/épinglage/archivage des conversations, rendu Mermaid, cartes d'approbation de commande shell, export/partage. Différences délibérées (pas des manques) : accès distant multi-appareils, auth/OIDC, Docker, 10 skins — hors du choix d'architecture souveraine/mono-machine de MangoOS.
+
+**Ce qui a marqué Raf** : « l'interface bien pensée, la chatbox fonctionnelle et responsive avec tout ce qu'il faut ». Plutôt que de deviner, vérifié EN RÉEL avec Playwright à largeur téléphone (390px, iPhone standard) sur l'écran Workspace (chat+preview) — **3 vrais problèmes trouvés** (pas des suppositions) :
+1. En-tête tronqué : badge modèle/coût coupés à droite (`Header.jsx` — une seule rangée flex non-responsive, aucun élément ne cède la place).
+2. Rail d'icônes (`WorkspaceTools.jsx`, `w-14` fixe = 56px) qui mange une grosse part des 390px disponibles.
+3. Actions Construire/Planifier/Discuter + leurs sélecteurs de modèle coupés en bord d'écran.
+Bonus trouvé au passage : la fenêtre flottante « Nouveau projet » (App Builder) déborde carrément de l'écran à cette largeur, bouton Créer inatteignable — **hors scope** (Raf a choisi de ne corriger QUE le chat/workspace cette fois, pas le système de fenêtres flottantes).
+
+**Fait** :
+- `ui/src/components/Header.jsx` : tous les libellés texte des dropdowns (Mode/Modèle/Publier), le nom de marque « MangoAI », la jauge de contexte et le coût cumulé passent en `hidden sm:inline`/`sm:flex` (icône seule sur mobile, texte complet dès 640px). Bouton Supprimer le projet masqué sur mobile (action rare/destructive, pas prioritaire à 390px). `ProjectSwitcher` : `max-w-[40vw]` → `max-w-[26vw] sm:max-w-[40vw]` (un nom de projet long ne doit plus manger toute la place des contrôles). En-tête + groupe droit : `gap`/`px` resserrés sur mobile (`gap-1.5 px-2` → `sm:gap-3 sm:px-4`).
+- `ui/src/components/Dropdown.jsx` : padding par défaut du bouton `px-3` → `px-2 sm:px-3` (fichier partagé, changement mineur et sûr).
+- `ui/src/components/WorkspaceTools.jsx` : rail `w-14` → `w-11 sm:w-14`.
+- `ui/src/Chat.jsx` : panneau `w-2/5 min-w-[360px]` → `w-full sm:w-2/5 sm:min-w-[360px]` (2 occurrences — plein écran sur mobile, comportement desktop inchangé dès `sm:`).
+- `ui/src/Preview.jsx` : `flex` → `hidden ... sm:flex` (pas de place pour un 3ᵉ panneau sur téléphone ; réapparaît intact dès `sm:`).
+
+**Vérifié EN RÉEL, PAS juste en théorie** : Playwright à 390px AVANT (3 captures montrant les coupures) puis APRÈS (plus aucune coupure — en-tête complet avec troncature propre du nom de projet, rail lisible, actions complètes) ; capture desktop 1280px APRÈS pour confirmer ZÉRO régression (brand complet, labels texte, jauge/coût, bouton supprimer, panneau Preview — tout identique à avant). `tsc --noEmit` propre, `npm test` (ui) 77/77, `npm run build` propre. Captures avant/après envoyées à Raf.

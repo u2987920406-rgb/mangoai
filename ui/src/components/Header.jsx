@@ -73,7 +73,7 @@ export default function Header({
   return (
     <header
       data-tour="header"
-      className="flex h-14 shrink-0 items-center gap-3 border-b border-edge bg-panel px-4"
+      className="flex h-14 shrink-0 items-center gap-1.5 border-b border-edge bg-panel px-2 sm:gap-3 sm:px-4"
     >
       {onBack && (
         <button
@@ -92,7 +92,7 @@ export default function Header({
         title="Retour à l'accueil"
       >
         <span className="text-xl">🥭</span>
-        <span>
+        <span className="hidden sm:inline">
           Mango<span className="text-accent-soft">AI</span>
         </span>
       </button>
@@ -112,7 +112,7 @@ export default function Header({
         </span>
       )}
 
-      <div className="ml-auto flex items-center gap-2">
+      <div className="ml-auto flex items-center gap-1 sm:gap-2">
         {deployedUrl && (
           <a
             href={deployedUrl}
@@ -134,7 +134,7 @@ export default function Header({
                 size={14}
                 className={mode === "elite" ? "text-accent-soft" : "text-dim"}
               />
-              {currentMode.label}
+              <span className="hidden sm:inline">{currentMode.label}</span>
             </>
           }
         >
@@ -157,7 +157,7 @@ export default function Header({
           button={
             <>
               <current.icon size={14} className="text-accent-soft" />
-              {current.label}
+              <span className="hidden sm:inline">{current.label}</span>
             </>
           }
         >
@@ -183,10 +183,10 @@ export default function Header({
             button={
               <>
                 {deploying ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}
-                {deploying ? "Publication…" : "Publier"}
+                <span className="hidden sm:inline">{deploying ? "Publication…" : "Publier"}</span>
               </>
             }
-            buttonClass="flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-[13px] font-semibold text-white shadow-lg shadow-accent/25 hover:bg-accent-soft disabled:opacity-60 transition"
+            buttonClass="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-2.5 sm:px-3.5 text-[13px] font-semibold text-white shadow-lg shadow-accent/25 hover:bg-accent-soft disabled:opacity-60 transition"
             disabled={deploying}
           >
             {(close) =>
@@ -203,17 +203,21 @@ export default function Header({
           </Dropdown>
         )}
 
-        {context && <ContextGauge tokens={context.tokens} window={context.window} />}
+        {context && (
+          <div className="hidden sm:block">
+            <ContextGauge tokens={context.tokens} window={context.window} />
+          </div>
+        )}
 
-        <span className="font-mono text-xs text-faint" title="Coût cumulé de la session">
+        <span className="hidden font-mono text-xs text-faint sm:inline" title="Coût cumulé de la session">
           ${cost.toFixed(4)}
         </span>
 
         {canDelete && onDeleteProject && (
-          <>
+          <div className="hidden items-center gap-1 sm:flex sm:gap-2">
             <span className="text-edge">|</span>
             <DeleteProjectButton onConfirm={onDeleteProject} />
-          </>
+          </div>
         )}
       </div>
     </header>
@@ -268,7 +272,7 @@ export function ProjectSwitcher({ projectName, projects, reviews = {}, onSwitch,
         type="button"
         onClick={() => setOpen((v) => !v)}
         title="Changer de projet — sans repasser par l'accueil"
-        className="flex max-w-[40vw] items-center gap-1 rounded-lg px-1.5 py-1 font-mono text-[13px] text-dim hover:bg-edge-soft hover:text-ink transition-colors"
+        className="flex max-w-[26vw] items-center gap-1 rounded-lg px-1.5 py-1 font-mono text-[13px] text-dim hover:bg-edge-soft hover:text-ink transition-colors sm:max-w-[40vw]"
       >
         <span className="truncate">{projectName}</span>
         <ChevronDown size={13} className={`shrink-0 text-faint transition-transform ${open ? "rotate-180" : ""}`} />

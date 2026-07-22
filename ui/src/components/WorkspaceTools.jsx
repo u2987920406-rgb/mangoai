@@ -350,7 +350,7 @@ export default function WorkspaceTools({
   return (
     <div className="flex h-full shrink-0 border-r border-edge">
       {/* Rail d'icônes */}
-      <div className="flex w-14 flex-col items-center gap-0.5 bg-panel/60 px-1.5 py-2">
+      <div className="flex w-11 shrink-0 flex-col items-center gap-0.5 bg-panel/60 px-1 py-2 sm:w-14 sm:px-1.5">
         {show("memoire") && <RailBtn icon={BrainCircuit} label="Mémoire" active={active === "memoire"} onClick={() => toggle("memoire")} />}
         {show("revue") && <RailBtn icon={ClipboardCheck} label="Revue du build" active={active === "revue"} onClick={() => toggle("revue")} />}
         {show("style") && onStyleStrength && (

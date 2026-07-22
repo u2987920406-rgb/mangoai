@@ -5,7 +5,7 @@ import { ChevronDown } from "lucide-react";
 // function receiving a close() callback so menu items can dismiss the menu.
 export default function Dropdown({ button, children, align = "right", width = "w-60", disabled, buttonClass, dataTour }) {
   const defaultButtonClass =
-    "flex h-9 items-center gap-1.5 rounded-lg border border-edge bg-panel px-3 text-[13px] text-ink hover:border-faint transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
+    "flex h-9 items-center gap-1.5 rounded-lg border border-edge bg-panel px-2 sm:px-3 text-[13px] text-ink hover:border-faint transition-colors disabled:opacity-40 disabled:cursor-not-allowed";
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
 

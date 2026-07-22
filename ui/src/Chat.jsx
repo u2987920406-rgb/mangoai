@@ -659,7 +659,7 @@ export default function Chat({
   // le premier tour Construire de ce projet n'a pas été validé.
   if (ideationGateText !== null) {
     return (
-      <section className="flex w-2/5 min-w-[360px] flex-col border-r border-edge bg-panel">
+      <section className="flex w-full flex-col border-r border-edge bg-panel sm:w-2/5 sm:min-w-[360px]">
         <Ideation
           initialDescription={ideationGateText}
           onBack={() => setIdeationGateText(null)}
@@ -680,7 +680,7 @@ export default function Chat({
   }
 
   return (
-    <section className="flex w-2/5 min-w-[360px] flex-col border-r border-edge bg-panel">
+    <section className="flex w-full flex-col border-r border-edge bg-panel sm:w-2/5 sm:min-w-[360px]">
       {snapMode && (
         <div
           className="fixed inset-0 z-50 cursor-crosshair bg-black/30"
