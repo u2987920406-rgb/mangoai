@@ -12,7 +12,7 @@
 // Moule = orchestrator.ts (#44) : gather borné → askLLM → proposition → validation
 // humaine → application. Parse robuste = parseRadar. Scheduler = nocturnal.ts.
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import fs from "node:fs";
 import type { Express, Request, Response } from "express";
 import { resolveProvider } from "./llm/llm-engine.js";
@@ -20,7 +20,7 @@ import { getBrain } from "./kernel.js";
 import { AXIOMS_FILE_NAME, capRegistry, loadAxioms, axiomStats } from "./axioms.js";
 import { WORKSPACE_DIR } from "./projects.js";
 
-const DATA_DIR = path.join(process.cwd(), "..", "server", "data");
+const DATA_DIR = dataDir();
 const RUNS_FILE = path.join(DATA_DIR, "prompt-evolution.json");
 const CONFIG_FILE = path.join(DATA_DIR, "prompt-evolution-config.json");
 

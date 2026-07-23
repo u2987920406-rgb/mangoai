@@ -9,7 +9,7 @@ import type { Express, Request, Response } from "express";
 import { fetchVeilleItems } from "./veille.js";
 import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -33,7 +33,7 @@ interface RadarCache {
 
 // ── Persistence ───────────────────────────────────────────────────────────────
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 const CACHE_FILE = path.join(DATA_DIR, "radar.json");
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 

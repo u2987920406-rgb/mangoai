@@ -18,12 +18,13 @@ import { tryAcquireAgent, releaseAgent } from "../agent/agent-lock.js";
 import { clearInterrupt } from "../interrupt.js";
 import { getSession, saveSession, clearSession } from "../sessions.js";
 import { appendHistory, type ChatEntry } from "../history.js";
+import { dataDir } from "../safe-io.js";
 
 /** Dossier d'historique DÉDIÉ, hors du dossier externe lui-même — décision consciente
  *  (docs/plan-193-section-code.md §4) : ne jamais écrire de .chat-history.json dans le
  *  repo de l'utilisateur, surprise minimale. */
 export function externalHistoryDir(externalProjectId: string): string {
-  return path.join(process.cwd(), "data", "external-history", externalProjectId);
+  return dataDir("external-history", externalProjectId);
 }
 
 function codeAgentSystemPrompt(dir: string): string {

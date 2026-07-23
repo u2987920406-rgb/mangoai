@@ -1,5 +1,5 @@
 import type { Express, Request, Response } from 'express'
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import fs from 'node:fs'
 import path from 'node:path'
 import { resolveProvider } from './llm/llm-engine.js'
@@ -9,7 +9,7 @@ import { projectDir } from './projects.js'
 const WORKSPACE_DIR = path.join(process.cwd(), '..', 'workspace')
 
 // Phase 3 idée #26 — index sémantique (résumés via l'Élève local Gemma/Ollama — $0, hors crédits API)
-const DATA_DIR = path.join(process.cwd(), '..', 'server', 'data')
+const DATA_DIR = dataDir()
 const INDEX_FILE = path.join(DATA_DIR, 'multi-project-index.json')
 
 const EXCLUDED_DIRS = new Set(['node_modules', '.mango', 'dist', '.git', '.cache', '.next', '.nuxt'])

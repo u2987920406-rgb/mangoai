@@ -13,7 +13,7 @@
 // le cerveau codeur local tient la boucle agentique.
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import {
   loadBrainRegistry,
   saveBrainRegistry,
@@ -62,7 +62,7 @@ export function applyProfile(name: string, registryFileForBackup?: string): Appl
   let backupPath: string | undefined;
   try {
     const current = loadBrainRegistry();
-    const dir = registryFileForBackup ? path.dirname(registryFileForBackup) : path.join(import.meta.dirname, "..", "data");
+    const dir = registryFileForBackup ? path.dirname(registryFileForBackup) : dataDir();
     backupPath = path.join(dir, "brain-registry.backup.json");
     atomicWriteFileSync(backupPath, JSON.stringify(current, null, 2));
   } catch {

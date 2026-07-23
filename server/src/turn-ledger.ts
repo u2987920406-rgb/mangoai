@@ -95,17 +95,112 @@ export function markTurnSeen(dir: string): void {
   }
 }
 
+// ── Opérations différées (#0.4, audit fault-finding 2026-07-23) ─────────────
+//
+// Trouvaille de l'audit : `chat-route.ts` appelle `finishTurn` SANS attendre les
+// opérations fire-and-forget qu'il vient de lancer (review, patrouille, compaction,
+// diagramme "après") — `.turn-ledger.json` affiche donc "success" alors que ces 4
+// sous-systèmes peuvent encore tourner, ou avoir crashé, en arrière-plan, sans que
+// rien ne le sache. Registre SÉPARÉ (ne retarde jamais le tour visible) : chaque
+// opération pose sa propre ancre "running" à son lancement, résolue à sa conclusion —
+// même discipline que `startTurn`/`finishTurn`, appliquée par opération nommée plutôt
+// que par tour entier.
+export const DEFERRED_FILE_NAME = ".turn-ledger-deferred.json";
+
+export interface DeferredOpEntry {
+  op: string; // "review" | "patrol" | "compaction" | "diagram-apres" …
+  turnId: string; // le tour qui a déclenché cette opération
+  status: "running" | "success" | "error";
+  startedAt: string;
+  finishedAt?: string;
+}
+
+function deferredFile(dir: string): string {
+  return path.join(dir, DEFERRED_FILE_NAME);
+}
+
+function isDeferredEntry(v: unknown): v is DeferredOpEntry {
+  if (!v || typeof v !== "object") return false;
+  const o = v as Record<string, unknown>;
+  return typeof o.op === "string" && typeof o.turnId === "string" && typeof o.status === "string" && typeof o.startedAt === "string";
+}
+
+export function readDeferredOps(dir: string): DeferredOpEntry[] {
+  try {
+    const data: unknown = JSON.parse(fs.readFileSync(deferredFile(dir), "utf8"));
+    return Array.isArray(data) ? data.filter(isDeferredEntry) : [];
+  } catch {
+    return [];
+  }
+}
+
+function writeDeferredOps(dir: string, entries: DeferredOpEntry[]): void {
+  try {
+    atomicWriteFileSync(deferredFile(dir), JSON.stringify(entries, null, 2));
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Pose l'ancre "en vol" pour UNE opération différée nommée (une entrée par `op`, la
+ *  plus récente remplace la précédente — pas un historique complet, juste l'état
+ *  courant). Écrit SYNCHRONE, avant que l'opération elle-même ne démarre. */
+function startDeferredOp(dir: string, turnId: string, op: string): void {
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    const entries = readDeferredOps(dir).filter((e) => e.op !== op);
+    entries.push({ op, turnId, status: "running", startedAt: new Date().toISOString() });
+    writeDeferredOps(dir, entries);
+  } catch {
+    /* best-effort */
+  }
+}
+
+function finishDeferredOp(dir: string, turnId: string, op: string, status: "success" | "error"): void {
+  try {
+    const entries = readDeferredOps(dir);
+    const idx = entries.findIndex((e) => e.op === op && e.turnId === turnId);
+    if (idx < 0) return; // ancre déjà remplacée par une opération plus récente du même nom
+    entries[idx] = { ...entries[idx]!, status, finishedAt: new Date().toISOString() };
+    writeDeferredOps(dir, entries);
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** Enveloppe une opération fire-and-forget pour qu'elle pose/résolve sa propre ancre —
+ *  patron `void trackDeferred(dir, turnId, "review", spawnBackgroundReview(...))`.
+ *  NE RETARDE JAMAIS l'appelant (l'ancre de départ est synchrone, le reste suit la
+ *  promesse existante sans y ajouter d'attente). Ne lève jamais. */
+export function trackDeferred<T>(dir: string, turnId: string, op: string, promise: Promise<T>): Promise<T> {
+  startDeferredOp(dir, turnId, op);
+  return promise
+    .then((v) => {
+      finishDeferredOp(dir, turnId, op, "success");
+      return v;
+    })
+    .catch((err) => {
+      finishDeferredOp(dir, turnId, op, "error");
+      throw err;
+    });
+}
+
 /** `GET /api/turn-status/:name` — le client interroge ceci à l'ouverture d'un projet
  *  pour détecter un tour interrompu par un crash (`status:"running"` jamais résolu) ou
- *  un résultat terminé pas encore vu (`seen` absent). `POST .../seen` acquitte. */
+ *  un résultat terminé pas encore vu (`seen` absent). `POST .../seen` acquitte. Inclut
+ *  les opérations différées ENCORE "running" pour le tour courant (#0.4) — un tour
+ *  "success" dont la review/patrouille/diagramme n'a jamais résolu doit être visible. */
 export function registerTurnLedgerRoutes(app: Express): void {
   app.get("/api/turn-status/:name", (req, res) => {
     const name = req.params["name"] as string;
     if (!projectExists(name)) {
-      res.json({ entry: null });
+      res.json({ entry: null, deferred: [] });
       return;
     }
-    res.json({ entry: readTurnLedger(projectDir(name)) });
+    const dir = projectDir(name);
+    const entry = readTurnLedger(dir);
+    const deferred = entry ? readDeferredOps(dir).filter((d) => d.turnId === entry.turnId) : [];
+    res.json({ entry, deferred });
   });
 
   app.post("/api/turn-status/:name/seen", (req, res) => {

@@ -5,8 +5,9 @@ import { randomUUID } from "node:crypto";
 import { resolveProvider } from "./llm/llm-engine.js";
 import { getBrain } from "./kernel.js";
 import { embedOllama } from "./ollama.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 
-const DATA_DIR = path.join(process.cwd(), "..", "server", "data");
+const DATA_DIR = dataDir();
 const NOTES_FILE = path.join(DATA_DIR, "notes.jsonl");
 
 interface Note {
@@ -28,16 +29,28 @@ function ensureDataDir() {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 }
 
+/** (2026-07-23, audit fault-finding) — ligne corrompue individuelle ignorée plutôt que
+ *  de faire échouer TOUT le chargement (patron déjà appliqué ailleurs, ex.
+ *  concept-consolidation.ts::loadVerifications) ; c'était le seul store JSONL de tout
+ *  l'inventaire sans cette protection. */
 function loadNotes(): Note[] {
   ensureDataDir();
   if (!fs.existsSync(NOTES_FILE)) return [];
   const lines = fs.readFileSync(NOTES_FILE, "utf-8").split("\n").filter(Boolean);
-  return lines.map((l) => JSON.parse(l) as Note);
+  const out: Note[] = [];
+  for (const l of lines) {
+    try {
+      out.push(JSON.parse(l) as Note);
+    } catch {
+      // ligne corrompue — ignorée, jamais un crash du store entier
+    }
+  }
+  return out;
 }
 
 function saveNotes(notes: Note[]) {
   ensureDataDir();
-  fs.writeFileSync(NOTES_FILE, notes.map((n) => JSON.stringify(n)).join("\n") + (notes.length ? "\n" : ""), "utf-8");
+  atomicWriteFileSync(NOTES_FILE, notes.map((n) => JSON.stringify(n)).join("\n") + (notes.length ? "\n" : ""));
 }
 
 function matchNote(note: Note, q: string): boolean {

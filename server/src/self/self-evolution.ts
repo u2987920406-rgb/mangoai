@@ -9,7 +9,7 @@
 
 import fs from "node:fs"
 import path from "node:path"
-import { atomicWriteFileSync } from "../safe-io.js"
+import { atomicWriteFileSync, dataDir } from "../safe-io.js"
 import { loadSpecialists, type SpecialistAgent } from "../specialist/specialist-agents.js"
 
 export type GapStatus = "proposed" | "forging" | "forged" | "dismissed"
@@ -48,7 +48,7 @@ const MAX_GAPS = 200
 
 /** Chemin du store, surchargeable par env (testabilité). Résolu paresseusement. */
 function gapsFile(): string {
-  return process.env.OPEN_GAPS_FILE ?? path.join(import.meta.dirname, "..", "data", "open-gaps.json")
+  return process.env.OPEN_GAPS_FILE ?? dataDir("open-gaps.json")
 }
 
 const clip = (s: unknown, n: number): string => (typeof s === "string" ? s.trim().slice(0, n) : "")

@@ -162,11 +162,15 @@ function formatTranscript(turn: ChatEntry[]): string {
     : lines;
 }
 
-/** Fire-and-forget: reviews the finished turn and updates both memory stores. */
-export function spawnBackgroundReview(projectDir: string, turn: ChatEntry[]): void {
-  if (reviewRunning) return;
+/** Fire-and-forget: reviews the finished turn and updates both memory stores.
+ *  Renvoie la promesse (au lieu de l'avaler en interne) depuis 2026-07-23 (#0.4,
+ *  audit fault-finding) — le caller peut désormais la suivre via turn-ledger.ts::
+ *  trackDeferred, sans que ça retarde qui que ce soit (fire-and-forget inchangé si
+ *  le caller ne fait rien de la promesse renvoyée). */
+export function spawnBackgroundReview(projectDir: string, turn: ChatEntry[]): Promise<void> {
+  if (reviewRunning) return Promise.resolve();
   reviewRunning = true;
-  void (async () => {
+  return (async () => {
     try {
       const memoryBefore = loadMemory(projectDir);
       const profileBefore = loadUserProfile(WORKSPACE_DIR);

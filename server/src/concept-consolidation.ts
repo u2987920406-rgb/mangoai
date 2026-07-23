@@ -12,7 +12,7 @@
 // PEUT désapprendre, parade documentée contre la dérive (cf. plan, point 5).
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import { updateConceptConfidence, type Embed } from "./concept-registry.js";
 import type { VerdictContexte } from "./verificateur-contexte.js";
 import type { VerdictChaine } from "./chaine-ambigue.js";
@@ -35,12 +35,18 @@ export interface VerificationEvent {
 }
 
 function telemetryFile(): string {
-  return process.env.CONCEPT_TELEMETRY_FILE ?? path.join(import.meta.dirname, "..", "data", "concept-verifications.jsonl");
+  return process.env.CONCEPT_TELEMETRY_FILE ?? dataDir("concept-verifications.jsonl");
 }
 
 /** Journalise un événement de vérification. Append-only (comme project-backlog.ts
  *  côté #183) — un append est une seule syscall, jamais de réécriture complète
- *  qui risquerait de perdre tout l'historique. Ne lève jamais. */
+ *  qui risquerait de perdre tout l'historique. Ne lève jamais.
+ *  (2026-07-23, audit fault-finding) : DÉLIBÉRÉMENT PAS `atomicAppendFileSync`
+ *  ici — celui-ci fait un read-modify-write complet à CHAQUE ligne (coût + le
+ *  risque de course documenté dans safe-io.ts pour un fichier qui grossit sans
+ *  fin), alors que `loadVerifications` valide déjà chaque ligne individuellement
+ *  et ignore silencieusement une ligne corrompue — la défense est déjà côté
+ *  lecture, pas besoin de la dupliquer côté écriture. */
 export function logVerification(event: Omit<VerificationEvent, "timestamp">, now: number = Date.now()): void {
   try {
     const full: VerificationEvent = { ...event, timestamp: new Date(now).toISOString() };

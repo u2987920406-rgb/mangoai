@@ -10,7 +10,7 @@
 // Patron I/O identique à `perimeter.ts` : écriture atomique, `file` injectable (tests).
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import { addGrantToFile, type GrantMode } from "./perimeter.js";
 
 export interface ExternalProject {
@@ -22,7 +22,7 @@ export interface ExternalProject {
   addedAt: number;
 }
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 export const EXTERNAL_PROJECTS_FILE = path.join(DATA_DIR, "external-projects.json");
 
 function normPath(p: string): string {

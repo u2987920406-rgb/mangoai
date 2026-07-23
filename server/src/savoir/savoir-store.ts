@@ -16,14 +16,21 @@
 import fs from "node:fs";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { dataDir } from "../safe-io.js";
 import { cosine, rankByCosine, type SearchHit } from "../kernel/kernel-blackboard-store.js";
 
 // ── Emplacement des bases (une par corpus) ──────────────────────────────────
 
-/** Racine des corpus (`server/data/savoir/`). Résolue depuis ce fichier, donc
- *  indépendante du cwd d'où le process a été lancé. */
+/** Racine des corpus (`server/data/savoir/`). Ancré via `dataDir()` (safe-io.ts) —
+ *  AVANT ce correctif (2026-07-23), ce fichier vivant dans `src/savoir/` (un
+ *  sous-dossier) résolvait en réalité vers `server/src/data/savoir/`, contrairement
+ *  à ce que ce commentaire affirmait déjà — le vrai corpus (transcripts vidéo,
+ *  savoir-transcript.ts) vit depuis toujours dans `server/data/savoir/`, jamais
+ *  atteint par ce module tant qu'aucun appelant réel n'existait (flags SAVOIR et
+ *  ELEVE_SAVOIR, désactivés par défaut) — sans conséquence visible jusqu'ici, mais
+ *  la même mine que `specialist-agents.json` en cas d'activation future. */
 export function savoirDataDir(): string {
-  return path.join(import.meta.dirname, "..", "data", "savoir");
+  return dataDir("savoir");
 }
 
 /** Chemin de la base SQLite d'un corpus (`server/data/savoir/<slug>/savoir.db`).

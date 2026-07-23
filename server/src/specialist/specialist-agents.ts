@@ -16,7 +16,7 @@
 
 import fs from "node:fs"
 import path from "node:path"
-import { atomicWriteFileSync } from "../safe-io.js"
+import { atomicWriteFileSync, dataDir } from "../safe-io.js"
 import { askLLM, type LLMProvider } from "../llm/llm-engine.js"
 import { sanitizeExternal } from "../agent/agent-contract.js"
 // Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
@@ -76,10 +76,11 @@ const MAX_TOOLS = 10
 const MAX_EXAMPLES = 6
 const MAX_TAGS = 8
 
-/** Chemin du registre, surchargeable par env (testabilité). Résolu paresseusement. */
+/** Chemin du registre, surchargeable par env (testabilité). Résolu paresseusement.
+ *  Ancré sur `dataDir()` (safe-io.ts) — PAS `import.meta.dirname` local (couplait le
+ *  chemin à la profondeur de CE fichier, cause du registre fantôme trouvé le 2026-07-23). */
 function registryFile(): string {
-  return process.env.SPECIALIST_AGENTS_FILE
-    ?? path.join(import.meta.dirname, "..", "data", "specialist-agents.json")
+  return process.env.SPECIALIST_AGENTS_FILE ?? dataDir("specialist-agents.json")
 }
 
 const clip = (s: unknown, n: number): string =>

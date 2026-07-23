@@ -5,7 +5,7 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { startTurn, finishTurn, readTurnLedger, markTurnSeen } from "../turn-ledger.js";
+import { startTurn, finishTurn, readTurnLedger, markTurnSeen, trackDeferred, readDeferredOps } from "../turn-ledger.js";
 import { line, makeCheck } from "./test-util.js";
 
 let failures = 0;
@@ -79,6 +79,76 @@ line();
   finishTurn(dir, "turn-old", "success", "résultat périmé"); // turnId ne correspond plus
   const entry = readTurnLedger(dir);
   check("finishTurn d'un tour périmé n'écrase pas le tour en cours", entry?.turnId === "turn-new" && entry.status === "running");
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+line();
+console.log("turn-ledger — trackDeferred / readDeferredOps (#0.4, audit fault-finding 2026-07-23)");
+line();
+
+{
+  // Ancre posée AVANT que la promesse ne résolve — c'est ce qui doit survivre à un crash.
+  const dir = tmpDir();
+  let resolve!: () => void;
+  const pending = new Promise<void>((r) => { resolve = r; });
+  const tracked = trackDeferred(dir, "turn-1", "review", pending);
+  const midFlight = readDeferredOps(dir).find((d) => d.op === "review");
+  check("ancre posée immédiatement, avant résolution", midFlight?.status === "running");
+  check("ancre porte le bon turnId", midFlight?.turnId === "turn-1");
+  resolve();
+  await tracked;
+  const after = readDeferredOps(dir).find((d) => d.op === "review");
+  check("résolu → success", after?.status === "success");
+  check("finishedAt posé", typeof after?.finishedAt === "string");
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+{
+  // Une opération qui rejette est trackée "error", et l'erreur remonte quand même
+  // au caller (trackDeferred ne doit jamais avaler silencieusement un vrai rejet).
+  const dir = tmpDir();
+  const failing = Promise.reject(new Error("boom"));
+  let threw = false;
+  try {
+    await trackDeferred(dir, "turn-2", "patrol", failing);
+  } catch {
+    threw = true;
+  }
+  check("l'erreur remonte bien au caller", threw);
+  check("ancre marquée error", readDeferredOps(dir).find((d) => d.op === "patrol")?.status === "error");
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+{
+  // Plusieurs opérations DIFFÉRENTES du même tour cohabitent, indépendamment.
+  const dir = tmpDir();
+  await trackDeferred(dir, "turn-3", "review", Promise.resolve());
+  await trackDeferred(dir, "turn-3", "diagram-apres", Promise.resolve());
+  const ops = readDeferredOps(dir);
+  check("2 opérations distinctes cohabitent", ops.length === 2);
+  check("les deux résolues", ops.every((o) => o.status === "success"));
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+{
+  // Un NOUVEL appel sur le MÊME nom d'opération remplace l'ancre précédente (pas un
+  // historique cumulatif — l'état COURANT de chaque opération nommée).
+  const dir = tmpDir();
+  await trackDeferred(dir, "turn-4", "review", Promise.resolve());
+  let resolve!: () => void;
+  const pending = new Promise<void>((r) => { resolve = r; });
+  const tracked2 = trackDeferred(dir, "turn-5", "review", pending);
+  const ops = readDeferredOps(dir);
+  check("la nouvelle ancre remplace l'ancienne (toujours 1 seule entrée 'review')", ops.filter((o) => o.op === "review").length === 1);
+  check("l'entrée courante porte le NOUVEAU turnId", ops.find((o) => o.op === "review")?.turnId === "turn-5");
+  resolve();
+  await tracked2;
+  fs.rmSync(dir, { recursive: true, force: true });
+}
+
+{
+  const dir = tmpDir();
+  check("readDeferredOps sur dossier vide → []", readDeferredOps(dir).length === 0);
   fs.rmSync(dir, { recursive: true, force: true });
 }
 

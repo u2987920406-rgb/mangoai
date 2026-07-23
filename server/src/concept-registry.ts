@@ -14,7 +14,7 @@
 // définition validée d'un concept, ou le mécanisme pour en proposer une neuve.
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import { getBlackboard, type Blackboard } from "./kernel/kernel-blackboard.js";
 import { embedOllama } from "./ollama.js";
 import { gapSignature } from "./self/self-evolution.js";
@@ -154,7 +154,7 @@ export interface ConceptGap {
 }
 
 function conceptGapsFile(): string {
-  return process.env.CONCEPT_GAPS_FILE ?? path.join(import.meta.dirname, "..", "data", "concept-gaps.json");
+  return process.env.CONCEPT_GAPS_FILE ?? dataDir("concept-gaps.json");
 }
 
 function isConceptGap(x: unknown): x is ConceptGap {

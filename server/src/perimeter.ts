@@ -16,7 +16,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import { flag } from "./flags.js";
 
 // ── Modèle ──────────────────────────────────────────────────────────────────
@@ -229,7 +229,7 @@ export function listGrants(grants: readonly unknown[]): Grant[] {
 
 // ── Registre de grants — couche I/O (impure, injectable) ────────────────────
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 export const GRANTS_FILE = path.join(DATA_DIR, "desktop-grants.json");
 
 /**

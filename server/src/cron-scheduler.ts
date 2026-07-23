@@ -1,5 +1,5 @@
 import fs from 'node:fs'
-import { atomicWriteFileSync } from './safe-io.js'
+import { atomicWriteFileSync, dataDir } from './safe-io.js'
 import path from 'node:path'
 import type { Express } from 'express'
 import { resolveProvider } from './llm/llm-engine.js'
@@ -22,7 +22,7 @@ interface CronTask {
   createdAt: string
 }
 
-const DATA_DIR = path.join(process.cwd(), 'data')
+const DATA_DIR = dataDir()
 const DATA_FILE = path.join(DATA_DIR, 'cron-tasks.json')
 
 // #173 — état in-process du disjoncteur cron (fenêtre glissante d'une heure). Le scheduler

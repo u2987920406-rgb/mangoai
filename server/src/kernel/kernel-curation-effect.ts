@@ -31,9 +31,9 @@ import {
   type CurationPriority,
   type TuningKnobs,
 } from './kernel-curation-priority.js'
-import { atomicWriteFileSync } from '../safe-io.js'
+import { atomicWriteFileSync, dataDir } from '../safe-io.js'
 
-const DATA_DIR = path.join(process.cwd(), 'data')
+const DATA_DIR = dataDir()
 const LEDGER_FILE = path.join(DATA_DIR, 'curation-ledger.json')
 const TUNING_FILE = path.join(DATA_DIR, 'curation-tuning.json')
 const MAX_SAMPLES = 400 // borne le fichier (≈ plus d'un an de nuits)

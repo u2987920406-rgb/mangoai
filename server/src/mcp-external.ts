@@ -22,6 +22,7 @@ import { spawn, type ChildProcess } from "node:child_process";
 import { z, type ZodRawShape, type ZodTypeAny } from "zod";
 import type { KernelTool, KernelToolResult } from "./kernel/kernel-mcp.js";
 import { sanitizeExternal } from "./agent/agent-contract.js";
+import { dataDir } from "./safe-io.js";
 
 // ── Config déclarative ───────────────────────────────────────────────────────
 
@@ -359,5 +360,5 @@ export async function loadExternalMcpTools(configPath: string, deps: McpLoaderDe
 
 /** Chemin par défaut de la config (data/mcp-servers.json à la racine du repo). */
 export function defaultMcpConfigPath(): string {
-  return path.resolve(process.cwd(), "data", "mcp-servers.json");
+  return dataDir("mcp-servers.json");
 }

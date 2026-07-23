@@ -7,7 +7,7 @@
 // valeurs par défaut saines (DEFAULT_REGISTRY) — jamais de crash, jamais de blocage.
 import fs from "node:fs"
 import path from "node:path"
-import { atomicWriteFileSync } from "../safe-io.js"
+import { atomicWriteFileSync, dataDir } from "../safe-io.js"
 import { flag } from "../flags.js"
 import type { LLMProvider } from "../llm/llm-engine.js"
 
@@ -131,7 +131,7 @@ const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
 /** Dossier des profils de cerveau (C4) : registres COMPLETS pré-remplis
  *  (full-local, cloud-actuel…) qu'on bascule en une commande ou une ligne d'env. */
 export function brainProfileDir(): string {
-  return path.join(import.meta.dirname, "..", "data", "brain-profiles")
+  return dataDir("brain-profiles")
 }
 export function brainProfilePath(name: string): string {
   return path.join(brainProfileDir(), `${name}.json`)
@@ -155,7 +155,7 @@ function registryFile(): string {
     if (fs.existsSync(pf)) return pf
     console.warn(`[brain-registry] BRAIN_PROFILE="${profile}" introuvable (${pf}) → registre habituel`)
   }
-  return path.join(import.meta.dirname, "..", "data", "brain-registry.json")
+  return dataDir("brain-registry.json")
 }
 
 /** Valide un objet brut en BrainConfig sûr, en repliant champ par champ sur `fallback`. */

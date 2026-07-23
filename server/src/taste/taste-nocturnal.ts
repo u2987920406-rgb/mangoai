@@ -9,7 +9,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "../safe-io.js";
+import { atomicWriteFileSync, dataDir } from "../safe-io.js";
 import { listProjects, projectDir, WORKSPACE_DIR } from "../projects.js";
 import { generateTasteSkins, findTokensFile, findHeroFile, type SkinRender } from "./taste-render.js";
 import { judgeSkins, buildJudgeContext } from "./taste-judge.js";
@@ -18,7 +18,7 @@ import { favoredIds } from "./taste-loop.js";
 import { notifyNtfy } from "../notify.js";
 import { lanBaseUrl } from "../net.js";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 const CONFIG_FILE = path.join(DATA_DIR, "taste-nocturnal-config.json");
 
 export interface TasteNocturnalConfig {

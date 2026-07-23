@@ -20,8 +20,9 @@ import {
   type PdfDeps,
 } from "./pdf-pipeline.js";
 import { renderPdfPage, extractPdfImages, type PdfCrop } from "./pdf-render.js";
+import { dataDir } from "./safe-io.js";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 const UPLOAD_DIR = path.join(DATA_DIR, "pdf-uploads");
 const DB_PATH = path.join(DATA_DIR, "pdf-store.db");
 

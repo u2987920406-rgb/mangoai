@@ -5,11 +5,16 @@ import { WORKSPACE_DIR } from "../projects.js";
 import { AGENTS_DIR } from "./agent-bus.js";
 import { resolveProvider } from "../llm/llm-engine.js";
 import { getBrain } from "../kernel.js";
-import { atomicWriteFileSync } from "../safe-io.js";
+import { atomicWriteFileSync, dataDir } from "../safe-io.js";
 import type { AgentDef, AgentCategory } from "./agent-types.js";
 
-const REGISTRY_FILE    = path.join(path.resolve(import.meta.dirname, "..", ".."), "server", "data", "agents-registry.json");
-const TEMPLATE_DIR     = path.join(path.resolve(import.meta.dirname, "..", ".."), "server", "templates", "agent");
+// (2026-07-23, audit fault-finding) — AVANT ce correctif, ces deux chemins avaient un
+// segment "server" EN TROP (`path.resolve(import.meta.dirname, "..", "..")` atteint
+// déjà `server/` depuis `src/agent/` — ajouter "server" ensuite visait `server/server/`,
+// un dossier qui n'a jamais existé). `loadAgentRegistry()` renvoyait donc TOUJOURS `[]`
+// et la génération par template était cassée, en silence, depuis toujours.
+const REGISTRY_FILE    = dataDir("agents-registry.json");
+const TEMPLATE_DIR     = path.join(path.resolve(import.meta.dirname, "..", ".."), "templates", "agent");
 const TEMPLATE_AGENT   = path.join(TEMPLATE_DIR, "agent.js");
 
 // Deps injectables (tests sans réseau).
@@ -40,6 +45,7 @@ export function saveAgentDef(def: AgentDef): void {
   const idx = registry.findIndex((d) => d.id === def.id);
   if (idx >= 0) registry[idx] = def;
   else registry.push(def);
+  fs.mkdirSync(path.dirname(REGISTRY_FILE), { recursive: true });
   atomicWriteFileSync(REGISTRY_FILE, JSON.stringify(registry, null, 2));
 }
 

@@ -3,6 +3,25 @@
 // write a sibling temp file then rename it over the target, so a crash or
 // power cut mid-write can never leave a truncated file as the only copy.
 import fs from "node:fs";
+import path from "node:path";
+
+// (Fault-finding audit, 2026-07-23) — AVANT ce helper, ~30 modules recalculaient
+// chacun leur propre chemin vers `data/`, avec 4 patrons INCOMPATIBLES selon que le
+// fichier propriétaire vivait à la racine de `src/` ou dans un sous-dossier
+// (`import.meta.dirname` couplé à la profondeur du fichier appelant) ou selon le cwd
+// de lancement (`process.cwd()`). Conséquence VÉRIFIÉE sur disque : `specialist-agents.json`,
+// `brain-registry.json` et `open-gaps.json` existaient chacun en DEUX exemplaires
+// divergents (`server/data/` vs `server/src/data/`) sans qu'aucun code ne le sache —
+// dont un registre de 10 agents spécialistes RÉELLEMENT forgés, invisibles du système
+// vivant depuis que le code avait migré vers un chemin cassé.
+//
+// `dataDir()` est LE seul point de résolution désormais : ancré sur l'emplacement de
+// CE fichier (`safe-io.ts`, à la racine de `src/`, jamais déplacé), donc STABLE quel
+// que soit le sous-dossier du module appelant ou le cwd de lancement. Canonique :
+// `server/data/` (le patron majoritaire avant ce correctif — ~15 modules déjà là).
+export function dataDir(...segments: string[]): string {
+  return path.join(import.meta.dirname, "..", "data", ...segments);
+}
 
 export function atomicWriteFileSync(file: string, data: string): void {
   const tmp = `${file}.tmp`;

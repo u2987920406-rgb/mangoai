@@ -26,9 +26,9 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 const GLOBAL_BUDGET_FILE = path.join(DATA_DIR, "global-budget.json");
 
 /** Cumul de dépense $ pour LA fenêtre (nuit) courante. */

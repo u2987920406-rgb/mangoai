@@ -24,7 +24,7 @@ import { getBrain } from "./kernel.js";
 import { capturePreview } from "./vision.js";
 import { startPreview } from "./preview.js";
 import { loadPreferences } from "./preferences.js";
-import { atomicWriteFileSync } from "./safe-io.js";
+import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import { runAxiomValidation, appendConfirmedAxiom } from "./axioms-validation.js";
 import { safeEmbed } from "./notes-rag.js";
 import { recordCurationSample, getTunedCurationPriority } from "./kernel/kernel-curation-effect.js";
@@ -37,7 +37,7 @@ import { maybeRunTuteurCycle } from "./formation/formation-tuteur.js";
 import { runAsActor } from "./perimeter-context.js";
 import { combineBreakerVerdict, listPerimeterIncidents, clearPerimeterIncidents } from "./perimeter-incidents.js";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 const FILE = path.join(DATA_DIR, "nocturnal.json");
 const CONFIG_FILE = path.join(DATA_DIR, "nocturnal-config.json");
 // Trace de résumabilité : quand le Disjoncteur MangoQA fait arrêter le lot, on y

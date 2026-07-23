@@ -278,17 +278,19 @@ export function patrolStatus(): { running: boolean } {
 
 /** Lance l'armée en arrière-plan après un tour livré. Kill-switch
  * PATROL_ENABLED=0. Verrou distinct de reviewRunning : review et patrouille
- * tournent en parallèle. */
+ * tournent en parallèle. Renvoie la promesse (2026-07-23, #0.4, audit
+ * fault-finding) — suivable via turn-ledger.ts::trackDeferred, sans retarder
+ * le caller (fire-and-forget inchangé si la promesse n'est pas utilisée). */
 export function spawnPatrol(
   projectDir: string,
   projectType: ProjectType,
   changedFiles: string[],
   deps: PatrolDeps = defaultDeps,
-): void {
-  if (process.env.PATROL_ENABLED === "0") return;
-  if (patrolRunning || changedFiles.length === 0) return;
+): Promise<void> {
+  if (process.env.PATROL_ENABLED === "0") return Promise.resolve();
+  if (patrolRunning || changedFiles.length === 0) return Promise.resolve();
   patrolRunning = true;
-  void runPatrolOnce(projectDir, projectType, changedFiles, deps)
+  return runPatrolOnce(projectDir, projectType, changedFiles, deps)
     .then((report) => {
       if (report) console.log(`[patrol] rapport injecté (${changedFiles.length} fichiers)`);
     })

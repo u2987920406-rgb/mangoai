@@ -55,18 +55,21 @@ export async function interruptCompaction(): Promise<void> {
 }
 
 /** Fire-and-forget: compacts the project's session when the context exceeds
- * the threshold. Returns true when a compaction was started. */
+ * the threshold. Renvoie la promesse quand une compaction démarre, `null` sinon
+ * (aucun appelant n'utilisait le `boolean` d'avant — 2026-07-23, #0.4, audit
+ * fault-finding — suivable via turn-ledger.ts::trackDeferred sans retarder qui
+ * que ce soit). */
 export function maybeCompactSession(
   projectName: string,
   projectDir: string,
   sessionId: string,
   contextTokens: number,
   contextWindow: number,
-): boolean {
-  if (running || !sessionId || !contextTokens || !contextWindow) return false;
-  if (contextTokens < contextWindow * THRESHOLD) return false;
+): Promise<void> | null {
+  if (running || !sessionId || !contextTokens || !contextWindow) return null;
+  if (contextTokens < contextWindow * THRESHOLD) return null;
   const floor = lastPostTokens.get(projectName);
-  if (floor && contextTokens <= floor * 1.1) return false;
+  if (floor && contextTokens <= floor * 1.1) return null;
 
   console.log(
     `[compact] ${projectName}: context at ${Math.round((contextTokens / contextWindow) * 100)}% ` +
@@ -122,7 +125,7 @@ export function maybeCompactSession(
       running = null;
     }
   })();
-  return true;
+  return running;
 }
 
 function fmtK(n: number): string {

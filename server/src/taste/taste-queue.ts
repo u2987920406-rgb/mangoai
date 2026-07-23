@@ -10,11 +10,11 @@
 
 import fsDefault from "node:fs";
 import path from "node:path";
-import { atomicWriteFileSync } from "../safe-io.js";
+import { atomicWriteFileSync, dataDir } from "../safe-io.js";
 import { projectDir } from "../projects.js";
 import type { SkinRender } from "./taste-render.js";
 
-const DATA_DIR = path.join(process.cwd(), "data");
+const DATA_DIR = dataDir();
 const QUEUE_FILE = path.join(DATA_DIR, "taste-queue.json");
 
 export type TasteRunStatus = "pending" | "decided" | "expired";

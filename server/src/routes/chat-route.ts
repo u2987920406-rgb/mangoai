@@ -35,7 +35,7 @@ import {
   wireframeChoiceSection,
 } from "../wireframe-fork.js";
 import { generateAndSaveDiagram } from "../diagram.js";
-import { startTurn, finishTurn } from "../turn-ledger.js";
+import { startTurn, finishTurn, trackDeferred } from "../turn-ledger.js";
 import { shouldCaptureDiff, captureDiff } from "../vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "../metrics.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
@@ -715,18 +715,24 @@ app.post("/api/chat", async (req, res) => {
       flushHistory(true);
       // Hermes pattern: review only delivered, non-failed turns — after the
       // response, so it never costs the user any latency.
+      // (2026-07-23, #0.4, audit fault-finding) — chacune de ces 4 opérations pose
+      // désormais sa propre ancre via trackDeferred (turn-ledger.ts), suivie
+      // séparément du tour visible — AVANT, finishTurn (plus bas) déclarait le tour
+      // "success" sans savoir si review/patrouille/diagramme avaient réellement fini
+      // ou crashé en arrière-plan. Aucune latence ajoutée : trackDeferred ne fait que
+      // poser une ancre synchrone puis suivre la MÊME promesse fire-and-forget.
       if (turn.some((e) => e.role === "agent") && !turn.some((e) => e.role === "error")) {
-        spawnBackgroundReview(historyDir, turn);
+        void trackDeferred(historyDir, turnId, "review", spawnBackgroundReview(historyDir, turn));
         // L'armée automatique (#73) : patrouilleurs spécialisés réveillés par le
         // delta du tour, en parallèle de la review (verrou séparé). historyDir est
         // null en mode Miroir → patrouille sautée (pas d'audit sur l'UI de Mango).
         if (patrolFiles.current.length > 0) {
-          spawnPatrol(historyDir, projectType, patrolFiles.current);
+          void trackDeferred(historyDir, turnId, "patrol", spawnPatrol(historyDir, projectType, patrolFiles.current));
         }
         // #196 partie D — diagramme "après" (ce qui a été RÉELLEMENT construit),
         // même point de clôture que la review — fire-and-forget, jamais sur le
         // chemin critique de la réponse SSE déjà envoyée.
-        void generateAndSaveDiagram(projectName, prompt, "apres").catch(() => {});
+        void trackDeferred(historyDir, turnId, "diagram-apres", generateAndSaveDiagram(projectName, prompt, "apres").then(() => {}));
       }
       // Hermes context_compressor transposed: compact between turns, in the
       // background, once the context crosses the threshold.
@@ -734,7 +740,8 @@ app.post("/api/chat", async (req, res) => {
       if (!turn.some((e) => e.role === "error") && ctx) {
         const session = getSession(projectName);
         if (session) {
-          maybeCompactSession(projectName, historyDir, session, ctx.tokens, ctx.window);
+          const compaction = maybeCompactSession(projectName, historyDir, session, ctx.tokens, ctx.window);
+          if (compaction) void trackDeferred(historyDir, turnId, "compaction", compaction);
         }
       }
       // Résout l'ancre "en vol" posée par startTurn — même classification que les

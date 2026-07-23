@@ -9,8 +9,9 @@ import { SKILLS_DIR } from './skills.js'
 import { WORKSPACE_DIR } from './projects.js'
 import { loadMemory } from './memory.js'
 import { detectProjectType } from './blueprints.js'
+import { atomicWriteFileSync, dataDir } from './safe-io.js'
 
-const DATA_DIR = path.join(process.cwd(), '..', 'server', 'data')
+const DATA_DIR = dataDir()
 const SUPER_AGENTS_FILE = path.join(DATA_DIR, 'super-agents.json')
 
 export interface SuperAgentTool {
@@ -40,7 +41,7 @@ function loadAgents(): SuperAgent[] {
 
 function saveAgents(agents: SuperAgent[]): void {
   if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true })
-  fs.writeFileSync(SUPER_AGENTS_FILE, JSON.stringify(agents, null, 2), 'utf-8')
+  atomicWriteFileSync(SUPER_AGENTS_FILE, JSON.stringify(agents, null, 2))
 }
 
 function generateId(): string {

@@ -19,7 +19,7 @@
 
 import fs from "node:fs"
 import path from "node:path"
-import { atomicWriteFileSync } from "../safe-io.js"
+import { atomicWriteFileSync, dataDir } from "../safe-io.js"
 import {
   emptyStrategistState,
   normalizeState,
@@ -32,7 +32,7 @@ import {
  *  Résolu paresseusement (pas au chargement du module) pour que les tests
  *  puissent fixer `STRATEGIST_STATE_FILE` avant le premier appel. */
 export function strategistStateFile(): string {
-  return process.env.STRATEGIST_STATE_FILE ?? path.join(import.meta.dirname, "..", "data", "strategist-state.json")
+  return process.env.STRATEGIST_STATE_FILE ?? dataDir("strategist-state.json")
 }
 
 // ————————————————————————————————————————————————————————————————

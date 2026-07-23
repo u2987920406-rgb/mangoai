@@ -6,8 +6,9 @@ import { capturePreview, getPreviewUrl } from '../vision.js'
 import type { Express, Request, Response } from 'express'
 import path from 'node:path'
 import fs from 'node:fs'
+import { atomicAppendFileSync, dataDir } from '../safe-io.js'
 
-const DATA_DIR = path.join(import.meta.dirname, '..', 'data')
+const DATA_DIR = dataDir()
 const REVIEWS_FILE = path.join(DATA_DIR, 'design-reviews.jsonl')
 
 interface DesignReviewRecord {
@@ -39,7 +40,7 @@ function ensureDataDir(): void {
 
 function appendReview(record: DesignReviewRecord): void {
   ensureDataDir()
-  fs.appendFileSync(REVIEWS_FILE, JSON.stringify(record) + '\n', 'utf8')
+  atomicAppendFileSync(REVIEWS_FILE, JSON.stringify(record))
 }
 
 function loadReviews(project: string): DesignReviewRecord[] {
