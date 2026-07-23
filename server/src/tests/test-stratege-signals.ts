@@ -1,6 +1,6 @@
 // Tests Phase 0 du Stratège (#164) — le diagnostic déterministe nomme correctement
 // les blocages RÉELS rencontrés. 100 % pur (aucun modèle, aucun réseau).
-import { diagnose, missingModuleName, localImportMismatch, REMEDY_BY_CLASS, type BlockerSymptoms } from "../stratege/stratege-signals.js";
+import { diagnose, missingModuleName, localImportMismatch, shouldStopRetrying, REMEDY_BY_CLASS, type BlockerSymptoms } from "../stratege/stratege-signals.js";
 
 let pass = 0;
 let fail = 0;
@@ -130,6 +130,15 @@ check("none → formatDiagnosis vide", REMEDY_BY_CLASS["none"] === "—");
   const dPkg = diagnose({ ...ok, buildOk: false, finished: false, buildDetail: `Cannot find module 'leaflet'` });
   check("missing-dependency garde la priorité sur local-import-mismatch", dPkg.blocker === "missing-dependency");
 }
+
+// ── shouldStopRetrying (#196 partie C — règle des 3 essais) ─────────────────
+check("0 répétition → ne pas arrêter", shouldStopRetrying(0) === false);
+check("1 répétition → ne pas arrêter", shouldStopRetrying(1) === false);
+check("2 répétitions → ne pas arrêter (pas encore 3)", shouldStopRetrying(2) === false);
+check("3 répétitions consécutives → arrêter", shouldStopRetrying(3) === true);
+check("au-delà de 3 → toujours arrêter", shouldStopRetrying(5) === true);
+check("seuil personnalisé respecté (2)", shouldStopRetrying(2, 2) === true);
+check("seuil personnalisé respecté (1 < 2)", shouldStopRetrying(1, 2) === false);
 
 console.log(`\n${fail === 0 ? "✅" : "❌"} stratege-signals : ${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

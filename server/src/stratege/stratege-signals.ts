@@ -236,6 +236,16 @@ export function diagnose(s: BlockerSymptoms): Diagnosis {
   return { blocker: "none", cause: "pas de blocage", evidence: "build vert + finish", remedy: "—" };
 }
 
+// #196 partie C (2026-07-23) — règle des 3 essais (« /investigue »). `relances`/
+// `selfRelanceMax` bornent le total des relances d'un tour, toutes causes
+// confondues — aucun compteur n'existait par SIGNATURE de blocage. Demande de
+// Raf : 3 tentatives CONSÉCUTIVES sur la MÊME classe diagnostiquée (pas 10 au
+// global) → on arrête de retenter CE chemin, c'est un problème d'architecture,
+// pas un bug à repatcher. Fonction PURE, testable isolément.
+export function shouldStopRetrying(consecutiveSameBlocker: number, threshold = 3): boolean {
+  return consecutiveSameBlocker >= threshold;
+}
+
 /** Ligne lisible « Mango pense à voix haute » (observabilité). */
 export function formatDiagnosis(d: Diagnosis): string {
   if (d.blocker === "none") return "";

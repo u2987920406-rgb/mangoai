@@ -411,6 +411,39 @@ async function deterministic(): Promise<void> {
     if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
     fs.rmSync(dir, { recursive: true, force: true });
   }
+
+  {
+    // H — #196 partie C : règle des 3 essais. Le blocage diagnostiqué (« ambiguous »
+    // — build cassé sans motif déterministe reconnu : jamais de write_file/edit_file/
+    // run_command appelé, jamais un détail « module manquant »/« usage erroné ») revient
+    // IDENTIQUE à chaque relance. AVANT #196C, rien n'arrêtait la boucle avant
+    // `selfRelanceMax` (10) essais — ici mis à 10 exprès pour prouver que l'arrêt
+    // survient BIEN AVANT, à la 3ᵉ tentative CONSÉCUTIVE, pas à la 10ᵉ.
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-H-"));
+    fs.writeFileSync(path.join(dir, "notes.txt"), "rien à voir");
+    const prevS = process.env.ELEVE_STRATEGE, prevR = process.env.ELEVE_SELF_RELANCE_MAX, prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_STRATEGE = "on"; // sans ça diagnose() ne tourne jamais (strategeLogs=false)
+    process.env.ELEVE_SELF_RELANCE_MAX = "10"; // la preuve : on s'arrête BIEN AVANT ce plafond
+    delete process.env.ELEVE_ESCALATE_ON_BLOCK; // défaut : pas de Claude, on veut voir l'arrêt du Stratège lui-même
+    let calls = 0;
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async () => inspKo("erreur de build générique, aucun motif reconnu"), // TOUJOURS cassé, TOUJOURS le même détail
+      ensureDeps: noEnsure,
+      escalate: async () => { throw new Error("ne doit JAMAIS être appelé — la boucle doit s'arrêter seule avant"); },
+      // Un seul type d'outil, LECTURE seule (jamais write_file/edit_file/run_command)
+      // → diagnose() ne peut classer que « ambiguous » (aucun motif déterministe reconnu).
+      agenticPost: async () => { calls++; return { content: "", toolCalls: [call("read_file", { path: "notes.txt" }, calls)] }; },
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 1 }, deps);
+    console.log("\n  [H] #196C — 3 tentatives sur la même cause → arrêt (pas 10) :");
+    check("message explicite de la règle des 3 essais présent", r.log.some((l) => l.includes("3 tentatives sur") && l.includes("architecture")));
+    check("pas résolu (toujours cassé, escalade Claude jamais atteinte)", r.resolvedBy === "none" && !r.success);
+    if (prevS === undefined) delete process.env.ELEVE_STRATEGE; else process.env.ELEVE_STRATEGE = prevS;
+    if (prevR === undefined) delete process.env.ELEVE_SELF_RELANCE_MAX; else process.env.ELEVE_SELF_RELANCE_MAX = prevR;
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 // ── LIVE : vrai Gemma sur une copie junctionnée de test-pipeline ───────────────

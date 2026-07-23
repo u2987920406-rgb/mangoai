@@ -19,7 +19,7 @@ import { loadExternalMcpTools, defaultMcpConfigPath } from "../mcp-external.js";
 import { clearPlan, buildRelanceNudge, getPlan, formatPlanReminder } from "../eleve-plan.js";
 import { checkAndRepairImages, formatImageCheck, buildImageRepairNudge } from "../eleve-image-check.js";
 import { curateImageBank, guaranteeLocalImages, formatImageBankForPrompt, formatGuarantee, type ImageBankEntry } from "../eleve-image-bank.js";
-import { diagnose, formatDiagnosis, type Diagnosis } from "../stratege/stratege-signals.js";
+import { diagnose, formatDiagnosis, shouldStopRetrying, type BlockerClass, type Diagnosis } from "../stratege/stratege-signals.js";
 import { route, newStrategeState, commitRemedy, formatRemedy, type StrategeState } from "../stratege.js";
 import { recallProcedure, distillProcedure, learnedHint } from "../stratege/stratege-learn.js";
 import { reclassifyAmbiguous, formatReclassify } from "../stratege/stratege-brain.js";
@@ -267,6 +267,11 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
     let relances = 0;
     let nudge = "";
+    // #196 partie C — règle des 3 essais : compteur LOCAL par SIGNATURE de blocage,
+    // séparé de `relances`/`selfRelanceMax` (qui bornent le total, toutes causes
+    // confondues). Remis à 0 dès que la classe diagnostiquée change.
+    let consecutiveSameBlocker = 0;
+    let lastBlockerClass: BlockerClass | null = null;
     // #161 — Gardien de clôture : compteur de corrections SÉPARÉ de selfRelanceMax
     // (les tours du Gardien ne consomment pas le budget anti-blocage). Gaté + non-bloquant.
     // 🟡 (revue #13.2) DOUBLES COMPTEURS : relances/selfRelanceMax ET gateRelances/gateRelanceMax
@@ -435,6 +440,21 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         return d; // la reclassification ne casse jamais la boucle
       }
     };
+    // #196 partie C — diagnostique ET met à jour le compteur de répétition (même
+    // classe de blocage que le tour précédent = incrémente, sinon reset à 1). Les
+    // DEUX points d'appel de la boucle passent par ici pour que le compteur soit
+    // cohérent quel que soit le côté (build cassé / build vert non-fini).
+    const diagnoseAndTrack = async (deadImages = 0): Promise<Diagnosis | null> => {
+      const d = await strategeDiagnoseRefined(deadImages);
+      if (d) {
+        consecutiveSameBlocker = d.blocker === lastBlockerClass ? consecutiveSameBlocker + 1 : 1;
+        lastBlockerClass = d.blocker;
+      } else {
+        consecutiveSameBlocker = 0;
+        lastBlockerClass = null;
+      }
+      return d;
+    };
     // #164 Phase 4 — tente une MONTÉE de cerveau de l'exécutant si le blocage est
     // `brain-inadequate` (récidive après remède déjà tenté). Si un barreau supérieur
     // existe : swap `runCtx.post` vers ce cerveau, arme le nudge, et signale au caller de
@@ -511,7 +531,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
       if (!insp.ok || agErr) {
-        const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
+        const d = await diagnoseAndTrack(); // #164 — nomme (P1) + reclasse si ambigu (P3) ; #196C — trace la répétition
         if (d) void fireObservationHook("OnBlock", projectDir, `${d.blocker}: ${d.detail ?? ""}`, relayHooks);
         // #168 — AUTO-ÉVOLUTION (trigger LARGE) : tout blocage « mur de capacité » non couvert
         // par un agent forgé → on l'inscrit comme lacune ouverte (une fois par type/build).
@@ -585,6 +605,14 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
               push(`  🧬 Forge à valider dans l'Atelier (${decision.reason})`);
             }
           }
+        }
+        // #196 partie C — règle des 3 essais : 3 tentatives CONSÉCUTIVES sur la MÊME
+        // classe de blocage → on arrête de retenter ce chemin (mur de capacité, pas un
+        // hoquet) et on rend la main tout de suite à l'escalade existante (le `break`
+        // ci-dessous, même chemin que relances épuisées).
+        if (d && shouldStopRetrying(consecutiveSameBlocker)) {
+          push(`⛔ Stratège : 3 tentatives sur « ${d.blocker} » sans succès — traité comme un problème d'architecture, pas un bug. Escalade.`);
+          break;
         }
         // #164 Phase 1 — sur build CASSÉ (pas une erreur moteur), le Stratège tente un remède
         // CHOISI avant d'abandonner : missing-dependency → installe la lib + relance ;
@@ -851,8 +879,15 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       }
       // Build vert MAIS arrêt sans `finish` (blocage/plafond) : l'Élève se RELANCE.
       if (relances < selfRelanceMax) {
-        const d = await strategeDiagnoseRefined(); // #164 — nomme (P1) + reclasse si ambigu (P3)
+        const d = await diagnoseAndTrack(); // #164 — nomme (P1) + reclasse si ambigu (P3) ; #196C — trace la répétition
         if (d) void fireObservationHook("OnBlock", projectDir, `${d.blocker}: ${d.detail ?? ""}`, relayHooks);
+        // #196 partie C — même règle des 3 essais que côté build cassé : 3 tentatives
+        // consécutives sur la même classe (ex. plateau-iterations qui récidive malgré
+        // décomposition) → mur d'architecture, pas un simple plafond à repousser.
+        if (d && shouldStopRetrying(consecutiveSameBlocker)) {
+          push(`⛔ Stratège : 3 tentatives sur « ${d.blocker} » sans succès — traité comme un problème d'architecture, pas un bug. Escalade.`);
+          break;
+        }
         relances++;
         // #164 Phase 1 — remède CHOISI : wandering → ré-ancre le plan (L17) ; plateau →
         // décompose via delegate. Escalade Stratège (ou mode off) → nudge générique (#160).
