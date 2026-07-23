@@ -169,6 +169,75 @@ line();
   check("section d'injection mentionne la région", section.includes("Sidebar"));
 }
 
+line();
+console.log("wireframe-fork — fusion Ideation (#196) : palette/composants");
+line();
+
+{
+  // parseLayoutSpec : palette valide (5 hex) et composants extraits.
+  const raw = '{"angle":"Visuel","rationale":"cartes","regions":[{"label":"Nav","x":0,"y":0,"w":100,"h":10}],' +
+    '"palette":["#1a1a2e","#16213e","#0f3460","#e94560","#f5f5f5"],"components":["Card","Header"]}';
+  const spec = parseLayoutSpec(raw, "fallback");
+  check("palette extraite (5 hex)", spec?.palette?.length === 5);
+  check("composants extraits", spec?.components?.length === 2 && spec.components[0] === "Card");
+}
+{
+  // Palette invalide (mauvais format hex) ou incomplète (≠5) → ignorée, pas de crash, pas de palette partielle.
+  const raw = '{"angle":"a","regions":[{"label":"X","x":0,"y":0,"w":10,"h":10}],"palette":["rouge","#fff"]}';
+  const spec = parseLayoutSpec(raw, "fallback");
+  check("palette invalide/incomplète → absente (pas de palette partielle)", spec?.palette === undefined);
+}
+{
+  // Spec SANS palette (comportement historique) → rendu gris neutre, inchangé.
+  const htmlGray = renderLayoutMockup({ angle: "a", rationale: "", regions: [{ label: "X", x: 0, y: 0, w: 10, h: 10 }] });
+  check("sans palette → fond blanc historique", htmlGray.includes("background:#fff;font-family"));
+  check("sans palette → boîte grise historique", htmlGray.includes("background:#eceff1"));
+}
+{
+  // Spec AVEC palette → le rendu applique VRAIMENT les couleurs choisies, pas le gris.
+  const spec: LayoutSpec = {
+    angle: "Sombre néon", rationale: "",
+    regions: [{ label: "X", x: 0, y: 0, w: 10, h: 10 }],
+    palette: ["#0a0a0a", "#1a1a2e", "#e94560", "#f5f5f5", "#16213e"],
+  };
+  const html = renderLayoutMockup(spec);
+  check("palette appliquée au fond du canevas", html.includes("background:#0a0a0a;font-family"));
+  check("palette appliquée au fond des boîtes", html.includes("background:#1a1a2e"));
+  check("texte clair sur fond sombre (lisibilité)", html.includes("color:#f5f5f5"));
+  check("plus de gris neutre historique quand une palette est fournie", !html.includes("#eceff1"));
+}
+{
+  // Fond clair de la palette → texte sombre choisi automatiquement (lisibilité).
+  const spec: LayoutSpec = {
+    angle: "Clair", rationale: "",
+    regions: [{ label: "X", x: 0, y: 0, w: 10, h: 10 }],
+    palette: ["#fefefe", "#f0f0f0", "#333333", "#111111", "#cccccc"],
+  };
+  const html = renderLayoutMockup(spec);
+  check("texte sombre sur fond clair (lisibilité)", html.includes("color:#2b2b2b"));
+}
+{
+  // Round-trip du choix AVEC palette/composants — le patron existant (perfect-plan.ts) tient telle quelle.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "wf-fusion-test-"));
+  try {
+    const spec: LayoutSpec = {
+      angle: "Visuel", rationale: "cartes modernes",
+      regions: [{ label: "Hero", x: 0, y: 0, w: 100, h: 30 }],
+      palette: ["#1a1a2e", "#16213e", "#0f3460", "#e94560", "#f5f5f5"],
+      components: ["Card", "Header"],
+    };
+    saveWireframeChoice(dir, spec);
+    const loaded = loadWireframeChoice(dir);
+    check("round-trip palette fidèle", JSON.stringify(loaded?.spec.palette) === JSON.stringify(spec.palette));
+    check("round-trip composants fidèle", JSON.stringify(loaded?.spec.components) === JSON.stringify(spec.components));
+    const section = wireframeChoiceSection(spec);
+    check("section d'injection mentionne la palette", section.includes("#e94560"));
+    check("section d'injection mentionne les composants", section.includes("Card"));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+}
+
 line("═");
 console.log(failures === 0 ? "✅ wireframe-fork : tout est prouvé." : `❌ ${failures} échec(s)`);
 process.exit(failures === 0 ? 0 : 1);

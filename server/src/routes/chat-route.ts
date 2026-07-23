@@ -30,7 +30,6 @@ import { saveUpload } from "../uploads.js";
 import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildIntent } from "../home-scratch.js";
 import { setVisionContext, snapZone, visionStatus, getPreviewUrl, closeBrowser } from "../vision.js";
 import {
-  generateAndRenderVariants,
   loadWireframeChoice,
   deleteWireframeChoice,
   wireframeChoiceSection,
@@ -357,33 +356,19 @@ app.post("/api/chat", async (req, res) => {
       }
     }
 
-    // Fourche visuelle multi-wireframes (2026-07-13) — mode Élite uniquement (skip
-    // Miroir/MVP). Le choix arrive comme DONNÉE STRUCTURÉE via POST
-    // /api/wireframe-fork/:name (patron perfect-plan, jamais du texte deviné —
-    // revue par un agent Plan dédié avant implémentation).
-    //
-    // ATTENTION : la CONSOMMATION du choix (bloc `pendingChoice`) est INDÉPENDANTE
-    // de `isNewProject` — celui-ci ne vaut que pour le 1er tour (createProject vient
-    // de tourner, package.json existe déjà dès le tour SUIVANT, donc `isNewProject`
-    // devient FALSE alors que le choix reste à consommer). Seule la GÉNÉRATION est
-    // bornée à `isNewProject` (jamais sur l'édition d'un projet existant).
+    // Fourche visuelle multi-wireframes — consommation du choix (#196, 2026-07-23 :
+    // la GÉNÉRATION se fait désormais côté client, gate DesignGate.jsx, AVANT que
+    // le message n'atteigne le serveur, tous modes. Seule la consommation d'un choix
+    // déjà tranché reste ici, en rétrocompat — indépendante de `isNewProject`
+    // (package.json existe déjà dès le tour SUIVANT la création, donc `isNewProject`
+    // devient FALSE alors que le choix reste à consommer sur ce tour).
     if (!isMirror && chosenMode === "elite") {
       const pendingChoice = loadWireframeChoice(dir);
       if (pendingChoice) {
-        // Choix déjà tranché sur un tour précédent → injecté puis effacé, le flux
-        // Construire habituel (Cadrage/Mango Plan/runRelay, plus bas) continue normalement.
+        // Choix déjà tranché → injecté puis effacé, le flux Construire habituel
+        // (Cadrage/Mango Plan/runRelay, plus bas) continue normalement.
         agentPrompt = `${wireframeChoiceSection(pendingChoice.spec)}\n\n${agentPrompt}`;
         deleteWireframeChoice(dir);
-      } else if (isNewProject) {
-        send({ type: "status", text: "🧩 Génération de 3 structures possibles…" });
-        const variants = await generateAndRenderVariants(prompt);
-        if (variants.length > 0) {
-          record("agent", "🧩 3 structures proposées — choisis celle qui te convient.");
-          send({ type: "wireframe-fork", variants });
-          return; // tour terminé SANS aperçu ni construction — attend le choix (finally gère la clôture SSE)
-        }
-        // 0 variante générée (Élève en échec) → repli honnête : pas de fourche
-        // possible, on NE BLOQUE PAS la construction, le tour continue normalement.
       }
     }
 

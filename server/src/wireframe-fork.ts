@@ -35,14 +35,22 @@ export interface LayoutSpec {
   angle: string;
   rationale: string;
   regions: LayoutRegion[];
+  // #196 (2026-07-23, fusion Ideation+fourche) — optionnels : une spec qui n'en
+  // porte pas reste 100% valide (rétrocompat des variantes/tests existants),
+  // rendue en gris comme avant. Portées quand présentes → le rendu devient une
+  // VRAIE proposition visuelle (structure ET couleur), pas juste des boîtes.
+  palette?: string[]; // 5 codes hex
+  components?: string[];
 }
 
 const SYSTEM_PROMPT =
-  "Tu es un architecte UX. On te donne l'intention d'une application et un angle structurel à explorer pour sa page principale. " +
+  "Tu es un architecte UX/UI. On te donne l'intention d'une application et un angle DE DIRECTION (structure ET style) à explorer pour sa page principale. " +
   "Réponds UNIQUEMENT par un objet JSON valide (zéro markdown, zéro backtick) avec EXACTEMENT ces champs : " +
-  '{"angle": "repris tel quel", "rationale": "1 phrase : pourquoi cette structure sert cet angle", ' +
-  '"regions": [{"label": "nom de la zone", "x": 0, "y": 0, "w": 100, "h": 100}]} ' +
-  "— 4 à 8 régions nommées, x/y/w/h en POURCENTAGE 0-100 du canevas, sans chevauchement grossier, couvrant l'essentiel de la page.";
+  '{"angle": "repris tel quel", "rationale": "1 phrase : pourquoi cette structure ET cette palette servent cet angle", ' +
+  '"regions": [{"label": "nom de la zone", "x": 0, "y": 0, "w": 100, "h": 100}], ' +
+  '"palette": ["#hex1", "#hex2", "#hex3", "#hex4", "#hex5"], "components": ["ComposantClé1", "ComposantClé2"]} ' +
+  "— 4 à 8 régions nommées, x/y/w/h en POURCENTAGE 0-100 du canevas, sans chevauchement grossier, couvrant l'essentiel de la page. " +
+  "La palette (EXACTEMENT 5 hex) doit être cohérente avec l'angle (ex. « Visuel — cartes modernes » ≠ palette de « Corporate strict »).";
 
 const DEFAULT_ANGLES = [
   "Efficacité — liste épurée, minimaliste",
@@ -94,7 +102,18 @@ export function parseLayoutSpec(raw: string, fallbackAngle: string): LayoutSpec 
   if (regions.length === 0) return null;
   const angle = typeof o.angle === "string" && o.angle.trim() ? o.angle.trim() : fallbackAngle;
   const rationale = typeof o.rationale === "string" ? o.rationale.trim() : "";
-  return { angle, rationale, regions };
+  const HEX_RE = /^#[0-9a-f]{6}$/i;
+  const paletteRaw = Array.isArray(o.palette) ? o.palette : [];
+  const palette = paletteRaw.filter((c): c is string => typeof c === "string" && HEX_RE.test(c.trim())).slice(0, 5);
+  const componentsRaw = Array.isArray(o.components) ? o.components : [];
+  const components = componentsRaw.filter((c): c is string => typeof c === "string" && c.trim().length > 0).slice(0, 12);
+  return {
+    angle,
+    rationale,
+    regions,
+    ...(palette.length === 5 ? { palette } : {}),
+    ...(components.length > 0 ? { components } : {}),
+  };
 }
 
 /**
@@ -136,6 +155,8 @@ export interface WireframeVariant {
   rationale: string;
   regions: LayoutRegion[];
   imageBase64: string;
+  palette?: string[];
+  components?: string[];
 }
 
 /** Génère N variantes ET les rend/capture en images — FONCTION UNIQUE partagée par
@@ -153,7 +174,11 @@ export async function generateAndRenderVariants(
   for (let i = 0; i < specs.length; i++) {
     const spec = specs[i]!;
     const buf = await renderMockupScreenshot(renderLayoutMockup(spec));
-    out.push({ id: i, angle: spec.angle, rationale: spec.rationale, regions: spec.regions, imageBase64: buf.toString("base64") });
+    out.push({
+      id: i, angle: spec.angle, rationale: spec.rationale, regions: spec.regions, imageBase64: buf.toString("base64"),
+      ...(spec.palette ? { palette: spec.palette } : {}),
+      ...(spec.components ? { components: spec.components } : {}),
+    });
   }
   return out;
 }
@@ -170,10 +195,36 @@ function escapeHtml(s: string): string {
   return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
 
+/** Repli gris neutre — comportement historique, utilisé quand la spec ne porte
+ *  aucune palette (rétrocompatible avec l'usage sans couleur). */
+const NEUTRAL_TONES = { bg: "#fff", box: "#eceff1", border: "#9aa0a6", text: "#37474f" };
+
+/** Dérive une petite palette de RENDU (fond canevas / fond boîte / bordure / texte)
+ *  à partir des 5 hex choisis par le modèle — HEURISTIQUE simple et déterministe
+ *  (pas de calcul de luminance complexe) : la 1ère couleur = fond du canevas, la
+ *  2ᵉ = fond des boîtes, la 3ᵉ = bordure/accent, texte toujours lisible (clair sur
+ *  fond présumé sombre si la 1ère couleur commence par un ton bas, sinon foncé).
+ *  PUR. */
+function renderTones(palette: string[] | undefined): typeof NEUTRAL_TONES {
+  if (!palette || palette.length !== 5) return NEUTRAL_TONES;
+  const [bg, box, border] = palette;
+  // Luminance perçue approximative (0-255) sur le fond canevas, pour choisir un texte lisible.
+  const hexToLum = (hex: string): number => {
+    const n = parseInt(hex.slice(1), 16);
+    const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+    return 0.299 * r + 0.587 * g + 0.114 * b;
+  };
+  const dark = hexToLum(bg!) < 128;
+  return { bg: bg!, box: box!, border: border!, text: dark ? "#f5f5f5" : "#2b2b2b" };
+}
+
 /** Rend une spec en HTML/CSS de boîtes étiquetées, TOUJOURS valide quel que soit le
  *  contenu de `regions` (positions hors-limites clampées, régions vides tolérées).
- *  PUR — aucun réseau, aucun navigateur. */
+ *  Coloré selon `spec.palette` quand présente (fusion Ideation+fourche, #196) —
+ *  repli gris neutre sinon (comportement historique inchangé). PUR — aucun réseau,
+ *  aucun navigateur. */
 export function renderLayoutMockup(spec: LayoutSpec): string {
+  const tones = renderTones(spec.palette);
   const boxes = (spec.regions ?? [])
     .map((r) => {
       const x = clamp(r.x, 0, 99);
@@ -183,15 +234,15 @@ export function renderLayoutMockup(spec: LayoutSpec): string {
       const label = escapeHtml(r.label || "");
       return (
         `<div style="position:absolute;left:${x}%;top:${y}%;width:${w}%;height:${h}%;` +
-        "box-sizing:border-box;border:1px solid #9aa0a6;background:#eceff1;" +
+        `box-sizing:border-box;border:1px solid ${tones.border};background:${tones.box};` +
         "display:flex;align-items:center;justify-content:center;" +
-        `font:12px system-ui,sans-serif;color:#37474f;overflow:hidden;padding:4px;text-align:center;">${label}</div>`
+        `font:12px system-ui,sans-serif;color:${tones.text};overflow:hidden;padding:4px;text-align:center;">${label}</div>`
       );
     })
     .join("");
   return (
     "<!DOCTYPE html><html><body style=\"margin:0;\">" +
-    `<div style="position:relative;width:${CANVAS_W}px;height:${CANVAS_H}px;background:#fff;font-family:system-ui,sans-serif;">${boxes}</div>` +
+    `<div style="position:relative;width:${CANVAS_W}px;height:${CANVAS_H}px;background:${tones.bg};font-family:system-ui,sans-serif;">${boxes}</div>` +
     "</body></html>"
   );
 }
@@ -231,8 +282,11 @@ export function deleteWireframeChoice(dir: string): void {
   }
 }
 
-/** Bloc d'injection pour le prompt/contexte du tour Construire suivant. */
+/** Bloc d'injection pour le prompt/contexte du tour Construire suivant. Porte la
+ *  palette/composants choisis quand présents (fusion Ideation+fourche, #196). */
 export function wireframeChoiceSection(spec: LayoutSpec): string {
   const regions = spec.regions.map((r) => `  - ${r.label} (x:${r.x}%, y:${r.y}%, w:${r.w}%, h:${r.h}%)`).join("\n");
-  return `Structure choisie par l'utilisateur (angle « ${spec.angle} » — ${spec.rationale}) :\n${regions}\nRespecte cette structure comme base de l'agencement de la page principale.`;
+  const paletteLine = spec.palette?.length ? `\nPalette choisie (à utiliser comme base de couleurs) : ${spec.palette.join(", ")}` : "";
+  const componentsLine = spec.components?.length ? `\nComposants clés attendus : ${spec.components.join(", ")}` : "";
+  return `Structure choisie par l'utilisateur (angle « ${spec.angle} » — ${spec.rationale}) :\n${regions}${paletteLine}${componentsLine}\nRespecte cette structure et cette direction comme base de l'agencement et du style de la page principale.`;
 }

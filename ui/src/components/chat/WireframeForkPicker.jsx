@@ -2,7 +2,22 @@
 // en vraies images, adaptée du patron de carte cliquable de TasteGallery.jsx. Un
 // clic = choix immédiat (pas d'étape de confirmation séparée, contrairement à la
 // galerie de goût — ici il n'y a pas de note libre à saisir).
+//
+// #196 (2026-07-23, fusion Ideation+fourche) — chaque variante peut porter une
+// palette (5 hex) : affichée en swatches sous la carte, pour que le choix soit une
+// VRAIE direction (structure ET couleur), pas juste un agencement de boîtes.
 import { Layout } from "lucide-react";
+
+function Swatches({ palette }) {
+  if (!palette?.length) return null;
+  return (
+    <div className="flex gap-1 px-3 pb-2.5">
+      {palette.map((hex, i) => (
+        <span key={i} className="h-3.5 w-3.5 rounded-full border border-edge-soft" style={{ backgroundColor: hex }} title={hex} />
+      ))}
+    </div>
+  );
+}
 
 export default function WireframeForkPicker({ variants, onChoose }) {
   if (!variants?.length) return null;
@@ -10,7 +25,7 @@ export default function WireframeForkPicker({ variants, onChoose }) {
     <div className="animate-fade-up w-full max-w-[95%] self-start rounded-2xl border border-accent/25 bg-accent/[0.04] p-2.5">
       <div className="mb-1.5 flex items-center gap-1.5 px-1 text-[11px] font-semibold tracking-wide text-accent-soft">
         <Layout size={12} />
-        CHOISIS UNE STRUCTURE
+        CHOISIS UNE DIRECTION
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         {variants.map((v) => (
@@ -30,6 +45,7 @@ export default function WireframeForkPicker({ variants, onChoose }) {
               <span className="text-sm font-medium text-ink">{v.angle}</span>
               {v.rationale && <span className="text-xs leading-snug text-faint">{v.rationale}</span>}
             </div>
+            <Swatches palette={v.palette} />
           </button>
         ))}
       </div>

@@ -8,7 +8,7 @@ import {
 } from "./components/chat/helpers.js";
 import ChatMessages from "./components/chat/ChatMessages.jsx";
 import ChatComposer from "./components/chat/ChatComposer.jsx";
-import Ideation from "./components/Ideation.jsx";
+import DesignGate from "./components/chat/DesignGate.jsx";
 import { useExternalBusy } from "./hooks/useExternalBusy.js";
 import { useVoiceInput } from "./hooks/useVoiceInput.js";
 import { useSnapCapture } from "./hooks/useSnapCapture.js";
@@ -70,10 +70,6 @@ export default function Chat({
   // Après un tour Discuter, l'Élève (lecture seule) a pu diagnostiquer un correctif :
   // on propose de l'APPLIQUER en un clic via le mode Construire (qui a l'écriture).
   const [awaitingApply, setAwaitingApply] = useState(false);
-  // Fourche visuelle multi-wireframes (2026-07-13) — { variants } reçu via SSE
-  // (type: "wireframe-fork") sur un NOUVEAU projet en mode Élite, avant toute
-  // construction. null = aucune fourche en attente.
-  const [wireframeFork, setWireframeFork] = useState(null);
   // #196 — Ideation obligatoire. `ideationDone` par défaut à true (fail-open :
   // un projet déjà entamé, ou une panne réseau sur le fetch de statut, ne doit
   // jamais bloquer). `ideationGateText` non-null = le gate est affiché à la
@@ -535,11 +531,6 @@ export default function Chat({
       case "context":
         if (ev.tokens && ev.window) onContext?.({ tokens: ev.tokens, window: ev.window });
         break;
-      // Fourche visuelle multi-wireframes (2026-07-13) — 3 structures rendues en
-      // images, à choisir AVANT toute construction (cf. wireframe-fork.ts).
-      case "wireframe-fork":
-        if (ev.variants?.length) setWireframeFork({ variants: ev.variants });
-        break;
       case "error":
         push({ role: "error", text: ev.message ?? ev.error });
         break;
@@ -615,27 +606,6 @@ export default function Chat({
     setInput("Confirmé — construis maintenant selon ce plan.");
     requestAnimationFrame(() => inputRef.current?.focus());
   };
-  // Fourche visuelle multi-wireframes (2026-07-13) — le choix (un clic sur une
-  // carte) est envoyé comme DONNÉE STRUCTURÉE (POST /api/wireframe-fork/:name,
-  // patron perfect-plan, jamais du texte deviné), PUIS le tour Construire suivant
-  // est déclenché directement (même patron que applyDiagnosedFix — un clic décisif
-  // n'a pas besoin d'une seconde confirmation).
-  const chooseWireframe = async (variant) => {
-    setWireframeFork(null);
-    const spec = { angle: variant.angle, rationale: variant.rationale, regions: variant.regions };
-    try {
-      await fetch(`/api/wireframe-fork/${encodeURIComponent(projectName)}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ spec }),
-      });
-    } catch {
-      /* best-effort — le tour suivant retentera la génération si le choix n'a pas pris */
-    }
-    setActiveAction("construire");
-    onChatMode({ model: actionModels.construire, mode: "elite" });
-    send(`Construis avec la structure choisie : « ${variant.angle} ».`, { modeOverride: "elite" });
-  };
   // Applique le correctif diagnostiqué en mode Discuter : on embarque le diagnostic
   // (dernier message de l'agent) pour que le chemin Construire soit auto-suffisant.
   const applyDiagnosedFix = () => {
@@ -657,20 +627,18 @@ export default function Chat({
 
   // #196 — Gate obligatoire : remplace le chat par le plan d'ideation tant que
   // le premier tour Construire de ce projet n'a pas été validé.
+  // #196 (2026-07-23) — fusion Ideation + fourche multi-wireframes : DesignGate
+  // remplace l'ancien <Ideation> mono-résultat par 3 vraies directions visuelles
+  // (structure ET couleur) à choisir, tous modes.
   if (ideationGateText !== null) {
     return (
       <section className="flex w-full flex-col border-r border-edge bg-panel sm:w-2/5 sm:min-w-[360px]">
-        <Ideation
-          initialDescription={ideationGateText}
-          onBack={() => setIdeationGateText(null)}
-          onValidated={(result) => {
-            fetch(`/api/ideation/save/${encodeURIComponent(projectName)}`, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify(result),
-            }).catch(() => {});
+        <DesignGate
+          description={ideationGateText}
+          projectName={projectName}
+          onCancel={() => setIdeationGateText(null)}
+          onValidated={(text) => {
             setIdeationDone(true);
-            const text = ideationGateText;
             setIdeationGateText(null);
             requestAnimationFrame(() => send(text, { modeOverride: "elite" }));
           }}
@@ -729,8 +697,6 @@ export default function Chat({
         onConfirmPlan={confirmPlan}
         awaitingApply={awaitingApply}
         onApplyFix={applyDiagnosedFix}
-        wireframeFork={wireframeFork}
-        onChooseWireframe={chooseWireframe}
       />
 
       <ChatComposer
