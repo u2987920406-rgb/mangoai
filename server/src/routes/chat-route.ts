@@ -236,8 +236,33 @@ app.post("/api/chat", async (req, res) => {
   // Files changed by this turn's commit (#73 patrol delta), filled after commit.
   const patrolFiles: { current: string[] } = { current: [] };
   const turnStart = Date.now();
-  const record = (role: ChatEntry["role"], text: string) =>
+  // #196 (2026-07-23, Raf : « je quitte la chatbox... ça arrête la tâche en
+  // cours ») — VÉRIFIÉ EN RÉEL que le backend continue bien de travailler après
+  // déconnexion du client (todo-list complète écrite, tour résolu ~4 min plus
+  // tard). Le VRAI problème : `.chat-history.json` n'était écrit qu'UNE FOIS, en
+  // fin de tour (`finally`) — si Raf revient PENDANT le tour, `/api/history` lui
+  // rend l'état d'AVANT, donnant l'impression que tout s'est arrêté. Flush
+  // incrémental throttlé (3s) : Raf qui revient voit l'état RÉEL en cours, pas
+  // un instantané périmé. `flushedCount` évite de ré-écrire ce qui l'est déjà.
+  let flushedCount = 0;
+  let lastFlushAt = 0;
+  const FLUSH_THROTTLE_MS = 3000;
+  const flushHistory = (force = false): void => {
+    if (!historyDir || turn.length <= flushedCount) return;
+    const now = Date.now();
+    if (!force && now - lastFlushAt < FLUSH_THROTTLE_MS) return;
+    try {
+      appendHistory(historyDir, turn.slice(flushedCount));
+      flushedCount = turn.length;
+      lastFlushAt = now;
+    } catch (err) {
+      console.error("[history] flush incrémental échoué :", err instanceof Error ? err.message : err);
+    }
+  };
+  const record = (role: ChatEntry["role"], text: string) => {
     turn.push({ role, text, ts: new Date().toISOString() });
+    flushHistory();
+  };
   const recordEvent = (event: AgentEvent) => {
     if (event.type === "text") record("agent", event.text);
     else if (event.type === "thinking") record("thinking", event.text);
@@ -692,11 +717,9 @@ app.post("/api/chat", async (req, res) => {
   } finally {
     releaseAgent();
     if (historyDir) {
-      try {
-        appendHistory(historyDir, turn);
-      } catch (err) {
-        console.error("[history]", err instanceof Error ? err.message : err);
-      }
+      // Force : écrit ce qui reste depuis le dernier flush throttlé (jamais un
+      // doublon — flushHistory ne réécrit que la tranche [flushedCount..fin]).
+      flushHistory(true);
       // Hermes pattern: review only delivered, non-failed turns — after the
       // response, so it never costs the user any latency.
       if (turn.some((e) => e.role === "agent") && !turn.some((e) => e.role === "error")) {
