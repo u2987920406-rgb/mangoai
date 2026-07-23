@@ -4467,3 +4467,48 @@ Parties 3-5 du plan restent à faire.
 `tsc --noEmit` propre, `test-watchdog-core.ts` (20 checks) tous verts, enregistré au manifeste. Suite offline complète relancée en clôture.
 
 Parties 4-5 du plan restent à faire.
+
+## Journal — 2026-07-23 (suite 11, nuit autonome) : plan fault-finding écosystème — Partie 4 (MangoQA vs incidents réels connus)
+
+**Contexte.** Raf est parti se coucher avec une autorisation explicite de mode autonome jusqu'au bout du plan (y compris commit+push, sans redemander), un heartbeat cron défensif posé (30 min, minutes décalées 23/53). Partie 4.1 : « MangoQA rattrape-t-il vraiment les vrais bugs connus ? ». Question testée EN RÉEL, pas en théorie.
+
+**Fait** — côté MangoQA (repo séparé, `D:\IA\MangoQA`) :
+- `tests/manual/fault-corpus-data.ts` (nouveau) : 4 cas RÉELS — 3 incidents documentés dans la mémoire MangoOS (retours goût 2026-07-10 : quiz toujours réponse "a", photo hors-contexte, constante physique fausse) + 1 contrôle positif (le VRAI bug `taste-nocturnal.ts` trouvé et corrigé plus tôt cette même nuit en Partie 2, comme point de comparaison "défaut dans le cœur de compétence de MangoQA").
+- `tests/manual/probe-fault-corpus.ts` (nouveau) : fait tourner CHAQUE cas contre les 6 VRAIES branches (aucun mock, `ask` non injecté — sinon la sonde ne prouve rien sur la capacité réelle du système).
+
+**Trouvaille en vérifiant** (pas en théorie) : timeout Ollama par défaut de MangoQA (25s, `QA_OLLAMA_TIMEOUT_MS`) trop court pour `qwen3.5:cloud` en mode "thinking" sur un prompt d'audit non-trivial — 1er run bascule systématiquement sur le repli Claude (abonnement) après 3 échecs. Relancé avec `QA_OLLAMA_TIMEOUT_MS=90000` pour rester 100% souverain ($0) — **non corrigé côté production MangoQA** (25s est un compromis délibéré documenté dans `ollama-client.ts` pour tenir le budget verdict de 60s ; resserrer/desserrer ce compromis est une décision pour Raf, pas une correction unilatérale sur un repo séparé cette nuit).
+
+**Résultat RÉEL (temperature=0, reproductible)** :
+| Cas | Verdict | Attrapé par | Nuance honnête |
+|---|---|---|---|
+| quiz-toujours-a | ❌ MISSED | (aucune) | Gap structurel confirmé — aucune branche n'a vocation à vérifier la correction SÉMANTIQUE d'une donnée (chaque ligne du tableau a l'air normale isolément). |
+| photo-hors-contexte | ✅ CAUGHT | architecture, accessibility, performance | Seule **accessibility** a vraiment attrapé LE défaut visé (« le texte alternatif contredit la légende ») — architecture et performance ont flaggé des défauts RÉELS mais DIFFÉRENTS dans le même fichier (couplage data en dur / image non dimensionnée), pas la même incohérence. |
+| constante-physique-fausse | ✅ CAUGHT (nuancé) | tests | La branche Tests n'a PAS vérifié que 29 jours est faux pour Saturne — elle a flaggé « logique de calcul scientifique sans test ». Un vrai faux-positif de robustesse : si un test AVAIT existé (même testant la valeur fausse), ce signal aurait disparu sans que le bug ne soit corrigé. **Ne pas présenter ce résultat comme « MangoQA vérifie les faits scientifiques »** — il vérifie la présence de tests, corrélée mais pas identique. |
+| verrou-avant-travail (contrôle positif) | ✅ CAUGHT (précis) | architecture, tests | Le SEUL cas où la branche a précisément nommé LE mécanisme du bug (« persistance de l'état avant exécution critique créant un blocage irréversible ») — confirme que les bugs d'architecture/résilience, cœur de compétence déclaré de MangoQA, sont bien couverts. |
+
+**Conclusion honnête pour Raf** : MangoQA protège solidement contre les défauts de CODE (architecture, sécurité, a11y, perf, absence de tests) — le contrôle positif le prouve avec précision. Il est structurellement AVEUGLE aux défauts de CONTENU/DONNÉES purs (une table de données fausse dont chaque ligne est individuellement plausible) — confirmé, pas supposé. Les 2 « CAUGHT » restants sont réels mais pour des raisons plus indirectes que le nom du verdict ne le suggère — à ne pas sur-vendre.
+
+`tsc --noEmit` MangoQA propre. Suite offline MangoOS relancée en clôture de nuit (Partie 5).
+
+## Journal — 2026-07-23 (suite 12, nuit autonome) : plan fault-finding écosystème — Partie 5 (catalogue de régression + sonde de chaos)
+
+**Fait** :
+- `server/src/regression/regression-catalog.ts` (nouveau) : index (pas une réimplémentation) de 10 incidents réels documentés — les 8 trouvailles de cette nuit (Parties 0-3) + la régression `relay-config.ts` du 2026-07-21 + le garde-fou « terme ambigu » du 2026-07-22 — chacun avec son statut honnête `"guarded"`/`"gap"` et le test qui le protège. 1 gap signalé explicitement et NON comblé cette nuit (`.chat-history.json` flush incrémental — surface SSE trop large pour un test sûr sous contrainte de temps, mieux vaut le dire que fabriquer un test de façade). `test-regression-catalog.ts` (18 checks) vérifie la cohérence du catalogue lui-même.
+- `server/src/regression/chaos-runner.ts` (nouveau) : sonde EN RÉEL sur instance isolée (port 3098). **Trouvaille en construisant l'outil** : le verrou global d'agent (`agent-lock.ts`) interdit DÉJÀ structurellement les tours de chat parallèles — la « concurrence à plusieurs tours » du plan initial n'existe pas dans cette architecture (mono-agent par construction, une bonne nouvelle, pas un manque). Redéfini le chaos réellement pertinent : (1) le rejet du verrou lui-même (regression-lock, un 2ᵉ tour doit recevoir 409) et (2) un VRAI crash en plein tour composé avec la relance AUTOMATIQUE du watchdog (Partie 3) — le ledger doit rester "running" après la relance, jamais résolu silencieusement.
+- `server/src/regression/regression-routes.ts` + `GET /api/regression/catalog`, `GET /api/regression/chaos-report` (lecture seule — rien ne déclenche la sonde depuis une route, elle touche de vrais process).
+
+**3 bugs trouvés ET corrigés EN CONSTRUISANT la sonde elle-même (avant même de juger le système)** :
+1. `MANGAI_WORKSPACE` n'existe QUE dans le `.env` de MangoQA (repo séparé) — MangoOS dérive le même chemin directement de `WORKSPACE_DIR` (`projects.ts`), jamais d'une variable d'env. Corrigé : réutilise `WORKSPACE_DIR` directement (même source que la production, `isMangoQaActive()`).
+2. Route `GET /api/turn-status/:name` renvoie `{entry, deferred}`, pas `{status}` à plat — la sonde lisait le mauvais champ, donnant un faux "introuvable" à chaque fois. Corrigé.
+3. Délai fixe (800ms) avant le kill tombait pendant `createProject` (npm install RÉEL, plusieurs secondes) — AVANT que `startTurn` ne pose l'ancre. Remplacé par un poll sur le VRAI statut du ledger (`waitForLedgerRunning`) — le kill tombe désormais garanti en plein tour ledgé, jamais pendant le scaffolding. Projet fixture (`chaos-probe-nightly`) volontairement gardé entre les runs (pas de suppression automatique) pour ne plus repayer le coût npm install à chaque exécution.
+
+**Vérifié EN RÉEL** (3 runs, le dernier propre) :
+- MangoQA vivant confirmé (sentinelle fraîche, vraie lecture du fichier réel).
+- Verrou : 2ᵉ tour pendant le 1er (ledger confirmé "running") → HTTP 409.
+- Crash réel (`SIGKILL` du vrai process enfant) → relance automatique confirmée (PID différent) → ledger TOUJOURS "running" après la relance, jamais auto-résolu — preuve que les Parties 0-3 composent correctement en système, pas seulement individuellement.
+- Intégrité : 0 perte inexpliquée sur tout le cycle crash→relance.
+- Nettoyage vérifié : aucun process/port orphelin après les 3 runs (y compris les 2 runs ratés avant le fix).
+
+`tsc --noEmit` propre, `test-regression-catalog.ts` (18 checks) + `test-watchdog-core.ts` (20 checks) verts, enregistrés au manifeste. Rapport de chaos → `server/data/regression-report.json` (runtime, gitignored).
+
+**Les 5 parties du plan fault-finding écosystème sont closes.** Partie 5 laisse volontairement 2 choses non automatisées pour Raf : (a) le scheduler nocturne opt-in pour `chaos-runner.ts` n'est PAS câblé (script manuel `npx tsx src/regression/chaos-runner.ts` pour l'instant — décision de ne pas activer un run automatique nocturne sans que Raf l'ait vu tourner au moins une fois) ; (b) le gap `chat-history-flush-fin-de-tour` reste un gap assumé, pas comblé.

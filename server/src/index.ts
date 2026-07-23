@@ -90,6 +90,7 @@ import { registerWireframeForkRoutes } from "./wireframe-fork-routes.js";
 import { registerDiagramRoutes } from "./diagram.js";
 import { registerTurnLedgerRoutes } from "./turn-ledger.js";
 import { registerIntegrityRoutes, startIntegrityScheduler } from "./integrity-routes.js";
+import { registerRegressionRoutes } from "./regression/regression-routes.js";
 import { registerHomeConversationsRoutes } from "./home-conversations-routes.js";
 import { registerAgentFactoryRoutes } from "./agent/agent-routes.js";
 import { restoreAgents } from "./agent/agent-runtime.js";
@@ -215,6 +216,7 @@ registerDiagramRoutes(app);
 registerTurnLedgerRoutes(app);
 registerIntegrityRoutes(app);
 startIntegrityScheduler(); // #196 fault-finding Partie 1 — audit périodique, 1er passage à 30s (amorçage)
+registerRegressionRoutes(app); // #196 fault-finding Partie 5 — catalogue de régression + rapport de chaos (lecture seule)
 registerAgentFactoryRoutes(app);
 // Agent PDF (#145, Chantier 3) — async (charge pdfjs-dist + Ollama paresseusement),
 // best-effort : un échec d'init ne doit jamais empêcher le serveur de démarrer.

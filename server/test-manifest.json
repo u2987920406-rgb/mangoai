@@ -513,6 +513,9 @@
     "test-references": {
       "tier": "smoke"
     },
+    "test-regression-catalog": {
+      "tier": "offline"
+    },
     "test-relay": {
       "tier": "smoke"
     },

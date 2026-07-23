@@ -29,6 +29,11 @@ server/data/integrity-audit.log.jsonl
 # Sentinelle heartbeat du superviseur backend (#196 fault-finding Partie 3) — runtime
 server/.backend-active
 
+# Artefacts de la sonde de chaos (#196 fault-finding Partie 5) — runtime
+server/.chaos-backend-active
+server/chaos-watchdog.log
+server/data/regression-report.json
+
 # Registre des cerveaux mesurés (#135 Phase E) — runtime, jamais versionné
 .brains/
 
