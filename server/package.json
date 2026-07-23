@@ -9,6 +9,7 @@
   "scripts": {
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
+    "watch:supervised": "tsx src/watchdog.ts",
     "check-key": "tsx src/check-key.ts",
     "test": "tsx src/test-runner.ts --tier smoke",
     "test:offline": "tsx src/test-runner.ts --tier offline",

@@ -80,6 +80,7 @@ import { registerSelfEvolutionRoutes } from "./self/self-evolution-routes.js";
 import { reconcileStuckForging } from "./self/self-evolution.js";
 import { startTasteNocturnalScheduler } from "./taste/taste-nocturnal.js";
 import { startBlackboardDecayScheduler } from "./kernel/kernel-blackboard-decay.js";
+import { startBackendHeartbeat } from "./backend-heartbeat.js";
 import { prewarmVision } from "./vision-prewarm.js";
 import { sweepOrphanPreviews } from "./preview-sweep.js";
 import { lanIPv4s } from "./net.js";
@@ -244,6 +245,10 @@ const httpServer = app.listen(PORT, HOST, () => {
   // en arrière-plan pour que le 1er regard (vois_ecran/Œil-Coach/Gardien) soit immédiat.
   // Fire-and-forget, ne lève jamais, saute si cloud ou VISION_PREWARM=off.
   void prewarmVision();
+  // Sentinelle heartbeat (#196 fault-finding Partie 3) — lue par watchdog.ts
+  // (process séparé, `npm run watch:supervised`) pour détecter un backend vivant
+  // mais bloqué. No-op utile même sans watchdog lancé (juste un fichier écrit).
+  startBackendHeartbeat();
   // Curation de goût nocturne (#149 v2) — scheduler opt-in (config.enabled défaut false).
   startTasteNocturnalScheduler();
   // Decay mémoire du Blackboard (harnais-2027 §2) — no-op tant que BLACKBOARD_TTL=off.

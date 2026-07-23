@@ -26,6 +26,9 @@ server/data/external-history/
 server/data/integrity-snapshot.json
 server/data/integrity-audit.log.jsonl
 
+# Sentinelle heartbeat du superviseur backend (#196 fault-finding Partie 3) — runtime
+server/.backend-active
+
 # Registre des cerveaux mesurés (#135 Phase E) — runtime, jamais versionné
 .brains/
 

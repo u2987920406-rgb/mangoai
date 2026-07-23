@@ -4448,3 +4448,22 @@ Parties 2-5 du plan restent à faire.
 **Non fait, honnêtement** : `nocturnal.ts`'s tick n'a pas de test unitaire dédié (contrairement à `taste-nocturnal.ts`) — la fonction reste privée (`function`, pas `export`) et ce sous-système est testé par ce projet via de VRAIS runs nocturnes plutôt que des mocks (patron déjà établi, `test-nocturnal.ts` ne teste que les fonctions pures). Le correctif suit exactement le même patron que celui de `taste-nocturnal.ts`, validé par les 5 tests de CE fichier-là — confiance par analogie directe, pas par un test dédié à ce fichier précis.
 
 Parties 3-5 du plan restent à faire.
+
+## Journal — 2026-07-23 (suite 10) : plan fault-finding écosystème — Partie 3 (superviseur de process du backend)
+
+**Objectif** : combler le trou opérationnel identifié en 0.5 — `tsx watch` ne relance PAS le backend après un `SIGKILL` (seulement sur changement de fichier, vérifié en réel plus tôt cette session). MangoQA (repo séparé) a déjà résolu exactement ce problème et l'a prouvé en prod (2 vrais crashs heap-overflow absorbés). Plutôt que d'inventer un nouveau mécanisme, réplique fidèlement le patron déjà éprouvé (`D:\IA\MangoQA\src\watchdog-core.ts`/`watchdog.ts`) côté MangoOS.
+
+**Fait** :
+- `server/src/watchdog-core.ts` (nouveau) : cœur PUR — `parseHeartbeat`/`heartbeatAgeMs`/`isHeartbeatStale`/`respawnDelayMs`, mêmes constantes que MangoQA (seuil périmé 60s, backoff base 3s/max 60s, seuil "échec rapide" 10s). Copie fidèle du patron, pas une réinvention.
+- `server/src/backend-heartbeat.ts` (nouveau) : `startBackendHeartbeat()` écrit la sentinelle `server/.backend-active` (`{heartbeat, pid}`) toutes les 10s, appelée au boot dans `index.ts`. Override par env `BACKEND_HEARTBEAT_FILE` (patron déjà établi : `CRON_TASKS_FILE`, `INTEGRITY_SNAPSHOT_FILE`…) — permet de tester un backend isolé sans écraser la sentinelle du backend réel en cours.
+- `server/src/watchdog.ts` (nouveau, orchestration) : spawn `src/index.ts` via `node tsx/dist/cli.mjs` (pas le binstub `.cmd`, `spawn` sans `shell:true` échoue en EINVAL sur Windows — même correctif déjà vérifié côté MangoQA), relance sur `exit` avec backoff anti-tempête, et surveille en plus la sentinelle heartbeat (toutes les 15s) pour détecter un process VIVANT mais BLOQUÉ — un cas qu'un simple `exit` ne peut jamais voir. Nouveau script `npm run watch:supervised` (à utiliser à la place de `npm run dev` pour une session longue durée sans supervision manuelle).
+
+**Vérifié EN RÉEL** (instance isolée port 3099, `BACKEND_HEARTBEAT_FILE`/`WATCHDOG_LOG_FILE` dédiés — jamais touché le backend vivant de la session sur le port 3000) :
+- Backend démarré sous watchdog, heartbeat confirmé sur disque, `curl` 200.
+- **Vrai crash simulé** : `Stop-Process -Force` (permission explicite demandée et obtenue) sur le PID du backend enfant → log watchdog confirme la détection (`code=4294967295 signal=null, actif 18s`) et la relance après 3000ms (backoff de base) → nouveau PID différent, `curl` 200 de nouveau, sentinelle rafraîchie. Preuve directe que ce mécanisme couvre exactement le trou que `tsx watch` seul ne couvre pas.
+- Chemin "heartbeat périmé" (process vivant mais bloqué) **non testé par un vrai hang** (difficile à provoquer proprement sans modifier le code) — confiance par analogie directe : logique pure identique déjà prouvée en prod par MangoQA (2 vrais blocages absorbés) et testée exhaustivement en unitaire (`test-watchdog-core.ts`, 20 checks).
+- **Trouvaille annexe pendant la vérification** : 3 process backend MangoOS zombies (tsx watch, orphelins de redémarrages précédents de cette session) trouvés en vérifiant les ports avant le test — ne tenaient PAS le port 3000 (seul le vrai backend actif le tenait), purs déchets. Nettoyés (permission explicite), backend actif confirmé intact après (`curl` 200).
+
+`tsc --noEmit` propre, `test-watchdog-core.ts` (20 checks) tous verts, enregistré au manifeste. Suite offline complète relancée en clôture.
+
+Parties 4-5 du plan restent à faire.
