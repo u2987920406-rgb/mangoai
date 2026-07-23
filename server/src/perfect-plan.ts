@@ -1,6 +1,8 @@
 import fs from "node:fs";
 import { atomicWriteFileSync } from "./safe-io.js";
 import path from "node:path";
+import { resolveProvider } from "./llm/llm-engine.js";
+import { getBrain } from "./kernel.js";
 
 export interface PerfectPlanAnswer {
   id: string;
@@ -324,6 +326,87 @@ export const PERFECT_PLAN_QUESTIONS = [
     ],
   },
 ] as const;
+
+// #196 partie B (2026-07-23) — sélection CIBLÉE dans le catalogue fixe ci-dessus.
+// Retour de Raf après relecture des 30 questions : trop décorrélées du sujet
+// (une todo-list simple n'a pas à répondre à « Monétisation ? » ou
+// « Multilingue ? »). Le catalogue ne bouge PAS (questions déjà curées) — un
+// cerveau léger lit la description du projet et sélectionne seulement les
+// identifiants réellement pertinents, jamais un texte inventé (fiabilité : un
+// FILTRE dans un catalogue validé, pas une génération libre).
+const VALID_QUESTION_IDS: Set<string> = new Set(PERFECT_PLAN_QUESTIONS.map((q) => q.id));
+
+// Repli honnête si l'appel LLM échoue ou renvoie hors-format — sous-ensemble
+// raisonnable pour n'importe quel projet, jamais un gate bloqué.
+const DEFAULT_QUESTION_IDS = ["type", "objectif", "audience", "style", "data", "priorite"];
+
+const SELECT_SYSTEM_PROMPT =
+  "Tu sélectionnes les questions de cadrage PERTINENTES pour un projet précis, dans un catalogue fixe. " +
+  'Réponds UNIQUEMENT par un tableau JSON d\'identifiants (zéro markdown, zéro backtick), ex: ["type","objectif"]. ' +
+  "N'invente JAMAIS un identifiant hors catalogue. Choisis entre 6 et 8 questions RÉELLEMENT décisives pour CE projet précis — " +
+  "ignore les questions sans rapport (ex. paiement/multilingue pour une simple todo-list, accessibilité AAA pour un prototype interne).";
+
+export type PerfectPlanAsk = (system: string, user: string) => Promise<string>;
+
+const defaultAsk: PerfectPlanAsk = (system, user) =>
+  getBrain().complete(system, user, {
+    provider: resolveProvider(process.env.PERFECT_PLAN_PROVIDER),
+    maxTokens: 200,
+    timeoutMs: 30_000,
+  });
+
+/** Extrait un tableau JSON d'identifiants depuis la sortie brute (tolérant aux
+ *  fences markdown), ne garde que les IDs du catalogue, déduplique, plafonne à
+ *  `maxCount`. Ne lève jamais — liste vide si hors-format. PUR. */
+export function parseQuestionIds(raw: string, maxCount = 8): string[] {
+  const txt = (raw ?? "").trim().replace(/```(?:json)?/gi, "").trim();
+  const start = txt.indexOf("[");
+  const end = txt.lastIndexOf("]");
+  if (start === -1 || end === -1 || end <= start) return [];
+  let arr: unknown;
+  try {
+    arr = JSON.parse(txt.slice(start, end + 1));
+  } catch {
+    return [];
+  }
+  if (!Array.isArray(arr)) return [];
+  const seen = new Set<string>();
+  const out: string[] = [];
+  for (const v of arr) {
+    if (typeof v !== "string") continue;
+    const id = v.trim();
+    if (!VALID_QUESTION_IDS.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+    if (out.length >= maxCount) break;
+  }
+  return out;
+}
+
+/** Sélectionne les `maxCount` questions du catalogue les plus pertinentes pour
+ *  `description`, via UN appel LLM léger. Repli sur `DEFAULT_QUESTION_IDS` si
+ *  l'appel échoue ou renvoie hors-format — jamais un throw, jamais un gate
+ *  bloqué. */
+export async function selectRelevantQuestions(
+  description: string,
+  maxCount = 8,
+  deps: { ask?: PerfectPlanAsk } = {},
+): Promise<string[]> {
+  const ask = deps.ask ?? defaultAsk;
+  const catalogue = PERFECT_PLAN_QUESTIONS.map((q) => `- ${q.id} : ${q.text}`).join("\n");
+  const user =
+    `Description du projet :\n"${description.trim()}"\n\n` +
+    `Catalogue de questions disponibles :\n${catalogue}\n\n` +
+    `Sélectionne au maximum ${maxCount} questions les plus pertinentes pour CE projet précis.`;
+  try {
+    const raw = await ask(SELECT_SYSTEM_PROMPT, user);
+    const ids = parseQuestionIds(raw, maxCount);
+    if (ids.length > 0) return ids;
+  } catch {
+    /* repli honnête ci-dessous */
+  }
+  return DEFAULT_QUESTION_IDS.slice(0, maxCount);
+}
 
 const FILE = ".perfect-plan.json";
 

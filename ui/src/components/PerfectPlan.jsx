@@ -2,9 +2,15 @@ import { useState } from "react";
 import { ArrowLeft, ArrowRight, Check, Plus, Trash2, X } from "lucide-react";
 import { QUESTIONS } from "./perfect-plan/questions.js";
 
-export default function PerfectPlan({ onClose, onLaunch, count = 15, title = "Perfect Plan", launchLabel = "Lancer avec ce plan" }) {
+export default function PerfectPlan({ onClose, onLaunch, count = 15, questionIds, title = "Perfect Plan", launchLabel = "Lancer avec ce plan" }) {
   // Perfect Plan = 15 questions · Gros chantier = 30. On découpe la banque commune.
-  const active = QUESTIONS.slice(0, Math.min(count, QUESTIONS.length));
+  // #196 partie B (2026-07-23) — `questionIds` (sélection ciblée, 6-8 ids) prend le
+  // pas sur `count` quand fourni : filtre le catalogue sur CES ids précis, dans
+  // l'ordre du catalogue (ordre stable, pas l'ordre de la sélection). `count` reste
+  // le comportement par défaut si absent — rétrocompatible avec tout usage existant.
+  const active = questionIds?.length
+    ? QUESTIONS.filter((q) => questionIds.includes(q.id))
+    : QUESTIONS.slice(0, Math.min(count, QUESTIONS.length));
   const TOTAL = active.length + 1; // N questions + l'étape références
 
   const [step, setStep] = useState(0);

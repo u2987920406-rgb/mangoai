@@ -10,6 +10,8 @@ import {
   saveContract,
   deleteContract,
   perfectPlanSection,
+  parseQuestionIds,
+  selectRelevantQuestions,
 } from "../perfect-plan.js";
 
 let failures = 0;
@@ -138,8 +140,75 @@ check("saveContract crée le répertoire", hasContract(dir9));
 fs.rmSync(dir9, { recursive: true });
 
 console.log("─".repeat(60));
+console.log("test-perfect-plan — #196 partie B : sélection ciblée (parseQuestionIds/selectRelevantQuestions)");
+console.log("─".repeat(60));
+
+// 11. parseQuestionIds — extraction tolérante, ids valides du catalogue
+{
+  const ids = parseQuestionIds('```json\n["type","objectif","style"]\n```');
+  check("parseQuestionIds extrait les ids valides", ids.length === 3 && ids.includes("style"));
+}
+{
+  // id hors catalogue ("inexistant") écarté, id valide conservé
+  const ids = parseQuestionIds('["type","inexistant","objectif"]');
+  check("parseQuestionIds écarte les ids hors catalogue", ids.length === 2 && !ids.includes("inexistant"));
+}
+{
+  // doublons dédupliqués
+  const ids = parseQuestionIds('["type","type","objectif"]');
+  check("parseQuestionIds déduplique", ids.length === 2);
+}
+{
+  // plafonné à maxCount
+  const ids = parseQuestionIds(JSON.stringify(PERFECT_PLAN_QUESTIONS.map((q) => q.id)), 5);
+  check("parseQuestionIds plafonne à maxCount", ids.length === 5);
+}
+{
+  check("parseQuestionIds hors-format → []", parseQuestionIds("pas du JSON du tout").length === 0);
+  check("parseQuestionIds objet (pas un tableau) → []", parseQuestionIds('{"a":1}').length === 0);
+}
+
+// 12. selectRelevantQuestions — ask injecté (patron generateLayoutVariants), jamais de vrai appel réseau
+{
+  const ask = async () => JSON.stringify(["type", "objectif", "audience", "data", "backend", "paiement", "recherche"]);
+  const ids = await selectRelevantQuestions("une boutique e-commerce avec paiement et recherche produits", 8, { ask });
+  check("e-commerce sélectionne paiement", ids.includes("paiement"));
+  check("e-commerce sélectionne recherche", ids.includes("recherche"));
+}
+{
+  const ask = async () => JSON.stringify(["type", "objectif", "audience", "style", "data", "priorite"]);
+  const ids = await selectRelevantQuestions("une todo-list simple, liste + ajout + coche fait", 8, { ask });
+  check("todo-list n'inclut pas paiement", !ids.includes("paiement"));
+  check("todo-list n'inclut pas i18n", !ids.includes("i18n"));
+}
+{
+  // Échec réseau → repli honnête (jamais un throw, jamais un gate bloqué)
+  const ask = async (): Promise<string> => { throw new Error("injoignable"); };
+  const ids = await selectRelevantQuestions("app quelconque", 8, { ask });
+  check("échec réseau → repli sur DEFAULT_QUESTION_IDS", ids.length > 0 && ids.every((id) => PERFECT_PLAN_QUESTIONS.some((q) => q.id === id)));
+}
+{
+  // Réponse toujours hors-format → repli honnête, jamais un tableau vide bloquant
+  const ask = async (): Promise<string> => "n'importe quoi";
+  const ids = await selectRelevantQuestions("app quelconque", 8, { ask });
+  check("hors-format → repli non-vide", ids.length > 0);
+}
+{
+  // Réponse avec uniquement des ids invalides → filtrée à vide → repli honnête (pas [])
+  const ask = async () => JSON.stringify(["bidon1", "bidon2"]);
+  const ids = await selectRelevantQuestions("app quelconque", 8, { ask });
+  check("uniquement ids invalides → repli non-vide", ids.length > 0);
+}
+{
+  // jamais plus de maxCount ids renvoyés, même si l'ask en renvoie davantage
+  const ask = async () => JSON.stringify(PERFECT_PLAN_QUESTIONS.map((q) => q.id));
+  const ids = await selectRelevantQuestions("app quelconque", 6, { ask });
+  check("jamais plus de maxCount ids", ids.length <= 6);
+}
+
+console.log("─".repeat(60));
 if (failures === 0) {
-  console.log(`✅ ${PERFECT_PLAN_QUESTIONS.length + 27} vérifications passées`);
+  console.log(`✅ ${PERFECT_PLAN_QUESTIONS.length + 27 + 14} vérifications passées`);
   process.exit(0);
 } else {
   console.log(`❌ ${failures} vérification(s) en échec`);

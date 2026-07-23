@@ -6,9 +6,11 @@ import {
   parseQuestion,
   CHAT_ACTIONS, groupMessages,
 } from "./components/chat/helpers.js";
+import { Loader2 } from "lucide-react";
 import ChatMessages from "./components/chat/ChatMessages.jsx";
 import ChatComposer from "./components/chat/ChatComposer.jsx";
 import DesignGate from "./components/chat/DesignGate.jsx";
+import PerfectPlan from "./components/PerfectPlan.jsx";
 import { useExternalBusy } from "./hooks/useExternalBusy.js";
 import { useVoiceInput } from "./hooks/useVoiceInput.js";
 import { useSnapCapture } from "./hooks/useSnapCapture.js";
@@ -86,6 +88,39 @@ export default function Chat({
       .catch(() => { if (!cancelled) setIdeationDone(true); });
     return () => { cancelled = true; };
   }, [projectName, apiPath]);
+
+  // #196 partie B — Perfect Plan obligatoire mais CIBLÉ (6-8 questions choisies
+  // par un cerveau léger sur la description tapée, pas la banque fixe de 15/30 —
+  // demande de Raf après relecture : « trop décorrélées du sujet parfois »).
+  // Même patron fail-open que `ideationDone`. Ce gate passe AVANT le design
+  // (fusion Ideation/fourche) — cadrer avant de designer, comme dans la vidéo.
+  const [perfectPlanDone, setPerfectPlanDone] = useState(true);
+  const [perfectPlanGateText, setPerfectPlanGateText] = useState(null);
+  const [perfectPlanQuestionIds, setPerfectPlanQuestionIds] = useState(null);
+
+  useEffect(() => {
+    if (apiPath !== "/api/chat" || !projectName.trim()) { setPerfectPlanDone(true); return; }
+    let cancelled = false;
+    fetch(`/api/perfect-plan/status/${encodeURIComponent(projectName)}`)
+      .then((r) => (r.ok ? r.json() : { done: true }))
+      .then((d) => { if (!cancelled) setPerfectPlanDone(Boolean(d.done)); })
+      .catch(() => { if (!cancelled) setPerfectPlanDone(true); });
+    return () => { cancelled = true; };
+  }, [projectName, apiPath]);
+
+  useEffect(() => {
+    if (perfectPlanGateText === null) { setPerfectPlanQuestionIds(null); return; }
+    let cancelled = false;
+    fetch("/api/perfect-plan/questions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ description: perfectPlanGateText }),
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`Erreur ${r.status}`))))
+      .then((d) => { if (!cancelled) setPerfectPlanQuestionIds(d.questionIds ?? []); })
+      .catch(() => { if (!cancelled) setPerfectPlanQuestionIds([]); }); // repli honnête : PerfectPlan.jsx retombe sur `count` par défaut
+    return () => { cancelled = true; };
+  }, [perfectPlanGateText]);
 
   const push = (msg) => {
     setMessages((prev) => [...prev, { id: uid(), ...msg }]);
@@ -340,17 +375,28 @@ export default function Chat({
     // Auto-prompts (fix requests) never carry attachments
     const files = typeof textArg === "string" ? [] : attachments;
     if ((!typed && files.length === 0) || busy) return;
-    // #196 — Ideation obligatoire : le tout premier tour Construire d'un projet
-    // neuf (aucun historique, aucun `.ideation.json`) est intercepté AVANT le
-    // fetch réel — la description tapée sert de point de départ au plan
-    // d'ideation, qui doit être validé avant que le code ne démarre. Ne
+    // #196 — Gates obligatoires du tout premier tour Construire d'un projet neuf
+    // (aucun historique) — interceptés AVANT le fetch réel, la description tapée
+    // sert de point de départ. Ordre CADRER puis DESIGNER (comme la vidéo « 6
+    // skills ») : Perfect Plan ciblé (partie B) d'abord si `.perfect-plan.json`
+    // absent, sinon Ideation/fourche fusionnée (partie A) si `.ideation.json`
+    // absent. Chaque gate, une fois validé, relance `send()` avec le MÊME texte —
+    // le gate suivant (s'il reste) s'ouvre naturellement à ce second passage. Ne
     // s'applique qu'au chat workspace normal (pas à la section Code, ni aux
     // projets déjà entamés, ni aux auto-prompts internes).
-    if (isUserSend && apiPath === "/api/chat" && activeAction === "construire" && !ideationDone && messages.length === 0) {
-      setInput("");
-      if (inputRef.current) inputRef.current.style.height = "auto";
-      setIdeationGateText(typed);
-      return;
+    if (isUserSend && apiPath === "/api/chat" && activeAction === "construire" && messages.length === 0) {
+      if (!perfectPlanDone) {
+        setInput("");
+        if (inputRef.current) inputRef.current.style.height = "auto";
+        setPerfectPlanGateText(typed);
+        return;
+      }
+      if (!ideationDone) {
+        setInput("");
+        if (inputRef.current) inputRef.current.style.height = "auto";
+        setIdeationGateText(typed);
+        return;
+      }
     }
     // #139 Gros Projet : un build d'incrément force mode "projet" et joint l'id
     // de l'incrément (réconcilié côté serveur après commit).
@@ -624,6 +670,46 @@ export default function Chat({
     abortRef.current?.abort();
     fetch("/api/stop", { method: "POST" }).catch(() => {});
   };
+
+  // #196 partie B — Perfect Plan ciblé, gate mandataire posé PAR-DESSUS le chat
+  // (PerfectPlan.jsx est déjà un modal `fixed inset-0 z-50` auto-suffisant, pas
+  // besoin de section dédiée). Fermer (onClose) n'invalide rien : le gate se
+  // rouvrira au prochain essai d'envoi (fail-open non-destructif, patron
+  // onCancel de DesignGate).
+  if (perfectPlanGateText !== null) {
+    if (perfectPlanQuestionIds === null) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center gap-2 bg-bg/90 text-sm text-dim backdrop-blur-sm">
+          <Loader2 size={16} className="animate-spin" />
+          MangoOS choisit les questions de cadrage pour ce projet…
+        </div>
+      );
+    }
+    return (
+      <PerfectPlan
+        questionIds={perfectPlanQuestionIds}
+        title="Cadrage du projet"
+        launchLabel="Valider et continuer"
+        onClose={() => { setPerfectPlanGateText(null); setPerfectPlanQuestionIds(null); }}
+        onLaunch={async ({ answers, refs }) => {
+          try {
+            await fetch(`/api/perfect-plan/${encodeURIComponent(projectName)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ answers, refs, kind: "perfect" }),
+            });
+          } catch {
+            /* best-effort — le contrat est secondaire, ne bloque pas la suite */
+          }
+          setPerfectPlanDone(true);
+          const text = perfectPlanGateText;
+          setPerfectPlanGateText(null);
+          setPerfectPlanQuestionIds(null);
+          requestAnimationFrame(() => send(text, { modeOverride: "elite" }));
+        }}
+      />
+    );
+  }
 
   // #196 — Gate obligatoire : remplace le chat par le plan d'ideation tant que
   // le premier tour Construire de ce projet n'a pas été validé.
