@@ -34,6 +34,7 @@ import {
   deleteWireframeChoice,
   wireframeChoiceSection,
 } from "../wireframe-fork.js";
+import { generateAndSaveDiagram } from "../diagram.js";
 import { shouldCaptureDiff, captureDiff } from "../vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "../metrics.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
@@ -715,6 +716,10 @@ app.post("/api/chat", async (req, res) => {
         if (patrolFiles.current.length > 0) {
           spawnPatrol(historyDir, projectType, patrolFiles.current);
         }
+        // #196 partie D — diagramme "après" (ce qui a été RÉELLEMENT construit),
+        // même point de clôture que la review — fire-and-forget, jamais sur le
+        // chemin critique de la réponse SSE déjà envoyée.
+        void generateAndSaveDiagram(projectName, prompt, "apres").catch(() => {});
       }
       // Hermes context_compressor transposed: compact between turns, in the
       // background, once the context crosses the threshold.

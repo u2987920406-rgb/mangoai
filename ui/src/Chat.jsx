@@ -726,6 +726,14 @@ export default function Chat({
           onValidated={(text) => {
             setIdeationDone(true);
             setIdeationGateText(null);
+            // #196 partie D — diagramme "avant" (architecture PRÉVUE), déclenché
+            // automatiquement juste après le choix de direction, fire-and-forget —
+            // n'attend jamais le résultat pour démarrer le vrai build.
+            fetch(`/api/diagram/${encodeURIComponent(projectName)}`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ kind: "avant", intention: text }),
+            }).catch(() => {});
             requestAnimationFrame(() => send(text, { modeOverride: "elite" }));
           }}
         />

@@ -1,12 +1,13 @@
 import { useState } from "react";
 import {
   Briefcase, BrainCircuit, ClipboardCheck, Download, Eye, EyeOff,
-  GitFork, Hammer, History, Layers, Loader2, Repeat, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2,
+  GitFork, Hammer, History, Layers, Loader2, Repeat, Server, ShieldCheck, SlidersHorizontal, Sparkles, Squircle, Trash2, Workflow,
 } from "lucide-react";
 import Knowledge from "./Knowledge.jsx";
 import BuildReview from "./BuildReview.jsx";
 import PanelShell from "./PanelShell.jsx";
 import ProjectKanban from "./ProjectKanban.jsx";
+import DiagramPanel from "./DiagramPanel.jsx";
 
 // ─── Bouton du rail d'outils projet ───────────────────────────────────────────
 function RailBtn({ icon: Icon, label, active = false, onClick, badge }) {
@@ -405,6 +406,10 @@ export default function WorkspaceTools({
         {show("loopdesign") && onLoopDesign && (
           <RailBtn icon={Repeat} label="Loop Design" active={active === "loopdesign" || loopDesignEnabled} onClick={() => toggle("loopdesign")} />
         )}
+        {/* #196 partie D — Diagrammes avant/après ("/illustre") */}
+        {show("diagram") && projectName && (
+          <RailBtn icon={Workflow} label="Diagrammes" active={active === "diagram"} onClick={() => toggle("diagram")} />
+        )}
 
         <Sep />
 
@@ -466,6 +471,11 @@ export default function WorkspaceTools({
           {active === "loopdesign" && (
             <PanelShell title="Loop Design" onClose={close}>
               <LoopDesignPanel enabled={loopDesignEnabled} onToggle={onLoopDesign} />
+            </PanelShell>
+          )}
+          {active === "diagram" && (
+            <PanelShell title="Diagrammes" onClose={close}>
+              <DiagramPanel projectName={projectName} />
             </PanelShell>
           )}
           {active === "versions" && (
