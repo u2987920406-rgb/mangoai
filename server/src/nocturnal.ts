@@ -814,7 +814,14 @@ function localDate(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** Tick périodique : lance un lot une fois par nuit à l'heure configurée. */
+/** Tick périodique : lance un lot une fois par nuit à l'heure configurée.
+ *  (2026-07-23, #196 fault-finding Partie 2) — `lastAutoRun` (verrou anti-doublon,
+ *  1×/nuit) n'est posé qu'APRÈS un lot RÉUSSI, plus avant. `running` protège déjà
+ *  la concurrence au sein du même process. AVANT ce correctif : un crash pendant
+ *  le lot laissait `lastAutoRun` déjà posé → le reste de la nuit silencieusement
+ *  perdu ET bloqué en retry jusqu'au lendemain (les projets déjà terminés
+ *  survivaient bien grâce à `saveEntries` au fil de l'eau — seul le verrou du
+ *  RESTE du lot était mal placé). */
 function startNocturnalScheduler(): void {
   const tick = () => {
     try {
@@ -822,11 +829,17 @@ function startNocturnalScheduler(): void {
       if (!cfg.enabled || running) return;
       if (new Date().getHours() !== cfg.hour) return;
       if (cfg.lastAutoRun === localDate()) return; // déjà tourné cette nuit
-      saveConfig({ ...cfg, lastAutoRun: localDate() });
       // (#180 É2) Acteur AUTONOME : la nuit tourne sans Raf → périmètre restreint
       // (workspace-only en écriture, coffres en ro et SEULEMENT si les garde-fous
       // sont armés). AsyncLocalStorage propage l'acteur jusqu'à executeContract.
-      void runAsActor("autonomous", () => runNocturnalBatch(cfg.count));
+      runAsActor("autonomous", () => runNocturnalBatch(cfg.count))
+        .then(() => {
+          saveConfig({ ...loadConfig(), lastAutoRun: localDate() });
+        })
+        .catch(() => {
+          /* échec réel (pas un crash) : ne pas poser le verrou non plus — même
+           * logique que le succès, cette nuit reste éligible à un re-essai */
+        });
     } catch {
       /* ignore */
     }

@@ -300,3 +300,42 @@ export function recordForgeAttempt(id: string, now: number = Date.now()): OpenGa
 export function forgeAttemptsExhausted(gap: OpenGap, maxAttempts: number): boolean {
   return (gap.forgeAttempts ?? 0) >= maxAttempts
 }
+
+// #196 fault-finding Partie 2 (2026-07-23) — réconciliation au boot des lacunes
+// bloquées à "forging". `markGap(id, "forging")` + `recordForgeAttempt` sont bien
+// écrits SYNCHRONE avant l'appel LLM (forgeForGap) — l'ancre existe déjà — mais
+// RIEN ne la résout après un crash pendant la forge : `listOpenGaps` ne renvoie QUE
+// "proposed"/"forging" comme éligibles au re-essai côté relay-agentic.ts (ligne
+// ~556), et le déclencheur d'auto-forge ne retente QUE `status === "proposed"` —
+// une lacune restée "forging" après un crash est donc silencieusement exclue du
+// re-essai automatique POUR TOUJOURS, sans qu'aucune trace ne le signale.
+const STUCK_FORGING_THRESHOLD_MS = 10 * 60 * 1000; // 10 min — largement au-delà d'une forge normale
+
+/** Repasse à "proposed" toute lacune bloquée à "forging" depuis plus de
+ *  `thresholdMs` (updatedAt/lastForgeAttemptAt le plus récent des deux comme
+ *  référence) — la rend de nouveau éligible au re-essai automatique. Appelée au
+ *  BOOT du process (index.ts) : une lacune "forging" au démarrage signifie presque
+ *  toujours un crash pendant la forge précédente (le process qui vient de démarrer
+ *  n'a JAMAIS pu la mettre à "forging" lui-même avant cet appel). Renvoie les ids
+ *  réconciliés (pour logging). Ne lève jamais. */
+export function reconcileStuckForging(now: number = Date.now(), thresholdMs = STUCK_FORGING_THRESHOLD_MS): string[] {
+  try {
+    const list = loadGaps()
+    const reconciled: string[] = []
+    let changed = false
+    for (let i = 0; i < list.length; i++) {
+      const g = list[i]!
+      if (g.status !== "forging") continue
+      const ref = g.lastForgeAttemptAt ?? g.updatedAt
+      const age = now - new Date(ref).getTime()
+      if (!Number.isFinite(age) || age < thresholdMs) continue
+      list[i] = { ...g, status: "proposed", updatedAt: new Date(now).toISOString() }
+      reconciled.push(g.id)
+      changed = true
+    }
+    if (changed) saveGaps(list)
+    return reconciled
+  } catch {
+    return []
+  }
+}

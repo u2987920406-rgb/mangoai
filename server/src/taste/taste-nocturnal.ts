@@ -211,15 +211,28 @@ function localDate(now = Date.now()): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 }
 
-/** Tick unique du scheduler (exporté pour test). Renvoie true si un batch a été lancé. */
-export async function tasteSchedulerTick(now = Date.now()): Promise<boolean> {
-  const cfg = loadTasteNocturnalConfig();
+/** Tick unique du scheduler (exporté pour test). Renvoie true si un batch a été lancé.
+ *  (2026-07-23, #196 fault-finding Partie 2) — `lastAutoRun` (verrou anti-doublon,
+ *  1×/jour) n'est posé qu'APRÈS un batch RÉUSSI, plus avant. `running` (module,
+ *  ci-dessus) protège déjà la concurrence au sein du MÊME process — ce marqueur ne
+ *  sert qu'à bloquer un RE-DÉCLENCHEMENT le même jour. AVANT ce correctif : un crash
+ *  pendant le batch laissait `lastAutoRun` déjà posé → toute la nuit silencieusement
+ *  perdue ET activement bloquée en retry jusqu'au lendemain (pire qu'aucun marqueur). */
+export async function tasteSchedulerTick(
+  now = Date.now(),
+  deps: { batch?: BatchDeps; configFile?: string } = {},
+): Promise<boolean> {
+  const file = deps.configFile ?? CONFIG_FILE;
+  const cfg = loadTasteNocturnalConfig(file);
   if (!cfg.enabled || running) return false;
   if (new Date(now).getHours() !== cfg.hour) return false;
   if (cfg.lastAutoRun === localDate(now)) return false;
-  saveTasteNocturnalConfig({ ...cfg, lastAutoRun: localDate(now) });
   pruneOld();
-  runNocturnalTasteBatch(cfg).catch((e) => console.error("[taste-nocturnal]", e instanceof Error ? e.message : e));
+  runNocturnalTasteBatch(cfg, deps.batch)
+    .then(() => {
+      saveTasteNocturnalConfig({ ...loadTasteNocturnalConfig(file), lastAutoRun: localDate(now) }, file);
+    })
+    .catch((e) => console.error("[taste-nocturnal]", e instanceof Error ? e.message : e));
   return true;
 }
 

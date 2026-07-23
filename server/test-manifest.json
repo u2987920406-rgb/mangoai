@@ -119,6 +119,9 @@
     "test-cron-breaker": {
       "tier": "offline"
     },
+    "test-cron-scheduler": {
+      "tier": "offline"
+    },
     "test-delegate-live": {
       "tier": "offline"
     },

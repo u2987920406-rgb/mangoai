@@ -1,8 +1,12 @@
 // Tests de la curation nocturne (taste-nocturnal.ts) — génération/juge/notif INJECTÉS,
 // zéro réseau, zéro navigateur, zéro disque pour la file (enqueue capturé).
 
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import {
-  selectEligibleProjects, enqueueTasteRun, runNocturnalTasteBatch,
+  selectEligibleProjects, enqueueTasteRun, runNocturnalTasteBatch, tasteSchedulerTick,
+  loadTasteNocturnalConfig, saveTasteNocturnalConfig, localDate,
   DEFAULT_TASTE_NOCTURNAL_CONFIG,
   type SelectDeps, type EnqueueTasteDeps, type BatchDeps, type TasteNocturnalConfig,
 } from "../taste/taste-nocturnal.js";
@@ -122,6 +126,59 @@ const cfg: TasteNocturnalConfig = { ...DEFAULT_TASTE_NOCTURNAL_CONFIG, count: 2,
   const b = batchDeps({ select: () => [] });
   const res = await runNocturnalTasteBatch(cfg, b.deps);
   check("zéro projet → generated 0, pas de notif", res.generated === 0 && b.notifs.length === 0);
+}
+
+// ── tasteSchedulerTick — #196 fault-finding Partie 2 (2026-07-23) ──
+// lastAutoRun (verrou anti-doublon) ne doit être posé qu'APRÈS un batch réussi —
+// avant ce correctif, il était posé AVANT, donc un crash pendant le batch bloquait
+// silencieusement toute reprise le même jour.
+{
+  function tmpConfigFile(): string {
+    return path.join(fs.mkdtempSync(path.join(os.tmpdir(), "taste-nocturnal-test-")), "config.json");
+  }
+  const NOW = new Date(2026, 6, 23, 3, 0, 0).getTime(); // 03h00 locale, un jour fixe
+
+  {
+    // Batch qui RÉUSSIT → lastAutoRun posé après coup.
+    const file = tmpConfigFile();
+    saveTasteNocturnalConfig({ ...DEFAULT_TASTE_NOCTURNAL_CONFIG, enabled: true, hour: 3 }, file);
+    const b = batchDeps();
+    const started = await tasteSchedulerTick(NOW, { batch: b.deps, configFile: file });
+    check("tick démarre un batch (heure correspond, pas encore tourné)", started === true);
+    // runNocturnalTasteBatch est fire-and-forget (.then) — laisse la microtask se résoudre.
+    await new Promise((r) => setTimeout(r, 20));
+    check("lastAutoRun posé APRÈS le succès du batch", loadTasteNocturnalConfig(file).lastAutoRun === localDate(NOW));
+  }
+
+  {
+    // Batch qui ÉCHOUE (simule un crash/exception) → lastAutoRun JAMAIS posé —
+    // la nuit reste éligible à un re-essai, pas bloquée jusqu'au lendemain.
+    const file = tmpConfigFile();
+    saveTasteNocturnalConfig({ ...DEFAULT_TASTE_NOCTURNAL_CONFIG, enabled: true, hour: 3 }, file);
+    const failingDeps: BatchDeps = {
+      select: () => ["app-a"],
+      enqueueRun: async () => { throw new Error("crash simulé pendant le batch"); },
+      notify: async () => ({ sent: false }),
+      pending: () => 0,
+      baseUrl: () => "http://x",
+    };
+    const started = await tasteSchedulerTick(NOW, { batch: failingDeps, configFile: file });
+    check("tick démarre quand même (le crash arrive APRÈS)", started === true);
+    await new Promise((r) => setTimeout(r, 20));
+    check(
+      "lastAutoRun JAMAIS posé après un échec — la nuit reste éligible au re-essai (pas le bug d'origine)",
+      loadTasteNocturnalConfig(file).lastAutoRun !== localDate(NOW),
+    );
+  }
+
+  {
+    // Verrou du jour déjà posé → tick ne redémarre rien (comportement inchangé).
+    const file = tmpConfigFile();
+    saveTasteNocturnalConfig({ ...DEFAULT_TASTE_NOCTURNAL_CONFIG, enabled: true, hour: 3, lastAutoRun: localDate(NOW) }, file);
+    const b = batchDeps();
+    const started = await tasteSchedulerTick(NOW, { batch: b.deps, configFile: file });
+    check("déjà tourné aujourd'hui → aucun nouveau batch", started === false && b.runs.length === 0);
+  }
 }
 
 console.log(`\n${pass} pass / ${fail} fail`);

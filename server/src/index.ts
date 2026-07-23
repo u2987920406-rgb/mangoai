@@ -77,6 +77,7 @@ import { registerSpecialistRoutes } from "./specialist/specialist-routes.js";
 import { registerEstheteRoutes } from "./esthete-routes.js";
 import { ensureEstheteAgent } from "./esthete-agent.js";
 import { registerSelfEvolutionRoutes } from "./self/self-evolution-routes.js";
+import { reconcileStuckForging } from "./self/self-evolution.js";
 import { startTasteNocturnalScheduler } from "./taste/taste-nocturnal.js";
 import { startBlackboardDecayScheduler } from "./kernel/kernel-blackboard-decay.js";
 import { prewarmVision } from "./vision-prewarm.js";
@@ -164,6 +165,13 @@ registerTasteRoutes(app);
 registerDesignCoachRoutes(app);
 registerSpecialistRoutes(app); // La Forge — agents spécialisés forgés par Mango (slice 2a)
 ensureEstheteAgent(); // Agent système « Esthète » — seed idempotent au boot (sidebar Design)
+// #196 fault-finding Partie 2 — une lacune bloquée à "forging" au boot ne peut être
+// qu'un crash de la forge précédente (ce process vient de démarrer). La repasse à
+// "proposed" pour la rendre de nouveau éligible au re-essai automatique.
+{
+  const reconciled = reconcileStuckForging();
+  if (reconciled.length > 0) console.log(`[self-evolution] ${reconciled.length} lacune(s) réconciliée(s) (forging bloqué → proposed) : ${reconciled.join(", ")}`);
+}
 registerEstheteRoutes(app); // Chat conversationnel de l'Esthète (voit la preview, retouche)
 registerSelfEvolutionRoutes(app); // #168 — Boucle d'auto-évolution (semi-auto) : lacunes → forge validée
 registerHomeConversationsRoutes(app); // Écran « Conversation » : revoir/reprendre les discussions d'accueil

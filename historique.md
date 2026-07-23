@@ -4428,3 +4428,23 @@ Parties 1-5 du plan (vérificateur d'intégrité, extension du registre de livra
 - `tsc --noEmit` propre, tests dédiés (`test-integrity-log` 15 checks, `test-integrity-audit` 15 checks, `test-esthete-agent` 14 checks dont 2 nouveaux) tous verts, puis **suite offline complète, manifeste corrigé : 227 PASS · 0 FAIL** (5 tests orphelins désormais réellement exécutés).
 
 Parties 2-5 du plan restent à faire.
+
+## Journal — 2026-07-23 (suite 9) : plan fault-finding écosystème — Partie 2 (registre de livraison étendu)
+
+**Objectif** : le même filet anti-crash que le tour de chat (prouvé hier soir) appliqué aux 3 autres angles morts identifiés par l'audit de recherche.
+
+**Fait** :
+- **Self-evolution auto-forge — réconciliation au boot.** `markGap(id,"forging")` posait déjà une ancre synchrone avant l'appel LLM, mais rien ne la résolvait après un crash — une lacune bloquée à `"forging"` était silencieusement exclue du re-essai automatique POUR TOUJOURS (`listOpenGaps`/le déclencheur d'auto-forge ne retentent que `"proposed"`). Nouveau `reconcileStuckForging(now, thresholdMs=10min)` (self-evolution.ts) : repasse à `"proposed"` toute lacune `"forging"` depuis plus de 10 minutes, appelé une fois au boot (`index.ts`) — une lacune "forging" au démarrage ne peut être qu'un crash de la forge précédente.
+- **Taste nocturnal + nocturnal build — anti-pattern corrigé.** Les deux boucles écrivaient `lastAutoRun` (le verrou anti-doublon 1×/nuit) AVANT de lancer le lot, pas après — un crash pendant le lot perdait la nuit ET bloquait activement tout re-essai jusqu'au lendemain (pire qu'aucun marqueur). `tasteSchedulerTick` (taste-nocturnal.ts) et le tick de `nocturnal.ts` posent désormais le verrou seulement APRÈS un lot réussi (`.then()` sur la promesse fire-and-forget) ; un échec (catch) ne pose PAS le verrou non plus — la nuit reste éligible au re-essai. `running` (module, déjà en place) continue de protéger la concurrence au sein du même process, donc rien ne change pour le cas normal — seul le crash change de comportement.
+- **Cron scheduler — sauvegarde par tâche.** `saveTasks(updated)` n'était appelé qu'UNE fois, après la boucle ENTIÈRE sur toutes les tâches dues — un crash sur la tâche 2/3 perdait même le résultat de la tâche 1, déjà terminée avec succès. Nouveau `saveTaskResult(taskId, patch)` (exporté) : relit le store à l'instant présent et ne touche QUE la tâche concernée — bénéfice annexe découvert en écrivant le test : protège aussi contre une édition externe concurrente (route REST) écrasée par une copie en mémoire périmée, un bug latent différent que l'ancien code aurait aussi eu.
+
+**Vérifié EN RÉEL** :
+- `test-taste-nocturnal.ts` (+5 checks) : scénario batch réussi (verrou posé après) ET scénario batch qui ÉCHOUE (`enqueueRun` qui throw, simulant un crash) → verrou JAMAIS posé, la nuit reste éligible. Prouvé avec le VRAI `tasteSchedulerTick`, pas une réimplémentation.
+- `test-self-evolution.ts` (+6 checks) : une lacune "forging" depuis 15 min est réconciliée, une "forging" depuis 1 min (forge normale en cours) NE L'EST PAS, un 2e appel immédiat ne retrouve rien.
+- `test-cron-scheduler.ts` (nouveau, 8 checks) : reproduit le scénario exact de l'incident (tâche 1 terminée, "crash" simulé avant la tâche 2) — le résultat de la tâche 1 survit, la tâche 2 reste honnêtement sans résultat (pas de faux "terminé").
+- Registre de spécialistes (Partie 1) confirmé STABLE à 11 entrées après une nouvelle vague de redémarrages `tsx watch` déclenchés par ces éditions — le correctif de la Partie 1 tient dans la durée.
+- `tsc --noEmit` propre, suite offline complète : **228 PASS · 0 FAIL** (le nouveau `test-cron-scheduler` immédiatement enregistré au manifeste — pas la même erreur qu'avant).
+
+**Non fait, honnêtement** : `nocturnal.ts`'s tick n'a pas de test unitaire dédié (contrairement à `taste-nocturnal.ts`) — la fonction reste privée (`function`, pas `export`) et ce sous-système est testé par ce projet via de VRAIS runs nocturnes plutôt que des mocks (patron déjà établi, `test-nocturnal.ts` ne teste que les fonctions pures). Le correctif suit exactement le même patron que celui de `taste-nocturnal.ts`, validé par les 5 tests de CE fichier-là — confiance par analogie directe, pas par un test dédié à ce fichier précis.
+
+Parties 3-5 du plan restent à faire.

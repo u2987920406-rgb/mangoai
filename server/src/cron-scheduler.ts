@@ -22,25 +22,31 @@ interface CronTask {
   createdAt: string
 }
 
-const DATA_DIR = dataDir()
-const DATA_FILE = path.join(DATA_DIR, 'cron-tasks.json')
+// Résolu paresseusement (comme registryFile()/gapsFile() ailleurs dans ce projet) —
+// permet un override par env pour les tests, chose que la constante figée d'avant
+// (2026-07-23, #196 fault-finding Partie 2) ne permettait pas.
+function dataFile(): string {
+  return process.env.CRON_TASKS_FILE ?? dataDir('cron-tasks.json')
+}
 
 // #173 — état in-process du disjoncteur cron (fenêtre glissante d'une heure). Le scheduler
 // vit longtemps ; un état en mémoire suffit (pas de persistance disque nécessaire).
 let cronBreakerState: CronBreakerState = newCronBreakerState()
 
 export function loadTasks(): CronTask[] {
-  if (!fs.existsSync(DATA_FILE)) return []
+  const f = dataFile()
+  if (!fs.existsSync(f)) return []
   try {
-    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')) as CronTask[]
+    return JSON.parse(fs.readFileSync(f, 'utf-8')) as CronTask[]
   } catch {
     return []
   }
 }
 
 function saveTasks(tasks: CronTask[]): void {
-  fs.mkdirSync(DATA_DIR, { recursive: true })
-  atomicWriteFileSync(DATA_FILE, JSON.stringify(tasks, null, 2))
+  const f = dataFile()
+  fs.mkdirSync(path.dirname(f), { recursive: true })
+  atomicWriteFileSync(f, JSON.stringify(tasks, null, 2))
 }
 
 function generateId(): string {
@@ -109,26 +115,44 @@ async function executeTask(task: CronTask): Promise<{ summary: string; nextRunHi
   return { summary: summarizeForCronLog(result, logs), nextRunHint: computeNextRunHint(result) }
 }
 
+/** Persiste le résultat d'UNE tâche, en relisant le store à cet instant (pas la copie
+ *  en mémoire du début du tick — une autre écriture a pu survenir entretemps, ex. un
+ *  ajout/edit via la route REST pendant qu'un tick tourne). Ne lève jamais. Exportée
+ *  pour test direct (2026-07-23, #196 fault-finding Partie 2) — le mécanisme (une
+ *  sauvegarde PAR tâche) est ce qui prouve la résilience au crash, indépendamment de
+ *  `executeTask`/`runRelay` (trop lourds pour un test unitaire). */
+export function saveTaskResult(taskId: string, patch: Partial<CronTask>): void {
+  try {
+    const current = loadTasks()
+    const i = current.findIndex((t) => t.id === taskId)
+    if (i < 0) return
+    current[i] = { ...current[i]!, ...patch }
+    saveTasks(current)
+  } catch {
+    /* best-effort */
+  }
+}
+
+/** (2026-07-23, #196 fault-finding Partie 2) — sauvegarde PAR TÂCHE, au fur et à
+ *  mesure, plus en bloc à la fin de la boucle. AVANT ce correctif : un crash pendant
+ *  la tâche 2/3 perdait même le résultat de la tâche 1, déjà terminée avec succès —
+ *  `saveTasks(updated)` n'était appelé qu'une seule fois, après la boucle ENTIÈRE
+ *  (qui peut enchaîner plusieurs builds agentiques complets, potentiellement longs). */
 async function startScheduler(): Promise<void> {
-  fs.mkdirSync(DATA_DIR, { recursive: true })
+  fs.mkdirSync(path.dirname(dataFile()), { recursive: true })
 
   const tick = async () => {
     const tasks = loadTasks()
-    const updated: CronTask[] = []
     for (const task of tasks) {
-      if (task.enabled && shouldRun(task)) {
-        try {
-          const { summary, nextRunHint } = await executeTask(task)
-          updated.push({ ...task, lastRun: new Date().toISOString(), lastResult: summary, nextRunHint })
-        } catch (err) {
-          const msg = err instanceof Error ? err.message : String(err)
-          updated.push({ ...task, lastRun: new Date().toISOString(), lastResult: `Erreur: ${msg}` })
-        }
-      } else {
-        updated.push(task)
+      if (!task.enabled || !shouldRun(task)) continue
+      try {
+        const { summary, nextRunHint } = await executeTask(task)
+        saveTaskResult(task.id, { lastRun: new Date().toISOString(), lastResult: summary, nextRunHint })
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        saveTaskResult(task.id, { lastRun: new Date().toISOString(), lastResult: `Erreur: ${msg}` })
       }
     }
-    saveTasks(updated)
   }
 
   setInterval(() => {

@@ -8,7 +8,7 @@ process.env.OPEN_GAPS_FILE = TMP
 
 const {
   gapSignature, coversGap, recordUncoveredGap, loadGaps, listOpenGaps, markGap, getGap,
-  evictOverflow, recordForgeAttempt, forgeAttemptsExhausted, gapValueScore,
+  evictOverflow, recordForgeAttempt, forgeAttemptsExhausted, gapValueScore, reconcileStuckForging,
 } = await import("../self/self-evolution.js")
 
 let pass = 0, fail = 0
@@ -166,6 +166,38 @@ console.log("\n[7] gapValueScore (2026-07-22, demande de Raf — chiffrer si une
   recordUncoveredGap({ blocker: "fraiche-et-jamais-tentee", detail: "d2", task: "t" }, { agents: [], now: NOW })
   const open = listOpenGaps(NOW)
   check("la lacune FRAÎCHE passe devant la lacune FRÉQUENTE-MAIS-ÉPUISÉE", open[0]!.blocker === "fraiche-et-jamais-tentee")
+  reset()
+}
+
+console.log("\n[9] reconcileStuckForging (#196 fault-finding Partie 2, 2026-07-23)")
+{
+  const NOW = 1_700_000_000_000
+  reset()
+  recordUncoveredGap({ blocker: "b1", detail: "d1", task: "t" }, { agents: [], now: NOW - 20 * 60_000 })
+  const g1 = loadGaps()[0]!
+  markGap(g1.id, "forging", {}, NOW - 15 * 60_000)
+  recordForgeAttempt(g1.id, NOW - 15 * 60_000) // "en vol" depuis 15 min
+
+  recordUncoveredGap({ blocker: "b2", detail: "d2", task: "t" }, { agents: [], now: NOW - 2 * 60_000 })
+  const g2 = loadGaps().find((g) => g.blocker === "b2")!
+  markGap(g2.id, "forging", {}, NOW - 60_000)
+  recordForgeAttempt(g2.id, NOW - 60_000) // "en vol" depuis 1 min — une forge normale, PAS bloquée
+
+  recordUncoveredGap({ blocker: "b3", detail: "d3", task: "t" }, { agents: [], now: NOW })
+  const g3 = loadGaps().find((g) => g.blocker === "b3")!
+  markGap(g3.id, "proposed", {}, NOW) // déjà "proposed" — rien à réconcilier
+
+  const reconciled = reconcileStuckForging(NOW)
+  check("seule la lacune VRAIMENT bloquée (15 min) est réconciliée", reconciled.length === 1 && reconciled[0] === g1.id)
+  check("son statut repasse à proposed", getGap(g1.id)?.status === "proposed")
+  check("la forge RÉCENTE (1 min) reste forging — pas encore bloquée", getGap(g2.id)?.status === "forging")
+  check("une lacune déjà proposed n'est jamais touchée", getGap(g3.id)?.status === "proposed")
+
+  const reconciledAgain = reconcileStuckForging(NOW)
+  check("un 2e appel immédiat ne retrouve rien à réconcilier (déjà fait)", reconciledAgain.length === 0)
+
+  reset()
+  check("aucune lacune → aucune réconciliation, jamais un throw", reconcileStuckForging(NOW).length === 0)
   reset()
 }
 
