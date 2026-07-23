@@ -23,6 +23,8 @@ server/data/curation-tuning.json
 server/data/desktop-grants.json
 server/data/external-projects.json
 server/data/external-history/
+server/data/integrity-snapshot.json
+server/data/integrity-audit.log.jsonl
 
 # Registre des cerveaux mesurés (#135 Phase E) — runtime, jamais versionné
 .brains/

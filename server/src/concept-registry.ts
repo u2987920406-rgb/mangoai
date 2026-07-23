@@ -15,6 +15,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { atomicWriteFileSync, dataDir } from "./safe-io.js";
+import { logValidationDrop } from "./integrity-log.js";
 import { getBlackboard, type Blackboard } from "./kernel/kernel-blackboard.js";
 import { embedOllama } from "./ollama.js";
 import { gapSignature } from "./self/self-evolution.js";
@@ -173,8 +174,15 @@ export function loadConceptGaps(): ConceptGap[] {
   }
 }
 
+/** (2026-07-23, #196 fault-finding Partie 1) — journalise toute entrée qui entre
+ *  invalide et ressort filtrée (integrity-log.ts). Ce store n'a AUCUN plafond
+ *  d'éviction visible dans le code (contrairement à open-gaps.json) — toute perte
+ *  ici est potentiellement suspecte, pas une décroissance voulue. */
 export function saveConceptGaps(list: ConceptGap[]): void {
-  const clean = (Array.isArray(list) ? list : []).filter(isConceptGap);
+  const raw = Array.isArray(list) ? list : [];
+  const clean = raw.filter(isConceptGap);
+  logValidationDrop("concept-gaps", raw, clean, (r) =>
+    r && typeof r === "object" && typeof (r as Record<string, unknown>).id === "string" ? (r as Record<string, unknown>).id as string : null);
   const f = conceptGapsFile();
   fs.mkdirSync(path.dirname(f), { recursive: true });
   atomicWriteFileSync(f, JSON.stringify(clean, null, 2));

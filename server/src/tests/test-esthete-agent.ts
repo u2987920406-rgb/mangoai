@@ -48,6 +48,40 @@ console.log("─".repeat(60))
   check("run_command absent de l'allowlist", !(agent?.toolPolicy?.allowedTools ?? []).includes("run_command"))
 }
 
+// ---- (2026-07-23, #196 fault-finding) — no-op quand rien n'a changé, ne touche
+// JAMAIS les autres spécialistes. Constaté EN RÉEL : un registre de 10 agents
+// forgés tombé à 1 seule entrée (l'Esthète) après plusieurs redémarrages rapprochés
+// du process (tsx watch, dev) — le seed non-gardé faisait un load-merge-save du
+// registre COMPLET à CHAQUE boot, fenêtre de course entre deux process qui se
+// chevauchent. Preuve qu'un AUTRE spécialiste (pas l'Esthète) survit intact à
+// plusieurs re-seeds. ----
+{
+  const { saveSpecialists } = await import("../specialist/specialist-agents.js")
+  const before = loadSpecialists()
+  saveSpecialists([
+    ...before,
+    {
+      id: "sa_test_survit_au_reseed",
+      name: "Témoin de survie",
+      role: "role de test",
+      lacune: "lacune de test",
+      systemPrompt: "prompt de test suffisamment long pour passer validateSpec (20 caractères min).",
+      tools: [],
+      triggers: "jamais",
+      examples: [],
+      tags: [],
+      provider: "ollama",
+      createdByAgent: "test",
+      createdAt: new Date().toISOString(),
+    },
+  ])
+  ensureEstheteAgent()
+  ensureEstheteAgent()
+  const after = loadSpecialists()
+  check("le témoin survit à plusieurs re-seeds de l'Esthète", after.some((a) => a.id === "sa_test_survit_au_reseed"))
+  check("toujours 1 seule entrée Esthète (pas de doublon)", after.filter((a) => a.name === "Esthète").length === 1)
+}
+
 // ---- buildEstheteTools : registre réel ----
 {
   const DIR = "/tmp/esthete-fake-project" // jamais lu — inspection de COMPOSITION seulement

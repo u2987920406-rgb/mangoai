@@ -17,6 +17,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { atomicWriteFileSync, dataDir } from "../safe-io.js"
+import { logValidationDrop } from "../integrity-log.js"
 import { askLLM, type LLMProvider } from "../llm/llm-engine.js"
 import { sanitizeExternal } from "../agent/agent-contract.js"
 // Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
@@ -213,11 +214,16 @@ export function loadSpecialists(): SpecialistAgent[] {
   return out
 }
 
-/** Persiste la liste (atomique). Valide/normalise avant écriture. */
+/** Persiste la liste (atomique). Valide/normalise avant écriture.
+ *  (2026-07-23, #196 fault-finding Partie 1) — TOUTE entrée qui entre invalide et
+ *  ressort filtrée est désormais journalisée (integrity-log.ts) : c'est EXACTEMENT
+ *  le mécanisme qui a rendu la disparition de 10 agents forgés indétectable pendant
+ *  des semaines. */
 export function saveSpecialists(list: SpecialistAgent[]): void {
-  const clean = (Array.isArray(list) ? list : [])
-    .map((s) => validateSpec(s))
-    .filter((s): s is SpecialistAgent => s !== null)
+  const raw = Array.isArray(list) ? list : []
+  const clean = raw.map((s) => validateSpec(s)).filter((s): s is SpecialistAgent => s !== null)
+  logValidationDrop("specialist-agents", raw, clean, (r) =>
+    r && typeof r === "object" && typeof (r as Record<string, unknown>).id === "string" ? (r as Record<string, unknown>).id as string : null)
   const file = registryFile()
   fs.mkdirSync(path.dirname(file), { recursive: true })
   atomicWriteFileSync(file, JSON.stringify(clean, null, 2))

@@ -137,6 +137,9 @@
     "test-desktop-system-shell": {
       "tier": "offline"
     },
+    "test-diagram": {
+      "tier": "offline"
+    },
     "test-domains": {
       "tier": "offline"
     },
@@ -304,6 +307,12 @@
       "tier": "offline"
     },
     "test-inspection": {
+      "tier": "offline"
+    },
+    "test-integrity-audit": {
+      "tier": "offline"
+    },
+    "test-integrity-log": {
       "tier": "offline"
     },
     "test-intent-capabilities": {
@@ -672,6 +681,9 @@
     "test-train": {
       "tier": "offline"
     },
+    "test-turn-ledger": {
+      "tier": "offline"
+    },
     "test-tutorial": {
       "tier": "offline"
     },
@@ -688,6 +700,9 @@
       "tier": "offline"
     },
     "test-webclone": {
+      "tier": "offline"
+    },
+    "test-wireframe-fork": {
       "tier": "offline"
     },
     "test-working-memory": {

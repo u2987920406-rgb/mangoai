@@ -87,6 +87,7 @@ import { registerPerfectPlanRoutes } from "./perfect-plan-routes.js";
 import { registerWireframeForkRoutes } from "./wireframe-fork-routes.js";
 import { registerDiagramRoutes } from "./diagram.js";
 import { registerTurnLedgerRoutes } from "./turn-ledger.js";
+import { registerIntegrityRoutes, startIntegrityScheduler } from "./integrity-routes.js";
 import { registerHomeConversationsRoutes } from "./home-conversations-routes.js";
 import { registerAgentFactoryRoutes } from "./agent/agent-routes.js";
 import { restoreAgents } from "./agent/agent-runtime.js";
@@ -203,6 +204,8 @@ registerPerfectPlanRoutes(app);
 registerWireframeForkRoutes(app);
 registerDiagramRoutes(app);
 registerTurnLedgerRoutes(app);
+registerIntegrityRoutes(app);
+startIntegrityScheduler(); // #196 fault-finding Partie 1 — audit périodique, 1er passage à 30s (amorçage)
 registerAgentFactoryRoutes(app);
 // Agent PDF (#145, Chantier 3) — async (charge pdfjs-dist + Ollama paresseusement),
 // best-effort : un échec d'init ne doit jamais empêcher le serveur de démarrer.

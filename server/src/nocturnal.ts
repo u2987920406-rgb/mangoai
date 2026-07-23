@@ -95,7 +95,7 @@ function saveConfig(c: NocturnalConfig): void {
   atomicWriteFileSync(CONFIG_FILE, JSON.stringify(c, null, 2));
 }
 
-function loadEntries(): NocturnalEntry[] {
+export function loadEntries(): NocturnalEntry[] {
   try {
     return JSON.parse(fs.readFileSync(FILE, "utf8")) as NocturnalEntry[];
   } catch {

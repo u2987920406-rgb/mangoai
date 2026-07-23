@@ -11,7 +11,7 @@
 // lacune ponctuelle détectée en cours de build. Réutilise la STRUCTURE
 // SpecialistAgent (déjà validée par validateSpec) et le moteur #175
 // (runSpecialistAgentic + toolPolicy scellée), jamais générée par GLM.
-import { upsertSpecialists, type SpecialistAgent } from "./specialist/specialist-agents.js";
+import { upsertSpecialists, getSpecialist, type SpecialistAgent } from "./specialist/specialist-agents.js";
 import { buildEleveActionTools, type ToolPolicy } from "./eleve-tools/eleve-action-tools.js";
 import { buildEleveVisionTools } from "./eleve-tools/eleve-vision-tools.js";
 import { ToolRegistry } from "./kernel/kernel-mcp.js";
@@ -100,9 +100,31 @@ function estheteSpec(): SpecialistAgent {
   };
 }
 
+/** Compare deux specs SANS `createdAt` (qui change à chaque appel par construction —
+ *  le comparer produirait toujours "différent"). PUR. */
+function sameEstheteContent(a: SpecialistAgent, b: SpecialistAgent): boolean {
+  const { createdAt: _a, ...restA } = a;
+  const { createdAt: _b, ...restB } = b;
+  return JSON.stringify(restA) === JSON.stringify(restB);
+}
+
 /** Seed idempotent de l'agent système au boot. `upsertSpecialists` déduplique par
  *  NOM (insensible à la casse) : rappeler cette fonction ne duplique jamais l'entrée,
- *  elle la remet à jour (utile si le prompt système évolue d'une version à l'autre). */
+ *  elle la remet à jour (utile si le prompt système évolue d'une version à l'autre).
+ *
+ *  (2026-07-23, #196 fault-finding) — AVANT ce garde, cette fonction faisait un
+ *  load-merge-save du registre COMPLET à CHAQUE boot, même quand rien n'avait
+ *  changé. En dev (`tsx watch`), un redémarrage rapproché peut chevaucher deux
+ *  process (l'ancien pas encore mort, le nouveau déjà lancé) — les DEUX lisent le
+ *  registre encore complet puis réécrivent, et le perdant de la course écrase le
+ *  gagnant avec une version basée sur une lecture plus ancienne. Constaté EN RÉEL,
+ *  2 fois dans la même session, en travaillant sur CE fichier : le registre de
+ *  10 agents spécialistes forgés est tombé à 1 entrée (l'Esthète seul) sans aucune
+ *  trace exploitable. Le garde ci-dessous rend l'appel NO-OP quand le contenu n'a
+ *  pas changé — élimine la fenêtre de course sur le cas commun (rien n'a changé). */
 export function ensureEstheteAgent(): void {
-  upsertSpecialists([estheteSpec()]);
+  const spec = estheteSpec();
+  const existing = getSpecialist(ESTHETE_AGENT_ID);
+  if (existing && sameEstheteContent(existing, spec)) return;
+  upsertSpecialists([spec]);
 }

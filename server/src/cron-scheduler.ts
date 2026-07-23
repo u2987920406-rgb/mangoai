@@ -29,7 +29,7 @@ const DATA_FILE = path.join(DATA_DIR, 'cron-tasks.json')
 // vit longtemps ; un état en mémoire suffit (pas de persistance disque nécessaire).
 let cronBreakerState: CronBreakerState = newCronBreakerState()
 
-function loadTasks(): CronTask[] {
+export function loadTasks(): CronTask[] {
   if (!fs.existsSync(DATA_FILE)) return []
   try {
     return JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8')) as CronTask[]

@@ -10,6 +10,7 @@
 import fs from "node:fs"
 import path from "node:path"
 import { atomicWriteFileSync, dataDir } from "../safe-io.js"
+import { logValidationDrop } from "../integrity-log.js"
 import { loadSpecialists, type SpecialistAgent } from "../specialist/specialist-agents.js"
 
 export type GapStatus = "proposed" | "forging" | "forged" | "dismissed"
@@ -143,9 +144,16 @@ export function evictOverflow(list: OpenGap[], max: number): OpenGap[] {
   return out
 }
 
-/** Persiste le store (atomique, plafonné). Ne lève jamais sur des entrées vides. */
+/** Persiste le store (atomique, plafonné). Ne lève jamais sur des entrées vides.
+ *  (2026-07-23, #196 fault-finding Partie 1) — journalise une perte de VALIDATION
+ *  (isGap) séparément de l'éviction VOULUE par `evictOverflow` (celle-là est un
+ *  comportement normal au-delà de MAX_GAPS, pas une anomalie à signaler ici). */
 export function saveGaps(list: OpenGap[]): void {
-  const clean = evictOverflow((Array.isArray(list) ? list : []).filter(isGap), MAX_GAPS)
+  const raw = Array.isArray(list) ? list : []
+  const validated = raw.filter(isGap)
+  logValidationDrop("open-gaps", raw, validated, (r) =>
+    r && typeof r === "object" && typeof (r as Record<string, unknown>).id === "string" ? (r as Record<string, unknown>).id as string : null)
+  const clean = evictOverflow(validated, MAX_GAPS)
   const f = gapsFile()
   fs.mkdirSync(path.dirname(f), { recursive: true })
   atomicWriteFileSync(f, JSON.stringify(clean, null, 2))
