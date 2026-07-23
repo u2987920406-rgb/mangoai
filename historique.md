@@ -4361,3 +4361,27 @@ Bonus trouvé au passage : la fenêtre flottante « Nouveau projet » (App Build
 `tsc --noEmit` propre (server + ui), `npm test` (ui) 77/77, `npm run build` propre, `test-diagram` (14 checks) tous verts.
 
 **#196 — les 4 parties du plan sont maintenant COMPLÈTES** : A (fusion design), B (Perfect Plan ciblé), C (règle des 3 essais), D (diagrammes avant/après). La boucle officielle de build MangoOS couvre désormais : cadrer → designer → construire (avec arrêt intelligent sur blocage récurrent) → illustrer.
+
+## Journal — 2026-07-23 (suite 6) : registre de livraison anti-crash (patron Hermes v0.19)
+
+**Contexte** : Raf a demandé mon avis sur Hermes Agent v0.19 « Quicksilver » (vidéo Hugo Buisson, transcript récupéré via `savoir-transcript.ts`/yt-dlp) et ses nouvelles fonctionnalités. Comparaison honnête faite avec MangoOS : sur 3 points évoqués (approbations intelligentes, coffre de secrets, delivery ledger), un seul était une VRAIE lacune identifiée côté MangoOS — les deux autres étaient soit déjà couverts (coffre #170), soit pas un besoin actuel (approbations — l'Élève opère sur ses propres projets, pas sur le système de Raf). Raf a demandé de corriger tous les points évoqués ; scope clarifié et restreint au seul point réel avant d'agir.
+
+**Le vrai trou** : le correctif du matin (flush incrémental de `.chat-history.json`) résout « je reviens PENDANT que le tour tourne encore » mais pas « le process backend crash BRUTALEMENT (OOM, kill) en plein tour » — après un tel crash, `busy` (`agent.ts`, en mémoire) se remet à zéro au redémarrage, donc rien ne dit après coup qu'un tour a été interrompu ni s'il a fini avant le crash. C'est exactement ce que le « delivery ledger » de Hermes résout : « une réponse doit être livrée et n'est pas encore livrée » + « une réponse terminée survit au crash de la gateway ».
+
+**Fait** :
+- `server/src/turn-ledger.ts` (nouveau) : `startTurn(dir, turnId)` pose une ancre `status:"running"` SYNCHRONE (pas throttlée) dès que le dossier du projet est connu, AVANT tout travail — c'est elle qui survit à un crash, même 1ms après le début. `finishTurn(dir, turnId, status, summary)` bascule sur le résultat réel (`success`/`error`/`incomplete`/`aborted`) à la clôture ; protégée contre un tour concurrent plus récent (ignore un `finishTurn` dont le `turnId` ne correspond plus au registre courant). `markTurnSeen` acquitte. `registerTurnLedgerRoutes` : `GET /api/turn-status/:name`, `POST /api/turn-status/:name/seen`.
+- `server/src/routes/chat-route.ts` : `startTurn` appelé juste après `historyDir = dir` (même point que le flush incrémental) ; `finishTurn` dans le `finally`, classification calquée sur celle déjà utilisée pour les métriques (`turn.some(error)`).
+- `ui/src/Chat.jsx` : à l'ouverture d'un projet, interroge `/api/turn-status/:name` — `status:"running"` (jamais résolu) → toast explicite (« le tour précédent a été interrompu, le serveur a redémarré ») ; résultat résolu et `!seen` → toast avec le résumé + acquittement. Le cas `"result"` du SSE (`send()`) acquitte IMMÉDIATEMENT dès que le client voit la conclusion EN DIRECT — pour que ce check au montage ne re-notifie JAMAIS un tour normal déjà suivi, seulement un tour dont personne n'a vu la fin.
+- `server/src/tests/test-turn-ledger.ts` : 19 checks (ancre, résolution, protection tour concurrent, acquittement, fichier corrompu → jamais un throw).
+
+**Vérifié EN RÉEL, avec un VRAI crash** (pas une simulation JS, un vrai `SIGKILL` du process backend — autorisation explicite de Raf demandée et obtenue avant, le classifieur ayant bloqué la première tentative) :
+1. Tour réel lancé sur un projet jetable (création + npm install + Élève au travail) ; à 8s, `.turn-ledger.json` confirmé `status:"running"` sur disque.
+2. `Stop-Process -Force` sur le VRAI PID écoutant le port 3000, pendant que le tour tournait encore.
+3. Backend confirmé injoignable (`HTTP:000`) — **`.turn-ledger.json` toujours `status:"running"` sur disque pendant que le process est mort** (l'ancre a survécu).
+4. Backend redémarré (trouvaille au passage : `tsx watch` ne relance PAS automatiquement après un `SIGKILL` du enfant — seulement sur changement de fichier ; un vrai crash exige un redémarrage manuel, information utile pour la discipline anti-orphelin déjà dans `CLAUDE.md`).
+5. `GET /api/turn-status/<projet>` renvoie **`status:"running"` même après le redémarrage complet** — la détection de crash fonctionne, ce que `/api/agent-status` (`busy`, en mémoire) n'aurait JAMAIS pu dire.
+6. Nouveau tour lancé sur le même projet → `startTurn` écrase bien l'ancienne ancre périmée avec un `turnId` frais.
+7. Tour laissé aller à son terme naturellement → `status` bascule sur `"success"` avec un vrai résumé (240 caractères, contenu réel généré par l'Élève).
+8. `POST .../seen` confirmé — acquittement fonctionnel.
+
+Projet de test et process orphelins (vite/esbuild du projet jetable) nettoyés avec la permission de Raf. `tsc --noEmit` propre, `npm test` (ui) 77/77, `npm run build` propre, `test-turn-ledger` (19 checks) tous verts.

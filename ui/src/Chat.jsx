@@ -122,6 +122,31 @@ export default function Chat({
     return () => { cancelled = true; };
   }, [perfectPlanGateText]);
 
+  // Registre de livraison (patron "delivery ledger", Hermes v0.19, 2026-07-23) — à
+  // l'ouverture d'un projet, détecte un tour interrompu par un crash BRUTAL du backend
+  // (`status:"running"` jamais résolu — `/api/agent-status` ne peut PAS le dire, `busy`
+  // vit en mémoire et se remet à zéro au redémarrage) ou un résultat terminé pas encore
+  // vu. Best-effort : une panne réseau ne bloque jamais l'ouverture du projet.
+  useEffect(() => {
+    if (apiPath !== "/api/chat" || !projectName.trim()) return;
+    let cancelled = false;
+    fetch(`/api/turn-status/${encodeURIComponent(projectName)}`)
+      .then((r) => (r.ok ? r.json() : { entry: null }))
+      .then((d) => {
+        if (cancelled || !d.entry) return;
+        const { status, summary } = d.entry;
+        if (status === "running") {
+          onToast?.("error", "Le tour précédent a été interrompu (le serveur a redémarré en plein travail) — vérifie l'historique ou relance.");
+        } else if (!d.entry.seen) {
+          const label = status === "error" ? "échoué" : status === "success" ? "terminé" : "interrompu";
+          onToast?.(status === "error" ? "error" : "success", `Un tour s'est ${label} pendant une interruption${summary ? ` : ${summary}` : ""}`);
+          fetch(`/api/turn-status/${encodeURIComponent(projectName)}/seen`, { method: "POST" }).catch(() => {});
+        }
+      })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, [projectName, apiPath]);
+
   const push = (msg) => {
     setMessages((prev) => [...prev, { id: uid(), ...msg }]);
     requestAnimationFrame(() => {
@@ -566,6 +591,11 @@ export default function Chat({
       case "result":
         sessionRef.current = ev.sessionId;
         onCost(ev.costUsd);
+        // Le client a vu le résultat EN DIRECT (SSE toujours ouvert) — acquitte le
+        // registre de livraison tout de suite pour que le check au montage (plus haut)
+        // ne re-notifie JAMAIS un tour déjà suivi normalement, seulement un tour dont
+        // personne n'a vu la conclusion (crash backend, ou client parti avant la fin).
+        fetch(`/api/turn-status/${encodeURIComponent(projectName)}/seen`, { method: "POST" }).catch(() => {});
         if (ev.contextTokens && ev.contextWindow) {
           onContext?.({ tokens: ev.contextTokens, window: ev.contextWindow });
         }

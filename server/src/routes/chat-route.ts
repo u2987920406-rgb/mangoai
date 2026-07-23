@@ -35,6 +35,7 @@ import {
   wireframeChoiceSection,
 } from "../wireframe-fork.js";
 import { generateAndSaveDiagram } from "../diagram.js";
+import { startTurn, finishTurn } from "../turn-ledger.js";
 import { shouldCaptureDiff, captureDiff } from "../vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "../metrics.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
@@ -200,6 +201,11 @@ app.post("/api/chat", async (req, res) => {
   // the project's .chat-history.json once the turn ends.
   const turn: ChatEntry[] = [];
   let historyDir: string | null = null;
+  // Registre de livraison (patron "delivery ledger", Hermes v0.19, 2026-07-23) — voir
+  // turn-ledger.ts. `startTurn` pose une ancre SYNCHRONE dès que le dossier du projet
+  // est connu ; `finishTurn` (dans le `finally`) la résout. Survit à un crash brutal du
+  // process (OOM, kill) entre les deux, contrairement à `busy` (agent.ts, en mémoire).
+  const turnId = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   // Kernel : span du tour (getTracer) ouvert dans le try, clos dans le finally
   // où l'issue est publiée sur l'Event Bus. Ref hors try pour le control-flow TS.
   let turnSpan: Span | null = null;
@@ -305,6 +311,7 @@ app.post("/api/chat", async (req, res) => {
       // Snapshot the pre-agent state so the first rollback point always exists
       await ensureRepo(dir);
       historyDir = dir;
+      startTurn(historyDir, turnId);
       // #176-global É5 — Stratège : surfaçage PUSH d'un briefing court au
       // DÉMARRAGE de session (jumeau spawnVerdictWatcher). Ancre = la création
       // du projet (première conversation), jamais un tour suivant → aucune
@@ -729,6 +736,16 @@ app.post("/api/chat", async (req, res) => {
         if (session) {
           maybeCompactSession(projectName, historyDir, session, ctx.tokens, ctx.window);
         }
+      }
+      // Résout l'ancre "en vol" posée par startTurn — même classification que les
+      // métriques ci-dessous (turn.some error). Synchrone, jamais throttlé : c'est le
+      // filet anti-crash, il doit toucher le disque avant que le process ne meure.
+      {
+        const errorEntry = [...turn].reverse().find((e) => e.role === "error");
+        const agentEntry = [...turn].reverse().find((e) => e.role === "agent");
+        const status = errorEntry ? "error" : agentEntry ? "success" : "incomplete";
+        const summaryText = (errorEntry ?? agentEntry)?.text;
+        finishTurn(historyDir, turnId, status, summaryText ? summaryText.slice(0, 240) : undefined);
       }
     }
     // One dated record per turn (idea 14): the raw material of the learning
