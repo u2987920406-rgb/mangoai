@@ -194,6 +194,9 @@
     "test-eleve-gate-constants": {
       "tier": "offline"
     },
+    "test-eleve-gate-content": {
+      "tier": "offline"
+    },
     "test-eleve-gate-images": {
       "tier": "offline"
     },

@@ -151,10 +151,13 @@ async function run() {
   }
   const result = (text: string) => ({ text, toolTrace: [] as Array<{ name: string; args: string }> });
 
-  console.log("\n[12] runClosureGate — gate ELEVE_GATE_IMAGES OFF (défaut) : checkImages JAMAIS appelé, verdict byte-identique");
+  // (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — ELEVE_GATE_IMAGES est
+  // désormais ON PAR DÉFAUT (flags.ts) : le volet a 34 tests verts et est fail-open, le
+  // laisser OFF laissait un vrai gap ouvert (aucun autre mécanisme ne vérifie image↔contexte).
+  console.log("\n[12] runClosureGate — gate ELEVE_GATE_IMAGES ON (défaut depuis 2026-07-24) : checkImages APPELÉ");
   {
     delete process.env.ELEVE_GATE_IMAGES;
-    let appele = false;
+    let appele: boolean = false;
     const withDep = await runClosureGate(
       "/proj",
       "tâche",
@@ -165,19 +168,46 @@ async function run() {
       gateDeps({
         checkImages: async () => {
           appele = true;
-          throw new Error("ne devrait jamais être appelé");
+          return { ok: true, applicable: true, cadrageOk: true, contexteOk: true, sautee: false, raisons: [] };
         },
       }),
     );
-    check("checkImages non appelé", appele === false);
+    check("checkImages appelé (défaut ON)", appele);
     check("ok=true", withDep.ok === true);
-    check("aucun champ images dans le verdict (byte-identique)", !("images" in withDep) && !("imagesOk" in withDep));
+    check("imagesOk=true dans le verdict (défaut ON)", withDep.imagesOk === true);
+  }
 
-    const withoutDep = await runClosureGate("/proj", "tâche", result("fait"), "/ws", "vitrine", {}, gateDeps());
-    check(
-      "verdict OFF strictement identique avec ou sans deps.checkImages (JSON égal)",
-      JSON.stringify(withDep as GateVerdict) === JSON.stringify(withoutDep as GateVerdict),
-    );
+  console.log("\n[12b] runClosureGate — ELEVE_GATE_IMAGES explicitement OFF : checkImages JAMAIS appelé, verdict byte-identique");
+  {
+    process.env.ELEVE_GATE_IMAGES = "off";
+    try {
+      let appele = false;
+      const withDep = await runClosureGate(
+        "/proj",
+        "tâche",
+        result("fait"),
+        "/ws",
+        "vitrine",
+        {},
+        gateDeps({
+          checkImages: async () => {
+            appele = true;
+            throw new Error("ne devrait jamais être appelé");
+          },
+        }),
+      );
+      check("checkImages non appelé (gate explicitement off)", appele === false);
+      check("ok=true", withDep.ok === true);
+      check("aucun champ images dans le verdict (byte-identique)", !("images" in withDep) && !("imagesOk" in withDep));
+
+      const withoutDep = await runClosureGate("/proj", "tâche", result("fait"), "/ws", "vitrine", {}, gateDeps());
+      check(
+        "verdict OFF strictement identique avec ou sans deps.checkImages (JSON égal)",
+        JSON.stringify(withDep as GateVerdict) === JSON.stringify(withoutDep as GateVerdict),
+      );
+    } finally {
+      delete process.env.ELEVE_GATE_IMAGES;
+    }
   }
 
   console.log("\n[13] runClosureGate — gate ON, volet IMAGES en échec → raisons remontées, ok=false");

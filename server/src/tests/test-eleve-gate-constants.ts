@@ -4,10 +4,12 @@
 
 import {
   extraireVitessesDeclarees,
+  extrairePeriodesDeclarees,
   comparerAReference,
   checkConstants,
   checkConstantsProjet,
   VITESSES_ORBITALES_KM_S,
+  PERIODES_ORBITALES_JOURS,
   type ConstantsDeps,
 } from "../eleve-gate-constants.js";
 import { runClosureGate, type GateDeps, type GateVerdict } from "../eleve-gate.js";
@@ -89,6 +91,55 @@ async function run() {
     check("ignorée (hors table curée)", ecarts.length === 0);
   }
 
+  // (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — miroir exact des tests
+  // [1]-[8] ci-dessus, mais pour la PÉRIODE ORBITALE (jours) : la sonde de la nuit
+  // précédente a prouvé que ce champ n'était pas détecté (seule la vitesse l'était).
+  console.log("\n[1b] extrairePeriodesDeclarees — Saturne, période fausse (29j au lieu de ~10 759j), champ per-entry");
+  {
+    const code = `const saturne = { orbitalPeriod: 29 };`;
+    const out = extrairePeriodesDeclarees(code);
+    check("1 planète détectée", out.length === 1);
+    check("planète = saturne", out[0]?.planete === "saturne");
+    check("valeur fausse capturée telle quelle", out[0]?.valeur === 29);
+  }
+
+  console.log("\n[2b] extrairePeriodesDeclarees — FR, plusieurs planètes");
+  {
+    const code = `
+      const mercure = { periode: 88 };
+      const earth = { periodeOrbitale: 365 };
+    `;
+    const out = extrairePeriodesDeclarees(code);
+    check("2 planètes détectées", out.length === 2);
+    check("terre détectée via alias earth", out.some((o) => o.planete === "terre" && o.valeur === 365));
+  }
+
+  console.log("\n[3b] extrairePeriodesDeclarees — ne confond jamais avec un champ vitesse voisin");
+  {
+    const code = `const saturne = { vitesse: 9.69, periode: 10759 };`;
+    const vitesses = extraireVitessesDeclarees(code);
+    const periodes = extrairePeriodesDeclarees(code);
+    check("vitesse détectée séparément", vitesses[0]?.valeur === 9.69);
+    check("période détectée séparément", periodes[0]?.valeur === 10759);
+  }
+
+  console.log("\n[4b] extrairePeriodesDeclarees — planète sans champ période à proximité → absente");
+  {
+    const code = `const description = "Saturne est célèbre pour ses anneaux."; // pas de période ici`;
+    check("aucune détection (fail-open)", extrairePeriodesDeclarees(code).length === 0);
+  }
+
+  console.log("\n[5b] comparerAReference (période) — écart au-delà de la tolérance");
+  {
+    const ecarts = comparerAReference([{ planete: "saturne", valeur: 29 }], PERIODES_ORBITALES_JOURS);
+    check("1 écart détecté", ecarts.length === 1);
+    check("valeurRéférence = 10759", ecarts[0]?.valeurReference === PERIODES_ORBITALES_JOURS.saturne);
+    // 29j vs réf. 10759j → écart relatif = 10730/10759 ≈ 0.997 (borné sous 1 par construction
+    // pour une valeur positive plus petite que la référence — jamais "> 1" ici, contrairement
+    // au cas vitesse [6] où la valeur fausse DÉPASSE la référence).
+    check("écart relatif énorme (>0.9, ~370x trop rapide)", (ecarts[0]?.ecartRelatif ?? 0) > 0.9);
+  }
+
   console.log("\n[9] checkConstants — non applicable (aucune constante planétaire dans le code)");
   {
     const v = checkConstants("function App() { return <div>Hello</div>; }");
@@ -116,6 +167,33 @@ async function run() {
     check("applicable=true", v.applicable === true);
     check("ok=true", v.ok === true);
     check("aucun écart", v.ecarts.length === 0);
+  }
+
+  console.log("\n[11b] checkConstants — même valeur que la sonde de la nuit précédente (Saturne 29j), champ per-entry détectable");
+  {
+    // Même VALEUR fausse que la fixture MangoQA de cette nuit (fault-corpus-data.ts,
+    // constante-physique-fausse : Saturne à 29 jours au lieu de ~10 759). Champ per-entry
+    // (`periodeJours` à proximité immédiate du nom de la planète), PAS la forme exacte de
+    // cette fixture (`Record<Planète, number>` nommé UNE FOIS au niveau de la déclaration,
+    // ex. `ORBITAL_PERIOD_DAYS = {Saturne: 29, ...}`) — cette forme-là reste un angle mort
+    // ASSUMÉ de ce détecteur PUR (aucun mot "période" n'apparaît physiquement à proximité de
+    // "Saturne" dans ce cas, seulement dans le nom de la constante globale) ; c'est
+    // exactement le type de cas que la Partie 2 (volet content, jugement LLM du fichier
+    // entier) couvre et que ce détecteur déterministe étroit ne peut pas voir par design.
+    const code = `const saturne = { nom: "Saturne", periodeJours: 29 };`;
+    const v = checkConstants(code);
+    check("applicable=true", v.applicable === true);
+    check("ok=false", v.ok === false);
+    check("raison cite saturne, la période et l'unité jours", v.raisons.some((r) => r.includes("saturne") && r.includes("période orbitale") && r.includes("jours")));
+  }
+
+  console.log("\n[11c] checkConstants — vitesse ET période fausses simultanément → 2 écarts fusionnés");
+  {
+    const code = `const saturne = { vitesse: 47.9, periode: 29 };`;
+    const v = checkConstants(code);
+    check("ok=false", v.ok === false);
+    check("2 écarts (1 vitesse + 1 période)", v.ecarts.length === 2);
+    check("1 raison vitesse km/s + 1 raison période jours", v.raisons.some((r) => r.includes("km/s")) && v.raisons.some((r) => r.includes("jours")));
   }
 
   console.log("\n[12] checkConstantsProjet — deps injectées, jamais de throw même si readSourceConcat lève");
@@ -167,10 +245,13 @@ async function run() {
   }
   const result = (text: string) => ({ text, toolTrace: [] as Array<{ name: string; args: string }> });
 
-  console.log("\n[14] runClosureGate — gate ELEVE_GATE_CONSTANTS OFF (défaut) : checkConstants JAMAIS appelé, verdict byte-identique");
+  // (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — ELEVE_GATE_CONSTANTS
+  // est désormais ON PAR DÉFAUT (flags.ts) : 34 tests verts, fail-open, 100% souverain
+  // ($0, zéro réseau/LLM) — aucun risque de faux positif coûteux à le laisser OFF.
+  console.log("\n[14] runClosureGate — gate ELEVE_GATE_CONSTANTS ON (défaut depuis 2026-07-24) : checkConstants APPELÉ");
   {
     delete process.env.ELEVE_GATE_CONSTANTS;
-    let appele = false;
+    let appele: boolean = false;
     const withDep = await runClosureGate(
       "/proj",
       "tâche",
@@ -181,19 +262,46 @@ async function run() {
       gateDeps({
         checkConstants: async () => {
           appele = true;
-          throw new Error("ne devrait jamais être appelé");
+          return { ok: true, applicable: true, ecarts: [], raisons: [] };
         },
       }),
     );
-    check("checkConstants non appelé", appele === false);
+    check("checkConstants appelé (défaut ON)", appele);
     check("ok=true", withDep.ok === true);
-    check("aucun champ constants dans le verdict (byte-identique)", !("constants" in withDep) && !("constantsOk" in withDep));
+    check("constantsOk=true dans le verdict (défaut ON)", withDep.constantsOk === true);
+  }
 
-    const withoutDep = await runClosureGate("/proj", "tâche", result("fait"), "/ws", "vitrine", {}, gateDeps());
-    check(
-      "verdict OFF strictement identique avec ou sans deps.checkConstants (JSON égal)",
-      JSON.stringify(withDep as GateVerdict) === JSON.stringify(withoutDep as GateVerdict),
-    );
+  console.log("\n[14b] runClosureGate — ELEVE_GATE_CONSTANTS explicitement OFF : checkConstants JAMAIS appelé, verdict byte-identique");
+  {
+    process.env.ELEVE_GATE_CONSTANTS = "off";
+    try {
+      let appele = false;
+      const withDep = await runClosureGate(
+        "/proj",
+        "tâche",
+        result("fait"),
+        "/ws",
+        "vitrine",
+        {},
+        gateDeps({
+          checkConstants: async () => {
+            appele = true;
+            throw new Error("ne devrait jamais être appelé");
+          },
+        }),
+      );
+      check("checkConstants non appelé (gate explicitement off)", appele === false);
+      check("ok=true", withDep.ok === true);
+      check("aucun champ constants dans le verdict (byte-identique)", !("constants" in withDep) && !("constantsOk" in withDep));
+
+      const withoutDep = await runClosureGate("/proj", "tâche", result("fait"), "/ws", "vitrine", {}, gateDeps());
+      check(
+        "verdict OFF strictement identique avec ou sans deps.checkConstants (JSON égal)",
+        JSON.stringify(withDep as GateVerdict) === JSON.stringify(withoutDep as GateVerdict),
+      );
+    } finally {
+      delete process.env.ELEVE_GATE_CONSTANTS;
+    }
   }
 
   console.log("\n[15] runClosureGate — gate ON, volet CONSTANTES en échec → raisons remontées, ok=false");

@@ -32,6 +32,24 @@ export const VITESSES_ORBITALES_KM_S: Record<string, number> = {
   neptune: 5.43,
 };
 
+// (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — la sonde de la nuit
+// précédente (probe-fault-corpus.ts, MangoQA) a utilisé une PÉRIODE orbitale (jours),
+// un champ que la table vitesse ci-dessus ne détecte PAS (`extraireVitessesDeclarees`
+// ne cherche que vitesse/speed/orbitalSpeed) — gap réel, confirmé en relisant le code
+// avant d'écrire ce correctif. Même patron exact (table curée IAU/NASA, extraction PURE,
+// tolérance 20%, fail-open) pour la PÉRIODE ORBITALE SIDÉRALE (jours terrestres).
+/** jours — période orbitale sidérale moyenne (source usuelle, arrondie à l'entier). */
+export const PERIODES_ORBITALES_JOURS: Record<string, number> = {
+  mercure: 88,
+  venus: 225,
+  terre: 365,
+  mars: 687,
+  jupiter: 4333,
+  saturne: 10759,
+  uranus: 30687,
+  neptune: 60190,
+};
+
 /** Alias FR/EN → clé canonique de VITESSES_ORBITALES_KM_S. */
 const ALIAS: Record<string, string> = {
   mercury: "mercure",
@@ -88,6 +106,33 @@ export function extraireVitessesDeclarees(code: string): Array<{ planete: string
   return out;
 }
 
+/** Miroir exact de `extraireVitessesDeclarees` pour la PÉRIODE ORBITALE (jours) — même
+ *  logique d'extraction PURE, même fenêtre, même fail-open (ambigu/absent → sauté). */
+export function extrairePeriodesDeclarees(code: string): Array<{ planete: string; valeur: number }> {
+  const out: Array<{ planete: string; valeur: number }> = [];
+  const seen = new Set<string>();
+  const lower = code.toLowerCase();
+
+  for (const alias of PLANET_NAMES) {
+    const canon = ALIAS[alias];
+    if (seen.has(canon)) continue;
+    const idx = lower.indexOf(alias);
+    if (idx === -1) continue;
+    const fenetre = code.slice(idx, idx + FENETRE);
+    // Cherche un champ période/period suivi (séparateur souple) d'un nombre. `[a-z]*`
+    // final couvre les suffixes d'unité courants dans les champs générés (periodeJours,
+    // orbitalPeriodDays…) sans être un mot totalement libre (toujours ancré sur la racine
+    // période/period). Ne matche jamais "vitesse" (motif disjoint).
+    const m = fenetre.match(/(?:p[ée]riode(?:Orbitale)?[a-z]*|orbital ?period[a-z]*|period[a-z]*)\s*[:=]\s*(-?\d+(?:[.,]\d+)?)/i);
+    if (!m) continue;
+    const valeur = parseFloat(m[1].replace(",", "."));
+    if (!Number.isFinite(valeur) || valeur <= 0) continue;
+    seen.add(canon);
+    out.push({ planete: canon, valeur });
+  }
+  return out;
+}
+
 /** Compare les valeurs déclarées à la table de référence. PUR. */
 export function comparerAReference(
   declarees: Array<{ planete: string; valeur: number }>,
@@ -127,19 +172,38 @@ export interface ConstantsDeps {
   readSourceConcat: (projectDir: string) => string;
 }
 
-export function checkConstants(code: string, tolerance: number = TOLERANCE_DEFAUT): ConstantsVerdict {
-  const declarees = extraireVitessesDeclarees(code);
-  if (declarees.length === 0) return { ok: true, applicable: false, ecarts: [], raisons: [] };
-
-  const ecarts = comparerAReference(declarees, VITESSES_ORBITALES_KM_S, tolerance);
-  if (ecarts.length === 0) return { ok: true, applicable: true, ecarts: [], raisons: [] };
-
-  const raisons = ecarts.map(
+/** Formatte les raisons d'un lot d'écarts pour UNE famille de constante (libellé+unité
+ *  distincts) — factorisé pour ne pas dupliquer le texte entre vitesse et période. */
+function raisonsPourFamille(ecarts: ConstanteDetectee[], libelle: string, unite: string): string[] {
+  return ecarts.map(
     (e) =>
-      `CONSTANTES — vitesse orbitale de ${e.planete} déclarée à ${fmt(e.valeurTrouvee)} km/s, ` +
-      `référence ~${fmt(e.valeurReference)} km/s (écart ${Math.round(e.ecartRelatif * 100)}%). ` +
+      `CONSTANTES — ${libelle} de ${e.planete} déclarée à ${fmt(e.valeurTrouvee)} ${unite}, ` +
+      `référence ~${fmt(e.valeurReference)} ${unite} (écart ${Math.round(e.ecartRelatif * 100)}%). ` +
       `Vérifie/corrige cette constante (source : données orbitales usuelles IAU/NASA).`,
   );
+}
+
+/** Vérifie DEUX familles de constantes orbitales indépendamment (vitesse km/s, période
+ *  jours — #196 fault-finding, 2026-07-24 : la sonde de la nuit précédente a prouvé que
+ *  la table vitesse seule laissait passer une période fausse, un champ différent) et
+ *  fusionne les résultats. `applicable` = vrai dès qu'AU MOINS une constante d'UNE des
+ *  deux familles a été détectée (même si l'autre famille est absente du code). */
+export function checkConstants(code: string, tolerance: number = TOLERANCE_DEFAUT): ConstantsVerdict {
+  const vitessesDeclarees = extraireVitessesDeclarees(code);
+  const periodesDeclarees = extrairePeriodesDeclarees(code);
+  if (vitessesDeclarees.length === 0 && periodesDeclarees.length === 0) {
+    return { ok: true, applicable: false, ecarts: [], raisons: [] };
+  }
+
+  const ecartsVitesse = comparerAReference(vitessesDeclarees, VITESSES_ORBITALES_KM_S, tolerance);
+  const ecartsPeriode = comparerAReference(periodesDeclarees, PERIODES_ORBITALES_JOURS, tolerance);
+  const ecarts = [...ecartsVitesse, ...ecartsPeriode];
+  if (ecarts.length === 0) return { ok: true, applicable: true, ecarts: [], raisons: [] };
+
+  const raisons = [
+    ...raisonsPourFamille(ecartsVitesse, "vitesse orbitale", "km/s"),
+    ...raisonsPourFamille(ecartsPeriode, "période orbitale", "jours"),
+  ];
   return { ok: false, applicable: true, ecarts, raisons };
 }
 

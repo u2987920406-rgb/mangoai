@@ -255,16 +255,34 @@ export const FLAGS = {
     description: "Complément de ELEVE_CONTEXT_LOOP : ne juge plus un seul mot isolé mais la COHÉRENCE JOINTE de plusieurs termes ambigus consécutifs d'un brief (chaine-ambigue.ts) — demande explicite de Raf : « si dès le départ on part dans le mauvais sens, tout ce qui en découle est faux ». Détecte 0-4 termes candidats (petit appel LLM), retourne \"coherente\" directe SANS juge si <2 termes trouvés, sinon un juge tranche coherente/incoherente/incertaine (jamais un score thresholdé). Contrairement à ELEVE_CONTEXT_LOOP (purement observationnel), ce gate a un effet borné et réversible : SEUL un verdict \"incoherente\" PARSÉ (jamais un timeout/erreur/incertaine) vide `templateSection` avant l'assemblage du prompt système (index.ts, juste avant domainTemplateSection) — l'Élève retombe alors sur le prompt générique, chemin déjà sûr et existant. `createProject`, le scaffold technique et la réponse SSE du tour ne sont JAMAIS affectés. OFF (défaut) → analyserChaineEnAmontDuGabarit retourne immédiatement {suppressDomain:false, rapport:null}, aucune I/O, templateSection calculé exactement comme avant.",
   },
   // ── L114/L116 (limites.md) — volet IMAGES du Gardien de clôture ───────────
+  // (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — ACTIVÉ par défaut :
+  // déjà 34 tests verts, fail-open par construction, byte-identique en cas de capture/
+  // réponse VL indisponible. La sonde de cette nuit a confirmé que ce volet reste le
+  // SEUL mécanisme de l'écosystème (MangoOS + MangoQA) qui vérifie la correspondance
+  // sémantique image↔contexte — le laisser OFF laissait ce gap réellement ouvert.
   ELEVE_GATE_IMAGES: {
     env: "ELEVE_GATE_IMAGES",
-    default: false,
-    description: "Volet IMAGES du Gardien de clôture (eleve-gate-images.ts, L114+L116) : capture l'écran final et demande à un VL un verdict CIBLÉ sur deux défauts qu'aucun gate existant n'inspecte — CADRAGE (image tronquée/mal cadrée/sujet hors-champ) et CONTEXTE (image réelle mais sémantiquement hors-sujet par rapport au texte adjacent). Fail-open comme tout le Gardien : capture indisponible ou réponse VL illisible → volet neutre, ne pénalise jamais. OFF (défaut) → deps.checkImages jamais appelé, aucun champ images/imagesOk dans le verdict, comportement byte-identique.",
+    default: true,
+    description: "Volet IMAGES du Gardien de clôture (eleve-gate-images.ts, L114+L116) : capture l'écran final et demande à un VL un verdict CIBLÉ sur deux défauts qu'aucun gate existant n'inspecte — CADRAGE (image tronquée/mal cadrée/sujet hors-champ) et CONTEXTE (image réelle mais sémantiquement hors-sujet par rapport au texte adjacent). Fail-open comme tout le Gardien : capture indisponible ou réponse VL illisible → volet neutre, ne pénalise jamais. ON (défaut depuis 2026-07-24) → présent dans chaque verdict de clôture. OFF (ELEVE_GATE_IMAGES=off) → deps.checkImages jamais appelé, aucun champ images/imagesOk dans le verdict, comportement byte-identique à avant.",
   },
   // ── L117 (limites.md) — volet CONSTANTES du Gardien de clôture ────────────
+  // (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — ACTIVÉ par défaut,
+  // même raisonnement que ELEVE_GATE_IMAGES ci-dessus (34 tests verts, fail-open,
+  // 100% souverain zéro réseau/LLM — aucun risque de faux positif coûteux).
   ELEVE_GATE_CONSTANTS: {
     env: "ELEVE_GATE_CONSTANTS",
+    default: true,
+    description: "Volet CONSTANTES du Gardien de clôture (eleve-gate-constants.ts, L117) : incident déclencheur `systeme-solaire` (vitesse orbitale de Saturne fausse, jamais détectée). Portée étroite et 100% souveraine ($0, zéro réseau/LLM) : extrait par heuristique texte les vitesses/périodes orbitales planétaires déclarées dans le code généré et les compare à une table curée (IAU/NASA), tolérance 20%. Non applicable (aucune constante détectée) → neutre, ne pénalise pas. ON (défaut depuis 2026-07-24) → présent dans chaque verdict de clôture. OFF (ELEVE_GATE_CONSTANTS=off) → deps.checkConstants jamais appelé, aucun champ constants/constantsOk dans le verdict, comportement byte-identique à avant.",
+  },
+  // ── #196 fault-finding, plan cohérence de contenu — volet CONTENU du Gardien ──
+  // Contrairement à IMAGES/CONSTANTES ci-dessus (34+34 tests ET l'incident déclencheur
+  // exact derrière eux avant même d'être activés), ce volet est NEUF — jamais éprouvé en
+  // réel. Reste OFF par défaut plus longtemps (même logique de montée en confiance que
+  // ELEVE_GATE_TASTE_OBSERVE) : à activer une fois qu'il a tourné sur de vrais builds.
+  ELEVE_GATE_CONTENT: {
+    env: "ELEVE_GATE_CONTENT",
     default: false,
-    description: "Volet CONSTANTES du Gardien de clôture (eleve-gate-constants.ts, L117) : incident déclencheur `systeme-solaire` (vitesse orbitale de Saturne fausse, jamais détectée). Portée étroite et 100% souveraine ($0, zéro réseau/LLM) : extrait par heuristique texte les vitesses orbitales planétaires déclarées dans le code généré et les compare à une table curée (IAU/NASA), tolérance 20%. Non applicable (aucune constante détectée) → neutre, ne pénalise pas. OFF (défaut) → deps.checkConstants jamais appelé, aucun champ constants/constantsOk dans le verdict, comportement byte-identique.",
+    description: "Volet CONTENU du Gardien de clôture (eleve-gate-content.ts) : vérifie l'AUTO-COHÉRENCE PAR ITEM d'un tableau de données généré (quiz, catalogue, mapping) — un juge LLM relit chaque entrée et vérifie qu'un champ correct/answer/correctIndex pointe RÉELLEMENT vers la bonne option listée dans CETTE entrée. Comble le trou entre checkBiaisPosition (statistique, formation-only) et les branches MangoQA (code, pas contenu) : aucun mécanisme existant ne vérifie la justesse PAR ITEM d'une app générique. Portée volontairement restreinte à l'auto-cohérence interne (aucune connaissance du monde réel requise), pour éviter le risque documenté (checkExactitude) d'un juge qui hallucine sur des faits externes. Fail-open comme tout le Gardien : aucun fichier de données détecté ou réponse illisible → volet neutre, ne pénalise jamais. OFF (défaut) → deps.checkContent jamais appelé, aucun champ content/contentOk dans le verdict, comportement byte-identique.",
   },
   // ── #193 — Section « Code » (2026-07-21, demande Raf) ─────────────────────
   CODE_SECTION: {

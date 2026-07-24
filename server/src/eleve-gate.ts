@@ -24,6 +24,7 @@ import { runProjectTests, type TestRun } from "./inspection.js";
 import { checkPedagoReel, type PedagoVerdict } from "./eleve-gate-pedago.js";
 import { checkImagesReel, type ImagesVerdict } from "./eleve-gate-images.js";
 import { checkConstantsReel, type ConstantsVerdict } from "./eleve-gate-constants.js";
+import { checkContentReel, type ContentVerdict } from "./eleve-gate-content.js";
 import { flag } from "./flags.js";
 import { publishGateVerdict } from "./kernel/kernel-design-events.js";
 
@@ -59,6 +60,10 @@ export interface GateVerdict {
   // (L117) Volet CONSTANTES — présent SEULEMENT si ELEVE_GATE_CONSTANTS=on.
   constants?: ConstantsVerdict;
   constantsOk?: boolean;
+  // (#196 fault-finding, plan cohérence de contenu) Volet CONTENU — présent SEULEMENT
+  // si ELEVE_GATE_CONTENT=on. Absent en gate OFF → verdict byte-identique à avant.
+  content?: ContentVerdict;
+  contentOk?: boolean;
   // (axiome 17, 2026-07-08 — expérience #183) « la clôture doit atteindre le signal le
   // plus HAUT ATTEIGNABLE, pas le plus commode. » Un script de test RÉEL existe mais
   // ELEVE_GATE_TESTS=off → un signal plus fiable que le seul build était disponible et
@@ -102,6 +107,9 @@ export interface GateDeps {
   /** (L117) Volet CONSTANTES (gated ELEVE_GATE_CONSTANTS). Optionnel : absent → volet
    *  sauté (comportement historique). Ne lève jamais côté implémentation réelle. */
   checkConstants?: (projectDir: string) => Promise<ConstantsVerdict>;
+  /** (#196 fault-finding) Volet CONTENU (gated ELEVE_GATE_CONTENT). Optionnel : absent →
+   *  volet sauté (comportement historique). Ne lève jamais côté implémentation réelle. */
+  checkContent?: (projectDir: string) => Promise<ContentVerdict>;
   /** (axiome 17) Un script `test` RÉEL (≠ placeholder npm par défaut) existe-t-il dans
    *  package.json ? Sert UNIQUEMENT à signaler un signal disponible non exploité — ne
    *  lève jamais, best-effort. */
@@ -188,6 +196,7 @@ const realGateDeps: GateDeps = {
   checkPedago: (dir) => checkPedagoReel(dir),
   checkImages: (dir) => checkImagesReel(dir),
   checkConstants: (dir) => checkConstantsReel(dir),
+  checkContent: (dir) => checkContentReel(dir),
   hasTestScript: hasRealTestScript,
 };
 
@@ -401,6 +410,19 @@ export async function runClosureGate(
   }
   const constantsOk = !constants || constants.ok;
 
+  // 9. CONTENU (#196 fault-finding, opt-in ELEVE_GATE_CONTENT, défaut OFF) — auto-cohérence
+  // PAR ITEM d'un tableau de données (quiz/catalogue/mapping), via un juge LLM. Gate OFF
+  // ou deps.checkContent absent → jamais appelé, verdict byte-identique.
+  let content: ContentVerdict | undefined;
+  if (flag("ELEVE_GATE_CONTENT") && deps.checkContent) {
+    try {
+      content = await deps.checkContent(projectDir);
+    } catch {
+      content = undefined;
+    }
+  }
+  const contentOk = !content || content.ok;
+
   const raisons: string[] = [];
   if (!intentOk) {
     const m = intent.manques.length ? intent.manques.map((x) => `  - ${x}`).join("\n") : "  - la demande n'est pas couverte";
@@ -426,6 +448,9 @@ export async function runClosureGate(
   }
   if (constants && !constants.ok) {
     raisons.push(...constants.raisons);
+  }
+  if (content && !content.ok) {
+    raisons.push(...content.raisons);
   }
   if (design) {
     // Goût : seulement si FIABLE (L28) ET hors mode observe (L34). Un goût observé/non-scoré
@@ -459,12 +484,13 @@ export async function runClosureGate(
     );
   }
   const verdict: GateVerdict = {
-    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks && pedagoOk && imagesOk && constantsOk,
+    ok: intentOk && tasteOk && wcagOk && balanceOk && placeholdersOk && testsOk && !dualSkipBlocks && pedagoOk && imagesOk && constantsOk && contentOk,
     intent, intentOk, design, tasteScored, tasteOk, tasteObserve, wcagOk, balanceOk, balance,
     placeholdersOk, placeholders, judgeSkipped, critiqueSkipped, dualSkip, testsRan, testsOk, tests, raisons,
     ...(pedago ? { pedago, pedagoOk } : {}),
     ...(images ? { images, imagesOk } : {}),
     ...(constants ? { constants, constantsOk } : {}),
+    ...(content ? { content, contentOk } : {}),
     ...(signalGap ? { signalGap } : {}),
   };
   // (2026-07-11) publie le verdict COMPLET du Gardien sur le Bus — MangoQA
@@ -515,7 +541,7 @@ export function evaluateGate(
   if (verdict.ok) return { action: "ok" };
   if (gateRelances >= max) return { action: "laisse-passer" };
 
-  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && (verdict.pedagoOk ?? true) && (verdict.imagesOk ?? true) && (verdict.constantsOk ?? true) && verdict.tasteScored && !verdict.tasteOk;
+  const onlyGout = verdict.intentOk && verdict.wcagOk && verdict.balanceOk && (verdict.placeholdersOk ?? true) && verdict.testsOk && (verdict.pedagoOk ?? true) && (verdict.imagesOk ?? true) && (verdict.constantsOk ?? true) && (verdict.contentOk ?? true) && verdict.tasteScored && !verdict.tasteOk;
   const gout = verdict.tasteScored ? verdict.design?.overall ?? null : null;
   if (onlyGout && gout !== null && prevGout !== null && gout <= prevGout) {
     return { action: "laisse-passer" };
