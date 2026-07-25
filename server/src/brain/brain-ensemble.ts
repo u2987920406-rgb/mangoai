@@ -10,8 +10,16 @@
 // `() => Promise<AgentResult>` injectée (l'appelant décide COMMENT chaque modèle
 // répond — dispatch, provider distinct, etc.). Ainsi le mécanisme se teste sans
 // réseau, et le câblage réel (quels modèles, comment) reste la responsabilité de
-// l'appelant. Rien ne s'active tant que BRAIN_ENSEMBLE + une config `ensemble` ne
-// sont pas présents (double verrou côté appelant).
+// l'appelant.
+//
+// ⚠ ÉTAT RÉEL (audit d'allègement 2026-07-24, correction d'un commentaire périmé) :
+// le seul appelant en prod, `taste/taste-compare.ts::comparePair`, appelle
+// `deliberate()` INCONDITIONNELLEMENT (aucune vérification de flag). Le flag
+// `BRAIN_ENSEMBLE` (flags.ts) n'est donc consulté NULLE PART au runtime — il est
+// vestigial (la feature a été promue "toujours active" pour la comparaison de goût).
+// À trancher avec Raf : soit assumer le always-on et retirer le flag, soit remettre
+// le verrou côté taste-compare si le gate a été perdu par accident. En attendant, ce
+// commentaire dit la vérité observée plutôt que l'ancien "double verrou" qui n'existe plus.
 import type { AgentResult } from "../agent/agent-contract.js";
 import type { AgentId } from "./brain-registry.js";
 

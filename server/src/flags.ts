@@ -168,11 +168,11 @@ export const FLAGS = {
     default: false,
     description: "Base de connaissance vidéo (#177 É4/D3) : réconciliation des claims candidats en groupes (clustering déterministe par sujet normalisé + similarité d'embedding, seuil SAVOIR_CLUSTER_MIN=0.78) puis arbitrage par le JUGE souverain (cerveau `juge` distinct, JSON borné, fail-open → verdict `isole` si le juge est muet) qui classe chaque groupe en consensus|conditionnel|desaccord|isole. Application journalisée (savoir_journal, jamais de suppression d'un côté d'un désaccord). OFF → aucune surface n'appelle la réconciliation ; le module savoir-reconcile.ts reste appelable par runners/tests (deps injectées).",
   },
-  SAVOIR_RUNNER: {
-    env: "SAVOIR_RUNNER",
-    default: false,
-    description: "Base de connaissance vidéo (#177 É4/D4) : le runner d'ingestion resumable par manifest (run-savoir.ts) — fetch transcript (cache) → re-segmentation ~400-700 car → embeddings → extraction claims → passe de réconciliation globale une fois toutes les vidéos extraites. OFF → aucune surface auto ne lance le runner ; il reste lançable explicitement en CLI (npx tsx src/run-savoir.ts) par un opérateur/test.",
-  },
+  // (Audit d'allègement 2026-07-24) SAVOIR_RUNNER retiré : le flag gatait `run-savoir.ts`,
+  // un fichier qui N'A JAMAIS ÉTÉ CONSTRUIT (vérifié : absent du disque, zéro référence dans
+  // tout le repo). Fantôme pur — les 3 modules savoir réels (extraction/reconcile/transcript)
+  // gardent leurs propres flags ci-dessus. Le sous-système #177 reste à moitié câblé (décision
+  // produit en attente : finir le runner, ou retirer l'échafaudage dormant en entier).
   // ── #182 — Intention/dispatch + conscience temporelle ─────────────────────
   TEMPORAL_AWARENESS: {
     env: "TEMPORAL_AWARENESS",

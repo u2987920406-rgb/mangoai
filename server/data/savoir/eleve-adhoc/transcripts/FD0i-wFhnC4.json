@@ -1,0 +1,6155 @@
+{
+  "videoId": "FD0i-wFhnC4",
+  "meta": {
+    "titre": "Arrêtez les prompts. Passez aux Loops (Le futur des agents IA)",
+    "chaine": "Elliott Pierret",
+    "dureeS": 2305,
+    "publieeLe": "2026-07-22",
+    "description": "Je te montre pourquoi tes prompts classiques et tes agents IA limitent tes résultats et comment la nouvelle méthode des Loops changent complètement la donne.\n\n🎁 Mon guide gratuit : https://elliottpierret.com/guide-gratuit\n🌟 Ma Masterclass IA : https://elliottpierret.com/ia-master\n\nDans cette vidéo, je te montre comment construire des Loops au lieu de simples prompts, avec la structure à suivre, les erreurs à éviter, des exemples concrets et la méthode pour enchaîner les itérations sans perdre le fil.\n\nTu vas apprendre à structurer tes échanges tes systèmes d’Agents IA pour obtenir des résultats plus précis et 100% automatisés, même si tu débutes, avec des exemples simples et des cas pratiques étape par étape que tu pourras reproduire.\n\n⌚ LES TEMPS FORTS DE CETTE VIDEO :\n00:00 : Arrêtez les prompts, passez aux Loops\n00:50 : Les générations d'IA \n03:27 : Que mettre dans une Loop\n06:05 : Les briques des Loops\n10:14 : Loop fermé VS Loop ouverte\n12:03 : Faut-il créer une Loop ou pas ?\n14:28 : Comment en créer dans Codex ou Claude Code\n16:57 : Créer une Loop simple avec Claude Cowork\n21:23 : Se former à l'IA à mes côtés !\n23:40 : Créer un système de Loops dans Claude Code\n38:18 : Outro\n\nLES SOURCES DE LA VIDEO :\n- Télécharger Claude Code : https://code.claude.com/docs/en/desktop\n- Accéder à mon application des Loops : https://claude.ai/public/artifacts/4c6d56b2-f93a-4a8f-9372-56fe54c1a2a\n- Documentation des Loops : https://claude.com/blog/getting-started-with-loops\n\nRESTONS CONNECTES :\n- Mon site : https://elliottpierret.com/\n- TikTok : https://www.tiktok.com/@elliottpierret\n- Instagram : https://www.instagram.com/elliottpierret/\n- LinkedIn : https://www.linkedin.com/in/elliottpierret/\n\n🎬 Monteur : Arnaud Graciet\n\n#IA #AI #ClaudeCode #Claude",
+    "chapitres": [
+      {
+        "t": 0,
+        "titre": "Arrêtez les prompts, passez aux Loops"
+      },
+      {
+        "t": 50,
+        "titre": "Les générations d'IA"
+      },
+      {
+        "t": 207,
+        "titre": "Que mettre dans une Loop"
+      },
+      {
+        "t": 365,
+        "titre": "Les briques des Loops"
+      },
+      {
+        "t": 614,
+        "titre": "Loop fermé VS Loop ouverte"
+      },
+      {
+        "t": 723,
+        "titre": "Faut-il créer une Loop ou pas ?"
+      },
+      {
+        "t": 868,
+        "titre": "Comment en créer dans Codex ou Claude Code"
+      },
+      {
+        "t": 1017,
+        "titre": "Créer une Loop simple avec Claude Cowork"
+      },
+      {
+        "t": 1283,
+        "titre": "Se former à l'IA à mes côtés !"
+      },
+      {
+        "t": 1420,
+        "titre": "Créer un système de Loops dans Claude Code"
+      },
+      {
+        "t": 2298,
+        "titre": "Outro"
+      }
+    ]
+  },
+  "source": "subs-manuels",
+  "langue": "fr",
+  "segments": [
+    {
+      "tStartS": 0.199,
+      "tEndS": 2.71,
+      "texte": "Vous devez arrêter de créer des agend et"
+    },
+    {
+      "tStartS": 2.7199999999999998,
+      "tEndS": 4.269,
+      "texte": "c'est pas moi qui le dit, c'est Boris"
+    },
+    {
+      "tStartS": 4.279,
+      "tEndS": 6.789,
+      "texte": "Chourney le créateur de Claude Code et"
+    },
+    {
+      "tStartS": 6.799,
+      "tEndS": 9.07,
+      "texte": "Peter Steinberger le créateur de Open"
+    },
+    {
+      "tStartS": 9.08,
+      "tEndS": 10.709,
+      "texte": "Clow qu'ils disent. Et pour eux, ils ont"
+    },
+    {
+      "tStartS": 10.719,
+      "tEndS": 12.91,
+      "texte": "résumé ça en une phrase. Ils n'écrivent"
+    },
+    {
+      "tStartS": 12.92,
+      "tEndS": 14.41,
+      "texte": "plus de prompt dans Claude à la"
+    },
+    {
+      "tStartS": 14.42,
+      "tEndS": 16.349,
+      "texte": "[musique] place. Ils écrivent des loupes"
+    },
+    {
+      "tStartS": 16.359,
+      "tEndS": 18.39,
+      "texte": "qui promptent à leur place dans Claude"
+    },
+    {
+      "tStartS": 18.4,
+      "tEndS": 20.509,
+      "texte": "et qui décident des actions à réaliser."
+    },
+    {
+      "tStartS": 20.519,
+      "tEndS": 22.23,
+      "texte": "En gros, leur nouveau travail, c'est"
+    },
+    {
+      "tStartS": 22.24,
+      "tEndS": 23.79,
+      "texte": "d'écrire des loupes. Mais le problème,"
+    },
+    {
+      "tStartS": 23.8,
+      "tEndS": 25.31,
+      "texte": "c'est que le mot loupe, il veut rien"
+    },
+    {
+      "tStartS": 25.32,
+      "tEndS": 26.99,
+      "texte": "dire pour la plupart des gens. À quoi ça"
+    },
+    {
+      "tStartS": 27,
+      "tEndS": 28.83,
+      "texte": "sert une loupe ? À quoi ça ressemble ?"
+    },
+    {
+      "tStartS": 28.84,
+      "tEndS": 30.269,
+      "texte": "quand est-ce qu'on doit donc créer et"
+    },
+    {
+      "tStartS": 30.279,
+      "tEndS": 31.669,
+      "texte": "surtout comment est-ce que ça se"
+    },
+    {
+      "tStartS": 31.679,
+      "tEndS": 33.11,
+      "texte": "construit réellement ? Et bien dans"
+    },
+    {
+      "tStartS": 33.12,
+      "tEndS": 34.869,
+      "texte": "cette vidéo, je clarifie tout ça. Je"
+    },
+    {
+      "tStartS": 34.879,
+      "tEndS": 36.15,
+      "texte": "vais vous définir ce qui est une loupe,"
+    },
+    {
+      "tStartS": 36.16,
+      "tEndS": 37.63,
+      "texte": "ce qu'il faut y mettre à l'intérieur. Je"
+    },
+    {
+      "tStartS": 37.64,
+      "tEndS": 39.19,
+      "texte": "vais aussi vous présenter de nombreux"
+    },
+    {
+      "tStartS": 39.2,
+      "tEndS": 41.029,
+      "texte": "cas d'usage d'application des loopes,"
+    },
+    {
+      "tStartS": 41.039,
+      "tEndS": 42.43,
+      "texte": "mais surtout je vais vous faire des"
+    },
+    {
+      "tStartS": 42.44,
+      "tEndS": 44.549,
+      "texte": "démonstrations sur des cas concrets pour"
+    },
+    {
+      "tStartS": 44.559,
+      "tEndS": 46.709,
+      "texte": "Nike et Trade Republic où je vais créer"
+    },
+    {
+      "tStartS": 46.719,
+      "tEndS": 48.35,
+      "texte": "des loopes et qui vont vous permettre de"
+    },
+    {
+      "tStartS": 48.36,
+      "tEndS": 49.869,
+      "texte": "comprendre tout l'intérêt de cette"
+    },
+    {
+      "tStartS": 49.879,
+      "tEndS": 51.43,
+      "texte": "nouvelle technique qui va totalement"
+    },
+    {
+      "tStartS": 51.44,
+      "tEndS": 53.389,
+      "texte": "changer votre manière de travailler avec"
+    },
+    {
+      "tStartS": 53.399,
+      "tEndS": 54.83,
+      "texte": "Lia. Allez, c'est parti pour créer vos"
+    },
+    {
+      "tStartS": 54.84,
+      "tEndS": 56.709,
+      "texte": "premières loop. Alors déjà, pour bien"
+    },
+    {
+      "tStartS": 56.719,
+      "tEndS": 58.229,
+      "texte": "comprendre cette notion de loupe, il"
+    },
+    {
+      "tStartS": 58.239,
+      "tEndS": 59.869,
+      "texte": "faut qu'on revienne ensemble sur les"
+    },
+    {
+      "tStartS": 59.879,
+      "tEndS": 62.27,
+      "texte": "générations d'IA qu'on a utilisé jusqu'à"
+    },
+    {
+      "tStartS": 62.28,
+      "tEndS": 64.109,
+      "texte": "présent. Si vous regardez bien ensemble"
+    },
+    {
+      "tStartS": 64.119,
+      "tEndS": 65.59,
+      "texte": "et on l'a fait sur la chaîne, on a"
+    },
+    {
+      "tStartS": 65.6,
+      "tEndS": 67.87,
+      "texte": "commencé par essayer de générer des"
+    },
+    {
+      "tStartS": 67.88,
+      "tEndS": 69.67,
+      "texte": "meilleures réponses à l'aide des I qu'on"
+    },
+    {
+      "tStartS": 69.68,
+      "tEndS": 71.63,
+      "texte": "va utiliser. Au début, le modèle, il"
+    },
+    {
+      "tStartS": 71.64,
+      "tEndS": 73.63,
+      "texte": "produisait du texte en s'appuyant sur un"
+    },
+    {
+      "tStartS": 73.64,
+      "tEndS": 76.03,
+      "texte": "modèle et à la fin, on avait une réponse"
+    },
+    {
+      "tStartS": 76.04,
+      "tEndS": 78.23,
+      "texte": "et toute la valeur et bien elle résidait"
+    },
+    {
+      "tStartS": 78.24,
+      "tEndS": 80.149,
+      "texte": "dans la qualité de cette réponse. et"
+    },
+    {
+      "tStartS": 80.159,
+      "tEndS": 81.749,
+      "texte": "vous et bien vous étiez responsable"
+    },
+    {
+      "tStartS": 81.759,
+      "tEndS": 83.789,
+      "texte": "d'écrire les bons promptes pour"
+    },
+    {
+      "tStartS": 83.799,
+      "tEndS": 85.749,
+      "texte": "augmenter la qualité de cette même"
+    },
+    {
+      "tStartS": 85.759,
+      "tEndS": 88.31,
+      "texte": "réponse et arrivé l'air des agents. Et"
+    },
+    {
+      "tStartS": 88.32,
+      "tEndS": 90.39,
+      "texte": "là le but c'était plus d'écrire"
+    },
+    {
+      "tStartS": 90.4,
+      "tEndS": 92.31,
+      "texte": "seulement des bons promptes mais c'était"
+    },
+    {
+      "tStartS": 92.32,
+      "tEndS": 94.069,
+      "texte": "de créer des systèmes qui sont capables"
+    },
+    {
+      "tStartS": 94.079,
+      "tEndS": 96.19,
+      "texte": "d'agir parfaitement en fonction d'une"
+    },
+    {
+      "tStartS": 96.2,
+      "tEndS": 98.35,
+      "texte": "demande. Ensuite notre agent il allait"
+    },
+    {
+      "tStartS": 98.36,
+      "tEndS": 100.149,
+      "texte": "appeler des outils, il avait une mémoire"
+    },
+    {
+      "tStartS": 100.159,
+      "tEndS": 101.63,
+      "texte": "et à la fin il était capable de faire"
+    },
+    {
+      "tStartS": 101.64,
+      "tEndS": 103.55,
+      "texte": "des actions pour nous. Nous on fixait"
+    },
+    {
+      "tStartS": 103.56,
+      "tEndS": 104.99,
+      "texte": "des objectifs, on donnait un"
+    },
+    {
+      "tStartS": 105,
+      "tEndS": 106.67,
+      "texte": "environnement de travail à la fin on"
+    },
+    {
+      "tStartS": 106.68,
+      "tEndS": 108.429,
+      "texte": "avait un résultat. Mais maintenant avec"
+    },
+    {
+      "tStartS": 108.439,
+      "tEndS": 110.31,
+      "texte": "cette notion de loupe, on arrive sur une"
+    },
+    {
+      "tStartS": 110.32,
+      "tEndS": 112.069,
+      "texte": "toute nouvelle génération d'agents."
+    },
+    {
+      "tStartS": 112.079,
+      "tEndS": 114.389,
+      "texte": "L'idée c'est de bâtir des systèmes qui"
+    },
+    {
+      "tStartS": 114.399,
+      "tEndS": 116.029,
+      "texte": "sont capables d'apprendre tout seul."
+    },
+    {
+      "tStartS": 116.039,
+      "tEndS": 117.789,
+      "texte": "Finalement nous on va lui donner un"
+    },
+    {
+      "tStartS": 117.799,
+      "tEndS": 119.429,
+      "texte": "cadre dans lequel il va pouvoir"
+    },
+    {
+      "tStartS": 119.439,
+      "tEndS": 121.67,
+      "texte": "s'exécuter. Ensuite il va faire des"
+    },
+    {
+      "tStartS": 121.68,
+      "tEndS": 123.91,
+      "texte": "tâches. Il va ensuite évaluer lui-même"
+    },
+    {
+      "tStartS": 123.92,
+      "tEndS": 125.749,
+      "texte": "ou avec notre aide le résultat. Il va"
+    },
+    {
+      "tStartS": 125.759,
+      "tEndS": 127.83,
+      "texte": "ensuite corriger et à la fin et bien il"
+    },
+    {
+      "tStartS": 127.84,
+      "tEndS": 129.19,
+      "texte": "va tellement comprendre les"
+    },
+    {
+      "tStartS": 129.2,
+      "tEndS": 130.869,
+      "texte": "comportements adoptés qu'il va pouvoir"
+    },
+    {
+      "tStartS": 130.879,
+      "tEndS": 132.55,
+      "texte": "faire ça tout seul sans notre"
+    },
+    {
+      "tStartS": 132.56,
+      "tEndS": 134.67,
+      "texte": "intervention. Au fil des exécutions, il"
+    },
+    {
+      "tStartS": 134.68,
+      "tEndS": 136.63,
+      "texte": "va s'améliorer et le résultat va"
+    },
+    {
+      "tStartS": 136.64,
+      "tEndS": 138.309,
+      "texte": "toujours être de la même ou d'une"
+    },
+    {
+      "tStartS": 138.319,
+      "tEndS": 139.949,
+      "texte": "meilleure qualité. Si vous regardez, on"
+    },
+    {
+      "tStartS": 139.959,
+      "tEndS": 141.869,
+      "texte": "voit encore mieux ici. Au début, on"
+    },
+    {
+      "tStartS": 141.879,
+      "tEndS": 143.39,
+      "texte": "tapait des promptes, on appelait le"
+    },
+    {
+      "tStartS": 143.4,
+      "tEndS": 145.55,
+      "texte": "modèle, on avait la réponse. Maintenant,"
+    },
+    {
+      "tStartS": 145.56,
+      "tEndS": 147.99,
+      "texte": "on a un système qui va être en mesure de"
+    },
+    {
+      "tStartS": 148,
+      "tEndS": 149.83,
+      "texte": "produire des actions. Quelles actions ?"
+    },
+    {
+      "tStartS": 149.84,
+      "tEndS": 151.79,
+      "texte": "Et bien ici les actions qu'on aura"
+    },
+    {
+      "tStartS": 151.8,
+      "tEndS": 153.509,
+      "texte": "définies nous-même sous notre"
+    },
+    {
+      "tStartS": 153.519,
+      "tEndS": 155.309,
+      "texte": "supervision où on aura donné la"
+    },
+    {
+      "tStartS": 155.319,
+      "tEndS": 157.39,
+      "texte": "trajectoire, il va produire des actions."
+    },
+    {
+      "tStartS": 157.4,
+      "tEndS": 159.67,
+      "texte": "Ensuite, il va évaluer l'écart entre ce"
+    },
+    {
+      "tStartS": 159.68,
+      "tEndS": 161.869,
+      "texte": "qu'il a fourni et ce qu'on avait voulu à"
+    },
+    {
+      "tStartS": 161.879,
+      "tEndS": 164.149,
+      "texte": "la base et à la fin il va se corriger"
+    },
+    {
+      "tStartS": 164.159,
+      "tEndS": 165.71,
+      "texte": "pour s'assurer que la prochaine fois"
+    },
+    {
+      "tStartS": 165.72,
+      "tEndS": 167.47,
+      "texte": "qu'il produit une action, elle soit"
+    },
+    {
+      "tStartS": 167.48,
+      "tEndS": 169.75,
+      "texte": "cette fois-ci d'une bonne qualité, mais"
+    },
+    {
+      "tStartS": 169.76,
+      "tEndS": 172.27,
+      "texte": "toujours avec de la supervision de notre"
+    },
+    {
+      "tStartS": 172.28,
+      "tEndS": 174.55,
+      "texte": "part, mais aussi sa propre supervision"
+    },
+    {
+      "tStartS": 174.56,
+      "tEndS": 176.75,
+      "texte": "et son propre contrôle à l'intérieur du"
+    },
+    {
+      "tStartS": 176.76,
+      "tEndS": 178.589,
+      "texte": "système. Donc ce qu'il faut retenir ici,"
+    },
+    {
+      "tStartS": 178.599,
+      "tEndS": 180.11,
+      "texte": "c'est que lorsqu'on va créer des loopes"
+    },
+    {
+      "tStartS": 180.12,
+      "tEndS": 182.309,
+      "texte": "dans cette nouvelle génération d'IA, le"
+    },
+    {
+      "tStartS": 182.319,
+      "tEndS": 184.27,
+      "texte": "but ne va plus être de fournir un"
+    },
+    {
+      "tStartS": 184.28,
+      "tEndS": 185.71,
+      "texte": "prompte et d'avoir un résultat, mais"
+    },
+    {
+      "tStartS": 185.72,
+      "tEndS": 187.63,
+      "texte": "d'expliquer tout ce qui va se passer à"
+    },
+    {
+      "tStartS": 187.64,
+      "tEndS": 189.55,
+      "texte": "l'intérieur d'un système. Et ce système"
+    },
+    {
+      "tStartS": 189.56,
+      "tEndS": 191.91,
+      "texte": "à la fin, il doit pouvoir tourner sans"
+    },
+    {
+      "tStartS": 191.92,
+      "tEndS": 193.47,
+      "texte": "vous et vous vous avez juste à le"
+    },
+    {
+      "tStartS": 193.48,
+      "tEndS": 195.789,
+      "texte": "regarder, à le superviser et ensuite à"
+    },
+    {
+      "tStartS": 195.799,
+      "tEndS": 197.63,
+      "texte": "venir rectifier s'il y a de temps en"
+    },
+    {
+      "tStartS": 197.64,
+      "tEndS": 199.789,
+      "texte": "temps des écarts. Mais sinon, le système"
+    },
+    {
+      "tStartS": 199.799,
+      "tEndS": 202.229,
+      "texte": "est auto-apprenant, s'autocorrige et"
+    },
+    {
+      "tStartS": 202.239,
+      "tEndS": 203.75,
+      "texte": "vous fournit toujours les résultats dont"
+    },
+    {
+      "tStartS": 203.76,
+      "tEndS": 205.949,
+      "texte": "vous avez besoin à certains moments,"
+    },
+    {
+      "tStartS": 205.959,
+      "tEndS": 207.309,
+      "texte": "sous certaines conditions. Et alors une"
+    },
+    {
+      "tStartS": 207.319,
+      "tEndS": 208.55,
+      "texte": "fois qu'on s'est dit ça, je vous propose"
+    },
+    {
+      "tStartS": 208.56,
+      "tEndS": 210.47,
+      "texte": "de revenir maintenant sur l'architecture"
+    },
+    {
+      "tStartS": 210.48,
+      "tEndS": 212.19,
+      "texte": "de la loupe. Qu'est-ce qu'on doit mettre"
+    },
+    {
+      "tStartS": 212.2,
+      "tEndS": 214.229,
+      "texte": "dans ces loopes pour que cela fonctionne"
+    },
+    {
+      "tStartS": 214.239,
+      "tEndS": 216.11,
+      "texte": "? Si vous regardez ici, c'est issu d'une"
+    },
+    {
+      "tStartS": 216.12,
+      "tEndS": 217.71,
+      "texte": "analyse qui a été faite par les équipes"
+    },
+    {
+      "tStartS": 217.72,
+      "tEndS": 219.869,
+      "texte": "d'anthropique et qui nous partage la"
+    },
+    {
+      "tStartS": 219.879,
+      "tEndS": 221.83,
+      "texte": "meilleure architecture possible pour une"
+    },
+    {
+      "tStartS": 221.84,
+      "tEndS": 224.149,
+      "texte": "loupe qu'on appelle récursive. Donc qui"
+    },
+    {
+      "tStartS": 224.159,
+      "tEndS": 226.429,
+      "texte": "est capable de ne jamais s'arrêter et"
+    },
+    {
+      "tStartS": 226.439,
+      "tEndS": 228.39,
+      "texte": "d'avoir un cycle en continu. On va avoir"
+    },
+    {
+      "tStartS": 228.4,
+      "tEndS": 230.47,
+      "texte": "un planificateur qui va découper"
+    },
+    {
+      "tStartS": 230.48,
+      "tEndS": 232.789,
+      "texte": "l'objectif en un plan réaliste. Lui"
+    },
+    {
+      "tStartS": 232.799,
+      "tEndS": 234.39,
+      "texte": "finalement, il donne le plan et les"
+    },
+    {
+      "tStartS": 234.4,
+      "tEndS": 236.47,
+      "texte": "étapes à accomplir et surtout il donne"
+    },
+    {
+      "tStartS": 236.48,
+      "tEndS": 238.71,
+      "texte": "le cap avec l'objectif final. Ensuite,"
+    },
+    {
+      "tStartS": 238.72,
+      "tEndS": 240.949,
+      "texte": "on va avoir le builder, le constructeur."
+    },
+    {
+      "tStartS": 240.959,
+      "tEndS": 243.19,
+      "texte": "Lui, il applique le plan et il va aller"
+    },
+    {
+      "tStartS": 243.2,
+      "tEndS": 245.429,
+      "texte": "appeler les bons outils au bon moment."
+    },
+    {
+      "tStartS": 245.439,
+      "tEndS": 246.869,
+      "texte": "Vous avez besoin d'envoyer un mail, il"
+    },
+    {
+      "tStartS": 246.879,
+      "tEndS": 248.309,
+      "texte": "appelle Gmail, de voir de la donner dans"
+    },
+    {
+      "tStartS": 248.319,
+      "tEndS": 250.429,
+      "texte": "du CRM, de pouvoir aller récupérer une"
+    },
+    {
+      "tStartS": 250.439,
+      "tEndS": 252.27,
+      "texte": "fiche client dans votre RP. C'est lui"
+    },
+    {
+      "tStartS": 252.28,
+      "tEndS": 253.99,
+      "texte": "qui applique le plan et qui appelle les"
+    },
+    {
+      "tStartS": 254,
+      "tEndS": 255.91,
+      "texte": "bons outils. Ensuite, et bien dans ce"
+    },
+    {
+      "tStartS": 255.92,
+      "tEndS": 257.27,
+      "texte": "plan, va peut-être y avoir de la"
+    },
+    {
+      "tStartS": 257.28,
+      "tEndS": 258.71,
+      "texte": "création, des éléments à faire."
+    },
+    {
+      "tStartS": 258.72,
+      "tEndS": 261.229,
+      "texte": "Finalement, le gros du travail est fait"
+    },
+    {
+      "tStartS": 261.239,
+      "tEndS": 262.79,
+      "texte": "par le builder. Ensuite, une fois qu'il"
+    },
+    {
+      "tStartS": 262.8,
+      "tEndS": 265.15,
+      "texte": "a fini, on va lui mettre un vérificateur"
+    },
+    {
+      "tStartS": 265.16,
+      "tEndS": 266.95,
+      "texte": "dans la loupe pour s'assurer que le"
+    },
+    {
+      "tStartS": 266.96,
+      "tEndS": 269.029,
+      "texte": "rendu correspond à nos attentes à la"
+    },
+    {
+      "tStartS": 269.039,
+      "tEndS": 270.67,
+      "texte": "base. Une fois qu'on a ça, il y a un"
+    },
+    {
+      "tStartS": 270.68,
+      "tEndS": 272.71,
+      "texte": "rôle super important dans les agents"
+    },
+    {
+      "tStartS": 272.72,
+      "tEndS": 275.31,
+      "texte": "depuis leur création, c'est la mémoire."
+    },
+    {
+      "tStartS": 275.32,
+      "tEndS": 276.71,
+      "texte": "Comment est-ce qu'on s'assure qu'à"
+    },
+    {
+      "tStartS": 276.72,
+      "tEndS": 278.51,
+      "texte": "l'intérieur du système, on ait une"
+    },
+    {
+      "tStartS": 278.52,
+      "tEndS": 280.189,
+      "texte": "mémoire qui puisse comprendre les"
+    },
+    {
+      "tStartS": 280.199,
+      "tEndS": 281.95,
+      "texte": "réussites, mais aussi les échecs et"
+    },
+    {
+      "tStartS": 281.96,
+      "tEndS": 284.83,
+      "texte": "ainsi autoaméliorer les éléments à"
+    },
+    {
+      "tStartS": 284.84,
+      "tEndS": 286.35,
+      "texte": "l'intérieur de la loupe. Ensuite, on va"
+    },
+    {
+      "tStartS": 286.36,
+      "tEndS": 287.749,
+      "texte": "voir le gestionnaire qui lui va"
+    },
+    {
+      "tStartS": 287.759,
+      "tEndS": 289.59,
+      "texte": "finalement reprendre le plan et voir si"
+    },
+    {
+      "tStartS": 289.6,
+      "tEndS": 291.95,
+      "texte": "tout a été fait ou non. Et à la fin, on"
+    },
+    {
+      "tStartS": 291.96,
+      "tEndS": 293.749,
+      "texte": "a le contrôleur. Le contrôleur, il est"
+    },
+    {
+      "tStartS": 293.759,
+      "tEndS": 295.43,
+      "texte": "extrêmement important parce qu'il revoit"
+    },
+    {
+      "tStartS": 295.44,
+      "tEndS": 297.15,
+      "texte": "toute la méthode de la Lou. Il va aller"
+    },
+    {
+      "tStartS": 297.16,
+      "tEndS": 298.71,
+      "texte": "voir dans la mémoire finalement est-ce"
+    },
+    {
+      "tStartS": 298.72,
+      "tEndS": 300.029,
+      "texte": "qu'il y a eu des échecs, est-ce qu'il y"
+    },
+    {
+      "tStartS": 300.039,
+      "tEndS": 301.71,
+      "texte": "a eu des réussites ? Si oui, est-ce"
+    },
+    {
+      "tStartS": 301.72,
+      "tEndS": 303.31,
+      "texte": "qu'il a manqué des éléments qui ont"
+    },
+    {
+      "tStartS": 303.32,
+      "tEndS": 305.11,
+      "texte": "abouti à un échec ? Est-ce qu'il y a eu"
+    },
+    {
+      "tStartS": 305.12,
+      "tEndS": 307.67,
+      "texte": "des éléments qu'on a ajouté qui ont été"
+    },
+    {
+      "tStartS": 307.68,
+      "tEndS": 309.31,
+      "texte": "extrêmement pertinents et qui sont"
+    },
+    {
+      "tStartS": 309.32,
+      "tEndS": 311.15,
+      "texte": "arrivés à une réussite ? Tout ça, c'est"
+    },
+    {
+      "tStartS": 311.16,
+      "tEndS": 312.99,
+      "texte": "des éléments à l'intérieur de la loupe."
+    },
+    {
+      "tStartS": 313,
+      "tEndS": 315.71,
+      "texte": "Et quand le contrôleur a terminé, le but"
+    },
+    {
+      "tStartS": 315.72,
+      "tEndS": 317.029,
+      "texte": "c'est pas que la loupe s'arrête. Le"
+    },
+    {
+      "tStartS": 317.039,
+      "tEndS": 319.11,
+      "texte": "contrôleur, il reprend toutes ces"
+    },
+    {
+      "tStartS": 319.12,
+      "tEndS": 320.59,
+      "texte": "informations, il les donne au"
+    },
+    {
+      "tStartS": 320.6,
+      "tEndS": 322.43,
+      "texte": "planificateur qui lorsqu'il va"
+    },
+    {
+      "tStartS": 322.44,
+      "tEndS": 325.189,
+      "texte": "redécouper l'objectif en un futur plan"
+    },
+    {
+      "tStartS": 325.199,
+      "tEndS": 327.029,
+      "texte": "avec des actions à réaliser, et bien il"
+    },
+    {
+      "tStartS": 327.039,
+      "tEndS": 328.629,
+      "texte": "aura pris en compte tout ça et"
+    },
+    {
+      "tStartS": 328.639,
+      "tEndS": 330.309,
+      "texte": "normalement la chaîne, elle est"
+    },
+    {
+      "tStartS": 330.319,
+      "tEndS": 332.629,
+      "texte": "autoaméliorée et pour qu'à la fin on"
+    },
+    {
+      "tStartS": 332.639,
+      "tEndS": 334.07,
+      "texte": "puisse s'assurer d'avoir toujours le"
+    },
+    {
+      "tStartS": 334.08,
+      "tEndS": 335.629,
+      "texte": "meilleur résultat possible. Si vous"
+    },
+    {
+      "tStartS": 335.639,
+      "tEndS": 337.23,
+      "texte": "regardez ici, je vous ai mis une vue"
+    },
+    {
+      "tStartS": 337.24,
+      "tEndS": 339.59,
+      "texte": "plus détaillée de ces différentes étapes"
+    },
+    {
+      "tStartS": 339.6,
+      "tEndS": 341.71,
+      "texte": "où le planificateur découpe l'objectif"
+    },
+    {
+      "tStartS": 341.72,
+      "tEndS": 343.909,
+      "texte": "en un plan réaliste. Le builder applique"
+    },
+    {
+      "tStartS": 343.919,
+      "tEndS": 345.749,
+      "texte": "le plan, appelle les outils et produit"
+    },
+    {
+      "tStartS": 345.759,
+      "tEndS": 347.67,
+      "texte": "les résultats. Le vérificateur, il"
+    },
+    {
+      "tStartS": 347.68,
+      "tEndS": 349.51,
+      "texte": "contrôle ce qui a été produit. La"
+    },
+    {
+      "tStartS": 349.52,
+      "tEndS": 351.909,
+      "texte": "mémoire, elle garde la trace de tout ce"
+    },
+    {
+      "tStartS": 351.919,
+      "tEndS": 354.15,
+      "texte": "qui a marché ou pas. Le gestionnaire, il"
+    },
+    {
+      "tStartS": 354.16,
+      "tEndS": 355.909,
+      "texte": "classe ce qu'il reste à faire et il"
+    },
+    {
+      "tStartS": 355.919,
+      "tEndS": 358.11,
+      "texte": "réoriente sur la suite des opérations."
+    },
+    {
+      "tStartS": 358.12,
+      "tEndS": 359.909,
+      "texte": "Et le contrôleur, il revoit toute la"
+    },
+    {
+      "tStartS": 359.919,
+      "tEndS": 361.67,
+      "texte": "méthode puis il passe le relais au"
+    },
+    {
+      "tStartS": 361.68,
+      "tEndS": 364.189,
+      "texte": "planificateur pour rejouer toute la"
+    },
+    {
+      "tStartS": 364.199,
+      "tEndS": 366.35,
+      "texte": "loupe. Et donc tout ça, c'est la partie"
+    },
+    {
+      "tStartS": 366.36,
+      "tEndS": 368.189,
+      "texte": "théorique de la construction des loupes."
+    },
+    {
+      "tStartS": 368.199,
+      "tEndS": 369.55,
+      "texte": "Mais vous allez certainement vous dire"
+    },
+    {
+      "tStartS": 369.56,
+      "tEndS": 371.469,
+      "texte": "comment ça se matérialise tout ça. Et"
+    },
+    {
+      "tStartS": 371.479,
+      "tEndS": 373.43,
+      "texte": "bien juste ici, je vous ai mis les"
+    },
+    {
+      "tStartS": 373.44,
+      "tEndS": 375.79,
+      "texte": "briques d'une loupe qui fonctionne. Si"
+    },
+    {
+      "tStartS": 375.8,
+      "tEndS": 377.71,
+      "texte": "vous regardez cette loupe, alors elle"
+    },
+    {
+      "tStartS": 377.72,
+      "tEndS": 379.79,
+      "texte": "reprend ici un projet d'encloud. On"
+    },
+    {
+      "tStartS": 379.8,
+      "tEndS": 381.11,
+      "texte": "pourrait avoir une loupe comme c'est"
+    },
+    {
+      "tStartS": 381.12,
+      "tEndS": 382.83,
+      "texte": "indiquée ici et à l'intérieur de cette"
+    },
+    {
+      "tStartS": 382.84,
+      "tEndS": 384.909,
+      "texte": "loupe, on va avoir des éléments qui sont"
+    },
+    {
+      "tStartS": 384.919,
+      "tEndS": 386.99,
+      "texte": "juste clés à retrouver à chaque fois. Et"
+    },
+    {
+      "tStartS": 387,
+      "tEndS": 388.43,
+      "texte": "ça peu importe que vous travaillez dans"
+    },
+    {
+      "tStartS": 388.44,
+      "tEndS": 390.71,
+      "texte": "Cloud ou chez Open AI, on retrouve les"
+    },
+    {
+      "tStartS": 390.72,
+      "tEndS": 392.71,
+      "texte": "mêmes éléments. Et la première notion,"
+    },
+    {
+      "tStartS": 392.72,
+      "tEndS": 394.99,
+      "texte": "c'est la notion de Hbit. Sans lui,"
+    },
+    {
+      "tStartS": 395,
+      "tEndS": 397.23,
+      "texte": "finalement, la loupe ne démarre pas et"
+    },
+    {
+      "tStartS": 397.24,
+      "tEndS": 398.589,
+      "texte": "là, il faudrait une intervention"
+    },
+    {
+      "tStartS": 398.599,
+      "tEndS": 400.11,
+      "texte": "humaine. Nous, ce qu'on veut, c'est que"
+    },
+    {
+      "tStartS": 400.12,
+      "tEndS": 401.99,
+      "texte": "ça tourne automatiquement. Ce qui peut"
+    },
+    {
+      "tStartS": 402,
+      "tEndS": 404.029,
+      "texte": "lancer une loupe, ça peut être une"
+    },
+    {
+      "tStartS": 404.039,
+      "tEndS": 406.309,
+      "texte": "cadence. Tous les lundis à 9h, ça"
+    },
+    {
+      "tStartS": 406.319,
+      "tEndS": 408.629,
+      "texte": "s'exécute ou une fois par mois, une fois"
+    },
+    {
+      "tStartS": 408.639,
+      "tEndS": 410.629,
+      "texte": "par an. Par exemple, tous les lundis à"
+    },
+    {
+      "tStartS": 410.639,
+      "tEndS": 412.15,
+      "texte": "9h, c'est ce qui permettrait de"
+    },
+    {
+      "tStartS": 412.16,
+      "tEndS": 413.71,
+      "texte": "déclencher une loupe qui va faire des"
+    },
+    {
+      "tStartS": 413.72,
+      "tEndS": 416.07,
+      "texte": "actions de reporting. Autre exemple, ça"
+    },
+    {
+      "tStartS": 416.08,
+      "tEndS": 418.15,
+      "texte": "peut être un goal. Un goal, c'est un"
+    },
+    {
+      "tStartS": 418.16,
+      "tEndS": 419.83,
+      "texte": "objectif qu'on va donner à l'intérieur"
+    },
+    {
+      "tStartS": 419.84,
+      "tEndS": 421.95,
+      "texte": "de la loupe qui va continuer en"
+    },
+    {
+      "tStartS": 421.96,
+      "tEndS": 424.23,
+      "texte": "permanence jusqu'à ce que fonctionne."
+    },
+    {
+      "tStartS": 424.24,
+      "tEndS": 425.869,
+      "texte": "Là, on est plutôt parti sur des projets"
+    },
+    {
+      "tStartS": 425.879,
+      "tEndS": 428.189,
+      "texte": "long terme. Et ensuite, vous allez avoir"
+    },
+    {
+      "tStartS": 428.199,
+      "tEndS": 429.95,
+      "texte": "les hook. Les hook, c'est ce qui vont"
+    },
+    {
+      "tStartS": 429.96,
+      "tEndS": 432.469,
+      "texte": "déclencher des commandes à certains"
+    },
+    {
+      "tStartS": 432.479,
+      "tEndS": 433.869,
+      "texte": "moments. Par exemple, ce qui pourrait"
+    },
+    {
+      "tStartS": 433.879,
+      "tEndS": 435.99,
+      "texte": "déclencher une loupe, c'est un cycle de"
+    },
+    {
+      "tStartS": 436,
+      "tEndS": 437.589,
+      "texte": "relance. Vous voulez relancer vos"
+    },
+    {
+      "tStartS": 437.599,
+      "tEndS": 439.67,
+      "texte": "clients tous les 7 jours ou lorsque vous"
+    },
+    {
+      "tStartS": 439.68,
+      "tEndS": 441.23,
+      "texte": "avez pas eu de retour au bout d'un"
+    },
+    {
+      "tStartS": 441.24,
+      "tEndS": 442.869,
+      "texte": "certain moment, et bien la loupe se"
+    },
+    {
+      "tStartS": 442.879,
+      "tEndS": 444.79,
+      "texte": "déclenche pour aller relancer le client."
+    },
+    {
+      "tStartS": 444.8,
+      "tEndS": 446.869,
+      "texte": "Imaginez ça aussi sur des cas de support"
+    },
+    {
+      "tStartS": 446.879,
+      "tEndS": 448.55,
+      "texte": "client. À chaque fois vous recevez un"
+    },
+    {
+      "tStartS": 448.56,
+      "tEndS": 450.589,
+      "texte": "nouveau ticket de support, la loupe se"
+    },
+    {
+      "tStartS": 450.599,
+      "tEndS": 452.629,
+      "texte": "déclenche depuis une solution et va"
+    },
+    {
+      "tStartS": 452.639,
+      "tEndS": 454.27,
+      "texte": "aller exécuter toutes les tâches pour"
+    },
+    {
+      "tStartS": 454.28,
+      "tEndS": 455.99,
+      "texte": "vous. Un autre système de loop, ça"
+    },
+    {
+      "tStartS": 456,
+      "tEndS": 457.15,
+      "texte": "pourrait être à chaque fois que vous"
+    },
+    {
+      "tStartS": 457.16,
+      "tEndS": 459.189,
+      "texte": "avez créé un devis, vous le déposez"
+    },
+    {
+      "tStartS": 459.199,
+      "tEndS": 461.23,
+      "texte": "quelque part dans votre drive et bien ça"
+    },
+    {
+      "tStartS": 461.24,
+      "tEndS": 463.309,
+      "texte": "va enclencher des actions de reporting"
+    },
+    {
+      "tStartS": 463.319,
+      "tEndS": 464.79,
+      "texte": "par exemple. Tout ça c'est des éléments"
+    },
+    {
+      "tStartS": 464.8,
+      "tEndS": 466.149,
+      "texte": "techniques mais qui vont envoyer un"
+    },
+    {
+      "tStartS": 466.159,
+      "tEndS": 468.629,
+      "texte": "signal pour déclencher la loupe et faire"
+    },
+    {
+      "tStartS": 468.639,
+      "tEndS": 470.43,
+      "texte": "différentes actions. Ici la loupe a été"
+    },
+    {
+      "tStartS": 470.44,
+      "tEndS": 472.589,
+      "texte": "déclenchée. Ensuite on va retrouver par"
+    },
+    {
+      "tStartS": 472.599,
+      "tEndS": 474.71,
+      "texte": "exemple à l'intérieur des skills. Ça"
+    },
+    {
+      "tStartS": 474.72,
+      "tEndS": 475.749,
+      "texte": "c'est une notion que vous devriez"
+    },
+    {
+      "tStartS": 475.759,
+      "tEndS": 477.67,
+      "texte": "normalement connaître dans l'IA. Les"
+    },
+    {
+      "tStartS": 477.68,
+      "tEndS": 479.95,
+      "texte": "skills, c'est finalement comment est-ce"
+    },
+    {
+      "tStartS": 479.96,
+      "tEndS": 482.07,
+      "texte": "que vous allez mettre des règles qui une"
+    },
+    {
+      "tStartS": 482.08,
+      "tEndS": 483.55,
+      "texte": "fois écrites sont capables d'être rejoué"
+    },
+    {
+      "tStartS": 483.56,
+      "tEndS": 485.23,
+      "texte": "par Lia. Je veux toujours que tu écris"
+    },
+    {
+      "tStartS": 485.24,
+      "tEndS": 487.469,
+      "texte": "des mails de relance avec ce format. Si"
+    },
+    {
+      "tStartS": 487.479,
+      "tEndS": 488.55,
+      "texte": "tu dois générer un devis"
+    },
+    {
+      "tStartS": 488.56,
+      "tEndS": 490.749,
+      "texte": "automatiquement, voici comment les devis"
+    },
+    {
+      "tStartS": 490.759,
+      "tEndS": 492.43,
+      "texte": "sont rédigés chez nous. Si tu fais du"
+    },
+    {
+      "tStartS": 492.44,
+      "tEndS": 494.67,
+      "texte": "reporting, voici le template de slide à"
+    },
+    {
+      "tStartS": 494.68,
+      "tEndS": 496.35,
+      "texte": "adopter. Finalement, c'est tous les"
+    },
+    {
+      "tStartS": 496.36,
+      "tEndS": 498.07,
+      "texte": "éléments qui à l'intérieur de la loupe"
+    },
+    {
+      "tStartS": 498.08,
+      "tEndS": 499.99,
+      "texte": "vont permettre de cloisonner la manière"
+    },
+    {
+      "tStartS": 500,
+      "tEndS": 502.35,
+      "texte": "dont le travail est effectué dans la"
+    },
+    {
+      "tStartS": 502.36,
+      "tEndS": 504.27,
+      "texte": "loupe. Et pour ça, on va s'appuyer sur"
+    },
+    {
+      "tStartS": 504.28,
+      "tEndS": 505.869,
+      "texte": "les skills qu'on aura entraîné"
+    },
+    {
+      "tStartS": 505.879,
+      "tEndS": 507.55,
+      "texte": "préalablement. Ensuite, dans la loupe,"
+    },
+    {
+      "tStartS": 507.56,
+      "tEndS": 509.469,
+      "texte": "il va y avoir un ou des agents."
+    },
+    {
+      "tStartS": 509.479,
+      "tEndS": 511.029,
+      "texte": "Généralement, vous allez le voir, on va"
+    },
+    {
+      "tStartS": 511.039,
+      "tEndS": 513.55,
+      "texte": "avoir un agent central en haut qui va"
+    },
+    {
+      "tStartS": 513.56,
+      "tEndS": 515.829,
+      "texte": "ensuite déléguer des tâches à des"
+    },
+    {
+      "tStartS": 515.839,
+      "tEndS": 517.67,
+      "texte": "subagents. L'idée, c'est qu'on va"
+    },
+    {
+      "tStartS": 517.68,
+      "tEndS": 520.149,
+      "texte": "diviser les tâches et donc le travail"
+    },
+    {
+      "tStartS": 520.159,
+      "tEndS": 522.029,
+      "texte": "entre les agents. Va y avoir celui qui"
+    },
+    {
+      "tStartS": 522.039,
+      "tEndS": 524.19,
+      "texte": "produit, celui qui valide, celui qui"
+    },
+    {
+      "tStartS": 524.2,
+      "tEndS": 526.07,
+      "texte": "planifie. Ça nous permet d'éviter des"
+    },
+    {
+      "tStartS": 526.08,
+      "tEndS": 528.07,
+      "texte": "hallucinations et de s'assurer que le"
+    },
+    {
+      "tStartS": 528.08,
+      "tEndS": 530.11,
+      "texte": "travail est bien distribué, que chaque"
+    },
+    {
+      "tStartS": 530.12,
+      "tEndS": 532.07,
+      "texte": "agent puisse appeler différentes skills,"
+    },
+    {
+      "tStartS": 532.08,
+      "tEndS": 534.03,
+      "texte": "différents connecteur. D'ailleurs, en"
+    },
+    {
+      "tStartS": 534.04,
+      "tEndS": 535.99,
+      "texte": "parlant de connecteur, vous allez bien"
+    },
+    {
+      "tStartS": 536,
+      "tEndS": 537.99,
+      "texte": "évidemment mettre des outils, des"
+    },
+    {
+      "tStartS": 538,
+      "tEndS": 540.269,
+      "texte": "connexions à l'intérieur de votre loupe."
+    },
+    {
+      "tStartS": 540.279,
+      "tEndS": 541.47,
+      "texte": "Des outils qui vont vous permettre"
+    },
+    {
+      "tStartS": 541.48,
+      "tEndS": 543.63,
+      "texte": "d'élargir le contexte et le champ"
+    },
+    {
+      "tStartS": 543.64,
+      "tEndS": 545.71,
+      "texte": "d'application de votre loop. Vous voulez"
+    },
+    {
+      "tStartS": 545.72,
+      "tEndS": 546.99,
+      "texte": "envoyer un mail, bah vous allez mettre"
+    },
+    {
+      "tStartS": 547,
+      "tEndS": 548.949,
+      "texte": "le connecteur Gmail. Vous voulez pouvoir"
+    },
+    {
+      "tStartS": 548.959,
+      "tEndS": 550.71,
+      "texte": "voir vos données clients dans le CRM,"
+    },
+    {
+      "tStartS": 550.72,
+      "tEndS": 551.949,
+      "texte": "vous allez mettre sales force. Vous"
+    },
+    {
+      "tStartS": 551.959,
+      "tEndS": 553.87,
+      "texte": "allez mettre tous les connecteurs ou des"
+    },
+    {
+      "tStartS": 553.88,
+      "tEndS": 555.79,
+      "texte": "MCP serveurs qui vont venir à"
+    },
+    {
+      "tStartS": 555.8,
+      "tEndS": 557.55,
+      "texte": "l'intérieur de la loupe au niveau des"
+    },
+    {
+      "tStartS": 557.56,
+      "tEndS": 559.47,
+      "texte": "différents agents pour appeler votre"
+    },
+    {
+      "tStartS": 559.48,
+      "tEndS": 561.509,
+      "texte": "contexte et l'exécuter d'une certaine"
+    },
+    {
+      "tStartS": 561.519,
+      "tEndS": 563.55,
+      "texte": "tâche à l'aide des skills. Et enfin, je"
+    },
+    {
+      "tStartS": 563.56,
+      "tEndS": 565.55,
+      "texte": "le mentionnais préalablement, il y a"
+    },
+    {
+      "tStartS": 565.56,
+      "tEndS": 567.829,
+      "texte": "cette notion de mémoire qui est"
+    },
+    {
+      "tStartS": 567.839,
+      "tEndS": 569.55,
+      "texte": "extrêmement importante. Pourquoi ? Parce"
+    },
+    {
+      "tStartS": 569.56,
+      "tEndS": 571.87,
+      "texte": "que au fur et à mesure que la loupe va"
+    },
+    {
+      "tStartS": 571.88,
+      "tEndS": 573.67,
+      "texte": "se jouer, et bien la mémoire va"
+    },
+    {
+      "tStartS": 573.68,
+      "tEndS": 575.509,
+      "texte": "s'étendre. La mémoire va permettre de"
+    },
+    {
+      "tStartS": 575.519,
+      "tEndS": 577.03,
+      "texte": "dire comment vous voulez certaines"
+    },
+    {
+      "tStartS": 577.04,
+      "tEndS": 578.829,
+      "texte": "choses, mais surtout la mémoire va"
+    },
+    {
+      "tStartS": 578.839,
+      "tEndS": 580.509,
+      "texte": "récupérer tout ce qui s'est passé dans"
+    },
+    {
+      "tStartS": 580.519,
+      "tEndS": 582.389,
+      "texte": "la loupe à chaque fois pour s'assurer"
+    },
+    {
+      "tStartS": 582.399,
+      "tEndS": 584.67,
+      "texte": "que par exemple si un subagent a produit"
+    },
+    {
+      "tStartS": 584.68,
+      "tEndS": 587.31,
+      "texte": "deux ou trois fois des résultats erronés"
+    },
+    {
+      "tStartS": 587.32,
+      "tEndS": 589.79,
+      "texte": "et bien il puisse s'automodifier suite"
+    },
+    {
+      "tStartS": 589.8,
+      "tEndS": 591.75,
+      "texte": "au contrôle d'un autre agent pour"
+    },
+    {
+      "tStartS": 591.76,
+      "tEndS": 593.75,
+      "texte": "améliorer le comportement sans que vous"
+    },
+    {
+      "tStartS": 593.76,
+      "tEndS": 596.03,
+      "texte": "ou moi, on ait à intervenir au niveau de"
+    },
+    {
+      "tStartS": 596.04,
+      "tEndS": 598.269,
+      "texte": "la loupe pour modifier manuellement un"
+    },
+    {
+      "tStartS": 598.279,
+      "tEndS": 599.949,
+      "texte": "des agents. Les agents, ils vont"
+    },
+    {
+      "tStartS": 599.959,
+      "tEndS": 601.99,
+      "texte": "discuter ensemble. l'un va voir que"
+    },
+    {
+      "tStartS": 602,
+      "tEndS": 604.71,
+      "texte": "l'autre a mal fonctionné et bien au fur"
+    },
+    {
+      "tStartS": 604.72,
+      "tEndS": 607.15,
+      "texte": "et à mesure à l'aide de la mémoire on va"
+    },
+    {
+      "tStartS": 607.16,
+      "tEndS": 609.31,
+      "texte": "comprendre pourquoi et qui est-ce qui"
+    },
+    {
+      "tStartS": 609.32,
+      "tEndS": 611.71,
+      "texte": "n'a mal fonctionné pour s'autoaméliorer."
+    },
+    {
+      "tStartS": 611.72,
+      "tEndS": 613.47,
+      "texte": "Donc là normalement vous avez compris ce"
+    },
+    {
+      "tStartS": 613.48,
+      "tEndS": 614.75,
+      "texte": "qui est une loupe et les éléments qu'on"
+    },
+    {
+      "tStartS": 614.76,
+      "tEndS": 615.949,
+      "texte": "doit y mettre à l'intérieur. Mais"
+    },
+    {
+      "tStartS": 615.959,
+      "tEndS": 617.19,
+      "texte": "ensuite il y a une question"
+    },
+    {
+      "tStartS": 617.2,
+      "tEndS": 618.91,
+      "texte": "fondamentale. Est-ce que la boucle je"
+    },
+    {
+      "tStartS": 618.92,
+      "tEndS": 620.59,
+      "texte": "dois la laisser ouverte ou bien est-ce"
+    },
+    {
+      "tStartS": 620.6,
+      "tEndS": 622.75,
+      "texte": "que je vais la fermer ? Et pour ça juste"
+    },
+    {
+      "tStartS": 622.76,
+      "tEndS": 624.47,
+      "texte": "ici je vous ai mis deux exemples. Les"
+    },
+    {
+      "tStartS": 624.48,
+      "tEndS": 626.23,
+      "texte": "loupes ouvertes sont plutôt des loupes"
+    },
+    {
+      "tStartS": 626.24,
+      "tEndS": 627.829,
+      "texte": "que je vous recommande d'utiliser sur"
+    },
+    {
+      "tStartS": 627.839,
+      "tEndS": 630.15,
+      "texte": "des scénarios par exemple grand public."
+    },
+    {
+      "tStartS": 630.16,
+      "tEndS": 631.63,
+      "texte": "vous allez mettre sur vos site web avec"
+    },
+    {
+      "tStartS": 631.64,
+      "tEndS": 633.949,
+      "texte": "un agent qui va répondre à des mails sur"
+    },
+    {
+      "tStartS": 633.959,
+      "tEndS": 635.55,
+      "texte": "un agent qui va traiter des demandes"
+    },
+    {
+      "tStartS": 635.56,
+      "tEndS": 637.47,
+      "texte": "entrantes sur une landing page. L'idée"
+    },
+    {
+      "tStartS": 637.48,
+      "tEndS": 639.19,
+      "texte": "c'est que l'agent va avoir un espace de"
+    },
+    {
+      "tStartS": 639.2,
+      "tEndS": 640.99,
+      "texte": "recherche très très large. Le process,"
+    },
+    {
+      "tStartS": 641,
+      "tEndS": 642.99,
+      "texte": "il y a tellement de possibilités que on"
+    },
+    {
+      "tStartS": 643,
+      "tEndS": 645.03,
+      "texte": "se doit d'avoir la loupe la plus ouverte"
+    },
+    {
+      "tStartS": 645.04,
+      "tEndS": 646.829,
+      "texte": "possible pour traiter les demandes."
+    },
+    {
+      "tStartS": 646.839,
+      "tEndS": 648.949,
+      "texte": "L'agent, il va errer à l'intérieur et il"
+    },
+    {
+      "tStartS": 648.959,
+      "tEndS": 650.15,
+      "texte": "va essayer de trouver le meilleur"
+    },
+    {
+      "tStartS": 650.16,
+      "tEndS": 651.55,
+      "texte": "résultat possible. Par contre,"
+    },
+    {
+      "tStartS": 651.56,
+      "tEndS": 652.91,
+      "texte": "attendez-vous à ce moment-là avoir une"
+    },
+    {
+      "tStartS": 652.92,
+      "tEndS": 654.79,
+      "texte": "grosse consommation de token. L'idée"
+    },
+    {
+      "tStartS": 654.8,
+      "tEndS": 656.59,
+      "texte": "ici, c'est plutôt sur des gros scénarios"
+    },
+    {
+      "tStartS": 656.6,
+      "tEndS": 658.269,
+      "texte": "avec un héroï tellement fort que"
+    },
+    {
+      "tStartS": 658.279,
+      "tEndS": 659.79,
+      "texte": "derrière le budget, il est quasiment"
+    },
+    {
+      "tStartS": 659.8,
+      "tEndS": 661.31,
+      "texte": "illimité. Donc on peut se permettre au"
+    },
+    {
+      "tStartS": 661.32,
+      "tEndS": 663.15,
+      "texte": "début d'avoir cet apprentissage."
+    },
+    {
+      "tStartS": 663.16,
+      "tEndS": 664.75,
+      "texte": "Attention, c'est pas parce que la loupe"
+    },
+    {
+      "tStartS": 664.76,
+      "tEndS": 666.11,
+      "texte": "elle est ouverte et qu'elle est très"
+    },
+    {
+      "tStartS": 666.12,
+      "tEndS": 668.03,
+      "texte": "large qu'elle va toujours le rester. À"
+    },
+    {
+      "tStartS": 668.04,
+      "tEndS": 669.629,
+      "texte": "terme, l'idée de la loupe encore une"
+    },
+    {
+      "tStartS": 669.639,
+      "tEndS": 671.47,
+      "texte": "fois, c'est qu'elle soit auto-apprenante"
+    },
+    {
+      "tStartS": 671.48,
+      "tEndS": 673.11,
+      "texte": "et donc au bout d'un moment et bien on"
+    },
+    {
+      "tStartS": 673.12,
+      "tEndS": 674.43,
+      "texte": "peut imaginer qu'à l'intérieur de la"
+    },
+    {
+      "tStartS": 674.44,
+      "tEndS": 676.55,
+      "texte": "loupe, le champ des possibles se"
+    },
+    {
+      "tStartS": 676.56,
+      "tEndS": 678.43,
+      "texte": "réduisent pour pouvoir apporter des"
+    },
+    {
+      "tStartS": 678.44,
+      "tEndS": 680.03,
+      "texte": "réponses beaucoup plus qualitatives."
+    },
+    {
+      "tStartS": 680.04,
+      "tEndS": 682.11,
+      "texte": "L'idée, on a peu de barrière mais plus"
+    },
+    {
+      "tStartS": 682.12,
+      "tEndS": 684.269,
+      "texte": "de créativité. La loupe fermée, c'est"
+    },
+    {
+      "tStartS": 684.279,
+      "tEndS": 685.509,
+      "texte": "vraiment ce que je vous recommande de"
+    },
+    {
+      "tStartS": 685.519,
+      "tEndS": 687.15,
+      "texte": "faire au début. L'idée c'est que ça va"
+    },
+    {
+      "tStartS": 687.16,
+      "tEndS": 689.19,
+      "texte": "vraiment être un processus fermé dans"
+    },
+    {
+      "tStartS": 689.2,
+      "tEndS": 690.75,
+      "texte": "lequel vous vous allez donner les"
+    },
+    {
+      "tStartS": 690.76,
+      "tEndS": 692.71,
+      "texte": "différentes étapes à réaliser. C'est"
+    },
+    {
+      "tStartS": 692.72,
+      "tEndS": 694.11,
+      "texte": "notamment ce qu'on va créer juste après"
+    },
+    {
+      "tStartS": 694.12,
+      "tEndS": 695.829,
+      "texte": "en démonstration ensemble. L'idée à"
+    },
+    {
+      "tStartS": 695.839,
+      "tEndS": 697.15,
+      "texte": "l'intérieur, c'est qu'on va avoir une"
+    },
+    {
+      "tStartS": 697.16,
+      "tEndS": 699.949,
+      "texte": "évaluation claire de chaque étape. On va"
+    },
+    {
+      "tStartS": 699.959,
+      "tEndS": 702.19,
+      "texte": "avoir un budget plus restreint parce que"
+    },
+    {
+      "tStartS": 702.2,
+      "tEndS": 704.19,
+      "texte": "ça va consommer moins de token. Mais"
+    },
+    {
+      "tStartS": 704.2,
+      "tEndS": 705.91,
+      "texte": "surtout votre loupe, elle est très"
+    },
+    {
+      "tStartS": 705.92,
+      "tEndS": 708.55,
+      "texte": "cadrée. Vous connaissez vous le résultat"
+    },
+    {
+      "tStartS": 708.56,
+      "tEndS": 710.35,
+      "texte": "final que vous allez chercher et donc"
+    },
+    {
+      "tStartS": 710.36,
+      "tEndS": 711.79,
+      "texte": "forcément, vous allez créer la loupe en"
+    },
+    {
+      "tStartS": 711.8,
+      "tEndS": 713.389,
+      "texte": "conséquence en partant de ce que vous"
+    },
+    {
+      "tStartS": 713.399,
+      "tEndS": 714.91,
+      "texte": "voulez avoir et tous les éléments qu'il"
+    },
+    {
+      "tStartS": 714.92,
+      "tEndS": 716.15,
+      "texte": "faut dans la loupe à chaque fois. Donc"
+    },
+    {
+      "tStartS": 716.16,
+      "tEndS": 717.55,
+      "texte": "au début, partez beaucoup plus sur des"
+    },
+    {
+      "tStartS": 717.56,
+      "tEndS": 719.11,
+      "texte": "loupes fermées, mais sachez que vous"
+    },
+    {
+      "tStartS": 719.12,
+      "tEndS": 720.35,
+      "texte": "pouvez aussi aller sur des loupes"
+    },
+    {
+      "tStartS": 720.36,
+      "tEndS": 722.19,
+      "texte": "ouvertes en fonction de vos scénarios."
+    },
+    {
+      "tStartS": 722.2,
+      "tEndS": 724.19,
+      "texte": "Et alors vous allez me dire \"OK super,"
+    },
+    {
+      "tStartS": 724.2,
+      "tEndS": 726.03,
+      "texte": "mais à quel moment est-ce que finalement"
+    },
+    {
+      "tStartS": 726.04,
+      "tEndS": 727.19,
+      "texte": "je dois créer une loupe ? Pourquoi"
+    },
+    {
+      "tStartS": 727.2,
+      "tEndS": 728.67,
+      "texte": "est-ce que je peux plus du tout utiliser"
+    },
+    {
+      "tStartS": 728.68,
+      "tEndS": 730.91,
+      "texte": "d'agent ou juste chatter avec Lia ?\" Ben"
+    },
+    {
+      "tStartS": 730.92,
+      "tEndS": 732.389,
+      "texte": "pour ça, j'ai créé une petite checklist"
+    },
+    {
+      "tStartS": 732.399,
+      "tEndS": 733.91,
+      "texte": "que je vais vous partager et qui vous"
+    },
+    {
+      "tStartS": 733.92,
+      "tEndS": 736.269,
+      "texte": "permet de comprendre si votre scénario"
+    },
+    {
+      "tStartS": 736.279,
+      "tEndS": 738.03,
+      "texte": "fonctionne sur une loupe ou pas du tout."
+    },
+    {
+      "tStartS": 738.04,
+      "tEndS": 739.71,
+      "texte": "Pour ça, juste ici, vous avez quatre"
+    },
+    {
+      "tStartS": 739.72,
+      "tEndS": 741.269,
+      "texte": "conditions que je vous recommande"
+    },
+    {
+      "tStartS": 741.279,
+      "tEndS": 744.15,
+      "texte": "d'appliquer pour savoir si une loupe est"
+    },
+    {
+      "tStartS": 744.16,
+      "tEndS": 745.75,
+      "texte": "pertinente ou non. La première"
+    },
+    {
+      "tStartS": 745.76,
+      "tEndS": 747.55,
+      "texte": "condition, c'est est-ce que votre tâche,"
+    },
+    {
+      "tStartS": 747.56,
+      "tEndS": 748.87,
+      "texte": "elle se répète plusieurs fois ? parce"
+    },
+    {
+      "tStartS": 748.88,
+      "tEndS": 750.15,
+      "texte": "que vous avez besoin de la faire tous"
+    },
+    {
+      "tStartS": 750.16,
+      "tEndS": 751.829,
+      "texte": "les jours, toutes les semaines. En"
+    },
+    {
+      "tStartS": 751.839,
+      "tEndS": 753.47,
+      "texte": "fonction de ça, ben forcément, elle est"
+    },
+    {
+      "tStartS": 753.48,
+      "tEndS": 755.35,
+      "texte": "dite récurrente. Donc à partir de là,"
+    },
+    {
+      "tStartS": 755.36,
+      "tEndS": 757.23,
+      "texte": "c'est une bonne condition pour commencer"
+    },
+    {
+      "tStartS": 757.24,
+      "tEndS": 759.189,
+      "texte": "à créer les loup. Ensuite, la deuxième"
+    },
+    {
+      "tStartS": 759.199,
+      "tEndS": 760.59,
+      "texte": "condition, c'est est-ce qu'il y a une"
+    },
+    {
+      "tStartS": 760.6,
+      "tEndS": 762.99,
+      "texte": "possibilité d'échec ? Ici, l'idée c'est"
+    },
+    {
+      "tStartS": 763,
+      "tEndS": 765.509,
+      "texte": "est-ce qu'on est en mesure de bien"
+    },
+    {
+      "tStartS": 765.519,
+      "tEndS": 767.509,
+      "texte": "identifier quand ça a marché ou quand ça"
+    },
+    {
+      "tStartS": 767.519,
+      "tEndS": 769.71,
+      "texte": "n'a pas marché. Pour ça, ici, si vous"
+    },
+    {
+      "tStartS": 769.72,
+      "tEndS": 772.03,
+      "texte": "êtes pas en mesure vous de vous dire ça"
+    },
+    {
+      "tStartS": 772.04,
+      "tEndS": 773.949,
+      "texte": "c'est un échec, ça c'est une réussite à"
+    },
+    {
+      "tStartS": 773.959,
+      "tEndS": 775.509,
+      "texte": "chaque fois de manière très binaire, et"
+    },
+    {
+      "tStartS": 775.519,
+      "tEndS": 777.269,
+      "texte": "bien en fait ça sert à rien d'aller sur"
+    },
+    {
+      "tStartS": 777.279,
+      "tEndS": 778.949,
+      "texte": "une loupe. Pourquoi ? parce qu'à la fin,"
+    },
+    {
+      "tStartS": 778.959,
+      "tEndS": 780.11,
+      "texte": "vous allez toujours devoir aller"
+    },
+    {
+      "tStartS": 780.12,
+      "tEndS": 782.31,
+      "texte": "vérifier le résultat final. Donc il y a"
+    },
+    {
+      "tStartS": 782.32,
+      "tEndS": 783.87,
+      "texte": "une intervention de votre part. Vous"
+    },
+    {
+      "tStartS": 783.88,
+      "tEndS": 785.35,
+      "texte": "êtes pas tout le temps dans la"
+    },
+    {
+      "tStartS": 785.36,
+      "tEndS": 787.71,
+      "texte": "supervision et la délégation. Non, vous"
+    },
+    {
+      "tStartS": 787.72,
+      "tEndS": 789.67,
+      "texte": "devez venir voir à chaque fois tous les"
+    },
+    {
+      "tStartS": 789.68,
+      "tEndS": 791.509,
+      "texte": "résultats et vérifier. C'est pas du tout"
+    },
+    {
+      "tStartS": 791.519,
+      "tEndS": 793.23,
+      "texte": "le but d'une loupe. Donc si vous avez"
+    },
+    {
+      "tStartS": 793.24,
+      "tEndS": 794.91,
+      "texte": "ça, vraiment partez sur un autre"
+    },
+    {
+      "tStartS": 794.92,
+      "tEndS": 796.15,
+      "texte": "scénario. Par contre, si vous êtes"
+    },
+    {
+      "tStartS": 796.16,
+      "tEndS": 798.15,
+      "texte": "capable d'identifier ça marche, ça ça"
+    },
+    {
+      "tStartS": 798.16,
+      "tEndS": 799.99,
+      "texte": "marche pas et ainsi la loupe elle le"
+    },
+    {
+      "tStartS": 800,
+      "tEndS": 802.47,
+      "texte": "fait à votre place sans supervision,"
+    },
+    {
+      "tStartS": 802.48,
+      "tEndS": 803.79,
+      "texte": "vous êtes sur un scénario pour une"
+    },
+    {
+      "tStartS": 803.8,
+      "tEndS": 805.47,
+      "texte": "loupe. Ensuite, est-ce que la loupe,"
+    },
+    {
+      "tStartS": 805.48,
+      "tEndS": 806.67,
+      "texte": "elle peut faire tout le travail ou bien"
+    },
+    {
+      "tStartS": 806.68,
+      "tEndS": 807.75,
+      "texte": "est-ce qu'il faut un moment que vous"
+    },
+    {
+      "tStartS": 807.76,
+      "tEndS": 809.55,
+      "texte": "veniez appuyer sur un bouton ? Euh, il"
+    },
+    {
+      "tStartS": 809.56,
+      "tEndS": 810.87,
+      "texte": "faut un moment que vous rentriez du"
+    },
+    {
+      "tStartS": 810.88,
+      "tEndS": 812.35,
+      "texte": "texte manuellement parce que c'est vous"
+    },
+    {
+      "tStartS": 812.36,
+      "tEndS": 814.069,
+      "texte": "qui avez l'information dans votre tête"
+    },
+    {
+      "tStartS": 814.079,
+      "tEndS": 815.949,
+      "texte": "par exemple ? Et bien ici, super"
+    },
+    {
+      "tStartS": 815.959,
+      "tEndS": 818.23,
+      "texte": "important, le but c'est que toute la"
+    },
+    {
+      "tStartS": 818.24,
+      "tEndS": 820.189,
+      "texte": "loupe, elle fonctionne de bout en bout"
+    },
+    {
+      "tStartS": 820.199,
+      "tEndS": 821.87,
+      "texte": "sans vous et à ce moment-là, vous avez"
+    },
+    {
+      "tStartS": 821.88,
+      "tEndS": 823.43,
+      "texte": "encore une condition pour créer votre"
+    },
+    {
+      "tStartS": 823.44,
+      "tEndS": 825.189,
+      "texte": "loupe. Et enfin, la dernière condition,"
+    },
+    {
+      "tStartS": 825.199,
+      "tEndS": 826.31,
+      "texte": "c'est est-ce que vous êtes en mesure de"
+    },
+    {
+      "tStartS": 826.32,
+      "tEndS": 828.91,
+      "texte": "vous dire \"OK, ça c'est terminé, il n'y"
+    },
+    {
+      "tStartS": 828.92,
+      "tEndS": 830.99,
+      "texte": "a pas d'interprétation de jugement"
+    },
+    {
+      "tStartS": 831,
+      "tEndS": 832.949,
+      "texte": "humain dans ce qui a été fait et c'est"
+    },
+    {
+      "tStartS": 832.959,
+      "tEndS": 834.43,
+      "texte": "certainement là vous allez avoir le plus"
+    },
+    {
+      "tStartS": 834.44,
+      "tEndS": 836.189,
+      "texte": "de difficultés à identifier une loupe."
+    },
+    {
+      "tStartS": 836.199,
+      "tEndS": 837.43,
+      "texte": "Mais par contre, vous allez voir qu'on"
+    },
+    {
+      "tStartS": 837.44,
+      "tEndS": 838.509,
+      "texte": "arrive quand même à des choses où au"
+    },
+    {
+      "tStartS": 838.519,
+      "tEndS": 839.79,
+      "texte": "bout d'un moment, on a fait tellement de"
+    },
+    {
+      "tStartS": 839.8,
+      "tEndS": 841.069,
+      "texte": "tests.\" C'est sur cette phase là"
+    },
+    {
+      "tStartS": 841.079,
+      "tEndS": 843.069,
+      "texte": "d'ailleurs que la partie de testing est"
+    },
+    {
+      "tStartS": 843.079,
+      "tEndS": 845.509,
+      "texte": "super importante. vous allez tester 10"
+    },
+    {
+      "tStartS": 845.519,
+      "tEndS": 847.47,
+      "texte": "15 20 fois les résultats. Au bout d'un"
+    },
+    {
+      "tStartS": 847.48,
+      "tEndS": 849.59,
+      "texte": "moment, si à la fin de ces 15 20"
+    },
+    {
+      "tStartS": 849.6,
+      "tEndS": 851.11,
+      "texte": "résultats, vous êtes pas en mesure de"
+    },
+    {
+      "tStartS": 851.12,
+      "tEndS": 852.949,
+      "texte": "vous dire \"C'est bon, les 20 sont bons.\""
+    },
+    {
+      "tStartS": 852.959,
+      "tEndS": 854.509,
+      "texte": "et bien à partir de là, c'est qu'il y a"
+    },
+    {
+      "tStartS": 854.519,
+      "tEndS": 855.91,
+      "texte": "un jugement humain. Il y a trop"
+    },
+    {
+      "tStartS": 855.92,
+      "tEndS": 857.829,
+      "texte": "d'interprétation pour que ça soit fait"
+    },
+    {
+      "tStartS": 857.839,
+      "tEndS": 859.509,
+      "texte": "par un loop. Et il faudra toujours qu'un"
+    },
+    {
+      "tStartS": 859.519,
+      "tEndS": 861.31,
+      "texte": "humain vérifie à la fin. Et là, c'est"
+    },
+    {
+      "tStartS": 861.32,
+      "tEndS": 863.069,
+      "texte": "pas forcément le but d'une loupe. Si"
+    },
+    {
+      "tStartS": 863.079,
+      "tEndS": 864.35,
+      "texte": "vous vous dites \"Là c'est bon, elle a"
+    },
+    {
+      "tStartS": 864.36,
+      "tEndS": 865.47,
+      "texte": "plus besoin de moi.\" Vous avez les cas"
+    },
+    {
+      "tStartS": 865.48,
+      "tEndS": 866.949,
+      "texte": "de conditions et vous pouvez créer votre"
+    },
+    {
+      "tStartS": 866.959,
+      "tEndS": 868.31,
+      "texte": "loupe. Donc là maintenant, vous avez"
+    },
+    {
+      "tStartS": 868.32,
+      "tEndS": 869.389,
+      "texte": "tout ce qu'il faut pour bien savoir"
+    },
+    {
+      "tStartS": 869.399,
+      "tEndS": 870.55,
+      "texte": "quand créer une loupe. Mais pour la"
+    },
+    {
+      "tStartS": 870.56,
+      "tEndS": 872.23,
+      "texte": "créer, il vous faut les bons outils."
+    },
+    {
+      "tStartS": 872.24,
+      "tEndS": 873.55,
+      "texte": "Pour ça aujourd'hui, moi j'ai choisi"
+    },
+    {
+      "tStartS": 873.56,
+      "tEndS": 875.55,
+      "texte": "deux outils, Codex et Cloud Code. C'est"
+    },
+    {
+      "tStartS": 875.56,
+      "tEndS": 876.749,
+      "texte": "pour moi les deux meilleurs outils"
+    },
+    {
+      "tStartS": 876.759,
+      "tEndS": 878.15,
+      "texte": "aujourd'hui pour créer des loops à"
+    },
+    {
+      "tStartS": 878.16,
+      "tEndS": 879.47,
+      "texte": "l'intérieur. Nous après, dans la partie"
+    },
+    {
+      "tStartS": 879.48,
+      "tEndS": 881.23,
+      "texte": "de Zmo, on va aller créer des loops à"
+    },
+    {
+      "tStartS": 881.24,
+      "tEndS": 883.389,
+      "texte": "l'intérieur de Cloud avec Cowork ainsi"
+    },
+    {
+      "tStartS": 883.399,
+      "tEndS": 884.87,
+      "texte": "queavec Cloud Code. Mais je voulais"
+    },
+    {
+      "tStartS": 884.88,
+      "tEndS": 886.629,
+      "texte": "quand même revenir avec vous sur les"
+    },
+    {
+      "tStartS": 886.639,
+      "tEndS": 888.269,
+      "texte": "éléments d'une loop. finalement à quoi"
+    },
+    {
+      "tStartS": 888.279,
+      "tEndS": 889.629,
+      "texte": "il ressemble à l'intérieur de ces"
+    },
+    {
+      "tStartS": 889.639,
+      "tEndS": 891.11,
+      "texte": "solutions. Quelles sont les briques que"
+    },
+    {
+      "tStartS": 891.12,
+      "tEndS": 892.59,
+      "texte": "vous allez devoir utiliser dans ces"
+    },
+    {
+      "tStartS": 892.6,
+      "tEndS": 894.11,
+      "texte": "solutions pour créer votre loop ? Et"
+    },
+    {
+      "tStartS": 894.12,
+      "tEndS": 895.91,
+      "texte": "pour ça, j'ai fait ici un petit tableau"
+    },
+    {
+      "tStartS": 895.92,
+      "tEndS": 897.59,
+      "texte": "avec les différents éléments pour"
+    },
+    {
+      "tStartS": 897.6,
+      "tEndS": 899.35,
+      "texte": "l'automatisation. Donc ce qui va"
+    },
+    {
+      "tStartS": 899.36,
+      "tEndS": 901.269,
+      "texte": "permettre de déclencher par exemple"
+    },
+    {
+      "tStartS": 901.279,
+      "tEndS": 903.629,
+      "texte": "comme je disais avant l'aspect Hertbit."
+    },
+    {
+      "tStartS": 903.639,
+      "tEndS": 905.59,
+      "texte": "Et bien pour ça, vous avez dans Codex"
+    },
+    {
+      "tStartS": 905.6,
+      "tEndS": 907.509,
+      "texte": "une partie qui s'appelle automatisation"
+    },
+    {
+      "tStartS": 907.519,
+      "tEndS": 908.99,
+      "texte": "qui est disponible dans l'app. Vous avez"
+    },
+    {
+      "tStartS": 909,
+      "tEndS": 910.269,
+      "texte": "juste à aller dessus. Vous allez pouvoir"
+    },
+    {
+      "tStartS": 910.279,
+      "tEndS": 911.949,
+      "texte": "créer des petites loupes à l'intérieur"
+    },
+    {
+      "tStartS": 911.959,
+      "tEndS": 914.31,
+      "texte": "et mettre des goals. Sinon, côté cloud"
+    },
+    {
+      "tStartS": 914.32,
+      "tEndS": 916.189,
+      "texte": "code, on va le voir, vous allez pouvoir"
+    },
+    {
+      "tStartS": 916.199,
+      "tEndS": 918.79,
+      "texte": "utiliser slash loop ou slashgal pour"
+    },
+    {
+      "tStartS": 918.8,
+      "tEndS": 921.069,
+      "texte": "lancer les différents éléments. Il y a"
+    },
+    {
+      "tStartS": 921.079,
+      "tEndS": 922.949,
+      "texte": "aussi toute la partie hook qui va vous"
+    },
+    {
+      "tStartS": 922.959,
+      "tEndS": 924.749,
+      "texte": "permettre de déclencher depuis un"
+    },
+    {
+      "tStartS": 924.759,
+      "tEndS": 926.43,
+      "texte": "comportement dans une application par"
+    },
+    {
+      "tStartS": 926.44,
+      "tEndS": 928.509,
+      "texte": "exemple. Ensuite, vous allez avoir les"
+    },
+    {
+      "tStartS": 928.519,
+      "tEndS": 929.55,
+      "texte": "work. Donc c'est ce qui va vous"
+    },
+    {
+      "tStartS": 929.56,
+      "tEndS": 931.55,
+      "texte": "permettre de répartir les éléments à"
+    },
+    {
+      "tStartS": 931.56,
+      "tEndS": 933.87,
+      "texte": "l'intérieur, vos subagent, vos skills"
+    },
+    {
+      "tStartS": 933.88,
+      "tEndS": 935.509,
+      "texte": "pour avoir une vue très détaillée des"
+    },
+    {
+      "tStartS": 935.519,
+      "tEndS": 937.67,
+      "texte": "éléments. Il y en a un par Sade chez"
+    },
+    {
+      "tStartS": 937.68,
+      "tEndS": 939.55,
+      "texte": "Codex et côté Cloud Code, vous avez des"
+    },
+    {
+      "tStartS": 939.56,
+      "tEndS": 941.629,
+      "texte": "work au niveau des subagent. Pour ce qui"
+    },
+    {
+      "tStartS": 941.639,
+      "tEndS": 943.59,
+      "texte": "est des skills, ici côté codex, vous"
+    },
+    {
+      "tStartS": 943.6,
+      "tEndS": 945.11,
+      "texte": "avez la possibilité de créer des"
+    },
+    {
+      "tStartS": 945.12,
+      "tEndS": 948.309,
+      "texte": "skills.m de même côté cloud code. Les"
+    },
+    {
+      "tStartS": 948.319,
+      "tEndS": 950.35,
+      "texte": "plugins sont directement disponibles"
+    },
+    {
+      "tStartS": 950.36,
+      "tEndS": 952.35,
+      "texte": "avec des MCP et des plugins à"
+    },
+    {
+      "tStartS": 952.36,
+      "tEndS": 954.23,
+      "texte": "l'intérieur de Codex. Vous avez aussi la"
+    },
+    {
+      "tStartS": 954.24,
+      "tEndS": 956.23,
+      "texte": "possibilité de mettre des plugins et des"
+    },
+    {
+      "tStartS": 956.24,
+      "tEndS": 958.35,
+      "texte": "MCP côté cloud code. Pour ce qui est des"
+    },
+    {
+      "tStartS": 958.36,
+      "tEndS": 960.67,
+      "texte": "sub agents, ça c'est un point important,"
+    },
+    {
+      "tStartS": 960.68,
+      "tEndS": 962.389,
+      "texte": "vous allez pouvoir les déclarer dans"
+    },
+    {
+      "tStartS": 962.399,
+      "tEndS": 964.47,
+      "texte": "Codex de même côté cloud code. Et alors"
+    },
+    {
+      "tStartS": 964.48,
+      "tEndS": 966.15,
+      "texte": "ça on va en créer ensemble juste après."
+    },
+    {
+      "tStartS": 966.16,
+      "tEndS": 967.509,
+      "texte": "Vous pouvez mettre des agents et créer"
+    },
+    {
+      "tStartS": 967.519,
+      "tEndS": 969.03,
+      "texte": "votre équipe d'agents aussi à"
+    },
+    {
+      "tStartS": 969.04,
+      "tEndS": 971.55,
+      "texte": "l'intérieur de cloud/agent. Et côté"
+    },
+    {
+      "tStartS": 971.56,
+      "tEndS": 973.03,
+      "texte": "cloud, vous allez aussi pouvoir créer"
+    },
+    {
+      "tStartS": 973.04,
+      "tEndS": 975.55,
+      "texte": "des sub agents à l'aide de slashagent."
+    },
+    {
+      "tStartS": 975.56,
+      "tEndS": 976.43,
+      "texte": "Ça je vais vous montrer comment on"
+    },
+    {
+      "tStartS": 976.44,
+      "tEndS": 978.47,
+      "texte": "l'écrit juste après. Et enfin côté state"
+    },
+    {
+      "tStartS": 978.48,
+      "tEndS": 980.43,
+      "texte": "qui reprend tout l'état de votre loop."
+    },
+    {
+      "tStartS": 980.44,
+      "tEndS": 981.91,
+      "texte": "Vous avez la possibilité de créer des"
+    },
+    {
+      "tStartS": 981.92,
+      "tEndS": 984.23,
+      "texte": "fichiers point MD chez Codex et aussi"
+    },
+    {
+      "tStartS": 984.24,
+      "tEndS": 986.069,
+      "texte": "chez Cloud Code pour retrouver tous les"
+    },
+    {
+      "tStartS": 986.079,
+      "tEndS": 987.71,
+      "texte": "éléments et la progression à"
+    },
+    {
+      "tStartS": 987.72,
+      "tEndS": 989.59,
+      "texte": "l'intérieur. Finalement à la fin, les"
+    },
+    {
+      "tStartS": 989.6,
+      "tEndS": 991.629,
+      "texte": "deux outils ont les mêmes solutions."
+    },
+    {
+      "tStartS": 991.639,
+      "tEndS": 992.949,
+      "texte": "Apportent juste des noms un petit peu"
+    },
+    {
+      "tStartS": 992.959,
+      "tEndS": 994.11,
+      "texte": "différents à chaque fois. Et donc"
+    },
+    {
+      "tStartS": 994.12,
+      "tEndS": 995.829,
+      "texte": "normalement à présent, vous avez tout ce"
+    },
+    {
+      "tStartS": 995.839,
+      "tEndS": 997.189,
+      "texte": "qu'il faut pour comprendre ce qui est"
+    },
+    {
+      "tStartS": 997.199,
+      "tEndS": 998.309,
+      "texte": "une loupe, ce qu'il faut y mettre à"
+    },
+    {
+      "tStartS": 998.319,
+      "tEndS": 999.509,
+      "texte": "l'intérieur, quand est-ce qu'il faut"
+    },
+    {
+      "tStartS": 999.519,
+      "tEndS": 1000.87,
+      "texte": "choisir entre une loupe ouverte et"
+    },
+    {
+      "tStartS": 1000.88,
+      "tEndS": 1002.91,
+      "texte": "fermée, les éléments qu'on va mettre à"
+    },
+    {
+      "tStartS": 1002.92,
+      "tEndS": 1004.749,
+      "texte": "l'intérieur et au niveau des solutions"
+    },
+    {
+      "tStartS": 1004.759,
+      "tEndS": 1006.189,
+      "texte": "que vous utilisez, comment est-ce que ça"
+    },
+    {
+      "tStartS": 1006.199,
+      "tEndS": 1008.15,
+      "texte": "se matérialise. Mais moi, je me doute"
+    },
+    {
+      "tStartS": 1008.16,
+      "tEndS": 1009.389,
+      "texte": "que ce que vous avez envie de voir,"
+    },
+    {
+      "tStartS": 1009.399,
+      "tEndS": 1010.99,
+      "texte": "c'est de la démo. Comment est-ce que je"
+    },
+    {
+      "tStartS": 1011,
+      "tEndS": 1012.55,
+      "texte": "peux vraiment créer des loopes dans ces"
+    },
+    {
+      "tStartS": 1012.56,
+      "tEndS": 1014.71,
+      "texte": "solutions ? À quoi ça ressemble ? Et"
+    },
+    {
+      "tStartS": 1014.72,
+      "tEndS": 1016.11,
+      "texte": "est-ce que c'est si puissant que ça ?"
+    },
+    {
+      "tStartS": 1016.12,
+      "tEndS": 1018.11,
+      "texte": "Pour ça, moi je vous propose juste ici à"
+    },
+    {
+      "tStartS": 1018.12,
+      "tEndS": 1019.829,
+      "texte": "l'intérieur de Cloud de créer déjà une"
+    },
+    {
+      "tStartS": 1019.839,
+      "tEndS": 1022.47,
+      "texte": "première loupe très simple. cette loupe."
+    },
+    {
+      "tStartS": 1022.48,
+      "tEndS": 1024.789,
+      "texte": "Imaginez que je travaille pour Nike et"
+    },
+    {
+      "tStartS": 1024.799,
+      "tEndS": 1026.11,
+      "texte": "l'idée c'est que je vais vouloir suivre"
+    },
+    {
+      "tStartS": 1026.12,
+      "tEndS": 1028.189,
+      "texte": "toutes les ventes de Nike. Et ici pour"
+    },
+    {
+      "tStartS": 1028.199,
+      "tEndS": 1030.309,
+      "texte": "créer une première loupe, on va utiliser"
+    },
+    {
+      "tStartS": 1030.319,
+      "tEndS": 1031.71,
+      "texte": "Cloud CowerK. Pourquoi ? Parce qu'en"
+    },
+    {
+      "tStartS": 1031.72,
+      "tEndS": 1034.11,
+      "texte": "fait cloud Cork, il peut déjà répondre à"
+    },
+    {
+      "tStartS": 1034.12,
+      "tEndS": 1035.59,
+      "texte": "beaucoup d'éléments d'une Lou. En effet,"
+    },
+    {
+      "tStartS": 1035.6,
+      "tEndS": 1037.309,
+      "texte": "je vais pouvoir aller programmer des"
+    },
+    {
+      "tStartS": 1037.319,
+      "tEndS": 1038.909,
+      "texte": "tâches à l'intérieur, ce qui va me"
+    },
+    {
+      "tStartS": 1038.919,
+      "tEndS": 1041.27,
+      "texte": "permettre d'avoir un déclencheur, le Hit"
+    },
+    {
+      "tStartS": 1041.28,
+      "tEndS": 1042.829,
+      "texte": "qui derrière et bien par exemple toutes"
+    },
+    {
+      "tStartS": 1042.839,
+      "tEndS": 1044.35,
+      "texte": "les semaines va mettre à jour des"
+    },
+    {
+      "tStartS": 1044.36,
+      "tEndS": 1046.029,
+      "texte": "éléments. Donc la tâche va être"
+    },
+    {
+      "tStartS": 1046.039,
+      "tEndS": 1047.949,
+      "texte": "planifiée, elle peut se lancer sans moi."
+    },
+    {
+      "tStartS": 1047.959,
+      "tEndS": 1049.83,
+      "texte": "Je vais pouvoir à l'intérieur aussi"
+    },
+    {
+      "tStartS": 1049.84,
+      "tEndS": 1052.07,
+      "texte": "connecter des applications, donc mettre"
+    },
+    {
+      "tStartS": 1052.08,
+      "tEndS": 1054.23,
+      "texte": "des connecteurs ici déjà disponibles,"
+    },
+    {
+      "tStartS": 1054.24,
+      "tEndS": 1056.029,
+      "texte": "mais aussi des MCP serveur. Je vais"
+    },
+    {
+      "tStartS": 1056.039,
+      "tEndS": 1058.75,
+      "texte": "pouvoir adosser à tout ça des skills si"
+    },
+    {
+      "tStartS": 1058.76,
+      "tEndS": 1060.95,
+      "texte": "j'en ai besoin pour rédiger des éléments"
+    },
+    {
+      "tStartS": 1060.96,
+      "tEndS": 1062.59,
+      "texte": "d'une certaine manière. Et en plus de"
+    },
+    {
+      "tStartS": 1062.6,
+      "tEndS": 1064.47,
+      "texte": "ça, à l'intérieur de Cloud, j'ai de la"
+    },
+    {
+      "tStartS": 1064.48,
+      "tEndS": 1066.23,
+      "texte": "mémoire. Donc tous les éléments peuvent"
+    },
+    {
+      "tStartS": 1066.24,
+      "tEndS": 1068.39,
+      "texte": "être suivis et améliorés. Donc en fait,"
+    },
+    {
+      "tStartS": 1068.4,
+      "tEndS": 1070.75,
+      "texte": "je peux déjà à un premier niveau très"
+    },
+    {
+      "tStartS": 1070.76,
+      "tEndS": 1072.47,
+      "texte": "simple créer des premières loopes à"
+    },
+    {
+      "tStartS": 1072.48,
+      "tEndS": 1074.07,
+      "texte": "l'aide de cower. Pour ça, ici, je vous"
+    },
+    {
+      "tStartS": 1074.08,
+      "tEndS": 1075.39,
+      "texte": "montre un petit exemple. J'ai un"
+    },
+    {
+      "tStartS": 1075.4,
+      "tEndS": 1077.35,
+      "texte": "dossier. Ce dossier, il est juste ici."
+    },
+    {
+      "tStartS": 1077.36,
+      "tEndS": 1079.19,
+      "texte": "C'est le rapport de vente Nike. Donc là,"
+    },
+    {
+      "tStartS": 1079.2,
+      "tEndS": 1080.87,
+      "texte": "j'ai un rapport de vente avec différents"
+    },
+    {
+      "tStartS": 1080.88,
+      "tEndS": 1083.07,
+      "texte": "fichiers Excel ventes que j'ai pu avoir"
+    },
+    {
+      "tStartS": 1083.08,
+      "tEndS": 1085.029,
+      "texte": "en 2025. Imaginez par exemple que vous"
+    },
+    {
+      "tStartS": 1085.039,
+      "tEndS": 1086.63,
+      "texte": "deviez mettre à jour ce fichier toutes"
+    },
+    {
+      "tStartS": 1086.64,
+      "tEndS": 1088.39,
+      "texte": "les semaines. Et bien pour ça, vous avez"
+    },
+    {
+      "tStartS": 1088.4,
+      "tEndS": 1090.47,
+      "texte": "ici un PowerPoint. Ce PowerPoint, il est"
+    },
+    {
+      "tStartS": 1090.48,
+      "tEndS": 1092.71,
+      "texte": "juste ici et il permet d'analyser toute"
+    },
+    {
+      "tStartS": 1092.72,
+      "tEndS": 1095.149,
+      "texte": "la performance e-commerce de Nike chaque"
+    },
+    {
+      "tStartS": 1095.159,
+      "tEndS": 1096.63,
+      "texte": "semaine. Vous devez le mettre à jour à"
+    },
+    {
+      "tStartS": 1096.64,
+      "tEndS": 1098.63,
+      "texte": "chaque fois. C'est ennuyeux, c'est"
+    },
+    {
+      "tStartS": 1098.64,
+      "tEndS": 1100.43,
+      "texte": "rébarbatif, c'est beaucoup de copiers"
+    },
+    {
+      "tStartS": 1100.44,
+      "tEndS": 1102.47,
+      "texte": "collés. Et bien pour ça ici une loupe"
+    },
+    {
+      "tStartS": 1102.48,
+      "tEndS": 1103.87,
+      "texte": "nous permettrait de le mettre à jour à"
+    },
+    {
+      "tStartS": 1103.88,
+      "tEndS": 1105.029,
+      "texte": "chaque fois que vous en avez besoin."
+    },
+    {
+      "tStartS": 1105.039,
+      "tEndS": 1106.59,
+      "texte": "Pour ça on retourne dans Cowork, on"
+    },
+    {
+      "tStartS": 1106.6,
+      "tEndS": 1108.71,
+      "texte": "sélectionne notre dossier, je choisis un"
+    },
+    {
+      "tStartS": 1108.72,
+      "tEndS": 1110.51,
+      "texte": "dossier et comme ça ici je viens de"
+    },
+    {
+      "tStartS": 1110.52,
+      "tEndS": 1112.11,
+      "texte": "mettre le rapport de vente de Nike. Et"
+    },
+    {
+      "tStartS": 1112.12,
+      "tEndS": 1113.31,
+      "texte": "ce que je vais lui demander de faire,"
+    },
+    {
+      "tStartS": 1113.32,
+      "tEndS": 1115.27,
+      "texte": "c'est chaque lundi à 10h, mets à jour la"
+    },
+    {
+      "tStartS": 1115.28,
+      "tEndS": 1117.11,
+      "texte": "présentation PowerPoint située dans mon"
+    },
+    {
+      "tStartS": 1117.12,
+      "tEndS": 1119.59,
+      "texte": "dossier en utilisant les données des"
+    },
+    {
+      "tStartS": 1119.6,
+      "tEndS": 1121.31,
+      "texte": "fichiers Excel présents dans le dossier"
+    },
+    {
+      "tStartS": 1121.32,
+      "tEndS": 1123.83,
+      "texte": "2006. Donc en fait ici, il va aller"
+    },
+    {
+      "tStartS": 1123.84,
+      "tEndS": 1125.59,
+      "texte": "ouvrir 2006 et prendre toutes les"
+    },
+    {
+      "tStartS": 1125.6,
+      "tEndS": 1127.43,
+      "texte": "nouvelles données pour mettre à jour mes"
+    },
+    {
+      "tStartS": 1127.44,
+      "tEndS": 1129.27,
+      "texte": "slides. Donc là, imaginez qu'à chaque"
+    },
+    {
+      "tStartS": 1129.28,
+      "tEndS": 1130.75,
+      "texte": "fois vous deviez mettre vos nouveaux"
+    },
+    {
+      "tStartS": 1130.76,
+      "tEndS": 1132.83,
+      "texte": "fichiers Excel qui sont mis à jour. Vous"
+    },
+    {
+      "tStartS": 1132.84,
+      "tEndS": 1134.789,
+      "texte": "avez juste à les déposer et la loupe"
+    },
+    {
+      "tStartS": 1134.799,
+      "tEndS": 1136.43,
+      "texte": "ensuite, elle travaillera pour vous. Le"
+    },
+    {
+      "tStartS": 1136.44,
+      "tEndS": 1137.75,
+      "texte": "mieux ici, c'est encore d'être dans du"
+    },
+    {
+      "tStartS": 1137.76,
+      "tEndS": 1139.029,
+      "texte": "drive parce que vous avez même plus"
+    },
+    {
+      "tStartS": 1139.039,
+      "tEndS": 1141.11,
+      "texte": "besoin de déposer les dossiers et on est"
+    },
+    {
+      "tStartS": 1141.12,
+      "tEndS": 1143.27,
+      "texte": "sur une vraie loupe 100 % autonome."
+    },
+    {
+      "tStartS": 1143.28,
+      "tEndS": 1144.75,
+      "texte": "Ensuite, une fois que la présentation"
+    },
+    {
+      "tStartS": 1144.76,
+      "tEndS": 1146.63,
+      "texte": "elle est mise à jour, il va générer la"
+    },
+    {
+      "tStartS": 1146.64,
+      "tEndS": 1148.51,
+      "texte": "nouvelle version du PowerPoint. il va"
+    },
+    {
+      "tStartS": 1148.52,
+      "tEndS": 1150.789,
+      "texte": "aller rédiger un mail pour moi. Donc là"
+    },
+    {
+      "tStartS": 1150.799,
+      "tEndS": 1152.23,
+      "texte": "par exemple, on pourrait avoir des"
+    },
+    {
+      "tStartS": 1152.24,
+      "tEndS": 1154.31,
+      "texte": "connecteurs, des outils avec Gmail. Dans"
+    },
+    {
+      "tStartS": 1154.32,
+      "tEndS": 1155.549,
+      "texte": "le corps du mail, il présente les"
+    },
+    {
+      "tStartS": 1155.559,
+      "tEndS": 1157.549,
+      "texte": "résultats principaux puis il prépare le"
+    },
+    {
+      "tStartS": 1157.559,
+      "tEndS": 1159.59,
+      "texte": "mail pour qu'il soit prêt à être envoyé."
+    },
+    {
+      "tStartS": 1159.6,
+      "tEndS": 1161.75,
+      "texte": "Et de là et bien regardez, chaque lundi"
+    },
+    {
+      "tStartS": 1161.76,
+      "tEndS": 1163.909,
+      "texte": "à 10h, c'est ce qui va permettre d'avoir"
+    },
+    {
+      "tStartS": 1163.919,
+      "tEndS": 1165.71,
+      "texte": "toute l'automatisation. Et de là, c'est"
+    },
+    {
+      "tStartS": 1165.72,
+      "tEndS": 1168.149,
+      "texte": "parti. Et en ayant ici chaque lundi à"
+    },
+    {
+      "tStartS": 1168.159,
+      "tEndS": 1170.83,
+      "texte": "10h, voilà, il voit que c'est une tâche"
+    },
+    {
+      "tStartS": 1170.84,
+      "tEndS": 1172.99,
+      "texte": "récurrente. Donc à la fin, quand il aura"
+    },
+    {
+      "tStartS": 1173,
+      "tEndS": 1174.87,
+      "texte": "terminé, bah finalement, on va avoir une"
+    },
+    {
+      "tStartS": 1174.88,
+      "tEndS": 1176.87,
+      "texte": "loupe qui va tourner tous les lundis à"
+    },
+    {
+      "tStartS": 1176.88,
+      "tEndS": 1179.669,
+      "texte": "10h sans mois. Il sait où les fichiers"
+    },
+    {
+      "tStartS": 1179.679,
+      "tEndS": 1181.149,
+      "texte": "Excel se trouvent, il sait où le"
+    },
+    {
+      "tStartS": 1181.159,
+      "tEndS": 1182.95,
+      "texte": "PowerPoint se trouve, il sait qu'il doit"
+    },
+    {
+      "tStartS": 1182.96,
+      "tEndS": 1185.43,
+      "texte": "faire un mail. Et bien ça va tourner en"
+    },
+    {
+      "tStartS": 1185.44,
+      "tEndS": 1187.31,
+      "texte": "permanence et ça permettrait de créer"
+    },
+    {
+      "tStartS": 1187.32,
+      "tEndS": 1190.149,
+      "texte": "déjà une première loupe très simple ici."
+    },
+    {
+      "tStartS": 1190.159,
+      "tEndS": 1191.789,
+      "texte": "Après quelques minutes, si vous regardez"
+    },
+    {
+      "tStartS": 1191.799,
+      "tEndS": 1193.35,
+      "texte": "bien, il avait donc bien compris comme"
+    },
+    {
+      "tStartS": 1193.36,
+      "tEndS": 1195.43,
+      "texte": "on l'a vu que c'est une tâche récurrent."
+    },
+    {
+      "tStartS": 1195.44,
+      "tEndS": 1197.669,
+      "texte": "Il a analysé le dossier ici, il m'a"
+    },
+    {
+      "tStartS": 1197.679,
+      "tEndS": 1199.87,
+      "texte": "demandé une validation. Est-ce que j'ai"
+    },
+    {
+      "tStartS": 1199.88,
+      "tEndS": 1201.35,
+      "texte": "besoin d'avoir ça du coup toutes les"
+    },
+    {
+      "tStartS": 1201.36,
+      "tEndS": 1202.59,
+      "texte": "semaines ? Moi, j'ai donné ma"
+    },
+    {
+      "tStartS": 1202.6,
+      "tEndS": 1204.669,
+      "texte": "validation. Il a fait toute l'analyse,"
+    },
+    {
+      "tStartS": 1204.679,
+      "tEndS": 1206.63,
+      "texte": "il a la structure exacte de tous les"
+    },
+    {
+      "tStartS": 1206.64,
+      "tEndS": 1208.31,
+      "texte": "graphiques dans le PowerPoint et de"
+    },
+    {
+      "tStartS": 1208.32,
+      "tEndS": 1209.99,
+      "texte": "comment le mettre à jour. Le script"
+    },
+    {
+      "tStartS": 1210,
+      "tEndS": 1211.75,
+      "texte": "tourne sans erreur, il a réussi à faire"
+    },
+    {
+      "tStartS": 1211.76,
+      "tEndS": 1213.909,
+      "texte": "un test lui-même pour voir les résultats"
+    },
+    {
+      "tStartS": 1213.919,
+      "tEndS": 1216.59,
+      "texte": "et il a bien planifié une tâche pour la"
+    },
+    {
+      "tStartS": 1216.6,
+      "tEndS": 1218.75,
+      "texte": "faire tourner chaque lundi. Il a analysé"
+    },
+    {
+      "tStartS": 1218.76,
+      "tEndS": 1220.87,
+      "texte": "la structure, il a tous les éléments. La"
+    },
+    {
+      "tStartS": 1220.88,
+      "tEndS": 1222.549,
+      "texte": "prochaine exécution, elle est prévue le"
+    },
+    {
+      "tStartS": 1222.559,
+      "tEndS": 1225.029,
+      "texte": "lundi 20 juillet à 10h. Moi, si je"
+    },
+    {
+      "tStartS": 1225.039,
+      "tEndS": 1227.35,
+      "texte": "reviens ici dans les tâches programmées,"
+    },
+    {
+      "tStartS": 1227.36,
+      "tEndS": 1228.95,
+      "texte": "on peut voir ici que j'ai mon rapport"
+    },
+    {
+      "tStartS": 1228.96,
+      "tEndS": 1231.27,
+      "texte": "hebdomadaire PowerPoint plus email qui"
+    },
+    {
+      "tStartS": 1231.28,
+      "tEndS": 1232.87,
+      "texte": "est prévu à chaque fois. Donc, il"
+    },
+    {
+      "tStartS": 1232.88,
+      "tEndS": 1234.11,
+      "texte": "pourrait mettre à jour comme ça mes"
+    },
+    {
+      "tStartS": 1234.12,
+      "tEndS": 1235.63,
+      "texte": "tâches et moi, j'aurais juste ensuite"
+    },
+    {
+      "tStartS": 1235.64,
+      "tEndS": 1237.43,
+      "texte": "aller présenter ça par exemple dans un"
+    },
+    {
+      "tStartS": 1237.44,
+      "tEndS": 1239.23,
+      "texte": "comité de direction. Si je veux, je peux"
+    },
+    {
+      "tStartS": 1239.24,
+      "tEndS": 1241.029,
+      "texte": "quand même exécuter ici la tâche une"
+    },
+    {
+      "tStartS": 1241.039,
+      "tEndS": 1242.95,
+      "texte": "fois pour voir le rendu. Ici, on voit"
+    },
+    {
+      "tStartS": 1242.96,
+      "tEndS": 1244.75,
+      "texte": "que la tâche vient de se lancer, ce qui"
+    },
+    {
+      "tStartS": 1244.76,
+      "tEndS": 1246.149,
+      "texte": "me permet quand même de faire des tests"
+    },
+    {
+      "tStartS": 1246.159,
+      "tEndS": 1247.83,
+      "texte": "et de s'assurer de la bonne qualité des"
+    },
+    {
+      "tStartS": 1247.84,
+      "tEndS": 1249.029,
+      "texte": "résultats. Et donc, comme on peut le"
+    },
+    {
+      "tStartS": 1249.039,
+      "tEndS": 1251.23,
+      "texte": "voir ici, il a terminé toute la mise à"
+    },
+    {
+      "tStartS": 1251.24,
+      "tEndS": 1252.71,
+      "texte": "jour du fichier avec les données de"
+    },
+    {
+      "tStartS": 1252.72,
+      "tEndS": 1254.35,
+      "texte": "2026. Donc, en fait, c'est comme s'il se"
+    },
+    {
+      "tStartS": 1254.36,
+      "tEndS": 1256.27,
+      "texte": "mettait à jour tous les lundis, il"
+    },
+    {
+      "tStartS": 1256.28,
+      "tEndS": 1258.39,
+      "texte": "vient, il récupère les informations. Et"
+    },
+    {
+      "tStartS": 1258.4,
+      "tEndS": 1260.75,
+      "texte": "si vous regardez ici en haut à droite en"
+    },
+    {
+      "tStartS": 1260.76,
+      "tEndS": 1262.63,
+      "texte": "sortie, j'ai un PowerPoint qui a été"
+    },
+    {
+      "tStartS": 1262.64,
+      "tEndS": 1264.71,
+      "texte": "mise à jour. Là, on était sur 2025, on"
+    },
+    {
+      "tStartS": 1264.72,
+      "tEndS": 1267.31,
+      "texte": "passe sur 2026 et tous les chiffres ici"
+    },
+    {
+      "tStartS": 1267.32,
+      "tEndS": 1268.669,
+      "texte": "ont été actualisés, ce qui me"
+    },
+    {
+      "tStartS": 1268.679,
+      "tEndS": 1270.269,
+      "texte": "permettrait comme ça d'automatiser"
+    },
+    {
+      "tStartS": 1270.279,
+      "tEndS": 1272.59,
+      "texte": "encore une fois tout ce reporting. Et"
+    },
+    {
+      "tStartS": 1272.6,
+      "tEndS": 1274.43,
+      "texte": "après, comme je l'ai dit, on peut lui"
+    },
+    {
+      "tStartS": 1274.44,
+      "tEndS": 1276.95,
+      "texte": "faire générer un email en brouillon avec"
+    },
+    {
+      "tStartS": 1276.96,
+      "tEndS": 1279.35,
+      "texte": "ce document en pièce jointe et ainsi"
+    },
+    {
+      "tStartS": 1279.36,
+      "tEndS": 1281.31,
+      "texte": "envoyer l'email avec tous les éléments"
+    },
+    {
+      "tStartS": 1281.32,
+      "tEndS": 1283.789,
+      "texte": "et ça automatische. Je fais juste une"
+    },
+    {
+      "tStartS": 1283.799,
+      "tEndS": 1285.47,
+      "texte": "très courte pause dans la vidéo de moins"
+    },
+    {
+      "tStartS": 1285.48,
+      "tEndS": 1287.029,
+      "texte": "d'une minute, mais c'est important pour"
+    },
+    {
+      "tStartS": 1287.039,
+      "tEndS": 1288.549,
+      "texte": "celles et ceux qui veulent aller encore"
+    },
+    {
+      "tStartS": 1288.559,
+      "tEndS": 1290.39,
+      "texte": "plus loin dans leur maîtrise de Lia. À"
+    },
+    {
+      "tStartS": 1290.4,
+      "tEndS": 1291.87,
+      "texte": "mes côtés, vous retrouvez en description"
+    },
+    {
+      "tStartS": 1291.88,
+      "tEndS": 1293.47,
+      "texte": "de cette vidéo deux ressources qui"
+    },
+    {
+      "tStartS": 1293.48,
+      "tEndS": 1295.029,
+      "texte": "peuvent vous aider. La première, c'est"
+    },
+    {
+      "tStartS": 1295.039,
+      "tEndS": 1297.07,
+      "texte": "vers mon guide les 7 jours de l'IA."
+    },
+    {
+      "tStartS": 1297.08,
+      "tEndS": 1298.71,
+      "texte": "C'est un guide que j'ai conçu pour vous"
+    },
+    {
+      "tStartS": 1298.72,
+      "tEndS": 1300.35,
+      "texte": "permettre d'intégrer toutes les bases de"
+    },
+    {
+      "tStartS": 1300.36,
+      "tEndS": 1302.43,
+      "texte": "l'IA en seulement 7 jours à mes côtés."
+    },
+    {
+      "tStartS": 1302.44,
+      "tEndS": 1304.59,
+      "texte": "Chaque jour, vous recevez une ressource"
+    },
+    {
+      "tStartS": 1304.6,
+      "tEndS": 1306.149,
+      "texte": "exclusive qui va vous permettre de"
+    },
+    {
+      "tStartS": 1306.159,
+      "tEndS": 1307.95,
+      "texte": "progresser, que ça soit pour créer vos"
+    },
+    {
+      "tStartS": 1307.96,
+      "tEndS": 1309.51,
+      "texte": "agents IA, pour comprendre les"
+    },
+    {
+      "tStartS": 1309.52,
+      "tEndS": 1310.789,
+      "texte": "meilleures techniques de prompt"
+    },
+    {
+      "tStartS": 1310.799,
+      "tEndS": 1312.71,
+      "texte": "engineering, pour avoir accès à ma"
+    },
+    {
+      "tStartS": 1312.72,
+      "tEndS": 1314.63,
+      "texte": "communauté avec plus de 8000 membres."
+    },
+    {
+      "tStartS": 1314.64,
+      "tEndS": 1316.47,
+      "texte": "Bref, vous recevez chaque jour un"
+    },
+    {
+      "tStartS": 1316.48,
+      "tEndS": 1318.23,
+      "texte": "contenu exclusif par mail. Pour y avoir"
+    },
+    {
+      "tStartS": 1318.24,
+      "tEndS": 1319.95,
+      "texte": "accès, ce guide, il est totalement"
+    },
+    {
+      "tStartS": 1319.96,
+      "tEndS": 1321.75,
+      "texte": "gratuit. Vous avez juste à venir ici,"
+    },
+    {
+      "tStartS": 1321.76,
+      "tEndS": 1323.75,
+      "texte": "taper votre mail, vous cochez cette case"
+    },
+    {
+      "tStartS": 1323.76,
+      "tEndS": 1325.39,
+      "texte": "et vous appuyez sur ce bouton. Et à"
+    },
+    {
+      "tStartS": 1325.4,
+      "tEndS": 1327.149,
+      "texte": "partir de là, vous voilà embarquer dans"
+    },
+    {
+      "tStartS": 1327.159,
+      "tEndS": 1328.87,
+      "texte": "les 7 jours de lire et vous recevrez"
+    },
+    {
+      "tStartS": 1328.88,
+      "tEndS": 1330.549,
+      "texte": "directement le contenu de la première"
+    },
+    {
+      "tStartS": 1330.559,
+      "tEndS": 1332.029,
+      "texte": "journée. Mais en plus de ça, je sais que"
+    },
+    {
+      "tStartS": 1332.039,
+      "tEndS": 1334.11,
+      "texte": "vous êtes nombreux à vouloir automatiser"
+    },
+    {
+      "tStartS": 1334.12,
+      "tEndS": 1336.19,
+      "texte": "un maximum de tâches à l'aide de l'IA."
+    },
+    {
+      "tStartS": 1336.2,
+      "tEndS": 1337.19,
+      "texte": "Et comme vous pouvez le voir dans cette"
+    },
+    {
+      "tStartS": 1337.2,
+      "tEndS": 1338.789,
+      "texte": "vidéo, je suis vraiment en mesure de"
+    },
+    {
+      "tStartS": 1338.799,
+      "tEndS": 1340.23,
+      "texte": "vous aider. Et bien pour ça, vous"
+    },
+    {
+      "tStartS": 1340.24,
+      "tEndS": 1341.83,
+      "texte": "retrouvez aussi en description de cette"
+    },
+    {
+      "tStartS": 1341.84,
+      "tEndS": 1344.07,
+      "texte": "vidéo le lien de présentation de ma"
+    },
+    {
+      "tStartS": 1344.08,
+      "tEndS": 1345.83,
+      "texte": "masterclass IA Master. Cette"
+    },
+    {
+      "tStartS": 1345.84,
+      "tEndS": 1347.51,
+      "texte": "masterclass, c'est une référence en"
+    },
+    {
+      "tStartS": 1347.52,
+      "tEndS": 1349.43,
+      "texte": "France. C'est la seule masterclass qui"
+    },
+    {
+      "tStartS": 1349.44,
+      "tEndS": 1351.23,
+      "texte": "vous forme à toutes les compétences"
+    },
+    {
+      "tStartS": 1351.24,
+      "tEndS": 1353.23,
+      "texte": "indispensables à l'air de l'IA. Prompt"
+    },
+    {
+      "tStartS": 1353.24,
+      "tEndS": 1355.19,
+      "texte": "engineering, vibe coding, context"
+    },
+    {
+      "tStartS": 1355.2,
+      "tEndS": 1356.789,
+      "texte": "engineering, tous ces termes, vous les"
+    },
+    {
+      "tStartS": 1356.799,
+      "tEndS": 1358.909,
+      "texte": "maîtrisez et vous savez les utiliser. Et"
+    },
+    {
+      "tStartS": 1358.919,
+      "tEndS": 1361.029,
+      "texte": "pour les utiliser, il faut maîtriser les"
+    },
+    {
+      "tStartS": 1361.039,
+      "tEndS": 1363.029,
+      "texte": "meilleurs I du marché. Et bien pour ça,"
+    },
+    {
+      "tStartS": 1363.039,
+      "tEndS": 1365.269,
+      "texte": "la masterclass vous forme aussi à toutes"
+    },
+    {
+      "tStartS": 1365.279,
+      "tEndS": 1367.19,
+      "texte": "les meilleures I du marché. Chat JPT,"
+    },
+    {
+      "tStartS": 1367.2,
+      "tEndS": 1369.83,
+      "texte": "Jimmy Cloud, Perplexity, Microsoft"
+    },
+    {
+      "tStartS": 1369.84,
+      "tEndS": 1371.75,
+      "texte": "Copilote. À la fin, vous maîtrisez"
+    },
+    {
+      "tStartS": 1371.76,
+      "tEndS": 1373.35,
+      "texte": "toutes ces solutions. Mais surtout en ce"
+    },
+    {
+      "tStartS": 1373.36,
+      "tEndS": 1375.19,
+      "texte": "moment, il y a une énorme révolution."
+    },
+    {
+      "tStartS": 1375.2,
+      "tEndS": 1376.909,
+      "texte": "les agents et bien à l'intérieur de"
+    },
+    {
+      "tStartS": 1376.919,
+      "tEndS": 1378.47,
+      "texte": "cette masterclass, vous avez aussi tout"
+    },
+    {
+      "tStartS": 1378.48,
+      "tEndS": 1380.35,
+      "texte": "un module pour vous permettre de créer à"
+    },
+    {
+      "tStartS": 1380.36,
+      "tEndS": 1382.35,
+      "texte": "mes côtés vos premiers agents I. Vous"
+    },
+    {
+      "tStartS": 1382.36,
+      "tEndS": 1383.59,
+      "texte": "retrouvez aussi sur la page de"
+    },
+    {
+      "tStartS": 1383.6,
+      "tEndS": 1384.99,
+      "texte": "présentation les témoignages des"
+    },
+    {
+      "tStartS": 1385,
+      "tEndS": 1386.669,
+      "texte": "personnes qui ont participé à cette"
+    },
+    {
+      "tStartS": 1386.679,
+      "tEndS": 1388.35,
+      "texte": "masterclass. Il y a plus de 32000"
+    },
+    {
+      "tStartS": 1388.36,
+      "tEndS": 1390.029,
+      "texte": "personnes qui ont participé depuis son"
+    },
+    {
+      "tStartS": 1390.039,
+      "tEndS": 1391.47,
+      "texte": "lancement. Cette masterclass, faut"
+    },
+    {
+      "tStartS": 1391.48,
+      "tEndS": 1392.909,
+      "texte": "savoir qu'elle est ouverte à tous, peu"
+    },
+    {
+      "tStartS": 1392.919,
+      "tEndS": 1394.11,
+      "texte": "importe votre niveau technique. La"
+    },
+    {
+      "tStartS": 1394.12,
+      "tEndS": 1395.19,
+      "texte": "montée en compétence, elle est"
+    },
+    {
+      "tStartS": 1395.2,
+      "tEndS": 1397.47,
+      "texte": "progressive. On apprend à votre rythme."
+    },
+    {
+      "tStartS": 1397.48,
+      "tEndS": 1398.909,
+      "texte": "Vous pouvez mettre pause, revenir un"
+    },
+    {
+      "tStartS": 1398.919,
+      "tEndS": 1400.43,
+      "texte": "petit peu plus tard comme sur une série"
+    },
+    {
+      "tStartS": 1400.44,
+      "tEndS": 1402.39,
+      "texte": "Netflix. Moi par contre, je m'engage à"
+    },
+    {
+      "tStartS": 1402.4,
+      "tEndS": 1404.39,
+      "texte": "une chose. L'IA ça évolue extrêmement"
+    },
+    {
+      "tStartS": 1404.4,
+      "tEndS": 1405.83,
+      "texte": "vite. Vous l'aurez sans doute remarqué."
+    },
+    {
+      "tStartS": 1405.84,
+      "tEndS": 1407.71,
+      "texte": "Et bien pour ça, je m'engage à mettre à"
+    },
+    {
+      "tStartS": 1407.72,
+      "tEndS": 1409.71,
+      "texte": "jour la masterclass tous les mois avec"
+    },
+    {
+      "tStartS": 1409.72,
+      "tEndS": 1410.83,
+      "texte": "des nouveaux contenus. Et bien"
+    },
+    {
+      "tStartS": 1410.84,
+      "tEndS": 1412.43,
+      "texte": "évidemment, à partir du moment où vous"
+    },
+    {
+      "tStartS": 1412.44,
+      "tEndS": 1414.51,
+      "texte": "la rejoignez, vous en avez un accès à"
+    },
+    {
+      "tStartS": 1414.52,
+      "tEndS": 1416.23,
+      "texte": "vie. Donc vous bénéficiez de toutes ces"
+    },
+    {
+      "tStartS": 1416.24,
+      "tEndS": 1417.59,
+      "texte": "mises à jour. Donc n'hésitez pas à"
+    },
+    {
+      "tStartS": 1417.6,
+      "tEndS": 1419.51,
+      "texte": "découvrir ces deux liens en description"
+    },
+    {
+      "tStartS": 1419.52,
+      "tEndS": 1421.19,
+      "texte": "de la vidéo. Mais je sais, vous voulez"
+    },
+    {
+      "tStartS": 1421.2,
+      "tEndS": 1422.669,
+      "texte": "certainement aller beaucoup plus loin"
+    },
+    {
+      "tStartS": 1422.679,
+      "tEndS": 1424.47,
+      "texte": "dans les loupes. Et bien pour ça, je"
+    },
+    {
+      "tStartS": 1424.48,
+      "tEndS": 1426.909,
+      "texte": "vous rassure, j'ai prévu un scénario"
+    },
+    {
+      "tStartS": 1426.919,
+      "tEndS": 1428.51,
+      "texte": "beaucoup plus poussé. On va pouvoir"
+    },
+    {
+      "tStartS": 1428.52,
+      "tEndS": 1430.669,
+      "texte": "créer toute une équipe d'agent IA qui va"
+    },
+    {
+      "tStartS": 1430.679,
+      "tEndS": 1432.71,
+      "texte": "fonctionner en parfaite autonomie à"
+    },
+    {
+      "tStartS": 1432.72,
+      "tEndS": 1434.43,
+      "texte": "l'intérieur d'une loupe. Et pour ça,"
+    },
+    {
+      "tStartS": 1434.44,
+      "tEndS": 1436.39,
+      "texte": "j'ai choisi un cas client concret. Ce"
+    },
+    {
+      "tStartS": 1436.4,
+      "tEndS": 1438.149,
+      "texte": "cas client, c'est Trade Republic. Et"
+    },
+    {
+      "tStartS": 1438.159,
+      "tEndS": 1440.149,
+      "texte": "pour ça, on va imaginer ensemble qu'on"
+    },
+    {
+      "tStartS": 1440.159,
+      "tEndS": 1442.029,
+      "texte": "travaille dans l'équipe marketing de"
+    },
+    {
+      "tStartS": 1442.039,
+      "tEndS": 1443.87,
+      "texte": "Trade Republic et qu'on veut créer une"
+    },
+    {
+      "tStartS": 1443.88,
+      "tEndS": 1445.669,
+      "texte": "loupe d'agents qui fonctionne"
+    },
+    {
+      "tStartS": 1445.679,
+      "tEndS": 1448.51,
+      "texte": "automatiquement pour créer nos posts sur"
+    },
+    {
+      "tStartS": 1448.52,
+      "tEndS": 1450.75,
+      "texte": "Instagram, le texte qui accompagne le"
+    },
+    {
+      "tStartS": 1450.76,
+      "tEndS": 1452.83,
+      "texte": "poste et ce de manière automatique sur"
+    },
+    {
+      "tStartS": 1452.84,
+      "tEndS": 1454.83,
+      "texte": "les sujets les plus tendants. Pour ça,"
+    },
+    {
+      "tStartS": 1454.84,
+      "tEndS": 1456.43,
+      "texte": "ici, qu'est-ce que j'ai construit ? J'ai"
+    },
+    {
+      "tStartS": 1456.44,
+      "tEndS": 1458.63,
+      "texte": "construit ce système que vous voyez là."
+    },
+    {
+      "tStartS": 1458.64,
+      "tEndS": 1460.23,
+      "texte": "À l'intérieur de ce système déjà,"
+    },
+    {
+      "tStartS": 1460.24,
+      "tEndS": 1462.07,
+      "texte": "qu'est-ce qui va permettre de déclencher"
+    },
+    {
+      "tStartS": 1462.08,
+      "tEndS": 1464.95,
+      "texte": "la loupe ? Donc d'avoir le heit ici tous"
+    },
+    {
+      "tStartS": 1464.96,
+      "tEndS": 1467.99,
+      "texte": "les lundis à 9h, je veux une veille du"
+    },
+    {
+      "tStartS": 1468,
+      "tEndS": 1470.23,
+      "texte": "secteur de la finance pour identifier"
+    },
+    {
+      "tStartS": 1470.24,
+      "tEndS": 1472.71,
+      "texte": "l'IPO le plus intéressant de la semaine"
+    },
+    {
+      "tStartS": 1472.72,
+      "tEndS": 1475.07,
+      "texte": "ou bien un énorme mouvement de marché,"
+    },
+    {
+      "tStartS": 1475.08,
+      "tEndS": 1476.99,
+      "texte": "une crise, une opportunité, un"
+    },
+    {
+      "tStartS": 1477,
+      "tEndS": 1478.75,
+      "texte": "changement politique. Tous ces aspects"
+    },
+    {
+      "tStartS": 1478.76,
+      "tEndS": 1480.35,
+      "texte": "là, pour moi, ils sont importants pour"
+    },
+    {
+      "tStartS": 1480.36,
+      "tEndS": 1482.149,
+      "texte": "en faire un post Instagram. Parce que si"
+    },
+    {
+      "tStartS": 1482.159,
+      "tEndS": 1483.909,
+      "texte": "vous regardez ici sur la page Instagram"
+    },
+    {
+      "tStartS": 1483.919,
+      "tEndS": 1485.71,
+      "texte": "de Trade Republic, il partage les"
+    },
+    {
+      "tStartS": 1485.72,
+      "tEndS": 1487.269,
+      "texte": "investissements de Donald Trump, les"
+    },
+    {
+      "tStartS": 1487.279,
+      "tEndS": 1489.669,
+      "texte": "nouveautés de marché ici, un cas sur une"
+    },
+    {
+      "tStartS": 1489.679,
+      "tEndS": 1491.87,
+      "texte": "entreprise en particulier Samsung, le"
+    },
+    {
+      "tStartS": 1491.88,
+      "tEndS": 1494.59,
+      "texte": "marché ici du pétrole. Ils prennent des"
+    },
+    {
+      "tStartS": 1494.6,
+      "tEndS": 1496.71,
+      "texte": "sujets très spécifiques. Ici la"
+    },
+    {
+      "tStartS": 1496.72,
+      "tEndS": 1498.99,
+      "texte": "croissance de l'action take to qui"
+    },
+    {
+      "tStartS": 1499,
+      "tEndS": 1501.51,
+      "texte": "produit GTA 6, les nouvelles entrées en"
+    },
+    {
+      "tStartS": 1501.52,
+      "tEndS": 1504.59,
+      "texte": "bourse, par exemple ici avec SpaceX ou"
+    },
+    {
+      "tStartS": 1504.6,
+      "tEndS": 1506.99,
+      "texte": "bien avec Anthropic. Bref, tous ces"
+    },
+    {
+      "tStartS": 1507,
+      "tEndS": 1508.87,
+      "texte": "éléments-là, c'est ce qu'on va essayer"
+    },
+    {
+      "tStartS": 1508.88,
+      "tEndS": 1511.07,
+      "texte": "de créer à l'aide de ce système pour"
+    },
+    {
+      "tStartS": 1511.08,
+      "tEndS": 1512.99,
+      "texte": "avoir des posts LinkedIn qui ressemblent"
+    },
+    {
+      "tStartS": 1513,
+      "tEndS": 1515.47,
+      "texte": "exactement à ceux qu'on a juste ici sur"
+    },
+    {
+      "tStartS": 1515.48,
+      "tEndS": 1518.11,
+      "texte": "des sujets précis de manière 100 %"
+    },
+    {
+      "tStartS": 1518.12,
+      "tEndS": 1519.87,
+      "texte": "automatisée. À partir de là, à la fin,"
+    },
+    {
+      "tStartS": 1519.88,
+      "tEndS": 1521.269,
+      "texte": "la loupe qu'on va créer, elle"
+    },
+    {
+      "tStartS": 1521.279,
+      "tEndS": 1523.549,
+      "texte": "permettrait de poster à chaque fois des"
+    },
+    {
+      "tStartS": 1523.559,
+      "tEndS": 1525.95,
+      "texte": "posts Instagram à ma place sans que j'ai"
+    },
+    {
+      "tStartS": 1525.96,
+      "tEndS": 1527.43,
+      "texte": "à m'en occuper. Elle fait ça en fait"
+    },
+    {
+      "tStartS": 1527.44,
+      "tEndS": 1530.07,
+      "texte": "parce qu'ici, j'ai un Instagram manager,"
+    },
+    {
+      "tStartS": 1530.08,
+      "tEndS": 1531.75,
+      "texte": "c'est mon planificateur, mon"
+    },
+    {
+      "tStartS": 1531.76,
+      "tEndS": 1534.19,
+      "texte": "orchestrateur à l'intérieur du système."
+    },
+    {
+      "tStartS": 1534.2,
+      "tEndS": 1536.51,
+      "texte": "Lui, il va répartir les tâches sur les"
+    },
+    {
+      "tStartS": 1536.52,
+      "tEndS": 1538.71,
+      "texte": "sub agents. Pour ça, lui, il se"
+    },
+    {
+      "tStartS": 1538.72,
+      "tEndS": 1541.07,
+      "texte": "déclenche tous les lundis à 9h pour"
+    },
+    {
+      "tStartS": 1541.08,
+      "tEndS": 1542.75,
+      "texte": "lancer la veille. Il va appeler à chaque"
+    },
+    {
+      "tStartS": 1542.76,
+      "tEndS": 1545.83,
+      "texte": "fois le Finance Trade Agent qui est en"
+    },
+    {
+      "tStartS": 1545.84,
+      "tEndS": 1548.19,
+      "texte": "fait un agent connecté avec des outils."
+    },
+    {
+      "tStartS": 1548.2,
+      "tEndS": 1550.149,
+      "texte": "Ces outils, c'est Perplexity. Il va"
+    },
+    {
+      "tStartS": 1550.159,
+      "tEndS": 1552.07,
+      "texte": "aller voir sur Perplexity quel est le"
+    },
+    {
+      "tStartS": 1552.08,
+      "tEndS": 1554.909,
+      "texte": "sujet finance le plus pertinent en"
+    },
+    {
+      "tStartS": 1554.919,
+      "tEndS": 1557.43,
+      "texte": "France à analyser et sur lequel il faut"
+    },
+    {
+      "tStartS": 1557.44,
+      "tEndS": 1559.47,
+      "texte": "communiquer cette semaine. Pour ça, donc"
+    },
+    {
+      "tStartS": 1559.48,
+      "tEndS": 1561.75,
+      "texte": "mon orchestrateur lance l'agent. À la"
+    },
+    {
+      "tStartS": 1561.76,
+      "tEndS": 1563.75,
+      "texte": "fin, il a identifié un sujet. Il donne"
+    },
+    {
+      "tStartS": 1563.76,
+      "tEndS": 1566.19,
+      "texte": "ce sujet ensuite au copywritter. Le"
+    },
+    {
+      "tStartS": 1566.2,
+      "tEndS": 1568.269,
+      "texte": "copywritter, lui, c'est l'expert pour"
+    },
+    {
+      "tStartS": 1568.279,
+      "tEndS": 1570.59,
+      "texte": "écrire la description Instagram avec les"
+    },
+    {
+      "tStartS": 1570.6,
+      "tEndS": 1572.63,
+      "texte": "bons mots clés qui va bien en lien avec"
+    },
+    {
+      "tStartS": 1572.64,
+      "tEndS": 1574.23,
+      "texte": "ce sujet. Et bien évidemment, il"
+    },
+    {
+      "tStartS": 1574.24,
+      "tEndS": 1576.71,
+      "texte": "reproduit à l'identique les messages"
+    },
+    {
+      "tStartS": 1576.72,
+      "tEndS": 1579.11,
+      "texte": "qu'on a déjà sur l'Instagram de Trade"
+    },
+    {
+      "tStartS": 1579.12,
+      "tEndS": 1580.669,
+      "texte": "Republic. Comment j'ai fait ça ? Et"
+    },
+    {
+      "tStartS": 1580.679,
+      "tEndS": 1582.11,
+      "texte": "bien, vous allez voir, je vais entraîner"
+    },
+    {
+      "tStartS": 1582.12,
+      "tEndS": 1584.51,
+      "texte": "une skill qu'on va appeler ADN text qui"
+    },
+    {
+      "tStartS": 1584.52,
+      "tEndS": 1586.389,
+      "texte": "comprend basé sur tous les posts"
+    },
+    {
+      "tStartS": 1586.399,
+      "tEndS": 1588.11,
+      "texte": "Instagram de Trade Republic comment ils"
+    },
+    {
+      "tStartS": 1588.12,
+      "tEndS": 1589.75,
+      "texte": "sont rédigés. Et enfin, j'ai un dernier"
+    },
+    {
+      "tStartS": 1589.76,
+      "tEndS": 1592.149,
+      "texte": "subagent qui lui est spécialisé dans la"
+    },
+    {
+      "tStartS": 1592.159,
+      "tEndS": 1594.389,
+      "texte": "création de l'image seulement. Pour ça,"
+    },
+    {
+      "tStartS": 1594.399,
+      "tEndS": 1596.75,
+      "texte": "lui aussi, il a été entraîné. Il a été"
+    },
+    {
+      "tStartS": 1596.76,
+      "tEndS": 1598.59,
+      "texte": "entraîné sur les posts Instagram que"
+    },
+    {
+      "tStartS": 1598.6,
+      "tEndS": 1600.789,
+      "texte": "j'ai récupéré directement sur le compte"
+    },
+    {
+      "tStartS": 1600.799,
+      "tEndS": 1602.23,
+      "texte": "de Trade Republic. Et pour créer"
+    },
+    {
+      "tStartS": 1602.24,
+      "tEndS": 1604.51,
+      "texte": "l'image, il a un outil, il a un nano"
+    },
+    {
+      "tStartS": 1604.52,
+      "tEndS": 1606.31,
+      "texte": "banana qui lui permet de comprendre"
+    },
+    {
+      "tStartS": 1606.32,
+      "tEndS": 1607.71,
+      "texte": "comment est-ce qu'il doit créer et"
+    },
+    {
+      "tStartS": 1607.72,
+      "tEndS": 1609.07,
+      "texte": "d'avoir un bon outil de génération"
+    },
+    {
+      "tStartS": 1609.08,
+      "tEndS": 1610.909,
+      "texte": "d'images. Une fois qu'ils ont ça, ils"
+    },
+    {
+      "tStartS": 1610.919,
+      "tEndS": 1612.31,
+      "texte": "sont capables de me générer tous les"
+    },
+    {
+      "tStartS": 1612.32,
+      "tEndS": 1614.11,
+      "texte": "éléments, ils les remontent à"
+    },
+    {
+      "tStartS": 1614.12,
+      "tEndS": 1616.71,
+      "texte": "l'Instagram manager qui me présente le"
+    },
+    {
+      "tStartS": 1616.72,
+      "tEndS": 1618.59,
+      "texte": "résultat. Bien évidemment, ici, j'ai"
+    },
+    {
+      "tStartS": 1618.6,
+      "tEndS": 1620.87,
+      "texte": "choisi de me présenter le résultat. Si"
+    },
+    {
+      "tStartS": 1620.88,
+      "tEndS": 1622.789,
+      "texte": "on voulait aller encore plus loin, je"
+    },
+    {
+      "tStartS": 1622.799,
+      "tEndS": 1624.669,
+      "texte": "pourrais connecter un autre outil qui me"
+    },
+    {
+      "tStartS": 1624.679,
+      "tEndS": 1626.909,
+      "texte": "permettrait de poster directement ça sur"
+    },
+    {
+      "tStartS": 1626.919,
+      "tEndS": 1629.549,
+      "texte": "Instagram automatiquement, mais là, j'ai"
+    },
+    {
+      "tStartS": 1629.559,
+      "tEndS": 1631.549,
+      "texte": "préféré m'arrêter pour pouvoir voir le"
+    },
+    {
+      "tStartS": 1631.559,
+      "tEndS": 1633.51,
+      "texte": "résultat avec vous avant de le publier."
+    },
+    {
+      "tStartS": 1633.52,
+      "tEndS": 1634.87,
+      "texte": "Et donc, ce qu'on va faire à présent,"
+    },
+    {
+      "tStartS": 1634.88,
+      "tEndS": 1636.149,
+      "texte": "c'est qu'on va aller créer tout ce"
+    },
+    {
+      "tStartS": 1636.159,
+      "tEndS": 1637.909,
+      "texte": "système ensemble et bien évidemment,"
+    },
+    {
+      "tStartS": 1637.919,
+      "tEndS": 1639.549,
+      "texte": "vous retrouvez tous les promptes pour"
+    },
+    {
+      "tStartS": 1639.559,
+      "tEndS": 1641.99,
+      "texte": "créer ça à votre tour dans ma communauté"
+    },
+    {
+      "tStartS": 1642,
+      "tEndS": 1643.47,
+      "texte": "à l'aide de mon guide gratuit en"
+    },
+    {
+      "tStartS": 1643.48,
+      "tEndS": 1645.269,
+      "texte": "description de la vidéo, les 7 jours de"
+    },
+    {
+      "tStartS": 1645.279,
+      "tEndS": 1646.75,
+      "texte": "lire. Alors, afin de pouvoir créer tout"
+    },
+    {
+      "tStartS": 1646.76,
+      "tEndS": 1648.87,
+      "texte": "ce système de loupe pour Trade Republic"
+    },
+    {
+      "tStartS": 1648.88,
+      "tEndS": 1651.029,
+      "texte": "ici, automatiser la publication de mes"
+    },
+    {
+      "tStartS": 1651.039,
+      "tEndS": 1653.51,
+      "texte": "posts sur Instagram, j'ai déjà dû faire"
+    },
+    {
+      "tStartS": 1653.52,
+      "tEndS": 1654.95,
+      "texte": "plusieurs choses. Juste là, si on"
+    },
+    {
+      "tStartS": 1654.96,
+      "tEndS": 1656.75,
+      "texte": "regarde bien, j'ai créé un dossier qui"
+    },
+    {
+      "tStartS": 1656.76,
+      "tEndS": 1659.07,
+      "texte": "s'appelle Marketing Trade Republic. Et à"
+    },
+    {
+      "tStartS": 1659.08,
+      "tEndS": 1660.83,
+      "texte": "l'intérieur, si on regarde bien ici,"
+    },
+    {
+      "tStartS": 1660.84,
+      "tEndS": 1663.11,
+      "texte": "j'ai récupéré des posts Instagram de"
+    },
+    {
+      "tStartS": 1663.12,
+      "tEndS": 1664.47,
+      "texte": "Trade Republic. J'en ai fait des"
+    },
+    {
+      "tStartS": 1664.48,
+      "tEndS": 1666.75,
+      "texte": "screenshots et on voit ici à droite la"
+    },
+    {
+      "tStartS": 1666.76,
+      "tEndS": 1668.63,
+      "texte": "description du poste et à gauche le type"
+    },
+    {
+      "tStartS": 1668.64,
+      "tEndS": 1670.509,
+      "texte": "d'image qu'on va vouloir reproduire. Et"
+    },
+    {
+      "tStartS": 1670.519,
+      "tEndS": 1672.11,
+      "texte": "donc nous, on va avoir juste besoin de"
+    },
+    {
+      "tStartS": 1672.12,
+      "tEndS": 1673.99,
+      "texte": "ça pour initier la loupe. Et alors"
+    },
+    {
+      "tStartS": 1674,
+      "tEndS": 1675.71,
+      "texte": "maintenant pour initier tout ça, on est"
+    },
+    {
+      "tStartS": 1675.72,
+      "tEndS": 1677.269,
+      "texte": "dans Cloud Code. Dans Cloud Code ici,"
+    },
+    {
+      "tStartS": 1677.279,
+      "tEndS": 1678.95,
+      "texte": "vous allez sélectionner un projet. Moi"
+    },
+    {
+      "tStartS": 1678.96,
+      "tEndS": 1680.75,
+      "texte": "ce projet c'est très simple ici, c'est"
+    },
+    {
+      "tStartS": 1680.76,
+      "tEndS": 1682.83,
+      "texte": "marketing trade Republic. La première"
+    },
+    {
+      "tStartS": 1682.84,
+      "tEndS": 1684.07,
+      "texte": "chose qu'on va faire c'est qu'on va"
+    },
+    {
+      "tStartS": 1684.08,
+      "tEndS": 1685.909,
+      "texte": "commencer par initier tout le contexte"
+    },
+    {
+      "tStartS": 1685.919,
+      "tEndS": 1688.029,
+      "texte": "de ce projet. Pour ça, juste ici, je"
+    },
+    {
+      "tStartS": 1688.039,
+      "tEndS": 1689.63,
+      "texte": "vais envoyer un premier prompt. Ce"
+    },
+    {
+      "tStartS": 1689.64,
+      "tEndS": 1690.87,
+      "texte": "prompt, il va me permettre de donner"
+    },
+    {
+      "tStartS": 1690.88,
+      "tEndS": 1692.43,
+      "texte": "toutes les instructions et le contexte"
+    },
+    {
+      "tStartS": 1692.44,
+      "tEndS": 1694.389,
+      "texte": "général. Je suis l'équipe marketing de"
+    },
+    {
+      "tStartS": 1694.399,
+      "tEndS": 1696.789,
+      "texte": "Trade Republic. Le but ici du système"
+    },
+    {
+      "tStartS": 1696.799,
+      "tEndS": 1698.31,
+      "texte": "d'agent, c'est de produire des posts"
+    },
+    {
+      "tStartS": 1698.32,
+      "tEndS": 1700.269,
+      "texte": "Instagram performants pour Trade"
+    },
+    {
+      "tStartS": 1700.279,
+      "tEndS": 1702.149,
+      "texte": "Republic. La structure, donc je lui"
+    },
+    {
+      "tStartS": 1702.159,
+      "tEndS": 1703.99,
+      "texte": "explique tous les agents que je vais"
+    },
+    {
+      "tStartS": 1704,
+      "tEndS": 1706.07,
+      "texte": "mettre à l'intérieur de ma structure."
+    },
+    {
+      "tStartS": 1706.08,
+      "tEndS": 1707.269,
+      "texte": "Donc c'est le petit schéma que je vous"
+    },
+    {
+      "tStartS": 1707.279,
+      "tEndS": 1709.07,
+      "texte": "ai présenté préalablement. Je lui"
+    },
+    {
+      "tStartS": 1709.08,
+      "tEndS": 1710.35,
+      "texte": "explique qu'il va y avoir un agent"
+    },
+    {
+      "tStartS": 1710.36,
+      "tEndS": 1712.509,
+      "texte": "manager et ensuite des sous-agents. Je"
+    },
+    {
+      "tStartS": 1712.519,
+      "tEndS": 1713.87,
+      "texte": "lui donne aussi des sources de"
+    },
+    {
+      "tStartS": 1713.88,
+      "tEndS": 1715.99,
+      "texte": "référence, le site web, le compte"
+    },
+    {
+      "tStartS": 1716,
+      "tEndS": 1717.789,
+      "texte": "Instagram de Trade Republic, les"
+    },
+    {
+      "tStartS": 1717.799,
+      "tEndS": 1719.99,
+      "texte": "objectifs éditorials, les règles"
+    },
+    {
+      "tStartS": 1720,
+      "tEndS": 1721.509,
+      "texte": "fondamentales, ce qui va me permettre de"
+    },
+    {
+      "tStartS": 1721.519,
+      "tEndS": 1724.11,
+      "texte": "donner tout le cadre d'exécution de mon"
+    },
+    {
+      "tStartS": 1724.12,
+      "tEndS": 1725.59,
+      "texte": "système d'agent. Et ici, comme vous"
+    },
+    {
+      "tStartS": 1725.6,
+      "tEndS": 1727.35,
+      "texte": "pouvez le voir, il a créé ce petit"
+    },
+    {
+      "tStartS": 1727.36,
+      "tEndS": 1729.43,
+      "texte": "fichiermd. Donc ça ça vous permet de"
+    },
+    {
+      "tStartS": 1729.44,
+      "tEndS": 1731.31,
+      "texte": "commencer à utiliser dans CL code juste"
+    },
+    {
+      "tStartS": 1731.32,
+      "tEndS": 1733.149,
+      "texte": "ici. Mais moi personnellement je préfère"
+    },
+    {
+      "tStartS": 1733.159,
+      "tEndS": 1735.59,
+      "texte": "l'utiliser directement dans Cursor. Pour"
+    },
+    {
+      "tStartS": 1735.6,
+      "tEndS": 1737.11,
+      "texte": "ça vous venez juste ici et vous faites"
+    },
+    {
+      "tStartS": 1737.12,
+      "tEndS": 1738.75,
+      "texte": "ouvrir dans Cursor. À partir de là,"
+    },
+    {
+      "tStartS": 1738.76,
+      "tEndS": 1740.389,
+      "texte": "Cursor va s'ouvrir et vous allez voir"
+    },
+    {
+      "tStartS": 1740.399,
+      "tEndS": 1741.95,
+      "texte": "qu'on va pouvoir utiliser Cloud Code"
+    },
+    {
+      "tStartS": 1741.96,
+      "tEndS": 1743.59,
+      "texte": "sans être un développeur pour aller au"
+    },
+    {
+      "tStartS": 1743.6,
+      "tEndS": 1745.31,
+      "texte": "bout du scénario. Si vous regardez ici"
+    },
+    {
+      "tStartS": 1745.32,
+      "tEndS": 1747.47,
+      "texte": "déjà, on retrouve ce qu'il vient de me"
+    },
+    {
+      "tStartS": 1747.48,
+      "tEndS": 1749.75,
+      "texte": "générer à l'instant dans Cloud Code et"
+    },
+    {
+      "tStartS": 1749.76,
+      "tEndS": 1752.11,
+      "texte": "on retrouve ici par exemple les posts"
+    },
+    {
+      "tStartS": 1752.12,
+      "tEndS": 1754.19,
+      "texte": "Instagram avec les différentes images"
+    },
+    {
+      "tStartS": 1754.2,
+      "tEndS": 1755.75,
+      "texte": "puisqu'on a sélectionné le dossier"
+    },
+    {
+      "tStartS": 1755.76,
+      "tEndS": 1757.35,
+      "texte": "marketing trade Republic. Ensuite,"
+    },
+    {
+      "tStartS": 1757.36,
+      "tEndS": 1759.23,
+      "texte": "maintenant on va pouvoir demander ici à"
+    },
+    {
+      "tStartS": 1759.24,
+      "tEndS": 1762.07,
+      "texte": "droite à Cloud Code de se baser sur tous"
+    },
+    {
+      "tStartS": 1762.08,
+      "tEndS": 1764.59,
+      "texte": "les posts Instagram qui sont dans post"
+    },
+    {
+      "tStartS": 1764.6,
+      "tEndS": 1766.269,
+      "texte": "Instagram, donc dans le dossier, mais"
+    },
+    {
+      "tStartS": 1766.279,
+      "tEndS": 1769.07,
+      "texte": "aussi en consultant le dossier.mmd qu'on"
+    },
+    {
+      "tStartS": 1769.08,
+      "tEndS": 1770.789,
+      "texte": "vient de créer avec tout le contexte"
+    },
+    {
+      "tStartS": 1770.799,
+      "tEndS": 1773.75,
+      "texte": "pour me générer une skill qui soit en"
+    },
+    {
+      "tStartS": 1773.76,
+      "tEndS": 1776.789,
+      "texte": "mesure de comprendre le ton, le format"
+    },
+    {
+      "tStartS": 1776.799,
+      "tEndS": 1779.59,
+      "texte": "et toute l'atmosphère des images et"
+    },
+    {
+      "tStartS": 1779.6,
+      "tEndS": 1781.789,
+      "texte": "uniquement des images. Pourquoi ? parce"
+    },
+    {
+      "tStartS": 1781.799,
+      "tEndS": 1783.87,
+      "texte": "que ça va me permettre de concevoir une"
+    },
+    {
+      "tStartS": 1783.88,
+      "tEndS": 1786.19,
+      "texte": "skill qui soit en mesure d'indiquer"
+    },
+    {
+      "tStartS": 1786.2,
+      "tEndS": 1788.87,
+      "texte": "ensuite à des subagent voici comment les"
+    },
+    {
+      "tStartS": 1788.88,
+      "tEndS": 1790.47,
+      "texte": "images doivent être créé. Donc comme ça,"
+    },
+    {
+      "tStartS": 1790.48,
+      "tEndS": 1792.11,
+      "texte": "vous lancez Claude Code et il va"
+    },
+    {
+      "tStartS": 1792.12,
+      "tEndS": 1793.909,
+      "texte": "commencer à vous concevoir la skill. Ici"
+    },
+    {
+      "tStartS": 1793.919,
+      "tEndS": 1795.509,
+      "texte": "à présent, on voit qu'il a terminé. La"
+    },
+    {
+      "tStartS": 1795.519,
+      "tEndS": 1797.87,
+      "texte": "skill a été générée ici. Elle s'appelle"
+    },
+    {
+      "tStartS": 1797.88,
+      "tEndS": 1800.35,
+      "texte": "ADN visuel Instagram. Maintenant ce que"
+    },
+    {
+      "tStartS": 1800.36,
+      "tEndS": 1801.549,
+      "texte": "je vous propose de faire et bien c'est"
+    },
+    {
+      "tStartS": 1801.559,
+      "tEndS": 1803.31,
+      "texte": "de faire la même chose mais ici"
+    },
+    {
+      "tStartS": 1803.32,
+      "tEndS": 1805.71,
+      "texte": "uniquement sur le texte des descriptions"
+    },
+    {
+      "tStartS": 1805.72,
+      "tEndS": 1807.75,
+      "texte": "qui accompagnent chacune des images sur"
+    },
+    {
+      "tStartS": 1807.76,
+      "tEndS": 1809.35,
+      "texte": "mon poste Instagram. On envoie la"
+    },
+    {
+      "tStartS": 1809.36,
+      "tEndS": 1811.11,
+      "texte": "demande de génération de skill. Ici,"
+    },
+    {
+      "tStartS": 1811.12,
+      "tEndS": 1812.75,
+      "texte": "encore une fois, la création du skill"
+    },
+    {
+      "tStartS": 1812.76,
+      "tEndS": 1815.669,
+      "texte": "est terminée. On a ici ADN texte"
+    },
+    {
+      "tStartS": 1815.679,
+      "tEndS": 1817.549,
+      "texte": "Instagram qui cette fois-ci est une"
+    },
+    {
+      "tStartS": 1817.559,
+      "tEndS": 1819.909,
+      "texte": "skill qui me permet de générer ce texte."
+    },
+    {
+      "tStartS": 1819.919,
+      "tEndS": 1821.47,
+      "texte": "Maintenant qu'on a ça, si on regarde"
+    },
+    {
+      "tStartS": 1821.48,
+      "tEndS": 1823.99,
+      "texte": "ici, si je fais slash MCP serveur, et"
+    },
+    {
+      "tStartS": 1824,
+      "tEndS": 1825.909,
+      "texte": "bien on va pouvoir voir qu'il y a"
+    },
+    {
+      "tStartS": 1825.919,
+      "tEndS": 1827.71,
+      "texte": "plusieurs MCP serveurs qui sont déjà"
+    },
+    {
+      "tStartS": 1827.72,
+      "tEndS": 1829.63,
+      "texte": "connectés. En effet, j'ai déjà connecté"
+    },
+    {
+      "tStartS": 1829.64,
+      "tEndS": 1831.59,
+      "texte": "ici notamment le MCP serveur avec"
+    },
+    {
+      "tStartS": 1831.6,
+      "tEndS": 1833.789,
+      "texte": "Perplexity parce que si on reprend juste"
+    },
+    {
+      "tStartS": 1833.799,
+      "tEndS": 1835.83,
+      "texte": "ici le système pour le copywritter, on"
+    },
+    {
+      "tStartS": 1835.84,
+      "tEndS": 1837.47,
+      "texte": "vient de créer cette skill. On a aussi"
+    },
+    {
+      "tStartS": 1837.48,
+      "tEndS": 1840.35,
+      "texte": "créé ici la skill pour les visuels."
+    },
+    {
+      "tStartS": 1840.36,
+      "tEndS": 1841.87,
+      "texte": "Maintenant, on va commencer à créer"
+    },
+    {
+      "tStartS": 1841.88,
+      "tEndS": 1844.23,
+      "texte": "l'agent ici de recherche des sujets"
+    },
+    {
+      "tStartS": 1844.24,
+      "tEndS": 1846.47,
+      "texte": "finances intéressant. Et pour ça, il"
+    },
+    {
+      "tStartS": 1846.48,
+      "tEndS": 1848.83,
+      "texte": "doit s'appuyer ici sur Perplexity. Et"
+    },
+    {
+      "tStartS": 1848.84,
+      "tEndS": 1850.35,
+      "texte": "donc pour ça, ici, vous faites"
+    },
+    {
+      "tStartS": 1850.36,
+      "tEndS": 1851.87,
+      "texte": "slashagent."
+    },
+    {
+      "tStartS": 1851.88,
+      "tEndS": 1853.47,
+      "texte": "Ça va vous ouvrir le terminal et à"
+    },
+    {
+      "tStartS": 1853.48,
+      "tEndS": 1855.11,
+      "texte": "partir de là, vous allez pouvoir créer"
+    },
+    {
+      "tStartS": 1855.12,
+      "tEndS": 1857.149,
+      "texte": "un nouvel agent pour un projet que vous"
+    },
+    {
+      "tStartS": 1857.159,
+      "tEndS": 1858.789,
+      "texte": "allez générer avec Claude. Vous lui"
+    },
+    {
+      "tStartS": 1858.799,
+      "tEndS": 1860.629,
+      "texte": "collez les informations. Ici, on veut"
+    },
+    {
+      "tStartS": 1860.639,
+      "tEndS": 1862.509,
+      "texte": "créer un agent spécialisé dans la"
+    },
+    {
+      "tStartS": 1862.519,
+      "tEndS": 1864.43,
+      "texte": "recherche de sujets d'actualité sur la"
+    },
+    {
+      "tStartS": 1864.44,
+      "tEndS": 1866.31,
+      "texte": "finance. On lui dit que ces sujets sur"
+    },
+    {
+      "tStartS": 1866.32,
+      "tEndS": 1868.87,
+      "texte": "la finance, c'est quoi ? C'est des IPO,"
+    },
+    {
+      "tStartS": 1868.88,
+      "tEndS": 1870.389,
+      "texte": "une industrie en croissance ou en"
+    },
+    {
+      "tStartS": 1870.399,
+      "tEndS": 1872.549,
+      "texte": "décroissance, des secteurs porteurs, des"
+    },
+    {
+      "tStartS": 1872.559,
+      "tEndS": 1874.43,
+      "texte": "changements politique majeur, tout ça,"
+    },
+    {
+      "tStartS": 1874.44,
+      "tEndS": 1876.31,
+      "texte": "ce sont des sujets importants pour nous."
+    },
+    {
+      "tStartS": 1876.32,
+      "tEndS": 1878.23,
+      "texte": "Et ensuite, pour effectuer la recherche,"
+    },
+    {
+      "tStartS": 1878.24,
+      "tEndS": 1880.669,
+      "texte": "tu passeras obligatoirement par le MCP"
+    },
+    {
+      "tStartS": 1880.679,
+      "tEndS": 1882.789,
+      "texte": "serveur de Perplexity et il devra"
+    },
+    {
+      "tStartS": 1882.799,
+      "tEndS": 1884.149,
+      "texte": "automatiquement rechercher des"
+    },
+    {
+      "tStartS": 1884.159,
+      "tEndS": 1885.75,
+      "texte": "informations sur les trois derniers"
+    },
+    {
+      "tStartS": 1885.76,
+      "tEndS": 1887.83,
+      "texte": "jours par rapport à la date du jour afin"
+    },
+    {
+      "tStartS": 1887.84,
+      "tEndS": 1890.149,
+      "texte": "de garantir que les sujets sélectionnés"
+    },
+    {
+      "tStartS": 1890.159,
+      "tEndS": 1892.31,
+      "texte": "so récents et pertinent. On envoie les"
+    },
+    {
+      "tStartS": 1892.32,
+      "tEndS": 1893.669,
+      "texte": "infos et l'agent est en train de se"
+    },
+    {
+      "tStartS": 1893.679,
+      "tEndS": 1895.47,
+      "texte": "générer. Ici, l'agent me demande à quels"
+    },
+    {
+      "tStartS": 1895.48,
+      "tEndS": 1897.19,
+      "texte": "outils il peut avoir accès. On va tous"
+    },
+    {
+      "tStartS": 1897.2,
+      "tEndS": 1899.19,
+      "texte": "lui les donner. Il va fonctionner avec"
+    },
+    {
+      "tStartS": 1899.2,
+      "tEndS": 1901.029,
+      "texte": "sonné et on va lui mettre une petite"
+    },
+    {
+      "tStartS": 1901.039,
+      "tEndS": 1902.43,
+      "texte": "couleur bleue qui nous rappelle"
+    },
+    {
+      "tStartS": 1902.44,
+      "tEndS": 1904.23,
+      "texte": "Perplexity. On le lit au niveau du"
+    },
+    {
+      "tStartS": 1904.24,
+      "tEndS": 1906.43,
+      "texte": "projet pour la mémoire. Et c'est parti."
+    },
+    {
+      "tStartS": 1906.44,
+      "tEndS": 1907.669,
+      "texte": "L'agent est créé. Ici, comme vous pouvez"
+    },
+    {
+      "tStartS": 1907.679,
+      "tEndS": 1909.669,
+      "texte": "le voir, on a Finance News Coot qui est"
+    },
+    {
+      "tStartS": 1909.679,
+      "tEndS": 1911.149,
+      "texte": "l'agent qui a été créé. On va à présent"
+    },
+    {
+      "tStartS": 1911.159,
+      "tEndS": 1913.269,
+      "texte": "lui demander de créer un second agent."
+    },
+    {
+      "tStartS": 1913.279,
+      "tEndS": 1915.11,
+      "texte": "Cette fois-ci, le but ça va être de lui"
+    },
+    {
+      "tStartS": 1915.12,
+      "tEndS": 1917.11,
+      "texte": "dire de créer un agent spécialisé dans"
+    },
+    {
+      "tStartS": 1917.12,
+      "tEndS": 1919.669,
+      "texte": "la création d'images de post Instagram."
+    },
+    {
+      "tStartS": 1919.679,
+      "tEndS": 1921.87,
+      "texte": "Sa mission, c'est de produire le visuel"
+    },
+    {
+      "tStartS": 1921.88,
+      "tEndS": 1923.789,
+      "texte": "et uniquement le visuel. Pour ça, il va"
+    },
+    {
+      "tStartS": 1923.799,
+      "tEndS": 1925.909,
+      "texte": "aller prendre le sujet d'actualité de la"
+    },
+    {
+      "tStartS": 1925.919,
+      "tEndS": 1928.11,
+      "texte": "part de notre agent Finance qui aura"
+    },
+    {
+      "tStartS": 1928.12,
+      "tEndS": 1930.149,
+      "texte": "analysé les infos dans Perplexity. Tu"
+    },
+    {
+      "tStartS": 1930.159,
+      "tEndS": 1932.549,
+      "texte": "n'identifies jamais toi-même les sujets"
+    },
+    {
+      "tStartS": 1932.559,
+      "tEndS": 1934.83,
+      "texte": "à traiter. Ensuite, ce subagent, je lui"
+    },
+    {
+      "tStartS": 1934.84,
+      "tEndS": 1937.149,
+      "texte": "ai mis plusieurs étapes à suivre, mais"
+    },
+    {
+      "tStartS": 1937.159,
+      "tEndS": 1939.59,
+      "texte": "surtout il respecte l'identité visuelle."
+    },
+    {
+      "tStartS": 1939.6,
+      "tEndS": 1942.389,
+      "texte": "Pour ça, il reprend la skill ADN visuel"
+    },
+    {
+      "tStartS": 1942.399,
+      "tEndS": 1944.31,
+      "texte": "Instagram qu'on a créé préalablement. Et"
+    },
+    {
+      "tStartS": 1944.32,
+      "tEndS": 1945.99,
+      "texte": "pour créer l'image, il s'appuie"
+    },
+    {
+      "tStartS": 1946,
+      "tEndS": 1949.43,
+      "texte": "automatiquement sur le MCP Nano Banana."
+    },
+    {
+      "tStartS": 1949.44,
+      "tEndS": 1951.07,
+      "texte": "pour créer l'image. Je lui ai mis"
+    },
+    {
+      "tStartS": 1951.08,
+      "tEndS": 1952.909,
+      "texte": "quelques contraintes. Il doit seulement"
+    },
+    {
+      "tStartS": 1952.919,
+      "tEndS": 1954.75,
+      "texte": "créer une image et il ne doit jamais"
+    },
+    {
+      "tStartS": 1954.76,
+      "tEndS": 1956.83,
+      "texte": "rédiger de texte, écrire un post,"
+    },
+    {
+      "tStartS": 1956.84,
+      "tEndS": 1959.029,
+      "texte": "proposer des hashtags et cetera. Son but"
+    },
+    {
+      "tStartS": 1959.039,
+      "tEndS": 1961.19,
+      "texte": "à lui, c'est de faire seulement l'image."
+    },
+    {
+      "tStartS": 1961.2,
+      "tEndS": 1962.87,
+      "texte": "J'ai volontairement choisi ça. Comme ça,"
+    },
+    {
+      "tStartS": 1962.88,
+      "tEndS": 1964.389,
+      "texte": "je m'assure qu'à la fin, le résultat, il"
+    },
+    {
+      "tStartS": 1964.399,
+      "tEndS": 1965.83,
+      "texte": "soit d'une très bonne qualité."
+    },
+    {
+      "tStartS": 1965.84,
+      "tEndS": 1967.07,
+      "texte": "Maintenant, comme on peut le voir, il a"
+    },
+    {
+      "tStartS": 1967.08,
+      "tEndS": 1968.99,
+      "texte": "bien créé l'agent. On retrouve ici au"
+    },
+    {
+      "tStartS": 1969,
+      "tEndS": 1971.47,
+      "texte": "niveau des agents l'agent Finance News"
+    },
+    {
+      "tStartS": 1971.48,
+      "tEndS": 1975.07,
+      "texte": "Scout et ici Instagram Visual Creator."
+    },
+    {
+      "tStartS": 1975.08,
+      "tEndS": 1976.47,
+      "texte": "Donc du coup, j'ai déjà bien mes deux"
+    },
+    {
+      "tStartS": 1976.48,
+      "tEndS": 1978.43,
+      "texte": "subagent. Je vais devoir en créer un"
+    },
+    {
+      "tStartS": 1978.44,
+      "tEndS": 1980.509,
+      "texte": "dernier. Celui-ci, il reprend plus ou"
+    },
+    {
+      "tStartS": 1980.519,
+      "tEndS": 1982.43,
+      "texte": "moins la même démarche que celui qu'on"
+    },
+    {
+      "tStartS": 1982.44,
+      "tEndS": 1983.71,
+      "texte": "vient de créer pour les images. Par"
+    },
+    {
+      "tStartS": 1983.72,
+      "tEndS": 1985.87,
+      "texte": "contre, il va être uniquement focalisé"
+    },
+    {
+      "tStartS": 1985.88,
+      "tEndS": 1987.47,
+      "texte": "sur le texte. Comme ça, j'ai mon"
+    },
+    {
+      "tStartS": 1987.48,
+      "tEndS": 1989.269,
+      "texte": "subagent qui va aller trouver le sujet"
+    },
+    {
+      "tStartS": 1989.279,
+      "tEndS": 1990.95,
+      "texte": "pertinent. J'ai mes deux agents pour"
+    },
+    {
+      "tStartS": 1990.96,
+      "tEndS": 1992.59,
+      "texte": "créer l'image ainsi que pour créer le"
+    },
+    {
+      "tStartS": 1992.6,
+      "tEndS": 1994.43,
+      "texte": "texte. Et une fois qu'on aura fait ça,"
+    },
+    {
+      "tStartS": 1994.44,
+      "tEndS": 1996.43,
+      "texte": "il va nous rester une seule étape, c'est"
+    },
+    {
+      "tStartS": 1996.44,
+      "tEndS": 1998.549,
+      "texte": "de créer le planificateur, donc"
+    },
+    {
+      "tStartS": 1998.559,
+      "tEndS": 2001.19,
+      "texte": "l'orchestrateur de ces sub agent juste"
+    },
+    {
+      "tStartS": 2001.2,
+      "tEndS": 2002.87,
+      "texte": "après. Et donc à présent, j'ai bien mes"
+    },
+    {
+      "tStartS": 2002.88,
+      "tEndS": 2004.909,
+      "texte": "trois sub agents qui sont prêts. Si on"
+    },
+    {
+      "tStartS": 2004.919,
+      "tEndS": 2006.629,
+      "texte": "regarde ici une seconde, on a ce sub"
+    },
+    {
+      "tStartS": 2006.639,
+      "tEndS": 2008.629,
+      "texte": "agent qui est prêt. On a les deux autres"
+    },
+    {
+      "tStartS": 2008.639,
+      "tEndS": 2010.669,
+      "texte": "ici aussi. Ils ont accès à leurs outils"
+    },
+    {
+      "tStartS": 2010.679,
+      "tEndS": 2012.43,
+      "texte": "ainsi qu'aux différentes skills pour"
+    },
+    {
+      "tStartS": 2012.44,
+      "tEndS": 2013.95,
+      "texte": "pouvoir s'assurer de la cohérence des"
+    },
+    {
+      "tStartS": 2013.96,
+      "tEndS": 2015.47,
+      "texte": "créations. Maintenant, on va créer"
+    },
+    {
+      "tStartS": 2015.48,
+      "tEndS": 2017.87,
+      "texte": "l'Instagram manager qui lui va chapauter"
+    },
+    {
+      "tStartS": 2017.88,
+      "tEndS": 2019.99,
+      "texte": "tout ça. Pour ça, je viens à droite et"
+    },
+    {
+      "tStartS": 2020,
+      "tEndS": 2021.509,
+      "texte": "ici, si vous regardez bien, tu es le"
+    },
+    {
+      "tStartS": 2021.519,
+      "tEndS": 2023.47,
+      "texte": "manager des agents de mon projet. On lui"
+    },
+    {
+      "tStartS": 2023.48,
+      "tEndS": 2025.149,
+      "texte": "explique toute sa mission. On lui dit"
+    },
+    {
+      "tStartS": 2025.159,
+      "tEndS": 2026.669,
+      "texte": "qu'avant toute chose, il vérifie"
+    },
+    {
+      "tStartS": 2026.679,
+      "tEndS": 2028.549,
+      "texte": "systématiquement le dossier. Et là, on"
+    },
+    {
+      "tStartS": 2028.559,
+      "tEndS": 2030.789,
+      "texte": "va mettre trade republic Instagram"
+    },
+    {
+      "tStartS": 2030.799,
+      "tEndS": 2032.83,
+      "texte": "agent.md avec tout le contexte."
+    },
+    {
+      "tStartS": 2032.84,
+      "tEndS": 2034.59,
+      "texte": "L'objectif, c'est de créer des posts"
+    },
+    {
+      "tStartS": 2034.6,
+      "tEndS": 2036.509,
+      "texte": "Instagram pour Trade Republic. Je lui ai"
+    },
+    {
+      "tStartS": 2036.519,
+      "tEndS": 2038.71,
+      "texte": "mis ici toute la démarche. En un, il"
+    },
+    {
+      "tStartS": 2038.72,
+      "tEndS": 2041.269,
+      "texte": "lance l'agent Finance News Scout pour"
+    },
+    {
+      "tStartS": 2041.279,
+      "tEndS": 2043.19,
+      "texte": "aller chercher le sujet de pertinence."
+    },
+    {
+      "tStartS": 2043.2,
+      "tEndS": 2045.83,
+      "texte": "Ensuite, il crée le visuel et ensuite,"
+    },
+    {
+      "tStartS": 2045.84,
+      "tEndS": 2047.789,
+      "texte": "il crée le texte. À la fin, il me fait"
+    },
+    {
+      "tStartS": 2047.799,
+      "tEndS": 2049.629,
+      "texte": "toute une synthèse, les sujets retenus,"
+    },
+    {
+      "tStartS": 2049.639,
+      "tEndS": 2051.79,
+      "texte": "les concepts visuels, la légende et une"
+    },
+    {
+      "tStartS": 2051.8,
+      "tEndS": 2053.669,
+      "texte": "explication. Je lance la création de ce"
+    },
+    {
+      "tStartS": 2053.679,
+      "tEndS": 2055.75,
+      "texte": "dernier agent. À présent, il a terminé."
+    },
+    {
+      "tStartS": 2055.76,
+      "tEndS": 2057.03,
+      "texte": "On voit qu'il m'a créé tous les"
+    },
+    {
+      "tStartS": 2057.04,
+      "tEndS": 2058.669,
+      "texte": "différents agents. Maintenant, ce qui va"
+    },
+    {
+      "tStartS": 2058.679,
+      "tEndS": 2060.349,
+      "texte": "nous intéresser, c'est de voir s'ils"
+    },
+    {
+      "tStartS": 2060.359,
+      "tEndS": 2062.31,
+      "texte": "sont capables de travailler entre eux et"
+    },
+    {
+      "tStartS": 2062.32,
+      "tEndS": 2064.31,
+      "texte": "de me fournir un bon résultat. Pour ça,"
+    },
+    {
+      "tStartS": 2064.32,
+      "tEndS": 2066.31,
+      "texte": "moi ici je débute une nouvelle session."
+    },
+    {
+      "tStartS": 2066.32,
+      "tEndS": 2068.43,
+      "texte": "Je demande à l'agent manager qui est"
+    },
+    {
+      "tStartS": 2068.44,
+      "tEndS": 2070.71,
+      "texte": "juste ici, Instagram manager, et je lui"
+    },
+    {
+      "tStartS": 2070.72,
+      "tEndS": 2073.109,
+      "texte": "dis débute le process du prochain post"
+    },
+    {
+      "tStartS": 2073.119,
+      "tEndS": 2075.349,
+      "texte": "Instagram à créer. Et ici, c'est parti."
+    },
+    {
+      "tStartS": 2075.359,
+      "tEndS": 2077.349,
+      "texte": "Vous voyez que le cycle complet, il a"
+    },
+    {
+      "tStartS": 2077.359,
+      "tEndS": 2079.03,
+      "texte": "débuté. La première chose qu'il vient de"
+    },
+    {
+      "tStartS": 2079.04,
+      "tEndS": 2080.47,
+      "texte": "faire, comme je lui ai demandé, c'est de"
+    },
+    {
+      "tStartS": 2080.48,
+      "tEndS": 2081.909,
+      "texte": "lire tout le contexte qui est dans le"
+    },
+    {
+      "tStartS": 2081.919,
+      "tEndS": 2084.23,
+      "texte": "fichiermd. Et ensuite ici, il est en"
+    },
+    {
+      "tStartS": 2084.24,
+      "tEndS": 2085.75,
+      "texte": "train d'appeler l'agent Scoot pour"
+    },
+    {
+      "tStartS": 2085.76,
+      "tEndS": 2087.55,
+      "texte": "pouvoir aller faire l'analyse sur"
+    },
+    {
+      "tStartS": 2087.56,
+      "tEndS": 2089.79,
+      "texte": "Perplexity et me ressortir un sujet"
+    },
+    {
+      "tStartS": 2089.8,
+      "tEndS": 2091.75,
+      "texte": "intéressant à traiter sur un post"
+    },
+    {
+      "tStartS": 2091.76,
+      "tEndS": 2093.27,
+      "texte": "Instagram. Vous voyez au passage que"
+    },
+    {
+      "tStartS": 2093.28,
+      "tEndS": 2095.389,
+      "texte": "juste ici, je peux voir tout le cycle,"
+    },
+    {
+      "tStartS": 2095.399,
+      "tEndS": 2097.109,
+      "texte": "donc toutes les étapes qui vont devoir"
+    },
+    {
+      "tStartS": 2097.119,
+      "tEndS": 2099.47,
+      "texte": "être lancées par l'agent manager jusqu'à"
+    },
+    {
+      "tStartS": 2099.48,
+      "tEndS": 2101.069,
+      "texte": "arriver à l'étape 4 bis pour me"
+    },
+    {
+      "tStartS": 2101.079,
+      "tEndS": 2102.95,
+      "texte": "ressortir tout le poste Instagram. Et"
+    },
+    {
+      "tStartS": 2102.96,
+      "tEndS": 2104.75,
+      "texte": "maintenant ici, après quelques minutes,"
+    },
+    {
+      "tStartS": 2104.76,
+      "tEndS": 2106.95,
+      "texte": "on voit que l'agent a réalisé toutes les"
+    },
+    {
+      "tStartS": 2106.96,
+      "tEndS": 2109.03,
+      "texte": "tâches. Si vous regardez ici déjà, il a"
+    },
+    {
+      "tStartS": 2109.04,
+      "tEndS": 2111.43,
+      "texte": "fait un suivi de toute sa todoo liste."
+    },
+    {
+      "tStartS": 2111.44,
+      "tEndS": 2113.829,
+      "texte": "Il est allé rechercher ici avec l'agent"
+    },
+    {
+      "tStartS": 2113.839,
+      "tEndS": 2115.91,
+      "texte": "de finance les informations. Il a"
+    },
+    {
+      "tStartS": 2115.92,
+      "tEndS": 2118.67,
+      "texte": "ressorti un sujet. Ensuite, il a avancé"
+    },
+    {
+      "tStartS": 2118.68,
+      "tEndS": 2121.109,
+      "texte": "jusqu'à utiliser du copywriting pour"
+    },
+    {
+      "tStartS": 2121.119,
+      "tEndS": 2123.23,
+      "texte": "écrire le poste et l'agent de création"
+    },
+    {
+      "tStartS": 2123.24,
+      "tEndS": 2124.99,
+      "texte": "pour créer l'image. Le sujet qu'il a"
+    },
+    {
+      "tStartS": 2125,
+      "tEndS": 2126.95,
+      "texte": "retenu, c'est l'entrée en bourse de la"
+    },
+    {
+      "tStartS": 2126.96,
+      "tEndS": 2128.99,
+      "texte": "marque le slip français. Donc ça va être"
+    },
+    {
+      "tStartS": 2129,
+      "tEndS": 2130.589,
+      "texte": "extrêmement intéressant. En plus, c'est"
+    },
+    {
+      "tStartS": 2130.599,
+      "tEndS": 2132.27,
+      "texte": "français, donc c'est vraiment sympa. Et"
+    },
+    {
+      "tStartS": 2132.28,
+      "tEndS": 2133.87,
+      "texte": "on va aller voir le résultat qu'il a"
+    },
+    {
+      "tStartS": 2133.88,
+      "tEndS": 2135.75,
+      "texte": "généré ici. À la fin, si vous regardez"
+    },
+    {
+      "tStartS": 2135.76,
+      "tEndS": 2138.15,
+      "texte": "bien, il a fait toutes les modifications"
+    },
+    {
+      "tStartS": 2138.16,
+      "tEndS": 2140.55,
+      "texte": "et il m'a validé un post Instagram pour"
+    },
+    {
+      "tStartS": 2140.56,
+      "tEndS": 2142.51,
+      "texte": "le prochain cycle. Ici, l'entrée en"
+    },
+    {
+      "tStartS": 2142.52,
+      "tEndS": 2144.19,
+      "texte": "bourse du sleep français, elle va avoir"
+    },
+    {
+      "tStartS": 2144.2,
+      "tEndS": 2146.55,
+      "texte": "lieu le 14 juillet, à l'heure à laquelle"
+    },
+    {
+      "tStartS": 2146.56,
+      "tEndS": 2148.15,
+      "texte": "je tourne la vidéo, on est le 17, donc"
+    },
+    {
+      "tStartS": 2148.16,
+      "tEndS": 2149.51,
+      "texte": "on est bien dans la fenêtre des tris"
+    },
+    {
+      "tStartS": 2149.52,
+      "tEndS": 2151.75,
+      "texte": "jours qui ont été imposés, de créer un"
+    },
+    {
+      "tStartS": 2151.76,
+      "tEndS": 2153.95,
+      "texte": "petit caroussel. Là, il m'a préparé la"
+    },
+    {
+      "tStartS": 2153.96,
+      "tEndS": 2155.51,
+      "texte": "première image, mais après il m'a"
+    },
+    {
+      "tStartS": 2155.52,
+      "tEndS": 2157.349,
+      "texte": "préparé les cinq prontes pour les"
+    },
+    {
+      "tStartS": 2157.359,
+      "tEndS": 2159.19,
+      "texte": "prochains visuels si j'en ai besoin. Il"
+    },
+    {
+      "tStartS": 2159.2,
+      "tEndS": 2161.51,
+      "texte": "m'a mis la légende avec le texte à"
+    },
+    {
+      "tStartS": 2161.52,
+      "tEndS": 2162.95,
+      "texte": "renseigner. Il m'a aussi mis un"
+    },
+    {
+      "tStartS": 2162.96,
+      "tEndS": 2165.03,
+      "texte": "potentiel de viralité. Maintenant, ce"
+    },
+    {
+      "tStartS": 2165.04,
+      "tEndS": 2166.47,
+      "texte": "qu'on va aller voir, c'est à quoi"
+    },
+    {
+      "tStartS": 2166.48,
+      "tEndS": 2168.43,
+      "texte": "ressemble cette image parce qu'on a déjà"
+    },
+    {
+      "tStartS": 2168.44,
+      "tEndS": 2171.43,
+      "texte": "le texte juste ici. L'image, la voici."
+    },
+    {
+      "tStartS": 2171.44,
+      "tEndS": 2173.39,
+      "texte": "Elle respecte parfaitement ce que fait"
+    },
+    {
+      "tStartS": 2173.4,
+      "tEndS": 2175.51,
+      "texte": "le slip français. On a ici le drapeau"
+    },
+    {
+      "tStartS": 2175.52,
+      "tEndS": 2178.109,
+      "texte": "bleu, blanc, rouge ipo le slip français"
+    },
+    {
+      "tStartS": 2178.119,
+      "tEndS": 2179.99,
+      "texte": "vient d'entrer en bourse. Voici comment."
+    },
+    {
+      "tStartS": 2180,
+      "tEndS": 2181.75,
+      "texte": "Et là, on reprend bien et on retrouve"
+    },
+    {
+      "tStartS": 2181.76,
+      "tEndS": 2184.03,
+      "texte": "bien toute l'ADN, toute la structure des"
+    },
+    {
+      "tStartS": 2184.04,
+      "tEndS": 2185.95,
+      "texte": "postes qu'on a sur Trade Republic. Si"
+    },
+    {
+      "tStartS": 2185.96,
+      "tEndS": 2187.75,
+      "texte": "vous regardez bien, ici, on a à chaque"
+    },
+    {
+      "tStartS": 2187.76,
+      "tEndS": 2189.55,
+      "texte": "fois le grand texte en haut avec un"
+    },
+    {
+      "tStartS": 2189.56,
+      "tEndS": 2191.309,
+      "texte": "petit texte juste en bas. Ici, il nous"
+    },
+    {
+      "tStartS": 2191.319,
+      "tEndS": 2193.19,
+      "texte": "l'a mis en français. Voilà, on a à"
+    },
+    {
+      "tStartS": 2193.2,
+      "tEndS": 2195.39,
+      "texte": "chaque fois les mêmes patterns. Alors"
+    },
+    {
+      "tStartS": 2195.4,
+      "tEndS": 2197.47,
+      "texte": "pas sur ces postes ici, mais ici par"
+    },
+    {
+      "tStartS": 2197.48,
+      "tEndS": 2199.75,
+      "texte": "exemple, on a à chaque fois les bons"
+    },
+    {
+      "tStartS": 2199.76,
+      "tEndS": 2201.99,
+      "texte": "éléments. On a le texte qui est prêt"
+    },
+    {
+      "tStartS": 2202,
+      "tEndS": 2204.109,
+      "texte": "aussi. Il y aurait juste à publier."
+    },
+    {
+      "tStartS": 2204.119,
+      "tEndS": 2205.75,
+      "texte": "Maintenant, la dernière chose qui nous"
+    },
+    {
+      "tStartS": 2205.76,
+      "tEndS": 2207.55,
+      "texte": "reste à faire, ça va être de réouvrir"
+    },
+    {
+      "tStartS": 2207.56,
+      "tEndS": 2209.39,
+      "texte": "ici cloud code et de lui dire \"Tu vas"
+    },
+    {
+      "tStartS": 2209.4,
+      "tEndS": 2211.109,
+      "texte": "faire en sorte que ce dossier les agents"
+    },
+    {
+      "tStartS": 2211.119,
+      "tEndS": 2212.91,
+      "texte": "qui s'y exécutent fonctionne comme une"
+    },
+    {
+      "tStartS": 2212.92,
+      "tEndS": 2214.75,
+      "texte": "loupe afin de livrer le poste tous les"
+    },
+    {
+      "tStartS": 2214.76,
+      "tEndS": 2216.87,
+      "texte": "lundis à 9h.\" Et à partir de là,"
+    },
+    {
+      "tStartS": 2216.88,
+      "tEndS": 2218.47,
+      "texte": "maintenant que j'ai testé la loupe et"
+    },
+    {
+      "tStartS": 2218.48,
+      "tEndS": 2220.23,
+      "texte": "qu'elle fonctionne, bien évidemment,"
+    },
+    {
+      "tStartS": 2220.24,
+      "tEndS": 2221.19,
+      "texte": "vous pourriez encore faire des"
+    },
+    {
+      "tStartS": 2221.2,
+      "tEndS": 2223.109,
+      "texte": "modifications s'il y a besoin. C'est"
+    },
+    {
+      "tStartS": 2223.119,
+      "tEndS": 2225.15,
+      "texte": "cette phase de test. Mais ici, imaginons"
+    },
+    {
+      "tStartS": 2225.16,
+      "tEndS": 2227.069,
+      "texte": "que je souhaite continuer et bien je"
+    },
+    {
+      "tStartS": 2227.079,
+      "tEndS": 2228.95,
+      "texte": "peux mettre en place la loupe. Et à"
+    },
+    {
+      "tStartS": 2228.96,
+      "tEndS": 2230.79,
+      "texte": "partir de là, et bien moi, j'ai plus du"
+    },
+    {
+      "tStartS": 2230.8,
+      "tEndS": 2232.95,
+      "texte": "tout à travailler. C'est directement ce"
+    },
+    {
+      "tStartS": 2232.96,
+      "tEndS": 2234.75,
+      "texte": "système d'agent qui va fonctionner de"
+    },
+    {
+      "tStartS": 2234.76,
+      "tEndS": 2237.39,
+      "texte": "manière 100 % autonome. Et voilà, juste"
+    },
+    {
+      "tStartS": 2237.4,
+      "tEndS": 2239.27,
+      "texte": "ici. Après quelques minutes, c'est en"
+    },
+    {
+      "tStartS": 2239.28,
+      "tEndS": 2241.03,
+      "texte": "place. Voici ce qui a été créé. Il a"
+    },
+    {
+      "tStartS": 2241.04,
+      "tEndS": 2243.23,
+      "texte": "créé toute l'automatisation. Ici, si"
+    },
+    {
+      "tStartS": 2243.24,
+      "tEndS": 2245.03,
+      "texte": "vous regardez bien à gauche, j'ai"
+    },
+    {
+      "tStartS": 2245.04,
+      "tEndS": 2247.99,
+      "texte": "maintenant Automation avec ici le weekly"
+    },
+    {
+      "tStartS": 2248,
+      "tEndS": 2250.03,
+      "texte": "prompt qui me permet de débuter la loupe"
+    },
+    {
+      "tStartS": 2250.04,
+      "tEndS": 2251.87,
+      "texte": "sans moi. J'ai plus à taper de prompt."
+    },
+    {
+      "tStartS": 2251.88,
+      "tEndS": 2254.15,
+      "texte": "Et ici, on a tout le script de la loupe"
+    },
+    {
+      "tStartS": 2254.16,
+      "tEndS": 2255.95,
+      "texte": "qui est maintenant en mesure de"
+    },
+    {
+      "tStartS": 2255.96,
+      "tEndS": 2258.91,
+      "texte": "s'exécuter sans moi. Et donc ici et bien"
+    },
+    {
+      "tStartS": 2258.92,
+      "tEndS": 2260.47,
+      "texte": "on a réussi à créer en seulement"
+    },
+    {
+      "tStartS": 2260.48,
+      "tEndS": 2262.069,
+      "texte": "quelques minutes ensemble toute une"
+    },
+    {
+      "tStartS": 2262.079,
+      "tEndS": 2264.109,
+      "texte": "loupe 100 % automatisée qui me"
+    },
+    {
+      "tStartS": 2264.119,
+      "tEndS": 2265.67,
+      "texte": "permettrait de générer des posts"
+    },
+    {
+      "tStartS": 2265.68,
+      "tEndS": 2267.309,
+      "texte": "Instagram. Encore une fois, ici si vous"
+    },
+    {
+      "tStartS": 2267.319,
+      "tEndS": 2268.589,
+      "texte": "voulez aller un tout petit peu plus"
+    },
+    {
+      "tStartS": 2268.599,
+      "tEndS": 2270.349,
+      "texte": "loin, vous ajoutez un outil qui est"
+    },
+    {
+      "tStartS": 2270.359,
+      "tEndS": 2272.27,
+      "texte": "capable de publier directement pour vous"
+    },
+    {
+      "tStartS": 2272.28,
+      "tEndS": 2274.27,
+      "texte": "sur Instagram ou de le faire par du"
+    },
+    {
+      "tStartS": 2274.28,
+      "tEndS": 2276.15,
+      "texte": "computer use comme c'est déjà possible"
+    },
+    {
+      "tStartS": 2276.16,
+      "tEndS": 2278.39,
+      "texte": "de le faire avec l'aud et à partir de là"
+    },
+    {
+      "tStartS": 2278.4,
+      "tEndS": 2281.309,
+      "texte": "vous êtes sur un processé."
+    },
+    {
+      "tStartS": 2281.319,
+      "tEndS": 2282.79,
+      "texte": "à l'aide des loupes. Alors, normalement"
+    },
+    {
+      "tStartS": 2282.8,
+      "tEndS": 2284.27,
+      "texte": "avec cette vidéo, vous avez tout ce"
+    },
+    {
+      "tStartS": 2284.28,
+      "tEndS": 2285.91,
+      "texte": "qu'il vous faut pour créer vos premières"
+    },
+    {
+      "tStartS": 2285.92,
+      "tEndS": 2287.95,
+      "texte": "loopes et automatiser toujours plus de"
+    },
+    {
+      "tStartS": 2287.96,
+      "tEndS": 2289.79,
+      "texte": "tâches avec l'IA. Et vous l'avez vu dans"
+    },
+    {
+      "tStartS": 2289.8,
+      "tEndS": 2291.63,
+      "texte": "la vidéo, à l'intérieur de la loupe, on"
+    },
+    {
+      "tStartS": 2291.64,
+      "tEndS": 2293.47,
+      "texte": "a créé une petite équipe d'agent IA."
+    },
+    {
+      "tStartS": 2293.48,
+      "tEndS": 2294.829,
+      "texte": "Mais vous voulez peut-être créer une"
+    },
+    {
+      "tStartS": 2294.839,
+      "tEndS": 2296.99,
+      "texte": "équipe beaucoup plus complète d'agent IA"
+    },
+    {
+      "tStartS": 2297,
+      "tEndS": 2298.47,
+      "texte": "à l'aide de Cloude. Et bien, ça tombe"
+    },
+    {
+      "tStartS": 2298.48,
+      "tEndS": 2300.23,
+      "texte": "bien parce que juste ici, vous avez une"
+    },
+    {
+      "tStartS": 2300.24,
+      "tEndS": 2301.91,
+      "texte": "vidéo qui s'affiche où je vous montre"
+    },
+    {
+      "tStartS": 2301.92,
+      "tEndS": 2303.67,
+      "texte": "comment créer votre première équipe"
+    },
+    {
+      "tStartS": 2303.68,
+      "tEndS": 2307.28,
+      "texte": "d'agent à l'aide de cloud. Yeah."
+    }
+  ]
+}

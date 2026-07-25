@@ -1,0 +1,1886 @@
+{
+  "videoId": "a7WtmEx15Yk",
+  "meta": {
+    "titre": "6 Skills pour Créer une VRAIE App avec Claude Code",
+    "chaine": "Naier Saidane",
+    "dureeS": 771,
+    "publieeLe": "2026-07-19",
+    "description": "💎 Mon système 3 clients IA en 180 jours - https://laccelerateuria.com/?utm_source=youtube&utm_campaign=a7WtmEx15Yk\n\n🎁 Mini-cours gratuit 1er client IA en 7 jours - https://laccelerateuria.com/mini-cours?utm_source=youtube&utm_campaign=a7WtmEx15Yk\n\n\n\nRepo Claude Mastery - https://github.com/naiersaidane/claude-mastery\n\n\nSections\n00:39 Pourquoi le vibe-coding échoue\n01:28 Le panorama des méthodes\n02:32 /interroge\n04:31 /cadre\n06:03 /planifie\n07:39 /design\n09:03 /investigue\n10:22 /illustre\n11:18 Installation",
+    "chapitres": [
+      {
+        "t": 0,
+        "titre": "<Untitled Chapter 1>"
+      },
+      {
+        "t": 39,
+        "titre": "Why vibe-coding fails"
+      },
+      {
+        "t": 88,
+        "titre": "Overview of methods"
+      },
+      {
+        "t": 152,
+        "titre": "questions"
+      },
+      {
+        "t": 271,
+        "titre": "framework"
+      },
+      {
+        "t": 363,
+        "titre": "plans"
+      },
+      {
+        "t": 459,
+        "titre": "designs"
+      },
+      {
+        "t": 543,
+        "titre": "investigates"
+      },
+      {
+        "t": 622,
+        "titre": "illustrates"
+      },
+      {
+        "t": 678,
+        "titre": "Installation"
+      }
+    ]
+  },
+  "source": "subs-manuels",
+  "langue": "fr",
+  "segments": [
+    {
+      "tStartS": 0.08,
+      "tEndS": 1.9100000000000001,
+      "texte": "Vous ouvrez clot code, vous promptez."
+    },
+    {
+      "tStartS": 1.92,
+      "tEndS": 4.19,
+      "texte": "Lia génère 300 en ligne, ça marche mais"
+    },
+    {
+      "tStartS": 4.2,
+      "tEndS": 6.15,
+      "texte": "ça casse autre chose. Et 2 heures plus"
+    },
+    {
+      "tStartS": 6.16,
+      "tEndS": 8.43,
+      "texte": "tard, vous réalisez que vous avez résolu"
+    },
+    {
+      "tStartS": 8.44,
+      "tEndS": 10.31,
+      "texte": "le mauvais problème depuis le début."
+    },
+    {
+      "tStartS": 10.32,
+      "tEndS": 12.11,
+      "texte": "C'est pas un problème de prente, c'est"
+    },
+    {
+      "tStartS": 12.12,
+      "tEndS": 14.23,
+      "texte": "pas un problème de modèle, c'est un"
+    },
+    {
+      "tStartS": 14.24,
+      "tEndS": 16.269,
+      "texte": "problème de méthode. Le top 1 % des"
+    },
+    {
+      "tStartS": 16.279,
+      "tEndS": 18.55,
+      "texte": "builders ne côte pas plus vite que vous."
+    },
+    {
+      "tStartS": 18.56,
+      "tEndS": 21.189,
+      "texte": "Il cadr avant de laisser Lia écrire une"
+    },
+    {
+      "tStartS": 21.199,
+      "tEndS": 22.75,
+      "texte": "seule ligne. Dans cette vidéo, je vous"
+    },
+    {
+      "tStartS": 22.76,
+      "tEndS": 24.95,
+      "texte": "montre les six skills que j'utilise pour"
+    },
+    {
+      "tStartS": 24.96,
+      "tEndS": 27.31,
+      "texte": "faire exactement ça. Comprendre le vrai"
+    },
+    {
+      "tStartS": 27.32,
+      "tEndS": 30.509,
+      "texte": "besoin, cadrer une spec bent. planifié"
+    },
+    {
+      "tStartS": 30.519,
+      "tEndS": 32.95,
+      "texte": "par tranche testable, designé sans le"
+    },
+    {
+      "tStartS": 32.96,
+      "tEndS": 35.95,
+      "texte": "slop, débugé de façon scientifique et"
+    },
+    {
+      "tStartS": 35.96,
+      "tEndS": 37.99,
+      "texte": "documenter sans quitter le terminal."
+    },
+    {
+      "tStartS": 38,
+      "tEndS": 40.069,
+      "texte": "Tout ça installable en 30 secondes."
+    },
+    {
+      "tStartS": 40.079,
+      "tEndS": 41.389,
+      "texte": "Imaginez que vous demandez à un"
+    },
+    {
+      "tStartS": 41.399,
+      "tEndS": 43.47,
+      "texte": "entrepreneur de construire une maison"
+    },
+    {
+      "tStartS": 43.48,
+      "tEndS": 46.069,
+      "texte": "sans plan et sans calendrier. Sans plan,"
+    },
+    {
+      "tStartS": 46.079,
+      "tEndS": 47.869,
+      "texte": "il empile les briques sans savoir ce"
+    },
+    {
+      "tStartS": 47.879,
+      "tEndS": 50.27,
+      "texte": "qu'il construit, une pièce sans porte,"
+    },
+    {
+      "tStartS": 50.28,
+      "tEndS": 52.67,
+      "texte": "un escalier qui débouche nulle part et à"
+    },
+    {
+      "tStartS": 52.68,
+      "tEndS": 54.869,
+      "texte": "mi-chantier, il réalise qu'il n'y a plus"
+    },
+    {
+      "tStartS": 54.879,
+      "tEndS": 56.67,
+      "texte": "de place pour la salle de bain. Et même"
+    },
+    {
+      "tStartS": 56.68,
+      "tEndS": 59.189,
+      "texte": "si par miracle, il sait quelle maison il"
+    },
+    {
+      "tStartS": 59.199,
+      "tEndS": 61.869,
+      "texte": "veut, sans calendrier, il peint avant la"
+    },
+    {
+      "tStartS": 61.879,
+      "tEndS": 64.509,
+      "texte": "plomberie, il oublie la climatisation et"
+    },
+    {
+      "tStartS": 64.519,
+      "tEndS": 66.469,
+      "texte": "il casse pour recommencer. Le vibe"
+    },
+    {
+      "tStartS": 66.479,
+      "tEndS": 68.27,
+      "texte": "coding, c'est exactement ça. Les deux en"
+    },
+    {
+      "tStartS": 68.28,
+      "tEndS": 70.35,
+      "texte": "même temps, pas de destination et pas"
+    },
+    {
+      "tStartS": 70.36,
+      "tEndS": 73.109,
+      "texte": "d'ordre. Ilia va construire vite sans se"
+    },
+    {
+      "tStartS": 73.119,
+      "tEndS": 75.03,
+      "texte": "plaindre, mais elle va construire"
+    },
+    {
+      "tStartS": 75.04,
+      "tEndS": 77.469,
+      "texte": "exactement ce que vous lui avez demandé,"
+    },
+    {
+      "tStartS": 77.479,
+      "tEndS": 79.39,
+      "texte": "pas ce dont vous aviez besoin. Donc la"
+    },
+    {
+      "tStartS": 79.4,
+      "tEndS": 81.469,
+      "texte": "solution n'est pas de mieux pranter,"
+    },
+    {
+      "tStartS": 81.479,
+      "tEndS": 83.789,
+      "texte": "c'est de cadrer avant de générer. Et"
+    },
+    {
+      "tStartS": 83.799,
+      "tEndS": 85.59,
+      "texte": "c'est ce que font les six skills que je"
+    },
+    {
+      "tStartS": 85.6,
+      "tEndS": 87.749,
+      "texte": "vais vous montrer dans l'ordre exact où"
+    },
+    {
+      "tStartS": 87.759,
+      "tEndS": 89.59,
+      "texte": "je les utilise. Il existe aujourd'hui au"
+    },
+    {
+      "tStartS": 89.6,
+      "tEndS": 91.069,
+      "texte": "moins h méthodes reconnues pour"
+    },
+    {
+      "tStartS": 91.079,
+      "tEndS": 93.069,
+      "texte": "structurer son travail avec l'autre code"
+    },
+    {
+      "tStartS": 93.079,
+      "tEndS": 95.149,
+      "texte": "du plus léger au plus complexe. Et je"
+    },
+    {
+      "tStartS": 95.159,
+      "tEndS": 97.03,
+      "texte": "vais vous donner une carte rapide pour"
+    },
+    {
+      "tStartS": 97.04,
+      "tEndS": 98.71,
+      "texte": "vous situer. À l'entrée du spectre, ma"
+    },
+    {
+      "tStartS": 98.72,
+      "tEndS": 100.71,
+      "texte": "méthode trois fichiers Markdown dans un"
+    },
+    {
+      "tStartS": 100.72,
+      "tEndS": 103.23,
+      "texte": "répertoire doc. C'est le point d'entrée"
+    },
+    {
+      "tStartS": 103.24,
+      "tEndS": 105.95,
+      "texte": "le plus léger dans le spec driven conçu"
+    },
+    {
+      "tStartS": 105.96,
+      "tEndS": 108.149,
+      "texte": "pour un solo non dev ou un dev dé"
+    },
+    {
+      "tStartS": 108.159,
+      "tEndS": 110.23,
+      "texte": "débutant. Elle permet de construire un"
+    },
+    {
+      "tStartS": 110.24,
+      "tEndS": 112.429,
+      "texte": "projet structuré durable dans le temps."
+    },
+    {
+      "tStartS": 112.439,
+      "tEndS": 114.67,
+      "texte": "Au milieu des méthodes comme GSD ou Open"
+    },
+    {
+      "tStartS": 114.68,
+      "tEndS": 116.67,
+      "texte": "Spec solides pour des grands projets"
+    },
+    {
+      "tStartS": 116.68,
+      "tEndS": 118.469,
+      "texte": "mais avec une charge d'apprentissage"
+    },
+    {
+      "tStartS": 118.479,
+      "tEndS": 121.029,
+      "texte": "réel et une consommation de tokens"
+    },
+    {
+      "tStartS": 121.039,
+      "tEndS": 122.749,
+      "texte": "beaucoup plus élevé. Et au sommet de la"
+    },
+    {
+      "tStartS": 122.759,
+      "tEndS": 125.069,
+      "texte": "complexité, la bémade 12 agents à"
+    },
+    {
+      "tStartS": 125.079,
+      "tEndS": 127.389,
+      "texte": "Rollagile, un cycle de développement"
+    },
+    {
+      "tStartS": 127.399,
+      "tEndS": 129.309,
+      "texte": "complet et reproduit dans Claude"
+    },
+    {
+      "tStartS": 129.319,
+      "tEndS": 131.229,
+      "texte": "puissant pour des équipes et des projets"
+    },
+    {
+      "tStartS": 131.239,
+      "tEndS": 132.83,
+      "texte": "complexes, mais vous n'avez pas besoin"
+    },
+    {
+      "tStartS": 132.84,
+      "tEndS": 134.71,
+      "texte": "de ça pour démarrer. Ma méthode apparaît"
+    },
+    {
+      "tStartS": 134.72,
+      "tEndS": 136.07,
+      "texte": "en premier, non pas parce qu'elle est"
+    },
+    {
+      "tStartS": 136.08,
+      "tEndS": 137.869,
+      "texte": "supérieure à toutes les autres, mais"
+    },
+    {
+      "tStartS": 137.879,
+      "tEndS": 139.75,
+      "texte": "parce que c'est le point de départ le"
+    },
+    {
+      "tStartS": 139.76,
+      "tEndS": 141.83,
+      "texte": "plus intelligent. Vous commencez ici,"
+    },
+    {
+      "tStartS": 141.84,
+      "tEndS": 143.43,
+      "texte": "vous montez en charge dès que les"
+    },
+    {
+      "tStartS": 143.44,
+      "tEndS": 145.47,
+      "texte": "signaux le justifient et les six skills"
+    },
+    {
+      "tStartS": 145.48,
+      "tEndS": 147.03,
+      "texte": "que je vais vous montrer maintenant"
+    },
+    {
+      "tStartS": 147.04,
+      "tEndS": 149.11,
+      "texte": "couvrent le cycle complet de la"
+    },
+    {
+      "tStartS": 149.12,
+      "tEndS": 151.11,
+      "texte": "compréhension du besoin jusqu'à la"
+    },
+    {
+      "tStartS": 151.12,
+      "tEndS": 152.869,
+      "texte": "documentation finale. Le premier skill"
+    },
+    {
+      "tStartS": 152.879,
+      "tEndS": 154.869,
+      "texte": "s'appelle interroge et c'est l'étape que"
+    },
+    {
+      "tStartS": 154.879,
+      "tEndS": 156.67,
+      "texte": "tout le monde saute. Voici ce qui se"
+    },
+    {
+      "tStartS": 156.68,
+      "tEndS": 158.63,
+      "texte": "passe sans lui. J'ai fait le test, j'ai"
+    },
+    {
+      "tStartS": 158.64,
+      "tEndS": 160.83,
+      "texte": "tapé le prank suivant. Fais-moi un outil"
+    },
+    {
+      "tStartS": 160.84,
+      "tEndS": 162.91,
+      "texte": "web qui dit à un freelance combien"
+    },
+    {
+      "tStartS": 162.92,
+      "tEndS": 165.39,
+      "texte": "facturer par jour pour atteindre son"
+    },
+    {
+      "tStartS": 165.4,
+      "tEndS": 167.229,
+      "texte": "objectif de revenu. En moins de 2"
+    },
+    {
+      "tStartS": 167.239,
+      "tEndS": 169.43,
+      "texte": "minutes 30, vous avez quelque chose sur"
+    },
+    {
+      "tStartS": 169.44,
+      "tEndS": 172.35,
+      "texte": "le web. violé il y a quelques champs et"
+    },
+    {
+      "tStartS": 172.36,
+      "tEndS": 174.67,
+      "texte": "Claud qui a décidé tout seul ce que vous"
+    },
+    {
+      "tStartS": 174.68,
+      "tEndS": 177.229,
+      "texte": "vouliez un revenu net annuel des"
+    },
+    {
+      "tStartS": 177.239,
+      "tEndS": 179.63,
+      "texte": "semaines de congé un TGM calculé"
+    },
+    {
+      "tStartS": 179.64,
+      "tEndS": 181.55,
+      "texte": "automatiquement c'est rapide c'est"
+    },
+    {
+      "tStartS": 181.56,
+      "tEndS": 183.35,
+      "texte": "fonctionnel et c'est exactement ce que"
+    },
+    {
+      "tStartS": 183.36,
+      "tEndS": 185.149,
+      "texte": "vous n'aviez pas demandé parce que vous"
+    },
+    {
+      "tStartS": 185.159,
+      "tEndS": 187.309,
+      "texte": "n'aviez pas encore décidé vous-même ce"
+    },
+    {
+      "tStartS": 187.319,
+      "tEndS": 188.789,
+      "texte": "que vous vouliez le problème c'est que"
+    },
+    {
+      "tStartS": 188.799,
+      "tEndS": 191.149,
+      "texte": "Lia ne va pas forcément défaire ce"
+    },
+    {
+      "tStartS": 191.159,
+      "tEndS": 193.39,
+      "texte": "qu'elle a déjà fait elle va plutôt"
+    },
+    {
+      "tStartS": 193.4,
+      "tEndS": 195.589,
+      "texte": "empiler des couches de code par-dessus"
+    },
+    {
+      "tStartS": 195.599,
+      "tEndS": 197.83,
+      "texte": "des routines qui corrigent les routines"
+    },
+    {
+      "tStartS": 197.84,
+      "tEndS": 200.309,
+      "texte": "des patchs qui s'accumulent Et plus vous"
+    },
+    {
+      "tStartS": 200.319,
+      "tEndS": 202.47,
+      "texte": "avancez, plus le coût de correction"
+    },
+    {
+      "tStartS": 202.48,
+      "tEndS": 204.55,
+      "texte": "augmente parce que vous construisez sur"
+    },
+    {
+      "tStartS": 204.56,
+      "tEndS": 206.19,
+      "texte": "des fondations qui n'étaient pas les"
+    },
+    {
+      "tStartS": 206.2,
+      "tEndS": 207.55,
+      "texte": "bonnes depuis le départ. Maintenant,"
+    },
+    {
+      "tStartS": 207.56,
+      "tEndS": 209.47,
+      "texte": "j'ai relancé le même prank en activant"
+    },
+    {
+      "tStartS": 209.48,
+      "tEndS": 211.83,
+      "texte": "le plan mode et en faisant appel au ce"
+    },
+    {
+      "tStartS": 211.84,
+      "tEndS": 214.309,
+      "texte": "qu'il interroge. Cloud ne génère pas. Il"
+    },
+    {
+      "tStartS": 214.319,
+      "tEndS": 217.429,
+      "texte": "m'a posé h questions sur le modèle de"
+    },
+    {
+      "tStartS": 217.439,
+      "tEndS": 219.47,
+      "texte": "calcul, les charges, les impôts, le"
+    },
+    {
+      "tStartS": 219.48,
+      "tEndS": 222.03,
+      "texte": "régime juridique, les jours facturables,"
+    },
+    {
+      "tStartS": 222.04,
+      "tEndS": 224.19,
+      "texte": "la stack technique, le style, les"
+    },
+    {
+      "tStartS": 224.2,
+      "tEndS": 226.229,
+      "texte": "couleurs. Il ne vous demande pas ce"
+    },
+    {
+      "tStartS": 226.239,
+      "tEndS": 227.949,
+      "texte": "qu'il peut déduire seul. Il va chercher"
+    },
+    {
+      "tStartS": 227.959,
+      "tEndS": 229.949,
+      "texte": "lui-même dans le code s'il y a déjà du"
+    },
+    {
+      "tStartS": 229.959,
+      "tEndS": 231.75,
+      "texte": "code et il va même chercher les taux"
+    },
+    {
+      "tStartS": 231.76,
+      "tEndS": 233.03,
+      "texte": "applicables en vigueur pour les"
+    },
+    {
+      "tStartS": 233.04,
+      "tEndS": 234.309,
+      "texte": "freelance, quel que soit le type"
+    },
+    {
+      "tStartS": 234.319,
+      "tEndS": 236.149,
+      "texte": "d'activité pour que les calculs soient"
+    },
+    {
+      "tStartS": 236.159,
+      "tEndS": 237.83,
+      "texte": "justes dès le départ. Et 12 minutes plus"
+    },
+    {
+      "tStartS": 237.84,
+      "tEndS": 240.55,
+      "texte": "tard, au lieu de 2 minutes 30, l'outil"
+    },
+    {
+      "tStartS": 240.56,
+      "tEndS": 242.55,
+      "texte": "est sans commune. Beaucoup plus"
+    },
+    {
+      "tStartS": 242.56,
+      "tEndS": 244.949,
+      "texte": "sophistiqué, beaucoup plus d'options de"
+    },
+    {
+      "tStartS": 244.959,
+      "tEndS": 246.99,
+      "texte": "configuration et surtout il correspond à"
+    },
+    {
+      "tStartS": 247,
+      "tEndS": 248.83,
+      "texte": "ce que vous vouliez vraiment, pas à ce"
+    },
+    {
+      "tStartS": 248.84,
+      "tEndS": 250.91,
+      "texte": "que Lia avait supposé. La différence de"
+    },
+    {
+      "tStartS": 250.92,
+      "tEndS": 252.429,
+      "texte": "temps est réelle, mais ce que vous"
+    },
+    {
+      "tStartS": 252.439,
+      "tEndS": 254.47,
+      "texte": "récupérez à la fin n'a rien à voir. Moi,"
+    },
+    {
+      "tStartS": 254.48,
+      "tEndS": 255.75,
+      "texte": "j'utilise Interroge pour une"
+    },
+    {
+      "tStartS": 255.76,
+      "tEndS": 257.39,
+      "texte": "fonctionnalité simple ou pour mes"
+    },
+    {
+      "tStartS": 257.4,
+      "tEndS": 259.39,
+      "texte": "demandes quel qu'elle soit auprès de"
+    },
+    {
+      "tStartS": 259.4,
+      "tEndS": 261.11,
+      "texte": "Cloud, au quotidien. Mais quand je"
+    },
+    {
+      "tStartS": 261.12,
+      "tEndS": 262.909,
+      "texte": "démarre un nouveau projet avec plusieurs"
+    },
+    {
+      "tStartS": 262.919,
+      "tEndS": 265.469,
+      "texte": "fonctionnalités, une application interne"
+    },
+    {
+      "tStartS": 265.479,
+      "tEndS": 268.43,
+      "texte": "pour un client ou un SAS, je passe par"
+    },
+    {
+      "tStartS": 268.44,
+      "tEndS": 270.71,
+      "texte": "la méthode projet qui démarre avec le"
+    },
+    {
+      "tStartS": 270.72,
+      "tEndS": 272.189,
+      "texte": "skill suivant. Le deuxième skill"
+    },
+    {
+      "tStartS": 272.199,
+      "tEndS": 274.39,
+      "texte": "s'appelle cadre et c'est le moment où"
+    },
+    {
+      "tStartS": 274.4,
+      "tEndS": 276.43,
+      "texte": "l'attention devient explicite. Pensez à"
+    },
+    {
+      "tStartS": 276.44,
+      "tEndS": 278.15,
+      "texte": "un plan d'architecte. Sur ce plan, il y"
+    },
+    {
+      "tStartS": 278.16,
+      "tEndS": 280.469,
+      "texte": "a une source unique de vérité. Le maçon,"
+    },
+    {
+      "tStartS": 280.479,
+      "tEndS": 282.23,
+      "texte": "le plombier, l'électricien travaille"
+    },
+    {
+      "tStartS": 282.24,
+      "tEndS": 284.189,
+      "texte": "tous depuis le même document. Pas"
+    },
+    {
+      "tStartS": 284.199,
+      "tEndS": 286.07,
+      "texte": "d'instruction différentes selon à qui"
+    },
+    {
+      "tStartS": 286.08,
+      "tEndS": 287.909,
+      "texte": "vous parlez. Un seul plan qui fait foi"
+    },
+    {
+      "tStartS": 287.919,
+      "tEndS": 289.27,
+      "texte": "pour tout le monde. Quatre produit"
+    },
+    {
+      "tStartS": 289.28,
+      "tEndS": 290.909,
+      "texte": "l'équivalent pour votre code et ça"
+    },
+    {
+      "tStartS": 290.919,
+      "tEndS": 293.469,
+      "texte": "s'appelle un PRD. Product requirement"
+    },
+    {
+      "tStartS": 293.479,
+      "tEndS": 296.029,
+      "texte": "document. C'est un document court, une à"
+    },
+    {
+      "tStartS": 296.039,
+      "tEndS": 298.11,
+      "texte": "deux pages. J'aime bien le poser dans un"
+    },
+    {
+      "tStartS": 298.12,
+      "tEndS": 300.749,
+      "texte": "répertoire doc qui regroupera l'ensemble"
+    },
+    {
+      "tStartS": 300.759,
+      "tEndS": 302.87,
+      "texte": "de vos documents de référence. Il dit le"
+    },
+    {
+      "tStartS": 302.88,
+      "tEndS": 305.469,
+      "texte": "pourquoi et le quoi, pourquoi vous"
+    },
+    {
+      "tStartS": 305.479,
+      "tEndS": 307.79,
+      "texte": "faites ce produit, pour qui, ce qu'il"
+    },
+    {
+      "tStartS": 307.8,
+      "tEndS": 309.95,
+      "texte": "fait et ce qu'il refuse de faire. Il ne"
+    },
+    {
+      "tStartS": 309.96,
+      "tEndS": 312.189,
+      "texte": "dit jamais le comment. La techno se"
+    },
+    {
+      "tStartS": 312.199,
+      "tEndS": 314.55,
+      "texte": "choisit plus tard. Il est stable, il"
+    },
+    {
+      "tStartS": 314.56,
+      "tEndS": 316.99,
+      "texte": "vieillit beaucoup moins vite que le code"
+    },
+    {
+      "tStartS": 317,
+      "tEndS": 319.189,
+      "texte": "et il est lésible par n'importe qui."
+    },
+    {
+      "tStartS": 319.199,
+      "tEndS": 321.55,
+      "texte": "Vous devez pouvoir l'envoyer à un client"
+    },
+    {
+      "tStartS": 321.56,
+      "tEndS": 323.87,
+      "texte": "ou à un associé non technique sans avoir"
+    },
+    {
+      "tStartS": 323.88,
+      "tEndS": 325.55,
+      "texte": "à expliquer quoi que ce soit. Ce que le"
+    },
+    {
+      "tStartS": 325.56,
+      "tEndS": 328.11,
+      "texte": "Skill 4 produit en sortie, c'est ce PRD"
+    },
+    {
+      "tStartS": 328.12,
+      "tEndS": 330.11,
+      "texte": "structuré en huit sections fixes avec"
+    },
+    {
+      "tStartS": 330.12,
+      "tEndS": 332.55,
+      "texte": "des user story numéroté. Pour reprendre"
+    },
+    {
+      "tStartS": 332.56,
+      "tEndS": 334.55,
+      "texte": "l'outil freelance qu'on a vu avec le"
+    },
+    {
+      "tStartS": 334.56,
+      "tEndS": 336.87,
+      "texte": "skill inter, ça donnerait par exemple en"
+    },
+    {
+      "tStartS": 336.88,
+      "tEndS": 339.029,
+      "texte": "tant que freelance, je veux saisir le"
+    },
+    {
+      "tStartS": 339.039,
+      "tEndS": 341.07,
+      "texte": "revenu net que je veux gagner pour"
+    },
+    {
+      "tStartS": 341.08,
+      "tEndS": 343.51,
+      "texte": "obtenir le TGM que je dois facturer pour"
+    },
+    {
+      "tStartS": 343.52,
+      "tEndS": 345.029,
+      "texte": "l'atteindre. Ou encore en tant"
+    },
+    {
+      "tStartS": 345.039,
+      "tEndS": 346.909,
+      "texte": "qu'auto-entrepreneur, je veux être"
+    },
+    {
+      "tStartS": 346.919,
+      "tEndS": 348.67,
+      "texte": "alerté quand mon chiffre d'affair"
+    },
+    {
+      "tStartS": 348.68,
+      "tEndS": 351.11,
+      "texte": "dépasse le plafond micro-entreprise afin"
+    },
+    {
+      "tStartS": 351.12,
+      "tEndS": 352.83,
+      "texte": "de comprendre qu'un autre statut est"
+    },
+    {
+      "tStartS": 352.84,
+      "tEndS": 354.79,
+      "texte": "plus adapté. Simple et vérifiable, le"
+    },
+    {
+      "tStartS": 354.8,
+      "tEndS": 357.07,
+      "texte": "PRD, c'est la destination, l'objectif"
+    },
+    {
+      "tStartS": 357.08,
+      "tEndS": 359.43,
+      "texte": "final, ce que vous voulez construire et"
+    },
+    {
+      "tStartS": 359.44,
+      "tEndS": 361.309,
+      "texte": "pourquoi. Le chemin pour y arriver,"
+    },
+    {
+      "tStartS": 361.319,
+      "tEndS": 363.11,
+      "texte": "c'est le skill suivant qui s'en charge."
+    },
+    {
+      "tStartS": 363.12,
+      "tEndS": 365.07,
+      "texte": "Le troisième skill s'appelle planifie et"
+    },
+    {
+      "tStartS": 365.08,
+      "tEndS": 366.909,
+      "texte": "c'est ce qui empêche Lia de partir"
+    },
+    {
+      "tStartS": 366.919,
+      "tEndS": 369.189,
+      "texte": "envir. Vous avez votre PRD, la"
+    },
+    {
+      "tStartS": 369.199,
+      "tEndS": 371.07,
+      "texte": "destination est claire. Si vous le"
+    },
+    {
+      "tStartS": 371.08,
+      "tEndS": 372.83,
+      "texte": "donnez directement à Lia, elle va"
+    },
+    {
+      "tStartS": 372.84,
+      "tEndS": 374.55,
+      "texte": "générer tout d'un coup toutes les"
+    },
+    {
+      "tStartS": 374.56,
+      "tEndS": 376.189,
+      "texte": "couches en même temps et vous vous"
+    },
+    {
+      "tStartS": 376.199,
+      "tEndS": 377.67,
+      "texte": "retrouvez avec quelque chose"
+    },
+    {
+      "tStartS": 377.68,
+      "tEndS": 379.71,
+      "texte": "d'impossible à relire, impossible à"
+    },
+    {
+      "tStartS": 379.72,
+      "tEndS": 382.23,
+      "texte": "tester et souvent à côté de la plaque."
+    },
+    {
+      "tStartS": 382.24,
+      "tEndS": 384.39,
+      "texte": "Le skill planifie prend ce PRD et le"
+    },
+    {
+      "tStartS": 384.4,
+      "tEndS": 386.029,
+      "texte": "découpe selon le principe des balles"
+    },
+    {
+      "tStartS": 386.039,
+      "tEndS": 388.189,
+      "texte": "traçantes. Ce terme vient du livre Le"
+    },
+    {
+      "tStartS": 388.199,
+      "tEndS": 389.71,
+      "texte": "programmeur pragmatique. C'est ce"
+    },
+    {
+      "tStartS": 389.72,
+      "tEndS": 392.39,
+      "texte": "livre-là d'Andrew Hunt et David Thomas."
+    },
+    {
+      "tStartS": 392.4,
+      "tEndS": 394.309,
+      "texte": "C'est l'un des livres fondateurs du"
+    },
+    {
+      "tStartS": 394.319,
+      "tEndS": 396.87,
+      "texte": "métier dont la première version date de"
+    },
+    {
+      "tStartS": 398.4,
+      "tEndS": 399.95,
+      "texte": "et dans les concepts restent utiles"
+    },
+    {
+      "tStartS": 399.96,
+      "tEndS": 401.83,
+      "texte": "aujourd'hui y compris dans l'ère de"
+    },
+    {
+      "tStartS": 401.84,
+      "tEndS": 403.43,
+      "texte": "l'IA. Pendant la seconde guerre"
+    },
+    {
+      "tStartS": 403.44,
+      "tEndS": 406.629,
+      "texte": "mondiale, les balles phosphores insé une"
+    },
+    {
+      "tStartS": 406.639,
+      "tEndS": 408.909,
+      "texte": "sur 6 dans les chargeurs laissaient une"
+    },
+    {
+      "tStartS": 408.919,
+      "tEndS": 411.309,
+      "texte": "traînée lumineuse visible dans le ciel."
+    },
+    {
+      "tStartS": 411.319,
+      "tEndS": 414.029,
+      "texte": "Le tireur ajustait ses canons en temps"
+    },
+    {
+      "tStartS": 414.039,
+      "tEndS": 417.39,
+      "texte": "réel sans calcul préalable. Il tirait,"
+    },
+    {
+      "tStartS": 417.4,
+      "tEndS": 419.55,
+      "texte": "il voyait où ça partait et il"
+    },
+    {
+      "tStartS": 419.56,
+      "tEndS": 421.029,
+      "texte": "corrigeait. En code, c'est le même"
+    },
+    {
+      "tStartS": 421.039,
+      "tEndS": 423.39,
+      "texte": "principe. Chaque tranche traverse toutes"
+    },
+    {
+      "tStartS": 423.4,
+      "tEndS": 424.99,
+      "texte": "les couches de la stack technique en"
+    },
+    {
+      "tStartS": 425,
+      "tEndS": 427.309,
+      "texte": "même temps. La base de données, l'API,"
+    },
+    {
+      "tStartS": 427.319,
+      "tEndS": 429.15,
+      "texte": "l'interface, les tests, elle est"
+    },
+    {
+      "tStartS": 429.16,
+      "tEndS": 432.15,
+      "texte": "démontrable seule dès la phase une et"
+    },
+    {
+      "tStartS": 432.16,
+      "tEndS": 434.11,
+      "texte": "vous corrigez la trajectoire en temps"
+    },
+    {
+      "tStartS": 434.12,
+      "tEndS": 436.55,
+      "texte": "réel plutôt qu'à la phase 4 quand il est"
+    },
+    {
+      "tStartS": 436.56,
+      "tEndS": 438.189,
+      "texte": "trop tard. Ce que le skill planifie"
+    },
+    {
+      "tStartS": 438.199,
+      "tEndS": 439.51,
+      "texte": "produit en sortie, c'est un fichier"
+    },
+    {
+      "tStartS": 439.52,
+      "tEndS": 441.869,
+      "texte": "plan.md dans votre répertoire doc."
+    },
+    {
+      "tStartS": 441.879,
+      "tEndS": 443.869,
+      "texte": "Chaque phase contient les user story"
+    },
+    {
+      "tStartS": 443.879,
+      "tEndS": 446.43,
+      "texte": "concernées, ce qui sera livré. Les"
+    },
+    {
+      "tStartS": 446.44,
+      "tEndS": 448.309,
+      "texte": "critères d'acceptation pour que LIA"
+    },
+    {
+      "tStartS": 448.319,
+      "tEndS": 450.23,
+      "texte": "sache si le résultat correspond à vos"
+    },
+    {
+      "tStartS": 450.24,
+      "tEndS": 451.99,
+      "texte": "attentes et si elle doit rectifier et"
+    },
+    {
+      "tStartS": 452,
+      "tEndS": 454.15,
+      "texte": "les dépendances entre les phases. Le PRD"
+    },
+    {
+      "tStartS": 454.16,
+      "tEndS": 456.869,
+      "texte": "dit où vous allez, le plan dit comment y"
+    },
+    {
+      "tStartS": 456.879,
+      "tEndS": 458.99,
+      "texte": "arriver, dans quel ordre et par quelle"
+    },
+    {
+      "tStartS": 459,
+      "tEndS": 461.35,
+      "texte": "étape vérifiable. Le 4è skill s'appelle"
+    },
+    {
+      "tStartS": 461.36,
+      "tEndS": 463.23,
+      "texte": "design et c'est le différenciateur"
+    },
+    {
+      "tStartS": 463.24,
+      "tEndS": 465.309,
+      "texte": "visuel à l'écran. Voici ce que produit"
+    },
+    {
+      "tStartS": 465.319,
+      "tEndS": 468.029,
+      "texte": "la majorité des projets I sans le skill"
+    },
+    {
+      "tStartS": 468.039,
+      "tEndS": 470.309,
+      "texte": "design. Police inter, fond blanc et"
+    },
+    {
+      "tStartS": 470.319,
+      "tEndS": 472.149,
+      "texte": "dégradé violet. et c'est connu sous le"
+    },
+    {
+      "tStartS": 472.159,
+      "tEndS": 473.99,
+      "texte": "nom d'ailleurs de Yaslop. Vous le"
+    },
+    {
+      "tStartS": 474,
+      "tEndS": 475.469,
+      "texte": "reconnaissez immédiatement parce que"
+    },
+    {
+      "tStartS": 475.479,
+      "tEndS": 477.149,
+      "texte": "vous l'avez déjà vu partout. Ce n'est"
+    },
+    {
+      "tStartS": 477.159,
+      "tEndS": 479.189,
+      "texte": "pas un problème de compétence, c'est un"
+    },
+    {
+      "tStartS": 479.199,
+      "tEndS": 481.11,
+      "texte": "problème de promptte. Si vous ne donnez"
+    },
+    {
+      "tStartS": 481.12,
+      "tEndS": 483.589,
+      "texte": "pas de direction visuelle à LIA, elle va"
+    },
+    {
+      "tStartS": 483.599,
+      "tEndS": 485.51,
+      "texte": "piocher dans les patterns les plus"
+    },
+    {
+      "tStartS": 485.52,
+      "tEndS": 486.869,
+      "texte": "représentés dans ses données"
+    },
+    {
+      "tStartS": 486.879,
+      "tEndS": 489.11,
+      "texte": "d'entraînement. Et les patterns les plus"
+    },
+    {
+      "tStartS": 489.12,
+      "tEndS": 491.23,
+      "texte": "représentés, c'est exactement ce slope"
+    },
+    {
+      "tStartS": 491.24,
+      "tEndS": 493.029,
+      "texte": "générique. Le skill design, il change"
+    },
+    {
+      "tStartS": 493.039,
+      "tEndS": 494.749,
+      "texte": "ça. Il commence par faire une recherche"
+    },
+    {
+      "tStartS": 494.759,
+      "tEndS": 496.629,
+      "texte": "de ce qui est utilisé dans la catégorie"
+    },
+    {
+      "tStartS": 496.639,
+      "tEndS": 498.469,
+      "texte": "de votre produit. ce que font les"
+    },
+    {
+      "tStartS": 498.479,
+      "tEndS": 500.43,
+      "texte": "meilleurs, ce qui est standard, ce qui"
+    },
+    {
+      "tStartS": 500.44,
+      "tEndS": 502.629,
+      "texte": "est saturé. Et à partir de cela, il"
+    },
+    {
+      "tStartS": 502.639,
+      "tEndS": 505.55,
+      "texte": "propose un système entier esthétique,"
+    },
+    {
+      "tStartS": 505.56,
+      "tEndS": 508.39,
+      "texte": "typographie, couleur, espacement, motion"
+    },
+    {
+      "tStartS": 508.4,
+      "tEndS": 510.43,
+      "texte": "avec une justification par choix. et"
+    },
+    {
+      "tStartS": 510.44,
+      "tEndS": 512.63,
+      "texte": "surtout, il sort une analyse où jouer"
+    },
+    {
+      "tStartS": 512.64,
+      "tEndS": 514.709,
+      "texte": "les standards de votre catégorie pour"
+    },
+    {
+      "tStartS": 514.719,
+      "tEndS": 517.509,
+      "texte": "rester crédible et où prendre le risque"
+    },
+    {
+      "tStartS": 517.519,
+      "tEndS": 520.35,
+      "texte": "qui donne sa singularité au produit pour"
+    },
+    {
+      "tStartS": 520.36,
+      "tEndS": 522.389,
+      "texte": "se démarquer. Ce que le skill design"
+    },
+    {
+      "tStartS": 522.399,
+      "tEndS": 525.15,
+      "texte": "produit en sortie, c'est un aperçu HTML"
+    },
+    {
+      "tStartS": 525.16,
+      "tEndS": 526.79,
+      "texte": "ouvert automatiquement dans votre"
+    },
+    {
+      "tStartS": 526.8,
+      "tEndS": 529.19,
+      "texte": "navigateur. Spécimen typographique,"
+    },
+    {
+      "tStartS": 529.2,
+      "tEndS": 531.19,
+      "texte": "palette complète, une petite maquette"
+    },
+    {
+      "tStartS": 531.2,
+      "tEndS": 533.59,
+      "texte": "d'écran. Vous voyez le système visuel"
+    },
+    {
+      "tStartS": 533.6,
+      "tEndS": 535.75,
+      "texte": "avant d'écrire une ligne d'interface."
+    },
+    {
+      "tStartS": 535.76,
+      "tEndS": 538.069,
+      "texte": "L'antilope est intégré automatiquement."
+    },
+    {
+      "tStartS": 538.079,
+      "tEndS": 540.389,
+      "texte": "Par exemple, Interu sont bannis par"
+    },
+    {
+      "tStartS": 540.399,
+      "tEndS": 542.91,
+      "texte": "défaut avec des alternatives justifiées"
+    },
+    {
+      "tStartS": 542.92,
+      "tEndS": 545.23,
+      "texte": "à la place. Le 5è skill s'appelle"
+    },
+    {
+      "tStartS": 545.24,
+      "tEndS": 547.87,
+      "texte": "investigue et c'est celui qui sépare le"
+    },
+    {
+      "tStartS": 547.88,
+      "tEndS": 550.389,
+      "texte": "débug scientifique du débug au hasard."
+    },
+    {
+      "tStartS": 550.399,
+      "tEndS": 552.11,
+      "texte": "Voici ce qui se passe sans lui. Un bug"
+    },
+    {
+      "tStartS": 552.12,
+      "tEndS": 553.509,
+      "texte": "arrive, il arrive toujours. De toutes"
+    },
+    {
+      "tStartS": 553.519,
+      "tEndS": 555.389,
+      "texte": "les façons, vous demandez à Lia de le"
+    },
+    {
+      "tStartS": 555.399,
+      "tEndS": 557.389,
+      "texte": "corriger, elle essaye quelque chose, ça"
+    },
+    {
+      "tStartS": 557.399,
+      "tEndS": 559.67,
+      "texte": "ne marche pas, elle essaye autre chose."
+    },
+    {
+      "tStartS": 559.68,
+      "tEndS": 561.23,
+      "texte": "Elle commence à changer du code qui n'a"
+    },
+    {
+      "tStartS": 561.24,
+      "tEndS": 562.949,
+      "texte": "rien à voir avec le bug. Et au bout de"
+    },
+    {
+      "tStartS": 562.959,
+      "tEndS": 564.79,
+      "texte": "20 minutes, vous avez un code plus"
+    },
+    {
+      "tStartS": 564.8,
+      "tEndS": 566.91,
+      "texte": "complexe qu'avant avec le même bug"
+    },
+    {
+      "tStartS": 566.92,
+      "tEndS": 568.59,
+      "texte": "toujours présent mais juste déplacé"
+    },
+    {
+      "tStartS": 568.6,
+      "tEndS": 570.11,
+      "texte": "ailleurs. C'est exactement le médecin"
+    },
+    {
+      "tStartS": 570.12,
+      "tEndS": 572.03,
+      "texte": "urgentiste qui traite les symptômes sans"
+    },
+    {
+      "tStartS": 572.04,
+      "tEndS": 574.59,
+      "texte": "diagnostic. Il vous soulage ce soir,"
+    },
+    {
+      "tStartS": 574.6,
+      "tEndS": 576.31,
+      "texte": "vous revenez demain avec les mêmes"
+    },
+    {
+      "tStartS": 576.32,
+      "tEndS": 577.91,
+      "texte": "douleurs ailleurs. Le symptôme"
+    },
+    {
+      "tStartS": 577.92,
+      "tEndS": 580.23,
+      "texte": "disparaît, la cause racine reste. Le"
+    },
+    {
+      "tStartS": 580.24,
+      "tEndS": 583.23,
+      "texte": "skill investigue impose à une autre"
+    },
+    {
+      "tStartS": 583.24,
+      "tEndS": 585.069,
+      "texte": "façon de travailler. Quatre phases avec"
+    },
+    {
+      "tStartS": 585.079,
+      "tEndS": 587.75,
+      "texte": "validation à chaque étape. Localiser et"
+    },
+    {
+      "tStartS": 587.76,
+      "tEndS": 590.55,
+      "texte": "reproduire le bug d'abord. puis poser"
+    },
+    {
+      "tStartS": 590.56,
+      "tEndS": 593.23,
+      "texte": "trois hypothèses sur la cause racine,"
+    },
+    {
+      "tStartS": 593.24,
+      "tEndS": 595.829,
+      "texte": "chacune avec un test concret. Si c'est"
+    },
+    {
+      "tStartS": 595.839,
+      "tEndS": 597.67,
+      "texte": "bien cette cause, voilà ce qu'on va"
+    },
+    {
+      "tStartS": 597.68,
+      "tEndS": 599.71,
+      "texte": "observer. Ensuite, ajouter des logs"
+    },
+    {
+      "tStartS": 599.72,
+      "tEndS": 601.87,
+      "texte": "ciblés temporaires, utiles pendant"
+    },
+    {
+      "tStartS": 601.88,
+      "tEndS": 604.269,
+      "texte": "l'analyse et supprimable une fois le bug"
+    },
+    {
+      "tStartS": 604.279,
+      "tEndS": 607.03,
+      "texte": "résolu. Et enfin, un corctif minimal qui"
+    },
+    {
+      "tStartS": 607.04,
+      "tEndS": 608.91,
+      "texte": "explique la cause racine, pas le"
+    },
+    {
+      "tStartS": 608.92,
+      "tEndS": 610.91,
+      "texte": "symptôme. Et la règle des trois strikes,"
+    },
+    {
+      "tStartS": 610.92,
+      "tEndS": 613.43,
+      "texte": "si les trois hypothèses sont fausses, on"
+    },
+    {
+      "tStartS": 613.44,
+      "tEndS": 615.59,
+      "texte": "s'arrête. Ce n'est plus un problème de"
+    },
+    {
+      "tStartS": 615.6,
+      "tEndS": 618.11,
+      "texte": "code, c'est un problème d'architecture."
+    },
+    {
+      "tStartS": 618.12,
+      "tEndS": 619.99,
+      "texte": "Et le traiter comme un bug, c'est"
+    },
+    {
+      "tStartS": 620,
+      "tEndS": 622.55,
+      "texte": "construire sur des fondations fissuré."
+    },
+    {
+      "tStartS": 622.56,
+      "tEndS": 624.87,
+      "texte": "Le 6e skill s'appelle illustre et c'est"
+    },
+    {
+      "tStartS": 624.88,
+      "tEndS": 627.67,
+      "texte": "le skill bonus du système. Il est utile"
+    },
+    {
+      "tStartS": 627.68,
+      "tEndS": 629.55,
+      "texte": "à deux moments précis. Au départ,"
+    },
+    {
+      "tStartS": 629.56,
+      "tEndS": 631.35,
+      "texte": "d'abord, avant même décrire une ligne de"
+    },
+    {
+      "tStartS": 631.36,
+      "tEndS": 632.99,
+      "texte": "code, un diagramme clair permet"
+    },
+    {
+      "tStartS": 633,
+      "tEndS": 635.03,
+      "texte": "d'aligner la compréhension avec un"
+    },
+    {
+      "tStartS": 635.04,
+      "tEndS": 637.31,
+      "texte": "client ou un collaborateur sur ce qu'on"
+    },
+    {
+      "tStartS": 637.32,
+      "tEndS": 639.31,
+      "texte": "va construire. Comme dit l'un de mes"
+    },
+    {
+      "tStartS": 639.32,
+      "tEndS": 641.75,
+      "texte": "mentors, un crobar est meilleur que 1000"
+    },
+    {
+      "tStartS": 641.76,
+      "tEndS": 644.069,
+      "texte": "mots. Pas de malentendu 3 semaines plus"
+    },
+    {
+      "tStartS": 644.079,
+      "tEndS": 645.79,
+      "texte": "tard. Et à la fin du projet, pour"
+    },
+    {
+      "tStartS": 645.8,
+      "tEndS": 647.949,
+      "texte": "documenter l'architecture de ce que vous"
+    },
+    {
+      "tStartS": 647.959,
+      "tEndS": 649.949,
+      "texte": "avez construit et garder une trace"
+    },
+    {
+      "tStartS": 649.959,
+      "tEndS": 651.79,
+      "texte": "claire de comment les composants"
+    },
+    {
+      "tStartS": 651.8,
+      "tEndS": 653.91,
+      "texte": "s'articulent. Avec le skill illustre,"
+    },
+    {
+      "tStartS": 653.92,
+      "tEndS": 656.43,
+      "texte": "vous obtenez un diagramme Excalidro au"
+    },
+    {
+      "tStartS": 656.44,
+      "tEndS": 660.71,
+      "texte": "format Excalidro, PNG et SVG sans avoir"
+    },
+    {
+      "tStartS": 660.72,
+      "tEndS": 662.55,
+      "texte": "quitter cloud code. La règle qui rend"
+    },
+    {
+      "tStartS": 662.56,
+      "tEndS": 664.629,
+      "texte": "ces diagrammes pro, un diagramme"
+    },
+    {
+      "tStartS": 664.639,
+      "tEndS": 667.23,
+      "texte": "argumente, il n'affiche pas. Le skill"
+    },
+    {
+      "tStartS": 667.24,
+      "tEndS": 669.389,
+      "texte": "illustre intègre des patterns prêts à"
+    },
+    {
+      "tStartS": 669.399,
+      "tEndS": 671.91,
+      "texte": "l'emploi, pipeline, enchaînement de"
+    },
+    {
+      "tStartS": 671.92,
+      "tEndS": 674.55,
+      "texte": "tâche, cycle avant après pour que chaque"
+    },
+    {
+      "tStartS": 674.56,
+      "tEndS": 676.43,
+      "texte": "diagramme raconte quelque chose plutôt"
+    },
+    {
+      "tStartS": 676.44,
+      "tEndS": 678.389,
+      "texte": "que de simplement lister des composants."
+    },
+    {
+      "tStartS": 678.399,
+      "tEndS": 680.15,
+      "texte": "Le 7e skill s'appelle, non, je"
+    },
+    {
+      "tStartS": 680.16,
+      "tEndS": 680.99,
+      "texte": "plaisante, celui-là, c'est"
+    },
+    {
+      "tStartS": 681,
+      "tEndS": 682.79,
+      "texte": "l'installation et c'est la partie la"
+    },
+    {
+      "tStartS": 682.8,
+      "tEndS": 684.71,
+      "texte": "plus courte de la vidéo. Une seule"
+    },
+    {
+      "tStartS": 684.72,
+      "tEndS": 686.629,
+      "texte": "commande, je vous l'affiche à l'écran et"
+    },
+    {
+      "tStartS": 686.639,
+      "tEndS": 688.11,
+      "texte": "je vous mets le lien vers le ripo dans"
+    },
+    {
+      "tStartS": 688.12,
+      "tEndS": 689.949,
+      "texte": "la description. 30 secondes et les six"
+    },
+    {
+      "tStartS": 689.959,
+      "tEndS": 691.67,
+      "texte": "skills sont disponibles dans Cloud Code"
+    },
+    {
+      "tStartS": 691.68,
+      "tEndS": 693.67,
+      "texte": "et dans tout agent de développement qui"
+    },
+    {
+      "tStartS": 693.68,
+      "tEndS": 695.79,
+      "texte": "lit les skills. Vous le déclenchez par"
+    },
+    {
+      "tStartS": 695.8,
+      "tEndS": 696.509,
+      "texte": "la commande"
+    },
+    {
+      "tStartS": 696.519,
+      "tEndS": 699.59,
+      "texte": "directe/interroge/cadre/planifie"
+    },
+    {
+      "tStartS": 699.6,
+      "tEndS": 701.67,
+      "texte": "et cetera et cetera ou par une phrase"
+    },
+    {
+      "tStartS": 701.68,
+      "tEndS": 704.15,
+      "texte": "naturelle cadre ce projet, débug ça,"
+    },
+    {
+      "tStartS": 704.16,
+      "tEndS": 705.91,
+      "texte": "fais-moi un diagramme Claude comprend"
+    },
+    {
+      "tStartS": 705.92,
+      "tEndS": 707.59,
+      "texte": "les deux. Vous avez maintenant le cycle"
+    },
+    {
+      "tStartS": 707.6,
+      "tEndS": 710.35,
+      "texte": "complet avec le skill interroge, cadrer"
+    },
+    {
+      "tStartS": 710.36,
+      "tEndS": 713.03,
+      "texte": "avec cadre, planifier avec planifie,"
+    },
+    {
+      "tStartS": 713.04,
+      "tEndS": 715.31,
+      "texte": "designer avec design, débugé avec"
+    },
+    {
+      "tStartS": 715.32,
+      "tEndS": 717.509,
+      "texte": "investigue et schématisé avec illustre."
+    },
+    {
+      "tStartS": 717.519,
+      "tEndS": 718.829,
+      "texte": "et une seule commande pour tout"
+    },
+    {
+      "tStartS": 718.839,
+      "tEndS": 720.949,
+      "texte": "installer en 30 secondes. Ce système est"
+    },
+    {
+      "tStartS": 720.959,
+      "tEndS": 722.829,
+      "texte": "l'entrée la plus légère dans les"
+    },
+    {
+      "tStartS": 722.839,
+      "tEndS": 725.11,
+      "texte": "systèmes Spect Driven. Trois fichiers"
+    },
+    {
+      "tStartS": 725.12,
+      "tEndS": 727.949,
+      "texte": "Mark, aucune contrainte imposée et une"
+    },
+    {
+      "tStartS": 727.959,
+      "tEndS": 730.11,
+      "texte": "option parmi h méthodes disponibles sur"
+    },
+    {
+      "tStartS": 730.12,
+      "tEndS": 732.23,
+      "texte": "le marché que vous pouvez revisiter dès"
+    },
+    {
+      "tStartS": 732.24,
+      "tEndS": 734.87,
+      "texte": "que votre projet l'exige. Le top 1 % ne"
+    },
+    {
+      "tStartS": 734.88,
+      "tEndS": 737.47,
+      "texte": "code pas mieux que vous, il cadre mieux"
+    },
+    {
+      "tStartS": 737.48,
+      "tEndS": 739.269,
+      "texte": "avant de coder. Avoir les bons outils,"
+    },
+    {
+      "tStartS": 739.279,
+      "tEndS": 741.03,
+      "texte": "c'est seulement la moitié du travail."
+    },
+    {
+      "tStartS": 741.04,
+      "tEndS": 742.67,
+      "texte": "L'autre moitié, c'est un piège que"
+    },
+    {
+      "tStartS": 742.68,
+      "tEndS": 744.79,
+      "texte": "presque tous les builders tentent dedans"
+    },
+    {
+      "tStartS": 744.8,
+      "tEndS": 747.03,
+      "texte": "et il va directement impacter la qualité"
+    },
+    {
+      "tStartS": 747.04,
+      "tEndS": 749.189,
+      "texte": "de ce que Claude Code produit pour vous."
+    },
+    {
+      "tStartS": 749.199,
+      "tEndS": 751.43,
+      "texte": "Quand votre contexte déborde, Claude"
+    },
+    {
+      "tStartS": 751.44,
+      "tEndS": 753.55,
+      "texte": "quitte sa zone de génie et s'enfonce"
+    },
+    {
+      "tStartS": 753.56,
+      "tEndS": 756.11,
+      "texte": "dans les hallucinations, le code bancal"
+    },
+    {
+      "tStartS": 756.12,
+      "tEndS": 757.75,
+      "texte": "et les réponses à côté. Dans cette"
+    },
+    {
+      "tStartS": 757.76,
+      "tEndS": 759.71,
+      "texte": "vidéo, je vous montre pourquoi et"
+    },
+    {
+      "tStartS": 759.72,
+      "tEndS": 761.67,
+      "texte": "comment surveiller votre contexte en"
+    },
+    {
+      "tStartS": 761.68,
+      "tEndS": 763.71,
+      "texte": "temps réel comme le lait sur le feu et"
+    },
+    {
+      "tStartS": 763.72,
+      "tEndS": 765.55,
+      "texte": "comment rester en permanence dans la"
+    },
+    {
+      "tStartS": 765.56,
+      "tEndS": 767.87,
+      "texte": "zone où cloud code performe vraiment. Et"
+    },
+    {
+      "tStartS": 767.88,
+      "tEndS": 769.269,
+      "texte": "pour ma part, il me reste plus qu'à vous"
+    },
+    {
+      "tStartS": 769.279,
+      "tEndS": 772.68,
+      "texte": "dire à la prochaine."
+    }
+  ]
+}

@@ -63,7 +63,7 @@ L'utilisateur peut demander :
 ## Règles propres à MangoOS
 
 - `tsc --noEmit` + `npm run build` (ui/) doivent rester verts après chaque modification
-- Toute nouvelle fonctionnalité = entrée dans `statut.md` (tableau + ligne "Où on en est") ET dans `historique.md` (section détail de l'idée)
+- Toute nouvelle fonctionnalité = documentée selon la procédure « Clôture automatique de chaque livraison » (ci-dessous) — `statut.md` + `historique.md` au minimum
 - Ports : backend Express 3000 · UI Vite 5173 · App générée 5174
 
 ## ⚖️ Discipline de poids `statut.md` — index, jamais archive (règle de Raf, 2026-07-12)

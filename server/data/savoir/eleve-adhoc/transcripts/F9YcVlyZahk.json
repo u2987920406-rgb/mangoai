@@ -1,0 +1,1436 @@
+{
+  "videoId": "F9YcVlyZahk",
+  "meta": {
+    "titre": "Hermes V0.19 Vient De Révolutionner Les Agents IA - Voici pourquoi",
+    "chaine": "Hugo Buisson",
+    "dureeS": 501,
+    "publieeLe": "2026-07-21",
+    "description": "▸ Tu veux ce genre de système dans ton entreprise ?\n\nhttps://bridge.agentic-os.fr/c/v019\n\n▸ Tu préfères te former toi-même ?\n\nhttps://bridge.agentic-os.fr/w/v019\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\nHermès Agent est un agent IA autonome open source développé par Nous Research, qui s'installe sur ton ordinateur ou sur un VPS et exécute des tâches en autonomie depuis le terminal : lire et écrire des fichiers, lancer des commandes, appeler des API, déléguer du travail à des sous-agents. La version 0.19 « Quicksilver » réduit le temps de démarrage avant le premier token, active par défaut les approbations intelligentes évaluées par un LLM, connecte les gestionnaires de mots de passe 1Password et Bitwarden pour ne plus stocker ses clés API en clair dans un fichier .env, rend observables en direct les transcripts des sous-agents, sécurise la livraison des réponses avec un delivery ledger, et permet de router plusieurs profils Hermès derrière une seule gateway. Elle ajoute aussi les modèles GPT-5.6, Grok 4.5, Kimi K3 et Claude Sonnet 5, ainsi que les niveaux de raisonnement max et ultra. Si tu cherches à automatiser ton travail avec une équipe d'agents IA, à installer et configurer Hermès Agent, ou à comprendre où en sont les agents autonomes en 2026, cette vidéo t'explique concrètement ce que change cette mise à jour.\n\n━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n⏱️ CHAPITRES\n\n00:00 Hermès Agent v0.19 « Quicksilver » : ce qui change\n00:21 Le cold start : de 4,3 s à 0,9 s\n00:58 Le raisonnement s'affiche maintenant en direct\n01:54 Les approbations intelligentes (et la commande /deny)\n03:19 Tes clés API dans un coffre, plus dans un .env\n04:19 Les sous-agents : c'est quoi exactement\n05:08 Suivre le travail d'un sous-agent en direct\n05:23 Le delivery ledger : ne plus perdre une réponse\n06:00 Le routage par profil : une porte d'entrée, plusieurs agents\n07:22 Nouveaux modèles + les niveaux de raisonnement max et ultra",
+    "chapitres": [
+      {
+        "t": 0,
+        "titre": "Hermès Agent v0.19 “Quicksilver”: What’s New"
+      },
+      {
+        "t": 21,
+        "titre": "Cold Start: From 4.3 s to 0.9 s"
+      },
+      {
+        "t": 58,
+        "titre": "Reasoning Now Displayed Live"
+      },
+      {
+        "t": 114,
+        "titre": "Smart Approvals (and the /deny command)"
+      },
+      {
+        "t": 199,
+        "titre": "Your API Keys in a Vault, No Longer in a .env File"
+      },
+      {
+        "t": 259,
+        "titre": "Sub-Agents: What Exactly Are They?"
+      },
+      {
+        "t": 308,
+        "titre": "Monitoring a Sub-Agent’s Work Live"
+      },
+      {
+        "t": 323,
+        "titre": "The Delivery Ledger: Never miss a response again"
+      },
+      {
+        "t": 360,
+        "titre": "Profile-based routing: one entry point, multiple agents"
+      },
+      {
+        "t": 442,
+        "titre": "New models + maximum and ultra-high reasoning levels"
+      }
+    ]
+  },
+  "source": "subs-manuels",
+  "langue": "fr",
+  "segments": [
+    {
+      "tStartS": 0,
+      "tEndS": 1.35,
+      "texte": "Une nouvelle version d'Hermes vient de"
+    },
+    {
+      "tStartS": 1.3599999999999999,
+      "tEndS": 3.27,
+      "texte": "sortir et elle se contente pas d'ajouter"
+    },
+    {
+      "tStartS": 3.2800000000000002,
+      "tEndS": 5.309,
+      "texte": "quelques fonctionnalités. Elle revoit la"
+    },
+    {
+      "tStartS": 5.319,
+      "tEndS": 7.11,
+      "texte": "façon dont l'agent travaille. Le nom de"
+    },
+    {
+      "tStartS": 7.12,
+      "tEndS": 8.83,
+      "texte": "cette mise à jour, c'est Quick Silver et"
+    },
+    {
+      "tStartS": 8.84,
+      "tEndS": 10.589,
+      "texte": "sur le papier, grâce à ça, Hermes"
+    },
+    {
+      "tStartS": 10.599,
+      "tEndS": 13.19,
+      "texte": "devient plus rapide, plus fiable et plus"
+    },
+    {
+      "tStartS": 13.2,
+      "tEndS": 14.829,
+      "texte": "autonome. Je vais analiser cette mise à"
+    },
+    {
+      "tStartS": 14.839,
+      "tEndS": 17.47,
+      "texte": "jour en fonction de mon agent qui est"
+    },
+    {
+      "tStartS": 17.48,
+      "tEndS": 19.31,
+      "texte": "mon système qui fait déjà travailler"
+    },
+    {
+      "tStartS": 19.32,
+      "tEndS": 21.189,
+      "texte": "plusieurs équipes d'agents en simultané."
+    },
+    {
+      "tStartS": 21.199,
+      "tEndS": 23.429,
+      "texte": "Bon, premier changement concret à"
+    },
+    {
+      "tStartS": 23.439,
+      "tEndS": 26.429,
+      "texte": "examiner, c'est la rapidité. Ce dont il"
+    },
+    {
+      "tStartS": 26.439,
+      "tEndS": 28.95,
+      "texte": "parle, c'est le démarrage à froid. que"
+    },
+    {
+      "tStartS": 28.96,
+      "tEndS": 30.749,
+      "texte": "tu vas entendre parler de code start, ça"
+    },
+    {
+      "tStartS": 30.759,
+      "tEndS": 32.15,
+      "texte": "veut dire le temps nécessaire pour"
+    },
+    {
+      "tStartS": 32.16,
+      "tEndS": 34.43,
+      "texte": "initialiser Hermes avant même que le"
+    },
+    {
+      "tStartS": 34.44,
+      "tEndS": 35.99,
+      "texte": "modèle ne puisse répondre. Avant Quick"
+    },
+    {
+      "tStartS": 36,
+      "tEndS": 38.27,
+      "texte": "Silver, cette initialisation prenait"
+    },
+    {
+      "tStartS": 38.28,
+      "tEndS": 41.15,
+      "texte": "environ 4,3 secondes. Maintenant, les"
+    },
+    {
+      "tStartS": 41.16,
+      "tEndS": 44.15,
+      "texte": "notes officielles annoncent environ 0,9"
+    },
+    {
+      "tStartS": 44.16,
+      "tEndS": 46.95,
+      "texte": "secondes, soit à peu près 80 % de délai"
+    },
+    {
+      "tStartS": 46.96,
+      "tEndS": 49.11,
+      "texte": "en moins avant le premier token. Donc ça"
+    },
+    {
+      "tStartS": 49.12,
+      "tEndS": 51.31,
+      "texte": "ne touche pas autant de raisonnement car"
+    },
+    {
+      "tStartS": 51.32,
+      "tEndS": 53.189,
+      "texte": "lui dépend du modèle utilisé. en"
+    },
+    {
+      "tStartS": 53.199,
+      "tEndS": 54.63,
+      "texte": "fonction du modèle utilisé. D'ailleurs,"
+    },
+    {
+      "tStartS": 54.64,
+      "tEndS": 55.79,
+      "texte": "on peut avoir des réponses qui vont être"
+    },
+    {
+      "tStartS": 55.8,
+      "tEndS": 57.27,
+      "texte": "plus ou moins rapides mais vraiment dans"
+    },
+    {
+      "tStartS": 57.28,
+      "tEndS": 59.15,
+      "texte": "tout ce qui va se passer avant. Il y a"
+    },
+    {
+      "tStartS": 59.16,
+      "tEndS": 60.99,
+      "texte": "un deuxième point qui va toucher, on va"
+    },
+    {
+      "tStartS": 61,
+      "tEndS": 63.11,
+      "texte": "dire plus du côté de la vitesse perçue,"
+    },
+    {
+      "tStartS": 63.12,
+      "tEndS": 64.509,
+      "texte": "c'est que le raisonnement est affiché"
+    },
+    {
+      "tStartS": 64.519,
+      "tEndS": 66.99,
+      "texte": "maintenant en direct token par token."
+    },
+    {
+      "tStartS": 67,
+      "tEndS": 69.03,
+      "texte": "Donc Quick Silver, il divise pas par 5"
+    },
+    {
+      "tStartS": 69.04,
+      "tEndS": 70.83,
+      "texte": "le temps de calcul d'une tâche complexe,"
+    },
+    {
+      "tStartS": 70.84,
+      "tEndS": 73.789,
+      "texte": "mais il va enlever le délai avant que le"
+    },
+    {
+      "tStartS": 73.799,
+      "tEndS": 75.35,
+      "texte": "calcul se produise. Et d'ailleurs, si tu"
+    },
+    {
+      "tStartS": 75.36,
+      "tEndS": 77.469,
+      "texte": "es une entreprise et que tu souhaites"
+    },
+    {
+      "tStartS": 77.479,
+      "tEndS": 79.03,
+      "texte": "mettre en place ce genre d'agent TICOS"
+    },
+    {
+      "tStartS": 79.04,
+      "tEndS": 80.35,
+      "texte": "pour toi pour avoir des outils en"
+    },
+    {
+      "tStartS": 80.36,
+      "tEndS": 82.35,
+      "texte": "interne, surmesure adapté à tes besoins,"
+    },
+    {
+      "tStartS": 82.36,
+      "tEndS": 84.23,
+      "texte": "tes problématique et créer ta propre"
+    },
+    {
+      "tStartS": 84.24,
+      "tEndS": 85.91,
+      "texte": "équipe d'agent autonome qui va pouvoir"
+    },
+    {
+      "tStartS": 85.92,
+      "tEndS": 87.39,
+      "texte": "travailler sur tes problématiques, tu"
+    },
+    {
+      "tStartS": 87.4,
+      "tEndS": 89.03,
+      "texte": "retrouveras dans le premier lien dans la"
+    },
+    {
+      "tStartS": 89.04,
+      "tEndS": 90.87,
+      "texte": "description un lien pour réserver un"
+    },
+    {
+      "tStartS": 90.88,
+      "tEndS": 92.51,
+      "texte": "appel avec moi pour voir si je suis en"
+    },
+    {
+      "tStartS": 92.52,
+      "tEndS": 94.03,
+      "texte": "capacité de t'aider. Si par contre tu"
+    },
+    {
+      "tStartS": 94.04,
+      "tEndS": 96.149,
+      "texte": "souhaites te former toi-même à ce genre"
+    },
+    {
+      "tStartS": 96.159,
+      "tEndS": 98.31,
+      "texte": "de système là, création d'agenticos,"
+    },
+    {
+      "tStartS": 98.32,
+      "tEndS": 100.149,
+      "texte": "configuration de Hermes et cetera, je te"
+    },
+    {
+      "tStartS": 100.159,
+      "tEndS": 101.99,
+      "texte": "laisse aussi te préinscrire à ma"
+    },
+    {
+      "tStartS": 102,
+      "tEndS": 103.429,
+      "texte": "communauté que je vais ouvrir très"
+    },
+    {
+      "tStartS": 103.439,
+      "tEndS": 104.709,
+      "texte": "prochainement qui va te permettre"
+    },
+    {
+      "tStartS": 104.719,
+      "tEndS": 105.789,
+      "texte": "justement où on va voir un petit peu"
+    },
+    {
+      "tStartS": 105.799,
+      "tEndS": 107.03,
+      "texte": "tout ça, il y aura des lives, ce sera"
+    },
+    {
+      "tStartS": 107.04,
+      "tEndS": 108.67,
+      "texte": "assez sympa. Je te laisse te préinscrire"
+    },
+    {
+      "tStartS": 108.68,
+      "tEndS": 111.67,
+      "texte": "et tu bénéficieras de - 40 % du prix à"
+    },
+    {
+      "tStartS": 111.68,
+      "tEndS": 113.63,
+      "texte": "la sortie si tu es déjà inscrit dans"
+    },
+    {
+      "tStartS": 113.64,
+      "tEndS": 114.709,
+      "texte": "cette liste. Allez, c'est reparti pour"
+    },
+    {
+      "tStartS": 114.719,
+      "tEndS": 115.709,
+      "texte": "la vidéo. On vient de voir la partie"
+    },
+    {
+      "tStartS": 115.719,
+      "tEndS": 117.069,
+      "texte": "vitesse et ça sert à rien de gagner"
+    },
+    {
+      "tStartS": 117.079,
+      "tEndS": 118.99,
+      "texte": "quelques secondes si on doit s'arrêter"
+    },
+    {
+      "tStartS": 119,
+      "tEndS": 120.469,
+      "texte": "toutes les 30 secondes pour donner notre"
+    },
+    {
+      "tStartS": 120.479,
+      "tEndS": 122.149,
+      "texte": "approbation à notre agent Hermes. Et"
+    },
+    {
+      "tStartS": 122.159,
+      "tEndS": 123.63,
+      "texte": "c'est pour ça qu'on va parler des"
+    },
+    {
+      "tStartS": 123.64,
+      "tEndS": 125.51,
+      "texte": "demandes d'approbation répétées. Quand"
+    },
+    {
+      "tStartS": 125.52,
+      "tEndS": 127.51,
+      "texte": "un agent utilise le terminal, certaines"
+    },
+    {
+      "tStartS": 127.52,
+      "tEndS": 129.589,
+      "texte": "commandes sont signalées comme risquées."
+    },
+    {
+      "tStartS": 129.599,
+      "tEndS": 131.47,
+      "texte": "Jusqu'ici, tu pouvais te retrouver à"
+    },
+    {
+      "tStartS": 131.48,
+      "tEndS": 133.949,
+      "texte": "confirmer chaque demande action après"
+    },
+    {
+      "tStartS": 133.959,
+      "tEndS": 135.19,
+      "texte": "action. C'est pour ça que ça poussait"
+    },
+    {
+      "tStartS": 135.2,
+      "tEndS": 136.71,
+      "texte": "beaucoup de personnes à le mettre en"
+    },
+    {
+      "tStartS": 136.72,
+      "tEndS": 138.43,
+      "texte": "mode sans limite que j'utilise"
+    },
+    {
+      "tStartS": 138.44,
+      "tEndS": 139.79,
+      "texte": "d'ailleurs en fait au quotidien parce"
+    },
+    {
+      "tStartS": 139.8,
+      "tEndS": 140.99,
+      "texte": "que c'est quand même plus pratique. Mais"
+    },
+    {
+      "tStartS": 141,
+      "tEndS": 142.11,
+      "texte": "on peut on peut noter qu'il y a une mise"
+    },
+    {
+      "tStartS": 142.12,
+      "tEndS": 143.589,
+      "texte": "à jour très importante qui vient de"
+    },
+    {
+      "tStartS": 143.599,
+      "tEndS": 145.35,
+      "texte": "sortir sur cette problématique-là. Donc"
+    },
+    {
+      "tStartS": 145.36,
+      "tEndS": 146.67,
+      "texte": "ce sont les demandes d'approbation"
+    },
+    {
+      "tStartS": 146.68,
+      "tEndS": 148.79,
+      "texte": "intelligentes qui deviennent le modèle"
+    },
+    {
+      "tStartS": 148.8,
+      "tEndS": 150.509,
+      "texte": "euh de comportement par défaut. En gros,"
+    },
+    {
+      "tStartS": 150.519,
+      "tEndS": 151.75,
+      "texte": "on va simplement avoir un évaluateur"
+    },
+    {
+      "tStartS": 151.76,
+      "tEndS": 153.39,
+      "texte": "automatique. Maintenant, avant d'avoir"
+    },
+    {
+      "tStartS": 153.4,
+      "tEndS": 154.91,
+      "texte": "une demande d'approbation pour chaque"
+    },
+    {
+      "tStartS": 154.92,
+      "tEndS": 156.83,
+      "texte": "tâche qui pourrait paraître risquée, on"
+    },
+    {
+      "tStartS": 156.84,
+      "tEndS": 159.63,
+      "texte": "va avoir un LLM qui va d'abord analyser"
+    },
+    {
+      "tStartS": 159.64,
+      "tEndS": 162.19,
+      "texte": "la tâche et elle l'évaluer si oui ou non"
+    },
+    {
+      "tStartS": 162.2,
+      "tEndS": 163.149,
+      "texte": "c'est vraiment une tâche qui est"
+    },
+    {
+      "tStartS": 163.159,
+      "tEndS": 164.39,
+      "texte": "risquée. Ce qui veut dire qu'on va avoir"
+    },
+    {
+      "tStartS": 164.4,
+      "tEndS": 166.63,
+      "texte": "de moins en moins besoin d'être en mode"
+    },
+    {
+      "tStartS": 166.64,
+      "tEndS": 168.229,
+      "texte": "sans limite si on a quand même envie de"
+    },
+    {
+      "tStartS": 168.239,
+      "tEndS": 170.67,
+      "texte": "garder un minimum de contrôle sur la"
+    },
+    {
+      "tStartS": 170.68,
+      "tEndS": 172.07,
+      "texte": "tâche parce qu'une grande partie des"
+    },
+    {
+      "tStartS": 172.08,
+      "tEndS": 174.11,
+      "texte": "demandes d'approbation seront déjà"
+    },
+    {
+      "tStartS": 174.12,
+      "tEndS": 176.149,
+      "texte": "filtrées par le LLM et les seules"
+    },
+    {
+      "tStartS": 176.159,
+      "tEndS": 177.43,
+      "texte": "demandes d'approbation qui va nous"
+    },
+    {
+      "tStartS": 177.44,
+      "tEndS": 179.509,
+      "texte": "rester seront donc des tâches qui elles"
+    },
+    {
+      "tStartS": 179.519,
+      "tEndS": 180.949,
+      "texte": "seront réellement risquées. Le vrai"
+    },
+    {
+      "tStartS": 180.959,
+      "tEndS": 182.43,
+      "texte": "changement c'est pas moins de sécurité,"
+    },
+    {
+      "tStartS": 182.44,
+      "tEndS": 184.149,
+      "texte": "c'est juste moins d'interruption"
+    },
+    {
+      "tStartS": 184.159,
+      "tEndS": 185.43,
+      "texte": "inutile. De l'autre côté, ce qui est"
+    },
+    {
+      "tStartS": 185.44,
+      "tEndS": 186.43,
+      "texte": "super bien, c'est que maintenant, on a"
+    },
+    {
+      "tStartS": 186.44,
+      "tEndS": 188.149,
+      "texte": "accès à une commande qui s'appelle Slash"
+    },
+    {
+      "tStartS": 188.159,
+      "tEndS": 189.91,
+      "texte": "qui nous permet d'ajouter une règle de"
+    },
+    {
+      "tStartS": 189.92,
+      "tEndS": 192.19,
+      "texte": "refus pour bloquer explicitement"
+    },
+    {
+      "tStartS": 192.2,
+      "tEndS": 194.47,
+      "texte": "certaines action du LLM. Donc à la fois,"
+    },
+    {
+      "tStartS": 194.48,
+      "tEndS": 196.07,
+      "texte": "il y a moins d'interruption et à la"
+    },
+    {
+      "tStartS": 196.08,
+      "tEndS": 197.83,
+      "texte": "fois, on s'assure que certaines actions"
+    },
+    {
+      "tStartS": 197.84,
+      "tEndS": 199.67,
+      "texte": "ne sont pas effectuées par Hermes."
+    },
+    {
+      "tStartS": 199.68,
+      "tEndS": 201.229,
+      "texte": "Pendant qu'on parle de sécurité, il y a"
+    },
+    {
+      "tStartS": 201.239,
+      "tEndS": 202.949,
+      "texte": "une question qu'on se pose tous. Comment"
+    },
+    {
+      "tStartS": 202.959,
+      "tEndS": 205.39,
+      "texte": "lui fournir des clés et des tokens de"
+    },
+    {
+      "tStartS": 205.4,
+      "tEndS": 207.149,
+      "texte": "manière plus sécurisée ? parce que plus"
+    },
+    {
+      "tStartS": 207.159,
+      "tEndS": 209.11,
+      "texte": "l'agent agit seul, plus la façon dont tu"
+    },
+    {
+      "tStartS": 209.12,
+      "tEndS": 211.63,
+      "texte": "lui donnes ses accès est importante."
+    },
+    {
+      "tStartS": 211.64,
+      "tEndS": 212.869,
+      "texte": "Parce que un agent peut avoir besoin"
+    },
+    {
+      "tStartS": 212.879,
+      "tEndS": 215.19,
+      "texte": "d'une clé API, d'un token, d'un mot de"
+    },
+    {
+      "tStartS": 215.2,
+      "tEndS": 217.07,
+      "texte": "passe pour accéder aux outils dont il a"
+    },
+    {
+      "tStartS": 217.08,
+      "tEndS": 218.27,
+      "texte": "besoin d'utiliser tout simplement. Le"
+    },
+    {
+      "tStartS": 218.28,
+      "tEndS": 219.19,
+      "texte": "réflexe classique, c'est de mettre"
+    },
+    {
+      "tStartS": 219.2,
+      "tEndS": 220.869,
+      "texte": "toutes ces informations dans un point"
+    },
+    {
+      "tStartS": 220.879,
+      "tEndS": 223.07,
+      "texte": "ENV, un environnement, c'est-à-dire un"
+    },
+    {
+      "tStartS": 223.08,
+      "tEndS": 226.35,
+      "texte": "un fichier qui contient des variables et"
+    },
+    {
+      "tStartS": 226.36,
+      "tEndS": 228.19,
+      "texte": "les secrets utilisés par ton"
+    },
+    {
+      "tStartS": 228.2,
+      "tEndS": 229.309,
+      "texte": "application. Le problème, c'est qu'un"
+    },
+    {
+      "tStartS": 229.319,
+      "tEndS": 230.91,
+      "texte": "secret stocké en clair, ça peut toujours"
+    },
+    {
+      "tStartS": 230.92,
+      "tEndS": 232.949,
+      "texte": "futer. Et avec la version 0.19 19."
+    },
+    {
+      "tStartS": 232.959,
+      "tEndS": 235.229,
+      "texte": "Maintenant, Hermes peut se brancher"
+    },
+    {
+      "tStartS": 235.239,
+      "tEndS": 237.47,
+      "texte": "directement à One Password. Donc au lieu"
+    },
+    {
+      "tStartS": 237.48,
+      "tEndS": 238.949,
+      "texte": "de laisser le mot de passe en clair dans"
+    },
+    {
+      "tStartS": 238.959,
+      "tEndS": 240.71,
+      "texte": "ton projet, maintenant tu vas le stocker"
+    },
+    {
+      "tStartS": 240.72,
+      "tEndS": 243.149,
+      "texte": "dans un coffre sécurisé prévu pour ça et"
+    },
+    {
+      "tStartS": 243.159,
+      "tEndS": 244.67,
+      "texte": "Hermes le récupère uniquement quand il"
+    },
+    {
+      "tStartS": 244.68,
+      "tEndS": 245.63,
+      "texte": "en a besoin. Du coup, le point"
+    },
+    {
+      "tStartS": 245.64,
+      "tEndS": 247.11,
+      "texte": "environnement, c'est plus la seule porte"
+    },
+    {
+      "tStartS": 247.12,
+      "tEndS": 248.789,
+      "texte": "d'entrée. Tu peux tout centraliser tes"
+    },
+    {
+      "tStartS": 248.799,
+      "tEndS": 250.309,
+      "texte": "tokens, tes mot de passe, tes clés à"
+    },
+    {
+      "tStartS": 250.319,
+      "tEndS": 251.869,
+      "texte": "payer et cetera dans un seul coffre."
+    },
+    {
+      "tStartS": 251.879,
+      "tEndS": 253.27,
+      "texte": "Hermes les utilise quand il en a besoin"
+    },
+    {
+      "tStartS": 253.28,
+      "tEndS": 254.509,
+      "texte": "et puis il les recopie pas un petit peu"
+    },
+    {
+      "tStartS": 254.519,
+      "tEndS": 255.67,
+      "texte": "de partout dans tous les fichiers. C'est"
+    },
+    {
+      "tStartS": 255.68,
+      "tEndS": 256.749,
+      "texte": "une meilleure pratique en terme de"
+    },
+    {
+      "tStartS": 256.759,
+      "tEndS": 258.15,
+      "texte": "sécurité et c'est cool qu'il viennent de"
+    },
+    {
+      "tStartS": 258.16,
+      "tEndS": 259.43,
+      "texte": "l'ajouter nativement dans cette mise à"
+    },
+    {
+      "tStartS": 259.44,
+      "tEndS": 261.229,
+      "texte": "jour. Sauf que protéger tes accès, ça"
+    },
+    {
+      "tStartS": 261.239,
+      "tEndS": 262.95,
+      "texte": "suffit pas. Si tu délègues une tâche, tu"
+    },
+    {
+      "tStartS": 262.96,
+      "tEndS": 264.23,
+      "texte": "dois aussi voir ce que l'autre agent"
+    },
+    {
+      "tStartS": 264.24,
+      "tEndS": 265.99,
+      "texte": "fait et récupérer son résultat. On"
+    },
+    {
+      "tStartS": 266,
+      "tEndS": 268.03,
+      "texte": "arrive au point qui pour moi cette mise"
+    },
+    {
+      "tStartS": 268.04,
+      "tEndS": 270.11,
+      "texte": "à jour transforme vraiment Hermes dans"
+    },
+    {
+      "tStartS": 270.12,
+      "tEndS": 271.71,
+      "texte": "une infrastructure d'agent. On va dire"
+    },
+    {
+      "tStartS": 271.72,
+      "tEndS": 273.67,
+      "texte": "que c'est vraiment le la fonctionnalité"
+    },
+    {
+      "tStartS": 273.68,
+      "tEndS": 275.23,
+      "texte": "qui rajoute un vrai plus. Pour ça, faut"
+    },
+    {
+      "tStartS": 275.24,
+      "tEndS": 276.55,
+      "texte": "comprendre ce que c'est un sub agent."
+    },
+    {
+      "tStartS": 276.56,
+      "tEndS": 277.95,
+      "texte": "Alors, un sub agent, un sous-agent,"
+    },
+    {
+      "tStartS": 277.96,
+      "tEndS": 279.95,
+      "texte": "c'est un agent temporaire que ton profil"
+    },
+    {
+      "tStartS": 279.96,
+      "tEndS": 282.79,
+      "texte": "Hermes va déployer pendant un lapse de"
+    },
+    {
+      "tStartS": 282.8,
+      "tEndS": 284.469,
+      "texte": "temps pour effectuer une action précise."
+    },
+    {
+      "tStartS": 284.479,
+      "tEndS": 286.39,
+      "texte": "Donc, par exemple, si tu lui demandes de"
+    },
+    {
+      "tStartS": 286.4,
+      "tEndS": 287.909,
+      "texte": "lire, je sais pas moi, 30 pages à ton"
+    },
+    {
+      "tStartS": 287.919,
+      "tEndS": 289.909,
+      "texte": "agent Hermè, il va pouvoir créer trois"
+    },
+    {
+      "tStartS": 289.919,
+      "tEndS": 291.87,
+      "texte": "sous-agents et chaque agent va lire 10"
+    },
+    {
+      "tStartS": 291.88,
+      "tEndS": 293.79,
+      "texte": "pages. Une fois que les sous-agents ont"
+    },
+    {
+      "tStartS": 293.8,
+      "tEndS": 295.51,
+      "texte": "lu leurs 10 pages, les agents sont tout"
+    },
+    {
+      "tStartS": 295.52,
+      "tEndS": 297.31,
+      "texte": "simplement supprimés. à pas confondre du"
+    },
+    {
+      "tStartS": 297.32,
+      "tEndS": 299.67,
+      "texte": "coup avec les profils Hermes qui eux"
+    },
+    {
+      "tStartS": 299.68,
+      "tEndS": 301.23,
+      "texte": "sont des agents permanents qui ont leur"
+    },
+    {
+      "tStartS": 301.24,
+      "tEndS": 304.35,
+      "texte": "propre skill, leur propre identité, leur"
+    },
+    {
+      "tStartS": 304.36,
+      "tEndS": 307.23,
+      "texte": "propre markdown et cetera et qui bah va"
+    },
+    {
+      "tStartS": 307.24,
+      "tEndS": 308.749,
+      "texte": "être tout simplement permanent. Le"
+    },
+    {
+      "tStartS": 308.759,
+      "tEndS": 309.99,
+      "texte": "problème des sous-agents, c'est que"
+    },
+    {
+      "tStartS": 310,
+      "tEndS": 311.07,
+      "texte": "quand ils travaillent en fait, on voit"
+    },
+    {
+      "tStartS": 311.08,
+      "tEndS": 312.27,
+      "texte": "pas leur progression, du moins, on les"
+    },
+    {
+      "tStartS": 312.28,
+      "tEndS": 313.87,
+      "texte": "voyait pas et ça faisait comme une boîte"
+    },
+    {
+      "tStartS": 313.88,
+      "tEndS": 315.43,
+      "texte": "noire. Donc c'est compliqué à auditer."
+    },
+    {
+      "tStartS": 315.44,
+      "tEndS": 317.029,
+      "texte": "Et c'est ça que Quick Silver ajoute, il"
+    },
+    {
+      "tStartS": 317.039,
+      "tEndS": 319.51,
+      "texte": "ajoute les transcriptions en live des"
+    },
+    {
+      "tStartS": 319.52,
+      "tEndS": 321.59,
+      "texte": "sous-agents. Du coup, tu peux suivre le"
+    },
+    {
+      "tStartS": 321.6,
+      "tEndS": 323.11,
+      "texte": "travail maintenant du sous-agent sans"
+    },
+    {
+      "tStartS": 323.12,
+      "tEndS": 324.909,
+      "texte": "avoir à attendre la fin. Cela étant dit,"
+    },
+    {
+      "tStartS": 324.919,
+      "tEndS": 327.15,
+      "texte": "voir le travail en train d'être effectué"
+    },
+    {
+      "tStartS": 327.16,
+      "tEndS": 328.87,
+      "texte": "ne garantit pas que tu vas toujours"
+    },
+    {
+      "tStartS": 328.88,
+      "tEndS": 330.59,
+      "texte": "avoir le résultat. Si par exemple à ce"
+    },
+    {
+      "tStartS": 330.6,
+      "tEndS": 332.59,
+      "texte": "moment-là, tu as un crash de ton VPS, la"
+    },
+    {
+      "tStartS": 332.6,
+      "tEndS": 334.67,
+      "texte": "réponse peut disparaître. C'est là"
+    },
+    {
+      "tStartS": 334.68,
+      "tEndS": 337.07,
+      "texte": "qu'arrive le delivery Ledger. Pour faire"
+    },
+    {
+      "tStartS": 337.08,
+      "tEndS": 339.35,
+      "texte": "simple, c'est comme un registre qui dit"
+    },
+    {
+      "tStartS": 339.36,
+      "tEndS": 342.029,
+      "texte": "qu'une réponse doit être livrée et n'est"
+    },
+    {
+      "tStartS": 342.039,
+      "tEndS": 343.39,
+      "texte": "pas encore livrée. Maintenant, les notes"
+    },
+    {
+      "tStartS": 343.4,
+      "tEndS": 345.71,
+      "texte": "de release indiquent qu'une réponse"
+    },
+    {
+      "tStartS": 345.72,
+      "tEndS": 348.23,
+      "texte": "terminée survit maintenant au crash de"
+    },
+    {
+      "tStartS": 348.24,
+      "tEndS": 350.11,
+      "texte": "la gateaway puis peut être donné au"
+    },
+    {
+      "tStartS": 350.12,
+      "tEndS": 351.309,
+      "texte": "prochain démarrage. Donc, tu peux"
+    },
+    {
+      "tStartS": 351.319,
+      "tEndS": 352.87,
+      "texte": "regarder le sebagent travailler puis"
+    },
+    {
+      "tStartS": 352.88,
+      "tEndS": 353.83,
+      "texte": "faire confiance au système pour"
+    },
+    {
+      "tStartS": 353.84,
+      "tEndS": 354.99,
+      "texte": "conserver sa réponse terminée."
+    },
+    {
+      "tStartS": 355,
+      "tEndS": 357.55,
+      "texte": "L'observation gère le pendant, le"
+    },
+    {
+      "tStartS": 357.56,
+      "tEndS": 359.51,
+      "texte": "registre de livraison gère l'après. Les"
+    },
+    {
+      "tStartS": 359.52,
+      "tEndS": 360.83,
+      "texte": "deux vont ensemble. Maintenant, il reste"
+    },
+    {
+      "tStartS": 360.84,
+      "tEndS": 363.029,
+      "texte": "à voir ce que le routage par change"
+    },
+    {
+      "tStartS": 363.039,
+      "tEndS": 364.51,
+      "texte": "quand tu utilises plusieurs agents."
+    },
+    {
+      "tStartS": 364.52,
+      "tEndS": 367.23,
+      "texte": "Imagine que tu utilises un profil Hermes"
+    },
+    {
+      "tStartS": 367.24,
+      "tEndS": 369.35,
+      "texte": "pour gérer la partie de rédaction d'une"
+    },
+    {
+      "tStartS": 369.36,
+      "tEndS": 371.39,
+      "texte": "vidéo YouTube et l'autre pour gérer ton"
+    },
+    {
+      "tStartS": 371.4,
+      "tEndS": 373.71,
+      "texte": "site internet. Donc tu as deux agents"
+    },
+    {
+      "tStartS": 373.72,
+      "tEndS": 375.469,
+      "texte": "avec deux profils distincts, sauf que tu"
+    },
+    {
+      "tStartS": 375.479,
+      "tEndS": 376.749,
+      "texte": "veux pouvoir leur parler du même"
+    },
+    {
+      "tStartS": 376.759,
+      "tEndS": 378.87,
+      "texte": "endroit, mais tu veux pas que l'agent de"
+    },
+    {
+      "tStartS": 378.88,
+      "tEndS": 381.51,
+      "texte": "rédaction de script récupère les outils"
+    },
+    {
+      "tStartS": 381.52,
+      "tEndS": 384.11,
+      "texte": "de la partie technique et que l'agent de"
+    },
+    {
+      "tStartS": 384.12,
+      "tEndS": 386.15,
+      "texte": "création du site web récupère les"
+    },
+    {
+      "tStartS": 386.16,
+      "tEndS": 387.55,
+      "texte": "outils, les skills et les informations,"
+    },
+    {
+      "tStartS": 387.56,
+      "tEndS": 389.71,
+      "texte": "l'identité et cetera de la partie"
+    },
+    {
+      "tStartS": 389.72,
+      "tEndS": 391.67,
+      "texte": "rédaction de script YouTube. Avant"
+    },
+    {
+      "tStartS": 391.68,
+      "tEndS": 394.11,
+      "texte": "Quicksilver garder ses agents séparés"
+    },
+    {
+      "tStartS": 394.12,
+      "tEndS": 395.589,
+      "texte": "pouvaient t'obliger à multiplier les"
+    },
+    {
+      "tStartS": 395.599,
+      "tEndS": 397.55,
+      "texte": "getaway. Pour faire simple, un Gaway"
+    },
+    {
+      "tStartS": 397.56,
+      "tEndS": 399.309,
+      "texte": "c'est la porte d'entrée d'Hermes. Elle"
+    },
+    {
+      "tStartS": 399.319,
+      "tEndS": 400.589,
+      "texte": "reçoit ton message avant de la"
+    },
+    {
+      "tStartS": 400.599,
+      "tEndS": 401.79,
+      "texte": "transmettre au bon agent. Pour faire"
+    },
+    {
+      "tStartS": 401.8,
+      "tEndS": 404.27,
+      "texte": "simple, tu devais gérer plusieurs portes"
+    },
+    {
+      "tStartS": 404.28,
+      "tEndS": 406.189,
+      "texte": "d'entrée pour éviter de mélanger leur"
+    },
+    {
+      "tStartS": 406.199,
+      "tEndS": 407.55,
+      "texte": "environnement. Sauf que maintenant, un"
+    },
+    {
+      "tStartS": 407.56,
+      "tEndS": 409.67,
+      "texte": "seul getaway peut servir plusieurs"
+    },
+    {
+      "tStartS": 409.68,
+      "tEndS": 411.39,
+      "texte": "profil d'Hermes. Quand un message"
+    },
+    {
+      "tStartS": 411.4,
+      "tEndS": 413.51,
+      "texte": "arrive, le routage par profil l'envoie"
+    },
+    {
+      "tStartS": 413.52,
+      "tEndS": 415.51,
+      "texte": "au bon espace. Si la demande concerne"
+    },
+    {
+      "tStartS": 415.52,
+      "tEndS": 416.83,
+      "texte": "une vidéo, elle peut aller vers le"
+    },
+    {
+      "tStartS": 416.84,
+      "tEndS": 418.83,
+      "texte": "profil par exemple d'Astrid qui elle"
+    },
+    {
+      "tStartS": 418.84,
+      "tEndS": 420.629,
+      "texte": "s'occupe de la rédaction de script"
+    },
+    {
+      "tStartS": 420.639,
+      "tEndS": 422.189,
+      "texte": "YouTube. Si elle concerne le système,"
+    },
+    {
+      "tStartS": 422.199,
+      "tEndS": 423.469,
+      "texte": "bah ça part tout simplement vers un"
+    },
+    {
+      "tStartS": 423.479,
+      "tEndS": 425.51,
+      "texte": "autre profil. Les deux agents partagent"
+    },
+    {
+      "tStartS": 425.52,
+      "tEndS": 427.83,
+      "texte": "la même porte d'entrée sans pour autant"
+    },
+    {
+      "tStartS": 427.84,
+      "tEndS": 430.55,
+      "texte": "partager leurs accès, leur skill, leur"
+    },
+    {
+      "tStartS": 430.56,
+      "tEndS": 432.51,
+      "texte": "identité. et cetera. Donc en réalité le"
+    },
+    {
+      "tStartS": 432.52,
+      "tEndS": 434.07,
+      "texte": "changement c'est que tu peux contacter"
+    },
+    {
+      "tStartS": 434.08,
+      "tEndS": 436.55,
+      "texte": "toute ton équipe d'agents Hermes depuis"
+    },
+    {
+      "tStartS": 436.56,
+      "tEndS": 438.07,
+      "texte": "un point d'entrée commun tandis que"
+    },
+    {
+      "tStartS": 438.08,
+      "tEndS": 439.95,
+      "texte": "chaque agent va pouvoir conserver son"
+    },
+    {
+      "tStartS": 439.96,
+      "tEndS": 441.83,
+      "texte": "rôle. Tu centralises les demandes sans"
+    },
+    {
+      "tStartS": 441.84,
+      "tEndS": 443.23,
+      "texte": "fusionner les agents. Bon, une fois que"
+    },
+    {
+      "tStartS": 443.24,
+      "tEndS": 444.99,
+      "texte": "les agents sont correctement séparés, il"
+    },
+    {
+      "tStartS": 445,
+      "tEndS": 446.869,
+      "texte": "te reste à définir le modèle et le"
+    },
+    {
+      "tStartS": 446.879,
+      "tEndS": 448.909,
+      "texte": "niveau de raisonnement de chaque agent"
+    },
+    {
+      "tStartS": 448.919,
+      "tEndS": 450.909,
+      "texte": "adapté à chaque tâche. Et c'est pour ça"
+    },
+    {
+      "tStartS": 450.919,
+      "tEndS": 452.23,
+      "texte": "que maintenant, grâce à cette mise à"
+    },
+    {
+      "tStartS": 452.24,
+      "tEndS": 453.99,
+      "texte": "jour, on a une compatibilité des modèles"
+    },
+    {
+      "tStartS": 454,
+      "tEndS": 457.909,
+      "texte": "maintenant qui couvre GPT 5.6, Groc 4.5,"
+    },
+    {
+      "tStartS": 457.919,
+      "tEndS": 461.79,
+      "texte": "Kimik 3, Claude Son 5 et ajoute surtout"
+    },
+    {
+      "tStartS": 461.8,
+      "tEndS": 464.23,
+      "texte": "deux niveaux de raisonnement natif, le"
+    },
+    {
+      "tStartS": 464.24,
+      "tEndS": 465.629,
+      "texte": "max et le ultra. Le niveau de"
+    },
+    {
+      "tStartS": 465.639,
+      "tEndS": 467.07,
+      "texte": "raisonnement, ça dépend de la quantité"
+    },
+    {
+      "tStartS": 467.08,
+      "tEndS": 468.79,
+      "texte": "d'effort demandé au modèle avant sa"
+    },
+    {
+      "tStartS": 468.8,
+      "tEndS": 470.27,
+      "texte": "réponse. Plus il est élevé, plus le"
+    },
+    {
+      "tStartS": 470.28,
+      "tEndS": 472.39,
+      "texte": "modèle va pouvoir consacrer de temps à"
+    },
+    {
+      "tStartS": 472.4,
+      "tEndS": 473.909,
+      "texte": "la résolution d'une tâche. Donc"
+    },
+    {
+      "tStartS": 473.919,
+      "tEndS": 476.189,
+      "texte": "forcément, le coût va augmenter parce"
+    },
+    {
+      "tStartS": 476.199,
+      "tEndS": 478.029,
+      "texte": "que ça va faire augmenter le la quantité"
+    },
+    {
+      "tStartS": 478.039,
+      "tEndS": 480.23,
+      "texte": "de token utilisés et le temps de"
+    },
+    {
+      "tStartS": 480.24,
+      "tEndS": 481.749,
+      "texte": "réalisation. Donc la nouveauté, c'est"
+    },
+    {
+      "tStartS": 481.759,
+      "tEndS": 483.27,
+      "texte": "pas simplement d'avoir plus de modèles"
+    },
+    {
+      "tStartS": 483.28,
+      "tEndS": 484.39,
+      "texte": "dans la liste, mais c'est aussi de"
+    },
+    {
+      "tStartS": 484.4,
+      "tEndS": 486.43,
+      "texte": "pouvoir adapter plus précisément le"
+    },
+    {
+      "tStartS": 486.44,
+      "tEndS": 488.149,
+      "texte": "niveau de réflexion de chaque modèle."
+    },
+    {
+      "tStartS": 488.159,
+      "tEndS": 489.23,
+      "texte": "N'oublie pas, si tu es une entreprise,"
+    },
+    {
+      "tStartS": 489.24,
+      "tEndS": 490.51,
+      "texte": "premier lien dans la description. Si tu"
+    },
+    {
+      "tStartS": 490.52,
+      "tEndS": 491.909,
+      "texte": "veux qu'on mette en place ensemble ce"
+    },
+    {
+      "tStartS": 491.919,
+      "tEndS": 493.469,
+      "texte": "genre de système agentique pour te faire"
+    },
+    {
+      "tStartS": 493.479,
+      "tEndS": 495.11,
+      "texte": "gagner du temps. Et si tu préfères te"
+    },
+    {
+      "tStartS": 495.12,
+      "tEndS": 496.149,
+      "texte": "former, deuxième lien dans la"
+    },
+    {
+      "tStartS": 496.159,
+      "tEndS": 497.67,
+      "texte": "description. Je te laisse te préinscrire"
+    },
+    {
+      "tStartS": 497.68,
+      "tEndS": 499.23,
+      "texte": "à ma communauté où tu bénéficieras moins"
+    },
+    {
+      "tStartS": 499.24,
+      "tEndS": 501.189,
+      "texte": "de 40 % à la sortie. C'était Gobisson. À"
+    },
+    {
+      "tStartS": 501.199,
+      "tEndS": 503.4,
+      "texte": "bientôt."
+    }
+  ]
+}
