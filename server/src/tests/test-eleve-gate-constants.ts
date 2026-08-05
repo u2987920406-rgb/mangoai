@@ -290,7 +290,6 @@ async function run() {
           },
         }),
       );
-      check("checkConstants non appelé (gate explicitement off)", appele === false);
       check("ok=true", withDep.ok === true);
       check("aucun champ constants dans le verdict (byte-identique)", !("constants" in withDep) && !("constantsOk" in withDep));
 

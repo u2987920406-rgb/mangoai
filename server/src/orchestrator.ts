@@ -20,7 +20,6 @@ import { loadMemory } from "./memory.js";
 import { loadArchitecture } from "./architecture.js";
 import { loadLexique } from "./lexique.js";
 import { loadMiroir } from "./miroir.js";
-import { matchAgentToProject } from "./super-agent-builder.js";
 
 export const RECOVERY_FILE_NAME = ".recovery-plan.md";
 
@@ -143,18 +142,6 @@ export function gatherProjectContext(dir: string): string {
  *  super-agent (#40) as an extra DOMAIN lens when one fits the project. */
 export function buildCouncil(projectName: string): CouncilLens[] {
   const lenses = [...DEFAULT_LENSES];
-  try {
-    const matched = matchAgentToProject(projectName);
-    if (matched) {
-      lenses.push({
-        key: `expert-${matched.agent.id}`,
-        title: `Expert métier — ${matched.agent.name}`,
-        focus: `expertise du domaine « ${matched.agent.domain} ». ${matched.agent.systemPrompt.slice(0, 600)}`,
-      });
-    }
-  } catch {
-    // matching is best-effort; the fixed panel already guarantees a council
-  }
   return lenses;
 }
 

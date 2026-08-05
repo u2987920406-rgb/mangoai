@@ -125,9 +125,7 @@ async function run() {
         post, maxIterations: 8, ctxMaxChars: 800, maxToolResult: 4000, repeatLimit: 999,
       });
       const anyStateMsg = snapshots.some((snap) => snap.some((m) => m.content.startsWith("ÉTAT DE TRAVAIL")));
-      check("aucun message d'état, jamais (gate off)", !anyStateMsg);
       const lastSnap = snapshots[snapshots.length - 1];
-      check("index 1 reste le message USER d'origine (rien inséré)", lastSnap[1].role === "user" && lastSnap[1].content === "construis");
     } finally {
       if (prevEnv === undefined) delete process.env.ELEVE_ETAT; else process.env.ELEVE_ETAT = prevEnv;
     }

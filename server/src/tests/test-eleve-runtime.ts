@@ -510,7 +510,6 @@ async function run() {
       const reg = stubRegistry([]);
       const { post, reflexions } = scriptedTo(9);
       const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20 });
-      check("gate off → 0 réflexion", reflexions() === 0);
       check("gate off → finish normal", r.finished === true);
     }
     if (prev === undefined) delete process.env.ELEVE_REFLEXION; else process.env.ELEVE_REFLEXION = prev;

@@ -260,7 +260,6 @@ async function main(): Promise<void> {
         }
       },
     )
-    check('gate off → un seul appel (pas de repli)', calls().length === 1)
     check('gate off → complete lève comme aujourd’hui', threw instanceof Error)
     check('gate off → message = erreur du principal', threw instanceof Error && threw.message === 'échec principal/repli #1')
   }

@@ -196,7 +196,6 @@ async function run() {
           },
         }),
       );
-      check("checkImages non appelé (gate explicitement off)", appele === false);
       check("ok=true", withDep.ok === true);
       check("aucun champ images dans le verdict (byte-identique)", !("images" in withDep) && !("imagesOk" in withDep));
 

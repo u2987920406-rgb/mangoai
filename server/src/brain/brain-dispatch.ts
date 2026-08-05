@@ -185,10 +185,8 @@ export async function dispatch(
   // 4 & 5. Injection du contrat + encadrement anti-injection de l'entrée externe.
   // En mode freeform, on n'impose PAS le contrat Mango (le cerveau répond en prose).
   // D4 — Conscience temporelle : injection en TÊTE du system prompt si gate ON.
-  let systemWithTemporal = system
-  if (flag("TEMPORAL_AWARENESS")) {
-    systemWithTemporal = `${temporalContext()}\n\n${system}`
-  }
+  // D4 — Conscience temporelle : figée ON au lot 2 (refonte v3), toujours injectée.
+  const systemWithTemporal = `${temporalContext()}\n\n${system}`
   const fullSystem = freeform ? systemWithTemporal : `${MANGO_CONTRACT_PROMPT}\n\n${systemWithTemporal}`
   const safeUser = trustExternal ? user : sanitizeExternal(user)
 
@@ -205,7 +203,7 @@ export async function dispatch(
   // déclarées, dans l'ordre. Première réussite gagne ; chaîne épuisée → le
   // dernier résultat dégradé (sortie ultime inchangée). Garde localOnly
   // re-passée sur CHAQUE cible + acquireSlot + timeout borné au principal.
-  if (retryable && flag("BRAIN_FALLBACK") && Array.isArray(brain.fallback) && brain.fallback.length) {
+  if (retryable && Array.isArray(brain.fallback) && brain.fallback.length) {
     const brainTimeout = brain.timeoutMs ?? DEFAULT_TIMEOUT_MS
     for (const fb of brain.fallback) {
       // Un rôle localOnly ne bascule JAMAIS vers un cloud, même en repli.

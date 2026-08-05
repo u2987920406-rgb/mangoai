@@ -57,7 +57,7 @@ async function run() {
   const scratch = fs.mkdtempSync(path.join(os.tmpdir(), "e2e182-"));
 
   try {
-    check("conscience temporelle active (défaut ON)", flag("TEMPORAL_AWARENESS") === true);
+    check("conscience temporelle active (figée ON au lot 2)", temporalContext().length > 0);
 
     const task = "regarde https://stripe.com et dis-moi ce que tu vois, et donne-moi la date d'aujourd'hui";
 
@@ -76,7 +76,7 @@ async function run() {
 
     // ── É3 : assemblage du `sys` À L'IDENTIQUE d'index.ts home-chat (temporalContext en tête) ──
     const sys = [
-      flag("TEMPORAL_AWARENESS") ? temporalContext() : "",
+      temporalContext(),
       "Tu es MangoOS, l'assistant IA personnel de Raf — chaleureux, direct, concis.",
       "Tu es ici en posture DISCUTER (lire, analyser, conseiller).",
     ].filter(Boolean).join("\n");

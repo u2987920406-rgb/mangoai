@@ -165,7 +165,8 @@ export function createBrain(config: BrainConfig = {}, deps: BrainDeps = {}): Man
       // Sans le gate BRAIN_FALLBACK OU sans repli configuré : comportement
       // STRICTEMENT identique à avant C2-P1 — appel principal, lève tel quel à
       // l'échec. Le contrat « lève, l'appelant décide » du Kernel est préservé.
-      if (!flag('BRAIN_FALLBACK') || !fallback) {
+      // Repli figé ON au lot 2 : seule l'absence de repli configuré court-circuite.
+      if (!fallback) {
         return runAsk(askOpts, { provider: callProvider, model: chosenModel ?? 'default' })
       }
 

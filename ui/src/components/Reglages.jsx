@@ -8,7 +8,6 @@ import { NEUTRAL } from "../neutral.js";
 
 // Composants système existants — réutilisés tels quels (code-split)
 const AtelierCerveaux  = lazy(() => import("./AtelierCerveaux.jsx"));
-const Billing          = lazy(() => import("./Billing.jsx"));
 const Metrics          = lazy(() => import("./Metrics.jsx"));
 const Traces           = lazy(() => import("./Traces.jsx"));
 const MetricsDashboard = lazy(() => import("./MetricsDashboard.jsx"));
@@ -104,7 +103,6 @@ export default function Reglages({ onBack }) {
     switch (section) {
       case "atelier":   return <AtelierCerveaux onBack={onBack} />;
       case "gaps":      return <AutoEvolution onBack={onBack} />;
-      case "billing":   return <Billing onBack={onBack} />;
       case "coffres":   return <Coffres />;
       case "dashboard": return <MetricsDashboard onBack={onBack} />;
       case "ablation":  return <AutoAblation onBack={onBack} />;

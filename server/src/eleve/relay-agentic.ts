@@ -135,7 +135,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // section vide, system identique). Fail-open : jamais bloquant (memoireSection
     // rend "" si Ollama/Blackboard indispo). Jamais en test (transport injecté).
     let memoireClause = "";
-    if (flag("ELEVE_MEMOIRE") && !deps.agenticPost) {
+    if (!deps.agenticPost) {
       try {
         memoireClause = await memoireSection(task, realMemoireDeps());
         if (memoireClause) push("  🧠 Mémoire : souvenirs pertinents injectés");
@@ -203,7 +203,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // que l'Élève interroge sa mémoire EN COURS de boucle. Gaté ELEVE_MEMOIRE.
     const withMemoire = (pd: string, allowRun: boolean): ReturnType<typeof buildEleveActionTools> => {
       const reg = buildEleveActionTools(pd, { allowRun });
-      if (flag("ELEVE_MEMOIRE") && !deps.agenticPost) {
+      if (!deps.agenticPost) {
         try { for (const t of buildMemoireTool(realMemoireDeps())) reg.register(t); } catch { /* mémoire best-effort */ }
       }
       return reg;
@@ -811,7 +811,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       // clôture (#161) vérifie intention + goût + QA. Gaté ELEVE_CLOSURE_GATE=on
       // (défaut OFF → zéro régression). Convergent/non-bloquant : convertit (relance
       // bornée) puis cède (incomplete). Ne casse jamais la boucle (try/catch).
-      if (process.env.ELEVE_CLOSURE_GATE === "on" && result?.finished) {
+      if (result?.finished) {
         try {
           const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task));
           appendBacklog(projectDir, { actor: "Gardien", action: "clôture", detail: verdict.raisons.join(" ; ") || "OK", ok: verdict.ok });

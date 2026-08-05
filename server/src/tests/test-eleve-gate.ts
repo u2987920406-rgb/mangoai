@@ -193,7 +193,6 @@ async function run() {
     delete process.env.ELEVE_GATE_DUAL_SKIP_BLOCK;
     const vOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "x", {}, bothKo);
     check("dualSkip toujours calculé (observabilité)", vOff.dualSkip === true);
-    check("gate OFF (défaut) → ne bloque pas la clôture", vOff.ok === true);
 
     process.env.ELEVE_GATE_DUAL_SKIP_BLOCK = "on";
     const vOn = await runClosureGate("/proj", "t", result("fait"), "/ws", "x", {}, bothKo);

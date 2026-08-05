@@ -109,7 +109,7 @@ export function registerEstheteRoutes(app: Express): void {
 
       // Gardien #161 — même wiring que eleve.ts : intention + goût + QA, relance bornée.
       let relances = 0;
-      if (process.env.ELEVE_CLOSURE_GATE === "on") {
+      { // Gardien de clôture : figé ON en dur au lot 2 (refonte v3, mesuré le 2026-08-05).
         let verdict = await runClosureGate(dir, task, result, WORKSPACE_DIR, inferProjectType(message));
         while (!verdict.ok && relances < GATE_RELANCE_MAX) {
           const decision = evaluateGate(dir, verdict, relances, GATE_RELANCE_MAX);

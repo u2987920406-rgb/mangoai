@@ -81,7 +81,6 @@ function withTimeout<T>(p: Promise<T>, ms: number, onTimeout: T): Promise<T> {
 export async function analyserChaineEnAmontDuGabarit(
   agentPrompt: string,
 ): Promise<{ suppressDomain: boolean; rapport: RapportChaineAmbigue | null }> {
-  if (!flag("ELEVE_CONTEXT_CHAINE")) return { suppressDomain: false, rapport: null };
   try {
     const rapport = await withTimeout(
       verifierChaineAmbigue(agentPrompt, { extraire, juger, chercherDefinitionWeb }),
@@ -110,7 +109,6 @@ export async function analyserChaineEnAmontDuGabarit(
  * exister (appelée APRÈS `createProject`).
  */
 export async function verifierChoixGabaritEnArrierePlan(template: string, prompt: string, dir: string): Promise<void> {
-  if (!flag("ELEVE_CONTEXT_LOOP")) return;
   try {
     const contenuReel = lireContenuGabarit(dir);
     if (!contenuReel) return; // rien à comparer — pas d'écran App.jsx lisible

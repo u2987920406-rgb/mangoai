@@ -367,7 +367,7 @@ async function buildAgenticImpl(
   // la compaction tronque le contexte. Gate off → jamais calculé/inséré (identique
   // à avant). `stateMsgIndex` mémorise où vit le message d'état pour le REMPLACER
   // (jamais l'empiler) une fois qu'il existe.
-  const eleveEtatOn = flag("ELEVE_ETAT");
+  const eleveEtatOn = true;
   let workingState: WorkingState = emptyWorkingState();
   let stateMsgIndex: number | null = null;
 
@@ -376,7 +376,7 @@ async function buildAgenticImpl(
   // périodiquement OU après un blocage (errorStreak), bornée par run, jamais deux
   // d'affilée. Le point survit comme message assistant → informe les tours suivants.
   // Gate off → aucun appel supplémentaire (comportement identique).
-  const eleveReflexionOn = flag("ELEVE_REFLEXION");
+  const eleveReflexionOn = true;
   const REFLEXION_EVERY = Math.max(3, Number(process.env.ELEVE_REFLEXION_EVERY ?? 8));
   const REFLEXION_MAX = Math.max(1, Number(process.env.ELEVE_REFLEXION_MAX ?? 3));
   let reflexionsCount = 0;
@@ -384,7 +384,7 @@ async function buildAgenticImpl(
 
   // (B0.3, gate ELEVE_RESUME) Snapshot de reprise. Gate off OU projectDir absent
   // OU `snapshots:false` (sous-agent délégué, 🟠2) → jamais écrit ni restauré.
-  const eleveResumeOn = flag("ELEVE_RESUME") && opts.snapshots !== false;
+  const eleveResumeOn = opts.snapshots !== false;
   const clearRunSnapshot = (): void => {
     if (eleveResumeOn && opts.projectDir) clearSnapshot(opts.projectDir);
   };

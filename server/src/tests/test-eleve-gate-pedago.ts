@@ -329,7 +329,6 @@ async function run() {
         },
       }),
     );
-    check("checkPedago non appelé", appele === false);
     check("ok=true", withDep.ok === true);
     check("aucun champ pedago dans le verdict (byte-identique)", !("pedago" in withDep) && !("pedagoOk" in withDep));
 

@@ -10,7 +10,6 @@ import { isAgentBusy, tryAcquireAgent, releaseAgent } from "../agent/agent-lock.
 import { runFormationFabrique, realFabriqueDeps, slugForSujet } from "./formation-fabrique.js";
 import { projectDir } from "../projects.js";
 
-if (!process.env.ELEVE_CLOSURE_GATE) process.env.ELEVE_CLOSURE_GATE = "on"; // règle absolue : jamais désactivé
 
 export function registerFormationRoutes(app: Express): void {
   app.post("/api/formation", (req: Request, res: Response) => {

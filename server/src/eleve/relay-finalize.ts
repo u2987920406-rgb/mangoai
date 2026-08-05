@@ -99,7 +99,7 @@ export async function finalizeEscalationPhase(
 
       // CLÔTURE après le Maître (mêmes garde-fous que l'Élève) — collecte les raisons RED.
       const issues: string[] = [];
-      if (process.env.ELEVE_CLOSURE_GATE === "on") {
+      { // Gardien de clôture : figé ON en dur au lot 2 (refonte v3, mesuré le 2026-08-05).
         try {
           const mResult = { text: esc2?.eleveSummary || "résolu par le Maître", toolTrace: [] as Array<{ name: string; args: string }> };
           const verdict = await runClosureGate(projectDir, task, mResult, WORKSPACE_DIR, inferProjectType(task));

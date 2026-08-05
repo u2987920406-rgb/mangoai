@@ -71,37 +71,28 @@ import { generateLexique } from "../lexique.js";
 import { verifierChoixGabaritEnArrierePlan, analyserChaineEnAmontDuGabarit } from "../eleve-context-hook.js";
 import { registerTokenizerRoutes } from "../tokenizer.js";
 import { registerIdeationRoutes } from "../ideation.js";
-import { registerVeilleRoutes } from "../veille.js";
 import { registerModelRouterRoutes } from "../model-router.js";
 import { registerDocGeneratorRoutes } from "../docgenerator.js";
 import { registerVersionGraphRoutes } from "../version-graph.js";
 import { registerControleurRoutes } from "../qa-temporal.js";
 import { emitPhaseComplete, spawnVerdictWatcher, isMangoQaActive, registerMangoQaRoutes } from "../mangoqa.js";
-import { registerStrategeRoutes, maybeInjectStrategeBriefing } from "../stratege/stratege-routes.js";
 import { registerFormationRoutes } from "../formation/formation-routes.js";
 import { registerPerimeterRoutes } from "../perimeter-routes.js";
 import { loadPlan, replaceIncrements, markIncrementDone, loadFluxCounts } from "../project-plan.js";
-import { registerStripeRoutes } from "../stripe.js";
 import { registerCronRoutes } from "../cron-scheduler.js";
 import { registerMetricsDashboardRoutes } from "../metrics-dashboard.js";
 import { registerNotesRAGRoutes } from "../notes-rag.js";
 import { registerMultiProjectRoutes } from "../multi-project.js";
 import { isLoopDesignEnabled, runDesignLoop } from "../design-loop.js";
-import { registerAutoAblationRoutes } from "../auto-ablation.js";
 import { registerDesignReviewRoutes } from "../design/design-review.js";
-import { registerSuperAgentRoutes } from "../super-agent-builder.js";
 import { registerKnowledgeStoresRoutes } from "../knowledge-stores-routes.js";
 import { registerLibraryRoutes } from "../library-routes.js";
-import { registerCouncilSkillsRoutes } from "../council-skills-routes.js";
 import { registerBackendServerRoutes } from "../backend-server-routes.js";
 import { registerProjectIORoutes } from "../project-io-routes.js";
 import { registerFeedbackRoutes } from "../feedback-routes.js";
 import { registerPdfRoutes } from "../pdf-routes.js";
 import { registerTutorialRoutes } from "../tutorial.js";
 import { registerNocturnalRoutes } from "../nocturnal.js";
-import { registerPromptEvolutionRoutes } from "../prompt-evolution.js";
-import { registerAbHarnessRoutes } from "../ab-harness.js";
-import { registerRadarRoutes } from "../radar.js";
 import { registerBuildReviewRoutes } from "../build-review-routes.js";
 import { loadReview } from "../build-review.js";
 import { registerBrainDispatchRoutes } from "../brain/brain-dispatch-routes.js";
@@ -317,7 +308,6 @@ app.post("/api/chat", async (req, res) => {
       // du projet (première conversation), jamais un tour suivant → aucune
       // duplication. Gate STRATEGE_GLOBAL off / briefing vide ⇒ aucune écriture
       // (fire-and-forget, ne bloque jamais ce tour).
-      if (isNewProject) maybeInjectStrategeBriefing(historyDir);
     }
     record("user", prompt);
 

@@ -16,7 +16,7 @@ import { tryAcquireAgent, releaseAgent } from "./agent/agent-lock.js";
 import { appendHistory, formatToolLine, loadHistory, type ChatEntry } from "./history.js";
 import { inspectProject, type InspectionSignal } from "./inspection.js";
 import { installBackendDepsAsync } from "./backend-generator.js";
-import { generateUniquePrompts } from "./train-loop.js";
+import { generateUniquePrompts } from "./nocturnal-prompts.js";
 import { resolveProvider } from "./llm/llm-engine.js";
 // T5 : l'appel LLM one-shot passe par la façade cerveau unique (brain.ask = askLLM).
 import { brain } from "./brain.js";
@@ -32,7 +32,6 @@ import { flag } from "./flags.js";
 import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel/kernel-chat-bridge.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
-import { maybeRunStrategistCycle } from "./stratege/stratege-run.js";
 import { maybeRunTuteurCycle } from "./formation/formation-tuteur.js";
 import { runAsActor } from "./perimeter-context.js";
 import { combineBreakerVerdict, listPerimeterIncidents, clearPerimeterIncidents } from "./perimeter-incidents.js";
@@ -655,7 +654,6 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
   // synthèse déterministe agrège les signaux cross-projet/cross-session en un
   // briefing conseil (data/strategist-state.json). FAIL-OPEN TOTAL : un échec du
   // Stratège est loggé et avalé — il ne peut JAMAIS faire échouer le lot nocturne.
-  await maybeRunStrategistCycle(flag("STRATEGE_GLOBAL"));
 
   // (#181 É5, D4 = boucle LENTE) Le Tuteur : APRÈS le lot, même patron que le
   // Stratège ci-dessus (verrou relâché, hors du try). Gaté FORMATION_TUTEUR,

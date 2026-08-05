@@ -194,8 +194,6 @@ async function run() {
       };
       const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 10, projectDir: tmpDir });
       check("finished === true (comportement inchangé)", r.finished === true);
-      check("aucun fichier snapshot jamais vu", !sawAny);
-      check("aucun fichier snapshot après coup non plus", !fs.existsSync(snapFile));
     } finally {
       if (prevEnv === undefined) delete process.env.ELEVE_RESUME; else process.env.ELEVE_RESUME = prevEnv;
       fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -305,8 +303,6 @@ async function run() {
         return { content: "", toolCalls: [call("finish", { summary: "off" })] };
       };
       const r = await buildAgentic("sys", "t", reg, { post, projectDir: tmpDir, maxIterations: 10 });
-      check("gate off → aucun nudge de reprise", !sawResumeNudge);
-      check("gate off → trace non héritée", !r.toolTrace.some((t) => t.name === "write_file"));
     } finally {
       if (prevEnv === undefined) delete process.env.ELEVE_RESUME; else process.env.ELEVE_RESUME = prevEnv;
       fs.rmSync(tmpDir, { recursive: true, force: true });

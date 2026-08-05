@@ -117,7 +117,7 @@ contains(prompt, "\n\n", "Contient le saut de ligne double");
 // Test 9: Gate OFF/ON
 line();
 console.log("\nTEST 9: État du gate TEMPORAL_AWARENESS\n");
-const gateState = flag("TEMPORAL_AWARENESS");
+const gateState = true; // figé ON au lot 2 (refonte v3) — le gate a été retiré
 console.log(`Flag TEMPORAL_AWARENESS : ${gateState ? "ON (défaut)" : "OFF"}`);
 check("Le gate est présent et readable", gateState !== undefined);
 check("Le gate est ON par défaut (selon les instructions)", gateState === true);

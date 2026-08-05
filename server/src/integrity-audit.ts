@@ -25,8 +25,6 @@ import { loadExternalProjects } from "./external-projects.js";
 import { loadGrants } from "./perimeter.js";
 import { loadLedger as loadCurationLedger } from "./kernel/kernel-curation-effect.js";
 import { loadEntries as loadNocturnalEntries } from "./nocturnal.js";
-import { loadRuns as loadEvolutionRuns } from "./prompt-evolution.js";
-import { loadStrategistState } from "./stratege/stratege-store.js";
 import { atomicWriteFileSync, dataDir } from "./safe-io.js";
 import { logDrop } from "./integrity-log.js";
 import fs from "node:fs";
@@ -102,16 +100,6 @@ export const INTEGRITY_TARGETS: IntegrityTarget[] = [
   {
     name: "nocturnal-entries",
     loadIds: () => idsOf(loadNocturnalEntries(), (e) => e.id),
-  },
-  {
-    name: "prompt-evolution-runs",
-    loadIds: () => idsOf(loadEvolutionRuns(), (r) => r.id),
-    knownShrinkage: "runs.slice(0, 20) — les 20 plus récents seulement",
-  },
-  {
-    name: "strategist-briefing-items",
-    loadIds: () => idsOf(loadStrategistState().items, (i) => i.id),
-    knownShrinkage: "pruneStrategistState — cap + TTL par ancienneté (dormant tant que STRATEGE_GLOBAL=off)",
   },
 ];
 

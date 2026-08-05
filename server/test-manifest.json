@@ -19,9 +19,6 @@
     ]
   },
   "entries": {
-    "test-ab-harness": {
-      "tier": "offline"
-    },
     "test-agent-bus": {
       "tier": "offline"
     },
@@ -33,9 +30,6 @@
       "tier": "offline"
     },
     "test-agent-runtime": {
-      "tier": "offline"
-    },
-    "test-agent-scheduler": {
       "tier": "offline"
     },
     "test-assign-mode": {
@@ -81,9 +75,6 @@
       "tier": "offline"
     },
     "test-brain-fallback": {
-      "tier": "offline"
-    },
-    "test-brain-profile": {
       "tier": "offline"
     },
     "test-brain-runtime": {
@@ -147,9 +138,6 @@
       "tier": "offline"
     },
     "test-domains": {
-      "tier": "offline"
-    },
-    "test-dry-run": {
       "tier": "offline"
     },
     "test-e2e-intention-dispatch": {
@@ -301,9 +289,6 @@
       "tier": "offline"
     },
     "test-gpu-serialize": {
-      "tier": "offline"
-    },
-    "test-grand-chantier": {
       "tier": "offline"
     },
     "test-home-scratch": {
@@ -507,12 +492,6 @@
     "test-projects": {
       "tier": "offline"
     },
-    "test-prompt-evolution": {
-      "tier": "offline"
-    },
-    "test-radar": {
-      "tier": "offline"
-    },
     "test-references": {
       "tier": "smoke"
     },
@@ -525,22 +504,10 @@
     "test-render-integrity": {
       "tier": "offline"
     },
-    "test-reverse-learn": {
-      "tier": "offline"
-    },
     "test-safe-io": {
       "tier": "offline"
     },
     "test-sandbox-net": {
-      "tier": "offline"
-    },
-    "test-savoir-extraction": {
-      "tier": "offline"
-    },
-    "test-savoir-reconcile": {
-      "tier": "offline"
-    },
-    "test-savoir-store": {
       "tier": "offline"
     },
     "test-savoir-transcript": {
@@ -615,31 +582,13 @@
     "test-stratege-brain": {
       "tier": "offline"
     },
-    "test-stratege-collecteurs": {
-      "tier": "offline"
-    },
-    "test-stratege-demandes": {
-      "tier": "offline"
-    },
     "test-stratege-escalate": {
-      "tier": "offline"
-    },
-    "test-stratege-global": {
       "tier": "offline"
     },
     "test-stratege-learn": {
       "tier": "offline"
     },
-    "test-stratege-routes": {
-      "tier": "offline"
-    },
-    "test-stratege-run": {
-      "tier": "offline"
-    },
     "test-stratege-signals": {
-      "tier": "offline"
-    },
-    "test-stratege-store": {
       "tier": "offline"
     },
     "test-taste-anchors": {
@@ -690,9 +639,6 @@
     "test-trace-dashboard": {
       "tier": "offline"
     },
-    "test-train": {
-      "tier": "offline"
-    },
     "test-turn-ledger": {
       "tier": "offline"
     },
@@ -718,6 +664,9 @@
       "tier": "offline"
     },
     "test-working-memory": {
+      "tier": "offline"
+    },
+    "test-nocturnal-prompts": {
       "tier": "offline"
     }
   }

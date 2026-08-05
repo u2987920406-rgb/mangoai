@@ -152,5 +152,5 @@ export function buildElevePlanifierTools(projectDir: string, deps: PlanifierDeps
 
   // Gate off → l'outil n'est pas offert (le modèle ne peut pas le voir/appeler),
   // donc `blocked` reste toujours vide → rendu du plan strictement identique à #160.
-  return flag("ELEVE_PLAN_V2") ? [planifier, etapeFaite, etapeBloquee] : [planifier, etapeFaite];
+  return [planifier, etapeFaite, etapeBloquee];
 }

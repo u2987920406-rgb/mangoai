@@ -374,7 +374,7 @@ export async function runClosureGate(
   // formation.json présent) — neutre sinon. Gate OFF ou deps.checkPedago absent → jamais
   // appelé, verdict byte-identique (pas de champ `pedago`/`pedagoOk` dans le retour).
   let pedago: PedagoVerdict | undefined;
-  if (flag("ELEVE_GATE_PEDAGO") && deps.checkPedago) {
+  if (deps.checkPedago) {
     try {
       pedago = await deps.checkPedago(projectDir);
     } catch {
@@ -388,7 +388,7 @@ export async function runClosureGate(
   // ciblé distinct de la critique de goût. Gate OFF ou deps.checkImages absent → jamais
   // appelé, verdict byte-identique (pas de champ `images`/`imagesOk`).
   let images: ImagesVerdict | undefined;
-  if (flag("ELEVE_GATE_IMAGES") && deps.checkImages) {
+  if (deps.checkImages) {
     try {
       images = await deps.checkImages(projectDir);
     } catch {
@@ -401,7 +401,7 @@ export async function runClosureGate(
   // (0 réseau/LLM) des vitesses orbitales planétaires déclarées vs une table curée. Gate OFF
   // ou deps.checkConstants absent → jamais appelé, verdict byte-identique.
   let constants: ConstantsVerdict | undefined;
-  if (flag("ELEVE_GATE_CONSTANTS") && deps.checkConstants) {
+  if (deps.checkConstants) {
     try {
       constants = await deps.checkConstants(projectDir);
     } catch {
@@ -414,7 +414,7 @@ export async function runClosureGate(
   // PAR ITEM d'un tableau de données (quiz/catalogue/mapping), via un juge LLM. Gate OFF
   // ou deps.checkContent absent → jamais appelé, verdict byte-identique.
   let content: ContentVerdict | undefined;
-  if (flag("ELEVE_GATE_CONTENT") && deps.checkContent) {
+  if (deps.checkContent) {
     try {
       content = await deps.checkContent(projectDir);
     } catch {
@@ -476,7 +476,7 @@ export async function runClosureGate(
   // visible ; ELEVE_GATE_DUAL_SKIP_BLOCK=on (défaut OFF) le fait aussi BLOQUER
   // (compté non-vérifié plutôt que vert) au lieu de se contenter du log N9.
   const dualSkip = Boolean(judgeSkipped && critiqueSkipped);
-  const dualSkipBlocks = dualSkip && flag("ELEVE_GATE_DUAL_SKIP_BLOCK");
+  const dualSkipBlocks = dualSkip;
   if (dualSkipBlocks) {
     raisons.push(
       `GARDIEN DÉGRADÉ — juge d'intention (${judgeSkipped}) ET critique visuelle (${critiqueSkipped}) ont échoué SIMULTANÉMENT : ` +

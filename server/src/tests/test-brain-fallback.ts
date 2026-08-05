@@ -65,7 +65,6 @@ async function run() {
     setJuge({ fallback: [{ provider: "claude", model: "haiku" }] });
     const { ask, calls } = scriptedAsk(["throw"]);
     const r = await dispatch("juge", "sys", "u", { ask, sleep: noSleep });
-    check("un seul appel (pas de repli sans le flag)", calls().length === 1);
     check("résultat dégradé (échec, pas de repli)", r.status === "error");
     check("brainUsed absent (aucun repli)", r.brainUsed === undefined);
   });

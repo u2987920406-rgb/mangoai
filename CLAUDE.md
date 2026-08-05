@@ -17,11 +17,13 @@ Lire `statut.md` uniquement et afficher immédiatement le **tableau consolidé**
 
 Lire aussi `memory.md` pour l'état courant du projet.
 
-Lire aussi `fondation.md` — le document fondateur (architecture, vision 10 ans, principes non-négociables). Léger (~25 ko) et structurant : c'est la référence absolue pour toute décision d'architecture.
+Lire aussi `fondation.md` — le document fondateur (architecture, vision 10 ans, principes non-négociables). Encore raisonnable (**41 ko**, re-mesuré le 2026-08-05 — l'ancienne mention « ~25 ko » avait dérivé) et structurant : c'est la référence absolue pour toute décision d'architecture.
 
 Lire aussi `pipeline-eleve-qa.md` — câblage TECHNIQUE concret du pipeline Élève + Stratège + Forge + MangoQA (fichiers, variables d'env, mécanismes réels, état daté 2026-07-14). Complément opérationnel de `fondation.md` (qui reste au niveau vision) — la référence à jour avant toute question ou modification touchant au pipeline.
 
-**Ne PAS lire `historique.md` au démarrage** — ce fichier est lourd (~220 ko). Le lire uniquement quand l'utilisateur demande explicitement le détail d'une idée ou d'une session passée.
+**Ne PAS lire `historique.md` au démarrage** — ce fichier est lourd : **1,35 Mo** (re-mesuré le 2026-08-05 ; cette instruction annonçait « ~220 ko », soit **6× moins que la réalité**). Le lire uniquement quand l'utilisateur demande explicitement le détail d'une idée ou d'une session passée, et alors **par section ciblée, jamais en entier**.
+
+> **Pourquoi cette correction compte.** Un chiffre faux d'un facteur 6 dans une instruction permanente est un chiffre qu'on a cessé de vérifier. C'est le mécanisme du Constat 1 de l'audit de refonte (« rien n'oblige jamais à refermer ») appliqué à la documentation elle-même. **Les poids annoncés dans ce fichier se re-mesurent, ils ne se recopient pas.**
 
 ## Wiki de connaissance (`wiki/`, vault Obsidian)
 

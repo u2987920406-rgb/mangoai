@@ -534,7 +534,7 @@ export async function integrerEtSpecialiser(
   manifest.decisions.palette = identite.palette;
 
   let gardien: IntegrationResult["gardien"];
-  if (process.env.ELEVE_CLOSURE_GATE === "on") {
+  { // Gardien de clôture : figé ON en dur au lot 2 (refonte v3, mesuré le 2026-08-05).
     try {
       const toolTrace = filesChanged.map((f) => ({ name: "write_file", args: JSON.stringify({ path: f }) }));
       const verdict = await runClosureGate(
@@ -550,8 +550,6 @@ export async function integrerEtSpecialiser(
       gardien = { ok: true, raisons: [], skipped: (e as Error).message.split("\n")[0] };
       deps.log(`  ⚠ Gardien indisponible (${gardien.skipped}) — non bloquant`);
     }
-  } else {
-    deps.log("  ⚠ ELEVE_CLOSURE_GATE désactivé — le Gardien n'a PAS tourné (ne devrait jamais arriver, règle absolue du projet)");
   }
 
   return { filesChanged, gardien };
