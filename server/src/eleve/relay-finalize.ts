@@ -123,7 +123,7 @@ export async function finalizeEscalationPhase(
           push(`⚠ Gardien (après Maître) indisponible (${(e as Error).message.split("\n")[0]}) — on laisse passer`);
         }
       }
-      if (process.env.ELEVE_GATE_PARCOURS === "on") {
+      { // Figé ON au lot 2 (refonte v3) — tournait déjà, gate retiré.
         const pc = await runClosureParcours(projectDir);
         push(`🧭 teste_parcours (après Maître) — ${pc.skipped ? `sauté (${pc.skipped}) — NON vérifié ⚠` : pc.ok ? "aucune erreur console ✓" : `${pc.errors.length} erreur(s) console ✗`}`);
         if (!pc.ok) issues.push(`erreurs console : ${pc.errors.slice(0, 3).join(" | ") || "(voir preview)"}`);

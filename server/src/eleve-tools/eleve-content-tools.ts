@@ -11,7 +11,6 @@ import path from "node:path";
 import type { KernelTool, KernelToolResult } from "../kernel/kernel-mcp.js";
 import { confinePath } from "../perimeter-context.js";
 import { askLLM } from "../llm/llm-engine.js";
-import { cachedComplete } from "../llm/llm-cache.js";
 import { searchPexelsImages } from "../taste/taste-images.js";
 import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA as ELEVE_OLLAMA_URL } from "../eleve/provider.js";
 import { getBrain } from "../brain/brain-registry.js";
@@ -50,13 +49,9 @@ function glmAsk(): GenContentDeps["ask"] {
       maxTokens: 6000,
       timeoutMs: 180_000,
     });
-  return (system, user) =>
-    cachedComplete(system, user, {
-      role: "genere-contenu",
-      providerModel: `${provider}:${model}`,
-      promptVersion: GENERE_CONTENU_PROMPT_VERSION,
-      ask: real,
-    });
+  // Cache sémantique archivé au lot 2 : son gate était OFF depuis toujours,
+  // `cachedComplete` n'était qu'un passe-plat vers `real`. Appel direct.
+  return real;
 }
 
 // Raf (2026-07-11) : VL_MODEL était un 3e registre — une variable d'env SÉPARÉE de

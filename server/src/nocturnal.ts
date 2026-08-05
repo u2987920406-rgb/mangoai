@@ -32,7 +32,6 @@ import { flag } from "./flags.js";
 import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel/kernel-chat-bridge.js";
 import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
-import { maybeRunTuteurCycle } from "./formation/formation-tuteur.js";
 import { runAsActor } from "./perimeter-context.js";
 import { combineBreakerVerdict, listPerimeterIncidents, clearPerimeterIncidents } from "./perimeter-incidents.js";
 
@@ -662,7 +661,6 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
   // (workspace/*/formation.json) : diagnostic + lot ciblé + écriture
   // bank-ext:<module>. FAIL-OPEN TOTAL — un échec du Tuteur (sur une formation
   // ou globalement) n'affecte JAMAIS le lot nocturne, déjà terminé.
-  await maybeRunTuteurCycle(flag("FORMATION_TUTEUR"));
 }
 
 // ── Review matinale → axiomes (vague 2, RLHF amplifié #41) ───────────────────

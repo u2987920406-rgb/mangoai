@@ -739,7 +739,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       // conteneur à largeur max (max-w-* / max-width) SANS centrage (mx-auto / margin:auto)
       // = contenu collé à gauche → renvoie l'Élève ajouter le centrage. C'est le filet
       // PERMANENT contre le biais « collé à gauche » (cf. limites L54). Coupure ELEVE_GATE_BALANCE=off.
-      if (process.env.ELEVE_GATE_BALANCE !== "off" && result?.finished) {
+      if (result?.finished) {
         try {
           const balFiles = changedFilesFromTrace(result.toolTrace);
           const findings = scanFilesForBalance(balFiles, (f) => {
@@ -764,7 +764,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       // défaut OFF) : ouvre la preview, et si l'app charge avec des erreurs console →
       // renvoie l'Élève corriger (reboucle bornée par selfRelanceMax). C'est la vérif
       // « ça marche vraiment » (#155) intégrée à la clôture, symétrique du chemin Maître.
-      if (process.env.ELEVE_GATE_PARCOURS === "on" && result?.finished && relances < selfRelanceMax) {
+      if (result?.finished && relances < selfRelanceMax) {
         const pc = await runClosureParcours(projectDir);
         if (!pc.ok) {
           relances++;

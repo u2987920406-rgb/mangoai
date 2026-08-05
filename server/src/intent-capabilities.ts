@@ -137,12 +137,6 @@ export async function requiredCapabilities(
   const caps = new Set<Capability>(DISCUSS_DEFAULT_CAPS);
   for (const c of heavyDetected) caps.add(c);
 
-  if (flag("INTENT_ROUTER_LLM") && looksAmbiguous(task, heavyDetected)) {
-    const doDispatch = opts.dispatch ?? dispatch;
-    const routed = await routeAmbiguous(task, doDispatch);
-    for (const c of routed) caps.add(c);
-  }
-
   return caps;
 }
 

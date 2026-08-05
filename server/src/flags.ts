@@ -103,36 +103,6 @@ export const FLAGS = {
   // un fichier qui N'A JAMAIS ÉTÉ CONSTRUIT (vérifié : absent du disque, zéro référence dans
   // tout le repo). Fantôme pur — les 3 modules savoir réels (extraction/reconcile/transcript)
   // gardent leurs propres flags ci-dessus. Le sous-système #177 reste à moitié câblé (décision
-  // produit en attente : finir le runner, ou retirer l'échafaudage dormant en entier).
-  LLM_SEMANTIC_CACHE: {
-    env: "LLM_SEMANTIC_CACHE",
-    default: false,
-    description: "Cache exact→sémantique (#182 D5/É4, llm-cache.ts) pour les appels LLM PURS/sans effet de bord (juges, classifications, extractions déterministes) : hash exact puis cosinus (safeEmbed, seuil 0.97) sur le scope Blackboard `llm-cache:<role>`, clé namespacée par providerModel+promptVersion. OFF → cachedComplete appelle directement `ask`, aucune écriture Blackboard, comportement historique byte-identique.",
-  },
-  // ── #182 D2/É2 — classificateur intention→capacités ─────────────────────
-  INTENT_ROUTER_LLM: {
-    env: "INTENT_ROUTER_LLM",
-    default: false,
-    description: "Routeur LLM de capacités (#182 D2 étage 3, intent-capabilities.ts) : REPLI d'ambiguïté seulement — si le signal déterministe (URL/mots-clés/pièce jointe) est muet ET la tâche manifestement multi-capacités, un one-shot dispatch(\"routeur\", …) renvoie une liste de capacités. OFF → on s'arrête au sur-provisionnement read-safe + aux heuristiques déterministes (étages 1+2), ZÉRO appel modèle.",
-  },
-  // ── #182 D3/É5 — cerveaux non-Élève à l'Accueil : divulgation + orchestration ─
-  FRONTIER_TOOLS_ANY_BRAIN: {
-    env: "FRONTIER_TOOLS_ANY_BRAIN",
-    default: false,
-    description: "Orchestration outillée pour les cerveaux non-Élève à l'Accueil (#182 D3, frontier-orchestration.ts). ON → quand un cerveau non-Élève (Fable/Opus/Sonnet/Haiku) est sélectionné ET que la tâche réclame des outils (URL/vision/média), l'ÉLÈVE exécute les outils (read-only) et remet ses artefacts — encadrés par sanitizeExternal (données non fiables) — au cerveau choisi qui RAISONNE/RÉDIGE par-dessus, via dispatch. OFF (défaut, byte-identique) → pas d'orchestration ; à la place une LIGNE DE DIVULGATION honnête est ajoutée à la réponse texte (« {cerveau} ne pilote pas les outils ici… ») au lieu du repli muet historique.",
-  },
-  // ── #182 D3/É5 suite — sélection rapide du cerveau à l'Accueil (registre) ──
-  HOME_QUICK_MODEL: {
-    env: "HOME_QUICK_MODEL",
-    default: false,
-    description: "Sélection rapide de modèle à l'Accueil (#182 D3 suite) : la popup « + Connecter un autre modèle… » lit/écrit le rôle `accueil` du registre brain-registry.ts (n'importe quel modèle Ollama installé, en plus des 3 tiers Claude fixes) et /api/home-chat l'utilise comme brainOverride au lieu du MODEL_MAP figé. OFF (défaut) → getBrain(\"accueil\") jamais appelé, comportement byte-identique au MODEL_MAP historique.",
-  },
-  // ── #181 É5 — le Tuteur (boucle adaptative LENTE, formation adaptative) ───
-  FORMATION_TUTEUR: {
-    env: "FORMATION_TUTEUR",
-    default: false,
-    description: "Le Tuteur (#181 É5, formation-tuteur.ts) : boucle adaptative LENTE côté serveur. Lit le modèle apprenant miroité dans `shared:formation-<slug>` (D2), diagnostique les faiblesses PERSISTANTES via `diagnoseWeaknesses` (É1, formation-adaptive.ts), et — seulement si des faiblesses sont trouvées — génère un lot d'exercices CIBLÉS (le sujet du lot cite les compétences faibles et le pattern d'erreur observé) via la même mécanique que la Fabrique (É3, generateContentItems), le valide (schéma É1 + images) et l'écrit en `bank-ext:<module>` dans la collection partagée (absorbé par l'app cliente via SSE, cf. `learner-store.ts` subscribeBankExt). Câblé en fin de lot nocturne (nocturnal.ts), UNE entrée par formation active (scan `workspace/*/formation.json`), fail-open par formation (un échec n'arrête ni les autres formations ni le reste du nocturne). OFF (défaut) → aucune lecture/écriture, `maybeRunTuteurCycle` retourne immédiatement, comportement byte-identique.",
-  },
   // ── L114/L116 (limites.md) — volet IMAGES du Gardien de clôture ───────────
   // (#196 fault-finding, plan cohérence de contenu, 2026-07-24) — ACTIVÉ par défaut :
   // déjà 34 tests verts, fail-open par construction, byte-identique en cas de capture/
@@ -150,6 +120,19 @@ export const FLAGS = {
     env: "CODE_SECTION",
     default: false,
     description: "Section « Code » (docs/plan-193-section-code.md) : chat agentique frontière-only sur des projets LOCAUX EXTERNES au workspace MangoOS — distinct de l'Accueil (léger, cerveau rapide) et du Builder (workspace, souverain). OFF (défaut) → /api/code-chat et /api/external-projects renvoient 403/réponses inertes, nav UI affiche un état désactivé explicite. Aucun effet sur /api/chat, /api/home-chat, workspace/ ou projects.ts.",
+  },
+  // ── Dette du lot 2 (2026-08-05) : ces deux gates étaient lus via process.env
+  //    SANS figurer ici — la règle en tête de ce fichier était enfreinte. Ils sont
+  //    déclarés pour rendre la décision VISIBLE ; leur sort produit reste à trancher.
+  ELEVE_GATE_TASTE_OBSERVE: {
+    env: "ELEVE_GATE_TASTE_OBSERVE",
+    default: true,
+    description: "Volet GOÛT du Gardien en mode OBSERVATION (défaut) : le score de goût est rapporté mais ne bloque JAMAIS la clôture. OFF → il bloque sous le seuil (ELEVE_GATE_TASTE_MIN). À trancher : un auditeur qui ne bloque jamais sur le goût est-il un auditeur ? Le figer ON retirerait au Gardien sa capacité de blocage esthétique — décision produit, pas nettoyage.",
+  },
+  ELEVE_GATE_TESTS: {
+    env: "ELEVE_GATE_TESTS",
+    default: false,
+    description: "Le Gardien EXÉCUTE réellement le script `test` du projet à la clôture. OFF (défaut, jamais allumé) → il se contente de DÉCLARER le manque (« un script test réel existe mais n'est pas exécuté à la clôture »), ce qui est honnête mais faible. ON → la clôture lance vraiment les tests : plus lent, et peut bloquer. Se tranche sur un vrai tour de build, pas au jugé.",
   },
 } as const satisfies Record<string, FlagSpec>;
 

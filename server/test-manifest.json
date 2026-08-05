@@ -282,12 +282,6 @@
     "test-formation-model": {
       "tier": "offline"
     },
-    "test-formation-tuteur": {
-      "tier": "offline"
-    },
-    "test-frontier-orchestration": {
-      "tier": "offline"
-    },
     "test-gpu-serialize": {
       "tier": "offline"
     },
@@ -368,9 +362,6 @@
     },
     "test-lexique": {
       "tier": "smoke"
-    },
-    "test-llm-cache": {
-      "tier": "offline"
     },
     "test-llm-endpoint-oracle": {
       "tier": "offline"

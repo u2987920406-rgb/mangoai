@@ -550,3 +550,151 @@ dispersé ailleurs »*. Or, lus en production et **absents du registre** :
 
 **42 → 17 fait. 17 → 8 demande de retirer du code, pas de basculer un flag** — c'est la
 suite du lot 2, de même nature que le lot 1.
+
+### 2026-08-05 — Lot 2, suite · flags 17 → 13
+
+#### 🐛 Le contrôle anti-binaire ajouté en tête de ce registre a servi immédiatement
+
+`server/src/llm/llm-cache.ts` passait lui aussi pour un binaire — **et il ne fallait
+surtout pas le « corriger »**. Contrairement à `axioms.ts` (octet parasite), ses trois NUL
+sont **délibérés** : ce sont les séparateurs de la clé de hachage.
+
+```js
+createHash("sha256").update(`${providerModel}\0${promptVersion}\0${sys}\0${user}`)
+```
+
+Un séparateur qui ne peut apparaître dans aucun champ — exactement la bonne pratique. Les
+retirer aurait invalidé toutes les clés de cache **et** supprimé la garantie d'unicité.
+
+> **Le contrôle « aucun `.ts` ne passe pour binaire » se lit, il ne s'applique pas
+> mécaniquement.** Deux fichiers, deux causes opposées : l'un se répare, l'autre se lit
+> avec `grep -a`. Un correctif automatique aurait cassé le second en silence.
+
+#### Retirés — 4 flags, 2 modules
+
+| Flag | Verdict | Motif mesuré |
+|---|---|---|
+| `INTENT_ROUTER_LLM` | ⚪ ARCHIVE | gate OFF depuis toujours → la branche n'a jamais tourné. Retrait byte-identique. |
+| `FORMATION_TUTEUR` + `formation/formation-tuteur.ts` | ⚪ ARCHIVE | seul `nocturnal.ts` l'appelait, gate OFF. |
+| `LLM_SEMANTIC_CACHE` + `llm/llm-cache.ts` | ⚪ ARCHIVE | gate OFF → `cachedComplete` n'était **qu'un passe-plat** vers `opts.ask`. `eleve-content-tools` appelle désormais `real` directement. |
+| `HOME_QUICK_MODEL` | 🟢 **figé ON** | `on` dans le `.env` vivant : figé dans son état **vécu**, pas dans une hypothèse. |
+
+Plus 2 tests dédiés, 1 import mort dans le test partagé, 2 entrées de manifeste.
+**Mesuré :** modules 312 → **310** · tests 226 → **224** · manifeste 216 → **214**.
+`tsc` **0 erreur** · 9 suites **vertes** · build UI **vert**.
+
+#### Deux blocs délibérément NON traités
+
+**`FRONTIER_TOOLS_ANY_BRAIN`** — sa condition ouvre un `if/else` volumineux dans
+`home-routes.ts`. Doublement mort (gate OFF **et** `ELEVE_PROVIDER=ollama` ≠ `openai`), mais
+je viens de laisser un `else` orphelin sur `formation-fabrique.ts` en traitant trop vite un
+bloc du même genre. **On ne répète pas la faute en fin de session.**
+
+**`CODE_SECTION`** — n'est pas une coupe libre : `routes/code-route.ts` exporte
+`externalHistoryDir`, importé par `project-io-routes.ts` **et** `preview-routes.ts`, tous deux
+gardés. Neuvième fois qu'un verdict d'archivage bute sur un module gardé.
+
+**`NOCTURNAL_QA_BUS` et `NOCTURNAL_BUDGET_HARD`** — non définis dans le `.env`, donc jamais
+exécutés. Mais `NOCTURNAL_BUDGET_HARD` est un **arrêt dur sur budget** : le figer ON
+imposerait une limite jamais éprouvée, le figer OFF retirerait un garde-fou. **Se tranche sur
+un vrai lot nocturne**, pas au jugé.
+
+#### État de la cible ≤ 8
+
+| Disposition | Nombre |
+|---|---|
+| 🟢 Réglages client — définitifs | **4** |
+| 🔵 Détails du module mémoire → lot 4 | 5 |
+| À trancher (`CODE_SECTION`, `FRONTIER_TOOLS_ANY_BRAIN`, 2 × `NOCTURNAL_*`) | 4 |
+| **Total déclaré** | **13** |
+
+Après le lot 4, le registre tombe **à 8** sans autre travail. Reste la dette signalée plus
+haut : **10 `ELEVE_GATE_*` lus en production sans figurer au registre** — la vraie surface
+de bascules est donc encore supérieure au chiffre affiché.
+
+### 2026-08-05 — Lot 3, préalable · cartographie des 16 rôles (aucune modification)
+
+Avant de bâtir `v3/`, les 16 rôles ont été mesurés **par leurs appelants**, pas par le doc 03.
+
+| Rôle | Fichiers de PROD | Lecture |
+|---|---|---|
+| `vision` | **15** | de très loin le plus sollicité |
+| `juge` | **7** | second — la vérification est bien le cœur vivant |
+| `codeur` | 5 | |
+| `stratege` | 3 | (le routeur déterministe, gardé au lot 1) |
+| `auditeur` | 2 | |
+| `accueil` · `routeur` · `architecte` · `optimiseur` · `chercheur` · `designer_ux` · `forgeron` · `codeur_frontiere` | 1 chacun | |
+| **`orchestrateur`** | **0** | ⚠️ voir ci-dessous |
+| **`extracteur`** | **0** | ⚠️ |
+| **`testeur`** | **0** (0 test aussi) | ⚠️ mort complet |
+
+#### ⚠️ La conception cible bute sur la mesure
+
+Le doc 03 fait de **🧭 Orchestrateur** « la seule équipe que l'utilisateur voit », et de
+**📄 Extraction** une des 8 équipes. Or **leurs deux rôles ont zéro appelant en production**.
+
+Symétriquement, `vision` (15 fichiers) et `juge` (7) portent l'essentiel du trafic réel — le
+doc 03 les range en équipes ordinaires.
+
+> **Lecture.** Les 8 équipes ont été dessinées depuis la structure *souhaitée*, pas depuis
+> l'usage *mesuré*. Deux d'entre elles n'ont aujourd'hui aucun invocateur : les bâtir telles
+> quelles créerait deux surfaces vides — exactement le défaut que la refonte corrige.
+> **`v3/` doit partir de `vision` et `juge`, pas de l'organigramme.** À trancher avant le
+> premier fichier de `v3/`.
+
+`testeur` est le seul retrait sans discussion : **0 appelant, 0 test**.
+
+#### ⛔ Pourquoi rien n'a été modifié
+
+`server/data/brain-registry.json` porte une **modification non commitée de Raf** : le
+basculement des rôles de `ollama/glm-5.2:cloud` vers `claude/opus`. Réduire les rôles
+imposerait d'éditer ce fichier et d'entrer en collision avec ce travail en cours — c'est
+précisément le conflit que la règle git de l'atelier existe pour empêcher. **Le lot 3
+attend que ce basculement soit commité.**
+
+### 2026-08-05 — Lot 2, fin · `FRONTIER_TOOLS_ANY_BRAIN` + la dette des gates non déclarés
+
+#### `FRONTIER_TOOLS_ANY_BRAIN` ⚪ ARCHIVE — et son module avec
+
+Sa branche ON était **doublement morte** : gate OFF depuis toujours, **et** la condition exige
+`ELEVE_PROVIDER === "openai"` alors que le `.env` vivant est sur `ollama`. Le repli était donc
+le seul chemin jamais emprunté — il devient le chemin unique (`home-routes.ts` −24 lignes,
+corps de l'`else` désindenté).
+
+Cette fois les **bornes ont été vérifiées avant de couper** (`if` en 196, `else` en 218,
+fermeture en 234), avec abandon programmé du script si l'une ne correspondait pas — leçon de
+l'`else` orphelin laissé sur `formation-fabrique.ts`.
+
+**Conséquence en cascade :** l'import devenu mort a révélé que `runFrontierOrchestration`
+n'était plus appelé nulle part — `chat-route.ts` et le test partagé ne portaient plus que des
+imports morts. **`frontier-orchestration.ts` est donc archivé**, avec son test dédié.
+
+#### La dette des 10 `ELEVE_GATE_*` hors registre — résolue
+
+| Gate | Traitement |
+|---|---|
+| `ELEVE_GATE_BALANCE` · `ELEVE_GATE_PLACEHOLDERS` | ON par défaut (`!== "off"`) → **figés**, zéro changement de comportement |
+| `ELEVE_GATE_PARCOURS` | `on` dans le `.env` vivant → **figé** dans son état vécu |
+| `ELEVE_GATE_TASTE_OBSERVE` · `ELEVE_GATE_TESTS` | **déclarés au registre**, décision produit rendue visible (voir ci-dessous) |
+| 5 seuils numériques (`INTENT_MIN`, `RELANCE_MAX`, `TASTE_FLOOR`, `TASTE_MIN`, `WCAG_MAX_FAILS`) | **restent des paramètres d'env** — `FlagSpec` est un registre de booléens, ils n'y ont pas leur place |
+
+#### ⚠️ Un gel annulé — mon raisonnement était faux, le test l'a prouvé
+
+J'ai figé `ELEVE_GATE_TASTE_OBSERVE` en justifiant que « ON par défaut ⇒ le figer ne change
+rien ». **Faux.** `tasteObserve = true` met le volet goût en mode *observation* : il rapporte
+mais ne bloque **jamais**. Le figer supprimait la capacité du Gardien à bloquer sur un score
+esthétique — `test-eleve-gate` est tombé sur `ok:false (goût 55 < 80)`.
+
+**Gel annulé, comportement restauré.** Le gate est déclaré au registre avec la question posée
+en toutes lettres : *un auditeur qui ne bloque jamais sur le goût est-il un auditeur ?*
+C'est une décision produit, pas un nettoyage. Même traitement pour `ELEVE_GATE_TESTS` : ON, le
+Gardien **exécute vraiment** le script `test` du projet à la clôture — plus lent, et bloquant.
+Se tranche sur un vrai tour de build.
+
+> **La leçon.** « ON par défaut, donc le figer est neutre » est un raisonnement séduisant et
+> faux dès que le gate ne pilote pas l'exécution mais la **sévérité**. Seul le test l'a
+> montré. C'est le neuvième verdict renversé — et le premier qui vienne de **moi**, pas du
+> registre d'origine.
+
+**Mesuré :** flags **12 + 2 déclarés = 14** · modules **309** · tests **223** ·
+`tsc` **0 erreur** · 9 suites **vertes** · build UI **vert**.

@@ -276,7 +276,6 @@ async function run() {
       { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 },
       deps({ scanBalance: () => [{ file: "x.jsx", line: 1, kind: "jsx-maxw-no-center", snippet: "max-w-3xl" }] }),
     );
-    check("désactivé → balanceOk:true, ok:true", v.balanceOk === true && v.ok === true);
     if (prev === undefined) delete process.env.ELEVE_GATE_BALANCE; else process.env.ELEVE_GATE_BALANCE = prev;
   }
 
@@ -351,7 +350,6 @@ async function run() {
     const prev = process.env.ELEVE_GATE_PLACEHOLDERS;
     process.env.ELEVE_GATE_PLACEHOLDERS = "off";
     const vOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "vitrine", { intentMin: 70, tasteMin: 70, wcagMaxFails: 0 }, deps({ scanPlaceholders: () => [finding] }));
-    check("désactivé → placeholdersOk:true, ok:true", vOff.placeholdersOk === true && vOff.ok === true);
     if (prev === undefined) delete process.env.ELEVE_GATE_PLACEHOLDERS; else process.env.ELEVE_GATE_PLACEHOLDERS = prev;
   }
 

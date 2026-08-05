@@ -13,10 +13,8 @@ import { SNAPSHOT_FILE } from "../loop-state.js";
 // ── #182 É8 — interaction des 6 gates du chantier intention/dispatch (§4.7-4.8) ──
 import { Blackboard, setBlackboard, resetBlackboard, getBlackboard } from "../kernel/kernel-blackboard.js";
 import { MemoryStore } from "../kernel/kernel-blackboard-store.js";
-import { cachedComplete, exactCacheKey } from "../llm/llm-cache.js";
 import type { DraftStep } from "../eleve-speculative/eleve-speculative-runner.js";
 import type { SelfWorktree } from "../mango-self.js";
-import { runFrontierOrchestration, type FrontierDeps, type DispatchFn } from "../frontier-orchestration.js";
 import { dispatch } from "../brain/brain-dispatch.js";
 import type { DispatchOpts } from "../brain/brain-dispatch.js";
 import { temporalContext } from "../temporal-context.js";

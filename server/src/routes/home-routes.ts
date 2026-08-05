@@ -18,7 +18,6 @@ import { WORKSPACE_DIR } from "../projects.js";
 import { estimateTokens, resolveContextWindow } from "../tokenizer.js";
 import { buildEleveContext, type CompactableEntry } from "../eleve-compaction.js";
 import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
-import { runFrontierOrchestration } from "../frontier-orchestration.js";
 import { brain } from "../brain.js";
 import { getBrain } from "../brain/brain-registry.js";
 import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildIntent } from "../home-scratch.js";
@@ -35,7 +34,7 @@ export function registerHomeRoutes(app: express.Express): void {
 // #182 D3/É5 suite — expose le gate HOME_QUICK_MODEL au client (aucune route
 // générique /api/flags n'existe déjà ; on en ajoute une isolée, minimale).
 app.get("/api/flags/home-quick-model", (_req, res) => {
-  res.json({ enabled: flag("HOME_QUICK_MODEL") });
+  res.json({ enabled: true }); // figé ON au lot 2 (refonte v3)
 });
 
 // (2026-07-13) L'Accueil n'a pas d'historique fichier (history.ts) — la conversation
@@ -178,7 +177,7 @@ app.post("/api/home-chat", async (req, res) => {
       // #182 D3/É5 suite — sous le gate, le registre `accueil` (popup rapide, n'importe
       // quel modèle Ollama installé) REMPLACE le MODEL_MAP figé comme source du
       // brainOverride. OFF (défaut) → accueilBrain reste null, comportement byte-identique.
-      const accueilBrain = flag("HOME_QUICK_MODEL") ? getBrain("accueil") : null;
+      const accueilBrain = getBrain("accueil"); // figé ON au lot 2 (ON en production)
       providerForContext = accueilBrain?.provider ?? "claude";
       const brainOverride = accueilBrain ?? { provider: "claude" as const, model: resolvedModel };
       const brainName = accueilBrain && accueilBrain.provider !== "claude"
@@ -193,44 +192,20 @@ app.post("/api/home-chat", async (req, res) => {
         ? `${system}\nIdentité : le cerveau qui te fait fonctionner en ce moment est « ${brainName} » (choisi par Raf via la popup rapide de l'accueil). Si Raf demande quel modèle/cerveau tu utilises, réponds-le honnêtement et précisément (ex. « J'utilise ${brainName} en ce moment »), ne reste jamais vague.`
         : system;
 
-      if (demanded.size > 0 && flag("FRONTIER_TOOLS_ANY_BRAIN") && convId && ELEVE_PROVIDER === "openai") {
-        // ── Mode ON — ORCHESTRATION : l'Élève outille, le cerveau choisi raisonne. ──
-        const scratch = ensureHomeScratch(convId);
-        const caps = await requiredCapabilities(last.content, { hasAttachment });
-        const fr = await runFrontierOrchestration(
-          {
-            task: last.content,
-            scratchDir: scratch,
-            requiredCaps: caps,
-            brainLabel: model ?? "sonnet",
-            brainName,
-            brainOverride,
-            system: systemForBrain,
-          },
-          {
-            // Raf (2026-07-11) : binding LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
-            runEleveTools: (sys, task, tools) =>
-              askEleveAgentic(sys, task, tools, { model: ELEVE_MODEL }),
-            dispatch: brain.dispatch,
-          },
-        );
-        text = fr.text;
-      } else {
-        // ── Mode OFF (défaut) — repli TEXTE, mais HONNÊTE : si la tâche réclamait des
-        // outils, on le DIT (plus de repli muet) ; sinon comportement byte-identique. ──
-        const { askLLM } = await import("../llm/llm-engine.js");
-        // Gate OFF (accueilBrain null) : appel STRICTEMENT identique à avant ce
-        // chantier (aucun `provider` explicite — laisse askLLM/resolveProvider()
-        // décider comme aujourd'hui). Gate ON : provider/model du registre `accueil`.
-        text = accueilBrain
-          ? await askLLM(systemForBrain, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
-          : await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
-        if (demanded.size > 0) {
-          const disclosure =
-            `${brainName} ne pilote pas les outils ici ; sélectionne l'Élève (GLM 5.2) ` +
-            `pour une réponse outillée, ou je te réponds au mieux sans outils.`;
-          text = `${disclosure}\n\n${text}`;
-        }
+      // ── Mode OFF (défaut) — repli TEXTE, mais HONNÊTE : si la tâche réclamait des
+      // outils, on le DIT (plus de repli muet) ; sinon comportement byte-identique. ──
+      const { askLLM } = await import("../llm/llm-engine.js");
+      // Gate OFF (accueilBrain null) : appel STRICTEMENT identique à avant ce
+      // chantier (aucun `provider` explicite — laisse askLLM/resolveProvider()
+      // décider comme aujourd'hui). Gate ON : provider/model du registre `accueil`.
+      text = accueilBrain
+        ? await askLLM(systemForBrain, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
+        : await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+      if (demanded.size > 0) {
+        const disclosure =
+          `${brainName} ne pilote pas les outils ici ; sélectionne l'Élève (GLM 5.2) ` +
+          `pour une réponse outillée, ou je te réponds au mieux sans outils.`;
+        text = `${disclosure}\n\n${text}`;
       }
     }
     // (2026-07-13) Jauge de contexte — voir le point d'entrée agentique plus haut pour

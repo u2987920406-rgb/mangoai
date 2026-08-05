@@ -274,7 +274,7 @@ export async function runClosureGate(
   // (L34) Mode OBSERVE (défaut ON) : on FIABILISE le score du goût (parsing tolérant +
   // multi-passes) et on l'AFFICHE, mais il ne BLOQUE pas encore (on calibre d'abord sur le
   // goût réel de Raf avant de durcir). Passer ELEVE_GATE_TASTE_OBSERVE=off pour l'activer en frein.
-  const tasteObserve = process.env.ELEVE_GATE_TASTE_OBSERVE !== "off";
+  const tasteObserve = flag("ELEVE_GATE_TASTE_OBSERVE");
   let design: DesignCritique | undefined;
   let critiqueSkipped: string | undefined; // (N9) raison si la critique a échoué (≠ tâche non-UI)
   let tasteScored = false;
@@ -308,7 +308,7 @@ export async function runClosureGate(
   // ELEVE_GATE_BALANCE=off. Ne dépend pas d'un rendu → marche même sans aperçu/cloud.
   let balance: BalanceFinding[] = [];
   let balanceOk = true;
-  if (process.env.ELEVE_GATE_BALANCE !== "off") {
+  { // Figé ON au lot 2 (refonte v3) — tournait déjà, gate retiré.
     try {
       balance = deps.scanBalance(projectDir, files);
     } catch {
@@ -321,7 +321,7 @@ export async function runClosureGate(
   // par le check 404 et par le VL : garde dédiée, opt-out ELEVE_GATE_PLACEHOLDERS=off.
   let placeholders: PlaceholderFinding[] = [];
   let placeholdersOk = true;
-  if (process.env.ELEVE_GATE_PLACEHOLDERS !== "off") {
+  { // Figé ON au lot 2 (refonte v3) — tournait déjà, gate retiré.
     try {
       placeholders = deps.scanPlaceholders(projectDir, files);
     } catch {
@@ -337,7 +337,7 @@ export async function runClosureGate(
   let testsRan = false;
   let testsOk = true;
   let tests: TestRun | undefined;
-  if (process.env.ELEVE_GATE_TESTS === "on") {
+  if (flag("ELEVE_GATE_TESTS")) {
     try {
       tests = await deps.runTests(projectDir);
       if (tests.signal === "tests-ok" || tests.signal === "tests-failed") {
@@ -360,7 +360,7 @@ export async function runClosureGate(
   try {
     if (!testsRan && deps.hasTestScript(projectDir)) {
       signalGap =
-        process.env.ELEVE_GATE_TESTS === "on"
+        flag("ELEVE_GATE_TESTS")
           ? "un script `test` réel existe mais n'a pas produit de signal exploitable ce tour (voir `tests`)"
           : "un script `test` réel existe dans package.json mais n'est pas exécuté à la clôture (ELEVE_GATE_TESTS=off) — signal disponible non exploité";
     }
