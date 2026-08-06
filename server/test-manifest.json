@@ -408,6 +408,9 @@
     "test-memory-migration": {
       "tier": "offline"
     },
+    "test-memory-recall": {
+      "tier": "offline"
+    },
     "test-miroir": {
       "tier": "offline"
     },

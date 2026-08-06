@@ -1964,3 +1964,94 @@ tranche pas sur un compte de fichiers.**
 Les entrées précédentes ne sont pas réécrites — elles portent la mesure telle qu'elle a
 été faite, et ce rectificatif dit en quoi elle était fausse. Effacer l'erreur effacerait
 aussi sa leçon.
+
+---
+
+### 2026-08-06 (lot 4, geste 2) — `recall()` : la mémoire a enfin un arbitre
+
+`server/src/memory/` — `budget.ts` (l'arbitrage, **pur**) et `recall.ts` (la porte
+unique, adossée aux magasins existants). **Aucun magasin réécrit** : `loadAxioms`,
+`loadPreferences`, `loadUserProfile`, `loadSelfKnowledge`, `loadMemory`,
+`loadLexique`, `proceduresPromptSection` restent la source. Même règle que `v3/` pour
+le dispatcher — on ajoute ce qui manquait, on ne refait pas ce qui marche.
+
+C'est l'étape 1 du doc 05 § 6, pas la migration. Rien n'est déplacé, rien n'est supprimé.
+
+#### La règle qui structure le module : **une coupe se déclare**
+
+C'est la leçon des axiomes, transformée en contrainte de conception. `.axioms.md` a
+atteint 273 859 caractères pour un cap de 3 000 ; 98,9 % n'était jamais relu ; **personne
+ne l'a vu pendant deux mois parce que la coupe ne disait rien**. Elle rendait un texte
+plausible, borné, sans indiquer qu'elle venait d'écarter 270 000 caractères.
+
+`arbitre()` rend donc toujours **ce qu'il a écarté, d'où ça venait, combien ça pesait et
+pourquoi** (`budget-etage` · `budget-total` · `etage-eteint`). Et quand un étage
+**incompressible** (① Identité, ③ Projet) doit malgré tout être amputé, `incompressibleAmpute`
+passe à `true` : c'est une **anomalie journalisée**, pas un fonctionnement.
+
+> L'assertion centrale du test n'est donc pas « le budget est respecté » mais
+> **« tout ce qui est écarté est déclaré »**. Un budget silencieux est un bug qui met
+> deux mois à se voir.
+
+`test-memory-recall` : **37 assertions**. Dont : ne throw jamais (un magasin corrompu
+n'emporte pas le tour — même garantie que `dispatch`), ④ Savoir tombe avant ② Goût,
+① et ③ jamais avant les deux autres, l'arbitre **n'invente pas de pertinence** (il
+respecte l'ordre que l'appelant lui donne, faute de pouvoir juger un texte).
+
+---
+
+#### ⚠️ La mesure sur les VRAIES données déséquilibre le doc 05
+
+`recall()` lancé sur `workspace/` avec le vrai compteur de tokens :
+
+```
+retenus : 3 souvenirs · 2 314 tokens / 8 000
+  ✓ identite  .axioms.md          1 463
+  ✓ identite  .preferences.md       308
+  ✓ savoir    .procedures/          543
+écartés : 2
+  ✗ identite  profil utilisateur  1 441  (budget-etage)
+  ✗ identite  self-knowledge      1 974  (budget-etage)
+```
+
+**Premier constat : la correction du geste 1 tient sur le réel.** `.axioms.md` pèse
+toujours 273 000 caractères, mais ce qui remonte est désormais **1 463 tokens des plus
+RÉCENTS** — plus les mêmes quinze du 2026-06-13.
+
+**Second constat, non prévu : les budgets du doc 05 ont été écrits sans mesurer.**
+
+| Étage | Budget doc 05 | Candidats réels |
+|---|---|---|
+| ① Identité | 2 000 | **5 186** — saturé de 2,6× |
+| ② Goût | 1 500 | **0** (non câblé) |
+| ③ Projet | 2 000 | 0 (hors projet ici) |
+| ④ Savoir | 2 500 | 543 |
+
+**L'Identité déborde du double pendant que Goût et Savoir dorment.** Et le détail qui
+compte : `self-knowledge` pèse **1 974 tokens** — à lui seul la quasi-totalité du budget
+Identité. **Ce que Mango sait de LUI-MÊME concurrence directement ce qu'il sait de Raf**,
+et c'est le second qui tombe.
+
+Ce déséquilibre existait avant ce soir. La différence est qu'il **se voit** maintenant.
+C'est le mode de panne des axiomes, à un autre étage — et il aurait suivi exactement la
+même trajectoire : invisible, plausible, deux mois.
+
+⏳ **À trancher au lot 4** : `self-knowledge` appartient-il à l'étage Identité ? Le
+doc 05 § 2.2 l'y range (« absorbe : axioms · preferences · identity · self-knowledge »),
+mais il décrit ce qui est **rappelé sur pertinence**, pas ce qui devrait vivre en dur
+dans le prompt système. Le rebudgéter ou le déplacer sont deux réponses différentes,
+et aucune ne se décide sans Raf.
+
+#### Ce qui reste, honnêtement
+
+- **② Goût n'a aucune lecture câblée** — il est éteint **sans condition**, et
+  `scope.tacheVisuelle` est accepté sans rien changer encore. C'est écrit dans le code
+  plutôt que suggéré par un `if` qui aurait l'air d'arbitrer : un étage vide qu'on croit
+  allumé est un étage dont on ne remarque jamais l'absence.
+- `remember()` et `forget()` du doc 05 § 2.1 ne sont **pas** écrits. `recall` seul est
+  livré — c'est la moitié qui manquait, l'écriture fonctionne déjà via les magasins.
+- **Aucun appelant de production ne passe encore par `recall`.** Le socle existe et est
+  prouvé ; le brancher est le geste suivant.
+
+**Suite offline complète : 215 PASS · 0 FAIL** (570 s) · `tsc` 0 erreur ·
+`test-memory-recall` 37 pass.
