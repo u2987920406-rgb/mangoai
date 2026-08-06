@@ -41,6 +41,27 @@ async function run() {
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
     check("défaut codeur = l'Élève Qwythos-tools v2 Q6 LOCAL (ollama, tool-calling natif réel)", def.codeur.provider === "ollama" && def.codeur.model === "qwythos-tools:q6");
 
+    // ── INVARIANT NON NÉGOCIABLE (doc 03 § 2, refonte v3) ────────────────────
+    // Le juge ne doit JAMAIS tourner sur le même cerveau que ce qu'il juge : un
+    // modèle ne rattrape pas ses propres angles morts. L'invariant s'était perdu
+    // au basculement c113729 (les 16 rôles envoyés en bloc sur claude/opus) sans
+    // que rien ne l'signale — d'où ce garde-fou, sur les défauts ET sur le
+    // registre VIVANT, qui est celui qui s'exécute réellement.
+    // `model` optionnel : deux rôles sans modèle explicite retombent sur le même
+    // défaut — donc « même cerveau », ce que la comparaison doit bien voir comme tel.
+    type Cerveau = { provider?: string; model?: string };
+    const memeCerveau = (a: Cerveau, b: Cerveau): boolean => a.provider === b.provider && a.model === b.model;
+    check("défauts : juge ≠ codeur (le vérificateur n'est pas le vérifié)", !memeCerveau(def.juge, def.codeur));
+    {
+      const vivant = path.join(import.meta.dirname, "..", "..", "data", "brain-registry.json");
+      if (fs.existsSync(vivant)) {
+        const r = JSON.parse(fs.readFileSync(vivant, "utf8"));
+        if (r.juge && r.codeur) {
+          check(`registre VIVANT : juge (${r.juge.provider}/${r.juge.model}) ≠ codeur (${r.codeur.provider}/${r.codeur.model})`, !memeCerveau(r.juge, r.codeur));
+        }
+      }
+    }
+
     // Merge champ par champ : on n'override que le modèle du codeur.
     saveBrainRegistry({ ...def, codeur: { provider: "ollama", model: "qwen2.5-coder:7b", timeoutMs: 99_000 } });
     const merged = loadBrainRegistry();

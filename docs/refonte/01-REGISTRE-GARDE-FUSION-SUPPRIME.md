@@ -812,3 +812,42 @@ c'est le seul filet.
 | Rôles de cerveau | 16 | **8** ✅ cible atteinte |
 | Modules de production | 343 | 309 |
 | Flags déclarés | 42 | 14 |
+
+### 2026-08-05 — Le juge repasse sur un cerveau distinct, et l'invariant devient GARDÉ
+
+**Décision de Raf.** `juge` : `claude/opus` → **`claude/sonnet`**. `codeur` reste sur
+`claude/opus`. Le vérificateur n'est plus le modèle vérifié.
+
+#### Le garde-fou compte plus que le réglage
+
+L'invariant du doc 03 § 2 — *« le juge reste **distinct** de l'exécutant — non négociable »* —
+s'était perdu au basculement `c113729` (les 16 rôles envoyés en bloc sur `claude/opus`)
+**sans que rien ne le signale**. Un réglage sans garde se reperd au basculement suivant.
+
+Deux assertions ajoutées à `test-brain-dispatch` :
+
+| Assertion | Portée |
+|---|---|
+| `défauts : juge ≠ codeur` | les défauts codés en dur de `brain-registry.ts` |
+| `registre VIVANT : juge ≠ codeur` | **`server/data/brain-registry.json`** — le fichier qui s'exécute |
+
+La seconde est celle qui protège vraiment : les défauts ne garantissent rien, puisque le
+registre vivant les écrase. Le garde vérifie la **distinction**, pas la hiérarchie — il tient
+donc quel que soit le sens choisi.
+
+#### ⚠️ Réserve mesurée, à porter au dossier
+
+`sonnet` est **moins fort** qu'`opus` : le juge est désormais plus faible que ce qu'il juge.
+La mesure de MangoQA (ADR-001 § 1) est sans ambiguïté sur ce risque — `qwen2.5-coder:14b` a
+rendu « aucun anti-pattern majeur » là où Opus 5 trouvait un défaut réel en 26,6 s. **Un juge
+plus faible produit des feux verts faux.**
+
+Le sens inverse est aussi défendable : `juge` sur `opus`, `codeur` sur `sonnet` — la
+vérification reste au plus haut niveau, la construction baisse. Un seul mot suffit à basculer.
+
+#### ⚠️ Le même problème subsiste à côté
+
+**`auditeur` est toujours sur `claude/opus`, comme le `codeur`.** C'est l'autre rôle de
+vérification, et la question est identique. Non traité : l'arbitrage ne portait que sur le juge.
+
+**Suite offline : 211 PASS · 0 FAIL** (545 s) · `tsc` 0 erreur.

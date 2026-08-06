@@ -43,7 +43,7 @@
   },
   "juge": {
     "provider": "claude",
-    "model": "opus",
+    "model": "sonnet",
     "timeoutMs": 45000
   }
 }
