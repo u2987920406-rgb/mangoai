@@ -1548,3 +1548,81 @@ souverain reste souverain même si l'appelant demande un cloud — et c'est test
 
 La **concentration du registre** — 8 rôles sur 8 sur `claude` — est maintenant mesurable
 pour la première fois : plus rien n'échappe au compteur. C'est la décision suivante.
+
+---
+
+### 2026-08-06 (inventaire) — `ollama` n'est pas toujours local, et ça faussait tout
+
+Raf : « regarde ». En regardant l'inventaire RÉEL des cerveaux disponibles — plutôt que
+ce que le registre déclare — un défaut est sorti, et il invalidait la mesure précédente.
+
+#### L'inventaire réel
+
+| Cerveau | Coût | Employé aujourd'hui |
+|---|---|---|
+| `claude` (abonnement) | inclus, **10 appels/min** | **les 8 rôles du registre** |
+| `qwen2.5-coder:14b` (9 Go, LOCAL) | **gratuit** | **nulle part** |
+| `glm-5.2:cloud` | **payant** (forfait Ollama) | `ELEVE_MODEL` — l'Élève de l'Atelier |
+| `qwen3.5:cloud` | **payant** | l'appel « Qwen » de l'Accueil |
+| OpenRouter (clé présente) | selon modèle | nulle part |
+
+#### ⚠️ Le défaut : le limiteur comptait les appels les plus chers comme gratuits
+
+`RATE_LIMITS.ollama = 999` portait un motif écrit noir sur blanc :
+*« local → pas de limite réelle »*. **Faux pour les modèles à suffixe `:cloud`** —
+`glm-5.2:cloud`, `qwen3.5:cloud` — qui tournent CHEZ Ollama, sont distants et facturés
+sur le forfait de Raf.
+
+Or ce sont exactement eux qui portent le vrai travail de construction. Le limiteur
+n'était donc pas simplement inexact : **il l'était précisément là où il aurait servi.**
+
+C'est aussi la troisième fois cette semaine qu'un **commentaire** énonçait une règle que
+le code ne tenait plus (après les étapes numérotées sans 8, et le « double verrou : le
+flag ET la chaîne » dont le flag avait disparu). Le motif se répète assez pour être noté :
+**un commentaire qui justifie une constante vieillit plus vite que la constante.**
+
+#### Ce qui est corrigé, et ce qui ne l'est PAS
+
+Les modèles `:cloud` ont désormais leur **propre fenêtre** (`ollama:cloud`), séparée du
+local. `cleDeFenetre(provider, model)` est la seule chose qui distingue « chez moi » de
+« chez eux » ; `dispatch` lui passe le modèle, y compris pour chaque cible de repli.
+
+**Le plafond reste volontairement à 999.** Le débit réel du forfait Ollama de Raf n'est
+pas connu, et inventer un chiffre brimerait le produit sur une supposition. Le compteur
+existe et se lit (`slotsConsommes("ollama:cloud")`) : **le renseigner est une donnée à
+fournir, pas une décision de code.**
+
+7 assertions neuves — dont « le suffixe `:cloud` n'affecte QUE ollama » : un test qui
+tomberait sur `claude/opus:cloud` signalerait qu'on a écrit une règle trop large.
+
+---
+
+### La répartition du registre — analyse rendue, décision NON prise
+
+J'avais annoncé, la veille : « le `codeur` devrait être en local, c'est l'argument de
+vente du doc 03 ». **Après inventaire, je me corrige.**
+
+Le seul cerveau réellement gratuit est `qwen2.5-coder:14b`. Or MangoQA l'a déjà mesuré
+(ADR-001 § 1) : il a rendu *« aucun anti-pattern majeur »* là où Opus 5 trouvait un défaut
+réel en 26,6 s. **Le placer sur le `juge` ou l'`auditeur` serait refaire l'erreur déjà
+payée.** Sur le `codeur`, c'est un arbitrage réel — 14 milliards de paramètres contre
+Opus, pour la pièce qui produit le livrable.
+
+**Proposé, non appliqué :**
+
+| Rôle | Proposition | Motif |
+|---|---|---|
+| `chercheur` | → `qwen2.5-coder:14b` (local, gratuit) | lire une page et la rapporter est la tâche la moins exigeante en jugement, et c'est du volume ; gain immédiat sur la fenêtre Claude, risque faible |
+| `juge`, `auditeur` | **rester sur Claude** | la mesure MangoQA est sans ambiguïté |
+| `codeur` | **ne pas bouger** | la promesse du doc 03 suppose un local assez fort ; celui installé ne l'est pas |
+
+> **La vraie question n'est pas « quel rôle déplacer » mais « quel modèle installer ».**
+> Le 1080 Ti (11 Go de VRAM) plafonne le choix autour de 9 Go — `qwen2.5-coder:14b` en
+> occupe déjà 9. Tant que ce point n'est pas tranché, déplacer le `codeur` échange de la
+> qualité contre du quota, sans que personne ait décidé du taux de change.
+
+Trois lignes de `brain-registry.json`, aucune de code, réversibles en une minute — mais
+c'est une décision produit, pas une tâche.
+
+**Suite offline complète : 214 PASS · 0 FAIL** (602 s) · `tsc` 0 erreur ·
+`test-brain-rate-limit` **23 pass** (16 → 23).

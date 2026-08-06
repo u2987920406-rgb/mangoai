@@ -14,6 +14,8 @@ import {
   resetRateLimits,
   slotsConsommes,
   RATE_LIMITS,
+  cleDeFenetre,
+  OLLAMA_CLOUD,
 } from "../brain/brain-rate-limit.js";
 
 let pass = 0;
@@ -98,6 +100,31 @@ async function run() {
     check("ollama a son propre compteur", slotsConsommes("ollama") === 1);
     check("ollama est quasi illimité (local, pas de quota réel)", RATE_LIMITS.ollama === 999);
     check("claude est le plus contraint des providers cloud", RATE_LIMITS.claude === 10);
+  }
+
+  console.log("\n[3bis] `ollama` n'est pas toujours local — les modèles `:cloud`");
+  {
+    // Le plafond `ollama: 999` porte le motif « local → pas de limite réelle ». Il est
+    // FAUX pour `glm-5.2:cloud` / `qwen3.5:cloud`, qui tournent CHEZ Ollama et sont
+    // facturés sur le forfait. Or ce sont eux qui portent le vrai travail
+    // (`ELEVE_MODEL=glm-5.2:cloud`, l'appel « Qwen » de l'Accueil) : les appels les
+    // PLUS coûteux du produit étaient comptés comme gratuits et illimités. Le limiteur
+    // n'était pas seulement inexact — il l'était exactement là où il aurait servi.
+    resetRateLimits();
+    const b = banc();
+
+    await acquireSlot("ollama", b.sleep, b.now, "qwen2.5-coder:14b");
+    check("un modèle LOCAL compte dans la fenêtre `ollama`", slotsConsommes("ollama") === 1);
+    check("…et pas dans celle du cloud", slotsConsommes(OLLAMA_CLOUD) === 0);
+
+    await acquireSlot("ollama", b.sleep, b.now, "glm-5.2:cloud");
+    check("un modèle `:cloud` compte dans SA fenêtre", slotsConsommes(OLLAMA_CLOUD) === 1);
+    check("…sans polluer le compteur local", slotsConsommes("ollama") === 1);
+
+    check("cleDeFenetre distingue local et cloud",
+      cleDeFenetre("ollama", "glm-5.2:cloud") === OLLAMA_CLOUD && cleDeFenetre("ollama", "qwen2.5-coder:14b") === "ollama");
+    check("sans modèle précisé, on reste sur la fenêtre du provider", cleDeFenetre("ollama", undefined) === "ollama");
+    check("le suffixe `:cloud` n'affecte QUE ollama", cleDeFenetre("claude", "opus:cloud") === "claude");
   }
 
   console.log("\n[4] resetRateLimits — le seul état global du dispatcher");

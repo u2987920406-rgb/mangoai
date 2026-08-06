@@ -55,7 +55,7 @@ export type { BrainConfig } from "./brain-registry.js"
 export type { AskFn } from "./brain-attempt.js"
 // Ré-exports de délégation pure : les appelants et tests existants importent
 // toujours `resetRateLimits` d'ici. Déplacer du code ne doit rien casser en amont.
-export { resetRateLimits, RATE_LIMITS, slotsConsommes } from "./brain-rate-limit.js"
+export { resetRateLimits, RATE_LIMITS, slotsConsommes, cleDeFenetre, OLLAMA_CLOUD } from "./brain-rate-limit.js"
 
 export interface DispatchOpts {
   imageBase64?: string
@@ -132,7 +132,7 @@ async function rejoueLaChaine(
       console.warn(`[brain-fallback] ${agentId}: repli ${fb.provider} REFUSÉ (rôle localOnly)`)
       continue
     }
-    await acquireSlot(fb.provider, sleep, now)
+    await acquireSlot(fb.provider, sleep, now, fb.model ?? role.model)
 
     const cible: BrainAttempt = {
       provider: fb.provider,
@@ -203,7 +203,7 @@ export async function dispatch(
   }
 
   // ── Rate limiting, puis tentative sur le cerveau PRINCIPAL ────────────────
-  await acquireSlot(role.provider, sleep, now)
+  await acquireSlot(role.provider, sleep, now, role.model)
   const { result: premier, retryable } = await runOnce(agentId, role, ctx)
 
   // ── Repli inter-providers, sous double verrou : échec de DISPONIBILITÉ ET
