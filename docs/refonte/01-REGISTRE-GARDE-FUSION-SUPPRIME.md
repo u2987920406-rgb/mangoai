@@ -698,3 +698,61 @@ Se tranche sur un vrai tour de build.
 
 **Mesuré :** flags **12 + 2 déclarés = 14** · modules **309** · tests **223** ·
 `tsc` **0 erreur** · 9 suites **vertes** · build UI **vert**.
+
+### 2026-08-05 — Lot 3 amorcé · suite offline **211 PASS · 0 FAIL**
+
+#### Rôles 16 → 14
+
+`extracteur` et `testeur` retirés : déclarés dans le type `AgentId` **et** dans les défauts
+codés en dur, jamais récupérés par `getBrain` ni `dispatch`.
+
+> **Dixième verdict corrigé.** J'avais annoncé `orchestrateur` comme troisième orphelin.
+> **Faux** : aucun `getBrain("orchestrateur")`, mais il est le rôle **par défaut** du registre —
+> `test-brain-dispatch` vérifie sur lui le repli quand le JSON est corrompu. Le critère
+> « zéro appel nominatif » ne suffit pas : un rôle peut être structurel sans être appelé.
+
+Restent **6 rôles à fusionner**, tous avec des sites d'appel réels : `accueil` · `routeur` ·
+`stratege` · `optimiseur` · `forgeron` · `codeur_frontiere`.
+
+#### L'étage 3 rétabli — deux lots qui se contredisaient
+
+Le § G du lot 2 archivait `INTENT_ROUTER_LLM` (« jamais exécuté ») ; le doc 03 § 5 en fait
+**l'étage 3 de l'escalier d'allumage** : *« on le garde, on l'allume, on le nomme »*.
+Seul l'appel avait été retiré — `looksAmbiguous` et `routeAmbiguous` étaient intacts.
+**Rétabli sans flag** : la capacité reste, le gate disparaît. C'est la règle du § G tenue dans
+le bon sens (« un flag est ON et fait partie du produit, ou il n'existe pas »).
+
+#### 4 régressions du lot 2 — et ce qu'elles apprennent sur la vérification
+
+Ma vérification du lot 2 portait sur **13 suites choisies**. La suite complète en a révélé
+**4 de plus**, toutes de la même racine : le figeage d'`ELEVE_PLAN_V2` sert désormais toujours
+`etape_bloquee`. L'une était déjà commitée et poussée dans `0b15de7`.
+
+- **golden `test-eleve-registry` régénéré** — mais seulement après avoir *mesuré* la dérive.
+  Le script de régénération **refuse d'écrire** si un outil disparaît ou si autre chose que
+  `etape_bloquee` apparaît. Une régénération à l'aveugle aurait masqué toute vraie régression.
+- compteurs 27→28 / 26→27 propagés · assertions « gate OFF » retirées.
+
+> **Un échantillon de tests ne vaut pas une suite.** Appris en le payant deux fois.
+
+#### `test-relay` — réparé par des FIXTURES, pas en affaiblissant des assertions
+
+Depuis que `ELEVE_CLOSURE_GATE` est figé ON, le Gardien tourne dans **tous** les chemins du
+relais, y compris sur des répertoires temporaires qu'il ne peut pas satisfaire
+(`intention 0/100`, pas de `package.json`) → boucle de re-correction du Maître, qui faussait
+coût, tentatives et `incomplete`.
+
+**Ce n'était pas une régression de production :** `ELEVE_CLOSURE_GATE` était déjà `on` dans le
+`.env` vivant — la boucle existait, le test ne l'exerçait jamais.
+
+`runClosureGate` acceptait **déjà** ses deps en dernier paramètre : c'est le relais qui ne
+propageait rien. Ajout de `gateDeps?: GateDeps` à `RelayDeps`, suivant l'idiome déjà en place
+(`judge?`, `agenticPost?`, `shouldAbort?`). Un défaut de paramètre s'applique sur `undefined` :
+**la production est inchangée**. 16 scénarios câblés sur une clôture déterministe, sans réseau.
+L'assertion de coût, que j'avais dû assouplir, est **remise au strict** (`=== 0.12`).
+
+> Le test mesure de nouveau le **relais**. Le Gardien a ses propres suites (`test-eleve-gate*`).
+
+#### Verdict
+
+**211 PASS · 0 FAIL**, 537 s (contre 640 s et 4 échecs avant) · `tsc` 0 erreur · build UI vert.
