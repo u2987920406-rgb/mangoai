@@ -1716,3 +1716,94 @@ fausse ou visait autre chose ; elle est corrigée.
 
 **État matériel à la fin des tests, vérifié : `power.limit = 150 W`, aucun verrou posé,
 607/405 MHz au repos. Rien n'a été laissé modifié.**
+
+---
+
+### 2026-08-06 (lot 4, ouverture) — **98,9 % de la mémoire n'est jamais relue**
+
+Avant d'écrire une ligne du lot 4, on a mesuré. Comme aux lots précédents, la mesure
+contredit le document de conception — et cette fois elle donne aussi la réponse exacte
+à la phrase qui a lancé toute la refonte : *« je pense que le système de mémoire doit
+être mieux géré »*.
+
+#### Le chiffre
+
+```
+workspace/.axioms.md      273 859 caractères  (~68k tokens · 1 419 axiomes appris)
+cap d'injection             3 000 caractères  → dépassement ×91
+réellement injecté          3 055 caractères  →  1,1 %
+```
+
+**Et ce 1,1 %, ce sont les PLUS ANCIENS.** `capRegistry()` fait `text.slice(0, 3000)` :
+elle garde le **début** du fichier. Les axiomes s'ajoutent à la fin. Donc ce qui remonte
+à chaque tour, ce sont toujours les mêmes premiers axiomes — `AXIOME-UIUX-01, vu le
+2026-06-13` — et tout ce qui a été appris depuis est écrit puis **jamais relu**.
+
+Ce n'est pas « la mémoire est mal gérée ». C'est **une mémoire qui écrit 100 % et lit
+1,1 %, toujours le même**. Le ressenti de Raf était exact ; il lui manquait le chiffre.
+
+#### La rotation existe, elle est OFF, et sa propre description dit le problème
+
+`AXIOMS_ROTATE`, défaut `false` :
+> *« au-delà du cap, archive le surplus dans `.axioms.archive.md` **au lieu de le couper
+> en silence** »*
+
+Le flag décrit donc littéralement ce qui se passe quand il est éteint. Essai à blanc avec
+la vraie fonction (`planAxiomRotation`) sur le vrai fichier, **sans rien écrire** :
+
+| | |
+|---|---|
+| rotation déclenchée | **oui** (seuil = cap × 3 = 9 000) |
+| archivé (les plus anciens) | 270 983 caractères |
+| conservé (les plus récents) | 2 874 caractères |
+
+L'activer ferait passer l'injection « des 15 plus vieux » à « des plus récents », **sans
+rien perdre** (l'archive garde tout). C'est un progrès net — mais ça reste de la
+récence, pas de la pertinence. Le vrai correctif est le lot lui-même.
+
+#### ⚠️ Le doc 05 est en partie périmé — trois rectificatifs
+
+**1. Sa trouvaille centrale est déjà résolue.** Le doc écrit : *« Le vrai problème :
+`ELEVE_MEMOIRE=off` … le système écrit énormément et ne relit presque rien. »* Le flag a
+été **figé ON au lot 2** ; les appels de `memoireSection` et `buildMemoireTool` sont
+désormais **inconditionnels** (sautés uniquement quand un transport est injecté, donc en
+test). Le rappel proactif **tourne en production**.
+
+> Mais **trois commentaires disent encore « Gaté ELEVE_MEMOIRE »** (`relay-agentic.ts`
+> ×2, `eleve-memoire.ts`). **Cinquième fois cette semaine** qu'un commentaire énonce une
+> règle que le code ne tient plus. À corriger dans le lot.
+
+**2. Le compte est faux dans les deux sens :** 17 modules annoncés → **21 présents** ;
+« ~5 700 lignes » → **3 826 mesurées**.
+
+**3. Quatre modules n'ont aucune donnée.** `references.ts` (179 l.), `procedures.ts`
+(248 l.), `lexique.ts` (237 l.), `concept-registry.ts` (323 l.) : **zéro fichier
+correspondant sur les 425 projets**. Presque 1 000 lignes de magasins vides — à trancher
+(⚪ archive ?) plutôt qu'à migrer.
+
+#### Où vit réellement la mémoire — les trois substrats, mesurés
+
+| Emplacement | Contenu réel | Volume |
+|---|---|---|
+| `workspace/` (racine, **global**) | `.axioms.md` **274 Ko** · `.preferences.md` 680 o · `.procedures/` | ~275 Ko |
+| `workspace/<projet>/` (**par projet**) | `.chat-history.json` ×**204** · `.memory.md` ×**95** · `.architecture.md` ×**16** | 5,7 Mo |
+| `server/data/` (**central**) | `blackboard.sqlite` **1,45 Mo** · `notes.jsonl` · 35 entrées | ~25 Mo avec `savoir/` |
+
+**425 projets, dont 204 portent de la mémoire.** C'est la vraie échelle de la migration —
+le doc n'en parle pas. « 17 modules → 1 » est un refactor ; déplacer la mémoire de
+204 projets vers un SQLite unique est un changement de sémantique (par projet → global
+avec scope), et il touche des données réelles.
+
+#### Ce que ça change pour le lot
+
+L'ordre du doc 05 § 6 reste bon, mais sa **priorité** change : le rappel proactif étant
+déjà actif, le gain immédiat n'est plus « allumer le rappel » mais **arbitrer ce qui
+remonte**. Un rappel qui tourne sur 1,1 % du magasin, toujours le même, ne vaut guère
+mieux qu'un rappel éteint.
+
+⏳ **Décision ouverte pour Raf** : activer `AXIOMS_ROTATE` maintenant (un mot, archive
+tout, fait passer l'injection aux axiomes récents) ou attendre le budget de rappel du
+lot 4, qui remplacera la récence par la pertinence. Les deux sont compatibles ; le
+premier est disponible ce soir.
+
+**Aucun code écrit, aucune donnée touchée. L'essai de rotation était à blanc.**
