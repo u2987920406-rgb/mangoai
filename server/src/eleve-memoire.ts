@@ -2,7 +2,7 @@
 //
 // Le plus gros levier « harnais dernière génération » : jusqu'ici, le Blackboard
 // (palettes/artefacts appris cross-projet) EXISTAIT mais n'était JAMAIS consulté
-// pendant que l'Élève raisonne. Ce module fait deux choses, gaté ELEVE_MEMOIRE :
+// pendant que l'Élève raisonne. Ce module fait deux choses (figé ON au lot 2, inconditionnelles) :
 //   1. Injection PROACTIVE : avant la boucle, on embarque la tâche, on cherche les
 //      souvenirs pertinents et on les ajoute au system en une section BORNÉE.
 //   2. Outil `memoire_rappel` : le modèle peut interroger sa mémoire EN COURS de

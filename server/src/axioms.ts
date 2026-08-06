@@ -43,10 +43,33 @@ export const AXIOMS_MAX_CHARS = 3000;
 // blocs Contexte/Piège/Règle), garanti présent quel que soit le poids des BUILD.
 export const AXIOMS_DESIGN_MAX_CHARS = 1500;
 
+/**
+ * Borne le registre au cap d'injection en gardant les axiomes **les plus RÉCENTS**.
+ *
+ * ⚠️ CORRECTION DU 2026-08-06, mesurée. Cette fonction faisait `slice(0, cap)` : elle
+ * gardait le DÉBUT du fichier. Or les axiomes s'AJOUTENT à la fin. Conséquence sur le
+ * fichier réel de Raf — 273 859 caractères, 1 419 axiomes appris depuis le 2026-06-13 :
+ * seuls **3 055 caractères étaient injectés, soit 1,1 %**, et toujours les mêmes, les
+ * plus vieux. **98,9 % de ce que le système avait appris était écrit et jamais relu.**
+ *
+ * Garder la tête plutôt que la queue n'était pas un choix : c'est le sens par défaut de
+ * `slice`. Personne ne l'a décidé, et rien ne le signalait — le message de troncature
+ * disait « condense le registre », ce qui laissait croire à une perte marginale.
+ *
+ * On coupe désormais à une **frontière de ligne**, comme `planAxiomRotation` : injecter
+ * un demi-axiome (un « Contexte : » sans sa « Règle d'or ») est pire que ne pas
+ * l'injecter — le modèle lit une prémisse sans sa conclusion.
+ */
 export function capRegistry(text: string): string {
-  return text.length > AXIOMS_MAX_CHARS
-    ? `${text.slice(0, AXIOMS_MAX_CHARS)}\n[... tronqué à ${AXIOMS_MAX_CHARS} caractères — condense le registre]`
-    : text;
+  if (text.length <= AXIOMS_MAX_CHARS) return text;
+
+  const queue = text.slice(text.length - AXIOMS_MAX_CHARS);
+  // Premier saut de ligne de la fenêtre : tout ce qui précède est un fragment
+  // d'axiome tronqué, on le laisse à l'archive plutôt que de l'injecter à moitié.
+  const frontiere = queue.indexOf("\n");
+  const propre = frontiere >= 0 ? queue.slice(frontiere + 1) : queue;
+
+  return `[... ${text.length - propre.length} caractères plus anciens non injectés — voir ${AXIOMS_ARCHIVE_FILE_NAME}]\n${propre}`;
 }
 
 // (A0.3, 2026-07-03) Calcul PUR de rotation d'un registre d'axiomes.
@@ -195,8 +218,12 @@ export function appendAxiom(workspaceDir: string, ligne: string, opts: { design?
     atomicAppendFileSync(file, `${text}\n`);
     // (A0.3) Rotation VISIBLE si le registre déborde largement son cap : les
     // axiomes anciens vont dans l'archive au lieu d'être coupés en silence par
-    // capRegistry. Gaté AXIOMS_ROTATE (défaut off) → comportement inchangé.
-    if (flag("AXIOMS_ROTATE")) rotateAxiomsFile(workspaceDir, file, opts.design ? AXIOMS_DESIGN_MAX_CHARS : AXIOMS_MAX_CHARS);
+    // capRegistry. FIGÉ ON au lot 4 (2026-08-06) : le flag `AXIOMS_ROTATE` a disparu.
+    // Sa description disait elle-même ce que l'éteindre provoquait — « archive le
+    // surplus AU LIEU DE LE COUPER EN SILENCE ». Il était à `false` par défaut, donc
+    // le silence était le comportement normal. Mesuré : le registre avait atteint
+    // 273 859 caractères pour un cap de 3 000, soit 91 fois le cap.
+    rotateAxiomsFile(workspaceDir, file, opts.design ? AXIOMS_DESIGN_MAX_CHARS : AXIOMS_MAX_CHARS);
     // (A1.3, 2026-07-03) Détecteur de dérive mémoire : gaté AXIOMS_DRIFT (défaut
     // off → comportement strictement inchangé). appendAxiom reste SYNCHRONE (son
     // contrat historique) — le check tourne en fire-and-forget (pas d'await) :

@@ -13,6 +13,7 @@ import {
   AXIOMS_FILE_NAME,
   AXIOMS_ARCHIVE_FILE_NAME,
   AXIOMS_MAX_CHARS,
+  capRegistry,
 } from "../axioms.js";
 
 let pass = 0;
@@ -56,16 +57,45 @@ function withGate(val: string | undefined, fn: () => void) {
 }
 
 {
-  // Gate OFF : append massif → fichier grossit, PAS d'archive (comportement A0.1).
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axrot-off-"));
+  // (2026-08-06, lot 4) La rotation est FIGÉE ON — le flag AXIOMS_ROTATE n'existe
+  // plus. Ce bloc affirmait l'inverse (« gate off → aucune archive ») ; il affirme
+  // désormais ce qui compte vraiment : **une variable d'environnement résiduelle ne
+  // peut plus rééteindre la rotation**. Un `AXIOMS_ROTATE=off` traînant dans un
+  // vieux .env doit rester sans effet, sinon le figeage n'en est pas un.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "axrot-figee-"));
   withGate("off", () => {
     for (let i = 0; i < 500; i++) appendAxiom(dir, `AX-off-${i} règle universelle assez longue pour peser`);
   });
   const archiveExists = fs.existsSync(path.join(dir, AXIOMS_ARCHIVE_FILE_NAME));
-  check("gate off → aucune archive créée", archiveExists === false);
-  // L'injection reste plafonnée (loadAxioms) — inchangée.
-  check("gate off → loadAxioms reste borné au cap", loadAxioms(dir).length <= AXIOMS_MAX_CHARS + 120);
+  check("AXIOMS_ROTATE=off résiduel → la rotation a QUAND MÊME eu lieu (flag figé ON)", archiveExists === true);
+  check("l'injection reste bornée au cap", loadAxioms(dir).length <= AXIOMS_MAX_CHARS + 120);
+
+  // Et le point de la correction : ce qui est injecté, ce sont les axiomes RÉCENTS.
+  // Avant le 2026-08-06, `capRegistry` gardait le DÉBUT du fichier — sur le registre
+  // réel de Raf, 1,1 % du contenu était injecté, et toujours les plus vieux.
+  const injecte = loadAxioms(dir);
+  check("l'injection contient les axiomes RÉCENTS (AX-off-499)", injecte.includes("AX-off-499"));
+  check("l'injection ne contient PAS les plus anciens (AX-off-0)", !injecte.includes("AX-off-0 "));
   fs.rmSync(dir, { recursive: true, force: true });
+}
+
+{
+  // capRegistry seule, sans disque : le sens de la troncature.
+  const vieux = "AXIOME-ANCIEN-000 le tout premier, appris il y a longtemps";
+  const recent = "AXIOME-RECENT-999 le tout dernier, appris a l'instant";
+  const gros = [vieux, ...Array.from({ length: 400 }, (_, i) => `AXIOME-${i} remplissage assez long pour peser sur le cap d'injection`), recent].join("\n");
+
+  const borne = capRegistry(gros);
+  check(`capRegistry : le registre (${gros.length} car.) dépasse largement le cap (${AXIOMS_MAX_CHARS})`, gros.length > AXIOMS_MAX_CHARS * 5);
+  check("capRegistry garde le PLUS RÉCENT", borne.includes(recent));
+  check("capRegistry écarte le PLUS ANCIEN", !borne.includes(vieux));
+  check("capRegistry reste borné", borne.length <= AXIOMS_MAX_CHARS + 200);
+  // Une frontière de ligne : injecter un demi-axiome (un « Contexte : » sans sa
+  // « Règle d'or ») est pire que ne pas l'injecter — le modèle lit une prémisse
+  // sans sa conclusion et la prend pour une règle.
+  const corps = borne.split("\n").slice(1).join("\n");
+  check("capRegistry coupe à une frontière de ligne", /^AXIOME-/.test(corps));
+  check("capRegistry dit ce qu'il a écarté", borne.startsWith("[..."));
 }
 
 {

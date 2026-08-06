@@ -1807,3 +1807,97 @@ lot 4, qui remplacera la récence par la pertinence. Les deux sont compatibles ;
 premier est disponible ce soir.
 
 **Aucun code écrit, aucune donnée touchée. L'essai de rotation était à blanc.**
+
+---
+
+### 2026-08-06 (lot 4, geste 1) — La mémoire cesse de ne relire que ses plus vieux souvenirs
+
+Deux défauts, et il fallait **les deux** : corriger l'un sans l'autre ne suffisait pas.
+
+#### Défaut 1 — la rotation existait, éteinte
+
+`AXIOMS_ROTATE` était à `false` par défaut, et sa propre description énonçait ce que
+l'éteindre provoquait : *« archive le surplus **au lieu de le couper en silence** »*. Le
+silence était donc le comportement **normal**. Résultat mesuré : 273 859 caractères pour
+un cap de 3 000 — **91 fois le cap**.
+
+**Figée ON, le flag disparaît** (règle du lot 2 : un flag est ON et fait partie du
+produit, ou il n'existe pas). **13 flags** désormais.
+
+#### Défaut 2 — `capRegistry` gardait le DÉBUT du fichier
+
+```diff
+- return text.slice(0, AXIOMS_MAX_CHARS)     // les plus ANCIENS
++ // la queue, coupée à une frontière de ligne  // les plus RÉCENTS
+```
+
+Les axiomes s'**ajoutent à la fin** ; `slice(0, cap)` gardait donc systématiquement les
+premiers. Ce n'était pas un choix — c'est le sens par défaut de `slice`. Personne ne
+l'avait décidé, et le message de troncature (« condense le registre ») laissait croire à
+une perte marginale.
+
+**Sans le défaut 1, le 2 restait actif** dans la bande `[cap, cap×3]` : entre 3 000 et
+9 000 caractères, la rotation ne se déclenche pas et la troncature coupait encore les
+récents. D'où la nécessité de traiter les deux ensemble.
+
+La coupe se fait désormais à une **frontière de ligne**. Injecter un demi-axiome — un
+« Contexte : » sans sa « Règle d'or » — est pire que ne rien injecter : le modèle lit une
+prémisse et la prend pour une conclusion.
+
+#### Le test dit maintenant ce qui compte
+
+L'ancienne assertion « gate off → aucune archive créée » affirmait le comportement qu'on
+vient de supprimer. Elle est devenue :
+
+> **« `AXIOMS_ROTATE=off` résiduel → la rotation a QUAND MÊME eu lieu »**
+
+C'est la bonne question quand on fige un flag : pas « le off fonctionne-t-il ? » mais
+**« un vieux `.env` peut-il rallumer le comportement qu'on vient d'interdire ? »**.
+Plus 6 assertions sur `capRegistry` (garde le récent, écarte l'ancien, coupe à la ligne,
+annonce ce qu'il a écarté). **22 pass** (14 → 22).
+
+#### Et les 3 commentaires qui mentaient
+
+`relay-agentic.ts` ×2 et `eleve-memoire.ts` annonçaient « Gaté ELEVE_MEMOIRE » alors que
+le flag avait disparu au lot 2. Corrigés. **Cinquième fois cette semaine** — après les
+étapes numérotées sans 8, le « double verrou » sans flag, le `ollama = local` faux, et le
+« Ollama plafonne à 4096 » démenti par la mesure.
+
+---
+
+### 2026-08-06 — Le cerveau central passe sur `glm-5.2:cloud`
+
+Demande de Raf. **Vérifié avant de brancher, et c'était nécessaire.**
+
+**`glm-5.2` est un modèle à RAISONNEMENT** : il consomme ses tokens dans un champ
+`thinking` séparé et laisse `response` **vide** tant qu'il n'a pas conclu. Premier essai
+à 200 tokens : réponse vide, `done_reason: length` — il réfléchissait encore.
+
+Le risque était précis et silencieux : pour l'🧭 Orchestrateur, une réponse vide signifie
+« arbitrage illisible → on garde toutes les équipes » (règle 3 de l'élagage). **L'élagage
+aurait disparu sans qu'aucune erreur ne le signale.**
+
+Deux mesures ont levé le risque :
+
+| Vérification | Résultat |
+|---|---|
+| MangoOS gère-t-il le champ `thinking` ? | **oui** — `llm-transport.ts:152` bascule dessus si `content` est vide |
+| Tient-il le contrat Mango via `dispatch` ? | **oui**, même au budget par défaut (1024) — 7 s puis 4 s |
+| Son arbitrage est-il juste ? | **oui** — `["construction","design"]` pour « écris un composant Panier » |
+
+`timeoutMs: 180 000` pour ce rôle : mesuré à 4-7 s, mais une demande complexe le fera
+réfléchir bien plus longtemps et le défaut de 60 s aurait été trop juste.
+
+> **Effet non prévu, et il tombe juste.** Ce rôle passant par `ollama`, il compte
+> désormais dans la fenêtre **`ollama:cloud`** — celle qu'on a séparée le matin même en
+> découvrant que le limiteur comptait les modèles `:cloud` comme du local gratuit. Le
+> cerveau le plus sollicité du produit sort donc du plafond `claude` de 10/min, **et sa
+> consommation est comptée**. La correction du limiteur et la demande de Raf se
+> rejoignent sans avoir été coordonnées.
+
+⚠️ **Réserve** : `glm-5.2:cloud` est **facturé** sur le forfait Ollama (les modèles à
+suffixe `:cloud` ne sont pas gratuits). On déplace une charge, on ne la supprime pas —
+mais on la déplace vers un quota qui n'était pas saturé, et qui est maintenant mesurable.
+
+**Suite offline complète : 214 PASS · 0 FAIL** (575 s) · `tsc` 0 erreur ·
+`test-axioms-rotation` 22 pass · flags **14 → 13**.

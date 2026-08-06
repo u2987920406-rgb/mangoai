@@ -131,8 +131,8 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     try { brainClause = brainArchitectureClause(); } catch { brainClause = ""; }
     // (A1.2/B1.3, 2026-07-03) Rappel PROACTIF de la mémoire cross-projet : on
     // embarque la tâche, on cherche les souvenirs pertinents (palettes/artefacts
-    // appris) et on les injecte en section BORNÉE. Gaté ELEVE_MEMOIRE (off →
-    // section vide, system identique). Fail-open : jamais bloquant (memoireSection
+    // appris) et on les injecte en section BORNÉE. FIGÉ ON au lot 2 — le flag n'existe plus,
+    // le rappel est inconditionnel. Fail-open : jamais bloquant (memoireSection
     // rend "" si Ollama/Blackboard indispo). Jamais en test (transport injecté).
     let memoireClause = "";
     if (!deps.agenticPost) {
@@ -200,7 +200,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // Contexte commun à chaque (re)lancement du moteur. Seul le prompt `user`
     // change entre relances (on y ajoute un coup de pouce) — d'où l'extraction ici.
     // (A1.2) Enregistre l'outil `memoire_rappel` dans le registre construit, pour
-    // que l'Élève interroge sa mémoire EN COURS de boucle. Gaté ELEVE_MEMOIRE.
+    // que l'Élève interroge sa mémoire EN COURS de boucle. Figé ON au lot 2.
     const withMemoire = (pd: string, allowRun: boolean): ReturnType<typeof buildEleveActionTools> => {
       const reg = buildEleveActionTools(pd, { allowRun });
       if (!deps.agenticPost) {

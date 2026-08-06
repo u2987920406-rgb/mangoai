@@ -1,8 +1,8 @@
 {
   "orchestrateur": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 30000
+    "provider": "ollama",
+    "model": "glm-5.2:cloud",
+    "timeoutMs": 180000
   },
   "architecte": {
     "provider": "claude",

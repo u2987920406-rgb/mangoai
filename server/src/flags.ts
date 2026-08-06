@@ -30,11 +30,6 @@ export interface FlagSpec {
  */
 export const FLAGS = {
   // ── Pilier A — mémoire ──────────────────────────────────────────────────
-  AXIOMS_ROTATE: {
-    env: "AXIOMS_ROTATE",
-    default: false,
-    description: "Rotation du registre d'axiomes : au-delà du cap, archive le surplus dans .axioms.archive.md au lieu de le couper en silence.",
-  },
   BLACKBOARD_TTL: {
     env: "BLACKBOARD_TTL",
     default: false,
