@@ -1626,3 +1626,93 @@ c'est une décision produit, pas une tâche.
 
 **Suite offline complète : 214 PASS · 0 FAIL** (602 s) · `tsc` 0 erreur ·
 `test-brain-rate-limit` **23 pass** (16 → 23).
+
+---
+
+### 2026-08-06 (matériel) — Le local est fermé, et ce n'est pas le logiciel qui ferme
+
+Raf voulait savoir quel modèle rentre dans sa configuration. `llmfit` a répondu :
+**`Qwen/Qwen3.5-9B`**, quantifié `Q6_K`, 🟢 *Perfect*, 9,2 Go sur 11 — et multimodal,
+donc candidat pour 👁️ Vision autant que pour 🔎 Recherche. Téléchargé (6,6 Go via Ollama,
+Q4_K_M), il tient effectivement : **6,2 Go, 100 % sur GPU, contexte 16 384**.
+
+Puis on a mesuré. Et c'est là que la soirée a basculé.
+
+#### La mesure : 5,3 tok/s, trois fois, 0 % de dispersion
+
+| Étape | Résultat | Ce que ça disait |
+|---|---|---|
+| `llmfit bench` | **4,5 tok/s** | Ollama alloue les **262 144** tokens du modèle → 16 Go réclamés → **46 % délesté sur le CPU** |
+| bench par contexte | 5,9 → 33,9 tok/s | 100 % GPU partout, 4-5 Go libres → **du bruit**, pas une mesure |
+| protocole propre | **5,3 tok/s, 0 %** | contexte fixe, modèle chaud, 3 passes |
+
+> Le curseur « Context length » de l'application Ollama était à **256k** — c'est ce que
+> `llmfit` a subi. **MangoOS, lui, n'aurait pas eu ce problème** : `llm-transport.ts`
+> impose `num_ctx: 16384` à chaque appel. Le produit était protégé ; l'outil de mesure
+> ne l'était pas.
+
+#### La cause, et les cinq hypothèses éliminées une à une
+
+Sous charge, la carte tombe en **P5 avec la mémoire à 810 MHz sur 5505** — 15 % de la
+bande passante, soit ~71 Go/s au lieu de 484. Pour un modèle de 6,6 Go, ça plafonne à
+**~11 tok/s en théorie**. On mesure 5,3. Tout concorde.
+
+| Hypothèse | Verdict |
+|---|---|
+| Débordement VRAM | ❌ 100 % sur GPU, 4-5 Go libres |
+| **Limite de puissance 150 W** | ❌ **la carte atteint P2 / 5005 MHz SOUS 150 W** pendant le chargement |
+| Panneau NVIDIA « performances maximales » | ❌ appliqué, sans effet (agit sur la 3D, pas CUDA) |
+| `nvidia-smi -lgc` (verrou de fréquences) | ❌ **non supporté** — GeForce Pascal, le verrou n'existe qu'à partir de Turing |
+| `nvidia-smi -ac` (application clocks) | ❌ non supporté non plus |
+
+**La deuxième ligne est celle qui compte.** J'avais présenté la limite de 150 W comme
+« la dernière hypothèse sérieuse ». La mesure l'a réfutée : la carte monte à 5005 MHz
+sous cette limite, elle en est capable — **elle redescend au moment précis où le décodage
+commence**. Le décodage LLM, c'est des milliers de petits noyaux qui attendent la
+mémoire : le pilote voit 45 W et peu de calcul, conclut qu'elle n'a besoin de rien, et
+l'endort exactement quand il faudrait accélérer.
+
+> Le seul apport du réglage NVIDIA aura été de faire tomber la dispersion de **199 % à
+> 2 %**. Les pointes à 32 tok/s observées avant n'étaient donc pas un potentiel — c'était
+> du bruit. Sans ce nettoyage, on aurait pu conclure « ça monte parfois à 32, c'est
+> jouable » et bâtir dessus.
+
+#### ⚠️ Conséquence produit : le doc 03 promet quelque chose que la machine ne peut pas tenir
+
+Doc 03 § 2, 🔨 CONSTRUCTION : *« Coût : `$0` — c'est l'équipe qui travaille le plus, et
+elle est gratuite. **C'est l'argument de vente.** »*
+
+À **5,3 tok/s**, un composant de 300 lignes demande ~10 minutes de génération pure. Ce
+n'est pas un arbitrage qualité/prix : c'est inutilisable. **Le registre reste sur
+`claude` — non par choix d'architecture, par contrainte matérielle mesurée.**
+
+Consigné en **L138** (`limites.md`) avec les cinq hypothèses éliminées, pour que personne
+ne refasse l'enquête. Le doc 03 devra porter cette réserve, ou la promesse devra changer.
+
+#### Trouvé en chemin, et indépendant du sujet — **L139**
+
+La protection de L61 (`nvidia-smi -pl 150`, posée après les coupures d'alimentation du
+2026-06-30) **a été posée à la main et rien ne la réapplique** : aucun outil de tuning en
+mémoire, aucune tâche planifiée. Or un `-pl` **ne survit pas à un redémarrage**.
+
+**Au prochain reboot, la carte repasse à 250 W et la faille d'alim se rouvre en silence.**
+Si le PC a redémarré depuis, elle a déjà sauté au moins une fois. Une tâche planifiée au
+démarrage suffit — 10 minutes de travail, et ça vaut d'être fait quelle que soit la suite
+donnée au local.
+
+#### Rectificatif sur une note qui m'appartient
+
+Je portais en mémoire « deux coupures sèches le 2026-08-04 ». Les documents ne consignent
+**aucune coupure en août** — les incidents tracés sont du **2026-06-30**. La note était
+fausse ou visait autre chose ; elle est corrigée.
+
+#### Ce qui reste ouvert
+
+- **Rien du côté logiciel.** Tous les leviers pilote ont été essayés et documentés.
+- Un outil tiers (Afterburner) pourrait forcer les fréquences — mais il **combat la
+  protection PSU de L61**. À ne pas faire avant d'avoir traité l'alimentation.
+- Un GPU Turing ou plus récent lèverait les deux contraintes d'un coup : verrouillage de
+  fréquences supporté, et bande passante bien supérieure.
+
+**État matériel à la fin des tests, vérifié : `power.limit = 150 W`, aucun verrou posé,
+607/405 MHz au repos. Rien n'a été laissé modifié.**
