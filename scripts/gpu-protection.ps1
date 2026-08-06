@@ -1,4 +1,4 @@
-# Protection GPU — réapplique la limite de puissance de la GTX 1080 Ti au démarrage.
+﻿# Protection GPU — réapplique la limite de puissance de la GTX 1080 Ti au démarrage.
 #
 # POURQUOI (limites.md L61 puis L139) :
 # Le 2026-06-30, deux coupures d'alimentation brutales (Kernel-Power 41 + arrêt 6008,

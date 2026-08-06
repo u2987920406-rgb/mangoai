@@ -1,4 +1,4 @@
-# Installe la tâche planifiée qui réapplique la protection GPU à chaque ouverture
+﻿# Installe la tâche planifiée qui réapplique la protection GPU à chaque ouverture
 # de session (limites.md L139). À lancer UNE FOIS, dans un PowerShell ADMINISTRATEUR.
 #
 #   Set-Location D:\IA\MangoOS ; .\scripts\gpu-protection-install.ps1
@@ -73,20 +73,49 @@ Register-ScheduledTask -TaskName $NomTache -Action $action -Trigger $trigger `
                   'nvidia-smi -pl ne survit pas au redemarrage et rien ne le reappliquait.') | Out-Null
 
 Write-Host "  Tache enregistree : $NomTache" -ForegroundColor Green
-
-# On ne se contente PAS d'enregistrer : on l'exécute tout de suite et on vérifie le
-# résultat réel. Une tâche « installée » dont personne n'a vu l'effet est une
-# protection supposée — c'est précisément ce que L139 reprochait à l'existant.
+# On ne se contente PAS d'enregistrer : on exécute ET on prouve.
+#
+# ⚠️ LEÇON DE LA PREMIÈRE VERSION (2026-08-06) — cette vérification a rendu un FAUX
+# VERT. Elle contrôlait que la limite valait 150 W... ce qui était déjà vrai AVANT
+# l'installation. Elle a donc affiché « VERIFIE » alors que le script n'avait même
+# pas pu être analysé (fichier UTF-8 sans BOM, illisible par powershell.exe 5.1) et
+# que la tâche renvoyait le code 1. Vérifier un ÉTAT déjà atteint ne prouve rien sur
+# l'ACTION — c'est exactement le défaut que L139 dénonce, reproduit par le correctif
+# de L139 lui-même.
+#
+# On vérifie donc TROIS choses distinctes, et il faut les trois :
+#   1. le code de retour de la tâche vaut 0 ;
+#   2. une ligne de journal FRAÎCHE a été écrite → preuve que le script a tourné ;
+#   3. la limite effective est bien à 150 W.
 Write-Host '  Execution immediate pour verification...' -ForegroundColor Cyan
-Start-ScheduledTask -TaskName $NomTache
-Start-Sleep -Seconds 8
 
-$limite = (& "$env:SystemRoot\System32\nvidia-smi.exe" --query-gpu=power.limit --format=csv,noheader,nounits | Select-Object -First 1).Trim()
+$journal   = "$env:LOCALAPPDATA\MangoOS\gpu-protection.log"
+$tailleAvant = if (Test-Path $journal) { (Get-Item $journal).Length } else { 0 }
+
+Start-ScheduledTask -TaskName $NomTache
+Start-Sleep -Seconds 10
+
+$info        = Get-ScheduledTaskInfo -TaskName $NomTache
+$tailleApres = if (Test-Path $journal) { (Get-Item $journal).Length } else { 0 }
+$limite      = (& "$env:SystemRoot\System32\nvidia-smi.exe" --query-gpu=power.limit --format=csv,noheader,nounits | Select-Object -First 1).Trim()
+
+$okCode    = ($info.LastTaskResult -eq 0)
+$okJournal = ($tailleApres -gt $tailleAvant)
+$okLimite  = ([math]::Abs([double]$limite - 150) -lt 0.5)
+
 Write-Host ''
-if ([math]::Abs([double]$limite - 150) -lt 0.5) {
-    Write-Host "  VERIFIE : limite effective = $limite W" -ForegroundColor Green
+Write-Host ('  code de retour de la tache : {0}   {1}' -f $info.LastTaskResult, $(if ($okCode) { 'OK' } else { 'ECHEC' })) -ForegroundColor $(if ($okCode) { 'Green' } else { 'Red' })
+Write-Host ('  journal ecrit              : {0}' -f $(if ($okJournal) { 'OUI' } else { 'NON - le script n a pas tourne' })) -ForegroundColor $(if ($okJournal) { 'Green' } else { 'Red' })
+Write-Host ('  limite effective           : {0} W   {1}' -f $limite, $(if ($okLimite) { 'OK' } else { 'ECHEC' })) -ForegroundColor $(if ($okLimite) { 'Green' } else { 'Red' })
+Write-Host ''
+
+if ($okCode -and $okJournal -and $okLimite) {
+    Write-Host '  PROTECTION ACTIVE ET PROUVEE.' -ForegroundColor Green
+    Write-Host "  Journal : $journal"
+    Write-Host ''
 } else {
-    Write-Host "  ECHEC : limite effective = $limite W (attendu 150)" -ForegroundColor Red
+    Write-Host '  PROTECTION NON PROUVEE - ne pas se fier a cette installation.' -ForegroundColor Red
+    Write-Host "  Diagnostic : $journal" -ForegroundColor Yellow
+    Write-Host ''
+    exit 1
 }
-Write-Host "  Journal : $env:LOCALAPPDATA\MangoOS\gpu-protection.log"
-Write-Host ''
