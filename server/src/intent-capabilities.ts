@@ -99,7 +99,7 @@ function parseRouterCaps(summary: string): Set<Capability> {
  * JAMAIS. Un échec (dégradé/hors ligne) → ensemble vide, jamais bloquant.
  */
 async function routeAmbiguous(task: string, doDispatch: DispatchFn): Promise<Set<Capability>> {
-  const r = await doDispatch("routeur", ROUTER_SYSTEM, task, { freeform: true });
+  const r = await doDispatch("orchestrateur", ROUTER_SYSTEM, task, { freeform: true });
   if (r.status !== "ok") return new Set();
   return parseRouterCaps(r.summary);
 }

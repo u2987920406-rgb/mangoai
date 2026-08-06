@@ -25,7 +25,7 @@ const { loadSpecialists } = await import("../specialist/specialist-agents.js")
 const mkSpec = (over: Partial<{ name: string; role: string; lacune: string; tags: string[] }>) => ({
   id: "sa_x", name: over.name ?? "X", role: over.role ?? "rôle", lacune: over.lacune ?? "",
   systemPrompt: "Tu es un expert.", tools: [], triggers: "", examples: [], tags: over.tags ?? [],
-  provider: "ollama" as const, model: "gemma4:12b", createdByAgent: "forgeron", createdAt: "",
+  provider: "ollama" as const, model: "gemma4:12b", createdByAgent: "codeur", createdAt: "",
 })
 
 let pass = 0, fail = 0

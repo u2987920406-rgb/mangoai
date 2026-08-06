@@ -37,9 +37,7 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("14 agents présents — refonte v3 lot 3 : `extracteur` et `testeur` retirés (déclarés, jamais récupérés par getBrain ni dispatch). Cible : 8 équipes.", AGENT_IDS.length === 14 && Object.keys(def).length === 14);
-    check("défaut stratege = qwythos-tools:q6 LOCAL ($0, barreau 1)", def.stratege.provider === "ollama" && def.stratege.model === "qwythos-tools:q6");
-    check("défaut forgeron = claude/opus (le meilleur raisonneur, acte rare)", def.forgeron.provider === "claude" && def.forgeron.model === "opus");
+    check("8 agents présents — refonte v3 lot 3 : les 8 ÉQUIPES du doc 03 (orchestrateur, architecte, codeur, vision, designer_ux, auditeur, chercheur, juge). `juge` reste DISTINCT de l'exécutant — non négociable.", AGENT_IDS.length === 8 && Object.keys(def).length === 8);
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
     check("défaut codeur = l'Élève Qwythos-tools v2 Q6 LOCAL (ollama, tool-calling natif réel)", def.codeur.provider === "ollama" && def.codeur.model === "qwythos-tools:q6");
 
@@ -116,7 +114,7 @@ async function run() {
   {
     // (2026-07-11) codeur = l'Élève Qwythos v2 Q6 LOCAL (ollama) : $0, souveraineté
     // prouvée en réel — inclus ici pour couvrir le cas ollama à 3 agents.
-    const local = estimatePipelineCost(["optimiseur", "vision", "codeur"], 100_000);
+    const local = estimatePipelineCost(["juge", "vision", "codeur"], 100_000);
     check("agents ollama (optimiseur+vision+codeur) → coût 0", local.usd === 0 && !local.warning);
     // orchestrateur = claude/opus : resté TARIFÉ (openai/* et claude/* = payant, plus $0).
     const cloudOne = estimatePipelineCost(["orchestrateur"], 1_000_000);
@@ -195,7 +193,7 @@ async function run() {
     fs.writeFileSync(REG, JSON.stringify({ codeur: { provider: "ollama", model: "m", timeoutMs: 20 } }));
     const results = await dispatchParallel([
       { agentId: "codeur", system: "s", user: "u", opts: { sleep: noSleep, ask: neverResolves } },          // timeout
-      { agentId: "optimiseur", system: "s", user: "u", opts: { sleep: noSleep, ask: async () => okJson() } }, // ok
+      { agentId: "architecte", system: "s", user: "u", opts: { sleep: noSleep, ask: async () => okJson() } }, // ok
       { agentId: "designer_ux", system: "s", user: "u", opts: { sleep: noSleep, ask: async () => "garbage" } }, // error
     ]);
     check("3 résultats retournés malgré timeout/erreur", results.length === 3);

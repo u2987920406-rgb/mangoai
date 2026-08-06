@@ -756,3 +756,59 @@ L'assertion de coût, que j'avais dû assouplir, est **remise au strict** (`=== 
 #### Verdict
 
 **211 PASS · 0 FAIL**, 537 s (contre 640 s et 4 échecs avant) · `tsc` 0 erreur · build UI vert.
+
+### 2026-08-05 — Lot 3 · **Les 8 équipes** (rôles 14 → 8) · suite **211 PASS · 0 FAIL**
+
+#### La cible du doc 03 § 7 est atteinte
+
+`orchestrateur` · `architecte` · `codeur` · `vision` · `designer_ux` · `auditeur` ·
+`chercheur` · `juge` — ce dernier **distinct de l'exécutant**, point que le doc 03 pose
+comme non négociable.
+
+| Fusionné | Dans | Motif (doc 03 § 7) |
+|---|---|---|
+| `accueil` | `orchestrateur` | l'Accueil **est** l'Orchestrateur |
+| `routeur` | `orchestrateur` | l'étage 3 de l'escalier est une décision de l'Orchestrateur |
+| `stratege` | `orchestrateur` | la classification de blocage lui revient |
+| `optimiseur` | `architecte` | 🧠 Analyse & Plan |
+| `forgeron` | `codeur` | la Forge devient interne — plus un rôle exposé |
+| `codeur_frontiere` | `codeur` | l'écran Code sort de la v3 (arbitrage A3) |
+
+#### Pourquoi c'était le bon moment — et pourquoi ça n'aurait pas été vrai la veille
+
+Depuis le basculement `c113729`, **les 14 rôles pointaient tous sur `claude/opus`**. Aucune
+fusion ne change donc le cerveau effectivement utilisé : l'opération est **neutre pour le
+comportement actuel**. Faite avant ce basculement, chaque fusion aurait silencieusement changé
+de modèle pour six chemins d'exécution.
+
+#### La même table pour le code et pour les tests
+
+Les tests ont reçu **exactement** la table ci-dessus, jamais une substitution choisie pour
+faire passer une suite. Deux ajustements assumés :
+
+- les assertions sur les défauts de `stratege` et `forgeron` sont devenues des **doublons**
+  de contrôles déjà faits sur `orchestrateur` et `codeur` → retirées ;
+- le trio « agents ollama → coût 0 » passe à **`juge` + `vision` + `codeur`**, les trois seuls
+  rôles dont le défaut codé en dur est réellement `ollama` après la fusion.
+
+#### ⚠️ Deux points que la fusion met en pleine lumière
+
+**Le `juge` et le `codeur` partagent le même cerveau.** Dans le registre vivant, les 8 rôles
+sont sur `claude/opus` — le vérificateur **est** le modèle vérifié. Le doc 03 pose la
+distinction juge/exécutant comme *non négociable* ; elle n'existe plus qu'au niveau du **rôle**,
+plus au niveau du **modèle**. À trancher : c'est le différenciateur produit n°1 qui est en jeu.
+
+**Aucun rôle n'a de cerveau local dans le registre vivant.** Or `BRAIN_LOCAL_ONLY` est l'un des
+4 réglages client conservés au lot 2 (« mode souverain »). Activé aujourd'hui, **aucun rôle ne
+peut s'exécuter**. Les défauts codés en dur gardent `ollama` pour `codeur`/`vision`/`juge` —
+c'est le seul filet.
+
+#### Verdict
+
+**211 PASS · 0 FAIL** (519 s) · `tsc` 0 erreur · build UI vert · modules de production **309**.
+
+| | Départ (audit) | Fin du lot 3 |
+|---|---|---|
+| Rôles de cerveau | 16 | **8** ✅ cible atteinte |
+| Modules de production | 343 | 309 |
+| Flags déclarés | 42 | 14 |

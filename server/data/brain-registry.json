@@ -36,11 +36,6 @@
     "model": "opus",
     "timeoutMs": 30000
   },
-  "optimiseur": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 60000
-  },
   "chercheur": {
     "provider": "claude",
     "model": "opus",
@@ -50,30 +45,5 @@
     "provider": "claude",
     "model": "opus",
     "timeoutMs": 45000
-  },
-  "stratege": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 90000
-  },
-  "forgeron": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 240000
-  },
-  "routeur": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 20000
-  },
-  "accueil": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 60000
-  },
-  "codeur_frontiere": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 120000
   }
 }

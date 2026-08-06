@@ -43,8 +43,7 @@ export const MAX_FALLBACK_CHAIN = 2
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
   | "designer_ux" | "auditeur"
-  | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron" | "routeur"
-  | "accueil" | "codeur_frontiere"
+  | "chercheur" | "juge"
 
 /** Valeurs par défaut — la vérité de repli si le registre est absent ou corrompu. */
 export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
@@ -67,7 +66,6 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // (2026-07-14) gemma4:12b désinstallé localement — repli de dernier recours
   // réaligné sur le cerveau Élève courant (le fichier vivant brain-registry.json
   // porte déjà qwythos-tools:q6 ; ce défaut n'intervient QUE si ce fichier disparaît).
-  optimiseur:    { provider: "ollama", model: "qwythos-tools:q6", timeoutMs: 60_000 },
   chercheur:     { provider: "claude", model: "sonnet", timeoutMs: 90_000 },
   // #161 — juge de clôture (intention↔livré) : souverain ($0) et DISTINCT de
   // l'exécutant GLM (provider openai), pour éviter l'auto-jugement biaisé.
@@ -79,23 +77,19 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // évite un swap VRAM supplémentaire). Le barreau 2 (cloud supérieur, GLM 5.2 via
   // le rôle `routeur`) est un AUTRE agent, configurable par env
   // (STRATEGE_ESCALATE_AGENT) — voir stratege-brain.ts.
-  stratege:      { provider: "ollama", model: "qwythos-tools:q6", timeoutMs: 90_000 },
   // La Forge — le FORGERON qui CONÇOIT les agents (méta-prompting). Décision Raf
   // (2026-06-29) : c'est l'acte le PLUS exigeant (lire une lacune abstraite → rédiger
   // un prompt système d'expert + JSON valide) et il est RARE → on y met le meilleur
   // raisonneur, Opus, via l'abonnement Claude ($0). Distinct du `codeur` (GLM) qui,
   // lui, EXÉCUTE. Réassignable à chaud dans l'Atelier comme tout cerveau.
-  forgeron:      { provider: "claude", model: "opus", timeoutMs: 120_000 },
   // #182 D2 — le ROUTEUR de capacités (étage 3, gaté INTENT_ROUTER_LLM=off par défaut) :
   // repli d'AMBIGUÏTÉ SEULE quand le signal déterministe (URL/mots-clés/pièce jointe) est
   // muet. Léger et rapide : GLM cloud, repli C2 (BRAIN_FALLBACK) déjà disponible pour ce rôle.
-  routeur:       { provider: "ollama", model: "glm-5.2:cloud", timeoutMs: 20_000 },
   // #182 D3/É5 suite — le cerveau CHOISI PAR RAF à l'Accueil (popup rapide, gate
   // HOME_QUICK_MODEL). Défaut = "sonnet" (alias court accepté tel quel par askClaude,
   // vérifié dans llm-engine.ts : query({model}) prend l'alias directement, aucun
   // MODEL_MAP nécessaire) → comportement identique au repli historique tant que Raf
   // n'a rien choisi dans la popup. Pas d'EXPECTED_CAPS : choix libre assumé (limites.md).
-  accueil:       { provider: "claude", model: "sonnet", timeoutMs: 60_000 },
   // #193 — le cerveau FRONTIÈRE dédié de la section Code (jamais l'Élève souverain,
   // jamais un repli .env) : lu SERVEUR-CÔTÉ par /api/code-chat (code-route.ts), le
   // client ne peut jamais le contourner. Distinct de `codeur` (Élève, sémantique
@@ -103,7 +97,6 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // disponible via l'abonnement, réassignable à chaud dans l'Atelier comme tout
   // cerveau, mais toujours filtré contre ALLOWED_MODELS côté route (repli "opus"
   // si le registre pointe vers un modèle non-Claude).
-  codeur_frontiere: { provider: "claude", model: "opus", timeoutMs: 120_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]

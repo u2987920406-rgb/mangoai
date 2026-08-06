@@ -130,7 +130,8 @@ export function refinedDiagnosis(blocker: BlockerClass, why: string, source: str
 
 export interface ReclassifyOpts {
   dispatch?: StrategeDispatch;
-  /** Agent du barreau 1 (local $0). Défaut : "stratege" (gemma4:12b). */
+  /** Agent du barreau 1. Défaut : "orchestrateur" — le rôle `stratege` a été fusionné
+   *  dans l'Orchestrateur au lot 3 (refonte v3), la classification de blocage lui revient. */
   rung1?: AgentId;
   /** Agent du barreau 2 (cloud supérieur). Défaut : env STRATEGE_ESCALATE_AGENT ?? "juge". */
   rung2?: AgentId;
@@ -206,7 +207,7 @@ export async function consultRungWithVote(
  */
 export async function reclassifyAmbiguous(s: BlockerSymptoms, opts: ReclassifyOpts = {}): Promise<Diagnosis | null> {
   const dispatch = opts.dispatch ?? realDispatch;
-  const rung1 = opts.rung1 ?? "stratege";
+  const rung1 = opts.rung1 ?? "orchestrateur";
   // Barreau 1 — LOCAL $0. Self-consistency opt-in (N tirages + vote) sinon tir unique.
   const r1 = opts.selfConsistency
     ? await consultRungWithVote(rung1, "barreau 1 (local)", s, dispatch, opts.voteN)

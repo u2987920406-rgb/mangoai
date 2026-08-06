@@ -21,10 +21,10 @@ function check(label: string, cond: boolean) {
 }
 
 const ok = (summary: string): AgentResult => ({
-  status: "ok", agent: "stratege", summary, data: {}, confidence: 0.9, durationMs: 1,
+  status: "ok", agent: "orchestrateur", summary, data: {}, confidence: 0.9, durationMs: 1,
 });
 const err = (): AgentResult => ({
-  status: "error", agent: "stratege", summary: "", data: {}, confidence: 0, durationMs: 1,
+  status: "error", agent: "orchestrateur", summary: "", data: {}, confidence: 0, durationMs: 1,
 });
 
 const SYMPTOMS: BlockerSymptoms = {
@@ -73,7 +73,7 @@ console.log("\n[3] reclassifyAmbiguous — barreau 1 (local) tranche");
   const d = await reclassifyAmbiguous(SYMPTOMS, { dispatch: fn });
   check("renvoie un diagnostic raffiné", d?.blocker === "knowledge-gap");
   check("UN SEUL appel cerveau (pas d'escalade inutile)", calls.length === 1);
-  check("barreau 1 = agent « stratege » par défaut", calls[0] === "stratege");
+  check("barreau 1 = agent « stratege » par défaut", calls[0] === "orchestrateur");
 }
 
 console.log("\n[4] barreau 1 échoue, escalade cloud DÉSACTIVÉE → null, pas de barreau 2");
@@ -134,18 +134,18 @@ console.log("\n[9] consultRungWithVote — self-consistency (N tirages + vote)")
     "CLASSE: wrong-tool\nB",
     "CLASSE: knowledge-gap\nC",
   ]);
-  const r = await consultRungWithVote("stratege", "barreau 1 (local)", SYMPTOMS, fn, 3);
+  const r = await consultRungWithVote("orchestrateur", "barreau 1 (local)", SYMPTOMS, fn, 3);
   check("majorité 2/3 l'emporte", r.diagnosis?.blocker === "knowledge-gap");
   check("3 appels en self-consistency", calls.length === 3);
 
   // Égalité stricte (1 vs 1 vs 1, ou 1 vs 1 avec un null) → pas de majorité claire → null.
   const { fn: fn2 } = fakeDispatch(["CLASSE: knowledge-gap\nA", "CLASSE: wrong-tool\nB", "CLASSE: inconnu"]);
-  const r2 = await consultRungWithVote("stratege", "barreau 1 (local)", SYMPTOMS, fn2, 3);
+  const r2 = await consultRungWithVote("orchestrateur", "barreau 1 (local)", SYMPTOMS, fn2, 3);
   check("égalité (1/1, le reste inconnu) → null, pas de choix arbitraire", r2.diagnosis === null);
 
   // Tous inconnus → null.
   const { fn: fn3 } = fakeDispatch(["CLASSE: inconnu", "CLASSE: inconnu", "CLASSE: inconnu"]);
-  const r3 = await consultRungWithVote("stratege", "barreau 1 (local)", SYMPTOMS, fn3, 3);
+  const r3 = await consultRungWithVote("orchestrateur", "barreau 1 (local)", SYMPTOMS, fn3, 3);
   check("aucune classe reconnue → null", r3.diagnosis === null);
 }
 

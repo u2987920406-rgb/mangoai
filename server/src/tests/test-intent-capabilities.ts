@@ -34,7 +34,7 @@ function check(label: string, cond: boolean) {
 const DIR = process.cwd();
 
 function fakeResult(status: AgentResult["status"], summary: string): AgentResult {
-  return { status, agent: "routeur", summary, data: {}, confidence: 0.8, durationMs: 1 };
+  return { status, agent: "orchestrateur", summary, data: {}, confidence: 0.8, durationMs: 1 };
 }
 
 async function run() {

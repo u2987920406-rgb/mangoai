@@ -140,7 +140,7 @@ export type ForgeAsk = (system: string, user: string) => Promise<string>
  *  méta-prompting = l'acte le plus exigeant, et RARE → on y met le meilleur raisonneur).
  *  Plafond de tokens RELEVÉ (le défaut 1024 d'askLLM tronquait un prompt système). */
 const realForgeAsk: ForgeAsk = (system, user) => {
-  const brain = getBrain("forgeron")
+  const brain = getBrain("codeur") // fusionné au lot 3 (refonte v3) — la Forge devient interne, plus un rôle exposé
   return askLLM(system, user, {
     provider: brain.provider,
     model: brain.model,

@@ -37,7 +37,7 @@ function codeAgentSystemPrompt(dir: string): string {
 }
 
 function resolveFrontierModel(): ModelChoice {
-  const configured = getBrain("codeur_frontiere").model;
+  const configured = getBrain("codeur").model; // fusionné au lot 3 (refonte v3) — l'écran Code sort de la v3 (A3)
   return (ALLOWED_MODELS as readonly string[]).includes(configured ?? "")
     ? (configured as ModelChoice)
     : "opus";

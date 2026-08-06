@@ -177,7 +177,7 @@ app.post("/api/home-chat", async (req, res) => {
       // #182 D3/É5 suite — sous le gate, le registre `accueil` (popup rapide, n'importe
       // quel modèle Ollama installé) REMPLACE le MODEL_MAP figé comme source du
       // brainOverride. OFF (défaut) → accueilBrain reste null, comportement byte-identique.
-      const accueilBrain = getBrain("accueil"); // figé ON au lot 2 (ON en production)
+      const accueilBrain = getBrain("orchestrateur"); // fusionné au lot 3 (refonte v3) — l'Accueil est l'Orchestrateur
       providerForContext = accueilBrain?.provider ?? "claude";
       const brainOverride = accueilBrain ?? { provider: "claude" as const, model: resolvedModel };
       const brainName = accueilBrain && accueilBrain.provider !== "claude"

@@ -165,7 +165,7 @@ Report at most 4 concrete bullets: "- problem — file:where — fix". If nothin
     id: "perf",
     label: "Performance",
     emoji: "⚡",
-    agentId: "optimiseur",
+    agentId: "architecte",
     triggers: (ctx) =>
       any(ctx.changedFiles, RE_JSX) && !["slides", "autre"].includes(ctx.projectType),
     system: `You are a Performance patroller in a local app builder. You audit ONLY React render performance in the changed files. STATIC analysis only — never claim a runtime measurement.
@@ -176,7 +176,7 @@ Report at most 4 prioritized bullets: "- problem — file:where — fix". If not
     id: "bundle",
     label: "Bundle",
     emoji: "📦",
-    agentId: "optimiseur",
+    agentId: "architecte",
     triggers: (ctx) =>
       !["slides", "autre"].includes(ctx.projectType) &&
       (any(ctx.changedFiles, /(^|\/)package\.json$/i) || importsBarePackage(ctx)),
