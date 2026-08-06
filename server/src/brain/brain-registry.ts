@@ -42,7 +42,7 @@ export const MAX_FALLBACK_CHAIN = 2
 
 export type AgentId =
   | "orchestrateur" | "architecte" | "codeur" | "vision"
-  | "designer_ux" | "extracteur" | "testeur" | "auditeur"
+  | "designer_ux" | "auditeur"
   | "optimiseur" | "chercheur" | "juge" | "stratege" | "forgeron" | "routeur"
   | "accueil" | "codeur_frontiere"
 
@@ -63,8 +63,6 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   codeur:        { provider: "ollama", model: "qwythos-tools:q6", timeoutMs: 120_000 },
   vision:        { provider: "ollama", model: "qwen3.5:cloud", timeoutMs: 60_000 },
   designer_ux:   { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
-  extracteur:    { provider: "claude", model: "haiku", timeoutMs: 30_000 },
-  testeur:       { provider: "claude", model: "sonnet", timeoutMs: 45_000 },
   auditeur:      { provider: "claude", model: "sonnet", timeoutMs: 30_000 },
   // (2026-07-14) gemma4:12b désinstallé localement — repli de dernier recours
   // réaligné sur le cerveau Élève courant (le fichier vivant brain-registry.json

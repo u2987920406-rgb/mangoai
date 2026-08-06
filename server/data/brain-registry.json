@@ -31,16 +31,6 @@
     "model": "opus",
     "timeoutMs": 30000
   },
-  "extracteur": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 30000
-  },
-  "testeur": {
-    "provider": "claude",
-    "model": "opus",
-    "timeoutMs": 45000
-  },
   "auditeur": {
     "provider": "claude",
     "model": "opus",

@@ -813,7 +813,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       // bornée) puis cède (incomplete). Ne casse jamais la boucle (try/catch).
       if (result?.finished) {
         try {
-          const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task));
+          const verdict = await runClosureGate(projectDir, task, result, WORKSPACE_DIR, inferProjectType(task), {}, deps.gateDeps);
           appendBacklog(projectDir, { actor: "Gardien", action: "clôture", detail: verdict.raisons.join(" ; ") || "OK", ok: verdict.ok });
           const goutLabel = verdict.design
             ? verdict.tasteScored

@@ -7,6 +7,7 @@ import { type LLMProvider } from "../llm/llm-engine.js";
 import { type BrainPolicy } from "../brain/brain-runtime.js";
 import { type PostFn } from "../eleve-runtime.js";
 import { type EndpointOverride } from "./provider.js";
+import type { GateDeps } from "../eleve-gate.js";
 
 export type ResolvedBy = "eleve" | "maitre" | "none";
 
@@ -78,6 +79,13 @@ export interface RelayDeps {
   // Interruption coopérative (clic « Stop ») lue en tête de boucle agentique.
   // Absent → isInterrupted (drapeau module armé par /api/stop). Surchargeable en test.
   shouldAbort?: () => boolean;
+  // (2026-08-05, refonte v3 lot 2) Dependances du Gardien de cloture, injectables.
+  // Depuis que ELEVE_CLOSURE_GATE est fige ON, le Gardien tourne dans TOUS les chemins
+  // du relais — y compris sur des repertoires de test qui ne peuvent pas le satisfaire
+  // (intention 0/100, pas de package.json), ce qui declenchait une boucle de
+  // re-correction du Maitre. Absent (production) → `realGateDeps` via le defaut de
+  // `runClosureGate`. Fourni → cloture deterministe, sans reseau ni juge LLM.
+  gateDeps?: GateDeps;
 }
 
 export interface EscalationContext {

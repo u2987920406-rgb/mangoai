@@ -137,6 +137,17 @@ export async function requiredCapabilities(
   const caps = new Set<Capability>(DISCUSS_DEFAULT_CAPS);
   for (const c of heavyDetected) caps.add(c);
 
+  // Étage 3 de l'escalier d'allumage (doc 03 § 5) : routeur LLM, en DERNIER recours.
+  // Rétabli au lot 3 SANS gate. Le lot 2 avait archivé INTENT_ROUTER_LLM au motif
+  // « jamais exécuté » ; le doc 03 en fait l'étage 3 : « on le garde, on l'allume, on
+  // le nomme ». Le flag disparaît, la capacité reste — la règle du § G tenue dans le
+  // bon sens. `looksAmbiguous` borne l'appel : muet dès que le déterministe a tranché.
+  if (looksAmbiguous(task, heavyDetected)) {
+    const doDispatch = opts.dispatch ?? dispatch;
+    const routed = await routeAmbiguous(task, doDispatch);
+    for (const c of routed) caps.add(c);
+  }
+
   return caps;
 }
 

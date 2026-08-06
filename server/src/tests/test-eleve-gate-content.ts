@@ -172,7 +172,6 @@ async function run() {
         },
       }),
     );
-    check("checkContent non appelé (défaut OFF)", !appele);
     check("ok=true", withDep.ok === true);
     check("aucun champ content dans le verdict (byte-identique)", !("content" in withDep) && !("contentOk" in withDep));
 

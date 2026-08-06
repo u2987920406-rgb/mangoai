@@ -37,7 +37,7 @@ async function run() {
     // Pas de fichier → défauts complets.
     if (fs.existsSync(REG)) fs.rmSync(REG);
     const def = loadBrainRegistry();
-    check("16 agents présents (dont stratege #164 P3 + forgeron La Forge + routeur #182 D2 + accueil #182 D3 + codeur_frontiere #193)", AGENT_IDS.length === 16 && Object.keys(def).length === 16);
+    check("14 agents présents — refonte v3 lot 3 : `extracteur` et `testeur` retirés (déclarés, jamais récupérés par getBrain ni dispatch). Cible : 8 équipes.", AGENT_IDS.length === 14 && Object.keys(def).length === 14);
     check("défaut stratege = qwythos-tools:q6 LOCAL ($0, barreau 1)", def.stratege.provider === "ollama" && def.stratege.model === "qwythos-tools:q6");
     check("défaut forgeron = claude/opus (le meilleur raisonneur, acte rare)", def.forgeron.provider === "claude" && def.forgeron.model === "opus");
     check("défaut orchestrateur = claude/opus", def.orchestrateur.provider === "claude" && def.orchestrateur.model === "opus");
@@ -175,8 +175,8 @@ async function run() {
     check("budget épuisé → error sans appeler le cerveau", rCb.status === "error" && !called && rCb.summary.includes("budget"));
 
     // localOnly + cerveau cloud → refus.
-    fs.writeFileSync(REG, JSON.stringify({ extracteur: { provider: "claude", model: "haiku", localOnly: true } }));
-    const rLocal = await dispatch("extracteur", "s", "u", { sleep: noSleep, ask: async () => okJson() });
+    fs.writeFileSync(REG, JSON.stringify({ chercheur: { provider: "claude", model: "haiku", localOnly: true } }));
+    const rLocal = await dispatch("chercheur", "s", "u", { sleep: noSleep, ask: async () => okJson() });
     check("localOnly + cloud → dispatch refusé", rLocal.status === "error" && rLocal.summary.includes("localOnly"));
     if (fs.existsSync(REG)) fs.rmSync(REG);
 

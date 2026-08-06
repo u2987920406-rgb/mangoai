@@ -56,6 +56,10 @@ console.log("\n[1] ÉGALITÉ BYTE-IDENTIQUE — préréglage CONSTRUIRE (ordre E
   // (2026-07-12 suite 2) golden RÉGÉNÉRÉ — 1 changement légitime de plus : nouvel outil
   // `lis_video_youtube` (transcript+métadonnées YouTube, capacité "read-web", toujours
   // actif, infra #177 enfin câblée) → +1 partout, y compris Discuter par défaut.
+  // (2026-08-05, refonte v3 lot 2) golden RÉGÉNÉRÉ — 1 changement légitime : `etape_bloquee`.
+  // ELEVE_PLAN_V2 a été figé ON (mesuré vert sur test-eleve-plan), donc les 3 outils de
+  // plan sont désormais TOUJOURS servis au lieu de 2. Régénération autorisée seulement
+  // après avoir prouvé que c'était la SEULE dérive (aucun outil perdu, `discuter` intact).
   setEnv({});
   check("construire_default : 27 outils, égalité EXACTE (ordre + contrat)", exactEqual(toOpenAITools(buildEleveActionTools(projectDir)), GOLDEN.construire_default));
   check("construire_norun (allowRun:false) : 26 outils, égalité EXACTE", exactEqual(toOpenAITools(buildEleveActionTools(projectDir, { allowRun: false })), GOLDEN.construire_norun));

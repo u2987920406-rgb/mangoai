@@ -102,7 +102,7 @@ export async function finalizeEscalationPhase(
       { // Gardien de clôture : figé ON en dur au lot 2 (refonte v3, mesuré le 2026-08-05).
         try {
           const mResult = { text: esc2?.eleveSummary || "résolu par le Maître", toolTrace: [] as Array<{ name: string; args: string }> };
-          const verdict = await runClosureGate(projectDir, task, mResult, WORKSPACE_DIR, inferProjectType(task));
+          const verdict = await runClosureGate(projectDir, task, mResult, WORKSPACE_DIR, inferProjectType(task), {}, deps.gateDeps);
           appendBacklog(projectDir, { actor: "Gardien", action: "clôture (après Maître)", detail: verdict.raisons.join(" ; ") || "OK", ok: verdict.ok });
           const goutLabel = verdict.design
             ? verdict.tasteScored

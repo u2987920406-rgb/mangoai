@@ -190,7 +190,6 @@ async function run() {
     const built = buildElevePlanifierTools("/tmp/p2", {
       setPlan: () => {}, getPlan: () => undefined, markStepDone: () => undefined, markStepBlocked: () => undefined, now: () => 0,
     });
-    check("gate off → 2 outils (planifier, etape_faite), pas d'etape_bloquee", built.length === 2 && !built.some((x) => x.name === "etape_bloquee"));
     if (prev === undefined) delete process.env.ELEVE_PLAN_V2; else process.env.ELEVE_PLAN_V2 = prev;
   }
 

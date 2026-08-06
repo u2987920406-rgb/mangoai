@@ -20,6 +20,25 @@ import type { PostFn, ToolCall } from "../eleve-runtime.js";
 
 const LIVE = process.argv.includes("--live");
 import { line, makeCheck } from "./test-util.js";
+import type { GateDeps } from "../eleve-gate.js";
+
+// ── Clôture DÉTERMINISTE (2026-08-05, refonte v3 lot 2) ──────────────────────
+// ELEVE_CLOSURE_GATE est désormais figé ON : le Gardien s'exécute dans TOUS les
+// chemins du relais, y compris ici. Sur un répertoire temporaire il échoue par
+// construction (rien à juger, pas de package.json) et fait re-corriger le Maître
+// en boucle — ce qui fausse le coût, le nombre de tentatives et `incomplete`.
+// Ce jeu de dépendances rend la clôture verte et SANS RÉSEAU : test-relay mesure
+// le relais, pas le Gardien — celui-ci a ses propres suites (test-eleve-gate*).
+const gardienQuiPasse: GateDeps = {
+  judge: async () => ({ couverture: 100, manques: [], note: "fixture test-relay", parsed: true }),
+  critique: async () => ({ overall: 95, lenses: [], scored: true }),
+  stopPreview: async () => { /* rien à arrêter : aucun aperçu n'est lancé */ },
+  scanBalance: () => [],
+  scanPlaceholders: () => [],
+  runTests: async () => ({ ok: true, signal: "tests-ok", detail: "fixture", durationMs: 0 }),
+  hasTestScript: () => false,
+};
+
 let failures = 0;
 const check = makeCheck(() => { failures++; });
 
@@ -60,6 +79,7 @@ async function deterministic(): Promise<void> {
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-A-"));
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("OK"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -80,6 +100,7 @@ async function deterministic(): Promise<void> {
     const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
     process.env.ELEVE_ESCALATE_ON_BLOCK = "on"; // filet Claude explicitement réactivé (2026-07-13)
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"), // toujours cassé
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -104,6 +125,7 @@ async function deterministic(): Promise<void> {
     const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
     process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => "Bien sûr, voici comment faire... (aucune balise)",
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -126,6 +148,7 @@ async function deterministic(): Promise<void> {
     process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
     let escalateCalls = 0;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -146,6 +169,7 @@ async function deterministic(): Promise<void> {
     delete process.env.ELEVE_ESCALATE_ON_BLOCK; // défaut : escalade OFF
     let escalateCalls = 0;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"), // toujours cassé
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -166,6 +190,7 @@ async function deterministic(): Promise<void> {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-E1-"));
     let judgeCalls = 0, eleveCalls = 0;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => { eleveCalls++; return writeMarker("OK"); }, // build TOUJOURS vert
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -184,6 +209,7 @@ async function deterministic(): Promise<void> {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-E2-"));
     let judgeCalls = 0, eleveCalls = 0;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => { eleveCalls++; return writeMarker("OK"); },
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -215,6 +241,7 @@ async function deterministic(): Promise<void> {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-F1-"));
     let escalated: boolean = false;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"), // ne doit PAS être utilisé (chemin agentique)
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -240,6 +267,7 @@ async function deterministic(): Promise<void> {
     const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
     process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -264,6 +292,7 @@ async function deterministic(): Promise<void> {
     delete process.env.ELEVE_ESCALATE_ON_BLOCK;
     let escalated: boolean = false;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -288,6 +317,7 @@ async function deterministic(): Promise<void> {
     const prev = process.env.ELEVE_AGENTIC;
     process.env.ELEVE_AGENTIC = "off";
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("OK"), // chemin contrat
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -312,6 +342,7 @@ async function deterministic(): Promise<void> {
     process.env.ELEVE_SELF_RELANCE_MAX = "1"; // 2 passes au total → test rapide
     delete process.env.ELEVE_ESCALATE_ON_BLOCK; // défaut : escalade OFF
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d), // marker OK → build vert
       ensureDeps: noEnsure,
@@ -345,6 +376,7 @@ async function deterministic(): Promise<void> {
         : { content: "", toolCalls: [call("write_file", { path: "marker.txt", content: "OK" }, 1)] };
     };
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -368,6 +400,7 @@ async function deterministic(): Promise<void> {
     process.env.ELEVE_SELF_RELANCE_MAX = "1";
     process.env.ELEVE_ESCALATE_ON_BLOCK = "on"; // opt-in
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -395,6 +428,7 @@ async function deterministic(): Promise<void> {
     process.env.ELEVE_SELF_RELANCE_MAX = "1";
     process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async (d) => markerInspect(d),
       ensureDeps: noEnsure,
@@ -427,6 +461,7 @@ async function deterministic(): Promise<void> {
     delete process.env.ELEVE_ESCALATE_ON_BLOCK; // défaut : pas de Claude, on veut voir l'arrêt du Stratège lui-même
     let calls = 0;
     const deps: RelayDeps = {
+      gateDeps: gardienQuiPasse,
       askEleve: async () => writeMarker("BAD"),
       inspect: async () => inspKo("erreur de build générique, aucun motif reconnu"), // TOUJOURS cassé, TOUJOURS le même détail
       ensureDeps: noEnsure,
