@@ -6,6 +6,10 @@
 // complet de bout en bout tourne ») sans dépendre de la décision restée ouverte
 // entre `brain.ts` et `v3/` : ce fichier n'appelle QUE `dispatchTeam`.
 //
+// (2026-08-06) L'Orchestrateur ARBITRE désormais : l'escalier propose un ensemble
+// d'équipes candidates, il en éteint. Il ne peut qu'en retirer, jamais en ajouter, et
+// il ne peut pas éteindre la Vérification. En cas de doute, on garde tout.
+//
 // Ce qu'il n'est pas : un remplaçant du relais de l'Élève. Le relais existant porte
 // le function-calling, la reprise sur erreur, la clôture du Gardien — des choses que
 // ce tour ne refait pas et ne doit pas refaire. `runTour` est le squelette de
@@ -19,6 +23,7 @@ import { TEAMS, type TeamId } from "./teams.js";
 import { allumage } from "./team-ignition.js";
 import { dispatchTeam, TeamBudget, type TeamResult, type TeamDispatchOpts } from "./team-dispatch.js";
 import { TeamJournal, journalEquipes, type EntreeJournal } from "./team-journal.js";
+import { elague, type ChoixOrchestrateur } from "./team-orchestrator.js";
 
 export interface TourOpts extends RequiredCapabilitiesOpts {
   /** Plafond de mutation du tour. Défaut `read-only` — un défaut permissif donnerait
@@ -45,6 +50,9 @@ export interface TourResult {
   readonly verdict: TeamResult;
   /** Ce que l'utilisateur verrait du tour (doc 03 § 6). */
   readonly bandeau: readonly EntreeJournal[];
+  /** L'arbitrage de l'🧭 Orchestrateur : ce qu'il a gardé, ce qu'il a éteint, et si
+   *  sa décision a pu être appliquée. `applique: false` = repli « on garde tout ». */
+  readonly choix: ChoixOrchestrateur;
 }
 
 /** Ce qu'une équipe reçoit : la demande d'origine, jamais écrasée, plus ce que les
@@ -78,14 +86,27 @@ export async function runTour(task: string, opts: TourOpts = {}): Promise<TourRe
 
   // Le plafond est passé à l'allumage, pas seulement au dispatch : c'est lui qui
   // porte l'intention « construire » (cf. Ignition dans teams.ts).
-  const equipes = await allumage(task, opts.context ?? {}, { dispatch: opts.dispatch }, ceiling);
+  const candidates = await allumage(task, opts.context ?? {}, { dispatch: opts.dispatch }, ceiling);
   const resultats: TeamResult[] = [];
 
-  // Les équipes de travail, dans l'ordre du bandeau. La Vérification est traitée à part
-  // en clôture : la faire passer dans cette boucle l'aurait rendue conditionnelle à
-  // l'allumage, donc désactivable — exactement ce que le doc 03 § 2 interdit.
-  for (const id of equipes) {
-    if (id === "verification") continue;
+  // ── L'ORCHESTRATEUR ARBITRE (doc 03 § 2 : « décider quelles équipes allumer ») ──
+  // L'escalier déterministe propose ; l'Orchestrateur dispose — mais il ne peut que
+  // RETIRER. Son appel avait DÉJÀ lieu (il est allumé à chaque tour, et parle en
+  // premier) : c'est sa réponse qui était jetée. L'élagage ne coûte donc aucun appel
+  // supplémentaire, et en économise autant qu'il éteint d'équipes.
+  const { choix, resultat: arbitrage } = await elague(task, candidates, base);
+  resultats.push(arbitrage);
+  // Les éteintes sont journalisées « pressenties » : elles ont été envisagées, jamais
+  // allumées. Le bandeau peut ainsi montrer ce que Mango a décidé de NE PAS faire —
+  // c'est souvent plus informatif que ce qu'il a fait.
+  for (const id of choix.eteintes) journal.pressent(id, `éteinte par l'Orchestrateur — ${choix.motif}`);
+
+  // Les équipes de travail GARDÉES, dans l'ordre du bandeau. L'Orchestrateur a déjà
+  // parlé ci-dessus ; la Vérification est traitée à part en clôture, car la faire
+  // passer ici l'aurait rendue conditionnelle à l'allumage, donc désactivable —
+  // exactement ce que le doc 03 § 2 interdit.
+  for (const id of choix.gardees) {
+    if (id === "verification" || id === "orchestrateur") continue;
     const r = await dispatchTeam(id, "", contexteAmont(task, resultats), {
       ...base,
       detail: `${TEAMS[id].label.toLowerCase()} — tour en cours`,
@@ -113,7 +134,7 @@ export async function runTour(task: string, opts: TourOpts = {}): Promise<TourRe
   });
   resultats.push(verdict);
 
-  return { task, equipes, resultats, verdict, bandeau: journal.lignes() };
+  return { task, equipes: choix.gardees, resultats, verdict, bandeau: journal.lignes(), choix };
 }
 
 /** Le résultat brut d'un tour, réduit à ce qu'un appelant non-v3 attend d'un

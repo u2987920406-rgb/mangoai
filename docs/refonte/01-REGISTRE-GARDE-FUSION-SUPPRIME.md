@@ -1363,3 +1363,86 @@ en sorte que l'Orchestrateur éteigne les équipes dont il n'a pas besoin (doc 0
 prévoit : « décider qui s'allume » — `runTour` les allume toutes). Les deux se défendent ;
 c'est une décision, pas une tâche.
 
+---
+
+### 2026-08-06 (élagage) — L'🧭 Orchestrateur ÉTEINT les équipes, et ça ne coûte rien
+
+**Décision de Raf**, entre les deux issues ouvertes par le constat de concentration :
+non pas répartir les rôles sur plusieurs providers, mais **faire que l'Orchestrateur
+éteigne les équipes dont il n'a pas besoin**. C'est la plus fidèle au produit — le doc 03
+§ 2 lui donne littéralement cette mission : *« décider quelles équipes allumer »*.
+
+Jusqu'ici il ne l'exerçait pas : `runTour` allumait tout ce que l'escalier proposait, et
+l'Orchestrateur était une équipe parmi les autres, portant une mission qu'il n'appliquait
+pas.
+
+#### La propriété qui rend l'arbitrage GRATUIT
+
+L'Orchestrateur est allumé à chaque tour et **parle déjà, en premier**. Son appel est donc
+déjà payé — c'est sa **réponse** qui était jetée. On lui demande simplement de répondre à
+la question qu'il était censé trancher.
+
+**L'élagage se paie zéro appel, et en économise autant qu'il éteint d'équipes.** Il n'y a
+donc aucun arbitrage coût/fidélité à rendre : c'est strictement meilleur que le statu quo.
+Mesuré sur un tour de construction dans `test-v3-parcours` :
+
+| | Appels modèle | Équipes exécutées |
+|---|---|---|
+| Avant (tout allumé) | **7** | 6 |
+| Après (Orchestrateur élague) | **4** | 3 |
+
+Rapporté au plafond `claude` de 10 appels/minute : on passe d'environ **1,4 tour par
+minute à 2,5**. Le constat de concentration n'est pas résolu — les 8 rôles restent sur le
+même provider — mais il n'est plus au bord du déclenchement à chaque double tour.
+
+#### Les trois règles, et pourquoi ce sont des règles
+
+**1. Il élague, il n'ajoute JAMAIS.** Le choix se fait dans l'ensemble que l'escalier
+déterministe a proposé. Sans cette borne, un modèle pourrait rallumer des équipes
+qu'aucun signal ne réclame et le coût redeviendrait non borné — c'est la même discipline
+que « la policy de l'appelant resserre, jamais n'élargit ».
+
+**2. Il ne peut PAS éteindre 🛡️ Vérification** — ni s'éteindre lui-même. « Toujours, à la
+clôture de chaque tour. Non désactivable » (doc 03 § 2). Le jour où un modèle décide que
+la vérification est superflue est le jour où la promesse produit tombe. La règle est
+gardée par une assertion qui lui fait explicitement omettre la Vérification de sa liste.
+
+**3. En cas de doute, ON GARDE TOUT.** Réponse illisible, `data` sans champ `equipes`,
+liste vide, cerveau en panne : on retombe sur le comportement d'avant. Dégrader vers
+« tout exécuter » coûte de l'argent ; dégrader vers « ne rien exécuter » perdrait du
+travail **en silence**. `applique: false` distingue ce repli d'un élagage qui n'a
+simplement rien trouvé à éteindre — l'un est un accident, l'autre une décision.
+
+Deux détails qui n'en sont pas : l'**ordre d'exécution** est reconstruit depuis les
+candidates, jamais depuis la réponse du modèle (sinon l'ordre du bandeau dépendrait de sa
+fantaisie) ; et un identifiant **inventé** est ignoré, jamais deviné.
+
+#### Le bandeau montre ce que Mango a décidé de NE PAS faire
+
+Les équipes éteintes sont journalisées « **pressenties** », avec le motif et l'auteur de
+l'extinction. C'est souvent plus informatif que la liste de ce qui a tourné : l'utilisateur
+voit que la demande a été comprise assez finement pour écarter du travail.
+
+#### ⚠️ Une assertion de MOI était fausse, pas le code
+
+J'avais écrit qu'une demande « écris un composant Panier » ne rend pas 🔎 Recherche
+candidate. **Faux** : `read-web` fait partie des capacités sur-provisionnées par défaut
+(`DISCUSS_DEFAULT_CAPS`), donc Recherche est candidate à **chaque** tour. Le test a été
+corrigé, pas l'implémentation — et la distinction est désormais écrite noir sur blanc :
+la règle interdit d'**ajouter hors candidates**, elle n'interdit pas de **garder** une
+candidate que l'escalier a proposée, si étonnante qu'elle paraisse.
+
+C'est aussi ce qui rend l'élagage utile : le sur-provisionnement est gratuit côté outils
+(un outil non appelé ne coûte rien) mais coûteux côté équipes. **L'Orchestrateur est
+exactement le correctif de ce déséquilibre.**
+
+#### Ce qui reste ouvert
+
+- La **concentration du registre** demeure : 8 rôles sur 8 sur `claude`. L'élagage
+  desserre l'étau, il ne le retire pas. L'autre issue — répartir les rôles — reste
+  disponible et n'est pas exclusive.
+- L'Orchestrateur **élague** mais ne **réordonne** pas et ne **fusionne** pas deux
+  équipes en un appel. Ce sont des optimisations possibles, non faites, non promises.
+
+**Suite offline complète : 214 PASS · 0 FAIL** (569 s) · `tsc` 0 erreur ·
+`test-v3-parcours` **55 pass** (30 → 55).

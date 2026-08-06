@@ -37,6 +37,11 @@ export {
 } from "./team-ignition.js";
 
 export {
+  elague,
+  type ChoixOrchestrateur,
+} from "./team-orchestrator.js";
+
+export {
   runTour,
   resultatDuTour,
   type TourOpts,
