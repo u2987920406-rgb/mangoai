@@ -849,5 +849,58 @@ vérification reste au plus haut niveau, la construction baisse. Un seul mot suf
 
 **`auditeur` est toujours sur `claude/opus`, comme le `codeur`.** C'est l'autre rôle de
 vérification, et la question est identique. Non traité : l'arbitrage ne portait que sur le juge.
+→ **Traité le 2026-08-06**, entrée suivante.
 
 **Suite offline : 211 PASS · 0 FAIL** (545 s) · `tsc` 0 erreur.
+
+---
+
+### 2026-08-06 — `auditeur` rejoint `juge` : le garde cesse de viser un rôle nommé
+
+`server/data/brain-registry.json` : `auditeur` `claude/opus` → **`claude/sonnet`**.
+`sonnet` est aussi son défaut codé en dur dans `brain-registry.ts` — le registre vivant est
+donc **réaligné sur ce que le code prévoyait déjà**, il n'y a pas eu de nouveau choix de modèle.
+
+#### Ce qui a réellement changé : la forme du garde
+
+Le garde-fou posé la veille nommait un rôle. Corriger l'auditeur en dupliquant les deux
+assertions aurait reconduit le même défaut : **un garde qui ne connaît qu'un cas se fait
+contourner par le suivant.** L'assertion porte désormais sur la *classe* :
+
+```ts
+const VERIFICATEURS = ["juge", "auditeur"] as const;
+```
+
+Elle boucle sur les défauts **et** sur le registre vivant — 4 assertions au lieu de 2, et le
+prochain rôle de vérification ajouté à la liste est gardé sans écrire une ligne de test.
+
+| Assertion | Portée |
+|---|---|
+| `défauts : juge ≠ codeur` | défauts codés en dur |
+| `défauts : auditeur ≠ codeur` | défauts codés en dur |
+| `registre VIVANT : juge (claude/sonnet) ≠ codeur (claude/opus)` | **le fichier qui s'exécute** |
+| `registre VIVANT : auditeur (claude/sonnet) ≠ codeur (claude/opus)` | **le fichier qui s'exécute** |
+
+#### État du registre vivant après l'opération
+
+| Rôle | Cerveau |
+|---|---|
+| orchestrateur | `claude/opus` |
+| architecte | `claude/opus` |
+| codeur | `claude/opus` |
+| vision | `claude/opus` |
+| designer_ux | `claude/opus` |
+| **auditeur** | **`claude/sonnet`** |
+| chercheur | `claude/opus` |
+| **juge** | **`claude/sonnet`** |
+
+#### ⚠️ La réserve n'est pas levée — elle est doublée
+
+La réserve portée à l'entrée du 2026-08-05 vaut désormais pour **les deux** vérificateurs :
+`sonnet` est moins fort qu'`opus`, donc **les deux rôles de vérification sont plus faibles que
+ce qu'ils vérifient**. La mesure MangoQA (ADR-001 § 1) reste la même : un juge plus faible
+produit des feux verts faux. Le sens inverse — `juge` et `auditeur` sur `opus`, `codeur` sur
+`sonnet` — est à un mot près, et le garde tient dans les deux sens puisqu'il vérifie la
+**distinction**, pas la hiérarchie.
+
+**Suite offline : 211 PASS · 0 FAIL** (581 s) · `tsc` 0 erreur · `test-brain-dispatch` 40 pass.

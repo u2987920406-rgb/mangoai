@@ -51,13 +51,20 @@ async function run() {
     // défaut — donc « même cerveau », ce que la comparaison doit bien voir comme tel.
     type Cerveau = { provider?: string; model?: string };
     const memeCerveau = (a: Cerveau, b: Cerveau): boolean => a.provider === b.provider && a.model === b.model;
-    check("défauts : juge ≠ codeur (le vérificateur n'est pas le vérifié)", !memeCerveau(def.juge, def.codeur));
+    // Tous les rôles de VÉRIFICATION, pas seulement le juge : un garde qui ne
+    // connaît qu'un cas se fait contourner par le suivant.
+    const VERIFICATEURS = ["juge", "auditeur"] as const;
+    for (const v of VERIFICATEURS) {
+      check(`défauts : ${v} ≠ codeur (le vérificateur n'est pas le vérifié)`, !memeCerveau(def[v], def.codeur));
+    }
     {
       const vivant = path.join(import.meta.dirname, "..", "..", "data", "brain-registry.json");
       if (fs.existsSync(vivant)) {
         const r = JSON.parse(fs.readFileSync(vivant, "utf8"));
-        if (r.juge && r.codeur) {
-          check(`registre VIVANT : juge (${r.juge.provider}/${r.juge.model}) ≠ codeur (${r.codeur.provider}/${r.codeur.model})`, !memeCerveau(r.juge, r.codeur));
+        for (const v of VERIFICATEURS) {
+          if (r[v] && r.codeur) {
+            check(`registre VIVANT : ${v} (${r[v].provider}/${r[v].model}) ≠ codeur (${r.codeur.provider}/${r.codeur.model})`, !memeCerveau(r[v], r.codeur));
+          }
         }
       }
     }

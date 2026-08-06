@@ -33,7 +33,7 @@
   },
   "auditeur": {
     "provider": "claude",
-    "model": "opus",
+    "model": "sonnet",
     "timeoutMs": 30000
   },
   "chercheur": {
