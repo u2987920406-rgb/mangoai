@@ -38,7 +38,7 @@ import path from "node:path";
 import type { Curriculum, FormationManifest, Item } from "./formation/formation-model.js";
 import { loadManifest as loadManifestReel } from "./formation/formation-fabrique.js";
 import { scrapeExternal } from "./vision.js";
-import { askLLM } from "./llm/llm-engine.js";
+import { brain } from "./brain.js";
 
 // ---------------------------------------------------------------------------
 // Dépendances injectables
@@ -495,7 +495,11 @@ export const realPedagoDeps: PedagoDeps = {
       `Affirmation à vérifier : "${affirmation}"\n\n` +
       `Cette affirmation est-elle SUPPORTÉE par cette source ? Réponds UNIQUEMENT par : oui, non, ou incertain.`;
     try {
-      const raw = await askLLM(system, user, { maxTokens: 10, timeoutMs: 30_000 });
+      // (2026-08-06) Cet appel n'indiquait AUCUN provider : il tombait sur le défaut
+      // d'environnement de `askLLM` — le genre de choix invisible que la refonte
+      // supprime. Il est désormais rendu sous l'identité du `juge`, dont c'est le
+      // métier : dire si une affirmation est soutenue par sa source.
+      const raw = await brain.askAs("juge", system, user, { maxTokens: 10, timeoutMs: 30_000 });
       const t = raw.trim().toLowerCase();
       if (t.startsWith("oui")) return "oui";
       if (t.startsWith("non")) return "non";

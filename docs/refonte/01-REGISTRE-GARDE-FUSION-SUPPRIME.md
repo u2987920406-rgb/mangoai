@@ -1446,3 +1446,105 @@ exactement le correctif de ce déséquilibre.**
 
 **Suite offline complète : 214 PASS · 0 FAIL** (569 s) · `tsc` 0 erreur ·
 `test-v3-parcours` **55 pass** (30 → 55).
+
+---
+
+### 2026-08-06 (migration) — Plus AUCUN appel ne contourne le dispatcher
+
+Décision de Raf : traiter d'abord les appels directs, puis la concentration du registre.
+Motif retenu : **on ne règle pas un problème de débit tant qu'on ne mesure pas tout le
+débit** — des appels invisibles du compteur rendaient toute mesure fausse.
+
+#### ⚠️ Rectificatif d'abord : **8 fichiers / 11 appels**, et non « 25 fichiers »
+
+J'ai annoncé « 25 fichiers » à plusieurs reprises, y compris dans deux messages de commit
+et dans `statut.md`. **Faux.** Mon comptage attrapait les fichiers qui *mentionnent*
+`askLLM` — imports, commentaires, types — au lieu de ceux qui l'**appellent**. Le vrai
+compte est **8 fichiers, 11 appels**.
+
+L'erreur n'était pas neutre : un chiffre trois fois trop gros faisait passer pour un
+chantier lourd ce qui tient en une session, et aurait pu justifier de le reporter encore.
+Corrigé dans `statut.md` et dans le plan 07.
+
+#### Il manquait un barreau à l'échelle
+
+| | Contourne le dispatcher ? | Contrat |
+|---|---|---|
+| `brain.ask` (= `askLLM`) | **oui, tout** | rend du texte, **lève** |
+| `brain(...)` (= `dispatch`) | non | rend un `AgentResult`, **ne lève jamais**, impose le format Mango |
+| **`brain.askAs`** *(nouveau)* | **non** | rend du texte, **lève** |
+
+Entre les deux, il n'y avait rien. C'est **ça** qui expliquait les 11 appels directs :
+un appelant qui veut du texte et un `try/catch` n'avait pas d'autre porte que celle qui
+contourne tout. `askAs` tient les deux bouts — et c'est ce qui a permis de migrer les
+11 appels **sans toucher un seul `try/catch`**.
+
+#### Deux blocages étaient dans le dispatcher, pas dans les appelants
+
+`maxTokens` et `imageMimeType` existaient dans `AskLLMOptions` mais **pas** dans
+`DispatchOpts` : router un appel par `dispatch` les **perdait en silence**. Or l'un des
+11 plafonne sa sortie à **10 tokens** et un autre envoie une **image**.
+
+Un plafond perdu ne casse rien — il produit une réponse plus longue, plus chère, et
+personne ne le voit. C'est le mode de panne le plus coûteux : celui qui ne se signale pas.
+Ajoutés, et gardés par 6 assertions dont **« `maxTokens` survit au repli inter-providers »** :
+perdre le plafond au moment d'une panne rendrait une réponse plus longue que demandée,
+précisément quand quelque chose vient déjà de mal se passer.
+
+#### Ce qui a été migré, et ce qui n'a pas bougé
+
+| Fichier | Rôle emprunté | Moteur |
+|---|---|---|
+| `agent/agent-forge.ts` (×2) | `codeur` | inchangé (celui du rôle / du spécialiste forgé) |
+| `design/design-review.ts` | `designer_ux` | inchangé (override explicite) |
+| `eleve-gate-pedago.ts` | `juge` | ⚠️ **était un défaut d'environnement** |
+| `eleve-speculative/…-trigger.ts` | `codeur` | inchangé |
+| `eleve-tools/eleve-content-tools.ts` | `designer_ux` | inchangé |
+| `formation/formation-fabrique.ts` | `designer_ux` | inchangé |
+| `specialist/specialist-agents.ts` | `codeur` | inchangé |
+| `routes/home-routes.ts` (×3) | `orchestrateur`, `vision` | inchangé — voir ci-dessous |
+
+**Aucun appel ne change de modèle.** Chacun conserve son moteur par override explicite.
+
+Deux n'en avaient aucun et tombaient sur `resolveProvider()`, le défaut d'environnement :
+- `eleve-gate-pedago` — désormais rendu sous l'identité du **`juge`**, dont c'est le
+  métier (« cette affirmation est-elle soutenue par sa source ? »). C'est le seul appel
+  dont le cerveau change, et c'est un gain : un choix invisible devient une décision.
+- `home-routes`, cas « aucun cerveau choisi » — **chemin utilisateur principal**, donc
+  traité autrement : `resolveProvider()` est passé **explicitement**. Le défaut reste
+  rigoureusement le même, il cesse seulement d'être invisible. Sur le chat d'accueil,
+  changer de fournisseur sans pouvoir l'essayer en vrai aurait été un pari, pas un choix.
+
+#### Ce que les 11 gagnent
+
+- **Le rate limiter les compte.** Le calcul de tout à l'heure (« 4 appels par tour sur un
+  plafond de 10 ») était **incomplet** : ces appels consommaient le quota Claude sans être
+  comptés. Le limiteur croyait qu'il restait de la place.
+- La **garde de souveraineté** s'applique — un rôle `localOnly` ne peut plus être
+  contourné par un appel direct.
+- Le **repli inter-providers** du rôle joue.
+- Le provider devient **explicite** partout.
+
+#### Ce qui change, et qu'il faut savoir
+
+La **conscience temporelle** est désormais injectée en tête de ces 11 prompts (figée ON au
+lot 2). C'est cohérent avec la décision produit, mais ce n'est pas rien : onze prompts ont
+changé. Le contrat Mango, lui, n'est **pas** imposé (`freeform`) et le contenu utilisateur
+n'est **pas** encadré (`trustExternal`) — le prompt reste sinon celui que l'appelant avait
+écrit, à l'octet près.
+
+#### L'invariant le plus important d'`askAs`
+
+**Un override choisit un MOTEUR, il ne lève pas une GARDE.** Quand un appelant impose un
+provider, la fusion conserve `localOnly` et la chaîne de repli **du rôle**. Un rôle
+souverain reste souverain même si l'appelant demande un cloud — et c'est testé.
+
+**7 imports morts** retirés au passage (les `askLLM` devenus inutiles).
+
+**Suite offline complète : 214 PASS · 0 FAIL** (562 s) · `tsc` 0 erreur ·
+`test-brain-facade` **21 pass** (11 → 21) · `test-brain-dispatch` **46 pass** (40 → 46).
+
+#### Reste ouvert
+
+La **concentration du registre** — 8 rôles sur 8 sur `claude` — est maintenant mesurable
+pour la première fois : plus rien n'échappe au compteur. C'est la décision suivante.

@@ -1,6 +1,7 @@
 // Idée #2 — Design Pair-Programming
 // Analyse les fichiers source d'un projet et retourne des recommandations UX/UI structurées.
-import { askLLM, resolveProvider } from '../llm/llm-engine.js'
+import { resolveProvider } from '../llm/llm-engine.js'
+import { brain } from "../brain.js"
 import { getBrain } from '../kernel.js'
 import { capturePreview, getPreviewUrl } from '../vision.js'
 import type { Express, Request, Response } from 'express'
@@ -222,9 +223,12 @@ export function registerDesignReviewRoutes(app: Express): void {
     let rawJson: string
     try {
       rawJson = hasVision
-        ? await askLLM(
+        ? await brain.askAs(
+            "designer_ux",
             systemPrompt,
             `${visualIntro}Voici le code source du projet "${projectName}" (${files.length} fichiers analysés) :\n${context}\n\nRetourne le JSON de recommandations design.`,
+            // `imageMimeType` ne franchissait pas le dispatcher avant le 2026-08-06 :
+            // c'est l'une des deux options qu'il perdait en silence.
             { provider, maxTokens: 2048, imageBase64, imageMimeType: 'image/jpeg' },
           )
         : await getBrain().complete(

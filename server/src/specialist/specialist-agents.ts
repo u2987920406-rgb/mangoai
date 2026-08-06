@@ -18,7 +18,8 @@ import fs from "node:fs"
 import path from "node:path"
 import { atomicWriteFileSync, dataDir } from "../safe-io.js"
 import { logValidationDrop } from "../integrity-log.js"
-import { askLLM, type LLMProvider } from "../llm/llm-engine.js"
+import { type LLMProvider } from "../llm/llm-engine.js"
+import { brain } from "../brain.js"
 import { sanitizeExternal } from "../agent/agent-contract.js"
 // Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
 import type { ToolPolicy } from "../eleve-tools/eleve-action-tools.js"
@@ -324,8 +325,10 @@ export async function runSpecialist(
   const agent = getSpecialist(id)
   if (!agent) return { ok: false, text: `Spécialiste introuvable : ${id}` }
   const ask: AskText = deps.ask
+    // Le moteur du spécialiste est conservé tel quel (override) ; il devient
+    // simplement visible du rate limiter et soumis à la garde de souveraineté.
     ?? ((system, user) =>
-      askLLM(system, user, {
+      brain.askAs("codeur", system, user, {
         provider: agent.provider,
         model: agent.model,
         timeoutMs: agent.timeoutMs,

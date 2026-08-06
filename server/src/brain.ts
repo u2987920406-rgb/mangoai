@@ -34,8 +34,26 @@
 import { dispatch, dispatchParallel, type DispatchOpts } from "./brain/brain-dispatch.js";
 import { askLLM } from "./llm/llm-engine.js";
 import { chatEleve, elevePost } from "./eleve.js";
-import type { AgentId } from "./brain/brain-registry.js";
+import { getBrain } from "./brain/brain-registry.js";
+import type { AgentId, BrainConfig } from "./brain/brain-registry.js";
 import type { AgentResult } from "./agent/agent-contract.js";
+
+/** Options d'`askAs`. Tout est optionnel : sans rien, le cerveau du rôle s'applique.
+ *  Les champs de cerveau (provider/model/baseUrl/apiKeyEnv/timeoutMs) forment un
+ *  `brainOverride` — ils servent aux appelants qui choisissaient déjà explicitement
+ *  leur moteur et doivent continuer à le faire à l'octet près. */
+export interface AskAsOptions {
+  provider?: BrainConfig["provider"];
+  model?: string;
+  baseUrl?: string;
+  apiKeyEnv?: string;
+  timeoutMs?: number;
+  maxTokens?: number;
+  imageBase64?: string;
+  imageMimeType?: string;
+  /** Transport injectable (tests). */
+  ask?: DispatchOpts["ask"];
+}
 
 /** Façade appelable + méthodes orientant vers chaque moteur consolidé. */
 export interface BrainFacade {
@@ -47,8 +65,24 @@ export interface BrainFacade {
   dispatch: typeof dispatch;
   /** dispatch en parallèle (Promise.all, chaque entrée résout en AgentResult). */
   parallel: typeof dispatchParallel;
-  /** Appel LLM one-shot (system, user) → texte. Lève si le provider échoue. */
+  /** Appel LLM one-shot (system, user) → texte. Lève si le provider échoue.
+   *  ⚠️ CONTOURNE le dispatcher : ni rate limiter, ni garde de souveraineté, ni repli.
+   *  Réservé aux cas où il n'existe pas de rôle pertinent. Sinon : `askAs`. */
   ask: typeof askLLM;
+  /** Le CHAÎNON MANQUANT (2026-08-06). Même contrat qu'`ask` — rend du TEXTE, LÈVE en
+   *  cas d'échec — mais l'appel passe par le dispatcher, sous l'identité d'un rôle.
+   *
+   *  Ce qu'un appelant y GAGNE sans rien changer à sa gestion d'erreur :
+   *    · le rate limiter le compte (un appel direct est invisible du compteur) ;
+   *    · la garde de souveraineté s'applique (un rôle localOnly ne sort pas) ;
+   *    · le repli inter-providers joue si le rôle en déclare un ;
+   *    · le provider devient EXPLICITE au lieu du défaut d'environnement.
+   *
+   *  Ce qui CHANGE, et qu'il faut savoir : la conscience temporelle est injectée en
+   *  tête du system (figée ON au lot 2). Le contrat Mango, lui, ne l'est PAS
+   *  (`freeform`), et le contenu utilisateur n'est PAS encadré (`trustExternal`) —
+   *  le prompt reste donc celui que l'appelant a écrit. */
+  askAs: (agentId: AgentId, system: string, user: string, opts?: AskAsOptions) => Promise<string>;
   /** Tour conversationnel de l'Élève (Discuter / Planifier) → texte. */
   chatEleve: typeof chatEleve;
   /** Construit la PostFn du transport agentique de l'Élève (function-calling). */
@@ -58,6 +92,51 @@ export interface BrainFacade {
 const brainImpl = ((agentId: AgentId, system: string, user: string, opts?: DispatchOpts) =>
   dispatch(agentId, system, user, opts)) as BrainFacade;
 brainImpl.dispatch = dispatch;
+brainImpl.askAs = async (agentId, system, user, opts = {}) => {
+  // Override PARTIEL : dès qu'un champ de cerveau est précisé, il se FUSIONNE sur
+  // celui du rôle. Un appelant qui ne veut imposer que le modèle (« même cerveau,
+  // autre modèle ») ne doit pas avoir à répéter le provider — sinon il le répète
+  // mal, ou il ne le répète pas et son modèle est silencieusement ignoré.
+  const precise = opts.provider ?? opts.model ?? opts.baseUrl ?? opts.apiKeyEnv ?? opts.timeoutMs;
+  let brainOverride: BrainConfig | undefined;
+  if (precise !== undefined) {
+    const duRole = getBrain(agentId);
+    brainOverride = {
+      provider: opts.provider ?? duRole.provider,
+      model: opts.model ?? duRole.model,
+      baseUrl: opts.baseUrl ?? duRole.baseUrl,
+      apiKeyEnv: opts.apiKeyEnv ?? duRole.apiKeyEnv,
+      timeoutMs: opts.timeoutMs ?? duRole.timeoutMs,
+      // La souveraineté et la chaîne de repli du RÔLE sont conservées : un override
+      // choisit un moteur, il ne lève pas une garde.
+      localOnly: duRole.localOnly,
+      fallback: duRole.fallback,
+    };
+  }
+
+  const r = await dispatch(agentId, system, user, {
+    // freeform : pas de contrat Mango imposé — l'appelant attend du texte brut, et
+    // c'est son prompt qui décide de la forme. trustExternal : pas d'encadrement
+    // anti-injection — l'ajouter changerait le prompt de tous les appelants d'un
+    // coup. Ceux qui en ont besoin l'appliquent déjà eux-mêmes (specialist-agents).
+    freeform: true,
+    trustExternal: true,
+    brainOverride,
+    maxTokens: opts.maxTokens,
+    imageBase64: opts.imageBase64,
+    imageMimeType: opts.imageMimeType,
+    ask: opts.ask,
+  });
+
+  // On RELÈVE l'échec. `dispatch` ne throw jamais — c'est sa garantie — mais les
+  // appelants d'`askLLM` ont tous un try/catch qui compte là-dessus. Leur rendre
+  // « erreur cerveau : … » comme s'il s'agissait d'une réponse valide serait pire
+  // qu'une exception : ils la traiteraient comme du contenu.
+  if (r.status !== "ok") {
+    throw new Error(`[${agentId}] ${r.summary || `échec du cerveau (${r.status})`}`);
+  }
+  return r.summary;
+};
 brainImpl.parallel = dispatchParallel;
 brainImpl.ask = askLLM;
 brainImpl.chatEleve = chatEleve;

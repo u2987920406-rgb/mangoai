@@ -5,7 +5,7 @@
 // expose une fonction pure-ish (deps injectées) qui ne lève jamais.
 import { draftSteps } from "./eleve-speculative-runner.js";
 import { runSpeculativeInWorktree, appSpecExecDeps, type SpecExecDeps } from "./eleve-speculative-exec.js";
-import { askLLM } from "../llm/llm-engine.js";
+import { brain } from "../brain.js";
 import { sanitizeSelfSlug } from "../mango-self.js";
 import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA } from "../eleve/provider.js";
 
@@ -25,7 +25,7 @@ export function realPrepassDeps(projectDir: string): PrepassDeps {
     // budget de tokens généreux : un draft de plusieurs étapes a besoin de place (cf. quirk slice 2).
     // Raf (2026-07-11) : bindings LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
     ask: (system, user) =>
-      askLLM(system, user, {
+      brain.askAs("codeur", system, user, {
         provider: ELEVE_PROVIDER,
         model: ELEVE_MODEL,
         baseUrl: ELEVE_PROVIDER === "ollama" ? OLLAMA : ELEVE_API_URL,

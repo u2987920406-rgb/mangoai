@@ -168,8 +168,9 @@ app.post("/api/home-chat", async (req, res) => {
       text = await chatEleve(system, last.content);
     } else if (model === "qwen") {
       // Qwen (« KUEN ») — VL/juge local via Ollama Cloud, souverain. Routage explicite du provider.
-      const { askLLM } = await import("../llm/llm-engine.js");
-      text = await askLLM(system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
+      // Même routage explicite (ollama/qwen3.5:cloud), mais via le standard : le
+      // rate limiter le compte et la garde de souveraineté s'applique.
+      text = await brain.askAs("vision", system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
       providerForContext = "ollama";
     } else {
       // ── Cerveau NON-ÉLÈVE (Fable/Opus/Sonnet/Haiku) — chemin TEXTE PUR (askLLM sans
@@ -202,13 +203,16 @@ app.post("/api/home-chat", async (req, res) => {
 
       // ── Mode OFF (défaut) — repli TEXTE, mais HONNÊTE : si la tâche réclamait des
       // outils, on le DIT (plus de repli muet) ; sinon comportement byte-identique. ──
-      const { askLLM } = await import("../llm/llm-engine.js");
-      // Gate OFF (accueilBrain null) : appel STRICTEMENT identique à avant ce
-      // chantier (aucun `provider` explicite — laisse askLLM/resolveProvider()
-      // décider comme aujourd'hui). Gate ON : provider/model du registre `accueil`.
+      // (2026-08-06) Passe par le standard, sous l'identité de l'`orchestrateur` —
+      // `accueil` y a été fusionné au lot 3. Le MOTEUR ne change pas d'un octet :
+      // le cas sans cerveau choisi passait par le défaut implicite de `askLLM`
+      // (`resolveProvider()`), qu'on rend simplement EXPLICITE ici. Le défaut reste
+      // le même, il cesse seulement d'être invisible — et l'appel devient comptable
+      // par le rate limiter, qui l'ignorait complètement jusqu'ici.
+      const { resolveProvider } = await import("../llm/llm-engine.js");
       text = accueilBrain
-        ? await askLLM(systemForBrain, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
-        : await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+        ? await brain.askAs("orchestrateur", systemForBrain, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
+        : await brain.askAs("orchestrateur", system, last.content, { provider: resolveProvider(), model: resolvedModel, maxTokens: 2048 });
       if (demanded.size > 0) {
         const disclosure =
           `${brainName} ne pilote pas les outils ici ; sélectionne l'Élève (GLM 5.2) ` +

@@ -30,11 +30,21 @@ export interface BrainAttempt {
   timeoutMs?: number
 }
 
+// (2026-08-06) `maxTokens` et `imageMimeType` existaient dans `AskLLMOptions` mais
+// PAS dans le dispatcher : router un appel par `dispatch` les perdait EN SILENCE.
+// C'est ce qui bloquait la migration des appels directs à `askLLM` — dont un qui
+// plafonne la sortie à 10 tokens, et un autre qui envoie un PNG. Les deux voyagent
+// par tour, pas par rôle : ils dépendent de la question posée, pas du cerveau.
+
 /** Contexte immuable partagé par toutes les tentatives d'un dispatch. */
 export interface AttemptCtx {
   fullSystem: string
   safeUser: string
   imageBase64?: string
+  /** Type MIME de l'image — défaut 'image/jpeg' côté askLLM. */
+  imageMimeType?: string
+  /** Plafond de tokens en SORTIE. Absent → le défaut d'`askLLM` s'applique. */
+  maxTokens?: number
   freeform: boolean
   ask: AskFn
   started: number
@@ -75,6 +85,8 @@ export async function runOnce(
     baseUrl: cfg.baseUrl,
     apiKeyEnv: cfg.apiKeyEnv,
     imageBase64: ctx.imageBase64,
+    imageMimeType: ctx.imageMimeType,
+    maxTokens: ctx.maxTokens,
   }
   const ecoule = () => ctx.now() - ctx.started
 

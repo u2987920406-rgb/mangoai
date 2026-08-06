@@ -10,8 +10,9 @@
 
 import fs from "node:fs"
 import path from "node:path"
-import { askLLM, type LLMProvider } from "../llm/llm-engine.js"
+import { type LLMProvider } from "../llm/llm-engine.js"
 import { getBrain } from "../brain/brain-registry.js"
+import { brain } from "../brain.js"
 import { MANGOOS_CANNOT } from "../capabilities.js"
 import {
   validateSpec,
@@ -140,13 +141,10 @@ export type ForgeAsk = (system: string, user: string) => Promise<string>
  *  méta-prompting = l'acte le plus exigeant, et RARE → on y met le meilleur raisonneur).
  *  Plafond de tokens RELEVÉ (le défaut 1024 d'askLLM tronquait un prompt système). */
 const realForgeAsk: ForgeAsk = (system, user) => {
-  const brain = getBrain("codeur") // fusionné au lot 3 (refonte v3) — la Forge devient interne, plus un rôle exposé
-  return askLLM(system, user, {
-    provider: brain.provider,
-    model: brain.model,
-    timeoutMs: brain.timeoutMs ?? 120_000,
-    maxTokens: 2200,
-  })
+  // (2026-08-06) Passe par le standard : le cerveau reste EXACTEMENT celui du rôle
+  // `codeur` (le `getBrain` explicite disparaît — `askAs` le résout lui-même), et
+  // l'appel devient visible du rate limiter, qui l'ignorait jusqu'ici.
+  return brain.askAs("codeur", system, user, { timeoutMs: getBrain("codeur").timeoutMs ?? 120_000, maxTokens: 2200 })
 }
 
 /**
@@ -355,7 +353,9 @@ export async function smokeTestSpec(
   const example = spec.examples?.[0]
   if (!example) return { ok: true }
   const ask: SmokeAsk = deps.ask
-    ?? ((system, user) => askLLM(system, user, { provider: spec.provider, model: spec.model, timeoutMs: spec.timeoutMs }))
+    // Le moteur reste celui du spécialiste forgé (override explicite) ; seule la
+    // route change. `askAs` LÈVE comme `askLLM` — le try/catch ci-dessous est intact.
+    ?? ((system, user) => brain.askAs("codeur", system, user, { provider: spec.provider, model: spec.model, timeoutMs: spec.timeoutMs }))
   let raw = ""
   try {
     raw = await ask(spec.systemPrompt, example)

@@ -59,6 +59,12 @@ export { resetRateLimits, RATE_LIMITS, slotsConsommes } from "./brain-rate-limit
 
 export interface DispatchOpts {
   imageBase64?: string
+  /** Type MIME de l'image (défaut 'image/jpeg'). */
+  imageMimeType?: string
+  /** Plafond de tokens en SORTIE. Absent → défaut d'`askLLM`. Voyage par TOUR et non
+   *  par rôle : il dépend de la question posée (« réponds oui/non » vs « rédige un
+   *  chapitre »), pas du cerveau qui répond. */
+  maxTokens?: number
   session?: PipelineSession
   /** false (défaut) → `user` est encadré par sanitizeExternal() avant l'envoi. */
   trustExternal?: boolean
@@ -159,7 +165,7 @@ export async function dispatch(
   user: string,
   opts: DispatchOpts = {},
 ): Promise<AgentResult> {
-  const { session, trustExternal = false, imageBase64, freeform = false } = opts
+  const { session, trustExternal = false, imageBase64, imageMimeType, maxTokens, freeform = false } = opts
   const ask = opts.ask ?? askLLM
   const sleep = opts.sleep ?? realSleep
   const now = opts.now ?? Date.now
@@ -188,6 +194,8 @@ export async function dispatch(
     fullSystem: freeform ? systemWithTemporal : `${MANGO_CONTRACT_PROMPT}\n\n${systemWithTemporal}`,
     safeUser: trustExternal ? user : sanitizeExternal(user),
     imageBase64,
+    imageMimeType,
+    maxTokens,
     freeform,
     ask,
     started,

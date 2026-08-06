@@ -36,7 +36,7 @@ import {
 } from "./formation-model.js";
 import { generateContentItems, checkImageCoherence, type GenContentDeps, type ImgCheckDeps } from "../eleve-content.js";
 import { atomicWriteFileSync } from "../safe-io.js";
-import { askLLM } from "../llm/llm-engine.js";
+import { brain } from "../brain.js";
 import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA } from "../eleve/provider.js";
 import { searchWeb, type WebResult } from "../eleve-tools/eleve-web-tools.js";
 import { scrapeExternal, type ScrapedPage } from "../vision.js";
@@ -61,7 +61,7 @@ export interface FabriqueDeps {
 // Raf (2026-07-11) : bindings LIVE (eleve/provider.ts), plus jamais process.env.ELEVE_MODEL brut.
 function glmAskFabrique(): GenContentDeps["ask"] {
   return (system, user) =>
-    askLLM(system, user, {
+    brain.askAs("designer_ux", system, user, {
       provider: ELEVE_PROVIDER,
       model: ELEVE_MODEL,
       baseUrl: ELEVE_PROVIDER === "ollama" ? OLLAMA : ELEVE_API_URL,

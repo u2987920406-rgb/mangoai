@@ -328,8 +328,12 @@ La méthode arbitrée, enfin amorcée. `v3/` **appelle** l'existant ; il ne le r
 - [x] Les **42** outils de l'Élève sont des **membres d'équipe** — 42/42 affectés, prouvé à chaque exécution du test, jamais supposé.
 - [ ] **6 concepts d'« agent » → 1** : le concept d'Équipe existe, mais les 5 autres n'ont pas été retirés.
 - [ ] **Tout appel LLM du produit passe par `v3/`** — la ROUTE est tranchée (option A, ci-dessous)
-      et gardée par un test ; la MIGRATION reste à faire : **25 fichiers** appellent encore
-      `askLLM` en direct.
+      et gardée par un test ; la MIGRATION reste à faire : **8 fichiers / 11 appels**
+      contournent le standard en appelant `askLLM` en direct.
+      ⚠️ **Rectificatif du 2026-08-06** — le plan a d'abord annoncé « 25 fichiers ». Faux :
+      le comptage attrapait les fichiers qui *mentionnent* `askLLM` (imports, commentaires,
+      types) au lieu de ceux qui l'**appellent**. Un chiffre trois fois trop gros aurait fait
+      reporter un chantier qui tient en une session.
 - [x] **Un parcours complet de bout en bout** à travers les équipes : `team-run.ts` +
       `test-v3-parcours` (**29 assertions**), déterministe et sans réseau. Il a trouvé
       **deux défauts que les tests unitaires ne pouvaient pas voir** : 🔨 Construction et

@@ -15,6 +15,7 @@ import {
   createSession, sessionBudgetExceeded, estimatePipelineCost, MANGO_CONTRACT_PROMPT,
 } from "../agent/agent-contract.js";
 import { dispatch, dispatchParallel, resetRateLimits } from "../brain/brain-dispatch.js";
+import type { AskLLMOptions } from "../llm/llm-engine.js";
 
 let pass = 0;
 let fail = 0;
@@ -227,6 +228,51 @@ async function run() {
     check("3 résultats retournés malgré timeout/erreur", results.length === 3);
     check("codeur=timeout, optimiseur=ok, designer=error (indépendants)",
       results[0].status === "timeout" && results[1].status === "ok" && results[2].status === "error");
+    if (fs.existsSync(REG)) fs.rmSync(REG);
+  }
+
+  console.log("\n[N] maxTokens et imageMimeType — les deux options perdues en silence");
+  {
+    // Elles existaient dans AskLLMOptions mais PAS dans le dispatcher : router un
+    // appel par `dispatch` les jetait sans rien dire. C'est ce qui bloquait la
+    // migration des appels directs à askLLM — dont un qui plafonne la sortie à
+    // 10 tokens et un autre qui envoie une image. Un plafond perdu ne casse rien :
+    // il produit une réponse plus longue, plus chère, et personne ne le voit.
+    if (fs.existsSync(REG)) fs.rmSync(REG);
+
+    let vues: AskLLMOptions = {};
+    const espion = async (_s: string, _u: string, o: AskLLMOptions) => { vues = o; return okJson(); };
+
+    await dispatch("codeur", "s", "u", { ask: espion, sleep: noSleep, maxTokens: 10 });
+    check("maxTokens atteint réellement askLLM", vues.maxTokens === 10);
+
+    vues = {};
+    await dispatch("vision", "s", "u", { ask: espion, sleep: noSleep, imageBase64: "AAAA", imageMimeType: "image/png" });
+    check("imageMimeType atteint réellement askLLM", vues.imageMimeType === "image/png");
+    check("imageBase64 continue de passer", vues.imageBase64 === "AAAA");
+
+    // Absentes = absentes : on ne fabrique pas de défaut ici, c'est askLLM qui décide.
+    vues = {};
+    await dispatch("codeur", "s", "u", { ask: espion, sleep: noSleep });
+    check("non fournies → laissées indéfinies (le défaut reste celui d'askLLM)",
+      vues.maxTokens === undefined && vues.imageMimeType === undefined);
+
+    // Et elles survivent au REPLI : une chaîne de fallback qui perdrait le plafond
+    // rendrait une réponse plus longue que celle demandée, précisément au moment où
+    // quelque chose vient déjà de mal se passer.
+    fs.writeFileSync(REG, JSON.stringify({
+      codeur: { provider: "ollama", model: "m", fallback: [{ provider: "ollama", model: "repli" }] },
+    }));
+    let vuesRepli: AskLLMOptions = {};
+    let premier = true;
+    const askRepli = async (_s: string, _u: string, o: AskLLMOptions) => {
+      if (premier) { premier = false; throw new Error("transport HS"); }
+      vuesRepli = o;
+      return okJson();
+    };
+    const r = await dispatch("codeur", "s", "u", { ask: askRepli, sleep: noSleep, maxTokens: 42 });
+    check("le repli a bien joué", r.status === "ok" && r.brainUsed?.fallback === true);
+    check("maxTokens survit au repli inter-providers", vuesRepli.maxTokens === 42);
     if (fs.existsSync(REG)) fs.rmSync(REG);
   }
 

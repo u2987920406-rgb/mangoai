@@ -10,7 +10,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { KernelTool, KernelToolResult } from "../kernel/kernel-mcp.js";
 import { confinePath } from "../perimeter-context.js";
-import { askLLM } from "../llm/llm-engine.js";
+import { brain } from "../brain.js";
 import { searchPexelsImages } from "../taste/taste-images.js";
 import { ELEVE_MODEL, ELEVE_PROVIDER, ELEVE_API_URL, OLLAMA as ELEVE_OLLAMA_URL } from "../eleve/provider.js";
 import { getBrain } from "../brain/brain-registry.js";
@@ -41,7 +41,7 @@ function glmAsk(): GenContentDeps["ask"] {
   const provider = ELEVE_PROVIDER;
   const baseUrl = provider === "ollama" ? ELEVE_OLLAMA_URL : ELEVE_API_URL;
   const real = (system: string, user: string) =>
-    askLLM(system, user, {
+    brain.askAs("designer_ux", system, user, {
       provider,
       model,
       baseUrl,
