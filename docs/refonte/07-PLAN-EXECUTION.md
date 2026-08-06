@@ -327,7 +327,9 @@ La méthode arbitrée, enfin amorcée. `v3/` **appelle** l'existant ; il ne le r
       l'exception, elle, se signale toute seule. Détail au registre 01 § L.
 - [x] Les **42** outils de l'Élève sont des **membres d'équipe** — 42/42 affectés, prouvé à chaque exécution du test, jamais supposé.
 - [ ] **6 concepts d'« agent » → 1** : le concept d'Équipe existe, mais les 5 autres n'ont pas été retirés.
-- [ ] **Tout appel LLM du produit passe par `v3/`** — non fait : **25 fichiers** appellent `askLLM` en direct.
+- [ ] **Tout appel LLM du produit passe par `v3/`** — la ROUTE est tranchée (option A, ci-dessous)
+      et gardée par un test ; la MIGRATION reste à faire : **25 fichiers** appellent encore
+      `askLLM` en direct.
 - [x] **Un parcours complet de bout en bout** à travers les équipes : `team-run.ts` +
       `test-v3-parcours` (**29 assertions**), déterministe et sans réseau. Il a trouvé
       **deux défauts que les tests unitaires ne pouvaient pas voir** : 🔨 Construction et
@@ -335,17 +337,28 @@ La méthode arbitrée, enfin amorcée. `v3/` **appelle** l'existant ; il ne le r
       ne produit pas), et sous plafond `read-only` aucune équipe ne savait lire un fichier
       du projet. Les deux sont corrigés ; détail au registre 01 § L.
 
-> ### ⚠️ Le blocage réel du reste du lot : **deux façades pour la même place**
+> ### ✅ Le blocage est levé — **arbitrage Raf du 2026-08-06, option A**
 >
-> `server/src/brain.ts` existe déjà et son en-tête annonce **le même objectif** que
-> `v3/index.ts` : « à terme, tout appel de haut niveau passe par `brain(...)` ». Elle a
-> **14 importateurs**. Faire converger le produit vers `v3/` sans trancher laquelle des deux
-> survit reviendrait à créer la duplication que cette refonte supprime.
+> `brain.ts` et `v3/` annonçaient le même objectif et paraissaient concurrentes. Elles ne
+> le sont pas : elles sont **superposées**, et le défaut n'était pas la duplication mais
+> l'**absence de règle** — sans elle, chacun aurait tranché au hasard, fichier par fichier.
 >
-> **C'est une décision, pas une tâche** — et elle conditionne tout le reste du lot. Les deux
-> ne sont pas au même niveau (`brain.ts` = transport : `dispatch`/`askLLM`/`chatEleve` ;
-> `v3/` = produit : quelle équipe, quels outils, quel budget), donc la fusion est possible —
-> mais il faut la vouloir explicitement.
+> ```
+>    produit    →  v3/  ........... QUELLE ÉQUIPE ? outils, budget, qui vérifie
+>                    ▼
+>    transport  →  brain.ts ....... QUEL MOTEUR ? dispatch / askLLM / chatEleve
+>                    ▼
+>                  brain-dispatch.ts  (implémentation privée)
+> ```
+>
+> **Coût : une ligne** (`dispatch(...)` → `brain(...)` dans `team-dispatch.ts`). Les 14
+> importateurs de `brain.ts` ne bougent pas, et l'observabilité qui y sera branchée vaudra
+> aussi pour les équipes. La règle est **gardée par un test** qui lit les sources de `v3/`
+> — vérifié par violation contrôlée, pas supposé.
+>
+> ⚠️ **Ce que l'arbitrage ne fait pas :** il dit vers quoi migrer, il ne migre rien. Et
+> `brain.chatEleve`/`brain.elevePost` n'ont **pas** d'équivalent équipe — c'est le coût que
+> l'option B aurait facturé tout de suite, et que A reporte sans le supprimer.
 
 > **Ce que le socle a appris.** Le doc 03 décrit **8** équipes, dont 📄 Extraction portée par
 > `extracteur` — rôle retiré du registre la veille sur décision de Raf. Une équipe sans

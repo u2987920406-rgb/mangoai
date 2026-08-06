@@ -364,7 +364,33 @@ async function run() {
     check("le détail de contexte est conservé pour le bandeau", j.lignes()[0].detail === "accueil");
   }
 
-  console.log("\n[8] Le registre VIVANT — la seule assertion qui lit le disque réel");
+  console.log("\n[8] La hiérarchie des façades — arbitrage du 2026-08-06 (option A)");
+  {
+    // `v3/` (produit : quelle équipe ?) s'adosse à `brain.ts` (transport : quel
+    // moteur ?), qui s'adosse à `brain-dispatch` (implémentation privée). La règle
+    // ne vaut que si elle est GARDÉE : sans ce test, le prochain import direct de
+    // `brain-dispatch` depuis `v3/` passerait sans un mot, et la hiérarchie
+    // redeviendrait une convention orale — c'est-à-dire rien.
+    const dossier = path.join(import.meta.dirname, "..", "v3");
+    const fautifs: string[] = [];
+    for (const f of fs.readdirSync(dossier).filter((n) => n.endsWith(".ts"))) {
+      // On ne regarde que les IMPORTS, jamais les commentaires : l'en-tête de
+      // team-dispatch.ts NOMME `brain-dispatch` précisément pour dire de ne pas
+      // l'importer. Un test qui échouerait sur sa propre explication serait absurde.
+      for (const ligne of fs.readFileSync(path.join(dossier, f), "utf8").split("\n")) {
+        const l = ligne.trim();
+        if (!l.startsWith("import") && !l.startsWith("} from")) continue;
+        if (l.includes("brain/brain-dispatch.js")) fautifs.push(`${f} → ${l.slice(0, 60)}`);
+      }
+    }
+    check(`aucun module de v3/ n'importe brain-dispatch en direct (fautifs : ${fautifs.join(" ; ") || "aucun"})`, fautifs.length === 0);
+
+    const td = fs.readFileSync(path.join(dossier, "team-dispatch.ts"), "utf8");
+    check("team-dispatch passe bien par la façade `brain(...)`",
+      td.includes('from "../brain.js"') && td.includes("await brain(cerveau,"));
+  }
+
+  console.log("\n[9] Le registre VIVANT — la seule assertion qui lit le disque réel");
   {
     // Les blocs précédents tournent sur un registre temporaire (défauts). Celui-ci lit
     // le fichier qui S'EXÉCUTE : c'est le seul qui puisse attraper un registre livré

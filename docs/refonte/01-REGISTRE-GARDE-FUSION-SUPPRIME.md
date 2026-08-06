@@ -1147,3 +1147,81 @@ vérifier qu'il n'en reste rien.
 
 Mesures après cette seconde passe (même portée que le tableau ci-dessus) : modules de
 prod **315** · tests **224** · socle `v3/` **6 modules** · outils joignables **42/42**.
+
+---
+
+### 2026-08-06 (arbitrage) — `brain.ts` **et** `v3/` : superposées, pas concurrentes
+
+**Décision de Raf : option A.** Le blocage du lot 3 est levé.
+
+#### Ce qui était réellement en cause
+
+Les deux fichiers annonçaient la même chose dans leur en-tête — « à terme, tout passe
+par moi ». Posées côte à côte, elles ne répondent pourtant pas à la même question :
+
+| | `brain.ts` | `v3/` |
+|---|---|---|
+| Question | **quel moteur ?** | **quelle équipe ?** |
+| Sait | transport, retry, provider, `chatEleve`, `elevePost` | périmètre d'outils, budget, clôture par le juge |
+| Ne sait pas | quels outils, quel budget | comment parler à un modèle |
+| Importateurs | **14** | 0 (neuf) |
+
+Elles n'étaient pas en concurrence : elles étaient **superposées**, et rien ne le
+disait. C'est ça, le vrai défaut — pas la duplication, l'**absence de règle**. Sans
+elle, le prochain développeur aurait tranché au hasard, fichier par fichier.
+
+#### La hiérarchie, désormais écrite dans les deux fichiers
+
+```
+   produit    →  v3/  ............ QUELLE ÉQUIPE ? outils, budget, qui vérifie
+                   │
+                   ▼
+   transport  →  brain.ts ........ QUEL MOTEUR ? dispatch / askLLM / chatEleve
+                   │
+                   ▼
+                 brain-dispatch.ts  (implémentation privée)
+```
+
+#### Le changement de code : **une ligne**
+
+```ts
+- const r = await dispatch(brain, missionSystem, user, dispatchOpts);
++ const r = await brain(cerveau, missionSystem, user, dispatchOpts);
+```
+
+(la variable locale s'appelait `brain` — elle aurait masqué la façade ; renommée
+`cerveau`.) **Aucun des 14 importateurs ne bouge.** Ce qui sera branché dans
+`brain.ts` — observabilité, retry centralisé — vaudra désormais aussi pour les
+équipes, sans double câblage. C'est tout l'intérêt de A sur B.
+
+#### Le garde, et la preuve qu'il garde
+
+Une convention non gardée est une convention orale, c'est-à-dire rien.
+`test-v3-teams` lit maintenant les sources de `server/src/v3/` et échoue si l'une
+d'elles importe `brain-dispatch` en direct. Il ne regarde que les lignes d'**import** :
+l'en-tête de `team-dispatch.ts` nomme `brain-dispatch` précisément pour dire de ne
+pas l'importer, et un test qui échouerait sur sa propre explication serait absurde.
+
+**Vérifié par violation contrôlée** — un import ajouté à `team-journal.ts` fait bien
+tomber l'assertion :
+
+```
+✗ aucun module de v3/ n'importe brain-dispatch en direct
+  (fautifs : team-journal.ts → import { resetRateLimits } from "../brain/brain-dispatch.js")
+```
+
+Fichier restauré à l'identique après l'essai (`git status` vide). **Un garde qu'on n'a
+jamais vu échouer ne garde rien** — c'est la même leçon que les 5 défauts silencieux
+de la veille, appliquée au test lui-même.
+
+#### Ce que ça débloque, et ce que ça ne débloque pas
+
+- ✅ La règle existe et elle est tenue par un test. Le lot 3 peut avancer.
+- ⏳ **25 fichiers appellent encore `askLLM` en direct.** L'arbitrage dit vers quoi
+  migrer ; il ne migre rien. Le critère « tout appel LLM passe par `v3/` » reste ouvert.
+- ⚠️ `brain.chatEleve` et `brain.elevePost` n'ont **pas** d'équivalent équipe. Le jour
+  où on voudra les y faire passer, il faudra en inventer un — c'est le vrai coût que
+  l'option B aurait facturé tout de suite, et que A reporte sans le supprimer.
+
+**Suite offline complète : 213 PASS · 0 FAIL** (582 s) · `tsc` 0 erreur ·
+`test-v3-teams` 81 pass (79 → 81) · `test-v3-parcours` 30 pass.

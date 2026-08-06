@@ -12,8 +12,29 @@
 // C'est précisément pour ça que le dispatcher est le bon socle : l'enveloppe
 // n'ajoute que du produit — une identité d'équipe, un périmètre d'outils, un
 // plafond, une trace. Si elle ajoutait du transport, ce serait une réécriture.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// LA HIÉRARCHIE DES DEUX FAÇADES — arbitrage Raf du 2026-08-06 (option A)
+// ─────────────────────────────────────────────────────────────────────────────
+// `brain.ts` et `v3/` annonçaient le MÊME objectif dans leur en-tête (« à terme,
+// tout passe par moi »). Elles ne sont pas concurrentes, elles sont SUPERPOSÉES —
+// mais rien ne le disait, donc le prochain développeur aurait choisi au hasard.
+//
+//     produit    →  v3/  ......... QUELLE ÉQUIPE ? quels outils, quel budget,
+//                     │            qui vérifie à la clôture
+//                     ▼
+//     transport  →  brain.ts ..... QUEL MOTEUR ? dispatch / askLLM / chatEleve
+//                     │
+//                     ▼
+//                   brain-dispatch.ts (implémentation privée, jamais importée d'ici)
+//
+// Conséquence appliquée ici : ce fichier appelle `brain(...)`, **jamais**
+// `dispatch(...)`. Les 14 importateurs de `brain.ts` ne bougent pas, et
+// l'observabilité centralisée que la façade prépare vaudra aussi pour les équipes.
+// `test-v3-teams` garde la règle en lisant les sources de `v3/` : un import direct
+// de `brain-dispatch` y fait échouer la suite.
 
-import { dispatch, type DispatchOpts } from "../brain/brain-dispatch.js";
+import { brain, type DispatchOpts } from "../brain.js";
 import type { AgentResult } from "../agent/agent-contract.js";
 import {
   policyFromCaps,
@@ -186,13 +207,13 @@ export async function dispatchTeam(
   }
 
   // Cerveau : principal, ou l'interne quand l'appelant le demande explicitement.
-  let brain = team.brain;
+  let cerveau = team.brain;
   if (opts.cerveau === "interne") {
     if (!team.brainInterne) {
       journal.eteint(team.id, "cerveau interne demandé mais inexistant", true);
       return degradeEquipe(team, `l'équipe ${team.id} n'a pas de cerveau interne`, toolPolicy);
     }
-    brain = team.brainInterne;
+    cerveau = team.brainInterne;
   }
 
   journal.allume(team.id, opts.detail ?? "");
@@ -201,7 +222,7 @@ export async function dispatchTeam(
   // On retire les options propres à l'équipe avant de passer la main : `dispatch`
   // ne les connaît pas, et lui passer des clés inconnues masquerait une faute de frappe.
   const { ceiling: _c, policy: _p, journal: _j, budget: _b, detail: _d, cerveau: _cv, ...dispatchOpts } = opts;
-  const r = await dispatch(brain, missionSystem, user, dispatchOpts);
+  const r = await brain(cerveau, missionSystem, user, dispatchOpts);
 
   journal.eteint(team.id, r.summary.slice(0, 120), r.status === "error" || r.status === "timeout");
   return { ...r, teamId: team.id, toolPolicy, refuse: false };

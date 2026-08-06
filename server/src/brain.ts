@@ -12,6 +12,24 @@
 // `brain.chatEleve` / `brain.elevePost`, et l'observabilité/retry centralisés se
 // branchent ICI, en un seul endroit. Les appelants migrent un par un (adossée, pas
 // substituée) — les imports directs de brain-dispatch/llm-engine/eleve restent valides.
+//
+// ── SA PLACE FACE À `v3/` — arbitrage Raf du 2026-08-06 (option A) ────────────────
+// `v3/` (le socle des équipes) annonçait le MÊME objectif dans son en-tête, et les
+// deux façades avaient l'air concurrentes. Elles ne le sont pas : elles répondent à
+// deux questions différentes, et elles sont SUPERPOSÉES.
+//
+//     v3/       → QUELLE ÉQUIPE ?  périmètre d'outils, budget, clôture par le juge
+//       │
+//       ▼
+//     brain.ts  → QUEL MOTEUR ?    dispatch / askLLM / chatEleve / elevePost   ← ICI
+//       │
+//       ▼
+//     brain-dispatch.ts (implémentation privée)
+//
+// Cette façade RESTE, avec ses 14 importateurs : `v3/team-dispatch.ts` l'appelle au
+// lieu d'appeler `dispatch` directement, et `test-v3-teams` garde la règle en lisant
+// les sources de `v3/`. Ce qui sera branché ICI (observabilité, retry) vaudra donc
+// aussi pour les équipes, sans double câblage — c'est tout l'intérêt de l'option A.
 
 import { dispatch, dispatchParallel, type DispatchOpts } from "./brain/brain-dispatch.js";
 import { askLLM } from "./llm/llm-engine.js";
