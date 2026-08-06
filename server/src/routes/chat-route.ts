@@ -42,7 +42,6 @@ import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js"
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "../eleve.js";
 import { buildEleveDiscussTools } from "../eleve-tools/eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "../brain/brain-runtime.js";
-import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
 import { dispatch } from "../brain.js";
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "../scenario.js";
 import { flag } from "../flags.js";

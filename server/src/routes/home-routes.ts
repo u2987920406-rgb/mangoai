@@ -18,6 +18,7 @@ import { WORKSPACE_DIR } from "../projects.js";
 import { estimateTokens, resolveContextWindow } from "../tokenizer.js";
 import { buildEleveContext, type CompactableEntry } from "../eleve-compaction.js";
 import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
+import { observeAllumage } from "../v3/index.js";
 import { brain } from "../brain.js";
 import { getBrain } from "../brain/brain-registry.js";
 import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildIntent } from "../home-scratch.js";
@@ -121,6 +122,13 @@ app.post("/api/home-chat", async (req, res) => {
         hasAttachment = fs.existsSync(assetsDir) && fs.readdirSync(assetsDir).length > 0;
       } catch { /* best-effort */ }
       const homeCaps = await requiredCapabilities(last.content, { hasAttachment });
+      // (2026-08-06, refonte v3 lot 3) Premier branchement du socle des équipes, en
+      // OBSERVATION. Le même escalier de capacités qui vient de tourner sert aussi à
+      // décider quelles ÉQUIPES la demande réclame — mais rien n'est exécuté par elles :
+      // les équipes sont journalisées « pressenties », pas « allumées ». Retirer cette
+      // ligne rend le comportement à l'octet près. Elle existe pour qu'on sache ce que
+      // le socle allumerait sur du trafic RÉEL avant de lui confier l'exécution.
+      observeAllumage(homeCaps, "accueil — posture Discuter");
       // Raf (2026-07-11) : process.env.ELEVE_MODEL est un repli figé au démarrage —
       // Réglages (Atelier des cerveaux → brain-registry.json → `codeur`, la même
       // source que le flux Construire, cf. globalFallback()) doit rester la SEULE

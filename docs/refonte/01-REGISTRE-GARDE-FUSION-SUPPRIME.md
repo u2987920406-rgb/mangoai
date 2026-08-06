@@ -904,3 +904,246 @@ produit des feux verts faux. Le sens inverse — `juge` et `auditeur` sur `opus`
 **distinction**, pas la hiérarchie.
 
 **Suite offline : 211 PASS · 0 FAIL** (581 s) · `tsc` 0 erreur · `test-brain-dispatch` 40 pass.
+
+---
+
+### 2026-08-06 — Le socle `v3/` existe : 7 équipes, zéro réécriture
+
+Le lot 3 avait amorcé sa moitié registre (16 rôles → 8). Voici sa moitié socle.
+
+```
+server/src/v3/
+  teams.ts          le catalogue des équipes — déclaratif, aucune logique
+  team-dispatch.ts  dispatchTeam() : l'enveloppe autour de dispatch()
+  team-ignition.ts  l'escalier d'allumage, NOMMÉ (il existait déjà)
+  team-journal.ts   le journal d'allumage → le bandeau de statut
+  index.ts          la porte unique
+```
+
+**Rien n'a été réécrit.** Le doc 03 § 4 l'exige mot pour mot : « `dispatch()` reste
+EXACTEMENT ce qu'il est. Trois ajouts seulement. » Ce sont ces trois-là, et strictement
+eux. Rate limiting, fallback inter-providers, garde `localOnly`, contrat Mango,
+anti-injection, timeout, « ne throw jamais » : tout est resté où c'était.
+
+#### ⚠️ 7 équipes, et non 8 — écart assumé avec le doc 03
+
+Le doc 03 § 2 décrit **8** équipes, dont 📄 **Extraction** portée par le rôle
+`extracteur` — **retiré du registre sur ta décision au lot 3**. Une équipe sans cerveau
+n'est pas une équipe. Le socle en déclare donc 7, et je le dis ici plutôt que de laisser
+un « 8 » qui ne correspondrait à rien.
+
+Ses 3 compétences sont **réaffectées, pas perdues** (le lot 3 exige « aucune capacité
+perdue ») :
+
+| Compétence | Va à | Motif |
+|---|---|---|
+| `lire_document` | 🔎 Recherche | sa mission est « trouver, lire et rapporter » — qu'il s'agisse d'une URL ou d'un PDF déposé ne change pas la nature du travail |
+| `lire_archive` | 🔎 Recherche | idem |
+| `decoupe_assets` | 👁️ Vision | découper une image est un travail d'image |
+
+Réversible en deux lignes : rendre `extracteur` au registre, déclarer l'équipe.
+
+#### La décision de conception qui n'était pas dans les docs
+
+Les outils d'une équipe sont **déclarés nommément**, pas déduits de ses capacités.
+`TOOL_CAPABILITIES` classe par capacité de **sûreté** (que risque-t-on à offrir cet
+outil), pas par appartenance métier — et les deux ne coïncident pas : `verifie_design`
+y est `read-local`, alors qu'il appartient sans ambiguïté au 🎨 Design.
+
+Déduire les outils des capacités aurait donné à 🎨 Design **tous** les outils
+`read-local` du produit : `read_file`, `list_files`, `check_build`… L'appartenance est
+donc déclarée, la capacité **dérivée**. Deux assertions gardent ce point précis.
+
+#### ⚠️ Correction de mesure — **42 outils, pas 41**
+
+Le plan 07 et le doc 03 annoncent « les 41 outils de l'Élève ». Le compte réel dans
+`TOOL_CAPABILITIES` est **42**, re-mesuré. Le test l'affiche à chaque exécution et
+échoue si un seul cesse d'être joignable — la mesure ne peut plus dériver en silence.
+
+#### Ce que le test garde vraiment (`test-v3-teams`, **72 assertions**)
+
+| Invariant | Ce qu'il empêche |
+|---|---|
+| aucun outil orphelin (42/42 affectés) | qu'une capacité devienne injoignable sans que personne le voie |
+| aucun outil fantôme | qu'une équipe croie savoir faire ce qu'elle ne fera jamais |
+| aucun outil partagé entre deux équipes | le retour du fourre-tout que la refonte supprime |
+| aucun rôle du registre sans équipe, **et réciproquement** | qu'on retire une équipe en laissant son rôle traîner |
+| 🛡️ Vérification s'allume sur **tout** jeu de capacités | qu'un paramètre finisse par l'éteindre — « non désactivable » (doc 03 § 2) |
+| 🛡️ Vérification toujours **en dernier** | qu'elle vérifie avant que le travail existe |
+| même message → même allumage | un allumage non déterministe, indébogable pour l'utilisateur |
+| le plafond `read-only` écarte les mutants | qu'un appelant distrait obtienne le droit d'écrire sans l'avoir demandé |
+| budget épuisé → refus **sans appel modèle** | qu'un dépassement devienne un blocage au lieu d'une extinction propre |
+
+#### Le premier branchement est une OBSERVATION, pas une substitution
+
+`home-routes.ts` appelle désormais `observeAllumage(homeCaps, …)` juste après
+l'escalier de capacités qui tournait déjà. Deux propriétés, toutes deux gardées :
+
+- **Elle ne change aucun comportement.** Retirez la ligne : le produit se comporte à
+  l'octet près comme avant.
+- **Elle ne ment pas.** Les équipes sont journalisées **« pressenties »**, pas
+  « allumées », parce que rien ne s'exécute encore. Un bandeau qui annonce un travail
+  qui n'a pas eu lieu est pire qu'un bandeau vide.
+
+C'est la discipline que le lot 2 a imposée aux gates : **mesurer d'abord, figer
+ensuite.** On saura ce que le socle allumerait sur du trafic réel avant de lui confier
+l'exécution.
+
+#### Trouvé en chemin — deux imports morts
+
+`chat-route.ts` et `index.ts` importaient `requiredCapabilities` et `toolDemandSignal`
+**sans jamais les appeler**. Vérifié symbole par symbole avant de couper (le script
+abandonne si l'un des deux apparaît ailleurs dans le fichier). Retirés.
+
+#### ⚠️ Ce que ce lot ne fait PAS — à lire avant de le croire fini
+
+Le critère d'achèvement du lot 3 dit : « **tout appel LLM du produit passe par `v3/`** ·
+un parcours complet de bout en bout tourne. » **Ce n'est pas fait, et de loin :**
+
+- **25 fichiers** appellent encore `askLLM` directement.
+- Une façade **concurrente** existe déjà : `brain.ts`, dont l'en-tête annonce le même
+  objectif (« à terme, tout appel de haut niveau passe par `brain(...)` ») avec
+  **14 importateurs**. Deux façades qui visent la même place, c'est exactement la
+  duplication que la refonte supprime — **il faut trancher laquelle survit**, et c'est
+  une décision, pas une tâche.
+- Aucun parcours de bout en bout n'a encore tourné à travers les équipes.
+
+Le socle **existe et est gardé** ; il ne **pilote** encore rien.
+
+#### Mesures — méthode inscrite, parce qu'elle avait dérivé
+
+| Mesure | Portée exacte | Valeur |
+|---|---|---|
+| Modules de prod | `server/src/**/*.ts` hors `test-*` | **314** (309 + les 5 du socle) |
+| Tests | `server/src/tests/test-*.ts` | **223** (222 + 1) |
+| Composants UI | `ui/src/components/**/*.jsx` | **103** — inchangé |
+| Flags | entrées de `flags.ts` | **14** — inchangé |
+| Outils joignables | `TOOL_CAPABILITIES` | **42/42** |
+
+> Les deux dernières lignes avaient l'air d'avoir bougé (109 et 17) : c'était **ma**
+> méthode de mesure qui variait, pas le code — `find ui/src` au lieu de
+> `ui/src/components`, et un `grep 'env:'` qui attrapait aussi la déclaration
+> d'interface. D'où la colonne « portée exacte », pour que le prochain compte se fasse
+> sur le même périmètre.
+
+**`tsc` 0 erreur · build UI vert (7,06 s) · `test-v3-teams` 72 pass, 0 fail.**
+
+---
+
+### 2026-08-06 (suite) — Le parcours tourne, et 5 défauts SILENCIEUX sont tombés
+
+`server/src/v3/team-run.ts` + `test-v3-parcours` (**29 assertions**). `runTour(task)`
+enchaîne allumage → équipes dans l'ordre → clôture par la Vérification en deux temps
+(l'auditeur vérifie, **le juge tranche**). Déterministe, transport injecté, zéro réseau.
+
+C'est le dernier critère d'achèvement du lot 3 qui **ne dépendait pas** de l'arbitrage
+resté ouvert entre `brain.ts` et `v3/` : `team-run.ts` n'appelle que `dispatchTeam`.
+
+#### Ce que le parcours garde et que le test unitaire ne pouvait pas garder
+
+Les invariants qui ne sont vrais **qu'en séquence**. Une équipe correcte prise isolément
+peut être appelée dans le mauvais ordre, avec le mauvais cerveau, ou pas du tout :
+
+- 🎨 Design s'exécute **après** 🔨 Construction — on embellit ce qui existe.
+- Le verdict est rendu par le `juge`, et le transport espion prouve qu'il a **réellement
+  parlé sur un autre modèle** que le codeur. `test-brain-dispatch` garde la distinction
+  au registre ; ici on garde qu'elle est **empruntée**.
+- La demande d'origine survit intacte jusqu'au verdict, et le premier appel ne contient
+  aucun amont.
+- Une équipe en **panne** n'emporte pas le tour : la Vérification doit pouvoir dire que
+  ça s'est mal passé, ce qu'elle ne pourrait pas faire si l'échec avait arrêté le
+  parcours avant elle.
+
+---
+
+### ⚠️ Défaut n° 1 — mes deux équipes principales ne se seraient **jamais** allumées
+
+J'avais allumé 🔨 Construction sur les capacités `write-fs`/`run-cmd`, et 🧠 Analyse sur
+`plan`. **L'escalier ne produit aucune de ces trois-là, et ne le peut pas.** C'est
+délibéré (#182 D1) : les capacités portent l'axe **intention** et sont *read-safe par
+construction* ; la mutation relève de l'axe **posture**. L'étage 2 ne détecte que du
+read-safe, et l'allowlist de l'étage 3 exclut explicitement write/run/deps.
+
+Deux équipes sur sept étaient donc **déclarées mais injoignables** — et les tests
+unitaires les déclaraient conformes, parce qu'ils vérifiaient la *déclaration*.
+
+**Correction :** l'allumage prend désormais **deux** entrées, capacités **et** plafond de
+mutation. `surMutation` porte l'intention « construire ». Le commentaire dans
+`teams.ts` interdit nommément de remettre une capacité de mutation dans `capacites`.
+
+> **La leçon, et elle vaut au-delà de ce lot :** un test unitaire vérifie qu'une pièce est
+> bien faite ; seul un parcours vérifie qu'elle est **appelée**. Les deux équipes qui
+> portent le cœur du produit — celle qui construit et celle qui planifie — étaient
+> mortes, et rien dans les 72 assertions précédentes ne le disait.
+
+---
+
+### ⚠️ Défaut n° 2 — sous plafond `read-only`, personne ne savait lire un fichier
+
+Les quatre lecteurs du projet (`read_file`, `list_files`, `search_code`, `check_build`)
+appartiennent à 🔨 Construction et **à aucune autre équipe** — 🔎 Recherche va chercher
+*dehors*. Construction ne s'allumant que sur la mutation, une question aussi banale que
+« que fait ce fichier ? » ne trouvait, en posture Discuter, **personne pour y répondre**.
+
+Ce n'est pas un détail de cadrage : c'est une régression fonctionnelle par rapport au
+comportement actuel, où `buildEleveDiscussTools` offre `read_file` par défaut.
+
+**Correction :** 🔨 Construction s'allume aussi sur `read-local`. Sous `read-only`, le
+plafond la réduit exactement à ses quatre lecteurs — **elle lit le projet, elle ne le
+construit pas.**
+
+> ### ⚠️ Conséquence à traiter au **lot 5** (surfaces), consignée pour ne pas la découvrir plus tard
+>
+> `read-local` étant sur-provisionné à chaque tâche, 🔨 Construction apparaîtra au
+> bandeau de **presque tous les tours**. Afficher « Mango construit » pendant une simple
+> question serait un contresens produit. **Le bandeau devra distinguer LIRE de
+> CONSTRUIRE** — c'est une exigence de conception d'écran, pas un réglage.
+
+---
+
+#### Une seconde conséquence, moins visible : l'allumage coûte de l'argent
+
+L'escalier sur-provisionne les capacités read-safe au motif explicite qu'« un outil non
+appelé ne coûte rien » (function-calling paresseux). **Cet argument ne tient plus dans le
+modèle par équipes** : `runTour` appelle *chaque* équipe allumée, donc chaque allumage
+est un appel modèle payé. Le sur-provisionnement, gratuit côté outils, devient coûteux
+côté équipes.
+
+`runTour` est un **squelette** : il exécute toutes les équipes allumées, dans l'ordre.
+Le doc 03 § 2 confie pourtant à l'Orchestrateur de « décider qui s'allume » — un vrai
+orchestrateur en éteindrait. Non fait, et consigné plutôt que masqué.
+
+#### Un troisième défaut, trouvé en relisant mon propre code
+
+`dispatchTeam` documente que la policy de l'appelant **resserre, jamais n'élargit**.
+Or `mergePolicies` fait primer l'appelant sur `allowRun` — sémantique juste pour un
+sous-agent scellé (#175), fausse ici : un appelant pouvait **rendre le shell** à une
+équipe à qui le plafond `read-only` venait de le retirer. Les deux sont désormais ET-és,
+et deux assertions gardent les deux sens (on peut retirer, on ne peut pas rendre).
+
+#### Deux autres pièges, trouvés en relisant — et ils ne se voyaient pas à l'exécution
+
+**Le budget du processus au lieu du budget du tour.** `runTour` prenait par défaut le
+singleton `budgetEquipes`, jamais réinitialisé. Le premier tour d'une session passait ;
+**le deuxième trouvait tous les plafonds épuisés** et refusait chaque équipe d'un coup.
+Un test à un seul tour ne pouvait pas le voir. Défaut par tour désormais NEUF ; un
+appelant qui veut plafonner à travers plusieurs tours injecte le sien — c'est alors un
+choix, pas un effet de bord. Gardé par « deux tours consécutifs aboutissent ».
+
+**L'allowlist vide qui autorise tout.** `applyToolPolicy` traite `allowedTools: []`
+comme « aucun filtre » (`allowedTools && allowedTools.length ? … : null`). La policy du
+🧭 Orchestrateur — qui n'a **aucun** outil — lui aurait donc donné le **registre entier**,
+l'exact contraire de son rôle : celui qui délègue et n'exécute pas se serait retrouvé
+seul à tout pouvoir faire. Une équipe sans outil sort maintenant avec une denylist
+explicite de tout le registre, et le test l'applique à un vrai `ToolRegistry` pour
+vérifier qu'il n'en reste rien.
+
+> Ces trois défauts (celui-ci, le budget, `allowRun`) ont un trait commun : **aucun ne
+> produisait d'erreur.** Ils rendaient un résultat plausible. C'est le mode de panne
+> contre lequel un test doit être écrit — pas contre l'exception, qui se signale seule.
+
+**Suite offline complète : 213 PASS · 0 FAIL** (613 s) · `tsc` 0 erreur · build UI vert ·
+`test-v3-teams` 79 pass · `test-v3-parcours` 30 pass.
+
+Mesures après cette seconde passe (même portée que le tableau ci-dessus) : modules de
+prod **315** · tests **224** · socle `v3/` **6 modules** · outils joignables **42/42**.

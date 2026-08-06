@@ -314,18 +314,50 @@ figé ON a une trace d'exécution réussie · `tsc` + build verts.
 > **Avant le socle v3, délibérément.** Construire `v3/` au-dessus de gates dont on ignore s'ils
 > fonctionnent, c'est bâtir sur une inconnue et la découvrir plus tard, plus cher.
 
-### Lot 3 — Le socle `v3/` : les 8 équipes
+### Lot 3 — Le socle `v3/` : les équipes · 🔨 **À MOITIÉ FAIT (2026-08-06)**
 
 La méthode arbitrée, enfin amorcée. `v3/` **appelle** l'existant ; il ne le réécrit pas.
 
-- Point de départ : `brain/brain-dispatch.ts` — la pièce que l'audit désigne comme la plus mûre.
-- `brain-registry` : **16 rôles → 8**, un par équipe (doc 03).
-- Les 11 spécialistes forgés et les 41 outils de l'Élève deviennent des **membres d'équipe**,
-  jamais des concepts de premier niveau.
-- **6 concepts d'« agent » → 1 : l'Équipe.**
+- [x] Point de départ : `brain/brain-dispatch.ts` — la pièce que l'audit désigne comme la plus mûre. **Non réécrite d'une ligne** : `dispatchTeam` l'enveloppe (doc 03 § 4).
+- [x] `brain-registry` : **16 rôles → 8** (2026-08-05), un par équipe.
+- [x] Le socle existe : `server/src/v3/` — 6 modules, `test-v3-teams` **79 assertions**
+      + `test-v3-parcours` **30**. **5 défauts de conception trouvés et corrigés en le
+      construisant, dont aucun ne produisait d'erreur** — ils rendaient un résultat
+      plausible. C'est le mode de panne contre lequel il faut écrire les tests ;
+      l'exception, elle, se signale toute seule. Détail au registre 01 § L.
+- [x] Les **42** outils de l'Élève sont des **membres d'équipe** — 42/42 affectés, prouvé à chaque exécution du test, jamais supposé.
+- [ ] **6 concepts d'« agent » → 1** : le concept d'Équipe existe, mais les 5 autres n'ont pas été retirés.
+- [ ] **Tout appel LLM du produit passe par `v3/`** — non fait : **25 fichiers** appellent `askLLM` en direct.
+- [x] **Un parcours complet de bout en bout** à travers les équipes : `team-run.ts` +
+      `test-v3-parcours` (**29 assertions**), déterministe et sans réseau. Il a trouvé
+      **deux défauts que les tests unitaires ne pouvaient pas voir** : 🔨 Construction et
+      🧠 Analyse ne se seraient jamais allumées (allumées sur des capacités que l'escalier
+      ne produit pas), et sous plafond `read-only` aucune équipe ne savait lire un fichier
+      du projet. Les deux sont corrigés ; détail au registre 01 § L.
 
-**Achevé quand :** tout appel LLM du produit passe par `v3/` · aucune capacité perdue (les 41
-outils restent joignables) · `tsc` + build verts · un parcours complet de bout en bout tourne.
+> ### ⚠️ Le blocage réel du reste du lot : **deux façades pour la même place**
+>
+> `server/src/brain.ts` existe déjà et son en-tête annonce **le même objectif** que
+> `v3/index.ts` : « à terme, tout appel de haut niveau passe par `brain(...)` ». Elle a
+> **14 importateurs**. Faire converger le produit vers `v3/` sans trancher laquelle des deux
+> survit reviendrait à créer la duplication que cette refonte supprime.
+>
+> **C'est une décision, pas une tâche** — et elle conditionne tout le reste du lot. Les deux
+> ne sont pas au même niveau (`brain.ts` = transport : `dispatch`/`askLLM`/`chatEleve` ;
+> `v3/` = produit : quelle équipe, quels outils, quel budget), donc la fusion est possible —
+> mais il faut la vouloir explicitement.
+
+> **Ce que le socle a appris.** Le doc 03 décrit **8** équipes, dont 📄 Extraction portée par
+> `extracteur` — rôle retiré du registre la veille sur décision de Raf. Une équipe sans
+> cerveau n'est pas une équipe : le socle en déclare **7**, et réaffecte les 3 compétences
+> de l'Extraction plutôt que de les perdre. Un document de conception ne survit pas
+> intact à une décision prise après lui ; le dire vaut mieux que coder un « 8 » creux.
+>
+> Deuxième leçon, plus banale et plus coûteuse : le doc annonce « les **41** outils ». Le
+> compte réel est **42**. Le test l'affiche désormais à chaque exécution.
+
+**Achevé quand :** tout appel LLM du produit passe par `v3/` · aucune capacité perdue (les
+**42** outils restent joignables) · `tsc` + build verts · un parcours complet de bout en bout tourne.
 
 ### Lot 4 — Mémoire : 17 modules → 1
 

@@ -68,10 +68,10 @@
     "test-brain-endpoints": {
       "tier": "offline"
     },
-    "test-brain-facade": {
+    "test-brain-ensemble": {
       "tier": "offline"
     },
-    "test-brain-ensemble": {
+    "test-brain-facade": {
       "tier": "offline"
     },
     "test-brain-fallback": {
@@ -111,9 +111,6 @@
       "tier": "offline"
     },
     "test-cron-scheduler": {
-      "tier": "offline"
-    },
-    "test-watchdog-core": {
       "tier": "offline"
     },
     "test-delegate-live": {
@@ -426,6 +423,9 @@
     "test-nocturnal-budget-qa": {
       "tier": "offline"
     },
+    "test-nocturnal-prompts": {
+      "tier": "offline"
+    },
     "test-nocturnal-repair": {
       "tier": "offline"
     },
@@ -639,6 +639,12 @@
     "test-tutorial-feedback": {
       "tier": "offline"
     },
+    "test-v3-parcours": {
+      "tier": "offline"
+    },
+    "test-v3-teams": {
+      "tier": "offline"
+    },
     "test-verificateur-contexte": {
       "tier": "offline"
     },
@@ -648,6 +654,9 @@
     "test-vision-prewarm": {
       "tier": "offline"
     },
+    "test-watchdog-core": {
+      "tier": "offline"
+    },
     "test-webclone": {
       "tier": "offline"
     },
@@ -655,9 +664,6 @@
       "tier": "offline"
     },
     "test-working-memory": {
-      "tier": "offline"
-    },
-    "test-nocturnal-prompts": {
       "tier": "offline"
     }
   }

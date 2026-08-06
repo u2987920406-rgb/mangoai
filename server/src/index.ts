@@ -25,7 +25,6 @@ import { readMetrics, recordTurnMetrics } from "./metrics.js";
 import { sovereigntyReport, formatSovereignty } from "./sovereignty-metrics.js";
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "./eleve.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "./brain/brain-runtime.js";
-import { requiredCapabilities, toolDemandSignal } from "./intent-capabilities.js";
 // T5 : l'orchestration de l'Accueil passe le dispatcher via la façade cerveau unique.
 import { assembleSystemPrompt, FIDELITY_CLAUSE } from "./scenario.js";
 import { isAgentBusy } from "./agent/agent-lock.js";
