@@ -1901,3 +1901,66 @@ mais on la déplace vers un quota qui n'était pas saturé, et qui est maintenan
 
 **Suite offline complète : 214 PASS · 0 FAIL** (575 s) · `tsc` 0 erreur ·
 `test-axioms-rotation` 22 pass · flags **14 → 13**.
+
+---
+
+### 2026-08-06 (rectificatif) — Trois des quatre « magasins vides » sont pleins
+
+**Erreur de ma mesure, corrigée dans l'heure.** L'entrée d'ouverture du lot 4 affirmait :
+*« Quatre modules n'ont aucune donnée : `references`, `procedures`, `lexique`,
+`concept-registry` — zéro fichier correspondant sur les 425 projets. ~1 000 lignes de
+magasins vides, à archiver plutôt qu'à migrer. »*
+
+**C'est faux pour trois d'entre eux.**
+
+| Magasin | Fichier RÉEL | Contenu mesuré |
+|---|---|---|
+| `procedures` | `workspace/.procedures/` | **57 procédures** |
+| `lexique` | `.lexique.md` (par projet) | **119 projets** en ont un |
+| `concept-registry` | `server/data/concept-gaps.json` | **14 645 octets** |
+| `references` | `.references/` | **0** — seul réellement vide |
+
+#### La cause, et elle s'est déjà produite aujourd'hui
+
+J'ai cherché des noms de fichiers que j'avais **devinés** — `lexique.json`,
+`concept-registry.json`, `references.json` — au lieu de ceux que le code utilise :
+`.lexique.md`, `concept-gaps.json`, `.procedures/`. Une absence de résultat sur un nom
+inventé n'est pas une absence de données.
+
+**Deuxième fois dans la même journée** : le matin, « 25 fichiers appellent `askLLM` »
+comptait les fichiers qui *mentionnent* le symbole au lieu de ceux qui l'*appellent*
+(vrai chiffre : 8 fichiers / 11 appels). Le motif est le même à chaque fois — **je
+mesure une approximation de la question au lieu de la question**, et le chiffre obtenu
+est plausible, donc il ne se signale pas.
+
+Contre-mesure appliquée ici : demander le nom au **code** (`grep 'FILE_NAME = '`) avant
+de chercher sur le disque, jamais l'inverse.
+
+#### Ce que ça change pour le lot 4 — l'inverse de ce qui était écrit
+
+**Ces modules ne sont pas à archiver.** Vérification des appelants (motif complet,
+imports statiques et dynamiques, deux styles de guillemets) :
+
+| Module | Appelants de PRODUCTION |
+|---|---|
+| `procedures` | **9** — `agent`, 4× `eleve/relay-*`, `eleve-artefact-tools`, `knowledge-stores-routes`, `review`, `stratege-learn` |
+| `lexique` | **7** — `git-signals`, `miroir`, `orchestrator`, `plan`, `chat-route`, `scenario`, `knowledge-stores-routes` |
+| `references` | **5** — `components`, `library-routes`, `nocturnal`, `scenario`, `knowledge-stores-routes` |
+| `concept-registry` | **4** — `chaine-ambigue`, `concept-consolidation`, `integrity-audit`, `verificateur-contexte` |
+
+**25 appelants de production au total.** Les archiver aurait cassé 25 points d'appel —
+exactement la faute que le lot 1 avait déjà commise et documentée (*« jamais importé »
+n'est pas *« mort »*), cette fois dans sa variante symétrique : **« sans données » n'est
+pas « mort » non plus** — et ici, même les données étaient là.
+
+#### Le seul cas qui reste ouvert
+
+`references` : **5 appelants, 0 donnée**. Un magasin câblé que rien ne remplit —
+`saveReference` n'a qu'**un** appelant. C'est une capacité qui existe et qu'on ne
+nourrit jamais. À trancher au lot 4 : la nourrir, ou l'admettre morte et la retirer avec
+ses 5 appelants. **Ce n'est pas la même question que « l'archiver », et elle ne se
+tranche pas sur un compte de fichiers.**
+
+Les entrées précédentes ne sont pas réécrites — elles portent la mesure telle qu'elle a
+été faite, et ce rectificatif dit en quoi elle était fausse. Effacer l'erreur effacerait
+aussi sa leçon.
