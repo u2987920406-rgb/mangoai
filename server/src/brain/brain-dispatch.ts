@@ -1,27 +1,61 @@
-// Brain-Dispatch #150 — Couche 4 : le dispatcher.
+// Brain-Dispatch #150 — Couche 4 : LE DISPATCHER.
 //
 // `dispatch(agentId, system, user)` route un appel vers LE cerveau de cet agent
-// (registre #couche2), en appliquant tout le contrat (#couche3) : injection du
-// format Mango, anti-injection sur l'entrée externe, circuit breaker de session,
-// timeout dégradé, rate limiting par provider avec retry exponentiel, et parsing
-// robuste. Ne throw JAMAIS : toute erreur devient un AgentResult dégradé.
-import { askLLM, type AskLLMOptions, type LLMProvider } from "../llm/llm-engine.js"
+// (registre #couche2) en appliquant tout le contrat (#couche3). Ne throw JAMAIS :
+// toute erreur devient un AgentResult dégradé.
+//
+// ─────────────────────────────────────────────────────────────────────────────
+// STRUCTURE — remaniement du 2026-08-06, à comportement IDENTIQUE
+// ─────────────────────────────────────────────────────────────────────────────
+// Raf : « garder toute la mécanique du Brain dispatcher, tout en l'améliorant et
+// en le rendant plus léger et plus structuré ». Rien n'a été retiré. Le fichier
+// portait cinq métiers dans une seule fonction de 80 lignes, découpée en « étapes »
+// numérotées 1, 2, 3, 4&5, 6, 7, 7bis, 9 — **la 8 avait disparu en cours de route**,
+// et personne ne pouvait le voir. Une numérotation qui ment est pire qu'aucune :
+// elle donne l'illusion d'un plan.
+//
+// Ce qui a bougé, et rien d'autre :
+//   · le rate limiter part dans `brain-rate-limit.ts` (+ horloge injectable) ;
+//   · la tentative unique part dans `brain-attempt.ts` ;
+//   · le repli inter-providers devient `rejoueLaChaine()`, une fonction nommée ;
+//   · la garde de souveraineté était écrite DEUX FOIS (principal, puis chaque
+//     cible de repli) — c'est maintenant un seul prédicat. Une règle de sûreté
+//     dupliquée finit toujours par ne l'être qu'à moitié ;
+//   · `flag` était importé sans jamais être appelé, et un commentaire annonçait un
+//     « double verrou : le flag ET une chaîne de repli » alors que le flag avait
+//     disparu au lot 2. Import retiré, commentaire remis d'aplomb — le verrou est
+//     bien double, mais c'est « échec de DISPONIBILITÉ ET chaîne déclarée ».
+//
+// Ce qui n'a PAS bougé : les plafonds, le backoff, l'ordre des opérations, le
+// contrat Mango, l'anti-injection, le timeout dégradé, la distinction
+// retryable/non-retryable, la trace de session. 68 assertions le prouvent
+// (test-brain-dispatch 40 · test-brain-fallback 17 · test-brain-facade 11).
+
+import { askLLM } from "../llm/llm-engine.js"
 import { getBrain, type AgentId, type BrainConfig } from "./brain-registry.js"
-export type { BrainConfig } from "./brain-registry.js"
-import { flag } from "../flags.js"
 import { temporalContext } from "../temporal-context.js"
 import {
   MANGO_CONTRACT_PROMPT,
-  parseAgentResponse,
   sanitizeExternal,
-  withAgentTimeout,
-  isTimeout,
   sessionBudgetExceeded,
   type AgentResult,
   type PipelineSession,
 } from "../agent/agent-contract.js"
+import { acquireSlot, type Horloge, type Sleep } from "./brain-rate-limit.js"
+import {
+  runOnce,
+  degraded,
+  DEFAULT_TIMEOUT_MS,
+  type AskFn,
+  type BrainAttempt,
+  type AttemptCtx,
+} from "./brain-attempt.js"
 
-export type AskFn = (system: string, user: string, opts: AskLLMOptions) => Promise<string>
+export type { BrainConfig } from "./brain-registry.js"
+export type { AskFn } from "./brain-attempt.js"
+// Ré-exports de délégation pure : les appelants et tests existants importent
+// toujours `resetRateLimits` d'ici. Déplacer du code ne doit rien casser en amont.
+export { resetRateLimits, RATE_LIMITS, slotsConsommes } from "./brain-rate-limit.js"
 
 export interface DispatchOpts {
   imageBase64?: string
@@ -40,121 +74,84 @@ export interface DispatchOpts {
   /** Transport injectable (tests). Défaut : askLLM. */
   ask?: AskFn
   /** Sleep injectable (tests du rate limiter / backoff). Défaut : vrai setTimeout. */
-  sleep?: (ms: number) => Promise<void>
+  sleep?: Sleep
+  /** Horloge injectable (tests des durées et de l'expiration de fenêtre). Défaut :
+   *  Date.now. Ajoutée au remaniement du 2026-08-06 : sans elle, l'expiration de la
+   *  fenêtre de 60 s ne pouvait pas se tester autrement qu'en attendant 60 s. */
+  now?: Horloge
 }
 
-const DEFAULT_TIMEOUT_MS = 60_000
-const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
+const realSleep: Sleep = (ms) => new Promise<void>((r) => setTimeout(r, ms))
 
 // ---------------------------------------------------------------------------
-// Rate limiter par provider (fenêtre glissante de 60 s + retry exponentiel)
+// Souveraineté — UN seul prédicat, appliqué au principal comme à chaque repli
 // ---------------------------------------------------------------------------
 
-const RATE_LIMITS: Record<LLMProvider, number> = {
-  claude: 10,
-  ollama: 999,   // local → pas de limite réelle
-  openai: 20,
-  deepseek: 20,
-  mistral: 20,
-  groq: 30,
-  openrouter: 20,
-  litellm: 999,
+/**
+ * Un rôle `localOnly` ne sort JAMAIS vers un cloud — ni en appel principal, ni en
+ * repli. La règle était écrite à deux endroits ; à la première divergence, le repli
+ * aurait pu franchir une frontière que l'appel principal refusait. Un seul prédicat,
+ * donc, et les deux appelants ci-dessous s'y adossent.
+ */
+function sortieInterdite(role: BrainConfig, cible: { provider: string }): boolean {
+  return Boolean(role.localOnly) && cible.provider !== "ollama"
 }
 
-const windows = new Map<LLMProvider, { count: number; windowStart: number }>()
+// ---------------------------------------------------------------------------
+// Repli inter-providers (C2)
+// ---------------------------------------------------------------------------
 
-/** Réserve un créneau d'appel pour ce provider, en attendant (backoff) si saturé. */
-async function acquireSlot(provider: LLMProvider, sleep: (ms: number) => Promise<void>): Promise<void> {
-  const max = RATE_LIMITS[provider] ?? 20
-  for (let attempt = 0; attempt < 3; attempt++) {
-    const now = Date.now()
-    let w = windows.get(provider)
-    if (!w || now - w.windowStart >= 60_000) {
-      w = { count: 0, windowStart: now }
-      windows.set(provider, w)
+/**
+ * Rejoue la chaîne de repli déclarée par le rôle, dans l'ordre. Première réussite
+ * gagne ; chaîne épuisée → le dernier résultat dégradé (la sortie ultime est celle
+ * qu'aurait rendue le principal seul).
+ *
+ * N'est appelée QUE si l'échec est `retryable`, c'est-à-dire un problème de
+ * disponibilité. Double verrou d'origine conservé : il faut une chaîne déclarée ET
+ * un échec de disponibilité.
+ */
+async function rejoueLaChaine(
+  agentId: AgentId,
+  role: BrainConfig,
+  ctx: AttemptCtx,
+  sleep: Sleep,
+  now: Horloge,
+  dernier: AgentResult,
+): Promise<AgentResult> {
+  const budgetTimeout = role.timeoutMs ?? DEFAULT_TIMEOUT_MS
+  let result = dernier
+
+  for (const fb of role.fallback ?? []) {
+    if (sortieInterdite(role, fb)) {
+      console.warn(`[brain-fallback] ${agentId}: repli ${fb.provider} REFUSÉ (rôle localOnly)`)
+      continue
     }
-    if (w.count < max) {
-      w.count++
-      return
+    await acquireSlot(fb.provider, sleep, now)
+
+    const cible: BrainAttempt = {
+      provider: fb.provider,
+      model: fb.model ?? role.model, // hérite du modèle du rôle si non précisé
+      baseUrl: fb.baseUrl,
+      apiKeyEnv: fb.apiKeyEnv,
+      // Timeout de la cible plafonné à celui du principal : un repli ne doit pas
+      // doubler le budget de temps que l'appelant croyait avoir accordé.
+      timeoutMs: Math.min(fb.timeoutMs ?? budgetTimeout, budgetTimeout),
     }
-    // Saturé → backoff exponentiel 1s → 2s → 4s avant de réessayer.
-    await sleep(1000 * 2 ** attempt)
+
+    const att = await runOnce(agentId, cible, ctx)
+    result = att.result
+    if (att.result.status === "ok") {
+      console.warn(`[brain-fallback] ${agentId}: ${role.provider}→${fb.provider} (repli réussi)`)
+      return { ...att.result, brainUsed: { provider: fb.provider, model: cible.model, fallback: true } }
+    }
+    // Sinon (encore dégradé) : on tente la cible suivante s'il en reste.
   }
-  // Après 3 essais : on laisse passer ; le 429 éventuel du provider (géré par askLLM)
-  // prendra le relais plutôt que de bloquer le pipeline indéfiniment.
-  const w = windows.get(provider) ?? { count: 0, windowStart: Date.now() }
-  w.count++
-  windows.set(provider, w)
-}
-
-/** Remet à zéro les compteurs de rate limiting (tests). */
-export function resetRateLimits(): void {
-  windows.clear()
+  return result
 }
 
 // ---------------------------------------------------------------------------
 // dispatch
 // ---------------------------------------------------------------------------
-
-function degraded(agentId: AgentId, summary: string, durationMs: number, status: AgentResult["status"] = "error"): AgentResult {
-  return { status, agent: agentId, summary, data: {}, confidence: 0, durationMs }
-}
-
-/** (C2) Un cerveau EFFECTIF pour UNE tentative : provider + éventuels modèle,
- *  endpoint, clé, timeout. Réutilisé pour le cerveau principal ET chaque repli. */
-interface BrainAttempt {
-  provider: LLMProvider
-  model?: string
-  baseUrl?: string
-  apiKeyEnv?: string
-  timeoutMs?: number
-}
-
-/** Contexte immuable partagé par toutes les tentatives d'un dispatch. */
-interface AttemptCtx {
-  fullSystem: string
-  safeUser: string
-  imageBase64?: string
-  freeform: boolean
-  ask: AskFn
-  started: number
-}
-
-/**
- * (C2) UNE tentative sur un cerveau donné. `retryable` = l'échec est un problème
- * de DISPONIBILITÉ (timeout ou erreur transport) → un repli est justifié. Un
- * échec de PARSING (le modèle a répondu) N'est PAS retryable : re-payer un appel
- * ne le corrigerait pas. Reproduit exactement l'ancien chemin pour le principal.
- */
-async function runOnce(agentId: AgentId, cfg: BrainAttempt, ctx: AttemptCtx): Promise<{ result: AgentResult; retryable: boolean }> {
-  const timeoutMs = cfg.timeoutMs ?? DEFAULT_TIMEOUT_MS
-  const askOpts: AskLLMOptions = {
-    provider: cfg.provider,
-    model: cfg.model,
-    timeoutMs,
-    baseUrl: cfg.baseUrl,
-    apiKeyEnv: cfg.apiKeyEnv,
-    imageBase64: ctx.imageBase64,
-  }
-  try {
-    const raced = await withAgentTimeout(ctx.ask(ctx.fullSystem, ctx.safeUser, askOpts), timeoutMs, agentId)
-    if (isTimeout(raced)) {
-      return { result: degraded(agentId, `délai dépassé (${timeoutMs} ms)`, Date.now() - ctx.started, "timeout"), retryable: true }
-    }
-    if (ctx.freeform) {
-      const txt = (raced ?? "").trim()
-      // Réponse vide en prose = pas un problème de disponibilité (le modèle a
-      // répondu, juste vide) → NON retryable, cohérent avec « repli sur timeout/transport ».
-      return txt
-        ? { result: { status: "ok", agent: agentId, summary: txt, data: {}, confidence: 1, durationMs: Date.now() - ctx.started }, retryable: false }
-        : { result: degraded(agentId, "réponse vide du cerveau", Date.now() - ctx.started), retryable: false }
-    }
-    return { result: parseAgentResponse(raced, agentId, Date.now() - ctx.started), retryable: false }
-  } catch (err) {
-    // Erreur de TRANSPORT (réseau, provider injoignable) → retryable.
-    return { result: degraded(agentId, `erreur cerveau : ${(err as Error).message}`.slice(0, 200), Date.now() - ctx.started), retryable: true }
-  }
-}
 
 export async function dispatch(
   agentId: AgentId,
@@ -162,77 +159,52 @@ export async function dispatch(
   user: string,
   opts: DispatchOpts = {},
 ): Promise<AgentResult> {
-  const started = Date.now()
   const { session, trustExternal = false, imageBase64, freeform = false } = opts
   const ask = opts.ask ?? askLLM
   const sleep = opts.sleep ?? realSleep
+  const now = opts.now ?? Date.now
+  const started = now()
 
-  // 1. Circuit breaker de session — un pipeline emballé s'arrête net.
+  // ── Circuit breaker de session : un pipeline emballé s'arrête net ──────────
   if (session && sessionBudgetExceeded(session)) {
-    return degraded(agentId, `budget de tours dépassé (${session.turns}/${session.maxTurns})`, Date.now() - started)
+    return degraded(agentId, `budget de tours dépassé (${session.turns}/${session.maxTurns})`, now() - started)
   }
 
-  // 2. Résolution du cerveau (override explicite #182 D3 prioritaire sur le registre).
-  const brain = opts.brainOverride ?? getBrain(agentId)
+  // ── Résolution du cerveau (override explicite #182 D3 prioritaire) ─────────
+  const role = opts.brainOverride ?? getBrain(agentId)
 
-  // 3. Garde de souveraineté — un agent localOnly ne sort jamais vers un cloud.
-  if (brain.localOnly && brain.provider !== "ollama") {
-    const r = degraded(agentId, `agent localOnly mais cerveau cloud (${brain.provider}) — dispatch refusé`, Date.now() - started)
+  // ── Garde de souveraineté ─────────────────────────────────────────────────
+  if (sortieInterdite(role, role)) {
+    const r = degraded(agentId, `agent localOnly mais cerveau cloud (${role.provider}) — dispatch refusé`, now() - started)
     if (session) { session.results.push(r); session.turns++ }
     return r
   }
 
-  // 4 & 5. Injection du contrat + encadrement anti-injection de l'entrée externe.
-  // En mode freeform, on n'impose PAS le contrat Mango (le cerveau répond en prose).
-  // D4 — Conscience temporelle : injection en TÊTE du system prompt si gate ON.
-  // D4 — Conscience temporelle : figée ON au lot 2 (refonte v3), toujours injectée.
+  // ── Assemblage du prompt : conscience temporelle, contrat Mango, anti-injection ──
+  // D4 — la conscience temporelle est figée ON (lot 2, refonte v3) : toujours injectée,
+  // en TÊTE. En mode freeform on n'impose PAS le contrat (le cerveau répond en prose).
   const systemWithTemporal = `${temporalContext()}\n\n${system}`
-  const fullSystem = freeform ? systemWithTemporal : `${MANGO_CONTRACT_PROMPT}\n\n${systemWithTemporal}`
-  const safeUser = trustExternal ? user : sanitizeExternal(user)
-
-  // 6. Rate limiting (avec retry exponentiel interne).
-  await acquireSlot(brain.provider, sleep)
-
-  // 7. Appel borné par timeout dégradé (tentative sur le cerveau PRINCIPAL).
-  const ctx: AttemptCtx = { fullSystem, safeUser, imageBase64, freeform, ask, started }
-  let { result, retryable } = await runOnce(agentId, brain, ctx)
-
-  // 7bis. (C2) FALLBACK inter-providers — DANS le contrat « ne throw jamais » :
-  // si l'échec est un problème de DISPONIBILITÉ (retryable) ET que le flag +
-  // une chaîne de repli sont présents (double verrou), on essaie les cibles
-  // déclarées, dans l'ordre. Première réussite gagne ; chaîne épuisée → le
-  // dernier résultat dégradé (sortie ultime inchangée). Garde localOnly
-  // re-passée sur CHAQUE cible + acquireSlot + timeout borné au principal.
-  if (retryable && Array.isArray(brain.fallback) && brain.fallback.length) {
-    const brainTimeout = brain.timeoutMs ?? DEFAULT_TIMEOUT_MS
-    for (const fb of brain.fallback) {
-      // Un rôle localOnly ne bascule JAMAIS vers un cloud, même en repli.
-      if (brain.localOnly && fb.provider !== "ollama") {
-        console.warn(`[brain-fallback] ${agentId}: repli ${fb.provider} REFUSÉ (rôle localOnly)`)
-        continue
-      }
-      await acquireSlot(fb.provider, sleep)
-      // Timeout de la cible plafonné à celui du principal (évite de doubler le budget).
-      const target: BrainAttempt = {
-        provider: fb.provider,
-        model: fb.model ?? brain.model, // hérite du modèle du rôle si non précisé
-        baseUrl: fb.baseUrl,
-        apiKeyEnv: fb.apiKeyEnv,
-        timeoutMs: Math.min(fb.timeoutMs ?? brainTimeout, brainTimeout),
-      }
-      const att = await runOnce(agentId, target, ctx)
-      result = att.result
-      retryable = att.retryable
-      if (att.result.status === "ok") {
-        console.warn(`[brain-fallback] ${agentId}: ${brain.provider}→${fb.provider} (repli réussi)`)
-        result = { ...att.result, brainUsed: { provider: fb.provider, model: target.model, fallback: true } }
-        break
-      }
-      // Sinon (encore retryable ou dégradé) : on tente la cible suivante s'il en reste.
-    }
+  const ctx: AttemptCtx = {
+    fullSystem: freeform ? systemWithTemporal : `${MANGO_CONTRACT_PROMPT}\n\n${systemWithTemporal}`,
+    safeUser: trustExternal ? user : sanitizeExternal(user),
+    imageBase64,
+    freeform,
+    ask,
+    started,
+    now,
   }
 
-  // 9. Trace dans la session immuable.
+  // ── Rate limiting, puis tentative sur le cerveau PRINCIPAL ────────────────
+  await acquireSlot(role.provider, sleep, now)
+  const { result: premier, retryable } = await runOnce(agentId, role, ctx)
+
+  // ── Repli inter-providers, sous double verrou : échec de DISPONIBILITÉ ET
+  //    chaîne déclarée. Un échec de parsing ne déclenche jamais de repli.
+  const result = retryable && role.fallback?.length
+    ? await rejoueLaChaine(agentId, role, ctx, sleep, now, premier)
+    : premier
+
+  // ── Trace dans la session ─────────────────────────────────────────────────
   if (session) {
     session.results.push(result)
     session.turns++

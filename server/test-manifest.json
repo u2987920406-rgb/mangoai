@@ -77,6 +77,9 @@
     "test-brain-fallback": {
       "tier": "offline"
     },
+    "test-brain-rate-limit": {
+      "tier": "offline"
+    },
     "test-brain-runtime": {
       "tier": "offline"
     },

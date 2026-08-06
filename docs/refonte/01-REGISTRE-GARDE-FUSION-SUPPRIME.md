@@ -1225,3 +1225,141 @@ de la veille, appliquée au test lui-même.
 
 **Suite offline complète : 213 PASS · 0 FAIL** (582 s) · `tsc` 0 erreur ·
 `test-v3-teams` 81 pass (79 → 81) · `test-v3-parcours` 30 pass.
+
+---
+
+### 2026-08-06 (dispatcher) — Le Brain-Dispatch structuré, **rien retiré**
+
+Consigne de Raf : *« il faut que tu gardes toute la mécanique du Brain dispatcher, tout
+en l'améliorant et en le rendant plus léger et plus structuré. Le Brain dispatcher est
+un des points forts de Mango. »*
+
+Aucune capacité n'a été retirée. Le découpage est à **comportement identique**, et la
+preuve tient en une phrase : **les 68 assertions qui couvrent le dispatcher passent sans
+qu'une seule ligne de test ait été modifiée.**
+
+```
+test-brain-dispatch  40 pass   test-brain-fallback  17 pass   test-brain-facade  11 pass
+```
+
+#### Ce qui a bougé
+
+| Avant | Après |
+|---|---|
+| tout dans `brain-dispatch.ts` | `brain-rate-limit.ts` — la fenêtre glissante |
+| | `brain-attempt.ts` — UNE tentative sur un cerveau |
+| | `brain-dispatch.ts` — l'entrée, et elle seule |
+| repli écrit en ligne dans `dispatch()` | `rejoueLaChaine()`, fonction nommée |
+| garde de souveraineté écrite **2 fois** | un seul prédicat `sortieInterdite()` |
+
+#### Trois défauts que le découpage a mis au jour
+
+**1. Les étapes numérotées mentaient.** `dispatch()` était commentée « 1, 2, 3, 4&5, 6,
+7, 7bis, 9 ». **Il n'y avait pas de 8.** Elle avait disparu au fil des remaniements sans
+que personne puisse le voir. Une numérotation fausse est pire qu'aucune : elle donne
+l'illusion d'un plan. Remplacée par des en-têtes nommés, qui ne peuvent pas se
+désynchroniser puisqu'ils décrivent ce qu'ils surmontent.
+
+**2. La garde de souveraineté était écrite deux fois** — une fois pour le cerveau
+principal, une fois dans la boucle de repli. Les deux disaient la même chose *aujourd'hui*.
+À la première divergence, un repli aurait pu franchir une frontière que l'appel principal
+refusait — et c'est la garantie la plus forte du produit (« un rôle `localOnly` ne sort
+jamais vers un cloud »). **Une règle de sûreté dupliquée finit toujours par ne l'être
+qu'à moitié.**
+
+**3. `flag` était importé sans jamais être appelé** — le troisième import mort de la
+semaine. Pire : un commentaire annonçait un *« double verrou : le flag ET une chaîne de
+repli »* alors que le flag avait disparu au lot 2. Le verrou est bien double, mais c'est
+« échec de **disponibilité** ET chaîne déclarée ». Import retiré, commentaire remis
+d'aplomb.
+
+---
+
+#### Le vrai gain : une pièce isolable est une pièce prouvable
+
+`acquireSlot` lisait `Date.now()` **en dur**. `sleep` était injecté, l'horloge non —
+donc l'**expiration de la fenêtre de 60 s**, qui est le cœur du mécanisme, ne pouvait se
+vérifier qu'en attendant soixante secondes réelles. Personne ne l'a jamais fait. Le rate
+limiter était le seul organe du dispatcher **sans aucune assertion sur son comportement
+propre**.
+
+Horloge désormais injectable (paramètre optionnel — tout appelant existant est inchangé),
+et `test-brain-rate-limit` : **16 assertions neuves**, dont celles qui étaient
+matériellement impossibles à écrire :
+
+- la fenêtre expire à 60 000 ms et le compteur repart à 1 ;
+- **à 59 999 ms elle tient encore** — un `>` au lieu d'un `>=` passerait sans bruit et
+  décalerait tout le rythme d'appel ;
+- saturation → backoff exactement 1 s / 2 s / 4 s, puis laisser-passer délibéré ;
+- saturer `claude` n'impose **aucun** backoff à `ollama` : un rôle local, gratuit et
+  souverain, ne doit pas être ralenti par le quota d'un cloud qu'il n'utilise pas.
+
+#### ⚠️ « Plus léger » : la mesure exacte, sans arrangement
+
+| Mesure | Avant | Après |
+|---|---|---|
+| Total de lignes | 249 | **405** (3 fichiers) |
+| Code hors commentaires dans `brain-dispatch.ts` | 165 | **114** (−31 %) |
+| La fonction `dispatch()` elle-même | 83 lignes | **58** (−30 %) |
+
+**Le total a augmenté**, et il faut le dire ainsi. Ce qui a maigri, c'est le **point
+d'entrée** — la fonction qu'on lit pour comprendre le système. Le volume ajouté est du
+commentaire et deux modules portant chacun un seul métier. Si la consigne « plus léger »
+visait le nombre total de lignes, alors elle n'est **pas** tenue et il faut me le dire :
+la seule façon de la tenir en ce sens serait de retirer de la mécanique, ce que la
+consigne interdit par ailleurs.
+
+**Suite offline complète : 214 PASS · 0 FAIL** (559 s) · `tsc` 0 erreur.
+
+---
+
+#### La question de Raf — « quel impact a de retirer la mécanique ? » — et sa réponse mesurée
+
+Question posée après le remaniement. Répondre de mémoire aurait été facile et faux : on a
+donc mesuré ce qui est **réellement emprunté**, pas ce qui est déclaré.
+
+| Mécanisme | Emprunté aujourd'hui | Si on le retire |
+|---|---|---|
+| Rate limiter | **en permanence** — 8 rôles sur 8 sur `claude`, plafond **10/min** | seul retrait à effet **immédiat** |
+| Repli inter-providers | **1 rôle sur 8** — `vision` seul (`opus` → `haiku`) | `vision` perd sa reprise ; les 7 autres inchangés |
+| Garde `localOnly` | **0 rôle** — dormante | rien ne change aujourd'hui ; la promesse de souveraineté disparaît |
+| Circuit breaker de session | 1 fichier | une boucle emballée n'a plus de frein |
+| `freeform` | 13 fichiers | vision / Sharingan cassent |
+| `brainOverride` | 3 fichiers | l'Accueil ne peut plus router sur le modèle choisi |
+| Contrat Mango, `sanitizeExternal`, « ne throw jamais » | tous les appels | le produit s'arrête |
+
+**Conclusion : il n'y a pas de gras.** Le seul retirable est ce qui est **dormant** — la
+garde `localOnly` (3 lignes) et 7 des 8 plafonds providers (jamais joignables, seul
+`claude` est au registre). **Une dizaine de lignes.** Or ces mécanismes sont dormants
+parce que ce sont des **assurances**, pas parce qu'ils sont inutiles : `localOnly` ne
+sert à rien jusqu'au jour où un rôle repasse en local, et c'est ce jour-là qu'il empêche
+le code souverain de sortir. Ce que Raf ressentait comme du poids était l'**organisation**,
+pas la mécanique — et c'est ce qui vient d'être traité.
+
+---
+
+### ⚠️ CONSTAT NOUVEAU, ET IL N'EST PAS DANS LE DISPATCHER — la concentration du registre
+
+En mesurant ce qui précède, un chiffre est sorti que personne ne cherchait :
+
+- **8 rôles sur 8 pointent sur `claude`** ;
+- le plafond `claude` est **10 appels/minute**, le plus serré de la table ;
+- un tour d'équipes (`runTour`) émet **6 à 8 appels** — Orchestrateur, Analyse,
+  Construction, Design, puis l'audit **et** le verdict.
+
+**Deux tours dans la même minute saturent la fenêtre.** Le troisième part en backoff
+1 s → 2 s → 4 s, puis passe quand même et récolte le 429 de Claude.
+
+Le rate limiter n'est donc pas du poids mort : c'est la pièce **la plus près de se
+déclencher** de tout le dispatcher. Et le défaut n'est pas là où on le cherchait — **ce
+n'est pas le dispatcher qui est trop lourd, c'est le registre qui est trop concentré.**
+
+Cela rejoint et aggrave la note du 2026-08-06 sur `runTour` (« l'allumage coûte de
+l'argent ») : il coûte aussi des **créneaux**. Le sur-provisionnement des capacités,
+gratuit côté outils, se paie deux fois dans le modèle par équipes.
+
+⏳ **Non traité, et à arbitrer** : répartir les rôles sur plusieurs providers, ou faire
+en sorte que l'Orchestrateur éteigne les équipes dont il n'a pas besoin (doc 03 § 2 le
+prévoit : « décider qui s'allume » — `runTour` les allume toutes). Les deux se défendent ;
+c'est une décision, pas une tâche.
+
