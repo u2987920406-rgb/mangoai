@@ -16,6 +16,33 @@ Serein répond à un constat de la [[refonte]] (doc 04) : l'écran d'accueil de 
 
 `ui/src/main.jsx` monte Serein **par défaut** ; l'atelier ([[dette-technique|App.jsx]]) est chargé à la demande. Deux garde-fous, nés d'un premier jet où la porte était à sens unique : un paramètre d'URL qui force la surface (`?serein` / `?atelier`) et un retour visible monté **par-dessus** l'atelier.
 
+## Le parcours en quatre phases (2026-08-08)
+
+> **Rien n'est installé tant que la personne n'a pas dit oui.**
+
+| Phase | Ce qui se passe | Ce que ça installe |
+|---|---|---|
+| ① **Discussion** | 6-8 questions **choisies pour ce projet** (`selectRelevantQuestions`, #196 partie B), posées **une par une** | rien |
+| ② **Plan** | Ce que Mango a compris, écrit : intention, pages, ce qu'on pourra faire, **ce qu'il ne fera pas** — plus une **ossature par page** (« comment ça s'organise »), en gris | rien |
+| ③ **Maquette** | Trois pages **HTML autonomes** à comparer — zéro npm, zéro React, zéro dossier | rien |
+| ④ **Exécution** | Le vrai code, avec tout ce qui a été validé | **c'est la première étape qui touche le disque** |
+
+`POST /api/atelier/plan` et `POST /api/atelier/maquette` sont les **seules routes du dépôt à ne pas prendre de nom de projet** : à ce stade, aucun projet n'existe. C'est ce qui rend les trois premières phases jetables.
+
+**La section la plus utile du plan est « ce que je ne ferai pas ».** Sur un premier essai réel — « un site pour montrer mes poteries » — elle a rendu *« Vente en ligne et paiement : les visiteurs contactent, ils n'achètent pas directement »*. Un malentendu de ce calibre se voit en 16 secondes au lieu de coûter un build entier.
+
+**L'échappatoire est une phrase, pas un bouton caché** : « construis directement » saute au code depuis n'importe quelle phase. Celui qui veut aller vite le dit ; celui qui découvre ne tombe jamais dessus par accident — et la moitié des tests de `parcours.js` gèlent les **faux positifs** (« construis une page de contact » ne doit surtout pas sauter les étapes).
+
+**Sécurité de la maquette** : le HTML vient d'un modèle et n'est passé par aucune relecture. Il est rendu en iframe `sandbox` **sans `allow-scripts`**, et le prompt interdit script, ressource distante et CDN — vérifié sur les trois pistes d'un run réel.
+
+**Conception corrigée par la mesure** : le premier jet demandait les trois maquettes en un seul appel → **timeout à 5 minutes**. Trois appels **parallèles** : 166 s, et `Promise.allSettled` a prouvé son utilité dans l'heure — un run de contrôle a rendu **2 pistes sur 3**, le choix a survécu. Les trois partis pris sont **imposés par le code**, sinon le modèle rend trois nuances de la même idée.
+
+**L'ossature (2026-08-09)** — le plan dit *ce qu'on fera*, l'ossature dit *comment ça s'organise* : un désaccord de structure ne se voit pas dans une liste à puces. Une par page, **en gris** (la palette est retirée avant le rendu : on valide une structure, l'esthétique reste la question de la phase 3). Rien n'a été réécrit — le moteur de [[refonte|#196]] est réutilisé sans sa conversion PNG. Générées en parallèle et **sans attendre** : 8 s pendant qu'on lit le plan.
+
+**Reprendre une création (2026-08-09)** — l'accueil porte, sous les exemples, les créations qu'on peut reprendre : un clic recharge le fil et relance l'aperçu. `GET /api/projects` existait déjà mais rend 400+ identifiants bruts, sans titre ni date. D'où un critère **de fond** plutôt qu'une liste noire à maintenir : *une création est un dossier où quelqu'un a demandé quelque chose* — donc qui porte un historique avec au moins un message. **6 sur 400+.** Le titre affiché est la première demande, jamais le slug ; la date est en français. Le fil rechargé ne garde que ce qui a été **dit** : la réflexion du modèle, les outils et les statuts sont du bruit pour qui relit sa conversation.
+
+Ce que ça coûte est écrit dans [[limites|L144]] (les phases ne survivent pas à un rechargement — prix assumé du « rien n'est installé ») et [[limites|L145]] (la maquette dure 2 à 5 min).
+
 ## Deux moments, un seul basculement
 
 L'ancre de tout est `projet` : tant qu'il est nul, rien n'existe.

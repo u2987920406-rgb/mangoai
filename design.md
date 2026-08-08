@@ -10,6 +10,13 @@
 On décrit, on voit apparaître, **on en discute**. Zéro navigation, zéro réglage.
 Fichiers : `ui/src/serein/{Serein.jsx,theme.css,dire.js}`, monté par `ui/src/main.jsx`.
 
+**Le parcours en 4 phases (2026-08-08)** — `discussion` → `plan` → `maquette` → `construction`.
+Les trois premières ne touchent pas le disque ; la quatrième seule crée un projet. Le volet
+droit change de contenu sans changer de place : le plan (document défilant), puis la maquette
+(iframe `sandbox` **sans `allow-scripts`**), puis l'app réelle. Un seul composeur, dont le sens
+dépend de la phase — répondre, corriger le plan, corriger la maquette, ou demander un
+changement. Échappatoire : la phrase « construis directement » saute au code.
+
 **Deux géométries, un seul basculement** — l'ancre est `projet` :
 
 | | Largeur | Contenu |
