@@ -65,11 +65,36 @@ qui étaient en suspens :
 - 🧠 La **mémoire** reste centrale — mais comme *moyen* (« il connaît ton goût, donc il code
   mieux »), pas comme *promesse*.
 
-## Où on en est
+## Où on en est (2026-08-08)
 
-**Toutes les décisions de cadrage sont prises.** Le chantier actif est
-[MangoQA en produit autonome](06-MANGOQA-PRODUIT-AUTONOME.md), jalon **J0 — mesurer avant de vendre**
-(corpus d'évaluation à défauts étiquetés, taux de détection et de faux positifs par branche).
+**Toutes les décisions de cadrage sont prises**, et le chantier
+[MangoQA en produit autonome](06-MANGOQA-PRODUIT-AUTONOME.md) a dépassé le cadrage : il
+s'exécute désormais sur `D:\IA\MangoQA`, gouverné par un ADR qui **prime sur ce dossier**
+en cas de contradiction — `D:\IA\MangoQA\docs\adr\ADR-001-cap-produit.md`.
+
+| Étape | État |
+|---|---|
+| **J0** — mesurer avant de vendre | ✅ corpus de **32 cas** étiquetés (24 à défaut, 8 propres, dont 9 longs appariés) |
+| **J1** — détacher | ✅ `auditProject()` audite n'importe quel dossier, sans MangoOS |
+| **J2** — couverture déclarée | ✅ l'audit partiel ne peut plus se taire (3 étages : prompt, rapport, verdict) |
+| **J3** — CLI + MCP | ✅ `mangoqa <dossier>`, serveur MCP stdio, 355 Mo → 1,1 Mo |
+| **ADR lot 0** — choix du cerveau | ✅ **Claude Opus 5** par défaut (le local rendait des verdicts faux, mesuré) |
+| **ADR lot 1** — `--diff` | ✅ portée sur le travail non commité ou depuis une référence |
+| **ADR lot 2** — fermer le trou d'honnêteté | ✅ un cerveau qui ne peut pas juger ne produit plus de feu vert |
+| **ADR lot 3** — conventions du dépôt | ✅ juge contre les règles que le dépôt a écrites, chaque citation vérifiée |
+| **ADR lot 4** — axe *Spec* | ✅ `--spec`, 7ᵉ branche : le code fait-il ce qui était demandé ? |
+| **ADR lot 5** — intégration | ✅ `mangoqa init` : MCP + hook pre-push + action de CI, sans jamais écraser |
+| **ADR lot 6** — prouver | ✅ corpus re-mesuré sous Opus 5, page produit alignée, limites publiées |
+
+**Les 7 lots de l'ADR-001 sont clos** (2026-08-08). Mesure publiée : 32 cas, 2 passes,
+**88 observations**, `claude-opus-5` — zéro défaut raté, zéro verdict instable, détection
+100 % sur les cinq branches bloquantes, et 2 fausses alertes en accessibilité publiées
+avec leur analyse plutôt qu'effacées.
+
+> **Ce qui reste avant une publication npm n'est plus du code : c'est un dépôt TIERS à
+> auditer.** Tout a été mesuré sur nos propres dépôts et notre propre corpus, dont les
+> défauts sont réalistes mais **injectés**, pas récoltés. Les mécanismes sont prouvés
+> partout ; la **valeur** des axes *Standards* et *Spec* ne l'est nulle part.
 
 La refonte MangoOS v3 (docs 01 à 05) reprend après, enrichie de l'expérience de la découpe de MangoQA.
 
