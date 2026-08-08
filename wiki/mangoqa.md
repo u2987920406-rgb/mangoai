@@ -2,8 +2,8 @@
 type: entite
 tags: [architecture, qa, audit]
 statut: actif
-sources: [statut, fondation, historique, SOUV-B, "audit 17/20 (2026-07-19)"]
-maj: 2026-07-19
+sources: [statut, fondation, historique, SOUV-B, "audit 17/20 (2026-07-19)", "docs/refonte/06", "ADR-001 (D:\\IA\\MangoQA)"]
+maj: 2026-08-08
 ---
 
 # MangoQA
@@ -33,6 +33,41 @@ Contrôle qualité en arrière-plan. Il lit le flux du [[kernel]] (exporté en `
 ## MangoQA nourri en vraies données de production (SOUV-B, 2026-07-12)
 
 Jusqu'ici, l'**Œil Design** (③ ci-dessus) calculait un `briefDrift` (comparaison palette référence ↔ CSS rendu) mais restait **dormant** en pratique : aucun event Bus `design.reference` n'était jamais publié avec `source:"sharingan"` — seuls des events `source:"perfect-plan"` existaient. Côté MangoOS, [[sharingan-vision-eleve]] a été câblé pour publier `design.reference` à chaque extraction Sharingan réussie (réel `sharinganAnalyze`), et 3 nouveaux events Bus ont été ajoutés dans `kernel/kernel-design-events.ts` — **`render.integrity`**, **`parcours.result`**, **`gate.verdict`** — câblés respectivement dans `taste-render.ts` (intégrité du rendu capturé), `relay-closure.ts` (résultat du parcours de clôture), `eleve-gate.ts` (verdict du [[gardien-cloture]] : intention/WCAG/équilibre/placeholders/tests/goût). Ces events sont publiés **quel que soit le cerveau** qui a construit l'app (local ou Claude) — MangoQA cesse d'être aveugle aux apps produites par le pipeline Élève souverain. Vérifié bout-en-bout entre les 2 dépôts (écriture côté MangoOS → lecture côté MangoQA via `.mangoqa/bus-events.jsonl`), sans aucune modification de code côté MangoQA.
+
+## 🥭 Le virage 2026-08 — MangoQA devient un PRODUIT autonome
+
+Depuis le **2026-08-04**, MangoQA n'est plus seulement l'auditeur fantôme de MangoOS : c'est **le premier morceau de l'écosystème à sortir, seul**, décision arbitrée par Raf (cadrage `docs/refonte/06-MANGOQA-PRODUIT-AUTONOME.md`). Trois raisons, dans l'ordre : c'est le seul morceau **déjà livrable** (4 361 l., 34 modules, 5 deps de prod, contre 346 modules côté MangoOS) · c'est le **vrai différenciateur** · c'est le **terrain d'entraînement** à la découpe, sur un objet 8 fois plus petit. Client visé : le **solo maker / dev indé**. Positionnement : *« tu génères du code avec une IA, voici l'auditeur indépendant qui le relit avant que tu l'expédies »*.
+
+**Le couplage à MangoOS était une illusion** : zéro import, les branches prennent de simples `{path, content}`, le contrat d'échange tient en 2 fichiers JSON. MangoQA n'était pas couplé, il était seulement **déclenché** par `phase-complete.json`. Tout le travail d'autonomisation tenait dans le déclencheur et la sortie.
+
+### La gouvernance : ADR-001 (`D:\IA\MangoQA\docs\adr\`)
+
+Document de **référence unique** — en cas de contradiction avec une envie de séance, un README ou une discussion, c'est lui qui gagne ; toute déviation non prévue est un défaut de processus, pas un arbitrage. Cinq décisions, chacune portant **ce qui l'invaliderait** : **D1** cerveau par défaut **Claude Opus 5** (mesuré : le local rendait des feux verts FAUX sur du vrai code ; la souveraineté devient une option, pas la promesse) · **D2** MangoQA est une **BARRIÈRE**, pas un conseiller · **D3** on vend la **PREUVE**, pas la détection (devenue une commodité gratuite) · **D4** l'étalon à égaler puis dépasser est `mattpocock/skills` · **D5** **aucune revendication non mesurée**. Lots dans l'ordre : 0 choix du cerveau ✅ · 1 `--diff` ✅ · 2 honnêteté ✅ · 3 conventions du dépôt ✅ · 4 axe Spec · 5 intégration · 6 prouver.
+
+### Ce qui rend le produit unique : il déclare son propre périmètre
+
+Deux fermetures successives, de la même famille, chacune née d'une **exécution sur du vrai code** et non d'une relecture :
+
+- **J1-a → la COUVERTURE** (2026-08-05) — le cap de payload s'arrêtait et abandonnait les fichiers suivants **en silence** : sur un projet réel, 5/19 fichiers réellement lus pendant que le rapport affichait « 19 fichiers ». Un défaut dans les 73 % non lus produisait un **Feu Vert**. Désormais mesurée à trois étages, **déclarée au modèle** (bloc injecté dans le prompt), au rapport et au verdict. Le cap n'a été relevé (24 000 → 100 000) **qu'après** cette garantie : le relever seul aurait rendu le mensonge plus rare sans le rendre impossible, donc moins détectable.
+- **J4-a → le JUGEMENT** (2026-08-08, lot 2) — le même défaut **un cran plus haut**. Le produit distinguait « n'a pas **LU** » de « a lu et n'a rien trouvé », mais pas **« n'a pas JUGÉ » de « a jugé et n'a rien trouvé »**. Un cerveau hors contrat JSON faisait tomber les 6 branches en `skip` → feu vert, couverture *complète*, **code 0**, sur du code fautif. Deux volets : un **préflight** du cerveau (câblé API + CLI + MCP, validé par `parseFirstJson`, le lecteur de la production) et une **cause portée par chaque `skip`** — jugement rendu (`hors-perimetre`, `juge-sans-avis`) contre panne (`reponse-illisible`, `cerveau-injoignable`, `cause-inconnue`). Mesuré en réel : `FEU VERT`/0 → `⚪ NON VÉRIFIÉ`/**4**, et 5,2 s pour le savoir au lieu d'un audit entier.
+
+- **Lot 3 → les CONVENTIONS** (2026-08-08) — la troisième déclaration, et la seule qui ne parle pas de ce que l'auditeur a fait mais de **contre quoi** il a jugé. Mango QA lisait un projet à l'aune de ses six spécialités : ce qu'il sait de la qualité en général, pas ce que *ce* dépôt a décidé. `src/conventions.ts` (déterministe, zéro LLM) **localise** les règles écrites — `CLAUDE.md`, `AGENTS.md`, `CONTRIBUTING.md`, `.editorconfig`, `.cursorrules`… — chacune avec son `fichier:ligne`, ce qui rend la citation vérifiable et la trouvaille **réfutable**. Et le symétrique compte autant : à un modèle à qui on ne parle jamais de conventions, il en **invente** — il juge contre les habitudes moyennes d'internet et les présente comme les règles de la maison. Un dépôt qui n'en documente aucune s'entend donc le dire, explicitement, sur les trois surfaces.
+
+**La règle commune aux trois, et c'est l'identité du produit** : *un auditeur a le droit de ne pas tout lire, de ne pas pouvoir juger, et de ne connaître aucune règle maison — il n'a le droit de taire aucun des trois.* Corollaire de conception appliqué trois fois : **rien d'optimiste n'est jamais une valeur par défaut** — non mesuré ≠ tout lu, cause inconnue = panne, citation non résolue = citation rejetée. Confondre l'un des trois serait refaire le défaut d'un cran plus haut.
+
+**Et le corollaire miroir, qui vaut pour le lot 3** : une règle **non citée** n'est pas une règle **non vérifiée** — elle a très bien pu être vérifiée et respectée. Le rapport dit ce qui a été *fourni* au jugement et ce qui a été *invoqué*, jamais « voilà tout ce qu'on a contrôlé ».
+
+**Le contrat figé n'a bougé dans aucune des deux fermetures.** `verdict` reste `'green' | 'red'` : un 3ᵉ état aurait cassé le lecteur MangoOS et surtout violé le **fail-open** (une panne de MangoQA ne bloque jamais la production d'autrui). Couverture et abstentions sont des champs **additifs**, et les deux mentions sont *en plus* recopiées en clair dans le résumé de chaque branche — pour qu'un affichage non mis à jour ne puisse pas présenter un audit partiel ou absent comme un audit complet. Ce qui se dégrade, ce sont la **présentation** et le **code de sortie** : les endroits où l'auditeur *affirme* quelque chose. Un **ROUGE reste rouge** — un défaut trouvé est un fait, seul le vert affirme une absence.
+
+### Les surfaces autonomes (J1 → J3, 2026-08-04/05)
+
+`auditProject(dir)` (API, sans fichier-signal ni workspace) · **CLI** `mangoqa <dossier>` (`--diff [ref]`, `--only`, `--cerveau`, `--cap`, `--json`, `--exiger-couverture`, `--sans-preflight` ; codes de sortie 0/1/2/3/**4** = le contrat consommé par une CI) · **serveur MCP** stdio (couverture ET jugement **requis au schéma de sortie**, donc structurellement impossibles à ignorer par un assistant qui relaierait « feu vert » à son utilisateur). Poids ramené de **355 Mo à 1,6 Mo** (SDK Claude et grammaires WASM passés en deps de pair optionnelles + imports dynamiques).
+
+### Le corpus d'évaluation (`eval/`, J0)
+
+Aucun corpus de défauts étiquetés n'existait — ni `regression-catalog.ts` (bugs internes de MangoOS) ni `FAILLES.md` (défauts de MangoQA lui-même) n'en tenait lieu, contrairement à ce qui avait d'abord été écrit puis corrigé. Créé de zéro : **32 cas** (24 à défaut, 8 propres) dont **9 cas longs** appariés — le même fichier de 210-240 lignes à un défaut près, défaut **enfoui** dans le dernier tiers, **voisinage trompeur** délibéré. Les 4 branches bloquantes détectent leur défaut aux 3 passes, **zéro verdict instable, zéro faux positif sur 21 jugements propres**. Le harnais a lui-même été corrigé d'un biais **flatteur** (il comptait « n'a pas regardé » au crédit de la branche) : *mesurer l'honnêteté avec un instrument complaisant n'a aucun sens.*
+
+> **Le lot 2 s'est fait auditer par le produit et recaler deux fois, à raison** — dont une règle recopiée dans trois surfaces, la branche architecture citant la doctrine du dépôt contre son propre auteur. Première fois que l'auditeur trouve un défaut réel **dans le code qui le rend honnête**.
 
 ## Liens
 
