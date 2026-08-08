@@ -42,7 +42,15 @@ Depuis le **2026-08-04**, MangoQA n'est plus seulement l'auditeur fantôme de Ma
 
 ### La gouvernance : ADR-001 (`D:\IA\MangoQA\docs\adr\`)
 
-Document de **référence unique** — en cas de contradiction avec une envie de séance, un README ou une discussion, c'est lui qui gagne ; toute déviation non prévue est un défaut de processus, pas un arbitrage. Cinq décisions, chacune portant **ce qui l'invaliderait** : **D1** cerveau par défaut **Claude Opus 5** (mesuré : le local rendait des feux verts FAUX sur du vrai code ; la souveraineté devient une option, pas la promesse) · **D2** MangoQA est une **BARRIÈRE**, pas un conseiller · **D3** on vend la **PREUVE**, pas la détection (devenue une commodité gratuite) · **D4** l'étalon à égaler puis dépasser est `mattpocock/skills` · **D5** **aucune revendication non mesurée**. Lots dans l'ordre : 0 choix du cerveau ✅ · 1 `--diff` ✅ · 2 honnêteté ✅ · 3 conventions du dépôt ✅ · 4 axe Spec ✅ · 5 intégration · 6 prouver.
+Document de **référence unique** — en cas de contradiction avec une envie de séance, un README ou une discussion, c'est lui qui gagne ; toute déviation non prévue est un défaut de processus, pas un arbitrage. Cinq décisions, chacune portant **ce qui l'invaliderait** : **D1** cerveau par défaut **Claude Opus 5** (mesuré : le local rendait des feux verts FAUX sur du vrai code ; la souveraineté devient une option, pas la promesse) · **D2** MangoQA est une **BARRIÈRE**, pas un conseiller · **D3** on vend la **PREUVE**, pas la détection (devenue une commodité gratuite) · **D4** l'étalon à égaler puis dépasser est `mattpocock/skills` · **D5** **aucune revendication non mesurée**. Lots dans l'ordre : 0 choix du cerveau ✅ · 1 `--diff` ✅ · 2 honnêteté ✅ · 3 conventions du dépôt ✅ · 4 axe Spec ✅ · 5 intégration ✅ · 6 prouver ✅. **Les 7 lots sont clos (2026-08-08).**
+
+### Le chiffre publié (lot 6, 2026-08-08)
+
+Corpus complet sous **`claude-opus-5`**, aucun repli : 32 cas, 2 passes, **88 observations**. **Zéro défaut raté, zéro verdict instable, détection 100 % sur les cinq branches bloquantes** — et **2 fausses alertes en accessibilité**, publiées avec leur analyse plutôt qu'effacées. Le motif a été vérifié à la main : il est *exact*, ce n'est pas une hallucination ; c'est le corpus qui affirmait plus qu'il ne pouvait. **L'assertion fautive n'a pas été retirée** : éditer un corpus juste après avoir vu un résultat défavorable ruine une mesure, même quand c'est défendable.
+
+**Trois défauts de l'instrument ont dû être réparés avant qu'un seul chiffre ne sorte** — un chiffre rendu sous de mauvaises conditions est pire qu'aucun chiffre. Le plus parlant : le harnais confondait **panne** et **abstention**, alors que le produit sait faire cette différence depuis le lot 2. *L'instrument avait un lot de retard sur ce qu'il mesure* — et 3 incidents réseau faisaient tomber deux branches sous les 100 %.
+
+**Ce que ça n'établit pas** : un corpus écrit par nous, un modèle, une machine. Le mécanisme est prouvé partout ; la **valeur** des axes *Standards* et *Spec* ne l'est pas — il manque un dépôt tiers. C'est le seul obstacle restant à une publication, et ce n'est plus du code.
 
 ### Ce qui rend le produit unique : il déclare son propre périmètre
 
