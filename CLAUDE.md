@@ -52,6 +52,27 @@ else { $conns | ForEach-Object { Get-Process -Id $_.OwningProcess } | Format-Tab
 - **Ports libres** → lancer normalement.
 - **Listener présent** → vérifier la `CommandLine` du process (`Get-CimInstance Win32_Process -Filter "ProcessId=<PID>"`) avant de tuer : si c'est un orphelin d'une AUTRE app (ex. `workspace/<autre-projet>/node_modules/.bin/vite`), le tuer sans hésiter. Si c'est un vrai backend/UI MangoOS de la session active, ne pas le tuer par erreur. Puis lancer un process FRAIS dans la session active — ne jamais réutiliser un orphelin (sa session est morte, ses spawns échoueront).
 
+## ⚠️ Une interface qu'on n'a pas REGARDÉE n'est pas livrée (règle née le 2026-08-08)
+
+**Avant de dire « fait » sur quoi que ce soit de visuel, en prendre une capture et la regarder.** `tsc`, le build et les tests unitaires ne voient rien du rendu : ils étaient tous verts sur un écran d'accueil que Raf a qualifié de « dégueulasse » à la première seconde.
+
+Le contrôle par capture a trouvé, en trois passes, ce qu'aucune relecture de code n'avait vu : un anneau de focus **allumé en permanence** (un `<textarea>` focalisé au montage satisfait toujours `:focus-visible`), une barre d'activité **hors piste** la moitié de son cycle, un titre laissant deux mots seuls sur une ligne, et un **slug technique** affiché sur la surface dont la règle n°1 est de n'afficher aucun mot de machine.
+
+**Comment regarder** (l'extension Chrome ne charge pas `localhost`) :
+
+```bash
+# Playwright est dans server/node_modules ; `channel: 'chrome'` réutilise le
+# navigateur DÉJÀ installé → aucun téléchargement de 140 Mo.
+node -e "import('file:///D:/IA/MangoOS/server/node_modules/playwright/index.mjs').then(async ({chromium})=>{
+  const n = await chromium.launch({channel:'chrome'});
+  const p = await (await n.newContext({viewport:{width:1440,height:900},deviceScaleFactor:2})).newPage();
+  await p.goto('http://127.0.0.1:5173/?serein',{waitUntil:'networkidle'});
+  await p.screenshot({path:'ecran.png'}); await n.close();
+})"
+```
+
+Pour les états qui exigent une génération (attente / résultat / échec) : **stuber `/api/chat`** avec `page.route()` et rejouer un flux SSE fabriqué. C'est le vrai composant et le vrai parseur d'événements — seul le moteur est remplacé, donc **zéro appel modèle, zéro coût**.
+
 ## Comment accéder à l'historique
 
 L'utilisateur peut demander :
