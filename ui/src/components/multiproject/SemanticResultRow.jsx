@@ -14,7 +14,7 @@ export default function SemanticResultRow({ result }) {
             <CategoryBadge category={result.category ?? "other"} />
             <span
               className="rounded-full px-2 py-0.5 text-xs font-semibold"
-              style={{ background: "rgba(150,120,255,0.15)", color: "#9678ff" }}
+              style={{ background: "rgba(255,149,0,0.15)", color: "#c96a00" }}
             >
               score {result.score}
             </span>

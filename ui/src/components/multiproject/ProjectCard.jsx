@@ -21,7 +21,7 @@ export default function ProjectCard({ project, allProjects, onCopied, activeCate
         className="w-full flex items-center gap-4 px-5 py-4 hover:bg-bg/40 transition-colors text-left"
       >
         <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-bg border border-edge flex-shrink-0">
-          <Layers size={16} className="text-accent-soft" style={{ color: "#9678ff" }} />
+          <Layers size={16} className="text-accent-soft" style={{ color: "#ff9500" }} />
         </div>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-ink truncate">{project.name}</p>
@@ -33,7 +33,7 @@ export default function ProjectCard({ project, allProjects, onCopied, activeCate
         <div className="flex items-center gap-3 flex-shrink-0">
           <span
             className="rounded-full px-2.5 py-0.5 text-xs font-semibold"
-            style={{ background: "rgba(150,120,255,0.15)", color: "#9678ff" }}
+            style={{ background: "rgba(255,149,0,0.15)", color: "#c96a00" }}
           >
             {visibleComponents.length}
           </span>

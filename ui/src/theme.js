@@ -5,12 +5,12 @@
 
 const KEY = "mangoos.theme";
 
-/** "dark" (défaut) ou "light", depuis localStorage. */
+/** "light" (défaut — refonte Serein) ou "dark", depuis localStorage. */
 export function getTheme() {
   try {
-    return localStorage.getItem(KEY) === "light" ? "light" : "dark";
+    return localStorage.getItem(KEY) === "dark" ? "dark" : "light";
   } catch {
-    return "dark";
+    return "light";
   }
 }
 

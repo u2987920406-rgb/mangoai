@@ -1,27 +1,28 @@
-/* MangoAI builder UI — dark premium violet theme (see design.md) */
+/* MangoAI builder UI — refonte Serein : fond blanc + accent mangue/orange.
+   Direction Apple (fond gris froid #f5f5f7, surfaces blanches, ombres douces,
+   un seul accent saturé employé avec parcimonie). Clair par défaut. */
 @import "tailwindcss";
 
 @theme {
   --font-sans: "Inter", system-ui, sans-serif;
   --font-mono: "JetBrains Mono", Consolas, monospace;
 
-  --color-bg: #0b0d12;
-  --color-panel: #12141c;
-  --color-raised: #1a1d28;
-  --color-edge: #232734;
-  --color-edge-soft: #1c202c;
-  --color-ink: #e8eaf0;
-  /* Crème adouci pour le corps de texte du chat — moins de contraste, repose l'œil */
-  --color-ink-soft: #d6d2c8;
-  --color-dim: #8b91a3;
-  --color-faint: #565c6e;
-  --color-accent: #7c5cff;
-  --color-accent-soft: #9678ff;
-  --color-bubble: #1f2330;
+  /* ── Mode clair (DÉFAUT — Serein) ─────────────────────────────── */
+  --color-bg: #f5f5f7;
+  --color-panel: #ffffff;
+  --color-raised: #ffffff;
+  --color-edge: #e3e3e8;
+  --color-edge-soft: #ececf0;
+  --color-ink: #1d1d1f;
+  --color-ink-soft: #3a3a3c;
+  --color-dim: #6e6e73;
+  --color-faint: #9a9aa0;
+  /* Accent mangue — unique et non décoratif (anneaux, icônes, barre d'activité) */
+  --color-accent: #ff9500;
+  --color-accent-soft: #ff9f0a;
+  --color-bubble: #fff4e5;
 
-  /* Palette système (inspirée iOS / Apple) — langage couleur global MangoOS.
-     Le violet #7c5cff reste la signature ; ces teintes servent aux statuts,
-     catégories et accents. Toujours en faible opacité pour le rendu minimaliste. */
+  /* Palette système (inspirée iOS / Apple) */
   --color-sys-indigo: #5856d6;
   --color-sys-pink: #ff2d55;
   --color-sys-red: #ff3b30;
@@ -32,13 +33,13 @@
   --color-sys-teal: #5ac8fa;
   --color-sys-green: #34c759;
 
-  /* Couleurs sémantiques alignées sur la palette système */
+  /* Couleurs sémantiques */
   --color-ok: #34c759;
   --color-warn: #ff9500;
   --color-err: #ff3b30;
-  --color-code-bg: #0b0d12;
-  --color-scroll: #2a2f3e;
-  --color-scroll-hover: #363c4f;
+  --color-code-bg: #1d1d1f;
+  --color-scroll: #d0d0d6;
+  --color-scroll-hover: #b8b8c0;
 
   --animate-fade-up: fade-up 0.25s ease-out both;
   --animate-fade: fade 0.18s ease-out both;
@@ -83,28 +84,27 @@
   }
 }
 
-
-/* ☀️ Mode clair — alternative dérivée de la même palette (violet signature gardé).
-   Surcharge les tokens sous [data-theme="light"] ; les utilitaires Tailwind v4
-   référencent les var() au runtime, donc la bascule est instantanée. */
-:root[data-theme="light"] {
-  --color-bg: #f6f6fb;
-  --color-panel: #ffffff;
-  --color-raised: #ffffff;
-  --color-edge: #e7e8f0;
-  --color-edge-soft: #eef0f5;
-  --color-ink: #16181f;
-  --color-dim: #6b7185;
-  --color-faint: #9aa0b0;
-  --color-accent: #6a48ff;
-  --color-accent-soft: #7c5cff;
-  --color-bubble: #efeaff;
-  --color-ok: #12a06d;
-  --color-warn: #c98a2e;
-  --color-err: #e23b3b;
-  --color-code-bg: #1a1d28; /* bloc de code volontairement sombre, lisible sur clair */
-  --color-scroll: #cdd0db;
-  --color-scroll-hover: #b4b8c7;
+/* 🌙 Mode sombre — dérivé de la même palette (accent mangue gardé).
+   Surcharge les tokens sous [data-theme="dark"]. */
+:root[data-theme="dark"] {
+  --color-bg: #0b0d12;
+  --color-panel: #12141c;
+  --color-raised: #1a1d28;
+  --color-edge: #232734;
+  --color-edge-soft: #1c202c;
+  --color-ink: #e8eaf0;
+  --color-ink-soft: #d6d2c8;
+  --color-dim: #8b91a3;
+  --color-faint: #565c6e;
+  --color-accent: #ff9f0a;
+  --color-accent-soft: #ffb340;
+  --color-bubble: #2a2418;
+  --color-ok: #34c759;
+  --color-warn: #ff9500;
+  --color-err: #ff3b30;
+  --color-code-bg: #0b0d12;
+  --color-scroll: #2a2f3e;
+  --color-scroll-hover: #363c4f;
 }
 
 body {
@@ -128,16 +128,16 @@ body {
   }
 }
 
-/* Subtle violet glow used behind the Home hero */
+/* Subtle mangue glow used behind the Home hero */
 .hero-glow {
   background:
-    radial-gradient(600px 300px at 50% 0%, rgba(124, 92, 255, 0.16), transparent 70%),
-    radial-gradient(400px 200px at 80% 20%, rgba(150, 120, 255, 0.07), transparent 70%);
+    radial-gradient(600px 300px at 50% 0%, rgba(255, 149, 0, 0.10), transparent 70%),
+    radial-gradient(400px 200px at 80% 20%, rgba(255, 159, 10, 0.05), transparent 70%);
 }
 
-/* Text with the animated violet shimmer (busy indicator) */
+/* Text with the animated mangue shimmer (busy indicator) */
 .shimmer-text {
-  background: linear-gradient(90deg, #8b91a3 35%, #c9bfff 50%, #8b91a3 65%);
+  background: linear-gradient(90deg, #9a9aa0 35%, #ffb340 50%, #9a9aa0 65%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;
@@ -190,7 +190,7 @@ body {
 .md code {
   font-family: var(--font-mono);
   font-size: 0.85em;
-  background: rgba(124, 92, 255, 0.12);
+  background: rgba(255, 149, 0, 0.12);
   border-radius: 4px;
   padding: 1px 5px;
 }
@@ -215,8 +215,8 @@ body {
 }
 
 /* ── Markdown enrichi du chat d'accueil (.md-chat) ──────────────────────────
-   Hiérarchie visuelle marquée : titres colorés + marqueur mangue, paragraphes
-   aérés, listes à puces colorées, tableaux lisibles, citations accentuées. */
+   Hiérarchie visuelle marquée : titres mangue, paragraphes aérés, listes à
+   puces colorées, tableaux lisibles, citations accentuées. */
 .md-chat > :first-child {
   margin-top: 0;
 }
@@ -226,13 +226,10 @@ body {
 .md-chat p {
   margin: 0.85em 0;
 }
-/* ── Style « Dégradé linéaire minimaliste » (Proposition 3) ──────────────────
-   Titres en dégradé violet→corail + filet dégradé sous le titre. Code en
-   pastille ambre. Tableaux épurés (hairlines, sans remplissage). Gras blanc net. */
 
-/* Dégradé signature, réutilisé partout */
+/* Dégradé signature mangue, réutilisé partout */
 :root {
-  --grad-line: linear-gradient(95deg, #7b52f2, #c95c9a 50%, #f56754);
+  --grad-line: linear-gradient(95deg, #ff9500, #ffb340 50%, #ff7a00);
 }
 
 .md-chat h1,
@@ -268,7 +265,7 @@ body {
   width: 100%;
   height: 1.5px;
   border-radius: 2px;
-  background: linear-gradient(90deg, rgba(123, 82, 242, 0.85), rgba(201, 92, 154, 0.7) 45%, rgba(245, 103, 84, 0));
+  background: linear-gradient(90deg, rgba(255, 149, 0, 0.85), rgba(255, 179, 64, 0.7) 45%, rgba(255, 122, 0, 0));
 }
 .md-chat ul,
 .md-chat ol {
@@ -280,13 +277,13 @@ body {
   padding-left: 0.2em;
 }
 .md-chat ul li::marker {
-  color: #7b52f2; /* puces violet */
+  color: #ff9500; /* puces mangue */
 }
 .md-chat ol li::marker {
-  color: #7b52f2;
+  color: #ff9500;
   font-weight: 700;
 }
-/* Gras = blanc net, minimaliste (sans surlignage) */
+/* Gras = encre nette, minimaliste (sans surlignage) */
 .md-chat strong {
   font-weight: 700;
   color: var(--color-ink);
@@ -295,13 +292,13 @@ body {
   color: var(--color-dim);
   font-style: italic;
 }
-/* Code inline = pastille ambre */
+/* Code inline = pastille mangue */
 .md-chat code {
   font-family: var(--font-mono);
   font-size: 0.85em;
-  background: rgba(255, 176, 67, 0.13);
-  color: #ffb043;
-  border: 1px solid rgba(255, 176, 67, 0.24);
+  background: rgba(255, 149, 0, 0.13);
+  color: #c96a00;
+  border: 1px solid rgba(255, 149, 0, 0.24);
   border-radius: 6px;
   padding: 1px 6px;
 }
@@ -312,27 +309,27 @@ body {
   padding: 0;
 }
 .md-chat a {
-  color: #7b52f2; /* liens violet */
+  color: #c96a00; /* liens mangue foncé (contraste sur blanc) */
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-/* Séparateur = filet dégradé violet→corail estompé */
+/* Séparateur = filet dégradé mangue estompé */
 .md-chat hr {
   height: 1.5px;
   border: none;
   margin: 1.6em 0;
   border-radius: 2px;
-  background: linear-gradient(90deg, transparent, rgba(123, 82, 242, 0.7) 30%, rgba(245, 103, 84, 0.6) 70%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(255, 149, 0, 0.7) 30%, rgba(255, 122, 0, 0.6) 70%, transparent);
 }
-/* Citation = boîte arrondie, fond très diffus/transparent, texte crème */
+/* Citation = boîte arrondie, fond très diffus/transparent */
 .md-chat blockquote {
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.022);
-  border: 1px solid rgba(255, 255, 255, 0.04);
-  border-left: 2px solid rgba(123, 82, 242, 0.45);
+  background: rgba(255, 149, 0, 0.05);
+  border: 1px solid rgba(255, 149, 0, 0.12);
+  border-left: 2px solid rgba(255, 149, 0, 0.45);
   padding: 0.7em 1.1em;
   margin: 1em 0;
-  color: #ece7db; /* crème légèrement plus blanc */
+  color: var(--color-ink-soft);
 }
 .md-chat blockquote p {
   margin: 0.3em 0;
@@ -350,12 +347,12 @@ body {
   text-align: left;
   vertical-align: top;
   border: none;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
 }
 /* Fine séparation verticale après la 1re colonne (libellés) */
 .md-chat th:first-child,
 .md-chat td:first-child {
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
 }
 .md-chat tr:last-child td {
   border-bottom: none;
@@ -365,5 +362,5 @@ body {
   color: var(--color-ink);
   font-weight: 700;
   border-bottom: 1.5px solid transparent;
-  border-image: linear-gradient(90deg, rgba(123, 82, 242, 0.7), rgba(245, 103, 84, 0.4)) 1;
+  border-image: linear-gradient(90deg, rgba(255, 149, 0, 0.7), rgba(255, 122, 0, 0.4)) 1;
 }

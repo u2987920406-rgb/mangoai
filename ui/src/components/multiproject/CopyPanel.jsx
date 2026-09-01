@@ -117,7 +117,7 @@ export default function CopyPanel({ projects, sourceProject, sourceFile, onClose
             onClick={handleCopy}
             disabled={copying}
             className="flex items-center gap-2 rounded-lg bg-accent-soft px-4 py-2 text-sm font-medium text-bg hover:opacity-90 transition-opacity disabled:opacity-50"
-            style={{ backgroundColor: "#9678ff", color: "#0b0d12" }}
+            style={{ backgroundColor: "#ff9500", color: "#ffffff" }}
           >
             {copying ? (
               <span className="animate-spin inline-block w-3 h-3 border border-current border-t-transparent rounded-full" />

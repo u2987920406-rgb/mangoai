@@ -14,13 +14,14 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
       rel="stylesheet"
     />
-    <!-- Applique le thème (clair/sombre) AVANT le premier rendu → pas de flash. -->
+    <!-- Applique le thème (clair/sombre) AVANT le premier rendu → pas de flash.
+         Défaut = clair (refonte Serein : fond blanc + accent mangue). -->
     <script>
       try {
         document.documentElement.dataset.theme =
-          localStorage.getItem("mangoos.theme") || "dark";
+          localStorage.getItem("mangoos.theme") || "light";
       } catch (e) {
-        document.documentElement.dataset.theme = "dark";
+        document.documentElement.dataset.theme = "light";
       }
     </script>
   </head>

@@ -82,7 +82,7 @@ export default function MultiProject({ onBack }) {
           </button>
           <div className="h-5 w-px bg-edge" />
           <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Layers size={18} style={{ color: "#9678ff" }} />
+            <Layers size={18} style={{ color: "#ff9500" }} />
             <h1 className="font-bold text-ink truncate">Multi-projets — Bibliothèque de fichiers</h1>
           </div>
           {!loading && (
@@ -116,7 +116,7 @@ export default function MultiProject({ onBack }) {
                       searchMode === "semantic" ? "bg-bg text-ink" : "text-dim hover:text-ink"
                     }`}
                   >
-                    <Sparkles size={13} style={searchMode === "semantic" ? { color: "#9678ff" } : undefined} />
+                    <Sparkles size={13} style={searchMode === "semantic" ? { color: "#ff9500" } : undefined} />
                     Recherche sémantique
                   </button>
                 </div>
