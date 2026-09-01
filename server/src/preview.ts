@@ -259,7 +259,7 @@ const defaultLaunch: Launcher = async (projectDir, configHash) => {
   // walks up to the next free one on its own.
   const proc = spawn(
     process.platform === "win32" ? "npm.cmd" : "npm",
-    ["run", "dev", "--", "--port", String(PREVIEW_PORT_BASE), "--host", "127.0.0.1"],
+    ["run", "dev", "--", "--port", String(PREVIEW_PORT_BASE), "--host", "0.0.0.0"],
     { cwd: projectDir, stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" },
   );
 
