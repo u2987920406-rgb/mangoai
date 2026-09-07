@@ -719,6 +719,9 @@
     },
     "test-working-memory": {
       "tier": "offline"
+    },
+    "test-short-model-label": {
+      "tier": "offline"
     }
   }
 }
