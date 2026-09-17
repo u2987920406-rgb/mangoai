@@ -4568,3 +4568,8 @@ Parties 4-5 du plan restent à faire.
 **`limites.md`** : L114/L116/L117 mis à jour (activation par défaut documentée). Nouvelle **L138** — le gap trouvé, marqué ✅ Résolu avec les 2 limites honnêtes (variabilité du juge, table nommée) explicitement consignées.
 
 `tsc --noEmit` propre à chaque étape. Suite offline complète : **230 PASS · 1 FAIL** (`test-relay` — timeout transitoire dû à la charge système des sondes LLM concurrentes, reproduit seul juste après : 100% vert, confirmé PAS une régression, patron déjà vu et vérifié plus tôt dans la même nuit).
+
+
+## 2026-09-17 — Audit et autonomie locale
+
+Mode Node autonome, installation coordonnée Mango/MangoQA, interface compilée, diagnostics visibles et sauvegarde fiable. Publication conditionnée aux tests existants et à un audit complet corrélé ; sources recontrôlées après compilation. Dépendances corrigées, suivi QA et arrêt des aperçus fiabilisés. 242 scripts serveur, 77 tests UI, 12 contrôles standalone et parcours Chromium réels réussis. Génération avec les modèles de Raf et publication cloud non validées. Pas encore d'exécutable embarqué. Détail : `docs/audit-standalone-2026-09-17.md` et `README.md`. Commit et publication GitHub autorisés ensuite par Raf ; livraison coordonnée avec MangoQA.

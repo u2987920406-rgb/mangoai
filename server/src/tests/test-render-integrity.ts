@@ -82,7 +82,7 @@ const SEEDED_FIXTURES: Record<string, string> = {
 
 async function main() {
   console.log("\n[2] GATE CHIFFRÉ — Playwright réel (navigateur partagé)");
-  const browser = await chromium.launch({ channel: "msedge", headless: true });
+  const browser = await chromium.launch({ headless: true, ...(process.env.MANGO_BROWSER_EXECUTABLE ? {executablePath: process.env.MANGO_BROWSER_EXECUTABLE} : {}), ...(process.env.MANGO_BROWSER_CHANNEL ? {channel: process.env.MANGO_BROWSER_CHANNEL} : {}) });
   try {
     const context = await browser.newContext({ viewport: { width: 1200, height: 800 }, deviceScaleFactor: 1 });
 

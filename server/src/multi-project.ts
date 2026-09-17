@@ -6,7 +6,7 @@ import { resolveProvider } from './llm/llm-engine.js'
 import { getBrain } from './kernel.js'
 import { projectDir } from './projects.js'
 
-const WORKSPACE_DIR = path.join(process.cwd(), '..', 'workspace')
+import { WORKSPACE_DIR } from "./projects.js"
 
 // Phase 3 idée #26 — index sémantique (résumés via l'Élève local Gemma/Ollama — $0, hors crédits API)
 const DATA_DIR = dataDir()

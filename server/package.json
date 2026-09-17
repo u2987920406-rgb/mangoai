@@ -8,14 +8,15 @@
   },
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
+    "start": "node --import tsx src/index.ts",
     "watch:supervised": "tsx src/watchdog.ts",
     "check-key": "tsx src/check-key.ts",
-    "test": "tsx src/test-runner.ts --tier smoke",
-    "test:offline": "tsx src/test-runner.ts --tier offline",
-    "test:llm": "tsx src/test-runner.ts --tier llm",
-    "test:full": "tsx src/test-runner.ts --tier full",
-    "test:list": "tsx src/test-runner.ts --list"
+    "test": "node --import tsx src/test-runner.ts --tier smoke",
+    "test:offline": "node --import tsx src/test-runner.ts --tier offline",
+    "test:llm": "node --import tsx src/test-runner.ts --tier llm",
+    "test:full": "node --import tsx src/test-runner.ts --tier full",
+    "test:list": "node --import tsx src/test-runner.ts --list",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@anthropic-ai/claude-agent-sdk": "^0.3.173",
@@ -30,7 +31,7 @@
     "multer": "^2.2.0",
     "node-unrar-js": "^2.0.2",
     "officeparser": "^7.2.1",
-    "pdfjs-dist": "^6.0.227",
+    "pdfjs-dist": "^6.3.289",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -39,6 +40,7 @@
     "@types/express": "^5.0.6",
     "@types/multer": "^2.1.0",
     "@types/node": "^25.9.3",
+    "esbuild": "^0.28.0",
     "playwright": "^1.60.0",
     "tsx": "^4.22.4",
     "typescript": "^6.0.3",
@@ -48,5 +50,10 @@
     "esbuild@0.28.0": true,
     "esbuild@0.27.3": true,
     "sharp@0.34.5": true
+  },
+  "overrides": {
+    "officeparser": {
+      "pdfjs-dist": "$pdfjs-dist"
+    }
   }
 }

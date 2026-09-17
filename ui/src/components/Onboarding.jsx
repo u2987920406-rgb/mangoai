@@ -58,6 +58,7 @@ export default function Onboarding({ onDone }) {
   const [step, setStep] = useState(0);
   const [answers, setAnswers] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState("");
 
   const current = STEPS[step];
   const selected = answers[current.id];
@@ -80,14 +81,17 @@ export default function Onboarding({ onDone }) {
   async function submit() {
     if (submitting) return;
     setSubmitting(true);
+    setError("");
     try {
-      await fetch("/api/onboarding", {
+      const response = await fetch("/api/onboarding", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(answers),
       });
+      if (!response.ok) throw new Error("Impossible d’enregistrer tes préférences. Réessaie.");
       onDone();
-    } catch {
+    } catch (e) {
+      setError(e.message || "Mango est indisponible. Réessaie.");
       setSubmitting(false);
     }
   }
@@ -106,7 +110,7 @@ export default function Onboarding({ onDone }) {
           <h1 className="text-2xl font-bold text-ink">
             Bienvenue dans <span className="text-accent">Mango</span>
           </h1>
-          <p className="mt-1 text-sm text-dim">5 questions pour que Mango apprenne à te connaître</p>
+          <p className="mt-1 text-sm text-dim">{STEPS.length} questions pour que Mango apprenne à te connaître</p>
         </div>
 
         {/* Progress dots */}
@@ -153,6 +157,7 @@ export default function Onboarding({ onDone }) {
           </div>
         </div>
 
+        {error && <p role="alert" className="mt-4 text-sm text-red-600">{error}</p>}
         {/* Navigation */}
         <div className="mt-4 flex justify-between">
           {step > 0 ? (

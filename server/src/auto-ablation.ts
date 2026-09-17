@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { Express, Request, Response } from 'express'
 
-const WORKSPACE_DIR = path.join(process.cwd(), '..', 'workspace')
+import { WORKSPACE_DIR } from "./projects.js"
 const AXIOMS_FILE = path.join(WORKSPACE_DIR, '.axioms.md')
 
 type Maturite = 'golden' | 'prouvé' | 'candidat' | 'inconnu'

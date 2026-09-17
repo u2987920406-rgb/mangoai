@@ -80,7 +80,7 @@ export async function runClosureParcours(projectDir: string): Promise<{ ok: bool
 // (comme le Gardien/parcours). Fail-open : MangoQA absent/timeout → ok:true (ne bloque jamais).
 export async function runClosureMangoQA(projectDir: string): Promise<{ ok: boolean; action: string; skipped?: string }> {
   try {
-    if (!isMangoQaActive()) return { ok: true, action: "" };
+    if (!isMangoQaActive()) return { ok: true, action: "", skipped: "MangoQA non démarré" };
     const name = path.basename(projectDir);
     emitPhaseComplete(name, "closure", []);
     // Timeout paramétrable : un audit MangoQA « lourd » peut dépasser 60 s (~140 s pour un gros
@@ -89,6 +89,7 @@ export async function runClosureMangoQA(projectDir: string): Promise<{ ok: boole
     if (verdict && verdict.verdict === "red") {
       return { ok: false, action: verdict.rejection?.corrective_action || "revois l'architecture (verdict MangoQA RED)" };
     }
+    if (!verdict || verdict.verdict === "unknown") return { ok: true, action: "", skipped: "Audit incomplet ou délai dépassé" };
     return { ok: true, action: "" };
   } catch (e) {
     // (revue 2026-07-03, action #6, constat A) Fail-open ASSUMÉ (une panne MangoQA

@@ -186,15 +186,12 @@ let launchInFlight: Promise<Browser> | null = null;
 export async function getBrowser(): Promise<Browser> {
   if (browser?.isConnected()) return browser;
   if (!launchInFlight) {
-    launchInFlight = Promise.race([
-      chromium.launch({ channel: "msedge", headless: true }),
-      new Promise<Browser>((_, reject) => {
-        setTimeout(
-          () => reject(new Error(`chromium.launch() timeout après ${BROWSER_LAUNCH_TIMEOUT_MS}ms (L112)`)),
-          BROWSER_LAUNCH_TIMEOUT_MS,
-        );
-      }),
-    ])
+    launchInFlight = chromium.launch({
+      headless: true,
+      ...(process.env.MANGO_BROWSER_EXECUTABLE ? { executablePath: process.env.MANGO_BROWSER_EXECUTABLE } : {}),
+      timeout: BROWSER_LAUNCH_TIMEOUT_MS,
+      ...(process.env.MANGO_BROWSER_CHANNEL ? { channel: process.env.MANGO_BROWSER_CHANNEL } : {}),
+    })
       .then((b) => {
         browser = b;
         return b;

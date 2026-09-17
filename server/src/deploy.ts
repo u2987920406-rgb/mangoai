@@ -1,3 +1,4 @@
+import { assertSourcesUnchanged } from "./publication-check.js";
 // One-click deployment of a generated project to a static host (idea 18).
 // Three interchangeable targets, all "build locally → push the dist":
 //   - Cloudflare Pages  → https://<project>.pages.dev   (npx wrangler)
@@ -66,18 +67,19 @@ function friendly(err: unknown, target: DeployTarget): Error {
 }
 
 // npm run build → dist/, with a sanity check that it produced an entry point.
-async function buildDist(dir: string): Promise<string> {
+async function buildDist(dir: string, fingerprint?: string): Promise<string> {
   await run("npm", ["run", "build"], dir);
   const dist = path.join(dir, "dist");
   if (!fs.existsSync(path.join(dist, "index.html"))) {
     throw new Error("Le build n'a pas produit de dist/index.html");
   }
+  if (fingerprint) assertSourcesUnchanged(dir, fingerprint);
   return dist;
 }
 
-async function deployCloudflare(dir: string, name: string): Promise<{ url: string }> {
+async function deployCloudflare(dir: string, name: string, fingerprint?: string): Promise<{ url: string }> {
   const project = sanitizeName(name);
-  const dist = await buildDist(dir);
+  const dist = await buildDist(dir, fingerprint);
 
   try {
     await run(
@@ -104,9 +106,9 @@ async function deployCloudflare(dir: string, name: string): Promise<{ url: strin
   return { url: `https://${project}.pages.dev` };
 }
 
-async function deployVercel(dir: string, name: string): Promise<{ url: string }> {
+async function deployVercel(dir: string, name: string, fingerprint?: string): Promise<{ url: string }> {
   const project = sanitizeName(name);
-  const dist = await buildDist(dir);
+  const dist = await buildDist(dir, fingerprint);
 
   // Deploy the prebuilt static dir straight to production. --yes accepts the
   // default project link non-interactively; the .vercel/ link persists in the
@@ -126,9 +128,9 @@ async function deployVercel(dir: string, name: string): Promise<{ url: string }>
   return { url };
 }
 
-async function deployNetlify(dir: string, name: string): Promise<{ url: string }> {
+async function deployNetlify(dir: string, name: string, fingerprint?: string): Promise<{ url: string }> {
   sanitizeName(name); // validate early (Netlify picks the site name itself)
-  const dist = await buildDist(dir);
+  const dist = await buildDist(dir, fingerprint);
 
   // --json gives a stable, parseable result ({ deploy_url, url, ... }). A linked
   // site is required: if absent, the CLI errors and friendly() points the user
@@ -152,7 +154,7 @@ async function deployNetlify(dir: string, name: string): Promise<{ url: string }
   return { url };
 }
 
-const DEPLOYERS: Record<DeployTarget, (dir: string, name: string) => Promise<{ url: string }>> = {
+const DEPLOYERS: Record<DeployTarget, (dir: string, name: string, fingerprint?: string) => Promise<{ url: string }>> = {
   cloudflare: deployCloudflare,
   vercel: deployVercel,
   netlify: deployNetlify,
@@ -162,8 +164,9 @@ export async function deployProject(
   dir: string,
   name: string,
   target: DeployTarget = "cloudflare",
+  fingerprint?: string,
 ): Promise<{ url: string; target: DeployTarget }> {
   if (!isDeployTarget(target)) throw new Error(`Cible de déploiement inconnue : ${target}`);
-  const { url } = await DEPLOYERS[target](dir, name);
+  const { url } = await DEPLOYERS[target](dir, name, fingerprint);
   return { url, target };
 }

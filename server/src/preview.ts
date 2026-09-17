@@ -259,8 +259,8 @@ const defaultLaunch: Launcher = async (projectDir, configHash) => {
   // walks up to the next free one on its own.
   const proc = spawn(
     process.platform === "win32" ? "npm.cmd" : "npm",
-    ["run", "dev", "--", "--port", String(PREVIEW_PORT_BASE), "--host", "0.0.0.0"],
-    { cwd: projectDir, stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32" },
+    ["run", "dev", "--", "--port", String(PREVIEW_PORT_BASE), "--host", process.env.MANGO_STANDALONE === "1" ? "127.0.0.1" : "0.0.0.0"],
+    { cwd: projectDir, stdio: ["ignore", "pipe", "pipe"], shell: process.platform === "win32", detached: process.platform !== "win32" },
   );
 
   // Si le process meurt, retirer son entrée du pool (par identité, pour ne pas
@@ -278,7 +278,7 @@ const defaultLaunch: Launcher = async (projectDir, configHash) => {
   await waitForServerOrExit(url, proc, 15_000);
 
   async function stopThis(): Promise<void> {
-    if (proc.exitCode === null) {
+    if (proc.exitCode === null && proc.signalCode === null) {
       if (process.platform === "win32" && proc.pid) {
         // (N20, nuit 2026-07-03) taskkill ATTENDU + mort re-vérifiée : le
         // fire-and-forget + 300 ms fixes laissait des Vite orphelins quand
@@ -291,16 +291,16 @@ const defaultLaunch: Launcher = async (projectDir, configHash) => {
           setTimeout(resolve, 3_000); // taskkill lui-même ne doit jamais nous bloquer
         });
       } else {
-        proc.kill("SIGTERM");
+        try { if (proc.pid) process.kill(-proc.pid, "SIGTERM"); } catch { proc.kill("SIGTERM"); }
       }
     }
     // Vérifie la mort réelle (jusqu'à ~2 s) ; escalade SIGKILL hors Windows.
-    for (let i = 0; i < 10 && proc.exitCode === null; i++) {
+    for (let i = 0; i < 10 && proc.exitCode === null && proc.signalCode === null; i++) {
       await new Promise((r) => setTimeout(r, 200));
     }
-    if (proc.exitCode === null) {
+    if (proc.exitCode === null && proc.signalCode === null) {
       console.warn(`[preview] le dev server (pid ${proc.pid}) survit au kill — orphelin possible`);
-      if (process.platform !== "win32") proc.kill("SIGKILL");
+      if (process.platform !== "win32") { try { if (proc.pid) process.kill(-proc.pid, "SIGKILL"); } catch { /* already gone */ } }
     }
   }
 
@@ -309,7 +309,7 @@ const defaultLaunch: Launcher = async (projectDir, configHash) => {
     url,
     port,
     configHash,
-    isAlive: async () => proc.exitCode === null && (await serverAlive(url)),
+    isAlive: async () => proc.exitCode === null && proc.signalCode === null && (await serverAlive(url)),
     stop: stopThis,
   };
 };

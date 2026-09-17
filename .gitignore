@@ -80,3 +80,7 @@ server/.toeic-content.intermediaire.state.json
 
 # Scripts de preuve jetables (bruit racine de src/) — jamais versionnés
 server/src/_prove-*
+
+# Captures et rapports des tests navigateur
+test-results/
+release/

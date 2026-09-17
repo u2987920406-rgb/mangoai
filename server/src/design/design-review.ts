@@ -1,3 +1,4 @@
+import { WORKSPACE_DIR } from "../projects.js";
 // Idée #2 — Design Pair-Programming
 // Analyse les fichiers source d'un projet et retourne des recommandations UX/UI structurées.
 import { askLLM, resolveProvider } from '../llm/llm-engine.js'
@@ -184,7 +185,7 @@ export function registerDesignReviewRoutes(app: Express): void {
     }
 
     const ROOT = path.resolve(import.meta.dirname, '..', '..')
-    const WORKSPACE_DIR = path.join(ROOT, 'workspace')
+
     const projectPath = path.join(WORKSPACE_DIR, projectName.trim())
 
     if (!fs.existsSync(projectPath)) {

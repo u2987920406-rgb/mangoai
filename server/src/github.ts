@@ -2,7 +2,7 @@
 // The user provides a personal access token (GITHUB_TOKEN in .env, "repo"
 // scope); the owner login is read from the API so nothing else is needed.
 // The project already has a per-turn git history (versions.ts) — here we just
-// make sure a matching GitHub repo exists and force-push the local history to
+// make sure a matching GitHub repo exists and push the local history without overwriting remote commits to
 // it (local is the source of truth, like the Cloudflare deploy). The token is
 // never written to .git/config: we push through an inline authenticated URL
 // and leave a clean, token-less "origin" remote behind for "Open on GitHub".
@@ -113,7 +113,7 @@ export async function pushToGitHub(
   // in .git/config; "main" is GitHub's default branch.
   const authUrl = `https://x-access-token:${token()}@github.com/${owner}/${repo}.git`;
   try {
-    await git(dir, ["push", "--force", authUrl, "HEAD:refs/heads/main"]);
+    await git(dir, ["push", authUrl, "HEAD:refs/heads/main"]);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     // Never leak the token if it appears in an error message.

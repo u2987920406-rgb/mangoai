@@ -20,7 +20,7 @@ import path from "node:path";
 // que soit le sous-dossier du module appelant ou le cwd de lancement. Canonique :
 // `server/data/` (le patron majoritaire avant ce correctif — ~15 modules déjà là).
 export function dataDir(...segments: string[]): string {
-  return path.join(import.meta.dirname, "..", "data", ...segments);
+  return path.join(path.resolve(process.env.MANGO_DATA_DIR || path.join(import.meta.dirname, "..", "data")), ...segments);
 }
 
 export function atomicWriteFileSync(file: string, data: string): void {

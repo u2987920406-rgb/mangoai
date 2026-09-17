@@ -9,7 +9,8 @@ import os from "node:os";
 export function lanIPv4s(): string[] {
   const seen = new Set<string>();
   const out: string[] = [];
-  const ifaces = os.networkInterfaces();
+  let ifaces: ReturnType<typeof os.networkInterfaces>;
+  try { ifaces = os.networkInterfaces(); } catch { return []; }
   for (const name of Object.keys(ifaces)) {
     for (const ni of ifaces[name] ?? []) {
       // Node ≥18 : ni.family peut être "IPv4" (string) ou 4 (number).

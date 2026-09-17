@@ -4,7 +4,7 @@ import fs from "node:fs";
 import { spawn } from "node:child_process";
 
 const ROOT = path.resolve(import.meta.dirname, "..", "..");
-export const WORKSPACE_DIR = path.join(ROOT, "workspace");
+export const WORKSPACE_DIR = path.resolve(process.env.MANGOAI_WORKSPACE || path.join(ROOT, "workspace"));
 const TEMPLATE_DIR = path.join(ROOT, "server", "template");
 const TEMPLATES_DIR = path.join(ROOT, "server", "templates");
 

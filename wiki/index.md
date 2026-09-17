@@ -12,6 +12,8 @@ Catalogue de toutes les pages. Voir [[_schema]] pour les conventions, [[log]] po
 
 **MangoOS** = agent personnel local-first style Lovable : on décrit une app web dans un chat, l'IA génère le code React/Vite (ou Svelte/Vue), aperçu live à côté. Backend Node+Express (`server/`, port 3000), front builder React+Vite (`ui/`, port 5173). Voir [[idee]].
 
+Voir aussi [[standalone]] : installation autonome locale et périmètre vérifié.
+
 ## Pages-entités (architecture)
 
 | Page | En une ligne | Statut |

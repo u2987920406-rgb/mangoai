@@ -2,7 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import type { Express, Request, Response } from 'express'
 
-const WORKSPACE_DIR = path.join(process.cwd(), '..', 'workspace')
+import { WORKSPACE_DIR } from "./projects.js"
 const METRICS_FILE = path.join(WORKSPACE_DIR, '.metrics.jsonl')
 
 interface MetricEntry {

@@ -1,0 +1,19 @@
+{
+  "name": "mangoos",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "setup": "node scripts/setup.mjs",
+    "build": "npm --prefix ui run build",
+    "start": "node scripts/standalone.mjs",
+    "doctor": "node scripts/doctor.mjs",
+    "test:standalone": "node scripts/test-standalone.mjs",
+    "test": "npm --prefix server test && npm --prefix ui test",
+    "typecheck": "npm --prefix server run typecheck && npm --prefix ui run typecheck",
+    "test:browser": "node scripts/test-browser.mjs"
+  }
+}

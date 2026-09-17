@@ -36,7 +36,8 @@ export function isMangoQaActive(): boolean {
 }
 
 export interface QAVerdict {
-  verdict: 'green' | 'red'
+  signalTimestamp?: string
+  verdict: 'green' | 'red' | 'unknown'
   rejection: {
     rejection_id: string
     corrective_action: string
@@ -62,7 +63,7 @@ export function emitPhaseComplete(
   phase: string,
   changedFiles: string[],
   retryCount = 0,
-): void {
+): string {
   const projDir = projectDir(projectName)
   const dir = qaDir(projDir)
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true })
@@ -78,6 +79,7 @@ export function emitPhaseComplete(
   const verdictFile = path.join(dir, 'audit-verdict.json')
   if (fs.existsSync(verdictFile)) fs.unlinkSync(verdictFile)
   fs.writeFileSync(path.join(dir, 'phase-complete.json'), JSON.stringify(signal, null, 2), 'utf8')
+  return signal.timestamp
 }
 
 // Attend le verdict de Mango QA. Renvoie null si timeout (Mango QA non lancé).
@@ -85,6 +87,7 @@ export function emitPhaseComplete(
 export async function waitForVerdict(
   projectName: string,
   timeoutMs: number = VERDICT_TIMEOUT,
+  expectedTimestamp?: string,
 ): Promise<QAVerdict | null> {
   const projDir = projectDir(projectName)
   const verdictFile = path.join(qaDir(projDir), 'audit-verdict.json')
@@ -94,7 +97,8 @@ export async function waitForVerdict(
     if (fs.existsSync(verdictFile)) {
       try {
         const raw = fs.readFileSync(verdictFile, 'utf8')
-        return JSON.parse(raw) as QAVerdict
+        const verdict = JSON.parse(raw) as QAVerdict
+        if (!expectedTimestamp || verdict.signalTimestamp === expectedTimestamp) return verdict
       } catch {
         return null
       }
@@ -121,6 +125,7 @@ Corrige ce point avant de continuer. MangoOS relancera l'audit automatiquement.`
 // Feu Vert → confirmation, sinon null (rien à surfacer).
 export function buildVerdictMessage(verdict: QAVerdict): string | null {
   if (verdict.verdict === 'red') return buildRejectionMessage(verdict) || null
+  if (verdict.verdict === 'unknown') return '⚪ Mango QA — Non vérifié : audit incomplet ou indisponible.'
   if (verdict.verdict === 'green') return '✅ Mango QA — Feu Vert'
   return null
 }

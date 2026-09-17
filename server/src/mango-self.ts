@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 // Auto-amélioration de MangoOS — la « copie isolée » (barreau (B), décidé avec Raf 2026-06-27).
 //
 // Mango pourra un jour LIRE et améliorer son PROPRE code. La règle de sûreté décidée :
@@ -288,8 +289,8 @@ export async function runTestSandboxed(
   try {
     // 1. Bundle (CONFIANCE) — cwd=worktree pour résoudre node_modules (jonction) + imports relatifs.
     const esb = await spawnCaptured(
-      `npx esbuild "${testAbs}" --bundle --platform=node --format=cjs --outfile="${bundle}"`,
-      null, worktree, true, SANDBOX_BUNDLE_TIMEOUT_MS,
+      process.platform === "win32" ? process.execPath : createRequire(import.meta.url).resolve("esbuild/bin/esbuild"), [...(process.platform === "win32" ? [createRequire(import.meta.url).resolve("esbuild/bin/esbuild")] : []), testAbs, "--bundle", "--platform=node", "--format=cjs", `--outfile=${bundle}`],
+      worktree, false, SANDBOX_BUNDLE_TIMEOUT_MS,
     );
     if (esb.code !== 0 || !fs.existsSync(bundle)) return { ok: false, output: "bundling esbuild KO :\n" + esb.out.slice(0, 1500) };
 

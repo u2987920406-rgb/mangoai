@@ -95,9 +95,9 @@ function lastMeaningfulLine(buf: string): string {
 function runTest(name: string): Promise<RunResult> {
   return new Promise((resolve) => {
     const start = Date.now();
-    const child = spawn("npx", ["tsx", path.join("src", "tests", `${name}.ts`)], {
+    const child = spawn(process.execPath, ["--import", "tsx", path.join("src", "tests", `${name}.ts`)], {
       cwd: SERVER_DIR,
-      shell: process.platform === "win32", // npx.cmd sous Windows
+      shell: false,
       env: process.env,
     });
     let out = "";
@@ -185,6 +185,10 @@ async function doRun(): Promise<void> {
   console.log(`RUNNER — tier « ${TIER} » · ${toRun.length} test(s) · timeout ${TIMEOUT_MS / 1000}s`);
   console.log("═".repeat(72));
 
+  if (toRun.length === 0) {
+    console.error("Aucun test sélectionné : vérifier le manifeste.");
+    process.exit(1);
+  }
   const results: RunResult[] = [];
   let idx = 0;
   for (const name of toRun) {

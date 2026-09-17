@@ -1,3 +1,7 @@
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
+import { verifyPublication } from "../publication-check.js";
+import { emitPhaseComplete, waitForVerdict, isMangoQaActive } from "../mangoqa.js";
 // Routes projet/aperçu/déploiement : upload multimodal, snap de zone, clic→source,
 // aperçus Vite vivants, deploy statique, push GitHub — extraites verbatim de
 // index.ts (comportement inchangé). Aucune dépendance du scope d'index.ts capturée.
@@ -9,7 +13,7 @@ import { saveUpload } from "../uploads.js";
 import { externalHistoryDir } from "./code-route.js";
 import { isPreviewing, startPreview, previewList } from "../preview.js";
 import { snapZone } from "../vision.js";
-import { isAgentBusy } from "../agent/agent-lock.js";
+import { isAgentBusy, tryAcquireAgent, releaseAgent } from "../agent/agent-lock.js";
 import { readSourceSnippet } from "../clicksource.js";
 import { ensureErrorRelay } from "../relay.js";
 import { deployProject, isDeployTarget } from "../deploy.js";
@@ -137,19 +141,32 @@ app.post("/api/deploy/:name", async (req, res) => {
     res.status(400).json({ error: `Cible de déploiement inconnue : ${String(target)}` });
     return;
   }
-  if (isAgentBusy()) {
+  if (!tryAcquireAgent()) {
     res.status(409).json({ error: "L'agent travaille — attends la fin avant de publier" });
     return;
   }
   try {
-    const { url } = await deployProject(projectDir(name), name, target);
+    const dir = projectDir(name);
+    const fingerprint = await verifyPublication(dir, {
+      active: isMangoQaActive,
+      audit: async () => {
+        const timestamp = emitPhaseComplete(name, "publication", []);
+        return waitForVerdict(name, 180000, timestamp);
+      },
+      test: async () => {
+        await promisify(execFile)("npm", ["test"], { cwd: dir, shell: process.platform === "win32", timeout: 120000, maxBuffer: 4 * 1024 * 1024, env: {...process.env, CI:"true"} });
+      },
+    });
+    const { url } = await deployProject(dir, name, target, fingerprint);
     res.json({ url, target });
   } catch (err) {
     res.status(500).json({ error: err instanceof Error ? err.message : String(err) });
+  } finally {
+    releaseAgent();
   }
 });
 
-// One-click push to GitHub (creates the repo if needed, force-pushes history)
+// One-click push to GitHub (creates the repo if needed, preserves remote history)
 app.post("/api/github/:name", async (req, res) => {
   const name = req.params.name as string;
   const body = req.body as { private?: boolean; targetRepo?: string };

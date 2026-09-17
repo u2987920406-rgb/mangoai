@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import { dataDir } from "./safe-io.js";
+import { installStandaloneAccess, installRuntimeRoutes, serveStandaloneUI } from "./standalone.js";
 // MangoOS backend: chat endpoint (SSE) + project/preview management.
 // Mode Miroir (#79) : projectName "__mirror__" → l'agent édite l'UI de Mango elle-même.
 export const MIRROR_PROJECT = "__mirror__";
@@ -126,8 +129,12 @@ const PORT = Number(process.env.PORT ?? 3000);
 // Écoute LAN (#149 v2) : par défaut 0.0.0.0 pour que le téléphone de Raf (même Wi-Fi) puisse
 // ouvrir /taste/review. Repli localhost en posant HOST=localhost. Exposition LAN domicile
 // uniquement — pas d'Internet (cf. décision d'archi : LAN + push ntfy, zéro tunnel).
-const HOST = process.env.HOST ?? "0.0.0.0";
+const HOST = process.env.HOST ?? "127.0.0.1";
 const app = express();
+fs.mkdirSync(WORKSPACE_DIR, { recursive: true });
+fs.mkdirSync(dataDir(), { recursive: true });
+if (process.env.MANGO_STANDALONE === "1") installStandaloneAccess(app);
+installRuntimeRoutes(app);
 // (Un, 2026-07-03) U11 — CORS était grand ouvert (toute origine) alors que le
 // serveur écoute sur le LAN : n'importe quelle page web visitée depuis une
 // machine du réseau pouvait appeler l'API en cross-origin. Origines limitées à
@@ -223,6 +230,8 @@ registerAgentFactoryRoutes(app);
 registerPdfRoutes(app).catch((err) =>
   console.error("[pdf] init routes échouée :", err instanceof Error ? err.message : err),
 );
+
+if (process.env.MANGO_STANDALONE === "1") serveStandaloneUI(app);
 
 const httpServer = app.listen(PORT, HOST, () => {
   console.log(`MangoOS backend → http://localhost:${PORT}`);

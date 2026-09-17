@@ -1,5 +1,11 @@
 # Registre des limites honnêtes — MangoOS
 
+
+## Réserves de la livraison autonome — 2026-09-17
+
+Node/npm/Git requis ; pas d'exécutable signé. Validation Linux uniquement. Modèles de Raf et publication cloud non testés. Usage local mono-utilisateur sans sandbox. QA borné ; empreinte hors fichiers cachés et environnement. Voir `docs/audit-standalone-2026-09-17.md` pour le périmètre exact et `README.md` pour l'installation.
+
+
 > **Règle (Raf, 2026-06-25)** : à **chaque fois** qu'une livraison bute sur une *limite honnête* (un truc qu'on ne sait pas faire aujourd'hui et qu'on assume au lieu de le cacher), je l'inscris ici. Une limite consciente et tracée = une porte ouverte pour plus tard, pas un échec. Ce fichier est **vivant** : on y ajoute à chaque chantier, on passe une ligne en ✅ Résolu quand on la lève.
 
 **Colonnes** — `Codable en interne ?` tranche si on peut **lever la limite nous-mêmes maintenant** (code maison, éventuellement + une lib curée) ou si elle est **bloquée** tant qu'un externe (API / MCP / format / modèle officiel) n'existe pas. `Modèle optimal` et `Effort` portent sur la **piste de résolution** (le travail à faire pour lever la limite), selon le référentiel du `CLAUDE.md` global.

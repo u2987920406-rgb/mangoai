@@ -16,6 +16,19 @@
       "test-llm-cache",
       "test-e2e-intention-dispatch",
       "test-brain-dispatch"
+    ],
+    "audit-added": [
+      "test-blackboard-decay",
+      "test-eleve-compaction",
+      "test-eleve-design-tools",
+      "test-eleve-external-vision-tools",
+      "test-eleve-image-bank",
+      "test-eleve-sharingan-tools",
+      "test-eleve-workflow",
+      "test-eleve-youtube-tools",
+      "test-raf-tom",
+      "test-web-search",
+      "test-publication-check"
     ]
   },
   "entries": {
@@ -571,7 +584,8 @@
       "tier": "offline"
     },
     "test-sharingan-live": {
-      "tier": "offline"
+      "tier": "full",
+      "reason": "Visite réellement stripe.com : accès réseau externe requis, pas un test offline."
     },
     "test-site-artifacts": {
       "tier": "offline"
@@ -722,6 +736,54 @@
     },
     "test-short-model-label": {
       "tier": "offline"
+    },
+    "test-eleve-compaction": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-blackboard-decay": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-web-search": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-workflow": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-sharingan-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-youtube-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-design-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-external-vision-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-publication-check": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-raf-tom": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-image-bank": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-preview-live": {
+      "tier": "full",
+      "reason": "Installe réellement un template npm et lance Chromium/Vite. Aucun LLM."
     }
   }
 }
