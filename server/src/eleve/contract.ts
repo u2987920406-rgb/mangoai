@@ -361,6 +361,18 @@ export async function askEleveAgentic(
         assistantContent = "";
       }
     }
+    // Normalisation des arguments AVANT de replier le message assistant : un
+    // tool_call aux arguments vides ("") est refusé par l'API Ollama Cloud
+    // (« invalid tool call arguments » → HTTP 400) et tue TOUT le tour, même
+    // quand le modèle a correctement émis un appel. On remet la chaîne vide à
+    // "{}" (objet vide = aucun paramètre), ce que l'exécution d'outil sait déjà
+    // gérer (rawArgs || "{}" plus bas).
+    if (effectiveCalls?.length) {
+      effectiveCalls = effectiveCalls.map((tc) => ({
+        ...tc,
+        function: { ...tc.function, arguments: tc.function.arguments || "{}" },
+      }));
+    }
     messages.push({ role: "assistant", content: assistantContent, ...(effectiveCalls?.length ? { tool_calls: effectiveCalls } : {}) });
 
     // Pas d'outil demandé → le modèle a fini de raisonner, on rend sa réponse.

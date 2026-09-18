@@ -92,12 +92,10 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // repli d'AMBIGUÏTÉ SEULE quand le signal déterministe (URL/mots-clés/pièce jointe) est
   // muet. Léger et rapide : GLM cloud, repli C2 (BRAIN_FALLBACK) déjà disponible pour ce rôle.
   routeur:       { provider: "ollama", model: "glm-5.2:cloud", timeoutMs: 20_000 },
-  // #182 D3/É5 suite — le cerveau CHOISI PAR RAF à l'Accueil (popup rapide, gate
-  // HOME_QUICK_MODEL). Défaut = "sonnet" (alias court accepté tel quel par askClaude,
-  // vérifié dans llm-engine.ts : query({model}) prend l'alias directement, aucun
-  // MODEL_MAP nécessaire) → comportement identique au repli historique tant que Raf
-  // n'a rien choisi dans la popup. Pas d'EXPECTED_CAPS : choix libre assumé (limites.md).
-  accueil:       { provider: "claude", model: "sonnet", timeoutMs: 60_000 },
+  // Brain-agnostic par défaut (Raf, 2026-09-09) : aucun cerveau pré-câblé.
+  // La boucle tourne sans cerveau → tu branches provider+model à la main dans
+  // Réglages quand tu veux. empty provider/model = "pas de cerveau ici".
+  accueil:       { provider: "none", model: "" },
   // #193 — le cerveau FRONTIÈRE dédié de la section Code (jamais l'Élève souverain,
   // jamais un repli .env) : lu SERVEUR-CÔTÉ par /api/code-chat (code-route.ts), le
   // client ne peut jamais le contourner. Distinct de `codeur` (Élève, sémantique
@@ -105,7 +103,7 @@ export const DEFAULT_REGISTRY: Record<AgentId, BrainConfig> = {
   // disponible via l'abonnement, réassignable à chaud dans l'Atelier comme tout
   // cerveau, mais toujours filtré contre ALLOWED_MODELS côté route (repli "opus"
   // si le registre pointe vers un modèle non-Claude).
-  codeur_frontiere: { provider: "claude", model: "opus", timeoutMs: 120_000 },
+  codeur_frontiere: { provider: "none", model: "", timeoutMs: 120_000 },
 }
 
 export const AGENT_IDS = Object.keys(DEFAULT_REGISTRY) as AgentId[]
@@ -125,7 +123,7 @@ export const EXPECTED_CAPS: Partial<Record<AgentId, string[]>> = {
 // du rôle (un autre provider). Tout registre pointant sur openrouter était donc
 // neutralisé au chargement. Aligné sur le type LLMProvider (llm-engine.ts:40).
 const VALID_PROVIDERS: ReadonlySet<string> = new Set<LLMProvider>(
-  ["claude", "ollama", "openai", "deepseek", "mistral", "groq", "openrouter", "litellm"],
+  ["claude", "ollama", "openai", "deepseek", "mistral", "groq", "openrouter", "litellm", "none"],
 )
 
 /** Dossier des profils de cerveau (C4) : registres COMPLETS pré-remplis

@@ -25,11 +25,6 @@ import { ensureHomeScratch, cleanHomeScratch, graduateHomeScratch, detectsBuildI
 import { clearInterrupt } from "../interrupt.js";
 import { saveUpload } from "../uploads.js";
 
-// Noms HUMAINS des cerveaux non-Élève sélectionnables à l'Accueil (#182 D3 — divulgation).
-const HOME_BRAIN_NAMES: Record<string, string> = {
-  fable: "Fable", sonnet: "Sonnet", opus: "Opus", haiku: "Haiku",
-};
-
 export function registerHomeRoutes(app: express.Express): void {
 
 // #182 D3/É5 suite — expose le gate HOME_QUICK_MODEL au client (aucune route
@@ -65,13 +60,6 @@ app.post("/api/home-chat", async (req, res) => {
   // discussions d'accueil suivantes muettes (« ⏹ Arrêté à ta demande »). Bug débusqué
   // en montant l'Accueil conversationnel du shell 2.0 (2026-07-02).
   clearInterrupt();
-  const MODEL_MAP: Record<string, string> = {
-    fable:  "claude-fable-5",              // Fable 5 — le plus capable (via abonnement, cf. llm-engine)
-    sonnet: "claude-sonnet-4-6",
-    opus:   "claude-opus-4-8",
-    haiku:  "claude-haiku-4-5-20251001",
-  };
-  const resolvedModel = MODEL_MAP[model ?? "sonnet"] ?? "claude-sonnet-4-6";
   const last = messages[messages.length - 1];
   const history = messages
     .slice(0, -1)
@@ -80,6 +68,13 @@ app.post("/api/home-chat", async (req, res) => {
 
   // Mango propose-t-il de passer à l'atelier ? (intention de CONSTRUIRE détectée)
   const suggestGraduate = detectsBuildIntent(last?.content ?? "");
+
+  // (2026-09-09) Brain-agnostic : l'accueil n'a plus de cerveau par défaut.
+  // Si l'utilisateur a branché un cerveau via la popup rapide (HOME_QUICK_MODEL),
+  // on le lit ici ; sinon accueilBrain reste null → askLLM décide seul
+  // via resolveProvider() (vide = aucun cerveau, la boucle tourne sans).
+  const accueilBrain = flag("HOME_QUICK_MODEL") ? getBrain("accueil") : null;
+  const brainName = accueilBrain?.model ?? "Ce cerveau";
 
   try {
     // ── ÉLÈVE (GLM) → home AGENTIQUE : la page d'accueil « peut tout faire dès le départ ».
@@ -165,32 +160,18 @@ app.post("/api/home-chat", async (req, res) => {
       text = await askLLM(system, last.content, { provider: "ollama", model: "qwen3.5:cloud", maxTokens: 2048 });
       providerForContext = "ollama";
     } else {
-      // ── Cerveau NON-ÉLÈVE (Fable/Opus/Sonnet/Haiku) — chemin TEXTE PUR (askLLM sans
-      // outils). #182 D3/É5 : ne plus rester SILENCIEUX quand la tâche réclame des outils.
-      let hasAttachment = false;
-      if (convId) {
-        try {
-          const a = path.join(ensureHomeScratch(convId), ".assets");
-          hasAttachment = fs.existsSync(a) && fs.readdirSync(a).length > 0;
-        } catch { /* best-effort */ }
-      }
+      // ── Cerveau NON-ÉLÈVE — chemin TEXTE PUR (askLLM sans outils).
+      // (2026-09-09) Brain-agnostic : le registre `accueil` (popup rapide)
+      // REMPLACE le MODEL_MAP figé. OFF (défaut) → accueilBrain reste null,
+      // askLLM décide via resolveProvider() (vide = aucun cerveau).
+      const hasAttachment = false;
       const demanded = toolDemandSignal(last.content, { hasAttachment });
-      // #182 D3/É5 suite — sous le gate, le registre `accueil` (popup rapide, n'importe
-      // quel modèle Ollama installé) REMPLACE le MODEL_MAP figé comme source du
-      // brainOverride. OFF (défaut) → accueilBrain reste null, comportement byte-identique.
-      const accueilBrain = flag("HOME_QUICK_MODEL") ? getBrain("accueil") : null;
-      providerForContext = accueilBrain?.provider ?? "claude";
-      const brainOverride = accueilBrain ?? { provider: "claude" as const, model: resolvedModel };
-      const brainName = accueilBrain && accueilBrain.provider !== "claude"
-        ? (accueilBrain.model ?? "Ce cerveau")
-        : HOME_BRAIN_NAMES[model ?? "sonnet"] ?? "Ce cerveau";
-      // Sans ça, le modèle n'a AUCUN moyen de savoir quel cerveau il est réellement
-      // (le prompt partagé `system` ne le dit jamais) — il ne peut donc que rester
-      // vague quand Raf demande « quel modèle es-tu ? ». On ne l'ajoute QUE quand
-      // Raf a choisi un cerveau via la popup rapide (`accueilBrain`), pour garder
-      // le repli Claude par défaut byte-identique (gate OFF ou choix jamais fait).
+      providerForContext = accueilBrain?.provider ?? "ollama";
+      const brainName = accueilBrain?.model ?? "Ce cerveau";
+      // Identité du cerveau : Raf peut choisir via la popup rapide.
+      // Gate OFF (accueilBrain null) : pas d'identité explicite, askLLM décide.
       const systemForBrain = accueilBrain
-        ? `${system}\nIdentité : le cerveau qui te fait fonctionner en ce moment est « ${brainName} » (choisi par Raf via la popup rapide de l'accueil). Si Raf demande quel modèle/cerveau tu utilises, réponds-le honnêtement et précisément (ex. « J'utilise ${brainName} en ce moment »), ne reste jamais vague.`
+        ? `${system}\nIdentité : le cerveau qui te fait fonctionner en ce moment est « ${brainName} » (choisi par Raf via la popup rapide de l'accueil). Si Raf demande quel modèle/cerveau tu utilises, réponds-le honnêtement et précisément.`
         : system;
 
       if (demanded.size > 0 && flag("FRONTIER_TOOLS_ANY_BRAIN") && convId && ELEVE_PROVIDER === "openai") {
@@ -204,7 +185,6 @@ app.post("/api/home-chat", async (req, res) => {
             requiredCaps: caps,
             brainLabel: model ?? "sonnet",
             brainName,
-            brainOverride,
             system: systemForBrain,
           },
           {
@@ -219,12 +199,14 @@ app.post("/api/home-chat", async (req, res) => {
         // ── Mode OFF (défaut) — repli TEXTE, mais HONNÊTE : si la tâche réclamait des
         // outils, on le DIT (plus de repli muet) ; sinon comportement byte-identique. ──
         const { askLLM } = await import("../llm/llm-engine.js");
-        // Gate OFF (accueilBrain null) : appel STRICTEMENT identique à avant ce
-        // chantier (aucun `provider` explicite — laisse askLLM/resolveProvider()
-        // décider comme aujourd'hui). Gate ON : provider/model du registre `accueil`.
-        text = accueilBrain
-          ? await askLLM(systemForBrain, last.content, { provider: accueilBrain.provider, model: accueilBrain.model, maxTokens: 2048 })
-          : await askLLM(system, last.content, { model: resolvedModel, maxTokens: 2048 });
+        // Gate OFF (accueilBrain null) : askLLM décide via resolveProvider()
+        // (vide = aucun cerveau, la boucle tourne sans).
+        // Gate ON : provider/model du registre `accueil`.
+        text = await askLLM(systemForBrain, last.content, {
+          provider: accueilBrain?.provider || undefined,
+          model: accueilBrain?.model || undefined,
+          maxTokens: 2048,
+        });
         if (demanded.size > 0) {
           const disclosure =
             `${brainName} ne pilote pas les outils ici ; sélectionne l'Élève (GLM 5.2) ` +

@@ -37,7 +37,7 @@ export { PROVIDER_PRESETS } from './llm-endpoint.js'
 import { claudeQuery, openAiChat, CLAUDE_QUERY_TIMEOUT_MS } from './llm-transport.js'
 export { subscriptionEnv } from './llm-transport.js'
 
-export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'openrouter' | 'litellm'
+export type LLMProvider = 'claude' | 'ollama' | 'openai' | 'deepseek' | 'mistral' | 'groq' | 'openrouter' | 'litellm' | 'none'
 
 export interface AskLLMOptions {
   provider?: LLMProvider
@@ -67,10 +67,10 @@ export interface AskLLMOptions {
 // importé + ré-exporté en tête de fichier. (Ancienne définition inline supprimée en T1.)
 
 /** Résout un provider depuis une valeur .env (ou le défaut global), borné aux
- * 6 valeurs valides. `envValue` = la variable dédiée d'une feature. */
+ * 9 valeurs valides. `envValue` = la variable dédiée d'une feature. */
 export function resolveProvider(envValue?: string, fallback: LLMProvider = 'claude'): LLMProvider {
   const raw = (envValue ?? process.env.LLM_PROVIDER ?? '').trim().toLowerCase()
-  const valid: LLMProvider[] = ['claude', 'ollama', 'openai', 'deepseek', 'mistral', 'groq', 'openrouter', 'litellm']
+  const valid: LLMProvider[] = ['claude', 'ollama', 'openai', 'deepseek', 'mistral', 'groq', 'openrouter', 'litellm', 'none']
   return (valid.includes(raw as LLMProvider) ? raw : fallback) as LLMProvider
 }
 
@@ -111,6 +111,7 @@ export function resolveLitellmEndpoint(overrides: EndpointOverrides = {}): { bas
 }
 
 function defaultModel(provider: LLMProvider): string {
+  if (provider === 'none') return ''
   if (provider === 'claude') return process.env.LLM_CLAUDE_MODEL ?? 'sonnet'
   if (provider === 'ollama') return process.env.OLLAMA_SUMMARY_MODEL ?? process.env.ELEVE_MODEL ?? 'gemma4:12b'
   if (provider === 'deepseek' || provider === 'mistral' || provider === 'groq' || provider === 'openrouter') {

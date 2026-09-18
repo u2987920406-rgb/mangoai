@@ -577,7 +577,7 @@ app.post("/api/chat", async (req, res) => {
                   : `⚠ Build vert. L'agent ${agentLabel} a continué seul jusqu'au bout de son budget d'auto-relances sans appeler « terminé » — l'app compile, il reste peut-être un détail. Relance-moi ou précise ce qui manque.`)
               : `✅ Résolu par l'agent ${agentLabel} (${agentTier}) en ${r.attempts} tentative(s) — coût Claude $0.00.`)
           : r.resolvedBy === "maitre"
-            ? `👑 L'agent a buté → escaladé au Maître (Claude), corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
+            ? `👑 L'agent a buté → escaladé au Maître, corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
             : `❌ Échec : ni l'agent ni le Maître n'ont fait passer le build (${r.inspection.signal}).`;
       if (r.success) {
         record("agent", verdict);

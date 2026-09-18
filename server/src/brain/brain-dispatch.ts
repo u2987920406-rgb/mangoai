@@ -53,6 +53,7 @@ const realSleep = (ms: number) => new Promise<void>((r) => setTimeout(r, ms))
 const RATE_LIMITS: Record<LLMProvider, number> = {
   claude: 10,
   ollama: 999,   // local → pas de limite réelle
+  none: 0,       // pas de cerveau → pas de rate limit
   openai: 20,
   deepseek: 20,
   mistral: 20,
