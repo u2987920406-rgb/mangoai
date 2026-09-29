@@ -80,7 +80,7 @@ export interface RelayDeps {
   askEleve: (system: string, user: string) => Promise<string>;
   inspect: (projectDir: string) => Promise<Inspection>;
   ensureDeps: (projectDir: string, log: (s: string) => void) => Promise<void>;
-  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean }>;
+  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean; codeChangedByMaitre?: boolean }>;
   // #104 Phase 2 — juge fonctionnel optionnel (injectable). Absent de
   // defaultRelayDeps → la porte ne peut JAMAIS se déclencher par défaut.
   judge?: (projectDir: string, task: string) => Promise<{ fonctionnel: number; note: string } | null>;
@@ -105,4 +105,9 @@ export interface EscalationContext {
   incomplete?: boolean;
   /** Résumé de ce que l'Élève a fait avant de se bloquer (pour orienter le Maître). */
   eleveSummary?: string;
+  /** CHANTIER 5b (2026-09-29) — chemins modifiés AVANT l'escalade. L'Élève écrit
+   * souvent ses fichiers puis cale (plafond) : le Maître n'a alors PLUS rien à
+   * modifier, et le contrôle `codeChanged` (qui ne regardait que le Maître)
+   * déclarait « aucun fichier modifié » → faux négatif sur un livrable jouable. */
+  codeChangedBefore?: boolean;
 }

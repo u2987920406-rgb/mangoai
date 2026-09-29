@@ -52,6 +52,15 @@ Ne touche à aucun fichier hors du projet et du registre d'axiomes.`;
 // dessous des blocages réels observés.
 const ESCALATION_IDLE_TIMEOUT_MS = 5 * 60_000;
 
+// CHANTIER 5b — le tour a-t-il produit du code ? Le Maître SEUL ne suffit pas à
+// juger : mesuré le 2026-09-29, l'Élève écrit ses 19 modules puis atteint son
+// plafond ; le Maître reçoit un projet déjà fait et ne change rien — le tour était
+// déclaré « aucun fichier modifié » alors que le jeu était JOUABLE. Fonction PURE
+// (testable sans SDK ni réseau) : le tour compte si le Maître OU l'Élève a écrit.
+export function combinerChangementCode(parLeMaitre: boolean, avantEscalade: boolean): boolean {
+  return parLeMaitre || avantEscalade;
+}
+
 async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_cost_usd?: number }>): Promise<{ costUsd: number; timedOut: boolean }> {
   let costUsd = 0;
   let timedOut = false;
@@ -76,7 +85,7 @@ async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_co
   return { costUsd, timedOut };
 }
 
-export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean }> {
+export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean; codeChangedByMaitre: boolean }> {
   // Détection de l'axiome appris sur l'UNION des fichiers de la partition (un
   // axiome rangé dans .axioms.<famille>.md compte aussi), via une empreinte NON
   // plafonnée : un nouvel axiome est appendé en fin de registre, donc au-delà du
@@ -107,6 +116,8 @@ export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom:
     escProfile.escalateAppendix, // "" pour GENERIC → prompt inchangé
   ].join("\n");
 
+  // CHANTIER 5b — l'Élève a-t-il DÉJÀ écrit du code avant l'escalade ? (voir types.ts)
+  const codeChangedBefore = hasRealCodeChange(await gitDirtyPaths(ctx.projectDir), new Set<string>());
   const filesBefore = await gitDirtyPaths(ctx.projectDir);
 
   const q = query({
@@ -125,5 +136,8 @@ export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom:
   const axiom = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles) !== axBefore;
   const filesAfter = await gitDirtyPaths(ctx.projectDir);
   const codeChanged = !timedOut && hasRealCodeChange(filesBefore, filesAfter);
-  return { axiom, costUsd, codeChanged };
+  // `codeChangedByMaitre` = ce que le Maître a apporté ; l'appelant combine avec
+  // `codeChangedBefore` pour juger si le TOUR a produit du code (pas le Maître seul).
+  const codeChangedByMaitre = codeChanged;
+  return { axiom, costUsd, codeChanged: combinerChangementCode(codeChanged, codeChangedBefore), codeChangedByMaitre };
 }

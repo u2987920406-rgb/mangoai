@@ -23,6 +23,7 @@ export interface RelayConfig {
   callCaps: { axiomCap: number; axiomFiles: string[]; fileBudget: number; fileMax: number };
   callAskEleve: (sys: string, usr: string) => Promise<string>;
   maitreModel: string;
+
   functionalGate: boolean;
   functionalMin: number;
   injectMeans: boolean;

@@ -55,6 +55,8 @@ import { constellationsSection } from "../constellations.js";
 import { ELEVE_MODEL, ELEVE_PROVIDER_DEFAULT, PROFILE, askEleveDispatch } from "./provider.js";
 import { elevePost, supportsTools, askEleveAgentic, AGENTIC_TOOL_CONTRACT, AGENTIC_FALLBACK_SYSTEM, AGENTIC_VISION_CLAUSE } from "./contract.js";
 import { escalateToClaude } from "./escalade.js";
+import { gitDirtyPaths, hasRealCodeChange } from "../git-signals.js";
+
 import { type RelayResult, type RelayOptions, type RelayDeps } from "./types.js";
 import { type RelayContext } from "./relay-config.js";
 import { runClosureParcours, runClosureMangoQA } from "./relay-closure.js";
@@ -73,12 +75,29 @@ export async function finalizeEscalationPhase(
     let feedback = lastErr;
     let axiomAny = false;
     let costTotal = 0;
+    // CHANTIER 5b — le TOUR a-t-il produit du code, AVANT que le Maître soit appelé ?
+    // (mesure 2026-09-29 : l'Élève écrit ses 19 modules puis atteint son plafond ; le
+    // Maître reçoit un projet déjà fait, ne change rien, et le tour — pourtant jouable —
+    // était déclaré « aucun fichier modifié »). Comparaison HEAD avant / après : fiable,
+    // l'Élève committe son travail (commitVersion) en fin de tour.
+    // Vérifié sur le run réel : le commit du projet arrive APRÈS l'escalade, donc
+    // HEAD n'a pas encore bougé. Le signal fiable est l'état NON COMMITTÉ du dépôt
+    // (les modules écrits par l'Élève y sont encore).
+    let eleveCodeChanged = false;
+    try {
+      eleveCodeChanged = hasRealCodeChange(new Set<string>(), await gitDirtyPaths(projectDir));
+    } catch { /* pas un dépôt git : rien de prouvable */ }
+
     for (let gTour = 0; ; gTour++) {
       push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})${gTour > 0 ? ` — re-correction clôture (${gTour}/${maxMaitreGate})` : esc2?.incomplete ? " — TERMINER la tâche" : ""}`);
       void fireObservationHook("OnEscalate", projectDir, feedback || "escalade Maître", relayHooks);
       const esc = await deps.escalate({
         task, projectDir, lastError: feedback, maitreModel, profile: callProfile,
         incomplete: esc2?.incomplete, eleveSummary: esc2?.eleveSummary,
+        // CHANTIER 5b — l'Élève a-t-il déjà écrit du code ce tour-ci ? (voir types.ts)
+        // Le Maître est appelé APRÈS son plafond : sans ce drapeau, le tour d'un jeu
+        // pourtant JOUABLE était déclaré « aucun fichier modifié » (faux négatif).
+        codeChangedBefore: eleveCodeChanged,
       });
       axiomAny = axiomAny || esc.axiom;
       costTotal += esc.costUsd;
@@ -97,6 +116,12 @@ export async function finalizeEscalationPhase(
         // « le build ne passe pas » etait FAUX. La cause reelle est l'absence de
         // changement de code (un placeholder compile deja).
         return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, echecCause: "aucun-changement", maitreAppele: true };
+      }
+      // CHANTIER 5b — DIRE qui a produit le code. Mesure 2026-09-29 : le Maître a été
+      // appelé alors que l'Élève venait d'écrire 19 modules (plafond atteint) ; il n'a
+      // donc rien changé, et le tour était déclaré « échec » sur un jeu JOUABLE.
+      if (!esc.codeChangedByMaitre) {
+        push(`ℹ code écrit par l'Élève (le Maître n'avait rien à changer) — le tour compte comme résolu`);
       }
       push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
 

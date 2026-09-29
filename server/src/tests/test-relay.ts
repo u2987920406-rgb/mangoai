@@ -11,7 +11,9 @@
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
-import { spawnSync } from "node:child_process";
+import { spawnSync, execSync } from "node:child_process";
+import { hasRealCodeChange } from "../git-signals.js";
+import { combinerChangementCode } from "../eleve/escalade.js";
 import { runRelay, type RelayDeps } from "../eleve.js";
 import type { Inspection } from "../inspection.js";
 import { inspectProject } from "../inspection.js";
@@ -223,6 +225,77 @@ async function deterministic(): Promise<void> {
       return { content: "", toolCalls: tc };
     };
   };
+
+  // D3) CHANTIER 5b (mesure réelle 2026-09-29) — le moteur atteint son PLAFOND
+  // alors que le build est VERT : l'Élève a déjà écrit son code, le Maître reçoit
+  // donc un projet déjà fait et n'a plus rien à changer. Avant : le contrôle ne
+  // regardait que le Maître et déclarait « aucun fichier modifié » — un jeu pourtant
+  // JOUABLE était marqué en échec. Le projet est un VRAI dépôt git (comme en prod).
+  {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-D3-"));
+    execSync("git init -q", { cwd: dir });
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    const prevB = process.env.ELEVE_BUDGET_TOOL_CALLS;
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
+    process.env.ELEVE_BUDGET_TOOL_CALLS = "1"; // plafond atteint au 1er appel d'outil
+    let escalateCalls = 0;
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      // le Maître NE change RIEN : le code était déjà écrit par l'Élève
+      escalate: async () => { escalateCalls++; return { axiom: false, costUsd: 0.03, codeChanged: true, codeChangedByMaitre: false }; },
+      agenticPost: agenticScript([
+        [call("write_file", { path: "marker.txt", content: "OK" }, 1)],
+        [call("read_file", { path: "marker.txt" }, 2)],
+      ]),
+    };
+    const r = await runRelay("tâche", dir, { profile: glm, maxEleveAttempts: 1 }, deps);
+    console.log("\n  [D3] Plafond atteint, build vert, le Maître n'apporte rien :");
+    check("Maître bien appelé (plafond, gate=on)", escalateCalls === 1);
+    check("tour RÉSOLU (pas « aucun fichier modifié »)", r.resolvedBy === "maitre" && r.success);
+    check("le journal dit QUI a écrit le code", /l'Élève/.test(r.log.join("\n")));
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    if (prevB === undefined) delete process.env.ELEVE_BUDGET_TOOL_CALLS; else process.env.ELEVE_BUDGET_TOOL_CALLS = prevB;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // D4) contre-preuve : si PERSONNE n'a écrit de code, l'échec reste un échec.
+  {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-D4-"));
+    execSync("git init -q", { cwd: dir });
+    const prevE = process.env.ELEVE_ESCALATE_ON_BLOCK;
+    process.env.ELEVE_ESCALATE_ON_BLOCK = "on";
+    const deps: RelayDeps = {
+      askEleve: async () => writeMarker("BAD"),
+      inspect: async (d) => markerInspect(d),
+      ensureDeps: noEnsure,
+      escalate: async () => ({ axiom: false, costUsd: 0.03, codeChanged: false, codeChangedByMaitre: false }),
+    };
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 1 }, deps);
+    console.log("\n  [D4] Personne n'a écrit de code — l'échec reste un échec :");
+    check("resolvedBy = none, success = false", r.resolvedBy === "none" && !r.success);
+    if (prevE === undefined) delete process.env.ELEVE_ESCALATE_ON_BLOCK; else process.env.ELEVE_ESCALATE_ON_BLOCK = prevE;
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
+  // D5) git-signals : un fichier de code sale AVANT l'escalade = vrai changement.
+  {
+    const vide = new Set<string>();
+    check("code écrit avant l'escalade = vrai changement",
+      hasRealCodeChange(vide, new Set(["src/game/loop.js"])));
+    check("les métadonnées seules ne comptent pas",
+      !hasRealCodeChange(vide, new Set([".lexique.md", ".architecture.md"])));
+  }
+
+  // D6) LA combinaison qui a causé le faux négatif — les 4 cas, exhaustifs.
+  {
+    check("Maître écrit → tour compté", combinerChangementCode(true, false));
+    check("Élève avait écrit, Maître non → tour compté (le faux négatif corrigé)",
+      combinerChangementCode(false, true));
+    check("les deux → tour compté", combinerChangementCode(true, true));
+    check("personne n'écrit → échec maintenu", !combinerChangementCode(false, false));
+  }
 
   {
     // F1 — le moteur écrit marker.txt=OK via write_file puis finish → succès Élève.
