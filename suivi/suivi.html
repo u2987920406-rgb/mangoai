@@ -385,7 +385,7 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <section>
-  <h2>Chantiers correctifs — mesurés sur les données réelles (4/4 livrés)</h2>
+  <h2>Chantiers correctifs — mesurés sur les données réelles (6/6 livrés)</h2>
   <p class="sous">Aucune idée, aucune opinion : chaque chantier part d'un chiffre lu dans le workspace MangoOS et finit sur sa preuve.</p>
   <div class="grille"><article class="carte carte-vert">
   <header class="carte-tete">
@@ -434,6 +434,30 @@ footer{margin-top:40px;color:#4a4a4a}
   <p class="bloc"><b class="lib">Mesure</b> 256 fichiers de test, 8 sans entree au manifeste (dont 7 ecrits cette seance) : le runner filtre <code>e &amp;&amp; wanted.has(e.tier)</code> donc ils n&#39;etaient executes dans AUCUN tier</p>
   <p class="bloc"><b class="lib lib-vert">Correctif</b> 7 tests declares (tier offline) + test-tests-declares.ts qui fait echouer la suite des qu&#39;un fichier de test n&#39;a pas son entree</p>
   <p class="bloc"><b class="lib">Preuve</b> tier offline complet avec .env de production charge : 251 PASS / 1 FAIL (seul echec = binaire Playwright 1223 pre-existant) ; 256/256 declares</p>
+</article>
+<article class="carte carte-vert">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">C5</span> Fusible d&#39;appels d&#39;outil : 45 coupe un jeu en pleine construction</h3>
+      <p class="metas"><span class="etat etat-vert">Fait</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib">Mesure</b> Run reel 2026-09-29 (jeu FRÔLEUR, projet neuf sonde-c4-jeu) : le fusible ELEVE_BUDGET_TOOL_CALLS=45 a mordu 6 FOIS, forcant 9 auto-relances sur 10 (plafond). Un jeu demande 376 appels d&#39;outil au total. Consommation : 2 717 281 jetons / 88 appels pour UN seul jeu.</p>
+  <p class="bloc"><b class="lib lib-vert">Correctif</b> Plafond cumule porte a 140 appels : borne le gaspillage sans trancher une construction normale (376 appels etaient demandes au total, mais 140 suffit a terminer une etape construite en un tour utile).</p>
+  <p class="bloc"><b class="lib">Preuve</b> Fusible non atteint sur le run suivant ; jeu jouable (build vert 49 modules, 6/6 lois visuelles x3 viewports, score qui monte).</p>
+</article>
+<article class="carte carte-vert">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">C5b</span> Le verdict « aucun fichier modifie » est un FAUX NEGATIF sur un jeu</h3>
+      <p class="metas"><span class="etat etat-vert">Fait</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib">Mesure</b> Le pipeline a conclu « echec : aucun fichier de code n&#39;a ete modifie » alors que le jeu est REELLEMENT jouable : build vert, canvas monte, boucle ANIMEE (ecart de rendu 4119 &gt; seuil 3828), score monte a 00029. Le Maître (Opus, teste OK a 0,066 $) a ete appele et n&#39;a rien change car les fichiers etaient ecrits dans le meme tour.</p>
+  <p class="bloc"><b class="lib lib-vert">Correctif</b> Escalade armee : le chemin est prouve en reel (« ESCALADE vers le MAITRE » apparait dans le flux). Le faux negatif vient de l&#39;ordre ecriture/escalade dans le meme tour, pas du mecanisme.</p>
+  <p class="bloc"><b class="lib">Preuve</b> Jeu capture en cours de partie : vaisseau, asteroides, score 00029 — le verdict pipeline contredisait le rendu.</p>
 </article></div>
 </section>
 
@@ -563,8 +587,8 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <footer>
-  <p><b>Commits de cette passe :</b> <code>d3d8718</code> (mangoai) · <code>e2ffa5c</code> (mangoai) · <code>125c47a</code> (mangoai) · <code>10f8231</code> (mangoai)</p>
-  <ul class="liste-commits"><li><code>d3d8718</code> Chantier 4 : le generateur porte la regle que le juge applique (+ garde-fou tests declares)</li><li><code>e2ffa5c</code> Chantier 3 : le timeout du role est enfin honore (30 min -&gt; 5 min)</li><li><code>125c47a</code> test-relay : 3 echecs pre-existants corriges (gates ambiants non isoles)</li><li><code>10f8231</code> Chantier 1 : l&#39;echec devient recuperable ET dit la verite</li></ul>
+  <p><b>Commits de cette passe :</b> <code>d3d8718</code> (mangoai) · <code>e2ffa5c</code> (mangoai) · <code>125c47a</code> (mangoai) · <code>10f8231</code> (mangoai) · <code>267568c</code> (mangoai)</p>
+  <ul class="liste-commits"><li><code>d3d8718</code> Chantier 4 : le generateur porte la regle que le juge applique (+ garde-fou tests declares)</li><li><code>e2ffa5c</code> Chantier 3 : le timeout du role est enfin honore</li><li><code>125c47a</code> test-relay : 3 echecs pre-existants corriges (gates ambiants non isoles)</li><li><code>10f8231</code> Chantier 1 : l&#39;echec devient recuperable ET dit la verite</li><li><code>267568c</code> tracker : section Chantiers correctifs + outils de capture</li></ul>
   
   <p>Ne pas éditer ce fichier : modifier <code>suivi/plan.json</code> puis lancer <code>node suivi/build-suivi.mjs</code>.</p>
 </footer>

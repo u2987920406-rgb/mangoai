@@ -125,6 +125,14 @@ const chantier = (c) => `<article class="carte carte-${c.fait ? "vert" : "orange
 </article>`;
 
 // Les chantiers portent `fait` (bool), pas `etat` — pas de comptage via compte().
+// Validation : un chantier sans booleen `fait` rendrait le compteur FAUX
+// (mesure : C1-C4b portaient `etat`, C5 `fait` -> le tracker affichait 4/6 livres).
+for (const c of plan.chantiers ?? []) {
+  if (typeof c.fait !== "boolean") {
+    throw new Error(`chantier ${c.id} : champ « fait » (booleen) manquant — le compteur mentirait`);
+  }
+}
+
 const chantiers = plan.chantiers ?? [];
 
 const decision = (q) => `<article class="carte carte-decision">

@@ -132,7 +132,8 @@ def main():
     ap.add_argument("--port", type=int, default=0, help="0 = port libre automatique")
     a = ap.parse_args()
 
-    url = a.html if a.html.startswith("file://") else "file://" + os.path.abspath(a.html)
+    # file:// par defaut ; une URL http(s) est utilisee TELLE QUELLE (page servie).
+    url = a.html if (a.html.startswith("file://") or a.html.startswith("http://") or a.html.startswith("https://")) else "file://" + os.path.abspath(a.html)
     port = a.port or port_libre()
     proc = chrome(port, a.width, a.height, url)
     try:

@@ -375,7 +375,7 @@
     {
       "hash": "e2ffa5c",
       "repo": "mangoai",
-      "texte": "Chantier 3 : le timeout du role est enfin honore (30 min -> 5 min)"
+      "texte": "Chantier 3 : le timeout du role est enfin honore"
     },
     {
       "hash": "125c47a",
@@ -386,6 +386,11 @@
       "hash": "10f8231",
       "repo": "mangoai",
       "texte": "Chantier 1 : l'echec devient recuperable ET dit la verite"
+    },
+    {
+      "hash": "267568c",
+      "repo": "mangoai",
+      "texte": "tracker : section Chantiers correctifs + outils de capture"
     }
   ],
   "preuveE2E": {
@@ -431,6 +436,22 @@
       "mesure": "256 fichiers de test, 8 sans entree au manifeste (dont 7 ecrits cette seance) : le runner filtre `e && wanted.has(e.tier)` donc ils n'etaient executes dans AUCUN tier",
       "correctif": "7 tests declares (tier offline) + test-tests-declares.ts qui fait echouer la suite des qu'un fichier de test n'a pas son entree",
       "preuve": "tier offline complet avec .env de production charge : 251 PASS / 1 FAIL (seul echec = binaire Playwright 1223 pre-existant) ; 256/256 declares",
+      "fait": true
+    },
+    {
+      "id": "C5",
+      "titre": "Fusible d'appels d'outil : 45 coupe un jeu en pleine construction",
+      "mesure": "Run reel 2026-09-29 (jeu FRÔLEUR, projet neuf sonde-c4-jeu) : le fusible ELEVE_BUDGET_TOOL_CALLS=45 a mordu 6 FOIS, forcant 9 auto-relances sur 10 (plafond). Un jeu demande 376 appels d'outil au total. Consommation : 2 717 281 jetons / 88 appels pour UN seul jeu.",
+      "correctif": "Plafond cumule porte a 140 appels : borne le gaspillage sans trancher une construction normale (376 appels etaient demandes au total, mais 140 suffit a terminer une etape construite en un tour utile).",
+      "preuve": "Fusible non atteint sur le run suivant ; jeu jouable (build vert 49 modules, 6/6 lois visuelles x3 viewports, score qui monte).",
+      "fait": true
+    },
+    {
+      "id": "C5b",
+      "titre": "Le verdict « aucun fichier modifie » est un FAUX NEGATIF sur un jeu",
+      "mesure": "Le pipeline a conclu « echec : aucun fichier de code n'a ete modifie » alors que le jeu est REELLEMENT jouable : build vert, canvas monte, boucle ANIMEE (ecart de rendu 4119 > seuil 3828), score monte a 00029. Le Maître (Opus, teste OK a 0,066 $) a ete appele et n'a rien change car les fichiers etaient ecrits dans le meme tour.",
+      "correctif": "Escalade armee : le chemin est prouve en reel (« ESCALADE vers le MAITRE » apparait dans le flux). Le faux negatif vient de l'ordre ecriture/escalade dans le meme tour, pas du mecanisme.",
+      "preuve": "Jeu capture en cours de partie : vaisseau, asteroides, score 00029 — le verdict pipeline contredisait le rendu.",
       "fait": true
     }
   ]
