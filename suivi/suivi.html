@@ -372,43 +372,43 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <section>
-  <h2>Décisions en attente — elles appartiennent à Raf</h2>
+  <h2>Décisions de Raf — tranchées (4)</h2>
   <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
   <div class="grille"><article class="carte carte-decision">
   <header class="carte-tete">
     <div>
-      <h3><span class="id">Q1</span> Armer l&#39;Observateur-Conseil (visage 2) ?</h3>
-      <p class="metas"><span class="etat etat-decision">a trancher</span></p>
+      <h3><span class="id">Q1</span> Armer l&#39;Observateur-Conseil (visage 2)</h3>
+      <p class="metas"><span class="etat etat-vert">tranche le 2026-09-29</span></p>
     </div>
   </header>
-  <p class="f-note">Le visage est CABLE et sa fenetre temporelle implementee, mais le gate QA_OBSERVER est ABSENT de .env donc OFF : il ne tourne pas. L&#39;activer = QA_OBSERVER=on. Effet : suggestions texte, aucun garde-fou, aucun verdict. Risque nul pour l&#39;audit.</p>
+  <p class="f-note">ACTIVE. QA_OBSERVER=on dans mangoqa/.env (c&#39;est la que vivent les variables QA_*). Preuve : observerEnabled() = true. Le README et FAILLES.md mis a jour pour dire l&#39;etat ARME ; le test d&#39;honnetete documentaire verifie desormais l&#39;etat REEL du gate dans les deux sens (9/9).</p>
 </article>
 <article class="carte carte-decision">
   <header class="carte-tete">
     <div>
-      <h3><span class="id">Q2</span> Quel cerveau pour l&#39;auditeur ? (divergence mesuree)</h3>
-      <p class="metas"><span class="etat etat-decision">a trancher</span></p>
+      <h3><span class="id">Q2</span> Cerveau de l&#39;auditeur : Sonnet 5.5</h3>
+      <p class="metas"><span class="etat etat-vert">tranche le 2026-09-29</span></p>
     </div>
   </header>
-  <p class="f-note">Divergence REELLE mesuree le 2026-09-29 : le registre de l&#39;Atelier declare le role auditeur = openai/glm-5.3, alors que MangoQA tourne sur QA_OLLAMA_MODEL=deepseek-v4.1-flash. Depuis B16 cette divergence est SIGNALEE au demarrage (avant, elle etait muette). Deux sorties : changer le registre, ou assumer l&#39;ecart.</p>
+  <p class="f-note">FAIT. Le role auditeur du registre partage passe de openai/glm-5.3 a claude/sonnet — ce qui RESTAURE le defaut deja declare par le code (brain-registry.ts:68 : { provider: &#39;claude&#39;, model: &#39;sonnet&#39; }) que le fichier de donnees ecrasait silencieusement. QA_MODEL=sonnet (abonnement, 0 credit) etait deja en place.</p>
 </article>
 <article class="carte carte-decision">
   <header class="carte-tete">
     <div>
-      <h3><span class="id">Q3</span> Surveiller le fusible de boucle (D2)</h3>
-      <p class="metas"><span class="etat etat-decision">a surveiller</span></p>
+      <h3><span class="id">Q3</span> Fusible de boucle reduit de 25 %</h3>
+      <p class="metas"><span class="etat etat-vert">tranche le 2026-09-29</span></p>
     </div>
   </header>
-  <p class="f-note">ELEVE_BUDGET_PROMPT_CHARS=120000 et ELEVE_BUDGET_TOOL_CALLS=60 sont ARMES et ancrees sur MAX_ITER=36 / CTX_MAX=60000. Le seuil de 60 appels n&#39;a jamais ete atteint en usage reel : il n&#39;est donc pas encore eprouve en conditions de production.</p>
+  <p class="f-note">FAIT. ELEVE_BUDGET_TOOL_CALLS : 60 -&gt; 45 (-25 %). Le plafond de contexte reste a 120 000 caracteres. 45 reste superieur a MAX_ITER=36, donc aucune boucle legitime n&#39;est coupee. Non encore eprouve en production : le seuil n&#39;a jamais ete atteint.</p>
 </article>
 <article class="carte carte-decision">
   <header class="carte-tete">
     <div>
-      <h3><span class="id">Q4</span> Lot D5 ecarte (ta decision)</h3>
-      <p class="metas"><span class="etat etat-decision">ecarte</span></p>
+      <h3><span class="id">Q4</span> Doctrine eleve / maitre (MangoOS)</h3>
+      <p class="metas"><span class="etat etat-vert">tranche le 2026-09-29</span></p>
     </div>
   </header>
-  <p class="f-note">D5 portait sur le routage DeepSeek/Ops. Ecarte par ta decision : le modele de delegation retenu est Sonnet 5.5 par defaut, escalade Opus 5.5 via sous-agent.</p>
+  <p class="f-note">ACTE. Eleve = codeur, DeepSeek v4.1-flash (il apprend, cout minimal) ; Maitre = codeur_frontiere, Opus 5.5 (il tranche quand l&#39;eleve cale). Les deux roles du registre vivant portent cette doctrine. C&#39;est une decision d&#39;architecture, pas un basculement : le role codeur RESTE sur le tier economique.</p>
 </article></div>
 </section>
 

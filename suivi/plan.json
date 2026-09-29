@@ -343,27 +343,27 @@
   "decisions": [
     {
       "id": "Q1",
-      "titre": "Armer l'Observateur-Conseil (visage 2) ?",
-      "etat": "a trancher",
-      "note": "Le visage est CABLE et sa fenetre temporelle implementee, mais le gate QA_OBSERVER est ABSENT de .env donc OFF : il ne tourne pas. L'activer = QA_OBSERVER=on. Effet : suggestions texte, aucun garde-fou, aucun verdict. Risque nul pour l'audit."
+      "titre": "Armer l'Observateur-Conseil (visage 2)",
+      "etat": "tranche le 2026-09-29",
+      "note": "ACTIVE. QA_OBSERVER=on dans mangoqa/.env (c'est la que vivent les variables QA_*). Preuve : observerEnabled() = true. Le README et FAILLES.md mis a jour pour dire l'etat ARME ; le test d'honnetete documentaire verifie desormais l'etat REEL du gate dans les deux sens (9/9)."
     },
     {
       "id": "Q2",
-      "titre": "Quel cerveau pour l'auditeur ? (divergence mesuree)",
-      "etat": "a trancher",
-      "note": "Divergence REELLE mesuree le 2026-09-29 : le registre de l'Atelier declare le role auditeur = openai/glm-5.3, alors que MangoQA tourne sur QA_OLLAMA_MODEL=deepseek-v4.1-flash. Depuis B16 cette divergence est SIGNALEE au demarrage (avant, elle etait muette). Deux sorties : changer le registre, ou assumer l'ecart."
+      "titre": "Cerveau de l'auditeur : Sonnet 5.5",
+      "etat": "tranche le 2026-09-29",
+      "note": "FAIT. Le role auditeur du registre partage passe de openai/glm-5.3 a claude/sonnet — ce qui RESTAURE le defaut deja declare par le code (brain-registry.ts:68 : { provider: 'claude', model: 'sonnet' }) que le fichier de donnees ecrasait silencieusement. QA_MODEL=sonnet (abonnement, 0 credit) etait deja en place."
     },
     {
       "id": "Q3",
-      "titre": "Surveiller le fusible de boucle (D2)",
-      "etat": "a surveiller",
-      "note": "ELEVE_BUDGET_PROMPT_CHARS=120000 et ELEVE_BUDGET_TOOL_CALLS=60 sont ARMES et ancrees sur MAX_ITER=36 / CTX_MAX=60000. Le seuil de 60 appels n'a jamais ete atteint en usage reel : il n'est donc pas encore eprouve en conditions de production."
+      "titre": "Fusible de boucle reduit de 25 %",
+      "etat": "tranche le 2026-09-29",
+      "note": "FAIT. ELEVE_BUDGET_TOOL_CALLS : 60 -> 45 (-25 %). Le plafond de contexte reste a 120 000 caracteres. 45 reste superieur a MAX_ITER=36, donc aucune boucle legitime n'est coupee. Non encore eprouve en production : le seuil n'a jamais ete atteint."
     },
     {
       "id": "Q4",
-      "titre": "Lot D5 ecarte (ta decision)",
-      "etat": "ecarte",
-      "note": "D5 portait sur le routage DeepSeek/Ops. Ecarte par ta decision : le modele de delegation retenu est Sonnet 5.5 par defaut, escalade Opus 5.5 via sous-agent."
+      "titre": "Doctrine eleve / maitre (MangoOS)",
+      "etat": "tranche le 2026-09-29",
+      "note": "ACTE. Eleve = codeur, DeepSeek v4.1-flash (il apprend, cout minimal) ; Maitre = codeur_frontiere, Opus 5.5 (il tranche quand l'eleve cale). Les deux roles du registre vivant portent cette doctrine. C'est une decision d'architecture, pas un basculement : le role codeur RESTE sur le tier economique."
     }
   ],
   "commits": {

@@ -115,7 +115,7 @@ const decision = (q) => `<article class="carte carte-decision">
   <header class="carte-tete">
     <div>
       <h3><span class="id">${esc(q.id)}</span> ${txt(q.titre)}</h3>
-      <p class="metas"><span class="etat etat-decision">${txt(q.etat)}</span></p>
+      <p class="metas"><span class="etat ${/^tranch/.test(q.etat) ? "etat-vert" : "etat-decision"}">${txt(q.etat)}</span></p>
     </div>
   </header>
   ${q.note ? `<p class="f-note">${txt(q.note)}</p>` : ""}
@@ -234,7 +234,7 @@ ${orphelines.length ? `<section>
 </section>` : ""}
 
 ${decisions.length ? `<section>
-  <h2>Décisions en attente — elles appartiennent à Raf</h2>
+  <h2>Décisions de Raf — tranchées (${decisions.length})</h2>
   <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
   <div class="grille">${decisions.map(decision).join("\n")}</div>
 </section>
