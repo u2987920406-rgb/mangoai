@@ -27,7 +27,10 @@ for spec in "desk 1280 1500" "mobile 412 2400" "paysage 1140 512"; do
     "file://$M/suivi/suivi.html" >/dev/null 2>&1
 done
 
-echo "### 4. planche"
+echo "### 4. preuve pixel (couleur réelle de chaque pastille vs son état déclaré)"
+python3 "$M/suivi/sample-pixels.py" "$M/suivi/suivi.html" --width 1280 --out "$S/suivi-preuve.png" 2>&1 | tail -8
+
+echo "### 5. planche"
 python3 - <<PYEOF
 from PIL import Image
 S = "$S"
