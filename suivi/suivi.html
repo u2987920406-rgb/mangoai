@@ -372,6 +372,19 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <section>
+  <h2>Preuve de bout en bout — 2026-09-29</h2>
+  <div class="liste">
+    <p class="bloc"><b class="lib">Objet</b> Prouver Q1 (Observateur arme) et Q2 (auditeur Sonnet) de bout en bout, sur un vrai cycle d&#39;audit — pas sur des tests unitaires.</p>
+    <p class="bloc"><b class="lib">Montage</b> Projet jouet <code>sonde-e2e</code> (2 fichiers + CSS) dans un workspace ISOLE (/home/raf/.hermes/cache/scratch/e2e-ws) pour ne pas polluer le workspace de MangoOS. Signal phase-complete.json ecrit a la main selon le contrat figé PhaseSignal.</p>
+    <ul class="liste-grille"><li class="faiblesse"><span class="coche coche-vert" role="img" aria-label="Fait">✓</span><div><p class="f-note">Q1 — la banniere de demarrage annonce « + Observateur-Conseil » ; observer-report.json produit au niveau du workspace : 1 evenement analyse, fenetre 30j, aucun pattern au-dessus du seuil. Le visage TOURNE.</p></div></li>
+<li class="faiblesse"><span class="coche coche-vert" role="img" aria-label="Fait">✓</span><div><p class="f-note">Q2 — la sonde de cerveau repond en 4090 ms ; aucune trace de repli dans le log (la seule occurrence du mot est dans le TEXTE d&#39;un constat) : l&#39;audit a tourne sur Sonnet PRIMAIRE. Divergence verifiee = AUCUNE (registre auditeur = claude/sonnet, confirme en lecture directe).</p></div></li>
+<li class="faiblesse"><span class="coche coche-vert" role="img" aria-label="Fait">✓</span><div><p class="f-note">Cycle complet — 6 branches auditees, verdict RED sur <code>tests</code>, avec rejection_id + corrective_action deterministe. Verdict REEL, pas un faux vert : le projet jouet n&#39;a effectivement aucun test.</p></div></li>
+<li class="faiblesse"><span class="coche coche-vert" role="img" aria-label="Fait">✓</span><div><p class="f-note">Artefacts produits : audit-verdict.json, design-observations.json, flux-observations.json, observer-report.json, breaker-verdict.json.</p></div></li></ul>
+    <p class="bloc"><b class="lib lib-gris">Réserve</b> Laya signale « fetch failed » sur les 6 branches (pont non demarre sur ce workspace) — fail-open attendu, sans effet sur le verdict.</p>
+  </div>
+</section>
+
+<section>
   <h2>Décisions de Raf — tranchées (4)</h2>
   <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
   <div class="grille"><article class="carte carte-decision">

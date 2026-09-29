@@ -369,5 +369,17 @@
   "commits": {
     "mangoqa": "75ad70f — Q1 + Q2 + B16 corrige · f8e0f5b — B16/B17/B11",
     "mangoai": "df5dd75 — Q3 + Q4 + B11 · 07f82a0 — B14/B19/B7/B11 · 55bf687 — tracker final"
+  },
+  "preuveE2E": {
+    "date": "2026-09-29",
+    "objet": "Prouver Q1 (Observateur arme) et Q2 (auditeur Sonnet) de bout en bout, sur un vrai cycle d'audit — pas sur des tests unitaires.",
+    "montage": "Projet jouet `sonde-e2e` (2 fichiers + CSS) dans un workspace ISOLE (/home/raf/.hermes/cache/scratch/e2e-ws) pour ne pas polluer le workspace de MangoOS. Signal phase-complete.json ecrit a la main selon le contrat figé PhaseSignal.",
+    "resultats": [
+      "Q1 — la banniere de demarrage annonce « + Observateur-Conseil » ; observer-report.json produit au niveau du workspace : 1 evenement analyse, fenetre 30j, aucun pattern au-dessus du seuil. Le visage TOURNE.",
+      "Q2 — la sonde de cerveau repond en 4090 ms ; aucune trace de repli dans le log (la seule occurrence du mot est dans le TEXTE d'un constat) : l'audit a tourne sur Sonnet PRIMAIRE. Divergence verifiee = AUCUNE (registre auditeur = claude/sonnet, confirme en lecture directe).",
+      "Cycle complet — 6 branches auditees, verdict RED sur `tests`, avec rejection_id + corrective_action deterministe. Verdict REEL, pas un faux vert : le projet jouet n'a effectivement aucun test.",
+      "Artefacts produits : audit-verdict.json, design-observations.json, flux-observations.json, observer-report.json, breaker-verdict.json."
+    ],
+    "reserve": "Laya signale « fetch failed » sur les 6 branches (pont non demarre sur ce workspace) — fail-open attendu, sans effet sur le verdict."
   }
 }

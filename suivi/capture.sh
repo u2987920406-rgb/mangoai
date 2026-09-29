@@ -14,7 +14,7 @@ cd "$M" && node suivi/build-suivi.mjs
 echo "### 2. mesures DOM (lois du gate visuel)"
 for W in 1280 1140 412; do
   printf 'W=%s ' "$W"
-  python3 "$S/cdp_measure.py" "$M/suivi/suivi.html" --width "$W" --height 2400 2>&1 | tail -1 \
+  python3 "$M/suivi/cdp_measure.py" "$M/suivi/suivi.html" --width "$W" --height 2400 2>&1 | tail -1 \
     | python3 -c "import json,sys; d=json.load(sys.stdin); L=d['laws']; print({k:v['pass'] for k,v in L.items()}); [print('   FAIL',k,[o.get('text') or o.get('cls') for o in v['offenders']][:3]) for k,v in L.items() if not v['pass']]"
 done
 

@@ -233,6 +233,16 @@ ${orphelines.length ? `<section>
   <div class="liste"><ul class="liste-grille">${orphelines.map(faiblesse).join("\n")}</ul></div>
 </section>` : ""}
 
+${plan.preuveE2E ? `<section>
+  <h2>Preuve de bout en bout — ${esc(plan.preuveE2E.date)}</h2>
+  <div class="liste">
+    <p class="bloc"><b class="lib">Objet</b> ${txt(plan.preuveE2E.objet)}</p>
+    <p class="bloc"><b class="lib">Montage</b> ${txt(plan.preuveE2E.montage)}</p>
+    <ul class="liste-grille">${plan.preuveE2E.resultats.map((r) => `<li class="faiblesse">${coche("fait")}<div><p class="f-note">${txt(r)}</p></div></li>`).join("\n")}</ul>
+    ${plan.preuveE2E.reserve ? `<p class="bloc"><b class="lib lib-gris">Réserve</b> ${txt(plan.preuveE2E.reserve)}</p>` : ""}
+  </div>
+</section>` : ""}
+
 ${decisions.length ? `<section>
   <h2>Décisions de Raf — tranchées (${decisions.length})</h2>
   <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
