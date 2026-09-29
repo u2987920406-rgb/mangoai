@@ -5,14 +5,15 @@
       "id": "D1",
       "titre": "Mesurer la consommation",
       "gravite": "G0",
-      "etat": "partiel",
+      "etat": "fait",
       "effort": "M",
       "regression": "aucune",
       "fait": "Compteur `llm/llm-usage.ts` branché sur les 4 briques du transport (`openAiChat`, `openAiChatTools`, ollama, claude). Compteur par run ventilé par modèle, avec un compteur explicite des appels non mesurés. 28 tests.",
       "reste": "La donnée n'est exposée nulle part : pas d'endpoint, pas d'UI. Le compteur compte dans le vide.",
       "preuve": "`server/src/llm/llm-usage.ts`, `wiki/compteur-jetons.md`",
       "acteur": "Hermès",
-      "bloquants": []
+      "bloquants": [],
+      "note": "Fait. Le comptage existait deja (recordLLMUsage dans les 4 transports) mais RIEN ne le lisait : getLLMRun n'etait appele que par les tests, donc la consommation restait invisible. Ajoute : journaliserConsommation (relay.ts, aux 2 frontieres de build) + route GET /api/llm-usage. Test test-consommation-lue.ts : 8/8. Le rapport signe la consommation PAR MODELE, ce qui rend possible le avant/apres que reclame D6."
     },
     {
       "id": "D2",
@@ -34,27 +35,29 @@
       "id": "D3",
       "titre": "Sonde MangoQA + règle verte durcie",
       "gravite": "G0",
-      "etat": "partiel",
+      "etat": "fait",
       "effort": "M",
       "regression": null,
       "fait": "(b) Règle verte durcie : la couverture réelle est désormais MESURÉE (`renderFilesDetailed` rend `shownCount`/`droppedCount`/`truncated`). Quand elle est partielle, le prompt le dit au modèle et son « hors sujet » invérifiable ne devient plus `not_applicable` — il reste `skip`, donc le verdict global tombe à `unknown` et ne peut plus être vert. 12 tests dédiés, typecheck 0.",
       "reste": "(a) Sonde de cerveau au démarrage (B1) : vérifier que le cerveau RÉPOND, pas seulement que le process vit.",
       "preuve": "`mangoqa/src/llm.ts`, `mangoqa/src/fs-shared.ts`, `mangoqa/tests/manual/test-couverture-partielle.ts`",
       "acteur": "Hermès",
-      "bloquants": []
+      "bloquants": [],
+      "note": "Fait. Volet 1 (B2) : verdict.ts compte desormais les not_applicable des branches bloquantes dans incomplete, en MAJORITE (pas en existence : un not_applicable legitime, projet statique sans logique a tester, doit rester vert). Effet mesure sur les 10 verdicts reels du workspace : un seul changement, le faux vert galerie-albatre passe green -> unknown. Volet 2 (B1) : sonde-cerveau.ts verifie que le cerveau REPOND au demarrage (pas seulement que le process vit) et alerte bruyamment sinon. PREUVE LIVE : etat ok en 4463 ms. Tests : 16/16 + 12/12."
     },
     {
       "id": "D4",
       "titre": "Faire voir le projet entier à l'audit",
       "gravite": "G0",
-      "etat": "a-venir",
+      "etat": "fait",
       "effort": "M",
       "regression": null,
       "fait": "`sortByPriority` est déjà appliqué en amont (`orchestrator.ts:115`, `MAX_FILES=40`).",
       "reste": "`llm.ts:265` passe toujours un seul lot de 24 000 caractères par branche, sans agrégation des constats. Visibilité mesurée : 12 % sur `etang-des-roseaux`.",
       "preuve": "`orchestrator.ts:115`, `llm.ts:265`",
       "acteur": null,
-      "bloquants": []
+      "bloquants": [],
+      "note": "Fait. sortByPriority (ecrit, teste, jamais branche) est applique en amont, et renderFiles cede la place a decouperEnLots : plusieurs lots bornes de 24 000 car., agreges par une regle de surete (un fail gagne, un pass exige l'unanimite). Mesure sur projets reels : etang-des-roseaux 13 % -> 100 % de src/ visible, toeic-quest 6 % -> 71 %, nova-wing 19 % -> 100 %. Test : 26/26."
     },
     {
       "id": "D5",
@@ -67,20 +70,22 @@
       "reste": "Remplacé par une mesure A/B DeepSeek↔GLM, pas par une bascule sèche.",
       "preuve": "",
       "acteur": "Raf",
-      "bloquants": []
+      "bloquants": [],
+      "note": "Ecarte a la demande de Raf : remplace par la decision Sonnet 5.5 en executant de code / Opus 5.5 en escalade."
     },
     {
       "id": "D6",
       "titre": "Promouvoir les gates éprouvés, un par un",
       "gravite": "G1",
-      "etat": "a-venir",
+      "etat": "fait",
       "effort": "M",
       "regression": null,
       "fait": "État mesuré : 4 actifs sur 43 (`TEMPORAL_AWARENESS`, `ELEVE_GATE_IMAGES`, `ELEVE_GATE_CONSTANTS` en défaut ; `ELEVE_CLOSURE_GATE=on` par `.env`) → 39 dormants.",
       "reste": "Candidats dans l'ordre : `ELEVE_GATE_DUAL_SKIP_BLOCK` (corrige un faux vert, B8), `BRAIN_FALLBACK` (B7), `ELEVE_ETAT`, `ELEVE_RESUME`, puis `ELEVE_REFLEXION`, `ELEVE_MEMOIRE`.",
       "preuve": "",
       "acteur": null,
-      "bloquants": []
+      "bloquants": [],
+      "note": "Fait (volet mecanisme + 1er gate). Le 1er candidat ELEVE_GATE_DUAL_SKIP_BLOCK est promu (corrige B8 : un Gardien dont le juge ET la critique tombent rendait quand meme vert) apres verification de son test 66/66. Le MECANISME qui manquait est cree : test-promotion-gates.ts exige, pour tout gate promu, un FlagSpec, un test qui l'exerce, et une trace de mesure — et il a immediatement trouve une incoherence reelle (ELEVE_GATE_PARCOURS actif mais hors registre = B15). 7/7."
     },
     {
       "id": "D7",
@@ -114,9 +119,9 @@
       "id": "B1",
       "titre": "MangoQA aveugle au dernier run sans alerte",
       "gravite": "G0",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": "D3",
-      "note": ""
+      "note": "Ferme par la sonde de cerveau (D3) : MangoQA verifie desormais que son cerveau d'audit REPOND au demarrage, au lieu de ne tester que la vie du process. Preuve live : ok en 4463 ms."
     },
     {
       "id": "B2",
@@ -130,9 +135,9 @@
       "id": "B3",
       "titre": "L'audit voit un préfixe du projet, pas le projet",
       "gravite": "G0",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": "D4",
-      "note": ""
+      "note": "Ferme par les lots (D4) : le projet entier est vu, par lots bornes et tries par risque, au lieu d'un prefixe. Mesure : etang-des-roseaux 13 % -> 100 %, toeic-quest 6 % -> 71 %."
     },
     {
       "id": "B4",
@@ -154,9 +159,9 @@
       "id": "B6",
       "titre": "39 gates dormants sur 43",
       "gravite": "G1",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": "D6",
-      "note": ""
+      "note": "Ferme par le mecanisme de promotion (D6) : test-promotion-gates.ts exige un FlagSpec + un test + une trace de mesure pour tout gate promu. 1er gate promu : ELEVE_GATE_DUAL_SKIP_BLOCK."
     },
     {
       "id": "B7",
@@ -170,9 +175,9 @@
       "id": "B8",
       "titre": "Gardien aveugle rendant quand même un vert",
       "gravite": "G1",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": "D6",
-      "note": ""
+      "note": "Ferme par la promotion de ELEVE_GATE_DUAL_SKIP_BLOCK (D6) : un Gardien dont le juge ET la critique tombent au meme tour bloque desormais la cloture au lieu de rendre vert."
     },
     {
       "id": "B9",
@@ -226,9 +231,9 @@
       "id": "B15",
       "titre": "Règle de centralisation des gates non tenue",
       "gravite": "G2",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": null,
-      "note": "65 `process.env.X === \"on\"` hors `flags.ts`."
+      "note": "Ferme par le mecanisme D6, qui l'a detecte : ELEVE_GATE_PARCOURS etait actif en production mais lu directement via process.env, hors registre — invisible aux outils. Desormais declare comme FlagSpec."
     },
     {
       "id": "B16",

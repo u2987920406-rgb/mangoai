@@ -17,6 +17,34 @@ import { resolveRelayConfig, type RelayContext } from "./relay-config.js";
 import { finalizeEscalationPhase } from "./relay-finalize.js";
 import { runAgenticEngine } from "./relay-agentic.js";
 import { runContractPath } from "./relay-contract.js";
+import { getLLMRun } from "../llm/llm-usage.js";
+
+/** D1 (audit 2026-09-28, B4) — LA LECTURE du compteur de consommation, qui manquait :
+ *  `startLLMRun` ouvrait un compteur et `getLLMRun()` n'était appelé par AUCUN code de
+ *  production (seulement les tests), donc la consommation restait invisible malgré un
+ *  comptage correct. Ici, à la frontière du build : quelle que soit la phase qui a
+ *  tourné (moteur agentique OU chemin contrat), le total du run est poussé dans le fil
+ *  — et le journal `LLM_USAGE_LOG` le persiste. Avec le détail par modèle : c'est ce
+ *  qui rend « quel modèle sur quel rôle » mesurable, préalable à toute promotion de
+ *  gate (D6) qui prétend comparer un AVANT/APRÈS. Ne lève jamais, n'écrit rien hors
+ *  du gate de journal. */
+export function journaliserConsommation(push: (s: string) => void): void {
+  try {
+    const u = getLLMRun();
+    if (!u || u.calls === 0) return;
+    const parModele = Object.entries(u.byModel)
+      .map(([m, v]) => `${m} ${v.totalTokens} jt/${v.calls} appels`)
+      .join(", ");
+    push(
+      `📊 Consommation du build : ${u.totalTokens} jetons sur ${u.calls} appel(s)` +
+        ` (${u.promptTokens} entrée / ${u.completionTokens} sortie)` +
+        `${u.unmeasuredCalls ? `, ${u.unmeasuredCalls} non mesuré(s)` : ""}` +
+        `${parModele ? ` — ${parModele}` : ""}`,
+    );
+  } catch {
+    /* mesurer ne doit jamais gêner le build */
+  }
+}
 
 async function npmInstallIfNeeded(dir: string, log: (s: string) => void, label: string): Promise<void> {
   if (fs.existsSync(path.join(dir, "node_modules"))) return;
@@ -85,9 +113,15 @@ export async function runRelay(
   // ── MOTEUR AGENTIQUE (Phase 2) : cerveau fort en function-calling → boucle maison.
   // Une fois ENTRÉ, ce chemin retourne toujours (jamais de repli sur le contrat).
   if (cfg.callProfile.agentic && process.env.ELEVE_AGENTIC !== "off" && (supportsTools(cfg.callProvider) || deps.agenticPost)) {
-    return await runAgenticEngine(ctx);
+    const r = await runAgenticEngine(ctx);
+    journaliserConsommation(cfg.push); // D1 — le compteur est enfin LU (B4)
+    return r;
   }
 
   // ── Chemin CONTRAT (exploration agentique optionnelle + boucle de tentatives). ──
-  return await runContractPath(ctx);
+  // D1 : même frontière de mesure sur ce chemin — sinon la consommation des builds
+  // passés par le contrat resterait invisible (c'est précisément le défaut B4).
+  const r = await runContractPath(ctx);
+  journaliserConsommation(cfg.push);
+  return r;
 }

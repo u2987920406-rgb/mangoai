@@ -142,6 +142,12 @@ export const FLAGS = {
     description: "Budget-$ DUR partagé entre Phase 0 (train-loop), Phase 1 (run-tonight/run-mango-nuit) et Phase 2 (nocturnal) : arrêt NET à la frontière d'itération (jamais en cours de génération) si le cumul dépensé (ledger partagé data/global-budget.json, fenêtre = la nuit courante) dépasse NOCTURNAL_GLOBAL_BUDGET_USD ($0/absent = illimité, mêmes conventions que FINISH_BUDGET_USD). OFF → l'état n'est jamais lu, 0 I/O, comportement historique.",
   },
   // ── Robustesse boucle nocturne (revue globale 2026-07-03, actions #6/#7 backlog) ─
+  ELEVE_GATE_PARCOURS: {
+    env: "ELEVE_GATE_PARCOURS",
+    default: false,
+    description:
+      "Verifie le PARCOURS utilisateur cote Eleve a la cloture (eleve-parcours.ts, #155) : « ca MARCHE » se juge en deroulant le parcours reel, pas en compilant. Active en production (B15 de l'audit : il etait lu directement via process.env, hors registre — un gate actif que le harnais ne connaissait pas, donc invisible aux outils de promotion D6).",
+  },
   ELEVE_GATE_DUAL_SKIP_BLOCK: {
     env: "ELEVE_GATE_DUAL_SKIP_BLOCK",
     default: false,

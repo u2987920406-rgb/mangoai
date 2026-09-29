@@ -11,9 +11,24 @@ import { interruptAgent } from "../agent/agent.js";
 import { isAgentBusy, releaseAgent } from "../agent/agent-lock.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
 import { loadHooks } from "../mango-hooks-config.js";
+import { getLLMRun, listLLMRuns } from "../llm/llm-usage.js";
 import { hasProfile, bootstrapProfile, type OnboardingAnswers } from "../onboarding.js";
 
 export function registerSystemRoutes(app: express.Express): void {
+
+// Mesure D1 (audit 2026-09-28, B4) — consommer le compteur, pas seulement l'alimenter.
+// `runLlm` : le run qui a DÉJÀ été mesuré (celui du Maître, chemin SDK Claude, que
+// `agent.ts` comptait séparément) — on l'ajoute au rapport pour que le chiffre du
+// build couvre les DEUX chemins en un seul endroit lisible.
+app.get("/api/llm-usage", (_req, res) => {
+  const courant = getLLMRun();
+  res.json({
+    courant,
+    runs: listLLMRuns().slice(-10),
+    // Le comptage n'est pas gaté (addition pure) ; seul le JOURNAL l'est.
+    journal: (process.env.LLM_USAGE_LOG ?? "").trim().toLowerCase() === "on",
+  });
+});
 
 // Learning-curve dashboard (idea 21): per-turn metrics for the UI to chart
 app.get("/api/metrics", (_req, res) => {

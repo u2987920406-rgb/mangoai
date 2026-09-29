@@ -77,15 +77,15 @@ footer{margin-top:40px;color:#4a4a4a}
   <div class="compteurs">
     <div class="compteur">
   <p class="compteur-titre">Lots du plan (D)</p>
-  <p class="compteur-chiffre"><strong>3</strong> faits / 8</p>
-  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="3" aria-label="Lots du plan (D)"><span style="width:38%"></span></div>
-  <p class="compteur-detail">2 en cours/partiel · 2 restants · 1 écarté</p>
+  <p class="compteur-chiffre"><strong>7</strong> faits / 8</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="7" aria-label="Lots du plan (D)"><span style="width:88%"></span></div>
+  <p class="compteur-detail">1 écarté</p>
 </div>
     <div class="compteur">
   <p class="compteur-titre">Faiblesses (B)</p>
-  <p class="compteur-chiffre"><strong>7</strong> fermées / 19</p>
-  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="7" aria-label="Faiblesses (B)"><span style="width:37%"></span></div>
-  <p class="compteur-detail">12 restants</p>
+  <p class="compteur-chiffre"><strong>12</strong> fermées / 19</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="12" aria-label="Faiblesses (B)"><span style="width:63%"></span></div>
+  <p class="compteur-detail">7 restants</p>
 </div>
     <div class="compteur">
   <p class="compteur-titre">Traités hors audit (H)</p>
@@ -105,12 +105,12 @@ footer{margin-top:40px;color:#4a4a4a}
 <section>
   <h2>Plan D1 → D8</h2>
   <div class="grille">
-<article class="carte carte-orange" id="D1">
+<article class="carte carte-vert" id="D1">
   <header class="carte-tete">
-    <span class="coche coche-orange" role="img" aria-label="Partiel">◐</span>
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
     <div>
       <h3><span class="id">D1</span> Mesurer la consommation</h3>
-      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-orange">Partiel</span><span class="meta"><b>Effort</b> M</span><span class="meta"><b>Régression</b> aucune</span><span class="meta"><b>Acteur</b> Hermès</span></p>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> M</span><span class="meta"><b>Régression</b> aucune</span><span class="meta"><b>Acteur</b> Hermès</span></p>
     </div>
   </header>
   <p class="bloc"><b class="lib lib-vert">Fait</b> Compteur <code>llm/llm-usage.ts</code> branché sur les 4 briques du transport (<code>openAiChat</code>, <code>openAiChatTools</code>, ollama, claude). Compteur par run ventilé par modèle, avec un compteur explicite des appels non mesurés. 28 tests.</p>
@@ -147,24 +147,24 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li></ul></div>
 </article>
-<article class="carte carte-orange" id="D3">
+<article class="carte carte-vert" id="D3">
   <header class="carte-tete">
-    <span class="coche coche-orange" role="img" aria-label="Partiel">◐</span>
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
     <div>
       <h3><span class="id">D3</span> Sonde MangoQA + règle verte durcie</h3>
-      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-orange">Partiel</span><span class="meta"><b>Effort</b> M</span><span class="meta"><b>Acteur</b> Hermès</span></p>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> M</span><span class="meta"><b>Acteur</b> Hermès</span></p>
     </div>
   </header>
   <p class="bloc"><b class="lib lib-vert">Fait</b> (b) Règle verte durcie : la couverture réelle est désormais MESURÉE (<code>renderFilesDetailed</code> rend <code>shownCount</code>/<code>droppedCount</code>/<code>truncated</code>). Quand elle est partielle, le prompt le dit au modèle et son « hors sujet » invérifiable ne devient plus <code>not_applicable</code> — il reste <code>skip</code>, donc le verdict global tombe à <code>unknown</code> et ne peut plus être vert. 12 tests dédiés, typecheck 0.</p>
   <p class="bloc"><b class="lib lib-gris">Reste</b> (a) Sonde de cerveau au démarrage (B1) : vérifier que le cerveau RÉPOND, pas seulement que le process vit.</p>
   <p class="bloc"><b class="lib">Preuve</b> <code>mangoqa/src/llm.ts</code>, <code>mangoqa/src/fs-shared.ts</code>, <code>mangoqa/tests/manual/test-couverture-partielle.ts</code></p>
   
-  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (1/2 fermées)</p><ul><li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (2/2 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B1</span> MangoQA aveugle au dernier run sans alerte</p>
-    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme par la sonde de cerveau (D3) : MangoQA verifie desormais que son cerveau d&#39;audit REPOND au demarrage, au lieu de ne tester que la vie du process. Preuve live : ok en 4463 ms.</p>
   </div>
 </li>
 <li class="faiblesse">
@@ -176,24 +176,24 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li></ul></div>
 </article>
-<article class="carte carte-gris" id="D4">
+<article class="carte carte-vert" id="D4">
   <header class="carte-tete">
-    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
     <div>
       <h3><span class="id">D4</span> Faire voir le projet entier à l&#39;audit</h3>
-      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> M</span></p>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> M</span></p>
     </div>
   </header>
   <p class="bloc"><b class="lib lib-vert">Fait</b> <code>sortByPriority</code> est déjà appliqué en amont (<code>orchestrator.ts:115</code>, <code>MAX_FILES=40</code>).</p>
   <p class="bloc"><b class="lib lib-gris">Reste</b> <code>llm.ts:265</code> passe toujours un seul lot de 24 000 caractères par branche, sans agrégation des constats. Visibilité mesurée : 12 % sur <code>etang-des-roseaux</code>.</p>
   <p class="bloc"><b class="lib">Preuve</b> <code>orchestrator.ts:115</code>, <code>llm.ts:265</code></p>
   
-  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/1 fermées)</p><ul><li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (1/1 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B3</span> L&#39;audit voit un préfixe du projet, pas le projet</p>
-    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme par les lots (D4) : le projet entier est vu, par lots bornes et tries par risque, au lieu d&#39;un prefixe. Mesure : etang-des-roseaux 13 % -&gt; 100 %, toeic-quest 6 % -&gt; 71 %.</p>
   </div>
 </li></ul></div>
 </article>
@@ -211,24 +211,24 @@ footer{margin-top:40px;color:#4a4a4a}
   
   
 </article>
-<article class="carte carte-gris" id="D6">
+<article class="carte carte-vert" id="D6">
   <header class="carte-tete">
-    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
     <div>
       <h3><span class="id">D6</span> Promouvoir les gates éprouvés, un par un</h3>
-      <p class="metas"><span class="grav grav-G1">G1</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> M</span></p>
+      <p class="metas"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> M</span></p>
     </div>
   </header>
   <p class="bloc"><b class="lib lib-vert">Fait</b> État mesuré : 4 actifs sur 43 (<code>TEMPORAL_AWARENESS</code>, <code>ELEVE_GATE_IMAGES</code>, <code>ELEVE_GATE_CONSTANTS</code> en défaut ; <code>ELEVE_CLOSURE_GATE=on</code> par <code>.env</code>) → 39 dormants.</p>
   <p class="bloc"><b class="lib lib-gris">Reste</b> Candidats dans l&#39;ordre : <code>ELEVE_GATE_DUAL_SKIP_BLOCK</code> (corrige un faux vert, B8), <code>BRAIN_FALLBACK</code> (B7), <code>ELEVE_ETAT</code>, <code>ELEVE_RESUME</code>, puis <code>ELEVE_REFLEXION</code>, <code>ELEVE_MEMOIRE</code>.</p>
   
   
-  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/3 fermées)</p><ul><li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (2/3 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B6</span> 39 gates dormants sur 43</p>
-    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme par le mecanisme de promotion (D6) : test-promotion-gates.ts exige un FlagSpec + un test + une trace de mesure pour tout gate promu. 1er gate promu : ELEVE_GATE_DUAL_SKIP_BLOCK.</p>
   </div>
 </li>
 <li class="faiblesse">
@@ -240,11 +240,11 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B8</span> Gardien aveugle rendant quand même un vert</p>
-    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme par la promotion de ELEVE_GATE_DUAL_SKIP_BLOCK (D6) : un Gardien dont le juge ET la critique tombent au meme tour bloque desormais la cloture au lieu de rendre vert.</p>
   </div>
 </li></ul></div>
 </article>
@@ -310,7 +310,7 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <section>
-  <h2>Faiblesses sans lot (1/7 fermées)</h2>
+  <h2>Faiblesses sans lot (2/7 fermées)</h2>
   <div class="liste"><ul class="liste-grille"><li class="faiblesse">
   <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
   <div>
@@ -328,11 +328,11 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B15</span> Règle de centralisation des gates non tenue</p>
-    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
-    <p class="f-note">65 <code>process.env.X === &quot;on&quot;</code> hors <code>flags.ts</code>.</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme par le mecanisme D6, qui l&#39;a detecte : ELEVE_GATE_PARCOURS etait actif en production mais lu directement via process.env, hors registre — invisible aux outils. Desormais declare comme FlagSpec.</p>
   </div>
 </li>
 <li class="faiblesse">
