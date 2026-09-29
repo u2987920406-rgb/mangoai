@@ -56,6 +56,20 @@ async function deterministic(): Promise<void> {
   // réseau ni coût" — ne doit JAMAIS dépendre du cerveau live configuré.
   const nonAgentic = resolveProfile("gemma4:12b");
 
+  // ISOLATION DES GATES AMBIANTS (2026-09-29). Ce fichier se declare "sans reseau
+  // ni cout" : il ne doit donc PAS dependre de la config de PRODUCTION. Or il
+  // n'isolait que ELEVE_ESCALATE_ON_BLOCK ; depuis que ELEVE_CLOSURE_GATE=on en
+  // prod, le Gardien jugeait "intention 0/100" sur les projets de TEST (vides,
+  // sans intention a satisfaire) et transformait un succes en `incomplete` ->
+  // 3 verifications en echec, PRE-EXISTANTES a tout changement de code
+  // (prouve : les 3 memes echecs sur HEAD~1). Gates ELEVE_* coupes pour ce test.
+  const gatesAmbiants = ["ELEVE_CLOSURE_GATE", "ELEVE_GATE_PARCOURS", "ELEVE_GATE_DUAL_SKIP_BLOCK", "ELEVE_GATE_RELANCE_MAX"] as const;
+  const gatesSauve = gatesAmbiants.map((g) => [g, process.env[g]] as const);
+  for (const g of gatesAmbiants) delete process.env[g];
+  process.on("exit", () => {
+    for (const [g, v] of gatesSauve) if (v !== undefined) process.env[g] = v;
+  });
+
   // A) L'Élève réussit du premier coup
   {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-A-"));
