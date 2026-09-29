@@ -4573,3 +4573,87 @@ Parties 4-5 du plan restent à faire.
 ## 2026-09-17 — Audit et autonomie locale
 
 Mode Node autonome, installation coordonnée Mango/MangoQA, interface compilée, diagnostics visibles et sauvegarde fiable. Publication conditionnée aux tests existants et à un audit complet corrélé ; sources recontrôlées après compilation. Dépendances corrigées, suivi QA et arrêt des aperçus fiabilisés. 242 scripts serveur, 77 tests UI, 12 contrôles standalone et parcours Chromium réels réussis. Génération avec les modèles de Raf et publication cloud non validées. Pas encore d'exécutable embarqué. Détail : `docs/audit-standalone-2026-09-17.md` et `README.md`. Commit et publication GitHub autorisés ensuite par Raf ; livraison coordonnée avec MangoQA.
+
+
+## Journal — 2026-09-28 : audit Opus (lecture seule) puis lot 1 — mesurer, cacher, réconcilier
+
+**Contexte.** Un audit externe en lecture seule a été rendu ce jour (`audit-opus-2026-09-28.md`, 496 lignes, tout ancré `fichier:ligne`) : 9 forces prouvées, 19 faiblesses classées par gravité, 4 « vrais murs » vers Lovable/Base44, et un plan d'action D1→D8 ordonné par rendement. Ce lot exécute **les trois actions à risque nul ou faible** : D1 (mesure), D7 (cache du registre), D8 (doc + champ `tools`). D2 (fusible de boucle), D3/D4 (MangoQA), D5 (bascule `codeur` sur Claude) et D6 (promotion des gates) sont explicitement **hors périmètre et non amorcés**.
+
+**Baseline mesurée avant d'écrire une ligne** : `HEAD = 863f094`, `npm run typecheck` exit 0, `npm test` (tier smoke) 12 PASS · 0 FAIL + 77 tests UI.
+
+### D1 — la consommation devient mesurable (constat B4)
+
+Le diagnostic de l'audit : tout endpoint OpenAI-compat renvoie un champ `usage`, Ollama renvoie `prompt_eval_count`/`eval_count`, et MangoOS **jetait tout au transport** — `openAiChat` ne lisait que `choices[0].message.content`. Le seul endroit du dépôt qui lisait un usage réel était le chemin SDK Claude (`agent.ts:276-306`), c'est-à-dire précisément le chemin **inactif** dans la configuration courante. « Combien coûte une app ? » n'avait donc pour réponse qu'une borne théorique (jusqu'à 360 appels modèle par build, dérivée des constantes).
+
+Livré — **addition pure**, aucune valeur de retour ni aucun chemin de décision ne change :
+
+- **`server/src/llm/llm-usage.ts`** (nouveau, ~180 l.) : `parseUsage` PUR (OpenAI-compat · Ollama natif · forme Anthropic · `null` si rien d'exploitable), compteur **par run** ventilé **par modèle**, borné aux 20 derniers runs, ne lève jamais.
+- **4 points de mesure** dans `llm/llm-transport.ts` : `openAiChat` (le chemin `askLLM` cité par l'audit), `openAiChatTools` (**la boucle de l'Élève** — la consommation dominante), `ollamaChat`, `ollamaChatTools`.
+- **Frontière de run** : une ligne dans `eleve/relay-agentic.ts` (`startLLMRun`), un build = un run ; les appels des sous-agents délégués s'accumulent dans le run du parent.
+- **Honnêteté** : un appel dont la réponse ne porte aucun usage est compté dans `unmeasuredCalls` et **n'est jamais estimé** — un total est toujours un plancher explicite.
+- **Lecture** : `getLLMRun()` ; l'affichage console est gaté `LLM_USAGE_LOG` (nouveau flag, `default:false`). Le **comptage** n'est pas gaté — c'est une addition de mesure, aucune décision ne le lit.
+
+Preuve : `test-llm-usage.ts` **28/28** (parseur pur ; les 3 transports contre un faux serveur HTTP local, valeur attendue vs obtenue : 1200 → 1750 → 2075 jetons ; `askLLM` de bout en bout ; appel sans usage → non mesuré, total inchangé ; isolation des runs ; copie défensive).
+
+Cette livraison **ferme le volet mesure de L7** (« Coût GLM cloud non tracé », ouverte depuis juin, avec la piste `prompt_eval_count` confirmée le 2026-07-21 puis différée). Ce qui reste ouvert sur L7 est écrit noir sur blanc : pas de tarification $, pas de persistance, pas de lecture UI, et la comptabilité du chemin Claude reste séparée.
+
+### D7 — cache du registre des cerveaux (constat B10)
+
+`getBrain()` → `loadBrainRegistry()` refaisait `existsSync` + `readFileSync` + `JSON.parse` **à chaque appel**, sur 75 sites d'appel dans 49 fichiers dont des chemins chauds, à chaque itération d'une boucle qui peut en compter des centaines.
+
+`loadBrainRegistry()` cache désormais le contenu **parsé**, invalidé sur `mtimeMs` + taille (un `statSync` remplace `existsSync` : même syscall, plus l'horodatage). Trois précautions pour que la sémantique reste **identique** : (1) c'est le registre d'avant `applyLocalOnly` qui est caché, le rideau de fer `BRAIN_LOCAL_ONLY` étant ré-appliqué à chaque appel ; (2) chaque appel renvoie une **copie** (des appelants mutent le résultat avant `saveBrainRegistry`) ; (3) `saveBrainRegistry` **invalide explicitement**, pour ne pas dépendre de la granularité d'horloge du FS (~15 ms sous Windows) pour voir sa propre écriture. Un registre corrompu n'est jamais caché (mêmes warning et repli qu'avant, à chaque appel).
+
+Preuve : `test-brain-registry-cache.ts` **13/13** — « 12 lectures → 1 seule lecture disque » (compteur `brainRegistryCacheStats()`, pas une impression), « `mtime` neuf → valeur relue » (l'**édition à chaud de l'Atelier** marche encore : c'est le critère qui comptait), save→load, copie défensive, fichier absent → défauts, `BRAIN_LOCAL_ONLY` honoré **sur un cache-hit**.
+
+### D8 — doc de données réconciliée, `tools` fantôme tranché (constats B9/B12/B13)
+
+**(a) Dérive documentaire.** `pipeline-eleve-qa.md` — la référence opérationnelle citée par `CLAUDE.md` — envoyait toute session qui le suit sur un mauvais fichier : il désignait `server/src/data/brain-registry.json` comme registre vivant (ce dossier n'existe plus depuis la migration `dataDir()` du 2026-07-23) et `server/data/open-gaps.json` comme un « doublon orphelin » à ne pas toucher (c'est l'inverse : c'est le chemin vivant, simplement absent du disque tant qu'aucune lacune n'est enregistrée — vérifié). Corrigé aux 4 endroits, plus `ELEVE_AGENTIC_MAX_ITER` (24 par défaut dans le code, 36 par `.env` — B13), plus `PRELAUNCH_CHECKLIST.md:31` qui portait la même erreur de chemin. Ajouts utiles au passage : `BRAIN_FALLBACK` est OFF donc la chaîne de repli déclarée dans les données n'est pas jouée (B7), et le rôle `codeur_frontiere` manque au fichier (B11). Une note datée a été ajoutée à `limites.md` L129, dont la résolution de juillet décrivait l'ancien emplacement.
+
+**(b) Le champ `tools`.** Les specs forgées annonçaient des outils **inexistants** (`detecter_couche_texte`, `rasteriser_pdf`, `extraire_ocr`… : zéro occurrence dans tout `server/src`), parce que la boîte d'un sous-agent vient de `deps.buildTools(projectDir, toolPolicy)` et **jamais** de ce champ. Décision prise, conforme à la recommandation de l'audit : **retirer, pas câbler** — câbler signifierait exécuter du code décrit par un modèle. Concrètement : le prompt de forge ne demande plus `tools` et **interdit d'inventer un outil** (`agent-forge.ts`) ; le champ reste **lu** par `validateSpec`, donc les 11 specs sur disque ne perdent rien (aucune donnée supprimée, `server/data/specialist-agents.json` n'a pas été réécrit) ; et à l'exécution `runSpecialistAgentic` énonce au sous-agent **la liste de ses outils réels** en invalidant tout nom absent (`realToolboxClause`), sur un chemin déjà gaté `ELEVE_DELEGATE_AGENTIC=off`. Le manque de fond — un spécialiste ne peut pas avoir d'outil à lui — est consigné en **L143**, avec sa piste (une bibliothèque d'outils pré-écrits où la forge n'aurait que le droit de piocher).
+
+Une assertion de `test-specialist-agentic.ts` exigeait l'égalité stricte du prompt système transmis ; elle devient « commence par le prompt de l'agent », plus 3 assertions neuves sur la clause. C'est la seule modification d'un test existant du lot, et c'est exactement le comportement qu'on voulait changer.
+
+### Vérifications
+
+`npm run typecheck` **exit 0**. `npm test` (smoke) **12 PASS · 0 FAIL** + **77 tests UI** (identique à la baseline). Suite `lot1` (18 tests du domaine touché, ajoutée au manifeste) **18 PASS · 0 FAIL**. Tier **offline complet : 243 PASS · 1 FAIL** — l'unique échec est `test-render-integrity`, qui exige un binaire Chromium Playwright absent de cette machine (`Executable doesn't exist at …/chromium_headless_shell-1223/`) : panne d'environnement pré-existante, sans rapport avec les fichiers du lot, et aucune dépendance ne pouvait être installée (contrainte du brief).
+
+**Zéro opération git. Aucun fichier supprimé.** Rapport de livraison détaillé, avec les commandes à rejouer et les sorties réelles : `lot1-mesure-cache-doc-2026-09-28.md`.
+
+## Journal — 2026-09-29 : Élève = DeepSeek v4.1 flash (partition + bascule)
+
+**Contexte.** Hermès a vérifié en réel que `deepseek-v4.1-flash` (Ollama Cloud) pilote le function-calling (`tool_calls` `read_file` + `usage` complet). Mais aucune partition ne le reconnaissait : `resolveProfile("deepseek-v4.1-flash")` renvoyait `generic` → chemin contrat, pas de boucle agentique, caps `5/9000/2500/2`.
+
+**Changé.**
+- `server/src/models/deepseek.ts` (neuf) : `id:"deepseek"`, matcher `/deepseek-v\d/i` (volontairement pas `/deepseek/i` : les distillations locales `deepseek-r1:7b`, `deepseek-coder:6.7b` sont de petits modèles sans function-calling prouvé et restent GENERIC), `agentic:true`, prompt de repli WRITE + EDIT (copie du style GLM), `axiomFiles: [".axioms.md", ".axioms.deepseek.md"]`, `escalateAppendix` qui nomme la famille DeepSeek et route les pièges d'outils/format vers `.axioms.deepseek.md`.
+- Caps `{axiomCap:10, fileBudget:24000, fileMax:6000, maxAttempts:3}` : alignées sur GLM, l'autre gros modèle cloud prouvé dans MangoOS, toutes au-dessus de GENERIC. **Non mesurées sur DeepSeek** — valeurs de départ ; une fiche cerveau mesurée (#148) les écrase via `profileForBrain`.
+- `server/src/models/profile.ts` : import + `deepseekProfile` en fin de `PROFILES` (aucun profil existant ne matche `deepseek-v…`, l'ordre est donc sans effet sur les autres).
+- `server/data/brain-registry.json` : rôle `codeur` seul → `provider:"openai"`, `model:"deepseek-v4.1-flash"`, `baseUrl:"https://ollama.com/v1"`, `apiKeyEnv:"OLLAMA_API_KEY"` (`timeoutMs` inchangé : 1 800 000).
+- `server/.env` : `ELEVE_API_URL=https://ollama.com/v1`, `ELEVE_MODEL=deepseek-v4.1-flash` (`ELEVE_PROVIDER=openai` et `ELEVE_API_KEY` = la clé Ollama déjà en place).
+- `server/src/tests/test-models.ts` : bloc [14], 9 assertions (résolution, `agentic`, non-collision r1/coder, axiomFiles, appendix, caps > GENERIC, contrat).
+
+**Vérifications.** `test-models` tout vert ; `npm test` (smoke) **12 PASS · 0 FAIL** ; `test-brain-runtime` 26/0, `test-specialized-agents` vert ; `getBrain("codeur")` réel → valeurs attendues, et `provider.ts` synchronisé → `ELEVE_MODEL=deepseek-v4.1-flash`, `PROFILE.id=deepseek`, `agentic=true`. **`npm run typecheck` en échec** : une erreur unique `src/llm/llm-transport.ts(116,28)` (type `Query.interrupt()` du SDK), fichier d'un lot parallèle hors périmètre — non corrigée.
+
+**Réserves.** (1) Registre absent/corrompu → le repli est `DEFAULT_REGISTRY.codeur` (`qwythos-tools:q6`, dans `brain-registry.ts`, hors périmètre), pas `.env` : l'alignement `.env` ne joue que si `codeur.model` est vide. (2) Huit autres rôles du registre portent `deepseek-v4-flash:0731` (vision, designer_ux, extracteur, chercheur, juge, stratege, routeur, accueil) : ils résoudraient aussi `deepseek` si on les passait à `resolveProfile`. Dans le code lu, seuls l'Élève (`provider.ts`, `globalFallback`, rôle `codeur`) et les fiches cerveau mesurées (`profileForBrain`) appellent `resolveProfile` : ces rôles ne sont donc pas touchés par ce chemin. (3) Aucun run de génération : le comportement agentique réel de DeepSeek dans la boucle MangoOS est **non mesuré**.
+
+Zéro git, aucun fichier supprimé. Rapport : `models-deepseek-rapport.md`.
+
+## Journal — 2026-09-29 (soir) : trois blocages silencieux levés + premier build complet de bout en bout
+
+**Contexte.** Le lot du matin avait basculé l'Élève sur DeepSeek v4.1 flash **sans jamais lancer un run** (réserve n°3 assumée). Ce lot lance le premier vrai build — un Pomodoro, projet neuf — et découvre que **rien ne passait**. Trois causes distinctes, toutes reproduites isolément avant d'être corrigées.
+
+**① Modèles Ollama Cloud périmés dans le registre (le plus grave : 8 rôles sur 15).**
+`deepseek-v4-flash:0731` a été **retiré par Ollama le 2026-09-25** (`"deepseek-v4-flash:0731 was retired at 2026-09-25 00:00:00 -0700 PDT"`, HTTP 400). Les rôles `juge`, `routeur`, `vision`, `stratege`, `accueil`, `designer_ux`, `extracteur`, `chercheur` le portaient encore : tout build qui les sollicitait mourait, et **aucun test ne pouvait le voir** — `resolveProfile` ne valide que le NOM du profil (`deepseek`/`glm`/`generic`), jamais l'existence du modèle chez le fournisseur. Réalignés sur `deepseek-v4.1-flash` (vérifié vivant par `POST /v1/chat/completions`). `orchestrateur` portait `mimo-v2.6-pro` (Xiaomi) : **quota épuisé**, mesuré `429 quota exhausted` — basculé sur Ollama Cloud. Nouvelle limite honnête **L147** (pré-vol `/v1/models` absent de `PRELAUNCH_CHECKLIST.md`, + alias stable).
+
+**② MangoQA — le filet de secours était lui-même un modèle mort.**
+`askFallback ?? askOllama` pointait `QA_OLLAMA_MODEL=deepseek-v4-flash:0731`. Le primaire (`QA_MODEL=sonnet`) et le repli étaient donc tous deux en cause. **Décision de Raf** : repli = **DeepSeek v4.1 flash**, le même cerveau économique que l'Élève. Défaut du code (`ollama-client.ts`) aligné (il pointait `qwen3.5:cloud`, jamais réellement utilisé), et le repli **prouvé joignable sur son vrai chemin** — `POST {OLLAMA_URL}/api/chat` avec `QA_OLLAMA_MODEL` → **HTTP 200**, modèle servi `deepseek-v4.1-flash`, réponse `vert` — et non « configuré » sur la foi d'un fichier. `cerveaux-verif.sh` §4 appelle désormais ce endpoint.
+
+**③ Le HTTP 400 qui tuait chaque tour de l'Élève (`invalid tool call arguments`).**
+Méthode : plutôt que deviner, **sonde isolée à variables contrôlées** contre l'API réelle. Écartés par la mesure : les arguments vides (400 — mais normalisés depuis le 2026-07-12), les **gros contenus** (34 ko de `write_file` acceptés), le nombre d'appels (4 `tool_calls` + 4 résultats : OK), la forme verbatim des `tool_calls` de l'API (avec `index`/`type` : OK). **Reproduit** : un historique contenant un `tool_call` aux arguments **tronqués** → 400. Cause réelle : `reduceToolArgs` (`eleve-runtime.ts`), utilisé par la compaction et par le snapshot de reprise, tronquait les arguments à **300 caractères bruts** — coupant le JSON en plein milieu. Corrigé pour ne produire que du **JSON parseable** (réduction au `path` seul ; au-delà, élision à l'intérieur des valeurs de premier niveau — jamais la chaîne entière). Deuxième trou, qui a coûté le diagnostic : le **corps de la réponse d'erreur était jeté** (`fetchWithRetry`) — un 400 était indiagnosticable. Il est désormais journalisé (600 car.), avec un dump optionnel du payload exact (`ELEVE_DEBUG_PAYLOAD`). Invariant verrouillé par un test neuf (`[3d]` : 72 `tool_calls` vérifiés parseables au fil d'une boucle compactée + preuve que la réduction a bien eu lieu) ; `test-eleve-runtime` **70 pass · 0 fail**.
+
+**Pollution committable trouvée et cause corrigée.** Le test `test-axioms-design` utilisait `Z:\chemin\impossible\!!` comme « répertoire impossible » pour prouver le fail-open d'`appendAxiom`. Sur Linux, ce n'est **qu'un nom relatif ordinaire** — et `appendAxiom` (`mkdirSync recursive`, fail-open) le **créait pour de vrai** dans le cwd du serveur : un dossier `server/Z:\…\!!/` contenant `.axioms.design.md`, prêt à être committé. Corrigé à la cause (chemin **sous un fichier** → `ENOTDIR`, identique POSIX/Windows) + 2 assertions dont « aucun dossier parasite créé à côté » ; parasite supprimé. Les 4 agents « Test » et l'horodatage de `specialist-agents.json` écrits par mon propre `--tier full` ont été **rendus à l'état committé** : ce bruit n'appartient pas à un commit.
+
+**Preuve de bout en bout.** L'Élève (DeepSeek v4.1 flash, partition agentique) a produit une app complète : `pomodoro.js` + tests, `App.jsx`, CSS — **build vert**, **16/16 tests vitest**, **0 HTTP 400**. Gate visuel mesuré au CDP (lois + DOM, pas l'impression) : **6/6 aux deux viewports** après **trois FAIL corrigés à la cause** — contraste du « : » du cadran à **4,03** (→ tomate foncée, 5,85), cadran de **152 px** qui poussait les trois boutons **hors écran en paysage** (676 px de document pour 448 px d'écran : aucune media query paysage n'existait), textes secondaires à **13,6 px** sous le seuil de 16. Preuve fonctionnelle par **clic réel** (CDP) : 25:00 → 24:56, bouton devenu « Reprendre ». Aperçu **durable** (`systemd --user`, port 8099) — 200 en local et sur le tailnet, là où un aperçu Vite meurt avec la session. Maître d'escalade = **Opus 5.5** (exigeait CLI 2.1.284 + SDK 0.3.284 : en dessous, `--model opus` routait silencieusement vers Opus 4.8), MangoQA = **Sonnet 5** primaire.
+
+**Vérifications.** `typecheck` **0** (serveur et MangoQA) · smoke **12 PASS · 0 FAIL** · offline **243 PASS · 1 FAIL** (le FAIL est `test-render-integrity`, binaire Chromium Playwright absent — **préexistant**, prouvé par l'erreur elle-même) · MangoQA vitest **158/158** · **0 fichier supprimé**. Tout rejouable : `bash docs/briefs-runs/cerveaux-verif.sh`.
+
+**Commit** (autorisation de Raf, en réponse à sa demande explicite).

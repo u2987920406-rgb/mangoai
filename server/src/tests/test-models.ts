@@ -11,6 +11,7 @@ import { qwythosToolsProfile } from "../models/qwythos-tools.js";
 import { qwen3Profile } from "../models/qwen3.js";
 import { llama3GroqToolUseProfile } from "../models/llama3-groq-tool-use.js";
 import { GENERIC } from "../models/generic.js";
+import { deepseekProfile } from "../models/deepseek.js";
 
 import { line, makeCheck } from "./test-util.js";
 let failures = 0;
@@ -105,6 +106,27 @@ console.log("\n  [13] resolveProfile → qwythos-tools (priorité sur qwythosPro
 check('qwythos-tools:q6 → qwythos-tools (PAS qwythos)', resolveProfile("qwythos-tools:q6").id === "qwythos-tools");
 check('qwythosToolsProfile.agentic === true', qwythosToolsProfile.agentic === true);
 check('hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K reste qwythos (chemin contrat, non affecté)', resolveProfile("hf.co/empero-ai/Qwythos-9B-v2-GGUF:Q6_K").id === "qwythos");
+
+// [14] DeepSeek V (2026-09-29) — Élève basculé sur deepseek-v4.1-flash (Ollama Cloud).
+// Avant cette partition, le modèle retombait sur GENERIC (chemin contrat, caps de petit
+// modèle). Les distillations locales (deepseek-r1, deepseek-coder) doivent y rester.
+console.log("\n  [14] resolveProfile → deepseek :");
+const ds = resolveProfile("deepseek-v4.1-flash");
+console.log(`    resolveProfile("deepseek-v4.1-flash") → id=${ds.id} agentic=${ds.agentic} caps=${JSON.stringify(ds.caps)}`);
+check('deepseek-v4.1-flash → deepseek', ds.id === "deepseek");
+check('deepseek-v4.1-flash → agentic === true', ds.agentic === true);
+check('deepseek-v4-flash:0731 → deepseek', resolveProfile("deepseek-v4-flash:0731").id === "deepseek");
+check('deepseek-r1:7b (distillation locale) reste generic', resolveProfile("deepseek-r1:7b").id === "generic");
+check('deepseek-coder:6.7b (petit local) reste generic', resolveProfile("deepseek-coder:6.7b").id === "generic");
+check('axiomFiles = [.axioms.md, .axioms.deepseek.md]',
+  JSON.stringify(deepseekProfile.axiomFiles) === JSON.stringify([".axioms.md", ".axioms.deepseek.md"]));
+check('escalateAppendix non vide, nomme DeepSeek et route .axioms.deepseek.md',
+  deepseekProfile.escalateAppendix.length > 0 && deepseekProfile.escalateAppendix.includes("DeepSeek") &&
+  deepseekProfile.escalateAppendix.includes(".axioms.deepseek.md"));
+check('caps > GENERIC (axiomCap, fileBudget, fileMax, maxAttempts)',
+  deepseekProfile.caps.axiomCap > GENERIC.caps.axiomCap && deepseekProfile.caps.fileBudget > GENERIC.caps.fileBudget &&
+  deepseekProfile.caps.fileMax > GENERIC.caps.fileMax && deepseekProfile.caps.maxAttempts > GENERIC.caps.maxAttempts);
+check('système offre <write> ET <edit> (repli contrat)', deepseekProfile.system.includes("<write") && deepseekProfile.system.includes("<edit"));
 
 line("═");
 console.log(failures === 0

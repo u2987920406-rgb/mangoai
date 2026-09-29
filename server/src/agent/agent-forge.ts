@@ -113,13 +113,19 @@ Rends UNIQUEMENT un objet JSON valide (aucun texte autour), avec EXACTEMENT ces 
   "role": "rôle/domaine en une phrase",
   "lacune": "la lacune ciblée (ex. ${focus?.id ?? "L35"} — ...)",
   "systemPrompt": "prompt système opérationnel et exigeant : expertise, méthode ordonnée, règles strictes, format de sortie. 150 à 350 mots.",
-  "tools": [ { "name": "nom_capacite", "desc": "ce qu'elle fait" } ],
   "triggers": "quand déclencher cet agent (condition claire)",
   "examples": [ "exemple de requête typique" ],
   "tags": [ "mot-cle" ],
   "provider": "ollama",
   "model": "gemma4:12b"
 }
+
+N'INVENTE AUCUN OUTIL et ne demande PAS de champ "tools" : un agent forgé n'a jamais d'outils
+à lui. À l'exécution il reçoit la boîte à outils RÉELLE de l'Élève (read_file, write_file,
+edit_file, list_files, search_code, check_build, finish…), filtrée par la policy que Mango scelle
+lui-même. Écris donc le "systemPrompt" en termes de MÉTHODE et de RÈGLES, jamais en ordonnant
+d'appeler une capacité nommée qui n'existerait pas. (Décision D8 de l'audit 2026-09-28 : le champ
+"tools" annonçait des outils introuvables dans tout le code — il est retiré du contrat de forge.)
 
 Indique la compétence DOMINANTE dans le rôle et les tags (vision / raisonnement / code…).
 Le cerveau (provider/model) sera AUTO-ASSIGNÉ par Mango selon cette compétence (vision → l'œil,

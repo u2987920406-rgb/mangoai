@@ -28,7 +28,7 @@ réelles, tout test de bout en bout sans supervision humaine continue).
 Un modèle Élève est référencé à **3 endroits distincts, jamais unifiés
 automatiquement** (voir `limites.md`) :
 - [ ] `server/.env` → `ELEVE_MODEL` (+ `ELEVE_PROVIDER`)
-- [ ] `server/src/data/brain-registry.json` → tous les rôles concernés
+- [ ] `server/data/brain-registry.json` → tous les rôles concernés
       (pas seulement `codeur` — `orchestrateur`, `forgeron`, `juge`, etc.)
 - [ ] `server/src/brain/brain-registry.ts` → `DEFAULT_REGISTRY` (repli de
       dernier recours si le fichier JSON est absent/corrompu)
@@ -36,6 +36,28 @@ automatiquement** (voir `limites.md`) :
 Vérifier que les 3 pointent vers le **même tag**, et que `resolveProfile()`
 (`server/src/models/profile.ts`) route bien vers le profil attendu (tester
 via `npx tsx src/tests/test-models.ts` si un profil a changé).
+
+- [ ] **Le modèle EXISTE encore chez le fournisseur** (leçon 2026-09-29, cf.
+      `limites.md` L147). Un tag cloud peut être **retiré** sans prévenir :
+      `deepseek-v4-flash:0731` a été retiré par Ollama le 2026-09-25 et **8 des
+      15 rôles** le portaient encore — tout build qui les sollicitait mourait en
+      HTTP 400, **invisible pour tous les tests** (`resolveProfile` ne valide que
+      le NOM du profil, jamais la disponibilité du modèle). Contrôle en une
+      commande, à faire pour CHAQUE id présent dans le registre :
+
+      ```bash
+      cd server && K=$(grep -h '^OLLAMA_API_KEY=' .env | cut -d= -f2-)
+      python3 -c "import json;d=json.load(open('data/brain-registry.json'));print('\n'.join(sorted({v['model'] for v in d.values() if isinstance(v,dict) and v.get('model')})))" \
+        | while read m; do
+            code=$(curl -s -o /dev/null -m 20 -w '%{http_code}' https://ollama.com/v1/chat/completions \
+              -H "Authorization: Bearer $K" -H 'Content-Type: application/json' \
+              -d "{\"model\":\"$m\",\"max_tokens\":1,\"messages\":[{\"role\":\"user\",\"content\":\"ok\"}]}")
+            [ "$code" = "200" ] && echo "  OK   $m" || echo "  MORT $m (HTTP $code)"
+          done
+      ```
+
+      Un `MORT` n'est pas un avertissement : c'est un rôle du pipeline qui ne
+      répond plus. Réaligner AVANT de lancer.
 
 ## 3. Cohérence prompt ↔ chemin réellement emprunté
 

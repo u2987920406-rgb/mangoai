@@ -55,9 +55,22 @@ Chantier « Fondations harnais dernière génération » : le jour où un cervea
 
 Vérif de clôture : 9 suites du domaine = **273 checks verts** (llm-engine 62 · kernel 56 · ensemble 11 · fallback 18 · dispatch 38 · brains 30 · brain-runtime 24 · endpoints 19 · profile 15).
 
+## Cache du registre (D7, 2026-09-28)
+
+L'audit du 2026-09-28 (constat **B10**) a relevé que `getBrain()` refaisait `existsSync` + `readFileSync` + `JSON.parse` **à chaque appel** — 75 sites d'appel dans 49 fichiers, dont des chemins chauds (`llm-engine`, `kernel`, `eleve/provider`, `capabilities`) sollicités à chaque itération d'une boucle qui peut en compter des centaines.
+
+`loadBrainRegistry()` cache désormais le contenu **parsé**, invalidé sur `mtimeMs` + taille du fichier (un `statSync` remplace la lecture complète). Trois précautions préservent la sémantique **à l'identique** :
+
+1. c'est le registre **avant** `applyLocalOnly` qui est caché — le rideau de fer `BRAIN_LOCAL_ONLY` est ré-appliqué à chaque appel, donc un changement d'env en cours de process reste pris en compte ;
+2. chaque appel renvoie une **copie** (des appelants mutent le résultat avant `saveBrainRegistry`) ;
+3. `saveBrainRegistry` **invalide explicitement** — ne pas dépendre de la granularité d'horloge du système de fichiers (~15 ms sous Windows) pour voir sa propre écriture.
+
+La propriété qui compte est préservée et **testée** : l'édition à chaud dans [[atelier-cerveaux|l'Atelier]] reste prise en compte sans redémarrage (`test-brain-registry-cache.ts`, 13/13 — dont « 12 lectures → 1 seule lecture disque » et « mtime neuf → valeur relue »). Diagnostic : `brainRegistryCacheStats()`.
+
 ## Liens
 
 - [[atelier-cerveaux]] — l'UI #162 qui pilote ce registre (un modèle par agent) ; `codeur` y EST l'Élève.
+- [[compteur-jetons]] — la mesure (D1) qui doit trancher « quel cerveau sur quel rôle » autrement qu'à l'opinion.
 - [[phase-e-multicerveaux]] — l'idée fondatrice (#135) dont Brain-Dispatch est la réalisation aboutie.
 - [[brains]] — registre `.brains` de fiches cerveau mesurées (Phase E) ; Brain-Dispatch généralise ce registre à 10 agents nommés.
 - [[examen-cerveau]] — #148, le scan qui mesure un cerveau inconnu → alimente le placement dans le registre.

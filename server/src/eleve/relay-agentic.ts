@@ -11,6 +11,7 @@ import { detectProjectType, inferProjectType } from "../blueprints.js";
 import { WORKSPACE_DIR } from "../projects.js";
 import { type ModelProfile } from "../models/profile.js";
 import { type LLMProvider } from "../llm/llm-engine.js";
+import { startLLMRun } from "../llm/llm-usage.js";
 import { buildEleveTools } from "../eleve-tools/eleve-tools.js";
 import { buildEleveActionTools, installDependency, setExternalMcpTools } from "../eleve-tools/eleve-action-tools.js";
 import { loadHooks } from "../mango-hooks-config.js";
@@ -95,6 +96,13 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     injectMeans, push, relayHooks, inspectReady, finalizeEscalation, log,
   } = ctx;
     push(`🤖 Moteur agentique — l'Élève (${callModel}) construit avec ses outils…`);
+
+    // D1 (audit 2026-09-28, B4) — frontière du COMPTEUR DE JETONS : un build = un run.
+    // Tout appel modèle du transport (y compris ceux des sous-agents délégués) s'y
+    // accumule jusqu'au prochain build. Addition PURE : `startLLMRun` ne fait qu'ouvrir
+    // un compteur mémoire, ne lève jamais, n'écrit rien et n'est lu par aucune décision.
+    // Lecture : `getLLMRun()` (llm/llm-usage.ts), journal via le gate LLM_USAGE_LOG.
+    startLLMRun(`build ${callModel}`);
 
     // (#171) PRÉ-PASSE SPÉCULATIF — opt-in `ELEVE_SPECULATIVE=on`, défaut OFF → ZÉRO régression.
     // Le cerveau frugal drafte une séquence d'étapes, on l'exécute en worktree isolé et on applique

@@ -102,7 +102,14 @@ export async function fetchWithRetry(
     }
     if (res.ok) return res;
     const delay = eleveRetryDelayMs(res.status, attempt, res.headers.get("retry-after"), maxRetries);
-    await res.text().catch(() => undefined); // draine avant de retenter/abandonner
+    // Le corps de la réponse est le SEUL endroit où l'API dit POURQUOI elle refuse
+    // (ex. « invalid tool call arguments », schéma d'outil, historique incohérent).
+    // On le draine (obligation : libérer le socket) ET on le journalise — sans lui,
+    // un HTTP 400 est indiagnosticable et coûte un tour entier de l'Élève.
+    const errBody = await res.text().catch(() => "");
+    if (errBody.trim()) {
+      console.warn(`[transport] HTTP ${res.status} — corps: ${errBody.slice(0, 600)}`);
+    }
     if (delay === null) throw new Error(labels.http(res.status));
     await new Promise((r) => setTimeout(r, delay));
   }

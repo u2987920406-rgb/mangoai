@@ -238,7 +238,9 @@ async function main(): Promise<void> {
   const count = arg("count") ? Number(arg("count")) : Infinity;
   const maxEscalations = Number(arg("max-escalations") ?? 6);
   const keep = Number(arg("keep") ?? 5);
-  const escalateModel = process.env.TRAIN_ESCALATE_MODEL ?? "sonnet";
+  // DÉCISION RAF 2026-09-29 : Opus 5.5 par défaut pour le Maître (cf. relay-config.ts).
+  // Surchargeable par TRAIN_ESCALATE_MODEL ; `--max-escalations` borne déjà le coût de la nuit.
+  const escalateModel = process.env.TRAIN_ESCALATE_MODEL ?? "opus";
 
   if (ELEVE_PROVIDER === "openai") {
     console.log("⚠ Élève = provider « openai » (API distante) — cette boucle N'EST PLUS gratuite : chaque création coûte des appels API. Ctrl-C pour annuler.");

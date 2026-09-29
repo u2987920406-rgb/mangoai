@@ -75,7 +75,13 @@ export function resolveRelayConfig(
   const callAskEleve: (sys: string, usr: string) => Promise<string> = usesGlobalDefaults
     ? deps.askEleve
     : (sys, usr) => askEleveDispatch(sys, usr, callModel, callProvider, callEndpoint);
-  const maitreModel = opts.maitreModel ?? "sonnet";
+  // DÉCISION RAF 2026-09-29 : le MAÎTRE (escalade) est Opus 5.5 par défaut, plus Sonnet.
+  // Justification : l'escalade est l'acte le PLUS exigeant du harnais (réparer un build que
+  // l'Élève n'a pas su passer + distiller UN axiome) et il est RARE et BORNÉ (maxMaitreGate,
+  // plafonds d'escalade du train-loop) — le poste de quota est faible, la contrepartie en
+  // justesse est la plus élevée du système. Override toujours possible par appel
+  // (`opts.maitreModel`), `TRAIN_ESCALATE_MODEL`, ou le cron (cron-scheduler.ts).
+  const maitreModel = opts.maitreModel ?? "opus";
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
   const functionalMin = opts.functionalMin ?? Number(process.env.RELAY_FUNCTIONAL_MIN ?? 5);
   const injectMeans = opts.injectMeans ?? (process.env.RELAY_INJECT_MEANS === "1");

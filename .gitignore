@@ -54,6 +54,8 @@ server/.tmp-spine.db-wal
 
 # Backups automatiques des migrations de schéma (A0.2) — runtime, jamais versionnés
 server/data/*.bak-v*
+# Sauvegardes manuelles du registre des cerveaux (avant édition) — jamais versionnées
+server/data/*.bak-2*
 
 # Script de pilotage jetable des runs de validation — jamais versionné
 run-driver.mjs
@@ -84,3 +86,7 @@ server/src/_prove-*
 # Captures et rapports des tests navigateur
 test-results/
 release/
+
+# PDF des rapports de session — artefacts générés (régénérables depuis le .html
+# via `google-chrome --headless --print-to-pdf`), jamais versionnés
+/*.pdf

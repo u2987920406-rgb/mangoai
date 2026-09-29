@@ -19,6 +19,7 @@ import { qwythosProfile } from "./qwythos.js";
 import { qwythosToolsProfile } from "./qwythos-tools.js";
 import { qwen3Profile } from "./qwen3.js";
 import { llama3GroqToolUseProfile } from "./llama3-groq-tool-use.js";
+import { deepseekProfile } from "./deepseek.js";
 
 export interface ModelProfile {
   /** Identifiant court de la famille ("gemma", "generic"). */
@@ -52,7 +53,7 @@ export interface ModelProfile {
 // contient "qwythos" et matcherait qwythosProfile en premier sinon (regex /qwythos/i),
 // perdant agentic:true. Premier match gagne (Array.find), donc le plus SPÉCIFIQUE
 // doit toujours précéder le plus GÉNÉRAL.
-const PROFILES: ModelProfile[] = [gemmaProfile, uxuiProfile, layoutProfile, glmProfile, qwythosToolsProfile, qwythosProfile, qwen3Profile, llama3GroqToolUseProfile];
+const PROFILES: ModelProfile[] = [gemmaProfile, uxuiProfile, layoutProfile, glmProfile, qwythosToolsProfile, qwythosProfile, qwen3Profile, llama3GroqToolUseProfile, deepseekProfile];
 
 /** Résout la partition d'un modèle ; fallback GENERIC (non-régression garantie). */
 export function resolveProfile(model: string): ModelProfile {

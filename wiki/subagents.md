@@ -31,6 +31,18 @@ La reprise auto [[auto-evolution|#168]] faisait déjà la moitié du chemin (`co
 
 L'agent **Esthète** (`esthete-agent.ts`/`esthete-routes.ts`) est le premier spécialiste mode-action qui n'est PAS forgé dynamiquement par GLM : c'est un agent SYSTÈME pré-enregistré (`ensureEstheteAgent`, seedé au boot, id fixe `sa_system_esthete`), réutilisant la structure `SpecialistAgent` + le mécanisme #175 sans passer par `agent-forge.ts` — c'est une capacité de premier plan décidée par Raf, pas une lacune détectée en cours de build. Nuance de câblage : sa route (`POST /api/esthete/:projectName`) appelle `askEleveAgentic` **directement** plutôt que `runSpecialistAgentic`, car ce dernier n'expose pas de callback `onTool` (nécessaire pour streamer les appels d'outils en SSE au fil d'une conversation utilisateur) — même budget borné (`SPECIALIST_MAX_ITER`) et même garantie de scellage, juste sans l'indirection qui masquerait le streaming. Protégé contre la suppression (`DELETE /api/specialists/:id` refuse son id, 403).
 
+## Le champ `tools` fantôme, tranché (D8, 2026-09-28)
+
+L'audit du 2026-09-28 (constat **B9**) a montré que les specs forgées annonçaient des outils **qui n'existent nulle part** : le « Déchiffreur de PDF scannés » déclare `detecter_couche_texte`, `rasteriser_pdf`, `extraire_ocr`, `reconstruire_structure`, `corriger_ocr` — zéro occurrence dans tout `server/src`. La cause est structurelle : la boîte à outils d'un sous-agent vient de `deps.buildTools(projectDir, toolPolicy)`, **jamais** du champ `tools`, qui n'a donc jamais été que de la prose. 11 spécialistes étaient dans ce cas.
+
+Décision (audit D8, recommandation suivie) : **retirer**, pas câbler.
+
+- Le prompt de forge ne demande plus de champ `tools` et **interdit explicitement d'inventer un outil** (`agent-forge.ts`) — il rappelle au forgeron que l'agent recevra la boîte RÉELLE de l'Élève filtrée par sa policy.
+- Le champ reste **lu** par `validateSpec` : les 11 specs déjà sur disque ne perdent rien (aucune donnée supprimée), il est simplement marqué hérité dans le type.
+- À l'exécution, `runSpecialistAgentic` énonce au sous-agent **la liste de ses outils réels** et invalide tout nom absent de cette liste (`realToolboxClause`). Ce chemin est déjà gaté `ELEVE_DELEGATE_AGENTIC=off` → aucun comportement par défaut ne change.
+
+Ce qui reste vrai et reste une limite : **un spécialiste forgé ne peut pas avoir d'outil à lui** — un outil est du code TypeScript (schéma + handler), pas une donnée. Le câbler voudrait dire exécuter du code décrit par un modèle. Piste consignée ([[limites|L143]]) : une bibliothèque d'outils pré-écrits dans laquelle la forge n'aurait que le droit de **piocher**, `tools` renaissant alors comme une allowlist de noms vérifiés au chargement.
+
 ## Limite / périmètre
 
 Le forgeron (LLM) décide de la `toolPolicy` → une mauvaise assignation reste possible (atténuée : allowlist restrictive par construction, budget réduit, confinement `resolveInside` hérité, gate off). La preuve du DÉCLENCHEMENT via `consultSpecialist` en vraie boucle (pas `runSpecialistAgentic` direct) attend un blocage naturel non forçable. `askEleveAgentic` ne boucle qu'en provider `openai` (repli texte pour un cerveau ollama pur local). Détails → [[limites|L73]].

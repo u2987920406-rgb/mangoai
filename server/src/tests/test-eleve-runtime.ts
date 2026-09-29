@@ -151,6 +151,65 @@ async function run() {
       !!recentWrite && recentArgs.content === bigContent);
   }
 
+  console.log("\n[3d] 🔴 2026-09-29 : après compaction, TOUT tool_call reste un JSON VALIDE (invariant API)");
+  {
+    // Régression réelle : la compaction tronquait les arguments à 300 caractères
+    // BRUTS → JSON coupé en plein milieu → l'API Ollama Cloud rejetait tout
+    // l'historique (« invalid tool call arguments », HTTP 400) et le tour de
+    // l'Élève mourait après sa première écriture. On vérifie ici l'invariant qui
+    // protège l'API : chaque `arguments` de chaque message est parseable, à
+    // n'importe quel moment de la boucle.
+    const reg = stubRegistry([]);
+    const snapshots: ChatMessage[][] = [];
+    let step = 0;
+    // Des appels aux formes variées : chaînes très longues, imbrication, tableau.
+    const shapes = (i: number) => [
+      { path: `f${i}.js`, content: "Z".repeat(3000) },              // chaîne longue
+      { n: i, bloc: { texte: "W".repeat(1500), sous: { x: "Q".repeat(900) } } }, // imbriqué
+      { items: Array.from({ length: 60 }, (_, k) => `element-${k}-${"L".repeat(40)}`) }, // tableau long
+      { commande: "npm run build", note: "N".repeat(4000) },
+    ];
+    const post: PostFn = async (messages) => {
+      snapshots.push(messages.map((m) => ({ ...m, tool_calls: m.tool_calls?.map((tc) => ({ id: tc.id, function: { ...tc.function } })) })));
+      step++;
+      if (step <= 8) return { content: "", toolCalls: [call("write_file", shapes(step)[0]), call("read_big", shapes(step)[1])] };
+      return { content: "", toolCalls: [call("finish", { summary: "fait" })] };
+    };
+    const r = await buildAgentic("sys", "x", reg, { post, maxIterations: 20, ctxMaxChars: 2500 });
+    check("le run conclut (finish) malgré la compaction", r.finished === true);
+    let total = 0;
+    const invalides: string[] = [];
+    for (const snap of snapshots) {
+      for (const m of snap) {
+        for (const tc of m.tool_calls ?? []) {
+          total++;
+          try {
+            JSON.parse(tc.function.arguments);
+          } catch {
+            invalides.push(`${tc.function.name}(${tc.function.arguments.length} car.)`);
+          }
+        }
+      }
+    }
+    check(`tous les tool_calls restent du JSON valide (${total} vérifiés, 0 attendu invalide)`, invalides.length === 0);
+    if (invalides.length) console.log("      invalides :", invalides.slice(0, 5).join(", "));
+    // Et la réduction a bien EU lieu (sinon le test ne prouve rien) : le 1ᵉʳ snapshot
+    // est antérieur à tout appel d'outil, on mesure donc sur le DERNIER.
+    const lastWithCalls = [...snapshots].reverse().find((s) => s.some((m) => m.tool_calls?.length));
+    const nbAppels = lastWithCalls?.reduce((n, m) => n + (m.tool_calls?.length ?? 0), 0) ?? 0;
+    check("des tool_calls ont bien été snapshottés (le test n'est pas vide)", nbAppels >= 8);
+    // Preuve que la réduction a EU lieu : dans le DERNIER snapshot, au moins un
+    // write_file ancien est réduit à son `path` (les récents gardent leur contenu,
+    // c'est voulu — fenêtre KEEP_RECENT).
+    const lastSnap2 = snapshots[snapshots.length - 1] ?? [];
+    const writeArgs = lastSnap2
+      .flatMap((m) => m.tool_calls ?? [])
+      .filter((tc) => tc.function.name === "write_file")
+      .map((tc) => JSON.parse(tc.function.arguments) as Record<string, unknown>);
+    check("une réduction a réellement eu lieu (un write_file ancien réduit à son path)",
+      writeArgs.some((a) => a.content === undefined && typeof a.path === "string"));
+  }
+
   console.log("\n[4] Conclusion sans finish (modèle s'arrête)");
   {
     const reg = stubRegistry([]);

@@ -290,6 +290,12 @@ export const FLAGS = {
     default: false,
     description: "Section « Code » (docs/plan-193-section-code.md) : chat agentique frontière-only sur des projets LOCAUX EXTERNES au workspace MangoOS — distinct de l'Accueil (léger, cerveau rapide) et du Builder (workspace, souverain). OFF (défaut) → /api/code-chat et /api/external-projects renvoient 403/réponses inertes, nav UI affiche un état désactivé explicite. Aucun effet sur /api/chat, /api/home-chat, workspace/ ou projects.ts.",
   },
+  // ── D1 (audit 2026-09-28, constat B4) — lecture au journal du compteur de jetons ──
+  LLM_USAGE_LOG: {
+    env: "LLM_USAGE_LOG",
+    default: false,
+    description: "Journalise une ligne [llm-usage] par appel modèle mesuré (llm/llm-usage.ts) : canal, modèle, jetons prompt/complétion et cumul du run. Le COMPTAGE lui-même n'est pas gaté (addition pure, aucune décision ne le lit) ; seul l'affichage l'est. OFF (défaut) → le compteur accumule en mémoire et n'écrit strictement rien, ni console ni disque.",
+  },
 } as const satisfies Record<string, FlagSpec>;
 
 export type FlagName = keyof typeof FLAGS;

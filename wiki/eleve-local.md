@@ -3,7 +3,7 @@ type: entite
 tags: [architecture, eleve, ollama, apprentissage, boucle]
 statut: actif
 sources: [memory, statut, historique]
-maj: 2026-06-24
+maj: 2026-09-29
 ---
 
 # Élève & boucle d'apprentissage
@@ -16,8 +16,10 @@ Faire tourner les tours de génération à $0 quand c'est possible, Claude resta
 
 ## Détails clés
 
+- **⚠ Modèles cloud périmés (2026-09-29)** : `deepseek-v4-flash:0731` a été **retiré par Ollama le 2026-09-25** et **8 des 15 rôles** du registre le portaient encore — tout build qui les sollicitait mourait en HTTP 400, invisible pour les tests (`resolveProfile` ne valide que le NOM du profil). Tous réalignés sur `deepseek-v4.1-flash`. **Contrôle obligatoire avant un run** : `PRELAUNCH_CHECKLIST.md` §2, qui teste maintenant l'existence de chaque id via `/v1/chat/completions`. Voir [[limites|L147]].
+- **⚠ Invariant des `tool_calls`** : voir [[invariant-tool-calls]] — la compaction ne doit jamais laisser un `arguments` non parseable, sous peine de perdre **tout le tour**.
 - **Modèle actif** : `glm-5.2:cloud` via **Ollama Cloud** (provider `openai`, endpoint OpenAI-compat `https://ollama.com/v1`, clé API Bearer) depuis 2026-06-22. **Repli local** : `gemma4:12b` via Ollama (`http://localhost:11434`, `ollama serve`, 1er appel ~60 s) — décommenter `ELEVE_MODEL=gemma4:12b` + retirer les 3 lignes provider dans `.env`. Qwen entièrement retiré le 2026-06-17.
-- **Profils par famille** (`models/`) : `resolveProfile(model)` route sur la partition du modèle (system prompt + axiomes + caps + routage d'escalade). `gemma.ts` = WRITE-ONLY (petit modèle qui rate le find/replace) ; **`glm.ts` (2026-06-22)** = WRITE **+ EDIT** + caps généreuses `{axiomCap:10, fileBudget:24000, fileMax:6000, maxAttempts:3}`, axiomes `.axioms.md`/`.axioms.glm.md` ; `uxui.ts`/`layout.ts` = spécialistes #145 ; `generic.ts` = repli non-régression. Un modèle non reconnu → GENERIC.
+- **Profils par famille** (`models/`) : `resolveProfile(model)` route sur la partition du modèle (system prompt + axiomes + caps + routage d'escalade). `gemma.ts` = WRITE-ONLY (petit modèle qui rate le find/replace) ; **`glm.ts` (2026-06-22)** = WRITE **+ EDIT** + caps généreuses `{axiomCap:10, fileBudget:24000, fileMax:6000, maxAttempts:3}`, axiomes `.axioms.md`/`.axioms.glm.md` ; `uxui.ts`/`layout.ts` = spécialistes #145 ; **`deepseek.ts` (2026-09-29)** = famille DeepSeek V cloud (`/deepseek-v\d/i` — les distillations locales `deepseek-r1`/`deepseek-coder` restent GENERIC), `agentic:true`, repli contrat WRITE + EDIT, caps alignées GLM, axiomes `.axioms.md`/`.axioms.deepseek.md` — **Élève actif depuis le 2026-09-29 : `deepseek-v4.1-flash` via Ollama Cloud** (rôle `codeur` de `brain-registry.json`) ; `generic.ts` = repli non-régression. Un modèle non reconnu → GENERIC.
 - **Boucle de relais** (`eleve.ts` → `runRelay`) : prompt d'entrée STRICT obligatoire (sinon l'Élève dérape), `executeContract` applique, `inspectProject` juge sur **signaux objectifs** (`build-failed`/`timeout`/`no-deps`…), escalade Claude qui corrige + écrit un axiome. Cerveaux `askEleve`/`escalate` **injectables** (`defaultRelayDeps`) → testable sans réseau.
 - **Branchement chat** : 4ᵉ cerveau `model === "eleve"` (sélecteur UI) → `/api/chat` route vers `runRelay` (sinon `runAgent`/Claude inchangé). Métriques `resolvedBy`/`attempts`/`projectType`.
 - **L'Élève sait aussi DISCUTER & PLANIFIER (2026-06-22)** : `runRelay` est un moteur de **build** → pour que « rester sur l'Élève » vaille aux 3 actions de la chatbox (Construire/Planifier/Discuter), une branche `if (model==="eleve" && mode==="discuss")` court-circuite le build et appelle **`chatEleve`** (`eleve.ts`, enveloppe `askEleveDispatch`) : réponse **texte, zéro build**, posture `DISCUSS_RULES` (`assembleSystemPrompt`) + fil récent (`loadHistory`) repassé en contexte (l'Élève n'a pas de session SDK comme Claude). Construire = build (runRelay) ; Planifier & Discuter = conversationnel. **Limite** : le build Élève reste **stateless** (ne lit pas l'historique) → un plan « Discuté » n'informe pas automatiquement un build GLM ultérieur.

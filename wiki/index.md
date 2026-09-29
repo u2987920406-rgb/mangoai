@@ -1,7 +1,7 @@
 ---
 type: meta
 tags: [wiki, index]
-maj: 2026-07-19
+maj: 2026-09-28
 ---
 
 # Index du wiki MangoOS
@@ -26,7 +26,9 @@ Voir aussi [[standalone]] : installation autonome locale et périmètre vérifi�
 | [[examen-cerveau]] | « Révélateur de cerveau » : scan d'audit d'entrée d'un modèle inconnu → verdict de placement — #148 | ✅ écrite |
 | [[phase-e-multicerveaux]] | Multi-cerveaux par intention : le bon cerveau par tâche, mesuré + souverain (cloud↔local) — #135/#146 Phase E | ✅ écrite |
 | [[brains]] | Registre `.brains` : fiches cerveau mesurées + routage intention→cerveau + « MangoOS avertit » — Phase E | ✅ écrite |
-| [[brain-dispatch]] | Système multi-agents à cerveaux interchangeables : 10 agents nommés + registre éditable + contrat universel — #150 ✅ fait, validé live | ✅ écrite |
+| [[brain-dispatch]] | Système multi-agents à cerveaux interchangeables : 10 agents nommés + registre éditable + contrat universel — #150 ✅ fait, validé live · **+ cache du registre invalidé au `mtime` (D7, 2026-09-28)** | ✅ écrite |
+| [[invariant-tool-calls]] | Un `tool_calls[].arguments` réduit par la compaction reste du **JSON valide** — l'API Ollama Cloud refuse tout l'historique sinon (400 « invalid tool call arguments ») ; corps d'erreur enfin journalisé (2026-09-29) | ✅ écrite |
+| [[compteur-jetons]] | Mesure de la consommation : le `usage` OpenAI-compat/Ollama, jeté au transport, est lu et cumulé par run (D1 de l'audit 2026-09-28, constat B4) — mesure seule, sans tarification | ✅ écrite |
 | [[atelier-cerveaux]] | UI Réglages : un modèle par agent + parcourir/télécharger les modèles Ollama locaux + garde de capacités (l'œil exige `vision`) + scanner #148 — #162, prouvé live · **+ forgeron Opus & cerveaux dédiés par agent forgé (2026-06-29)** | ✅ écrite |
 | [[auto-evolution]] | La boucle qui rend Mango auto-évolutif : un blocage non couvert → lacune notée (`open-gaps.json`) → forgeron crée l'agent ciblé après validation de Raf (semi-auto) — #168 tranche 1 ✅ prouvée live | ✅ écrite |
 | [[sharingan-vision-eleve]] | L'œil de GLM : outil `vois_ecran` (rendu→image→VL cloud→critique) pour qu'il VOIE ses écrans et s'auto-corrige — #151 ✅ fait, prouvé live | ✅ écrite |
@@ -36,7 +38,7 @@ Voir aussi [[standalone]] : installation autonome locale et périmètre vérifi�
 | [[hooks]] | Gardes déclaratives (événement + matcher + handler) exécutées par un dispatcher générique : ajouter une garde = une entrée de config, plus un fichier .ts — PreToolUse/PostToolUse/PreFinish/OnBlock/OnEscalate/OnGapRecorded, gaté ELEVE_HOOKS off — #172, livré 2026-07-01 | ✅ écrite |
 | [[loop]] | Cron agentique : le cron in-app appelle la vraie boucle `runRelay` (écrit du code, seul) borné par un disjoncteur à fenêtre glissante + rythme adaptatif + journal diff-friendly, gaté CRON_AGENTIC off — #173, livré 2026-07-02 | ✅ écrite |
 | [[skills]] | Skills à invocation directe : taper `/slug args` au composer expanse le SKILL.md (substitution `$ARGUMENTS` / positionnels / nommés) en tour utilisateur ; `disable-model-invocation` retire une skill du prompt passif de l'Élève sans lui ôter l'invocation directe — #174, livré 2026-07-02, prouvé HTTP réel | ✅ écrite |
-| [[subagents]] | Spécialistes forgés EXÉCUTANTS : un agent en mode "action" reçoit sa propre boucle agentique (`runSpecialistAgentic`) avec des outils SCELLÉS à la forge (`toolPolicy` allowlist/denylist via `assignMode`), budget réduit ; gaté `ELEVE_DELEGATE_AGENTIC` off — #175, livré 2026-07-02, preuve live (agent écrit un fichier, scellage tenu) | ✅ écrite |
+| [[subagents]] | Spécialistes forgés EXÉCUTANTS : un agent en mode "action" reçoit sa propre boucle agentique (`runSpecialistAgentic`) avec des outils SCELLÉS à la forge (`toolPolicy` allowlist/denylist via `assignMode`), budget réduit ; gaté `ELEVE_DELEGATE_AGENTIC` off — #175, livré 2026-07-02, preuve live (agent écrit un fichier, scellage tenu) · **+ champ `tools` fantôme retiré du contrat de forge (D8, 2026-09-28)** | ✅ écrite |
 | [[le-stratege]] | Raisonnement de déblocage : quand l'exécutant bloque, Mango DIAGNOSTIQUE la cause puis CHOISIT le remède et APPREND, tranche l'ambigu (cerveau frugal) et monte le cerveau de l'exécutant + mesure la souveraineté — #164 ✅ COMPLET (Phases 0-4) | ✅ écrite |
 | [[grand-chantier]] | Orchestrateur qui enchaîne TOUT SEUL les incréments d'un gros projet A-Z (squelette → incrément → Gardien+tests → suivant), checkpoint resumable + budget + quarantaine — Phase 2, cœur prouvé 27/27, gaté OFF | ✅ écrite |
 | [[domaines-unity]] | Abstraction de domaine (Web défaut vs Unity) qui sort le pipeline du tout-Vite + compétence Unity/C# (build headless, tests EditMode, template) — Phase 3a, gaté OFF, build live à prouver | ✅ écrite |

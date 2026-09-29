@@ -23,8 +23,17 @@ import { sanitizeExternal } from "../agent/agent-contract.js"
 // Type-only (effacé à la compilation) → aucun cycle runtime avec eleve-action-tools.
 import type { ToolPolicy } from "../eleve-tools/eleve-action-tools.js"
 
-/** Un « outil » d'un spécialiste = une capacité DÉCRITE (nom + description) qui cadre
- *  son comportement (pas un outil exécutable du moteur — il oriente le raisonnement). */
+/** Un « outil » d'un spécialiste = une capacité DÉCRITE (nom + description).
+ *
+ *  ⚠️ CHAMP HÉRITÉ, PLUS PRODUIT (D8 de l'audit 2026-09-28, constat B9). Il n'a JAMAIS
+ *  été exécutable : `runSpecialistAgentic` construit la boîte à outils du sous-agent
+ *  depuis le registre RÉEL de l'Élève filtré par `toolPolicy` (specialist-agentic.ts),
+ *  jamais depuis ce champ. Les 11 spécialistes déjà forgés annonçaient donc des outils
+ *  introuvables dans tout `server/src` (ex. `rasteriser_pdf`, `extraire_ocr`).
+ *  Décision : RETIRÉ DU CONTRAT DE FORGE (le prompt de forge ne le demande plus,
+ *  agent-forge.ts) — la validation le conserve en LECTURE pour ne rien perdre des
+ *  enregistrements existants, et `runSpecialistAgentic` dit désormais explicitement au
+ *  sous-agent quels outils il a RÉELLEMENT. Ne pas rebrancher ce champ sans l'implémenter. */
 export interface SpecialistTool {
   name: string
   desc: string
@@ -41,7 +50,7 @@ export interface SpecialistAgent {
   lacune: string
   /** Prompt système : l'expertise et les règles de l'agent. */
   systemPrompt: string
-  /** Capacités décrites (orientent le raisonnement). */
+  /** ⚠️ Hérité, plus produit par la Forge depuis D8 (2026-09-28) — voir SpecialistTool. */
   tools: SpecialistTool[]
   /** Quand déclencher cet agent (condition lisible). */
   triggers: string

@@ -32,6 +32,31 @@ export type AgenticFn = (
 /** Constructeur de registre injecté — compatible avec `buildEleveActionTools`. */
 export type BuildToolsFn = (projectDir: string, policy: ToolPolicy) => ToolRegistry
 
+/**
+ * (D8 de l'audit 2026-09-28, constat B9) La BOÎTE À OUTILS RÉELLE, dite au sous-agent.
+ *
+ * Le champ `tools` des specs forgées n'a jamais rien câblé : la boîte vient de
+ * `deps.buildTools(projectDir, toolPolicy)` (ligne ci-dessous), pas de la spec. Un
+ * spécialiste pouvait donc recevoir un prompt système qui lui ordonne d'utiliser cinq
+ * capacités absentes de sa boîte (`rasteriser_pdf`, `extraire_ocr`…). Le champ est retiré
+ * du contrat de forge ; pour les 11 agents DÉJÀ forgés (données conservées, jamais
+ * supprimées), on corrige la promesse à l'exécution : on énonce les outils réellement
+ * disponibles et on invalide explicitement tout nom absent de cette liste.
+ *
+ * PUR (testable sans réseau). Renvoie "" si le registre est vide — dans ce cas on
+ * n'ajoute rien au prompt système (aucune modification de comportement).
+ */
+export function realToolboxClause(toolNames: string[]): string {
+  const names = toolNames.filter((n) => typeof n === "string" && n.trim())
+  if (!names.length) return ""
+  return (
+    "\n\n## Ta boîte à outils RÉELLE\n" +
+    `Tu disposes EXACTEMENT de ces outils : ${names.join(", ")}.\n` +
+    "Toute autre capacité nommée ailleurs dans ces consignes n'existe PAS : ne l'appelle pas, " +
+    "fais le travail avec les outils ci-dessus, et dis-le franchement si c'est impossible."
+  )
+}
+
 export interface SpecialistAgenticResult {
   ok: boolean
   text: string
@@ -62,9 +87,13 @@ export async function runSpecialistAgentic(
   // + policy scellée à la forge. Un agent sans toolPolicy reçoit {} → registre action complet
   // (rien n'est retiré) ; c'est `assignMode` qui pose une allowlist restrictive à la forge.
   const registry = deps.buildTools(projectDir, agent.toolPolicy ?? {})
+  // (D8/B9) La vérité sur la boîte à outils, ajoutée au prompt système du sous-agent.
+  // Ce chemin est lui-même gaté ELEVE_DELEGATE_AGENTIC (défaut off, relay-agentic.ts) :
+  // aucun comportement par défaut ne change. Registre vide → clause vide → prompt identique.
+  const systemPrompt = agent.systemPrompt + realToolboxClause(registry.names())
   try {
     const result = await deps.agentic(
-      agent.systemPrompt,
+      systemPrompt,
       sanitizeExternal(String(task ?? "")),
       registry,
       {

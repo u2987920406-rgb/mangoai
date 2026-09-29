@@ -150,16 +150,56 @@ export interface AgenticBuildResult {
 // jusqu'ici ne touchait jamais aux `tool_calls` et laissait le fichier ENTIER d'un
 // vieux write_file resservi au modèle à CHAQUE tour suivant.
 const SNAPSHOT_ARGS_MAX = 300;
+// 🔴 (2026-09-29) UNE TRONCATURE BRUTE DE JSON EST UN JSON INVALIDE, et l'API
+// Ollama Cloud REJETTE tout l'historique pour ça : « invalid tool call arguments »
+// → HTTP 400 → le tour de l'Élève meurt. Reproduit en sonde le 2026-09-29 : un
+// tool_call aux arguments tronqués (fin de chaîne coupée) donne 400, un JSON
+// valide passe. La réduction ci-dessous DOIT donc toujours rendre du JSON
+// PARSEABLE — c'est la seule contrainte qui compte pour l'API.
+//
+// Règle : write_file/edit_file → `path` seul (le contenu n'a aucune valeur une
+// fois écrit ; le modèle peut relire). Les autres outils → on RÉDUIT les VALEURS
+// LONGUES du JSON (les chaînes sont coupées PROPREMENT à l'intérieur de l'objet),
+// jamais la sérialisation elle-même.
 function reduceToolArgs(name: string, args: string): string {
   if (name === "write_file" || name === "edit_file") {
     try {
       const a = JSON.parse(args) as { path?: unknown };
       if (typeof a.path === "string") return JSON.stringify({ path: a.path });
     } catch {
-      /* args illisibles : tronqués comme les autres, ci-dessous */
+      /* args illisibles : réduits comme les autres, ci-dessous */
     }
   }
-  return args.length > SNAPSHOT_ARGS_MAX ? args.slice(0, SNAPSHOT_ARGS_MAX) : args;
+  if (args.length <= SNAPSHOT_ARGS_MAX) return args;
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(args);
+  } catch {
+    // Illisible : on ne peut PAS couper la chaîne (ce serait un JSON invalide).
+    // On rend un objet vide — valide, honnête (l'appel n'est plus rejouable, mais
+    // il ne cassera jamais le tour), et le marqueur dit pourquoi.
+    return JSON.stringify({ _reduce: "arguments illisibles, tronqués" });
+  }
+  const budget = SNAPSHOT_ARGS_MAX;
+  const shrink = (v: unknown): unknown => {
+    if (typeof v === "string") {
+      return v.length > 120 ? `${v.slice(0, 120)}… [${v.length} car. au total]` : v;
+    }
+    if (Array.isArray(v)) return v.slice(0, 12).map(shrink);
+    if (v && typeof v === "object") {
+      const out: Record<string, unknown> = {};
+      for (const [k, val] of Object.entries(v as Record<string, unknown>)) out[k] = shrink(val);
+      return out;
+    }
+    return v;
+  };
+  let reduced = JSON.stringify(shrink(parsed));
+  // Si les valeurs étaient courtes mais nombreuses, la sérialisation reste longue :
+  // dernier recours, un objet qui décrit l'appel au lieu de le rejouer. TOUJOURS valide.
+  if (reduced.length > budget) {
+    reduced = JSON.stringify({ _reduce: `arguments ${args.length} car. — contenu retiré` });
+  }
+  return reduced;
 }
 
 /** Somme des longueurs de contenu (proxy du poids contexte). Inclut désormais les

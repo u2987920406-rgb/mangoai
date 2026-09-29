@@ -1,7 +1,7 @@
 {
   "orchestrateur": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 30000
@@ -15,14 +15,14 @@
   },
   "codeur": {
     "provider": "openai",
-    "model": "glm-5.3",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
-    "timeoutMs": 120000
+    "timeoutMs": 1800000
   },
   "vision": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 60000,
@@ -36,14 +36,14 @@
   },
   "designer_ux": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 30000
   },
   "extracteur": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 30000
@@ -71,21 +71,21 @@
   },
   "chercheur": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 90000
   },
   "juge": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 45000
   },
   "stratege": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 90000
@@ -99,14 +99,14 @@
   },
   "routeur": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 20000
   },
   "accueil": {
     "provider": "openai",
-    "model": "deepseek-v4-flash:0731",
+    "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "OLLAMA_API_KEY",
     "timeoutMs": 60000

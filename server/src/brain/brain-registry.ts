@@ -202,17 +202,87 @@ function coerceFallbackChain(raw: unknown): BrainFallback[] | undefined {
   return out.length ? out : undefined
 }
 
+// ── D7 (audit 2026-09-28, constat B10) — CACHE DU REGISTRE, invalidé au mtime ──
+//
+// Avant : `getBrain()` → `loadBrainRegistry()` refaisait existsSync + readFileSync +
+// JSON.parse à CHAQUE appel (75 sites d'appel dans 49 fichiers, dont des chemins
+// chauds : llm-engine, kernel, eleve/provider, capabilities) — de l'I/O synchrone
+// gratuite sur l'event loop, à chaque itération d'une boucle qui peut en faire des
+// centaines.
+//
+// La propriété à NE PAS casser : l'édition à chaud dans l'Atelier des cerveaux doit
+// rester prise en compte SANS redémarrage. D'où l'invalidation sur `mtimeMs` + `size`
+// du fichier : un `statSync` (1 syscall) remplace la lecture+parse complète, et toute
+// écriture — par l'Atelier ou à la main dans l'éditeur — rend le cache caduc.
+//
+// Trois précautions qui préservent la sémantique À L'IDENTIQUE :
+//  1. on cache le registre PARSÉ (avant `applyLocalOnly`) et on ré-applique le rideau
+//     de fer à chaque appel → un changement de BRAIN_LOCAL_ONLY en cours de process
+//     reste pris en compte comme avant ;
+//  2. on renvoie toujours une COPIE (le résultat était un objet neuf à chaque appel ;
+//     des appelants le mutent avant `saveBrainRegistry`) ;
+//  3. `saveBrainRegistry` invalide explicitement — la granularité de l'horloge système
+//     sous Windows (~15 ms) pourrait sinon rendre un save suivi d'un load invisible.
+interface RegistryCache {
+  file: string
+  mtimeMs: number
+  size: number
+  registry: Record<AgentId, BrainConfig>
+}
+let registryCache: RegistryCache | null = null
+let cacheDiskReads = 0
+let cacheHits = 0
+
+/** Compteurs du cache (diagnostic + preuve de test). `diskReads` = nombre de
+ *  lectures+parses RÉELLES du fichier depuis le dernier reset. */
+export function brainRegistryCacheStats(): { diskReads: number; hits: number; cached: boolean } {
+  return { diskReads: cacheDiskReads, hits: cacheHits, cached: registryCache !== null }
+}
+
+/** Vide le cache et remet les compteurs à zéro (tests, bascule de profil, diagnostic). */
+export function resetBrainRegistryCache(): void {
+  registryCache = null
+  cacheDiskReads = 0
+  cacheHits = 0
+}
+
+/** Copie défensive d'un registre (jamais la référence cachée — un appelant qui mute
+ *  son résultat ne doit pas pouvoir corrompre le cache). */
+function cloneRegistry(reg: Record<AgentId, BrainConfig>): Record<AgentId, BrainConfig> {
+  const out = {} as Record<AgentId, BrainConfig>
+  for (const id of AGENT_IDS) {
+    const cfg = reg[id] ?? DEFAULT_REGISTRY[id]
+    out[id] = { ...cfg, ...(cfg.fallback ? { fallback: cfg.fallback.map((f) => ({ ...f })) } : {}) }
+  }
+  return out
+}
+
 /**
  * Charge le registre depuis disque. Toujours un registre COMPLET et valide :
  * - fichier absent → DEFAULT_REGISTRY ;
  * - JSON invalide → warning + DEFAULT_REGISTRY ;
  * - entrées partielles → merge champ par champ par-dessus les défauts.
+ * (D7) Le contenu du fichier est CACHÉ, invalidé dès que son `mtime`/sa taille
+ * changent — l'édition à chaud reste donc prise en compte sans redémarrage.
  */
 export function loadBrainRegistry(): Record<AgentId, BrainConfig> {
   const file = registryFile()
+  // statSync remplace existsSync : même information (le fichier est-il là ?) pour le
+  // même coût, plus l'horodatage qui sert de clé de cache.
+  let stat: { mtimeMs: number; size: number } | null = null
+  try {
+    stat = fs.statSync(file)
+  } catch {
+    stat = null
+  }
+  if (!stat) return applyLocalOnly(cloneDefaults())
+  if (registryCache && registryCache.file === file && registryCache.mtimeMs === stat.mtimeMs && registryCache.size === stat.size) {
+    cacheHits++
+    return applyLocalOnly(cloneRegistry(registryCache.registry))
+  }
   let parsed: unknown
   try {
-    if (!fs.existsSync(file)) return applyLocalOnly(cloneDefaults())
+    cacheDiskReads++
     parsed = JSON.parse(fs.readFileSync(file, "utf8"))
   } catch (err) {
     console.warn(`[brain-registry] registre corrompu (${file}) → repli sur les défauts :`, (err as Error).message)
@@ -222,6 +292,9 @@ export function loadBrainRegistry(): Record<AgentId, BrainConfig> {
   const raw = parsed as Record<string, unknown>
   const out = {} as Record<AgentId, BrainConfig>
   for (const id of AGENT_IDS) out[id] = coerceConfig(raw[id], DEFAULT_REGISTRY[id])
+  // Un registre corrompu / non-objet n'est JAMAIS caché (mêmes warning et repli
+  // qu'avant à chaque appel) — seul un chargement propre l'est.
+  registryCache = { file, mtimeMs: stat.mtimeMs, size: stat.size, registry: cloneRegistry(out) }
   return applyLocalOnly(out)
 }
 
@@ -241,6 +314,9 @@ export function saveBrainRegistry(registry: Record<AgentId, BrainConfig>): void 
   const file = registryFile()
   fs.mkdirSync(path.dirname(file), { recursive: true })
   atomicWriteFileSync(file, JSON.stringify(out, null, 2))
+  // (D7) Invalidation EXPLICITE après écriture : ne pas dépendre de la seule
+  // granularité d'horloge du système de fichiers pour voir sa propre écriture.
+  registryCache = null
 }
 
 /** Le cerveau d'un agent donné (toujours défini, repli sur le défaut). */

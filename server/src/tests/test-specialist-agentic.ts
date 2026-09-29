@@ -4,7 +4,7 @@
 
 import { buildEleveActionTools, applyToolPolicy } from "../eleve-tools/eleve-action-tools.js"
 import { ToolRegistry, type KernelTool } from "../kernel/kernel-mcp.js"
-import { runSpecialistAgentic, SPECIALIST_MAX_ITER, type AgenticFn } from "../specialist/specialist-agentic.js"
+import { runSpecialistAgentic, realToolboxClause, SPECIALIST_MAX_ITER, type AgenticFn } from "../specialist/specialist-agentic.js"
 import { consultSpecialist } from "../specialist/specialist-delegate.js"
 import { sanitizeExternal } from "../agent/agent-contract.js"
 import type { SpecialistAgent } from "../specialist/specialist-agents.js"
@@ -100,9 +100,27 @@ const agentAction: SpecialistAgent = {
   check("action : toolTrace remonté", r.toolTrace.length === 2)
   check("action : budget = SPECIALIST_MAX_ITER (< 12 de l'Élève)",
     seenMaxIter === SPECIALIST_MAX_ITER && SPECIALIST_MAX_ITER < 12)
-  check("action : systemPrompt de l'agent transmis", seenSystem === agentAction.systemPrompt)
+  // (D8/B9, audit 2026-09-28) Le prompt système est désormais le prompt de l'agent
+  // SUIVI de la clause de boîte à outils RÉELLE — il commence donc toujours par le
+  // prompt forgé, mais ne s'y limite plus (l'ancienne égalité stricte était la forme
+  // exacte du défaut : on transmettait tel quel un prompt qui pouvait nommer des
+  // outils inexistants, sans jamais dire lesquels existaient vraiment).
+  check("action : systemPrompt de l'agent transmis (en tête)", seenSystem.startsWith(agentAction.systemPrompt))
+  check("action : boîte à outils RÉELLE énoncée au sous-agent",
+    seenSystem.includes("Ta boîte à outils RÉELLE") && seenSystem.includes("edit_file") && seenSystem.includes("finish"))
+  check("action : les outils SCELLÉS hors policy ne sont pas annoncés",
+    !seenSystem.includes("run_command") && !/\bwrite_file\b/.test(seenSystem.split("boîte à outils RÉELLE")[1] ?? ""))
   check("action : tâche passée via sanitizeExternal (entrée = donnée)", seenUser === sanitizeExternal(taskInput))
   check("action : registre SCELLÉ (write_file/run_command hors allowlist ABSENTS)", sealedOk)
+}
+
+// (D8/B9) La clause elle-même, PURE : contenu, et neutralité quand le registre est vide.
+{
+  const clause = realToolboxClause(["read_file", "finish"])
+  check("clause : liste EXACTEMENT les outils réels", clause.includes("read_file, finish"))
+  check("clause : invalide explicitement tout outil fantôme", /n'existe PAS/.test(clause))
+  check("clause : registre vide → clause vide (prompt inchangé)", realToolboxClause([]) === "")
+  check("clause : noms vides ignorés", realToolboxClause(["", "  "]) === "")
 }
 
 {

@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<title>Audit MangoOS / MangoQA — 2026-09-28</title>
+<style>
+  :root {
+    --text: #1c1c1c;
+    --muted: #555;
+    --bg: #ffffff;
+    --panel: #f6f7f5;
+    --border: #d9dcd5;
+    --accent: #b5651d;
+    --code-bg: #eef0ec;
+    --sev0: #b3261e;
+    --sev1: #9a6b00;
+    --sev2: #4a5b8c;
+    --sev3: #6b6b6b;
+  }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: Georgia, "Times New Roman", serif;
+    line-height: 1.55;
+    font-size: 16px;
+  }
+  main {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 40px 96px;
+  }
+  h1, h2, h3 {
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    color: #111;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+  h1 {
+    font-size: 1.7em;
+    margin-top: 2.2em;
+    padding-bottom: 0.35em;
+    border-bottom: 3px solid var(--accent);
+  }
+  h1:first-of-type {
+    margin-top: 0;
+  }
+  h2 {
+    font-size: 1.3em;
+    margin-top: 1.9em;
+    padding-bottom: 0.25em;
+    border-bottom: 1px solid var(--border);
+  }
+  h3 {
+    font-size: 1.08em;
+    margin-top: 1.6em;
+    margin-bottom: 0.5em;
+  }
+  p {
+    margin: 0.85em 0;
+  }
+  ul, ol {
+    margin: 0.7em 0;
+    padding-left: 1.6em;
+  }
+  li {
+    margin: 0.35em 0;
+  }
+  code {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.05em 0.35em;
+    font-size: 1em;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  strong { color: #111; }
+  em { color: #333; }
+  hr {
+    border: none;
+    border-top: 2px solid var(--border);
+    margin: 2.6em 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.1em 0 1.6em;
+    font-size: 1em;
+    background: var(--panel);
+  }
+  caption {
+    caption-side: top;
+    text-align: left;
+    font-weight: 600;
+    margin-bottom: 0.4em;
+  }
+  th, td {
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #e7e9e2;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-weight: 700;
+  }
+  tr:nth-child(even) td {
+    background: #fbfbfa;
+  }
+  .meta {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 16px 20px;
+    margin-bottom: 1.6em;
+  }
+  .sev0 h2 { color: var(--sev0); }
+  .sev1 h2 { color: var(--sev1); }
+  .sev2 h2 { color: var(--sev2); }
+  .sev3 h2 { color: var(--sev3); }
+  .toc {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 18px 24px;
+    margin: 1.5em 0 2.5em;
+    font-family: -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 1em;
+  }
+  .toc h2 {
+    border: none;
+    margin-top: 0;
+    font-size: 1.05em;
+  }
+  .toc ul {
+    columns: 2;
+    -webkit-columns: 2;
+    padding-left: 1.2em;
+  }
+  .toc a {
+    color: var(--accent);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 2px 4px;
+  }
+  .toc a:hover {
+    text-decoration: underline;
+  }
+
+  .tablewrap {
+    overflow-x: auto;
+    max-width: 100%;
+    margin: 1.1em 0 1.6em;
+  }
+  .tablewrap table { margin: 0; }
+  @media (max-width: 900px) {
+    main { padding: 28px 18px 64px; }
+    .toc ul { columns: 1; }
+    h1 { font-size: 1.45em; }
+    h2 { font-size: 1.2em; }
+    th, td { padding: 6px 8px; }
+    .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  }
+</style>
+</head>
+<body>
+<main>
+
+<h1 id="titre">Audit MangoOS / MangoQA — 2026-09-28</h1>
+
+<div class="meta">
+<p><strong>Auditeur</strong> : Claude Opus 5 · <strong>Mode</strong> : lecture seule (aucune écriture hors ce rapport et son HTML)
+<strong>Périmètre</strong> : architecture du harnais · pipeline Élève/Stratège/Forge/Gardien · MangoQA · registre des
+cerveaux · fiabilité perçue · consommation de la boucle de génération.
+<strong>Hors périmètre</strong> (demandé) : toute modification de code, tout refactoring, tout run de génération réel,
+l'esthétique de l'interface MangoOS.</p>
+</div>
+
+<nav class="toc">
+<h2>Sommaire</h2>
+<ul>
+<li><a href="#methode">Méthode et honnêteté des chiffres</a></li>
+<li><a href="#section-a">A — Forces réelles, prouvées par le code</a></li>
+<li><a href="#section-b">B — Faiblesses, classées par gravité</a></li>
+<li><a href="#gravite-0">Gravité 0</a></li>
+<li><a href="#gravite-1">Gravité 1</a></li>
+<li><a href="#gravite-2">Gravité 2</a></li>
+<li><a href="#gravite-3">Gravité 3</a></li>
+<li><a href="#section-c">C — Les quatre vrais murs</a></li>
+<li><a href="#pas-le-probleme">Ce qui n'est pas le problème</a></li>
+<li><a href="#section-d">D — Plan d'action priorisé</a></li>
+<li><a href="#section-modeles">Section modèles</a></li>
+<li><a href="#affectation-recommandee">Affectation recommandée</a></li>
+<li><a href="#conformite">Conformité du rapport aux interdits</a></li>
+</ul>
+</nav>
+
+<h2 id="methode">Méthode et honnêteté des chiffres</h2>
+
+<p>Tout constat est ancré sur <code>fichier:ligne</code>. Les chiffres viennent soit d'un comptage réel sur le dépôt,
+soit d'une lecture directe de constantes de code. Les grandeurs que je n'ai <strong>pas</strong> pu mesurer sont
+écrites « <strong>non mesuré</strong> » — jamais remplacées par une estimation présentée comme un fait.</p>
+
+<p>Mesures faites pendant l'audit :</p>
+
+<div class="tablewrap"><table>
+<thead>
+<tr><th>Mesure</th><th>Valeur</th><th>Source</th></tr>
+</thead>
+<tbody>
+<tr><td>Fichiers TypeScript dans <code>server/src</code></td><td>595</td><td>comptage <code>find</code></td></tr>
+<tr><td>Fichiers de test dans <code>server/src/tests</code></td><td>249</td><td>comptage <code>ls</code></td></tr>
+<tr><td>Rôles de cerveau déclarés dans le code</td><td>16</td><td><code>server/src/brain/brain-registry.ts:43</code></td></tr>
+<tr><td>Rôles réellement présents dans le registre vivant</td><td>15</td><td><code>server/data/brain-registry.json</code></td></tr>
+<tr><td>Drapeaux de fonctionnalité (<code>FlagSpec</code>)</td><td>42</td><td><code>server/src/flags.ts:31-293</code></td></tr>
+<tr><td>… dont <code>default: true</code></td><td>3</td><td><code>flags.ts</code> (<code>TEMPORAL_AWARENESS</code>, <code>ELEVE_GATE_IMAGES</code>, <code>ELEVE_GATE_CONSTANTS</code>)</td></tr>
+<tr><td>… dont activés par <code>server/.env</code></td><td>1 (<code>ELEVE_CLOSURE_GATE</code>)</td><td><code>server/.env</code></td></tr>
+<tr><td>Limites enregistrées dans <code>limites.md</code></td><td>145</td><td>comptage des lignes de tableau <code>L&lt;n&gt;</code></td></tr>
+<tr><td>Verdicts MangoQA présents sur disque</td><td>11 (9 <code>red</code>, 1 <code>green</code>, 1 <code>unknown</code>)</td><td><code>workspace/*/.mangoqa/audit-verdict.json</code></td></tr>
+<tr><td>Spécialistes forgés</td><td>11</td><td><code>server/data/specialist-agents.json</code></td></tr>
+<tr><td>Lectures <code>process.env.X === "on"</code> hors <code>flags.ts</code></td><td>65 (dans 20 fichiers)</td><td>grep</td></tr>
+</tbody>
+</table></div>
+
+<p><strong>Non mesuré</strong>, et pourquoi :</p>
+<ul>
+<li><code>npm run typecheck</code> / <code>npm run build</code> : l'exécution de ces commandes n'a pas été autorisée dans cette session non-interactive. L'état vert du dépôt est donc <strong>non mesuré</strong> ici.</li>
+<li>Consommation réelle en tokens d'une génération complète : <strong>structurellement non mesurable</strong> aujourd'hui (voir <strong>B4</strong>), pas seulement non mesurée par moi.</li>
+<li>Quotas consommés sur l'abonnement Claude Pro : <strong>non mesuré</strong> (aucun run lancé, comme demandé).</li>
+<li>Contenu du dépôt MangoQA au-delà de <code>README.md</code>, <code>FAILLES.md</code>, <code>.env</code> et <code>src/</code> : lu par sondage ciblé.</li>
+</ul>
+
+<hr>
+
+<h1 id="section-a">A — Forces réelles, prouvées par le code</h1>
+
+<p>Ce ne sont pas les promesses des documents : chaque point ci-dessous a été vérifié dans le code.</p>
+
+<h3 id="a1">A1 — Le contrat d'agent universel et son parseur à 4 niveaux</h3>
+<p><code>server/src/agent/agent-contract.ts:43-91</code>. <code>extractJsonCandidate</code> essaie sentinelles Mango → bloc
+<code>```json</code> → premier objet <code>{...}</code> → abandon ; <code>parseAgentResponse</code> <strong>ne lève jamais</strong> et dégrade une
+réponse tronquée en <code>partial</code> plutôt qu'en exception (<code>agent-contract.ts:88</code>). C'est exactement la
+pièce qui manque à la plupart des harnais maison : elle absorbe la bavardise hétérogène des modèles
+non-Anthropic. À préserver telle quelle.</p>
+
+<h3 id="a2">A2 — La compaction de contexte qui compte les <code>tool_calls</code></h3>
+<p><code>server/src/eleve-runtime.ts:171-176</code> (<code>totalChars</code> inclut <code>tool_calls.arguments</code>) et <code>:238-261</code>
+(<code>compact</code> réduit <code>write_file</code>/<code>edit_file</code> à leur seul <code>path</code>). C'est une correction non triviale et
+juste : sans elle, un <code>write_file</code> de 10 ko était resservi au modèle <strong>à chaque tour suivant</strong>. Le
+commentaire de <code>:178-189</code> documente un O(n²) d'I/O réellement observé et corrigé (<code>snapshotTrace</code>,
+<code>snapshotMessages</code> en <code>:184-210</code>). Rare et précieux.</p>
+
+<h3 id="a3">A3 — Le registre de cerveaux par rôle, tolérant aux pannes</h3>
+<p><code>server/src/brain/brain-registry.ts:160-226</code>. <code>coerceConfig</code> valide <strong>champ par champ</strong> avec repli
+individuel : un registre partiellement corrompu ne casse pas le rôle, il complète depuis
+<code>DEFAULT_REGISTRY</code>. Le « rideau de fer » <code>BRAIN_LOCAL_ONLY</code> (<code>:231-235</code>) force <code>localOnly</code> sur tous les
+rôles d'un coup. Et le correctif de <code>:120-127</code> (provider <code>openrouter</code> oublié de <code>VALID_PROVIDERS</code>, donc
+silencieusement neutralisé) montre que ce fail-open a été audité une fois pour de vrai.</p>
+
+<h3 id="a4">A4 — Le Gardien de clôture : douze signaux, pas « build vert »</h3>
+<p><code>server/src/eleve-gate.ts:31-75</code>. Le verdict porte intention, goût, WCAG, équilibre de mise en page,
+placeholders, tests, pédago, images, constantes, contenu — et <strong>surtout</strong> <code>judgeSkipped</code>,
+<code>critiqueSkipped</code>, <code>dualSkip</code> et <code>signalGap</code> (<code>:44-73</code>) : le Gardien dit quand il n'a pas pu vérifier.
+Un gate qui déclare son propre aveuglement est plus mûr que la moyenne.</p>
+
+<h3 id="a5">A5 — Le Stratège : nommer le blocage avant de le traiter</h3>
+<p><code>server/src/stratege/stratege-signals.ts</code> + <code>server/src/stratege.ts</code>. Un blocage est classé
+(<code>missing-dependency</code>, <code>knowledge-gap</code>, <code>wrong-tool</code>, <code>repetitive-failure</code>, <code>wandering</code>,
+<code>plateau-iterations</code>, <code>ambiguous</code>) puis mappé sur un remède borné, avec un remède <code>reframe</code> déclenché
+seulement à la <strong>récidive</strong> du même blocage. <code>relay-agentic.ts:270-274</code> tient un compteur <strong>par
+signature de blocage</strong>, remis à zéro quand la classe change — c'est-à-dire qu'on distingue « il
+patine sur le même mur » de « il enchaîne dix problèmes différents ». Distinction juste.</p>
+
+<h3 id="a6">A6 — L'arrêt coopératif propre</h3>
+<p><code>server/src/eleve-runtime.ts:450-454</code> : le <code>Stop</code> sort <strong>sur la frontière d'itération</strong>, avant l'appel
+modèle et avant l'exécution d'outil, avec <code>clearRunSnapshot()</code>. Aucun état à demi-écrit. C'est ce qui
+rend un harnais utilisable par un humain plutôt que subi.</p>
+
+<h3 id="a7">A7 — L'hygiène anti-injection et anti-fuite de secrets</h3>
+<p><code>agent-contract.ts:98-100</code> (<code>sanitizeExternal</code> encadre toute donnée externe en <code>&lt;&lt;&lt;UNTRUSTED_INPUT&gt;&gt;&gt;</code>),
+appliqué notamment à l'entrée des sous-agents (<code>server/src/specialist/specialist-agentic.ts:68</code>). Côté
+MangoQA, <code>/home/raf/projets/mangoqa/src/llm.ts:21-65</code> supprime une liste nommée de secrets <strong>plus</strong>
+toute variable dont le nom contient <code>SECRET</code>/<code>PASSWORD</code>/<code>_TOKEN</code>/<code>_KEY</code> avant de passer l'env au SDK.
+C'est du travail de sécurité réel, pas décoratif.</p>
+
+<h3 id="a8">A8 — La séparation MangoQA / MangoOS, et son verdict conservateur</h3>
+<p><code>/home/raf/projets/mangoqa/src/verdict.ts:14-38</code> : rouge dès <strong>une</strong> branche bloquante en échec, et la
+première branche en échec dans l'ordre de priorité devient le rejet — déterministe, pas un vote flou.
+Côté MangoOS, <code>server/src/mangoqa.ts:87-109</code> attend le verdict avec corrélation par <code>signalTimestamp</code>
+(<code>:101</code>) — donc un vieux verdict ne peut pas être pris pour le nouveau. Le fail-open de <code>:108</code> est
+assumé et documenté.</p>
+
+<h3 id="a9">A9 — La discipline de réversibilité</h3>
+<p><code>server/src/flags.ts:10-12</code> pose la règle « un gate ne change JAMAIS le comportement quand il est OFF »,
+et les descriptions de gates répètent « byte-identique » de façon vérifiable. Cette discipline est ce qui
+rend l'activation progressive possible (action <strong>D6</strong>). Elle est réelle : les 42 entrées portent une
+description exploitable, pas un nom nu.</p>
+
+<hr>
+
+<h1 id="section-b">B — Faiblesses, classées par gravité</h1>
+
+<div class="sev0">
+<h2 id="gravite-0">Gravité 0 — le harnais croit vérifier, et ne vérifie pas</h2>
+
+<h3 id="b1">B1 — MangoQA était <strong>aveugle</strong> au dernier run, sans que rien ne l'ait signalé</h3>
+<p><strong>Preuve</strong> : <code>workspace/etang-des-roseaux/.mangoqa/audit-verdict.json:6-24</code> (2026-09-24) — les trois
+branches bloquantes qui ont tourné rendent <code>skip</code> avec le même message :
+« <em>Claude Code returned an error result: Your organization has disabled Claude subscription access</em> ».
+Verdict final : <code>unknown</code>.</p>
+
+<p><strong>Cause racine</strong> : la chaîne de cerveaux d'audit n'a que deux maillons
+(<code>/home/raf/projets/mangoqa/src/llm.ts:82-90</code> : primaire <code>askOllama</code>, repli <code>askClaude</code>) et les deux
+étaient hors service — le primaire parce que <code>QA_OLLAMA_MODEL</code> pointe sur un alias cloud
+(<code>/home/raf/projets/mangoqa/.env:21</code>) sur un endpoint qui n'a pas de daemon local (<code>.env:12-13</code>), le
+repli parce que l'abonnement était refusé. Surtout : <strong>la seule sonde de vivacité existante teste le
+process, pas le cerveau</strong> (<code>server/src/mangoqa.ts:22-36</code> lit un heartbeat de fichier). MangoQA pouvait
+donc être « actif » et incapable d'auditer quoi que ce soit, indéfiniment.</p>
+
+<p>Ce point est à re-vérifier maintenant que l'abonnement Claude Pro est authentifié — mais la faille
+structurelle (aucune sonde de cerveau) reste, abonnement ou pas.</p>
+
+<h3 id="b2">B2 — Un « Feu Vert » peut être rendu sur une couverture quasi nulle</h3>
+<p><strong>Preuve</strong> : <code>workspace/galerie-albatre/.mangoqa/audit-verdict.json</code> — verdict <code>green</code>, alors que
+4 branches sur 6 sont <code>not_applicable</code> ou <code>skip</code>, et que la branche architecture écrit elle-même
+« <em>le code fourni (App.jsx tronqué, main.jsx) ne contient pas d'éléments d'architecture auditable</em> »
+(<code>:7</code>).</p>
+
+<p><strong>Cause racine</strong> : <code>/home/raf/projets/mangoqa/src/verdict.ts:23-26</code>. La règle verte est
+<code>audited &amp;&amp; !incomplete</code>, où <code>incomplete</code> ne compte que les <code>skip</code>. Un <code>not_applicable</code> — y compris
+quand il signifie « je n'ai rien vu » et non « il n'y avait rien à voir » — est traité comme inoffensif.
+Une seule branche bloquante en <code>pass</code> suffit alors à peindre tout le projet en vert. C'est le seul
+défaut de cet audit qui produit un <strong>faux positif rassurant</strong>, la pire catégorie.</p>
+
+<h3 id="b3">B3 — L'audit ne voit pas un échantillon du projet : il voit un <strong>préfixe</strong></h3>
+<p><strong>Preuve</strong> : <code>/home/raf/projets/mangoqa/src/llm.ts:18</code> (<code>FILE_PAYLOAD_CAP = 24_000</code> caractères) et
+<code>/home/raf/projets/mangoqa/src/fs-shared.ts:47-58</code> — <code>renderFiles</code> concatène dans l'ordre reçu et
+<strong><code>break</code></strong> au premier fichier qui déborde (<code>:54</code>). Tout ce qui vient après est simplement invisible.</p>
+
+<p><strong>Mesure de l'écart</strong> (taille de <code>src/</code> des projets du workspace) :</p>
+
+<div class="tablewrap"><table>
+<thead>
+<tr><th>Projet</th><th><code>src/</code></th><th>Part visible par une branche d'audit</th></tr>
+</thead>
+<tbody>
+<tr><td><code>shining-tactics</code></td><td>25,8 ko</td><td>~93 %</td></tr>
+<tr><td><code>analytic-mind</code></td><td>60,1 ko</td><td>~40 %</td></tr>
+<tr><td><code>galerie-albatre</code></td><td>62,0 ko</td><td>~39 %</td></tr>
+<tr><td><code>mango-quest</code></td><td>116,4 ko</td><td>~21 %</td></tr>
+<tr><td><code>nova-wing</code></td><td>134,8 ko</td><td>~18 %</td></tr>
+<tr><td><code>etang-des-roseaux</code></td><td>199,1 ko</td><td>~12 %</td></tr>
+<tr><td><code>toeic-quest</code></td><td>1 198,9 ko</td><td>~2 %</td></tr>
+</tbody>
+</table></div>
+
+<p><strong>Cause racine</strong> : le module de tri par risque existe (<code>/home/raf/projets/mangoqa/src/priority.ts:28-39</code>,
+<code>priorityScore</code> / <code>sortByPriority</code>) et son propre en-tête (<code>:4-12</code>) explique pourquoi il faut trier avant
+de tronquer — mais <code>llm.ts:255</code> consomme <code>ctx.files</code> <strong>tel quel</strong>. Le tri est écrit, testé, et pas appliqué
+sur ce chemin. Et même appliqué, un cap de 24 000 caractères pour un projet de 200 ko reste un coup de
+sonde, pas un audit.</p>
+
+<h3 id="b4">B4 — La consommation de la boucle est <strong>structurellement non mesurable</strong></h3>
+<p><strong>Preuve</strong> : <code>server/src/llm/llm-engine.ts:191-220</code> — <code>askLLM</code> retourne <code>Promise&lt;string&gt;</code>. Le champ
+<code>usage</code> renvoyé par tout endpoint OpenAI-compat est jeté au transport. Le <strong>seul</strong> endroit du dépôt qui
+lit un <code>usage</code> réel est le chemin SDK Claude (<code>server/src/agent/agent.ts:276-306</code>, <code>contextTokens</code> et
+<code>total_cost_usd</code>) — précisément le chemin <strong>inactif</strong> dans la configuration courante, où <code>codeur</code>,
+<code>architecte</code>, <code>juge</code>, <code>stratege</code>… sont tous <code>provider: "openai"</code> (<code>server/data/brain-registry.json</code>).</p>
+
+<p><strong>Conséquence</strong> : il est aujourd'hui impossible de répondre à « combien coûte une app ? » autrement que
+par une borne théorique. C'est la racine de <strong>B5</strong>, et le préalable de toute décision de modèle.</p>
+
+<h3 id="b5">B5 — Le fusible de coût existe, et il est <strong>inerte</strong></h3>
+<p><strong>Preuve</strong> : <code>server/src/eleve/relay-agentic.ts:241-248</code> — <code>loopBudget</code> n'est construit que si
+<code>ELEVE_BUDGET_PROMPT_CHARS</code> <strong>ou</strong> <code>ELEVE_BUDGET_TOOL_CALLS</code> est &gt; 0 ; sinon <code>undefined</code>, et le bloc de
+garde <code>server/src/eleve-runtime.ts:484-497</code> est mort. Ni l'une ni l'autre variable n'est présente dans
+<code>server/.env</code>.</p>
+
+<p><strong>Enveloppe théorique laissée ouverte</strong> (dérivée des constantes, pas mesurée) :
+<code>ELEVE_AGENTIC_MAX_ITER=36</code> (<code>server/.env</code>) × <code>ELEVE_SELF_RELANCE_MAX</code> par défaut 10
+(<code>relay-agentic.ts:264</code>) = <strong>jusqu'à 360 appels modèle sur le rôle <code>codeur</code> pour un seul build</strong>, chacun
+avec un contexte plafonné à <code>ELEVE_AGENTIC_CTX_MAX = 60 000</code> caractères (<code>eleve-runtime.ts:48</code>). Le
+coupe-circuit réel en pratique est <code>ELEVE_AGENTIC_MAX_CORRECTIONS</code> (défaut 8, <code>eleve-runtime.ts:55</code>),
+mais c'est un détecteur d'anti-répétition, pas un budget.</p>
+</div>
+
+<div class="sev1">
+<h2 id="gravite-1">Gravité 1 — le harnais est bien plus riche que ce qu'il exécute</h2>
+
+<h3 id="b6">B6 — 38 gates sur 42 sont dormants en production</h3>
+<p><strong>Preuve</strong> : <code>server/src/flags.ts:31-293</code> déclare 42 <code>FlagSpec</code>, dont 3 seulement en <code>default: true</code>.
+<code>server/.env</code> n'en active qu'un de plus (<code>ELEVE_CLOSURE_GATE=on</code>). Donc <strong>4 actifs, 38 éteints</strong>.</p>
+
+<p>Le code que j'ai lu et trouvé bon <strong>ne s'exécute jamais dans la configuration actuelle</strong> :
+la reprise après crash (<code>eleve-runtime.ts:405-443</code>, gate <code>ELEVE_RESUME</code>), l'état de travail réinjecté
+après compaction (<code>:469-479</code>, <code>ELEVE_ETAT</code>), la réflexion périodique (<code>:503-518</code>, <code>ELEVE_REFLEXION</code>),
+la mémoire cross-projet (<code>relay-agentic.ts:138-143</code>, <code>ELEVE_MEMOIRE</code>), le repli inter-cerveaux
+(<code>BRAIN_FALLBACK</code>), le Stratège global, le dry-run, le cache sémantique, le harnais A/B.</p>
+
+<p><strong>Cause racine</strong> : la politique « défaut OFF = rétrocompatibilité stricte » (<code>flags.ts:10-12</code>) est
+excellente pour livrer sans risque, mais elle n'a jamais été suivie d'une <strong>phase de promotion</strong>. Il n'y a,
+dans le dépôt, aucun mécanisme qui fasse passer un gate éprouvé de OFF à ON. Résultat : la valeur écrite
+s'accumule sans jamais être encaissée.</p>
+
+<h3 id="b7">B7 — Le repli inter-cerveaux est déclaré dans les données et désarmé par le code</h3>
+<p><code>server/data/brain-registry.json</code> déclare pour le rôle <code>vision</code> une chaîne <code>fallback</code> vers
+<code>claude/haiku</code>. Cette chaîne est bien chargée et validée (<code>brain-registry.ts:187-203</code>), mais elle n'est
+jouée que si <code>BRAIN_FALLBACK</code> est actif — <code>flags.ts</code> le laisse à <code>false</code> et <code>server/.env</code> ne l'active pas.
+Un <code>vision</code> en panne échoue donc sans essayer son repli déclaré.</p>
+
+<h3 id="b8">B8 — Un Gardien totalement aveugle rend quand même un verdict vert</h3>
+<p><strong>Preuve</strong> : <code>server/src/eleve-gate.ts:478-487</code>. <code>dualSkip</code> (juge d'intention <strong>et</strong> critique visuelle
+tombés au même tour) est calculé, journalisé… et n'entre dans <code>ok</code> que via <code>dualSkipBlocks</code>, lui-même
+conditionné à <code>ELEVE_GATE_DUAL_SKIP_BLOCK</code> — <code>default: false</code> dans <code>flags.ts</code>, absent de <code>server/.env</code>.
+Le commentaire <code>:472-477</code> décrit exactement le scénario : « <em>intention+goût+QA se réduit silencieusement
+à 2 regex triviales — tout en restant marqué VERT</em> ». Le correctif est écrit ; il est éteint.</p>
+
+<h3 id="b9">B9 — Les spécialistes forgés annoncent des outils qui n'existent pas</h3>
+<p><strong>Preuve</strong> : <code>server/data/specialist-agents.json:8-29</code> — le « Déchiffreur de PDF scannés » déclare
+<code>detecter_couche_texte</code>, <code>rasteriser_pdf</code>, <code>extraire_ocr</code>, <code>reconstruire_structure</code>, <code>corriger_ocr</code>.
+Recherche sur tout <code>server/src</code> : <strong>zéro occurrence</strong> de ces noms.</p>
+
+<p><strong>Cause racine</strong> : <code>server/src/specialist/specialist-agentic.ts:64</code> construit le registre du sous-agent
+depuis <code>deps.buildTools(projectDir, agent.toolPolicy ?? {})</code> — c'est-à-dire depuis le registre <strong>réel</strong> de
+l'Élève filtré par une policy. Le champ <code>tools</code> produit par la Forge n'est jamais câblé ; c'est de la
+prose. Un spécialiste invoqué reçoit donc un prompt système qui lui ordonne d'utiliser cinq outils
+absents de sa boîte. 11 spécialistes sont dans ce cas potentiel.</p>
+
+<h3 id="b10">B10 — <code>getBrain()</code> relit et re-parse le registre à <strong>chaque</strong> appel</h3>
+<p><code>server/src/brain/brain-registry.ts:247-249</code> → <code>loadBrainRegistry()</code> → <code>fs.existsSync</code> +
+<code>fs.readFileSync</code> + <code>JSON.parse</code> (<code>:211-226</code>), sans aucun cache. 75 sites d'appel répartis sur 49 fichiers,
+dont des chemins chauds (<code>llm-engine.ts</code>, <code>kernel.ts</code>, <code>eleve/provider.ts</code>, <code>capabilities.ts</code>). Sur une
+boucle à plusieurs centaines d'itérations (<strong>B5</strong>), c'est de l'I/O synchrone gratuite sur l'event loop.</p>
+
+<h3 id="b11">B11 — Le registre vivant est incomplet d'un rôle</h3>
+<p><code>brain-registry.ts:43-47</code> déclare 16 <code>AgentId</code> ; <code>server/data/brain-registry.json</code> n'en contient que 15.
+<code>codeur_frontiere</code> retombe donc sur son défaut <code>{ provider: "none", model: "" }</code> (<code>:106</code>). Sans effet
+visible aujourd'hui (la section Code est elle-même gatée <code>CODE_SECTION</code>, <code>default: false</code>), mais c'est un
+rôle qui existe pour le code et pas pour l'exploitant.</p>
+
+<h3 id="b12">B12 — Dérive documentaire sur l'emplacement réel des données</h3>
+<p><code>pipeline-eleve-qa.md:39</code> désigne <code>server/src/data/brain-registry.json</code> comme le registre vivant, et
+<code>:91-93</code> désigne <code>server/data/open-gaps.json</code> comme un « doublon orphelin » à ne pas toucher.
+<strong>Les deux sont faux</strong> : <code>dataDir()</code> (<code>server/src/safe-io.ts:22-24</code>) résout sur <code>server/data/</code>, et
+<code>server/src/data/</code> <strong>n'existe pas sur le disque</strong>. De plus <code>open-gaps.json</code> — le registre vivant de la
+Forge (<code>server/src/self/self-evolution.ts:52</code>) — est <strong>absent</strong> de <code>server/data/</code>.
+Ce document est la référence opérationnelle citée par <code>CLAUDE.md</code> ; sa dérive envoie sur un mauvais
+fichier toute session qui le suit.</p>
+
+<h3 id="b13">B13 — Écart doc/code sur les budgets de boucle</h3>
+<p><code>pipeline-eleve-qa.md:53</code> annonce <code>ELEVE_AGENTIC_MAX_ITER</code> à 36 ; le défaut du code est <strong>24</strong>
+(<code>eleve-runtime.ts:47</code>). La valeur 36 ne vient pas du code mais de <code>server/.env</code>. Même famille que <strong>B12</strong> :
+un document daté qui se lit comme une spécification.</p>
+</div>
+
+<div class="sev2">
+<h2 id="gravite-2">Gravité 2 — dette qui fausse le pilotage</h2>
+
+<h3 id="b14">B14 — La table de coûts est fausse dans les deux sens</h3>
+<p><code>server/src/agent/agent-contract.ts:164-175</code> :</p>
+<ul>
+<li><code>claude/opus</code> à 30 $/Mtok, alors que le chemin Claude passe par l'<strong>abonnement</strong> et jamais par les
+crédits API (<code>agent.ts:243-246</code>, <code>subscriptionEnv()</code>) → le coût en crédits est 0.</li>
+<li><code>ollama/*</code> à <strong>0</strong> (« local → gratuit », <code>:174</code>), alors que sur cette machine il n'y a <strong>pas</strong> de daemon
+Ollama local (<code>/home/raf/projets/mangoqa/.env:3-5</code>) et que tout passe par Ollama Cloud
+(<code>server/data/brain-registry.json</code>, <code>baseUrl: https://ollama.com/v1</code>).</li>
+</ul>
+<p><code>estimatePipelineCost</code> (<code>:189-201</code>) et son seuil <code>COST_WARNING_USD = 2</code> (<code>:177</code>) dissuadent donc d'utiliser
+Claude pour une raison financière <strong>qui n'existe pas</strong>, tout en chiffrant à zéro le provider qui consomme
+réellement du quota. Toute décision d'affectation prise sur cette base est fausse.</p>
+
+<h3 id="b15">B15 — La règle de centralisation des gates n'est pas tenue</h3>
+<p><code>flags.ts:6-8</code> écrit : « on les CENTRALISE ici : une seule source de vérité […] jamais un
+<code>process.env.X === "on"</code> dispersé ailleurs ». Comptage réel : <strong>65 occurrences</strong> de
+<code>process.env.X === "on"</code> / <code>!== "off"</code> en dehors de <code>flags.ts</code>, dans 20 fichiers — dont 21 dans
+<code>server/src/eleve-tools/eleve-action-tools.ts</code> et 15 dans <code>server/src/eleve/relay-agentic.ts</code>. L'état de
+configuration du harnais n'est donc pas auditable depuis un seul endroit, ce qui est exactement le
+problème que <code>flags.ts</code> disait résoudre.</p>
+
+<h3 id="b16">B16 — Deux registres de modèles sans source commune</h3>
+<p>MangoOS choisit ses cerveaux dans <code>server/data/brain-registry.json</code> ; MangoQA choisit le sien dans
+<code>QA_OLLAMA_MODEL</code> / <code>QA_MODEL</code> (<code>/home/raf/projets/mangoqa/.env:21,27</code>, lus en
+<code>/home/raf/projets/mangoqa/src/ollama-client.ts:15</code> et <code>src/llm.ts:16</code>). Aucun lien. Changer de cerveau
+dans l'Atelier ne change rien à l'auditeur — et rien ne le signale. C'est la version inter-dépôts du
+problème des « 3 registres » déjà connu (<code>pipeline-eleve-qa.md:31-35</code>).</p>
+
+<h3 id="b17">B17 — Un visage annoncé, non câblé</h3>
+<p><code>/home/raf/projets/mangoqa/README.md:42-45</code> présente l'Observateur-Conseil comme le « Visage 2 » du
+système. <code>/home/raf/projets/mangoqa/FAILLES.md:24</code> dit l'inverse et dit vrai : « <em>amorce non câblée […]
+volontairement PAS branché dans <code>orchestrator.ts</code>/<code>index.ts</code></em> ». La couverture réellement offerte est
+donc inférieure à celle affichée en tête de README.</p>
+</div>
+
+<div class="sev3">
+<h2 id="gravite-3">Gravité 3 — hygiène</h2>
+
+<h3 id="b18">B18 — Une entrée de répertoire manifestement accidentelle traîne dans <code>server/</code></h3>
+<p><code>git status</code> liste <code>server/Z:\\chemin\impossible\!!/</code> — vestige d'un test de chemin Windows sur une
+machine Linux. Aucun impact fonctionnel repéré ; à nettoyer (hors périmètre de cet audit : aucune
+suppression n'a été faite).</p>
+
+<h3 id="b19">B19 — Clés en clair et dupliquées dans <code>server/.env</code></h3>
+<p>La même clé bearer sert de <code>OLLAMA_API_KEY</code> et de <code>ELEVE_API_KEY</code>, et la clé du fournisseur du rôle
+<code>codeur</code> est en clair à côté. Une rotation devient une opération manuelle multi-fichiers
+(<code>server/.env</code> <strong>et</strong> <code>/home/raf/projets/mangoqa/.env</code> portent la même valeur). Rien n'est exposé au
+dépôt à ma connaissance, mais le couplage est un risque opérationnel.</p>
+</div>
+
+<hr>
+
+<h1 id="section-c">C — Ce qui empêche réellement d'atteindre Lovable / Base44, et ce qui est du bruit</h1>
+
+<h2 id="quatre-murs">Les quatre vrais murs</h2>
+
+<h3 id="c1">C1 — La vérification n'a <strong>aucune autorité</strong>, et parfois aucune vue</h3>
+<p>Lovable et Base44 ne sont pas meilleurs parce qu'ils écrivent un meilleur code au premier jet : ils sont
+meilleurs parce qu'une boucle voit le produit tourner et refuse d'avancer tant que ça ne tient pas.
+MangoOS a <strong>deux</strong> vérificateurs, et aucun n'a d'autorité :</p>
+<ul>
+<li>le Gardien est « convergent / non-bloquant » par décision explicite (<code>eleve-gate.ts:7-8</code>), et il passe
+vert même quand il n'a rien vérifié (<strong>B8</strong>) ;</li>
+<li>MangoQA est fail-open par construction (<code>mangoqa.ts:108</code>), ne voit qu'un préfixe du projet (<strong>B3</strong>),
+peut peindre en vert une couverture nulle (<strong>B2</strong>), et était purement aveugle au dernier run (<strong>B1</strong>).</li>
+</ul>
+<p>Tant qu'un verdict rouge ne coûte rien, le « 95 % fini » reste une intention.</p>
+
+<h3 id="c2">C2 — On ne mesure rien, donc on ne pilote rien</h3>
+<p><strong>B4</strong> + <strong>B5</strong>. Il n'existe aujourd'hui aucun moyen de répondre à : combien d'appels, combien de tokens,
+combien de temps pour une application. La seule borne connue est théorique (jusqu'à 360 appels modèle
+par build). Sans cette mesure, l'arbitrage « quel modèle sur quel rôle » — la question centrale posée
+par ce brief — ne peut être qu'une opinion. C'est le préalable de tout le reste, et c'est la
+correction la moins risquée du lot.</p>
+
+<h3 id="c3">C3 — Le cerveau exécutant, et tout ce que le harnais dépense pour le compenser</h3>
+<p>Une grande partie de la sophistication de MangoOS n'est pas de la capacité : c'est de la
+<strong>compensation</strong>. Dix auto-relances (<code>relay-agentic.ts:264</code>), un Stratège qui reclasse les blocages, un
+remède <code>reframe</code> pour les récidives, une Forge qui fabrique des spécialistes, des nudges « arrête de
+lire, AGIS » — tout cela existe parce que le modèle qui code ne va pas au bout tout seul. Les
+concurrents cités mettent un modèle de frontière sur ce rôle et se passent des trois quarts de cet
+échafaudage. L'abonnement Claude Pro qui vient d'être activé rend cet arbitrage <strong>testable pour la
+première fois</strong> ; il ne l'a pas encore tranché.</p>
+
+<h3 id="c4">C4 — Le harnais est éteint</h3>
+<p><strong>B6</strong> : 38 gates sur 42 dormants. Il y a, dans ce dépôt, une reprise après crash, une mémoire
+cross-projet, un état de travail résistant à la compaction, un repli inter-cerveaux et un mode
+réflexion — tous écrits, tous testés, tous inertes. L'écart entre MangoOS-sur-le-papier et
+MangoOS-qui-tourne est la plus grande valeur immédiatement disponible du projet.</p>
+
+<h2 id="pas-le-probleme">Ce qui n'est <strong>pas</strong> le problème (à ne pas traiter)</h2>
+
+<ul>
+<li><strong>La taille du code.</strong> 595 fichiers et ~103 000 lignes ne sont pas en soi de la dette. La modularité
+est réelle (<code>eleve/</code> éclaté en 11 feuilles, <code>eleve-tools/</code> en 24), les deps sont injectées pour la
+testabilité (<code>specialist-agentic.ts:25-33</code>), et 249 fichiers de test existent. Un refactoring de
+volume ne rapprocherait de rien.</li>
+<li><strong>La documentation.</strong> Elle est abondante et, hors les dérives <strong>B12</strong>/<strong>B13</strong>, cohérente. Le triptyque
+<code>statut.md</code> / <code>historique.md</code> / <code>wiki/</code> fonctionne. Ce n'est pas là que ça coince.</li>
+<li><strong>Les échafaudages dormants</strong> (Laya en shadow, Observateur non câblé, <code>SAVOIR_*</code> à moitié bâti, harnais
+A/B). Ils ne nuisent pas — ils ne comptent simplement <strong>pas</strong> comme capacité. L'erreur serait de les
+lire comme acquis dans un inventaire de couverture, pas de les supprimer.</li>
+<li><strong>Le débat « souveraineté locale vs cloud », dans son état actuel.</strong> Sur cette machine il n'y a pas de
+daemon Ollama (<code>/home/raf/projets/mangoqa/.env:3-5</code>) : tout ce qui est étiqueté « local / $0 » passe en
+réalité par Ollama Cloud. La question n'est donc pas « souverain ou Claude », c'est « quel cloud, à
+quel coût, pour quelle qualité » — et <strong>B14</strong> montre que la table de coûts du harnais répond faux aux
+deux bouts.</li>
+</ul>
+
+<hr>
+
+<h1 id="section-d">D — Plan d'action priorisé</h1>
+
+<p>Ordonné par rendement : ce qui débloque le reste d'abord, ce qui coûte cher en risque ensuite.</p>
+
+<div class="tablewrap"><table>
+<thead>
+<tr><th>#</th><th>Action</th><th>Effort</th><th>Risque de régression</th></tr>
+</thead>
+<tbody>
+<tr><td>D1</td><td>Rendre la consommation mesurable</td><td>M</td><td><strong>aucun</strong></td></tr>
+<tr><td>D2</td><td>Armer le fusible de boucle</td><td>S</td><td>faible</td></tr>
+<tr><td>D3</td><td>Donner une sonde de cerveau à MangoQA et durcir la règle verte</td><td>M</td><td>faible</td></tr>
+<tr><td>D4</td><td>Faire voir le projet entier à l'audit</td><td>M</td><td>faible</td></tr>
+<tr><td>D5</td><td>Basculer le rôle <code>codeur</code> sur Claude et mesurer en A/B</td><td>S (config)</td><td><strong>élevé</strong></td></tr>
+<tr><td>D6</td><td>Promouvoir les gates éprouvés, un par un, avec mesure</td><td>M</td><td>faible (par gate)</td></tr>
+<tr><td>D7</td><td>Mettre en cache le registre des cerveaux</td><td>S</td><td>faible</td></tr>
+<tr><td>D8</td><td>Réconcilier la doc de données et honorer (ou retirer) les <code>tools</code> des spécialistes</td><td>S</td><td><strong>aucun</strong></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="d1">D1 — Rendre la consommation mesurable · effort <strong>M</strong> · régression <strong>aucune</strong></h3>
+<p>Faire remonter le champ <code>usage</code> des réponses OpenAI-compat (et l'équivalent Ollama) à travers
+<code>openAiChat</code> → <code>askLLM</code> (<code>server/src/llm/llm-engine.ts:191-220</code>) jusqu'à un compteur par run, à côté de
+ce que <code>agent.ts:302-306</code> fait déjà pour le chemin Claude. <strong>Addition pure</strong> : aucun chemin de décision
+ne change, on ne fait que cesser de jeter une donnée déjà reçue. C'est le préalable de D2 et la seule
+façon de répondre honnêtement à la question « quel modèle sur quel rôle ». À faire en premier.</p>
+
+<h3 id="d2">D2 — Armer le fusible de boucle · effort <strong>S</strong> · régression <strong>faible</strong></h3>
+<p>Poser <code>ELEVE_BUDGET_PROMPT_CHARS</code> et <code>ELEVE_BUDGET_TOOL_CALLS</code> dans <code>server/.env</code> pour activer le garde
+déjà écrit (<code>eleve-runtime.ts:484-497</code> via <code>relay-agentic.ts:241-248</code>). Risque réel et assumé : des runs
+qui vont aujourd'hui au bout de leurs 360 appels seront coupés — c'est l'effet recherché, mais il change
+le résultat de builds existants. À calibrer <strong>après</strong> D1, sur des chiffres.</p>
+
+<h3 id="d3">D3 — Sonde de cerveau MangoQA + règle verte durcie · effort <strong>M</strong> · régression <strong>faible</strong></h3>
+<p>Deux corrections indissociables :</p>
+<ol>
+<li>un appel de contrôle au démarrage de MangoQA qui vérifie que le cerveau d'audit <strong>répond</strong> (pas juste
+que le process vit, <code>mangoqa.ts:22-36</code>), et qui alerte bruyamment sinon — c'est ce qui manquait à
+<strong>B1</strong> ;</li>
+<li>dans <code>/home/raf/projets/mangoqa/src/verdict.ts:23-26</code>, compter les <code>not_applicable</code> des branches
+<strong>bloquantes</strong> dans <code>incomplete</code>, de sorte qu'un projet où presque rien n'a été vu sorte <code>unknown</code> et
+non <code>green</code> (<strong>B2</strong>).</li>
+</ol>
+<p>Effet attendu : plus de verdicts <code>unknown</code>, moins de faux verts. C'est une régression <strong>désirée</strong> du taux
+de vert ; elle ne casse rien, elle cesse de mentir.</p>
+
+<h3 id="d4">D4 — Faire voir le projet entier à l'audit · effort <strong>M</strong> · régression <strong>faible</strong></h3>
+<p>Appliquer <code>sortByPriority</code> (<code>/home/raf/projets/mangoqa/src/priority.ts:37-39</code>, déjà écrit et testé) en
+amont de <code>renderFiles</code> sur le chemin <code>llm.ts:255</code>, et passer d'un <strong>préfixe unique</strong> à plusieurs lots de
+24 000 caractères par branche, avec agrégation des constats. Sans cela, D3 rendra surtout des <code>unknown</code>
+sur les gros projets (12 % de visibilité sur <code>etang-des-roseaux</code>, 2 % sur <code>toeic-quest</code>).</p>
+
+<h3 id="d5">D5 — Basculer <code>codeur</code> sur Claude et mesurer en A/B · effort <strong>S</strong> en config · régression <strong>élevée</strong></h3>
+<p>Une édition du rôle <code>codeur</code> dans l'Atelier suffit côté configuration. Le risque est ailleurs, et il est
+réel : le chemin agentique de l'Élève est bâti sur le <strong>function-calling OpenAI-compat</strong>
+(<code>server/src/eleve/contract.ts</code>, <code>supportsTools(provider)</code>, <code>elevePost(...)</code>), tandis que le provider
+<code>claude</code> passe par <code>query()</code> du SDK (<code>llm-engine.ts:132-141</code>) — un transport différent. Avant de basculer,
+il faut <strong>vérifier</strong> que <code>askEleveAgentic</code> sait piloter un provider <code>claude</code> ; à défaut, la bascule
+renverrait silencieusement l'Élève sur le moteur « contrat » (DSL texte, <code>relay-contract.ts</code>), qui n'a même
+pas d'intégration MangoQA native (<code>pipeline-eleve-qa.md:29-30</code>). Ne pas faire cette action avant D1 : sans
+mesure, on ne saura pas si le changement a payé.</p>
+
+<h3 id="d6">D6 — Promouvoir les gates éprouvés, un par un · effort <strong>M</strong> · régression <strong>faible par gate</strong></h3>
+<p>Candidats par ordre de rapport/risque, tous déjà écrits et testés :
+<code>ELEVE_GATE_DUAL_SKIP_BLOCK</code> (<strong>B8</strong>, corrige un faux vert), <code>BRAIN_FALLBACK</code> (<strong>B7</strong>, le registre déclare
+déjà sa chaîne), <code>ELEVE_ETAT</code>, <code>ELEVE_RESUME</code>, puis <code>ELEVE_REFLEXION</code> et <code>ELEVE_MEMOIRE</code>. Un gate à la
+fois, avec la mesure D1 avant/après — c'est précisément le mécanisme de promotion qui manque
+aujourd'hui (<strong>B6</strong>).</p>
+
+<h3 id="d7">D7 — Mettre en cache le registre des cerveaux · effort <strong>S</strong> · régression <strong>faible</strong></h3>
+<p>Cacher <code>loadBrainRegistry()</code> avec invalidation sur <code>mtime</code> du fichier
+(<code>server/src/brain/brain-registry.ts:211-249</code>). Préserve la propriété qui compte — l'édition à chaud dans
+l'Atelier reste prise en compte sans redémarrage — et supprime une lecture disque synchrone par appel sur
+75 sites.</p>
+
+<h3 id="d8">D8 — Réconcilier la doc de données, honorer ou retirer les <code>tools</code> forgés · effort <strong>S</strong> · régression <strong>aucune</strong></h3>
+<p>Deux corrections documentaires/contractuelles, sans effet d'exécution :
+(a) corriger <code>pipeline-eleve-qa.md:39</code> et <code>:91-93</code> (le vivant est <code>server/data/</code>, <code>server/src/data/</code>
+n'existe pas) et <code>:53</code> (24 par défaut, 36 par <code>.env</code>) — <strong>B12</strong>/<strong>B13</strong> ;
+(b) trancher sur le champ <code>tools</code> des spécialistes forgés (<code>specialist-agents.json</code>) : soit le câbler dans
+<code>specialist-agentic.ts:64</code>, soit le retirer du contrat de forge pour cesser de promettre à un sous-agent
+des outils qu'il n'aura pas — <strong>B9</strong>.</p>
+
+<hr>
+
+<h1 id="section-modeles">Section modèles — affectations comparées par rôle</h1>
+
+<h2 id="lire-quota">Comment lire la colonne « quota »</h2>
+
+<p>Il n'existe <strong>aucune mesure</strong> de consommation sur le chemin actuellement emprunté (<strong>B4</strong>). La colonne
+« appels par app » ci-dessous est donc <strong>dérivée de constantes du code</strong>, pas observée :</p>
+
+<ul>
+<li><code>codeur</code> : 1 à <code>ELEVE_AGENTIC_MAX_ITER</code> appels par relance (36, <code>server/.env</code> ; défaut code 24,
+<code>eleve-runtime.ts:47</code>), × jusqu'à <code>ELEVE_SELF_RELANCE_MAX</code> relances (10, <code>relay-agentic.ts:264</code>)
+→ <strong>plafond 360</strong>, coupé en pratique par <code>ELEVE_AGENTIC_MAX_CORRECTIONS</code> (8, <code>eleve-runtime.ts:55</code>).</li>
+<li><code>juge</code> : 1 appel par tour de clôture (<code>eleve-gate.ts</code>, <code>judgeIntention</code>).</li>
+<li><code>vision</code> : 1 à 2 par tour de clôture (critique visuelle + volet images, <code>ELEVE_GATE_IMAGES</code>
+<code>default: true</code>, <code>flags.ts</code>).</li>
+<li>branches MangoQA : 6 appels par audit (<code>/home/raf/projets/mangoqa/src/index.ts</code>, 6 branches).</li>
+<li><code>forgeron</code> : <strong>0 aujourd'hui</strong> — <code>SELF_EVOLVE</code> n'est pas dans <code>server/.env</code>.</li>
+</ul>
+
+<p><strong>La conversion appels → tokens → quota d'abonnement est « non mesuré »</strong> et le restera jusqu'à D1.
+Toute table qui donnerait ici un nombre de tokens serait inventée.</p>
+
+<h2 id="affectations-comparees">Affectations comparées</h2>
+
+<p>Tags réels tels qu'ils figurent dans <code>server/data/brain-registry.json</code> : <code>mimo-v2.6-pro</code>,
+<code>glm-5.3</code>, <code>deepseek-v4-flash:0731</code>. « Opus 5.5 » ci-dessous désigne le tier <code>claude/opus</code>
+(<code>brain-registry.ts:51</code>, via l'abonnement — coût crédits <strong>0</strong>, coût <strong>quota</strong> réel).</p>
+
+<div class="tablewrap"><table>
+<thead>
+<tr><th>Rôle</th><th>Aujourd'hui</th><th>Opus (abonnement)</th><th>GLM 5.3</th><th>DeepSeek v4 flash</th><th>MiMo v2.6 pro</th><th>Appels/app (dérivé)</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>codeur</strong> (l'Élève)</td><td>MiMo v2.6 pro</td><td>qualité max, <strong>quota lourd</strong> — c'est le rôle qui domine tout le budget</td><td>milieu de gamme, tool-calling à re-prouver</td><td>trop faible pour 36 itérations outillées</td><td>tenant actuel</td><td><strong>1 → 360</strong></td></tr>
+<tr><td><strong>architecte</strong></td><td>GLM 5.3</td><td>pertinent : rare, structurant, décide du reste</td><td>tenant actuel, acceptable</td><td>trop faible pour un plan</td><td>possible</td><td>quelques appels</td></tr>
+<tr><td><strong>juge</strong> (clôture)</td><td>DeepSeek v4 flash</td><td>surdimensionné</td><td>bon compromis</td><td>tenant actuel, acceptable</td><td>possible</td><td>1 / tour de clôture</td></tr>
+<tr><td><strong>vision</strong></td><td>DeepSeek v4 flash (+ repli <code>claude/haiku</code> <strong>désarmé</strong>, <strong>B7</strong>)</td><td>Haiku suffit</td><td>ne voit pas</td><td>dépend du support image réel</td><td>non vérifié</td><td>1–2 / clôture</td></tr>
+<tr><td><strong>stratege</strong></td><td>DeepSeek v4 flash</td><td>surdimensionné — il <strong>classe</strong>, il ne résout pas</td><td>possible</td><td>tenant actuel, adapté</td><td>possible</td><td>≤ budget Stratège</td></tr>
+<tr><td><strong>forgeron</strong></td><td>GLM 5.3</td><td><strong>recommandé</strong> : acte le plus exigeant et le plus rare (<code>brain-registry.ts:86-90</code> le disait déjà)</td><td>tenant actuel</td><td>non</td><td>non</td><td>0 aujourd'hui</td></tr>
+<tr><td><strong>routeur</strong></td><td>DeepSeek v4 flash</td><td>jamais</td><td>possible</td><td>tenant actuel, adapté</td><td>possible</td><td>≤ 1 / tour</td></tr>
+<tr><td><strong>auditeur MangoQA</strong></td><td><code>deepseek-v4-flash:0731</code> (registre <strong>séparé</strong>, <strong>B16</strong>)</td><td>repli <code>QA_MODEL=sonnet</code> déjà configuré</td><td>possible</td><td>tenant actuel</td><td>non</td><td>6 / audit</td></tr>
+</tbody>
+</table></div>
+
+<h2 id="affectation-recommandee">Affectation recommandée</h2>
+
+<div class="tablewrap"><table>
+<thead>
+<tr><th>Rôle</th><th>Recommandation</th><th>Raison</th></tr>
+</thead>
+<tbody>
+<tr><td><code>codeur</code></td><td><strong>Opus (abonnement) en A/B mesuré contre MiMo</strong> — pas en bascule sèche</td><td>C'est le seul levier qui peut supprimer l'échafaudage de compensation (<strong>C3</strong>) ; mais c'est aussi 1→360 appels/app et le transport n'est pas prouvé (<strong>D5</strong>)</td></tr>
+<tr><td><code>architecte</code></td><td><strong>Opus (abonnement)</strong></td><td>Rare, structurant, décide de tout le reste. Excellent rapport qualité/quota</td></tr>
+<tr><td><code>forgeron</code></td><td><strong>Opus (abonnement)</strong></td><td>Acte le plus exigeant et le plus rare du système ; c'était déjà la décision documentée (<code>brain-registry.ts:86-90</code>)</td></tr>
+<tr><td><code>juge</code>, <code>stratege</code>, <code>routeur</code>, <code>extracteur</code></td><td><strong>inchangés</strong> (DeepSeek v4 flash / GLM)</td><td>Rôles de classement et d'arbitrage court : la montée en gamme y coûte du quota sans rien acheter</td></tr>
+<tr><td><code>vision</code></td><td><strong>DeepSeek v4 flash + activer <code>BRAIN_FALLBACK</code></strong></td><td>La chaîne de repli vers <code>claude/haiku</code> est déjà déclarée dans les données ; il suffit de l'armer (<strong>B7</strong>, <strong>D6</strong>)</td></tr>
+<tr><td><strong>auditeur</strong> MangoQA</td><td><strong>conserver <code>deepseek-v4-flash:0731</code>, mais ajouter la sonde de cerveau</strong></td><td>Le modèle n'est pas le problème : l'absence de détection de panne l'est (<strong>B1</strong>, <strong>D3</strong>)</td></tr>
+</tbody>
+</table></div>
+
+<p>Ces recommandations sont des <strong>hypothèses à valider par la mesure D1</strong>, pas des conclusions : aucune n'a
+pu être chiffrée en quota, faute d'instrumentation.</p>
+
+<hr>
+
+<h2 id="conformite">Conformité du rapport aux interdits</h2>
+
+<p>Aucun fichier supprimé. Aucun code, configuration ou donnée de <code>server/data/</code> modifié — le registre des
+cerveaux n'a pas été touché. Aucune génération d'application lancée, aucun appel à <code>/api/chat</code>, aucune
+dépendance installée, aucune opération git. Les seuls fichiers écrits sont ce rapport et son HTML.</p>
+
+</main>
+</body>
+</html>

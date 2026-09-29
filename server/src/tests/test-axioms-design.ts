@@ -76,8 +76,16 @@ try {
   appendAxiom(dir2, "   ", { design: true });
   check("ligne blanche ignorée (rien d'appendé)", fs.readFileSync(path.join(dir2, AXIOMS_DESIGN_FILE_NAME), "utf8") === designRaw);
   let threw = false;
-  try { appendAxiom("Z:\\\\chemin\\impossible\\!!", "UX-42 — ne doit pas lever", { design: true }); } catch { threw = true; }
-  check("répertoire impossible → ne lève pas", threw === false);
+  // Répertoire impossible : chemin SOUS un FICHIER (ENOTDIR, POSIX/Windows identiques).
+  // ⚠ Ne PAS utiliser un chemin « exotique » type `Z:\\chemin\impossible\!!` : sur Linux
+  // ce n'est qu'un nom relatif ordinaire, et `appendAxiom` (mkdirSync recursive, fail-open)
+  // le CRÉAIT alors pour de vrai dans le cwd du serveur — un dossier parasite committé
+  // par erreur le 2026-09-29. La cause est traitée ici, pas le symptôme.
+  const blocker = path.join(dir, "pas-un-dossier.txt");
+  fs.writeFileSync(blocker, "je suis un fichier", "utf8");
+  try { appendAxiom(path.join(blocker, "dessous", "!!"), "UX-42 — ne doit pas lever", { design: true }); } catch { threw = true; }
+  check("répertoire impossible (ENOTDIR) → ne lève pas", threw === false);
+  check("répertoire impossible → aucun dossier parasite créé à côté", !fs.existsSync(path.join(blocker, "dessous")));
 } finally {
   // Nettoyage best-effort des tmp (jamais bloquant).
   try { fs.rmSync(dir, { recursive: true, force: true }); } catch { /* tant pis */ }

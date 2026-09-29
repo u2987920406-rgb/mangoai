@@ -22,6 +22,13 @@ interface CronTask {
   createdAt: string
 }
 
+// DÉCISION RAF 2026-09-29 : le Maître du chemin AUTONOME (cron = aucun humain pour
+// rattraper). Opus 5.5 par défaut, surchargeable par env — lue paresseusement comme
+// le reste de ce module, pour rester testable.
+function cronMaitreModel(): string {
+  return process.env.CRON_MAITRE_MODEL ?? 'opus'
+}
+
 // Résolu paresseusement (comme registryFile()/gapsFile() ailleurs dans ce projet) —
 // permet un override par env pour les tests, chose que la constante figée d'avant
 // (2026-07-23, #196 fault-finding Partie 2) ne permettait pas.
@@ -107,7 +114,11 @@ async function executeTask(task: CronTask): Promise<{ summary: string; nextRunHi
   const result = await runAsActor("autonomous", () => runRelay(
     task.prompt,
     projectDir(task.projectName),
-    { maitreModel: 'sonnet', onLog: (line: string) => { logs.push(line) } },
+    // DÉCISION RAF 2026-09-29 : le Maître du chemin autonome (cron) = Opus 5.5, comme le
+    // défaut de relay-config.ts. Le cron est justement le chemin sans humain : c'est là
+    // qu'un Maître juste vaut le plus (aucun rattrapage manuel possible). Le disjoncteur
+    // cron (CRON_BREAKER) borne déjà le coût ; l'ancien défaut Sonnet datait d'avant Opus 5.5.
+    { maitreModel: cronMaitreModel(), onLog: (line: string) => { logs.push(line) } },
     defaultRelayDeps,
   ))
   // Comptabilise le RÉEL (coût renvoyé par runRelay) dans la fenêtre glissante.

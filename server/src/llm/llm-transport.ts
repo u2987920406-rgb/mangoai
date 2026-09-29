@@ -20,10 +20,16 @@
 // GARDE-FOU CENTRAL préservé ici : subscriptionEnv() neutralise ANTHROPIC_API_KEY
 // pour que query() utilise l'ABONNEMENT Claude Code et NON les crédits API payants.
 
+import { writeFileSync } from "node:fs";
 import { query } from "@anthropic-ai/claude-agent-sdk";
 import type { OpenAITool } from "../kernel/kernel-mcp.js";
 import type { ChatMessage, ToolCall } from "../eleve-runtime.js";
 import { fetchWithRetry, type RetryPolicy } from "../eleve-retry.js";
+// D1 (audit 2026-09-28, B4) : le champ `usage` des réponses arrive ICI et n'était
+// lu par personne. Chaque brique de transport le remonte désormais au compteur par
+// run — addition PURE : aucun retour de fonction, aucun payload, aucune décision ne
+// change (recordLLMUsage ne lève jamais et n'écrit rien tant que LLM_USAGE_LOG=off).
+import { recordLLMUsage } from "./llm-usage.js";
 
 // ── Abonnement vs crédits API : le garde-fou central ─────────────────────────
 // CRUCIAL : query() utilise l'ABONNEMENT Claude Code UNIQUEMENT si ANTHROPIC_API_KEY
@@ -43,7 +49,10 @@ export function subscriptionEnv(): Record<string, string | undefined> {
 export const CLAUDE_QUERY_TIMEOUT_MS = Math.max(60_000, Number(process.env.CLAUDE_QUERY_TIMEOUT_MS ?? 300_000));
 
 async function withQueryDeadline(
-  q: { interrupt?: () => Promise<void> },
+  // Le SDK 0.3.284 fait retourner un OBJET à `interrupt()` (SDKControlInterruptResponse) :
+  // typer en `Promise<void>` casse l'affectation (TS2345 sur un type de retour plus large).
+  // On n'utilise que l'EFFET de bord ; `Promise<unknown>` décrit les deux versions du SDK.
+  q: { interrupt?: () => Promise<unknown> },
   work: Promise<string>,
   timeoutMs: number,
   label: string,
@@ -144,7 +153,13 @@ export async function ollamaChat(
     }),
   });
   if (!res.ok) throw new Error(`Ollama HTTP ${res.status}`);
-  const data = (await res.json()) as { message?: { content?: string; thinking?: string } };
+  const data = (await res.json()) as {
+    message?: { content?: string; thinking?: string };
+    prompt_eval_count?: number;
+    eval_count?: number;
+  };
+  recordLLMUsage(data, { model: opts.model, channel: "ollama" }); // D1 — mesure seule
+
   // Repli « thinking » : un VL qui pense peut laisser `content` vide et mettre sa réponse
   // dans `thinking` — on la récupère plutôt que de renvoyer du vide. Cas normal (content
   // rempli) : retour inchangé, SANS trim (préservé).
@@ -196,7 +211,11 @@ export async function openAiChat(
     }),
   });
   if (!res.ok) throw new Error(`${opts.errorLabel ?? "OpenAI-compat"} HTTP ${res.status}`);
-  const data = (await res.json()) as { choices?: Array<{ message?: { content?: string } }> };
+  const data = (await res.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: Record<string, unknown>;
+  };
+  recordLLMUsage(data, { model: opts.model, channel: "openai-compat" }); // D1 — mesure seule
   const content = data.choices?.[0]?.message?.content ?? "";
   return opts.trim === false ? content : content.trim();
 }
@@ -221,7 +240,22 @@ export async function openAiChatTools(opts: {
     messages: opts.messages,
     ...(opts.tools ? { tools: opts.tools, tool_choice: "auto" } : {}),
   });
-  const res = await fetchWithRetry(
+  // Diagnostic HTTP 400 : l'API refuse le payload sans dire QUEL champ la gêne.
+  // Gate `ELEVE_DEBUG_PAYLOAD=<fichier>` → on écrit le payload EXACT refusé pour
+  // pouvoir le rejouer hors de la boucle. Défaut OFF (aucune écriture disque).
+  const dumpPayload = (status: number): void => {
+    const target = process.env.ELEVE_DEBUG_PAYLOAD;
+    if (!target) return;
+    try {
+      writeFileSync(target, JSON.stringify({ status, payload: JSON.parse(payload) }, null, 1));
+      console.warn(`[transport] payload HTTP ${status} écrit dans ${target}`);
+    } catch {
+      /* diagnostic best-effort : ne doit jamais gêner le run */
+    }
+  };
+  let res: Response;
+  try {
+    res = await fetchWithRetry(
     opts.url,
     () => ({
       method: "POST",
@@ -234,10 +268,19 @@ export async function openAiChatTools(opts: {
       http: (status) => `API Élève HTTP ${status}`,
       network: (attempts, name) => `API Élève injoignable (${name}) après ${attempts} tentative(s)`,
     },
-  );
+    );
+  } catch (e) {
+    const status = Number((e as Error)?.message?.match(/HTTP (\d{3})/)?.[1] ?? 0);
+    if (status >= 400 && status < 500) dumpPayload(status);
+    throw e;
+  }
   const data = (await res.json()) as {
     choices?: Array<{ message?: { content?: string; tool_calls?: ToolCall[] } }>;
+    usage?: Record<string, unknown>;
   };
+  // D1 : c'est CE chemin qui porte la consommation dominante (la boucle de l'Élève,
+  // jusqu'à 360 appels par build selon l'audit) — mesuré avant tout traitement.
+  recordLLMUsage(data, { model: opts.model, channel: "openai-compat-tools" });
   const msg = data.choices?.[0]?.message;
   if (!msg) throw new Error("réponse Élève vide");
   return { content: msg.content ?? "", toolCalls: msg.tool_calls };
@@ -315,5 +358,11 @@ export async function ollamaChatTools(opts: {
     const body = await res.text().catch(() => "");
     throw new Error(`Ollama tools HTTP ${res.status}: ${body.slice(0, 400)}`);
   }
-  return fromOllamaResponse((await res.json()) as { message?: { content?: string; tool_calls?: OllamaToolCall[] } });
+  const data = (await res.json()) as {
+    message?: { content?: string; tool_calls?: OllamaToolCall[] };
+    prompt_eval_count?: number;
+    eval_count?: number;
+  };
+  recordLLMUsage(data, { model: opts.model, channel: "ollama-tools" }); // D1 — mesure seule
+  return fromOllamaResponse(data);
 }

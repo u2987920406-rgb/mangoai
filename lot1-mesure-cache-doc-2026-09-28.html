@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MangoOS — lot 1 : mesure, cache, doc (2026-09-28)</title>
+<style>
+:root{--text:#1c1c1c;--muted:#555;--bg:#fff;--panel:#f6f7f5;--border:#d9dcd5;--accent:#b5651d;--code-bg:#eef0ec}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Georgia,"Times New Roman",serif;line-height:1.55;font-size:17px}
+main{max-width:1100px;margin:0 auto;padding:48px 40px 96px}
+h1,h2,h3,h4{font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;color:#111;font-weight:700;line-height:1.25}
+h1{font-size:1.7em;margin-top:2.2em;padding-bottom:.35em;border-bottom:3px solid var(--accent)}
+h1:first-of-type{margin-top:0}
+h2{font-size:1.3em;margin-top:1.9em;padding-bottom:.25em;border-bottom:1px solid var(--border);font-size:1.3em}
+h2{font-size:1.3em}
+h3{font-size:1.12em;margin-top:1.6em;margin-bottom:.5em}
+h4{font-size:1em}
+p{margin:.85em 0}
+ul,ol{margin:.7em 0;padding-left:1.6em}
+li{margin:.35em 0}
+code{font-family:"SFMono-Regular",Consolas,"Liberation Mono",Menlo,monospace;background:var(--code-bg);border:1px solid var(--border);border-radius:3px;padding:.05em .3em;font-size:1em;white-space:pre-wrap;word-break:break-word}
+pre{background:var(--code-bg);border:1px solid var(--border);border-radius:5px;padding:14px 16px;font-size:1em}
+pre code{background:none;border:none;padding:0;white-space:pre-wrap;word-break:break-word}
+blockquote{margin:1.1em 0;padding:.6em 1em;border-left:4px solid var(--accent);background:var(--panel);font-size:1em}
+hr{border:none;border-top:2px solid var(--border);margin:2.4em 0}
+.tablewrap{overflow-x:auto;margin:1.1em 0 1.6em}
+table{border-collapse:collapse;width:100%;font-size:1em;background:var(--panel);table-layout:fixed}
+th,td{border:1px solid var(--border);padding:8px 10px;text-align:left;vertical-align:top;word-break:break-word;overflow-wrap:anywhere}
+th{background:#e7e9e2;font-family:-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;font-weight:700}
+tr:nth-child(even) td{background:#fbfbfa}
+strong{color:#111}
+@media (max-width:640px){main{padding:28px 18px 64px}h1{font-size:1.4em}pre{overflow-x:visible}pre code{white-space:pre-wrap;word-break:break-word}table{table-layout:auto}th,td{word-break:break-word}}
+</style></head><body><main>
+<h1>MangoOS — lot 1 : mesure (D1), cache registre (D7), doc + outils fantômes (D8)</h1>
+<p><strong>Date</strong> : 2026-09-28 · <strong>Baseline</strong> : <code>HEAD 863f094</code>, <code>typecheck</code> vert, smoke 12 PASS / 0 FAIL</p>
+<p><strong>Auteur du code</strong> : Claude Opus 5 (D1, D7, D8) + Sonnet 5 (gabarits de test) · <strong>Vérification et rédaction</strong> : Hermès</p>
+<p><strong>Replay de tout ce document en une commande</strong> : <code>bash /home/raf/projets/mangoai/lot1-verif.sh</code></p>
+<blockquote><strong>Statut du livrable</strong> : le run Opus a été coupé par son plafond de tours (121/120) avant d'écrire ce</blockquote>
+<blockquote>fichier ; le run Sonnet de clôture a été coupé par la limitation de fenêtre 5 h de l'abonnement à son</blockquote>
+<blockquote>4ᵉ tour. Les outputs ci-dessous ont donc été <strong>produits et copiés par Hermès</strong>, pas par le rédacteur du</blockquote>
+<blockquote>code — c'est une vérification indépendante, pas une auto-déclaration.</blockquote>
+<hr>
+<h2>§1 — C1 : aucune régression sur la baseline</h2>
+<pre><code>
+### §1 — C1 : typecheck (attendu : exit 0)
+
+&gt; mangoos-server@0.1.0 typecheck
+&gt; tsc --noEmit
+
+TYPECHECK_EXIT=0
+
+### §1b — C1 : tier smoke (attendu : 12 PASS · 0 FAIL)
+────────────────────────────────────────────────────────────────────────
+TOTAL : 12 PASS · 0 FAIL · 3.7s cumulées
+
+✅ Tous les tests du tier sont verts.
+</code></pre>
+<p><strong>Ce que ça prouve</strong> : l'ajout du compteur, du cache du registre et des clauses d'outils ne casse ni la</p>
+<p>compilation ni le tier de référence. Identique à la baseline du 2026-09-28T18:54.</p>
+<hr>
+<h2>§2 — D1 : la consommation d'un build est désormais mesurable</h2>
+<p><strong>Constat d'origine (audit, B4)</strong> : le champ <code>usage</code> renvoyé par tout endpoint OpenAI-compatible était</p>
+<p><strong>jeté</strong> au transport — <code>openAiChat</code> ne lisait que <code>choices[0].message.content</code>. Le seul endroit du dépôt</p>
+<p>qui lisait un usage réel était le chemin SDK Claude, c'est-à-dire précisément le chemin inactif. La question</p>
+<p>« combien coûte une app ? » n'avait donc aucune réponse mesurée.</p>
+<p><strong>Ce qui a changé</strong></p>
+<div class="tablewrap"><table><thead><tr><th>Fichier</th><th>Rôle</th></tr></thead><tbody><tr><td><code>server/src/llm/llm-usage.ts</code> (nouveau)</td><td><code>parseUsage</code> (PUR), <code>recordLLMUsage</code>, <code>startLLMRun</code>, <code>getLLMRun</code>, <code>resetLLMUsage</code></td></tr><tr><td><code>server/src/llm/llm-transport.ts</code></td><td><code>ollamaChat</code>, <code>openAiChat</code>, <code>openAiChatTools</code> remontent le payload brut au compteur</td></tr><tr><td><code>server/src/eleve/relay-agentic.ts</code></td><td><code>startLLMRun('build …')</code> à la frontière d'un build</td></tr><tr><td><code>server/src/flags.ts</code></td><td>nouveau gate <code>LLM_USAGE_LOG</code> (défaut <code>false</code>) — <strong>seul l'affichage est gaté</strong>, le comptage ne l'est pas</td></tr><tr><td><code>server/src/tests/test-llm-usage.ts</code> (nouveau)</td><td>28 vérifications</td></tr></tbody></table></div>
+<p>Trois propriétés tenues, chacune écrite dans l'en-tête du module :</p>
+<ol><li><strong>Addition pure</strong> : aucune fonction ne retourne autre chose, aucune décision ne lit le compteur.</li><li><strong>Ne lève jamais</strong> : une erreur de mesure ne peut pas casser un build (règle fail-open du dépôt).</li><li><strong>Honnêteté</strong> : un appel dont la réponse ne porte pas d'<code>usage</code> exploitable est compté dans</li></ol>
+<p>   <code>unmeasuredCalls</code> — jamais estimé. Un total affiché est donc un <strong>plancher explicite</strong>.</p>
+<p><strong>Preuve exécutée</strong></p>
+<pre><code>
+[134/248] test-llm-usage … PASS (0.3s)
+test-llm-usage                         ✓ PASS   0.3s     ✅ llm-usage : 28 pass, 0 fail
+</code></pre>
+<p>Le test couvre les trois formats réels (<code>usage.prompt_tokens</code> OpenAI-compat, <code>usage.input_tokens</code></p>
+<p>Anthropic, <code>prompt_eval_count</code>/<code>eval_count</code> Ollama natif) et le cas « pas d'usage → non mesuré ».</p>
+<p><strong>Replay</strong> : <code>cd /home/raf/projets/mangoai/server &amp;&amp; node --import tsx src/test-runner.ts --tier full 2&gt;&amp;1 | grep llm-usage</code></p>
+<p><strong>Limite honnête</strong> : le compteur est <strong>en mémoire du process</strong> (20 runs glissants, borné). Il ne survit pas</p>
+<p>à un redémarrage et n'est encore exposé par aucune route HTTP — c'est la brique de mesure, pas encore le</p>
+<p>tableau de bord. À suivre dans une action D1-bis si Raf veut la lecture depuis l'UI.</p>
+<hr>
+<h2>§3 — D7 : le registre des cerveaux n'est plus relu du disque à chaque appel</h2>
+<p><strong>Constat d'origine (audit, B10)</strong> : <code>getBrain()</code> → <code>loadBrainRegistry()</code> faisait</p>
+<p><code>existsSync + readFileSync + JSON.parse</code> <strong>à chaque appel</strong>, sur 75 sites d'appel répartis dans 49 fichiers,</p>
+<p>dont des chemins chauds (<code>llm-engine</code>, <code>kernel</code>, <code>eleve/provider</code>, <code>capabilities</code>) — de l'I/O synchrone</p>
+<p>gratuite sur l'event loop, à chaque itération d'une boucle qui peut en faire des centaines.</p>
+<p><strong>Ce qui a changé</strong> (<code>server/src/brain/brain-registry.ts</code>)</p>
+<ul><li>Cache du registre <strong>parsé</strong>, invalidé sur <code>mtimeMs</code> + <code>size</code> du fichier : un <code>statSync</code> (1 syscall)</li></ul>
+<p>  remplace lecture + parse.</p>
+<ul><li>La propriété non négociable est préservée : **l'édition à chaud dans l'Atelier reste prise en compte</li></ul>
+<p>  sans redémarrage**.</p>
+<ul><li>Trois précautions pour que la sémantique soit identique : le rideau de fer <code>BRAIN_LOCAL_ONLY</code> est</li></ul>
+<p>  ré-appliqué à chaque appel (et non gelé dans le cache), une <strong>copie</strong> est renvoyée (des appelants mutent</p>
+<p>  leur résultat avant <code>saveBrainRegistry</code>), et <code>saveBrainRegistry</code> invalide explicitement (l'horloge sous</p>
+<p>  Windows a une granularité de ~15 ms).</p>
+<ul><li>Diagnostic : <code>brainRegistryCacheStats()</code> renvoie <code>{diskReads, hits, cached}</code>.</li></ul>
+<p><strong>Preuve exécutée</strong></p>
+<pre><code>
+[24/248] test-brain-registry-cache … PASS (0.1s)
+test-brain-registry-cache              ✓ PASS   0.1s     ✅ brain-registry-cache : 13 pass, 0 fail
+</code></pre>
+<p>Le test prouve les deux moitiés du contrat (extraits réels de <code>src/tests/test-brain-registry-cache.ts</code>) :</p>
+<pre><code>
+61:  check(`2 lectures → 1 SEULE lecture disque (diskReads=${statsA.diskReads})`, statsA.diskReads === 1)
+67:  check(`12 lectures au total → toujours 1 lecture disque (diskReads=${statsB.diskReads})`, statsB.diskReads === 1)
+</code></pre>
+<p>et l'autre moitié : un fichier réécrit avec un <code>mtime</code> neuf est <strong>relu</strong> (édition à chaud toujours vivante).</p>
+<p><strong>Replay</strong> : <code>cd /home/raf/projets/mangoai/server &amp;&amp; node --import tsx src/test-runner.ts --tier full 2&gt;&amp;1 | grep brain-registry-cache</code></p>
+<hr>
+<h2>§4 — D8 : doc d'état corrigée, outils fantômes traités</h2>
+<h3>(a) Dérive documentaire</h3>
+<p><code>pipeline-eleve-qa.md</code> désignait <code>server/src/data/brain-registry.json</code> comme registre vivant — un dossier</p>
+<p>qui <strong>n'existe plus depuis la migration <code>dataDir()</code> du 2026-07-23</strong>. Corrigé aux endroits d'état, plus</p>
+<p><code>PRELAUNCH_CHECKLIST.md:31</code> qui portait la même erreur.</p>
+<pre><code>
+/home/raf/projets/mangoai/pipeline-eleve-qa.md:43:`server/src/data/` n'existe pas sur le disque (corrigé le 2026-07-23, cf.
+/home/raf/projets/mangoai/pipeline-eleve-qa.md:110:  `server/src/data/` n'existe plus depuis la migration du 2026-07-23. Le
+</code></pre>
+<p>Les deux occurrences restantes sont des <strong>négations explicites</strong> — c'est la correction, pas le défaut.</p>
+<p><strong>Décision assumée : <code>historique.md</code> n'est PAS réécrit</strong> (8 occurrences). C'est un journal daté qui décrit</p>
+<p>l'état passé du dépôt ; le réécrire effacerait le passé et rendrait la trace mensongère. Le critère C4 du</p>
+<p>brief est donc satisfait dans son intention (plus aucune <strong>référence d'état courant</strong> fausse) et</p>
+<p>explicitement non satisfait dans sa lettre (le <code>grep</code> brut renvoie encore des lignes). Écart déclaré, pas maquillé.</p>
+<h3>(b) Outils fantômes des spécialistes</h3>
+<p><strong>Constat d'origine (audit, B9)</strong> : le champ <code>tools</code> des specs forgées annonçait des capacités que le</p>
+<p>sous-agent n'avait pas (<code>rasteriser_pdf</code>, <code>extraire_ocr</code>…) — la boîte à outils réelle vient de</p>
+<p><code>deps.buildTools(projectDir, toolPolicy)</code>, jamais de la spec.</p>
+<p>**Tranché : ni retirer les 11 agents forgés, ni laisser la promesse fausse — corriger la promesse à</p>
+<p>l'exécution.** <code>specialist-agentic.ts</code> ajoute une clause <code>realToolboxClause(registry.names())</code> qui énonce</p>
+<p>les outils <strong>réellement</strong> disponibles et invalide explicitement tout nom absent. Registre vide → clause</p>
+<p>vide → prompt identique à avant. Le chemin est lui-même gaté <code>ELEVE_DELEGATE_AGENTIC</code> (défaut off), donc</p>
+<p>aucun comportement par défaut ne change. Le champ <code>tools</code> reste dans les <strong>données</strong> des agents déjà forgés</p>
+<p>(on ne supprime pas de données) mais plus rien ne le présente comme exécutable.</p>
+<pre><code>
+test-specialist-agentic                ✓ PASS   0.8s     specialist-agentic (#175) : 33/33
+</code></pre>
+<p><strong>Replay</strong> : <code>cd /home/raf/projets/mangoai/server &amp;&amp; node --import tsx src/test-runner.ts --tier full 2&gt;&amp;1 | grep specialist-agentic</code></p>
+<hr>
+<h2>§5 — C5 : périmètre respecté</h2>
+<pre><code>
+fichiers supprimés: 0
+</code></pre>
+<p>Aucune suppression, aucun <code>git add</code>, aucun commit. Fichiers touchés : les 4 du code (D1, D7, D8), le gate,</p>
+<p>les 3 fichiers de test, + la doc de clôture exigée par <code>CLAUDE.md</code> (<code>statut.md</code>, <code>historique.md</code>,</p>
+<p><code>limites.md</code>, <code>pipeline-eleve-qa.md</code>, <code>wiki/</code>, <code>PRELAUNCH_CHECKLIST.md</code>, <code>test-manifest.json</code>, <code>wiki/compteur-jetons.md</code>).</p>
+<p><strong>Deux modifications ne viennent PAS de ce lot</strong> (présentes avant le 18:54, non touchées) :</p>
+<p><code>server/data/brain-registry.json</code> (le registre vivant a été rebasculé sur <code>mimo-v2.6-pro</code> / Xiaomi pour</p>
+<p><code>codeur</code> et <code>orchestrateur</code>, alors que git porte <code>glm-5.3</code> / <code>deepseek-v4-flash</code>) et</p>
+<p><code>server/data/specialist-agents.json</code> (horodatage). À traiter séparément : ce n'est pas un livrable, c'est</p>
+<p>un état local à réconcilier avec git.</p>
+<hr>
+<h2>Réponse — changé / vérifié / reste</h2>
+<p><strong>Changé</strong> — D1 : la consommation de chaque build est mesurée par run, par modèle, avec le nombre d'appels</p>
+<p>non mesurés affiché à côté (4 fichiers, 1 gate, 28 tests). D7 : le registre des cerveaux est mis en cache</p>
+<p>et invalidé au <code>mtime</code>, l'édition à chaud intacte (13 tests). D8 : la doc d'état pointe le bon dossier, et</p>
+<p>la promesse d'outils des spécialistes est ramenée à la vérité de leur boîte réelle (33/33).</p>
+<p><strong>Vérifié</strong> — <code>typecheck</code> exit 0 ; smoke 12 PASS / 0 FAIL ; <code>test-llm-usage</code> 28/28 ;</p>
+<p><code>test-brain-registry-cache</code> 13/13 ; <code>test-specialist-agentic</code> 33/33 ; 0 fichier supprimé.</p>
+<p>Tout rejouable par <code>bash /home/raf/projets/mangoai/lot1-verif.sh</code>.</p>
+<p><strong>Reste</strong> — (1) le compteur n'est pas encore exposé par une route HTTP (D1-bis). (2) <code>historique.md</code> garde</p>
+<p>ses 8 mentions du chemin historique : décision assumée. (3) <code>brain-registry.json</code> et</p>
+<p><code>specialist-agents.json</code> portent des modifications locales d'origine inconnue — à réconcilier. (4) Les</p>
+<p>actions D2, D3, D4, D5, D6 de l'audit ne sont <strong>pas</strong> amorcées, comme demandé.</p>
+</main></body></html>

@@ -1,4 +1,4 @@
-# Câblage du pipeline Élève + MangoQA — état technique (2026-07-14)
+# Câblage du pipeline Élève + MangoQA — état technique (2026-07-14, chemins de données corrigés le 2026-09-28)
 
 Complément OPÉRATIONNEL de `fondation.md` (section V, MangoQA — vision) : ici,
 le câblage CONCRET (fichiers, variables d'env, mécanismes) tel qu'il existe
@@ -31,26 +31,42 @@ réellement dans le code aujourd'hui. Ce fichier décrit un ÉTAT DATÉ — vér
 - **⚠️ 3 registres de modèle, JAMAIS unifiés automatiquement** (limite connue,
   `limites.md`) — à resynchroniser À LA MAIN si on change de cerveau :
   1. `server/.env` (`ELEVE_MODEL`, le cerveau par défaut global)
-  2. `server/src/data/brain-registry.json` (15 RÔLES indépendants — voir §3)
+  2. `server/data/brain-registry.json` (15 RÔLES indépendants — voir §3)
   3. `.brains/registry.json` (routage par intention, souvent vide/à part)
 
 ## 3. Le registre des cerveaux par RÔLE (Brain-Dispatch #150)
 
-`server/src/data/brain-registry.json` (vivant, éditable dans Réglages →
+`server/data/brain-registry.json` (vivant, éditable dans Réglages →
 Atelier des cerveaux) + `brain-registry.ts::DEFAULT_REGISTRY` (repli de
-dernier recours si le fichier disparaît). 15 rôles, chacun avec son propre
+dernier recours si le fichier disparaît). **Un seul répertoire de données :
+`server/data/`**, résolu par `dataDir()` (`server/src/safe-io.ts:22-24`) —
+`server/src/data/` n'existe pas sur le disque (corrigé le 2026-07-23, cf.
+`historique.md` ; ce document avait gardé l'ancien chemin jusqu'au 2026-09-28).
+15 rôles déclarés dans le fichier pour 16 `AgentId` dans le code
+(`codeur_frontiere` absent du fichier → retombe sur son défaut
+`{provider:"none"}`). Chacun avec son propre
 `provider`/`model`/`timeoutMs`, ex. : `codeur` (= l'Élève), `vision`,
 `stratege`, `forgeron`, `juge`, `routeur`, `orchestrateur`…
 
 - Chaque rôle peut avoir un `fallback` (chaîne de repli inter-cerveaux,
   gaté `BRAIN_FALLBACK`) — ex. `vision` replie sur `qwen3.5:cloud` si le
-  local `qwen3-vl:8b` échoue.
+  local `qwen3-vl:8b` échoue. ⚠️ `BRAIN_FALLBACK` est `default:false`
+  (`flags.ts`) et absent de `server/.env` : la chaîne déclarée dans les
+  données n'est donc PAS jouée aujourd'hui (audit 2026-09-28, B7).
+- (D7, 2026-09-28) Le fichier est **caché en mémoire**, invalidé sur
+  `mtime`/taille (`loadBrainRegistry`) : l'édition à chaud dans l'Atelier
+  reste prise en compte sans redémarrage, mais `getBrain()` ne relit plus le
+  disque à chaque appel (75 sites d'appel). Compteurs de diagnostic :
+  `brainRegistryCacheStats()`.
 - Un seul modèle Ollama réside en VRAM à la fois (GTX 1080 Ti, 11 Go) — sollicter
   deux rôles différents en parallèle cause un swap/contention, pas un crash.
 
 ## 4. La boucle agentique — budgets et déblocage
 
-- **Par appel** : `ELEVE_AGENTIC_MAX_ITER` (36) = plafond d'itérations outil.
+- **Par appel** : `ELEVE_AGENTIC_MAX_ITER` = plafond d'itérations outil —
+  **24 par défaut dans le code** (`eleve-runtime.ts:47`), porté à **36 par
+  `server/.env`** (la valeur 36 n'est donc pas un défaut, corrigé le
+  2026-09-28 — audit B13).
   `ELEVE_AGENTIC_MAX_CORRECTIONS` (8, PLUS BAS, coupe AVANT) = détecteur
   anti-répétition/anti-exploration-stérile — c'est LUI qui coupe court en
   pratique la plupart du temps, pas le plafond de 36.
@@ -88,13 +104,26 @@ dernier recours si le fichier disparaît). 15 rôles, chacun avec son propre
   BLOCAGE, TOUS PROJETS CONFONDUS — pas par projet, volontairement (pour
   construire une bibliothèque de spécialistes réutilisables plutôt que
   reforger la même chose à chaque projet).
-- Registre vivant : `server/src/data/open-gaps.json` (⚠️ un doublon orphelin
-  existe à `server/data/open-gaps.json` SANS `src/` — ne rien y lire/écrire,
-  plus rien ne le référence).
+- Registre vivant : `server/data/open-gaps.json` — chemin résolu par
+  `gapsFile()` (`server/src/self/self-evolution.ts:52`, via `dataDir()`),
+  surchargeable par `OPEN_GAPS_FILE`. **Il n'y a PAS de doublon** : la version
+  `server/src/data/` n'existe plus depuis la migration du 2026-07-23. Le
+  fichier est **absent du disque** tant qu'aucune lacune n'a été enregistrée
+  (normal : `SELF_EVOLVE` n'est pas dans `server/.env`) — vérifié le
+  2026-09-28. (Cette entrée disait l'inverse des deux côtés jusque-là : audit
+  2026-09-28, B12.)
 - `ELEVE_DELEGATE(_AGENTIC)` : réutilise un agent DÉJÀ forgé
-  (`server/src/data/specialist-agents.json`) via `consultSpecialist`, filtré
-  par winrate (`ELEVE_DELEGATE_MIN_WINRATE`/`_MIN_USES`) — pas de re-forge si
-  un spécialiste pertinent existe déjà.
+  (`server/data/specialist-agents.json`, 11 agents) via `consultSpecialist`,
+  filtré par winrate (`ELEVE_DELEGATE_MIN_WINRATE`/`_MIN_USES`) — pas de
+  re-forge si un spécialiste pertinent existe déjà.
+- ⚠️ **Le champ `tools` d'une spec de spécialiste n'a jamais été exécutable**
+  (audit 2026-09-28, B9) : la boîte à outils d'un sous-agent vient du registre
+  RÉEL de l'Élève filtré par sa `toolPolicy`
+  (`specialist-agentic.ts`), jamais de ce champ. Décision D8 du 2026-09-28 :
+  champ **retiré du contrat de forge** (le prompt de forge ne le demande plus
+  et interdit d'inventer un outil), conservé en lecture pour les 11 agents
+  déjà forgés, et le sous-agent reçoit désormais la liste de ses outils
+  réels (`realToolboxClause`).
 - **UI** : Réglages → Intelligence → « Lacunes à combler » (`AutoEvolution.jsx`,
   routes `/api/gaps*`). Badge de notification (2026-07-14) sur le dock
   (`Sidebar.jsx`) et l'item de nav — compte les lacunes `status:"proposed"`,
