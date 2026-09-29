@@ -85,7 +85,7 @@ export async function finalizeEscalationPhase(
       const insp = await inspectReady();
       if (!insp.ok) {
         push(`✗ build encore cassé après escalade — échec`);
-        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
+        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, echecCause: "build-casse", maitreAppele: true };
       }
       // (L113, run showcase 2026-07-09) build vert ne suffit PAS : un placeholder
       // jamais touché compile déjà. Sans changement de code réel, ce n'était pas
@@ -93,7 +93,10 @@ export async function finalizeEscalationPhase(
       // interrompu avant d'écrire quoi que ce soit) déguisé en succès.
       if (!esc.codeChanged) {
         push(`✗ le Maître n'a modifié AUCUN fichier de code réel — échec (pas une résolution)`);
-        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
+        // CHANTIER 1 — le build passe ici (on vient de le verifier) : annoncer
+        // « le build ne passe pas » etait FAUX. La cause reelle est l'absence de
+        // changement de code (un placeholder compile deja).
+        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, echecCause: "aucun-changement", maitreAppele: true };
       }
       push(`✓ build vert — résolu par le MAÎTRE${esc.axiom ? " (+1 axiome appris)" : ""}, coût $${esc.costUsd.toFixed(4)}`);
 

@@ -271,6 +271,8 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     // la main, chaque relance restant $0/locale (le coût est juste du temps).
     const selfRelanceMax = Number(process.env.ELEVE_SELF_RELANCE_MAX ?? 10);
     let agErr = "";
+    // CHANTIER 1 — la cause REELLE, pour que le message d'echec cesse de mentir.
+    let cerveauKo = false;
     let result: AgenticBuildResult | null = null;
     let insp: Inspection = { ok: false, signal: "build-failed", detail: "", durationMs: 0 };
     let relances = 0;
@@ -492,6 +494,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     clearPlan(projectDir);
     for (;;) {
       agErr = "";
+      cerveauKo = false;
       // Relance (nudge non vide) : reconstruit le prompt user FRAIS — sinon la liste
       // des fichiers date d'AVANT la tentative précédente (un projet neuf y figure
       // « vide » alors que 20 fichiers viennent d'être écrits) et l'Élève ré-explore,
@@ -538,6 +541,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       }
       insp = await inspectReady();
       // Build cassé ou erreur moteur → on sort vers l'escalade (échec objectif réel).
+      cerveauKo = Boolean(agErr) && /injoignable|timeout|terminated|HTTP 400|aborted/i.test(agErr);
       if (!insp.ok || agErr) {
         const d = await diagnoseAndTrack(); // #164 — nomme (P1) + reclasse si ambigu (P3) ; #196C — trace la répétition
         if (d) void fireObservationHook("OnBlock", projectDir, `${d.blocker}: ${d.detail ?? ""}`, relayHooks);
@@ -933,7 +937,11 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
         `⚠ build vert mais pas de finish après ${relances} auto-relances (${blockReason}) — j'ai vraiment essayé seul. ` +
           `L'app compile ; il reste sans doute un détail. Relance-moi ou précise ce qui manque.`,
       );
-      return { resolvedBy: "eleve", attempts: 1, success: true, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
+      return {
+      resolvedBy: "eleve", attempts: 1, success: true, inspection: insp,
+      axiom: false, costUsd: 0, log, incomplete: true,
+      maitreAppele: false,
+    };
     }
     // Build cassé + relances épuisées — escalade Claude = OPT-IN strict, même
     // gate que le cas « bloqué » ci-dessus. Défaut OFF : échec honnête plutôt
@@ -946,5 +954,10 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       `✗ build toujours cassé après ${relances} auto-relance(s) — j'ai vraiment essayé seul. ` +
         `${breakReason.slice(0, 300)} Précise ce qui bloque ou relance-moi.`,
     );
-    return { resolvedBy: "none", attempts: 1, success: false, inspection: insp, axiom: false, costUsd: 0, log, incomplete: true };
+    return {
+      resolvedBy: "none", attempts: 1, success: false, inspection: insp,
+      axiom: false, costUsd: 0, log, incomplete: true,
+      echecCause: agErr ? "cerveau-injoignable" : "build-casse",
+      maitreAppele: false,
+    };
 }

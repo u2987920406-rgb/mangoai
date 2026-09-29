@@ -40,6 +40,7 @@ import { shouldCaptureDiff, captureDiff } from "../vision-diff.js";
 import { readMetrics, recordTurnMetrics } from "../metrics.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
 import { runRelay, chatEleve, askEleveAgentic, ELEVE_PROVIDER } from "../eleve.js";
+import { messageEchecRelais } from "../eleve/message-echec.js";
 import { buildEleveDiscussTools } from "../eleve-tools/eleve-action-tools.js";
 import { resolveBinding, deriveIntention, policyForBinding } from "../brain/brain-runtime.js";
 import { requiredCapabilities, toolDemandSignal } from "../intent-capabilities.js";
@@ -578,7 +579,7 @@ app.post("/api/chat", async (req, res) => {
               : `✅ Résolu par l'agent ${agentLabel} (${agentTier}) en ${r.attempts} tentative(s) — coût Claude $0.00.`)
           : r.resolvedBy === "maitre"
             ? `👑 L'agent a buté → escaladé au Maître, corrigé${r.axiom ? " + 1 axiome appris" : ""} — coût $${r.costUsd.toFixed(4)}.`
-            : `❌ Échec : ni l'agent ni le Maître n'ont fait passer le build (${r.inspection.signal}).`;
+            : messageEchecRelais(r);
       if (r.success) {
         record("agent", verdict);
         send({ type: "text", text: verdict });

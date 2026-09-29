@@ -81,7 +81,10 @@ export function resolveRelayConfig(
   // plafonds d'escalade du train-loop) — le poste de quota est faible, la contrepartie en
   // justesse est la plus élevée du système. Override toujours possible par appel
   // (`opts.maitreModel`), `TRAIN_ESCALATE_MODEL`, ou le cron (cron-scheduler.ts).
-  const maitreModel = opts.maitreModel ?? "opus";
+  // CHANTIER 1 — le modele du Maitre devient CONFIGURABLE (ELEVE_MAITRE_MODEL),
+  // comme TRAIN_ESCALATE_MODEL l'est deja pour le train-loop. Sans ca, changer
+  // de Maitre imposait de toucher au code (defaut fige "opus").
+  const maitreModel = opts.maitreModel ?? (process.env.ELEVE_MAITRE_MODEL?.trim() || "opus");
   const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
   const functionalMin = opts.functionalMin ?? Number(process.env.RELAY_FUNCTIONAL_MIN ?? 5);
   const injectMeans = opts.injectMeans ?? (process.env.RELAY_INJECT_MEANS === "1");

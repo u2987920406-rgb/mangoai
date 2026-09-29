@@ -24,6 +24,19 @@ export interface RelayResult {
   // L'utilisateur a cliqué « Stop » : arrêt VOLONTAIRE, ni échec ni escalade.
   // Le travail déjà écrit est committé par le tour → on peut reprendre ensuite.
   aborted?: boolean;
+  // CHANTIER 1 (2026-09-29) — NOM DE LA CAUSE RÉELLE, pour que le message cesse
+  // de mentir. Constat de mesure : des tours étaient annoncés « ni l'agent ni le
+  // Maître n'ont fait passer le build (ok) » — le build passait, donc le message
+  // était faux — et « ni l'agent ni le Maître » alors que le Maître n'avait
+  // JAMAIS été appelé (ELEVE_ESCALATE_ON_BLOCK off). Deux mensonges distincts.
+  //   build-casse         : le build ne passe réellement pas.
+  //   aucun-changement    : build vert, mais le Maître n'a touché aucun fichier
+  //                         (un placeholder compile déjà — ce n'est pas une résolution).
+  //   cerveau-injoignable : l'API de l'Élève n'a pas répondu (timeout/HTTP 400/terminated).
+  //   maitre-non-appele   : l'Élève a calé et l'escalade est désarmée (opt-in off).
+  echecCause?: "build-casse" | "aucun-changement" | "cerveau-injoignable" | "maitre-non-appele";
+  // Le Maître a-t-il été RÉELLEMENT appelé ? (pour ne jamais l'impliquer à tort)
+  maitreAppele?: boolean;
 }
 
 export interface RelayOptions {

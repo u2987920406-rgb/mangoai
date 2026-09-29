@@ -92,6 +92,11 @@ export const FLAGS = {
     default: false,
     description: "Fallback AUTOMATIQUE inter-providers : sur timeout/erreur transport d'un rôle, bascule vers la chaîne `fallback` déclarée dans son registre (garde localOnly préservée, $0 abonnement Claude préservé).",
   },
+  ELEVE_ESCALATE_ON_BLOCK: {
+    env: "ELEVE_ESCALATE_ON_BLOCK",
+    default: false,
+    description: "CHANTIER 1 (2026-09-29) — l'Élève cale (build cassé ou plafond) → escalade au MAÎTRE pour RÉPARER. Mesure qui a motivé l'armement : 14 runs sur 37 en erreur, coût Claude total 0 $ sur 37 runs (= le Maître n'a jamais été appelé, donc l'échec était définitif), 0 projet livré en 5 semaines. Coût borné : uniquement sur échec, ~0,10 $/tour (Opus 5.5, ELEVE_MAITRE_MODEL). OFF → échec honnête mais non récupérable (comportement historique, souveraineté 2026-07-13).",
+  },
   BRAIN_ENSEMBLE: {
     env: "BRAIN_ENSEMBLE",
     default: false,
