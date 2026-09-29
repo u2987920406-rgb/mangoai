@@ -57,6 +57,10 @@ server/data/*.bak-v*
 # Sauvegardes manuelles du registre des cerveaux (avant édition) — jamais versionnées
 server/data/*.bak-2*
 
+# Sauvegardes d'environnement (contiennent des secrets) — JAMAIS versionnées
+server/.env.bak*
+.env.bak*
+
 # Script de pilotage jetable des runs de validation — jamais versionné
 run-driver.mjs
 

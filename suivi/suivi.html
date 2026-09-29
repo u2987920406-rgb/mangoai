@@ -77,20 +77,20 @@ footer{margin-top:40px;color:#4a4a4a}
   <div class="compteurs">
     <div class="compteur">
   <p class="compteur-titre">Lots du plan (D)</p>
-  <p class="compteur-chiffre"><strong>2</strong> faits / 8</p>
-  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="2" aria-label="Lots du plan (D)"><span style="width:25%"></span></div>
-  <p class="compteur-detail">1 en cours/partiel · 4 restants · 1 écarté</p>
+  <p class="compteur-chiffre"><strong>3</strong> faits / 8</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="3" aria-label="Lots du plan (D)"><span style="width:38%"></span></div>
+  <p class="compteur-detail">2 en cours/partiel · 2 restants · 1 écarté</p>
 </div>
     <div class="compteur">
   <p class="compteur-titre">Faiblesses (B)</p>
-  <p class="compteur-chiffre"><strong>6</strong> fermées / 19</p>
-  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="6" aria-label="Faiblesses (B)"><span style="width:32%"></span></div>
-  <p class="compteur-detail">13 restants</p>
+  <p class="compteur-chiffre"><strong>7</strong> fermées / 19</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="7" aria-label="Faiblesses (B)"><span style="width:37%"></span></div>
+  <p class="compteur-detail">12 restants</p>
 </div>
     <div class="compteur">
   <p class="compteur-titre">Traités hors audit (H)</p>
-  <p class="compteur-chiffre"><strong>9</strong> faits / 9</p>
-  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="9" aria-valuenow="9" aria-label="Traités hors audit (H)"><span style="width:100%"></span></div>
+  <p class="compteur-chiffre"><strong>10</strong> faits / 10</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="10" aria-valuenow="10" aria-label="Traités hors audit (H)"><span style="width:100%"></span></div>
   <p class="compteur-detail">tout est fait</p>
 </div>
   </div>
@@ -126,12 +126,12 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li></ul></div>
 </article>
-<article class="carte carte-gris" id="D2">
+<article class="carte carte-vert" id="D2">
   <header class="carte-tete">
-    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
     <div>
       <h3><span class="id">D2</span> Armer le fusible de boucle</h3>
-      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> S</span><span class="meta"><b>Régression</b> faible (assumée)</span></p>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> S</span><span class="meta"><b>Régression</b> faible (assumée)</span></p>
     </div>
   </header>
   <p class="bloc"><b class="lib lib-vert">Fait</b> Le garde existe (<code>eleve-runtime.ts</code> via <code>relay-agentic.ts:249-253</code>).</p>
@@ -147,19 +147,19 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li></ul></div>
 </article>
-<article class="carte carte-gris" id="D3">
+<article class="carte carte-orange" id="D3">
   <header class="carte-tete">
-    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <span class="coche coche-orange" role="img" aria-label="Partiel">◐</span>
     <div>
       <h3><span class="id">D3</span> Sonde MangoQA + règle verte durcie</h3>
-      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> M</span></p>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-orange">Partiel</span><span class="meta"><b>Effort</b> M</span><span class="meta"><b>Acteur</b> Hermès</span></p>
     </div>
   </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> (b) Règle verte durcie : la couverture réelle est désormais MESURÉE (<code>renderFilesDetailed</code> rend <code>shownCount</code>/<code>droppedCount</code>/<code>truncated</code>). Quand elle est partielle, le prompt le dit au modèle et son « hors sujet » invérifiable ne devient plus <code>not_applicable</code> — il reste <code>skip</code>, donc le verdict global tombe à <code>unknown</code> et ne peut plus être vert. 12 tests dédiés, typecheck 0.</p>
+  <p class="bloc"><b class="lib lib-gris">Reste</b> (a) Sonde de cerveau au démarrage (B1) : vérifier que le cerveau RÉPOND, pas seulement que le process vit.</p>
+  <p class="bloc"><b class="lib">Preuve</b> <code>mangoqa/src/llm.ts</code>, <code>mangoqa/src/fs-shared.ts</code>, <code>mangoqa/tests/manual/test-couverture-partielle.ts</code></p>
   
-  <p class="bloc"><b class="lib lib-gris">Reste</b> (a) Sonde de cerveau au démarrage : vérifier que le cerveau répond, pas seulement que le process vit. (b) Dans <code>mangoqa/src/verdict.ts:25</code>, compter les <code>not_applicable</code> des branches bloquantes dans <code>incomplete</code> — aujourd&#39;hui seul <code>skip</code> est compté, donc un audit qui n&#39;a rien vu peut sortir vert.</p>
-  <p class="bloc"><b class="lib">Preuve</b> <code>mangoqa/src/verdict.ts:25</code></p>
-  
-  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/2 fermées)</p><ul><li class="faiblesse">
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (1/2 fermées)</p><ul><li class="faiblesse">
   <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
   <div>
     <p class="f-titre"><span class="id">B1</span> MangoQA aveugle au dernier run sans alerte</p>
@@ -168,11 +168,11 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B2</span> Feu Vert possible sur couverture quasi nulle</p>
-    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé le 2026-09-29. Cause : le <code>skip</code> du modèle (« hors spécialité ») était converti en <code>not_applicable</code>, statut inoffensif. Corrigé à la source : couverture partielle détectée et annoncée, skip invérifiable non converti → verdict <code>unknown</code>. Preuve : 12/12 tests, +158 tests vitest, typecheck 0.</p>
   </div>
 </li></ul></div>
 </article>
@@ -441,6 +441,14 @@ footer{margin-top:40px;color:#4a4a4a}
     <p class="f-titre"><span class="id">H9</span> Deux commits posés, non poussés</p>
     <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
     <p class="f-note">Le 2026-09-29. <code>mangoai c7cead1</code>, <code>mangoqa 3f5a395</code>.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H10</span> 5 runners écrivaient sur le disque réel malgré un writer injecté</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. <code>fs.mkdirSync</code> appelé inconditionnellement avant le writer : l&#39;injection en test était court-circuitée et deux tests manuels échouaient en EACCES sur des chemins codés en dur (<code>/ws</code>, <code>/proj</code>). Le mkdir appartient désormais au writer par défaut. Corrigé dans <code>breakers</code>, <code>design-eye</code>, <code>suite-eye</code>, <code>observer</code>, <code>flux-eye</code> (tier 0 et 1). Production inchangée (aucun writer n&#39;y est injecté) : <code>disjoncteur-runner</code> 21/21, <code>œil-design</code> 67/67.</p>
   </div>
 </li></ul></div>
 </section>

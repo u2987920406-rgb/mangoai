@@ -18,26 +18,29 @@
       "id": "D2",
       "titre": "Armer le fusible de boucle",
       "gravite": "G0",
-      "etat": "a-venir",
+      "etat": "fait",
       "effort": "S",
       "regression": "faible (assumée)",
       "fait": "Le garde existe (`eleve-runtime.ts` via `relay-agentic.ts:249-253`).",
       "reste": "`ELEVE_BUDGET_PROMPT_CHARS` et `ELEVE_BUDGET_TOOL_CALLS` sont absents de `server/.env` : le fusible est strictement inerte. À calibrer après D1.",
       "preuve": "`relay-agentic.ts:249-253`",
       "acteur": null,
-      "bloquants": ["D1"]
+      "bloquants": [
+        "D1"
+      ],
+      "note": "Fusible ARMÉ et prouvé : ELEVE_BUDGET_PROMPT_CHARS=120000, ELEVE_BUDGET_TOOL_CALLS=60 dans server/.env (sauvegarde .env.bak). Ancré sur l'existant (ELEVE_AGENTIC_MAX_ITER=36, CTX_MAX=60000) : un run lent finit donc naturellement avant la coupure, seuls les vrais emballements sont coupés. Sonde src/tests/probe-budget.ts (armé=OUI, cohérent=OUI) + suite eleve-runtime 70/70 dont « budgetExhausted sur poids contexte »."
     },
     {
       "id": "D3",
       "titre": "Sonde MangoQA + règle verte durcie",
       "gravite": "G0",
-      "etat": "a-venir",
+      "etat": "partiel",
       "effort": "M",
       "regression": null,
-      "fait": "",
-      "reste": "(a) Sonde de cerveau au démarrage : vérifier que le cerveau répond, pas seulement que le process vit. (b) Dans `mangoqa/src/verdict.ts:25`, compter les `not_applicable` des branches bloquantes dans `incomplete` — aujourd'hui seul `skip` est compté, donc un audit qui n'a rien vu peut sortir vert.",
-      "preuve": "`mangoqa/src/verdict.ts:25`",
-      "acteur": null,
+      "fait": "(b) Règle verte durcie : la couverture réelle est désormais MESURÉE (`renderFilesDetailed` rend `shownCount`/`droppedCount`/`truncated`). Quand elle est partielle, le prompt le dit au modèle et son « hors sujet » invérifiable ne devient plus `not_applicable` — il reste `skip`, donc le verdict global tombe à `unknown` et ne peut plus être vert. 12 tests dédiés, typecheck 0.",
+      "reste": "(a) Sonde de cerveau au démarrage (B1) : vérifier que le cerveau RÉPOND, pas seulement que le process vit.",
+      "preuve": "`mangoqa/src/llm.ts`, `mangoqa/src/fs-shared.ts`, `mangoqa/tests/manual/test-couverture-partielle.ts`",
+      "acteur": "Hermès",
       "bloquants": []
     },
     {
@@ -107,35 +110,229 @@
     }
   ],
   "faiblesses": [
-    { "id": "B1", "titre": "MangoQA aveugle au dernier run sans alerte", "gravite": "G0", "etat": "ouvert", "lot": "D3", "note": "" },
-    { "id": "B2", "titre": "Feu Vert possible sur couverture quasi nulle", "gravite": "G0", "etat": "ouvert", "lot": "D3", "note": "" },
-    { "id": "B3", "titre": "L'audit voit un préfixe du projet, pas le projet", "gravite": "G0", "etat": "ouvert", "lot": "D4", "note": "" },
-    { "id": "B4", "titre": "Consommation structurellement non mesurable", "gravite": "G0", "etat": "fait", "lot": "D1", "note": "Fermé par D1 (mesure) — la lecture reste ouverte." },
-    { "id": "B5", "titre": "Fusible de coût inerte", "gravite": "G0", "etat": "ouvert", "lot": "D2", "note": "" },
-    { "id": "B6", "titre": "39 gates dormants sur 43", "gravite": "G1", "etat": "ouvert", "lot": "D6", "note": "" },
-    { "id": "B7", "titre": "Repli inter-cerveaux déclaré dans les données, désarmé par le code", "gravite": "G1", "etat": "ouvert", "lot": "D6", "note": "" },
-    { "id": "B8", "titre": "Gardien aveugle rendant quand même un vert", "gravite": "G1", "etat": "ouvert", "lot": "D6", "note": "" },
-    { "id": "B9", "titre": "Spécialistes annonçant des outils inexistants", "gravite": "G1", "etat": "fait", "lot": "D8", "note": "Fermé par D8." },
-    { "id": "B10", "titre": "`getBrain()` relisait le registre à chaque appel", "gravite": "G1", "etat": "fait", "lot": "D7", "note": "Fermé par D7." },
-    { "id": "B11", "titre": "Registre vivant incomplet d'un rôle", "gravite": "G1", "etat": "ouvert", "lot": null, "note": "`codeur_frontiere` absent des 15 rôles." },
-    { "id": "B12", "titre": "Dérive documentaire sur l'emplacement des données", "gravite": "G1", "etat": "fait", "lot": "D8", "note": "Fermé par D8." },
-    { "id": "B13", "titre": "Écart doc/code sur les budgets de boucle", "gravite": "G1", "etat": "fait", "lot": "D8", "note": "Fermé par D8." },
-    { "id": "B14", "titre": "Table de coûts fausse dans les deux sens", "gravite": "G2", "etat": "ouvert", "lot": null, "note": "`claude/opus` à 30 $/Mtok alors que le chemin passe par l'abonnement ; `ollama/*` à 0 alors que tout passe par Ollama Cloud payant." },
-    { "id": "B15", "titre": "Règle de centralisation des gates non tenue", "gravite": "G2", "etat": "ouvert", "lot": null, "note": "65 `process.env.X === \"on\"` hors `flags.ts`." },
-    { "id": "B16", "titre": "Deux registres de modèles sans source commune", "gravite": "G2", "etat": "ouvert", "lot": null, "note": "" },
-    { "id": "B17", "titre": "Un visage annoncé non câblé", "gravite": "G2", "etat": "ouvert", "lot": null, "note": "Observateur-Conseil : README dit « Visage 2 », FAILLES dit « non câblé »." },
-    { "id": "B18", "titre": "Entrée de répertoire accidentelle dans `server/`", "gravite": "G3", "etat": "fait", "lot": null, "note": "Fermé le 2026-09-29 : dossier parasite supprimé, cause corrigée dans `test-axioms-design.ts` — le test vérifie désormais qu'aucun dossier parasite n'est créé." },
-    { "id": "B19", "titre": "Clés en clair et dupliquées", "gravite": "G3", "etat": "ouvert", "lot": null, "note": "`OLLAMA_API_KEY` = `ELEVE_API_KEY`, même valeur dans `server/.env` et `mangoqa/.env` (les deux `.env` sont bien git-ignorés)." }
+    {
+      "id": "B1",
+      "titre": "MangoQA aveugle au dernier run sans alerte",
+      "gravite": "G0",
+      "etat": "ouvert",
+      "lot": "D3",
+      "note": ""
+    },
+    {
+      "id": "B2",
+      "titre": "Feu Vert possible sur couverture quasi nulle",
+      "gravite": "G0",
+      "etat": "fait",
+      "lot": "D3",
+      "note": "Fermé le 2026-09-29. Cause : le `skip` du modèle (« hors spécialité ») était converti en `not_applicable`, statut inoffensif. Corrigé à la source : couverture partielle détectée et annoncée, skip invérifiable non converti → verdict `unknown`. Preuve : 12/12 tests, +158 tests vitest, typecheck 0."
+    },
+    {
+      "id": "B3",
+      "titre": "L'audit voit un préfixe du projet, pas le projet",
+      "gravite": "G0",
+      "etat": "ouvert",
+      "lot": "D4",
+      "note": ""
+    },
+    {
+      "id": "B4",
+      "titre": "Consommation structurellement non mesurable",
+      "gravite": "G0",
+      "etat": "fait",
+      "lot": "D1",
+      "note": "Fermé par D1 (mesure) — la lecture reste ouverte."
+    },
+    {
+      "id": "B5",
+      "titre": "Fusible de coût inerte",
+      "gravite": "G0",
+      "etat": "ouvert",
+      "lot": "D2",
+      "note": ""
+    },
+    {
+      "id": "B6",
+      "titre": "39 gates dormants sur 43",
+      "gravite": "G1",
+      "etat": "ouvert",
+      "lot": "D6",
+      "note": ""
+    },
+    {
+      "id": "B7",
+      "titre": "Repli inter-cerveaux déclaré dans les données, désarmé par le code",
+      "gravite": "G1",
+      "etat": "ouvert",
+      "lot": "D6",
+      "note": ""
+    },
+    {
+      "id": "B8",
+      "titre": "Gardien aveugle rendant quand même un vert",
+      "gravite": "G1",
+      "etat": "ouvert",
+      "lot": "D6",
+      "note": ""
+    },
+    {
+      "id": "B9",
+      "titre": "Spécialistes annonçant des outils inexistants",
+      "gravite": "G1",
+      "etat": "fait",
+      "lot": "D8",
+      "note": "Fermé par D8."
+    },
+    {
+      "id": "B10",
+      "titre": "`getBrain()` relisait le registre à chaque appel",
+      "gravite": "G1",
+      "etat": "fait",
+      "lot": "D7",
+      "note": "Fermé par D7."
+    },
+    {
+      "id": "B11",
+      "titre": "Registre vivant incomplet d'un rôle",
+      "gravite": "G1",
+      "etat": "ouvert",
+      "lot": null,
+      "note": "`codeur_frontiere` absent des 15 rôles."
+    },
+    {
+      "id": "B12",
+      "titre": "Dérive documentaire sur l'emplacement des données",
+      "gravite": "G1",
+      "etat": "fait",
+      "lot": "D8",
+      "note": "Fermé par D8."
+    },
+    {
+      "id": "B13",
+      "titre": "Écart doc/code sur les budgets de boucle",
+      "gravite": "G1",
+      "etat": "fait",
+      "lot": "D8",
+      "note": "Fermé par D8."
+    },
+    {
+      "id": "B14",
+      "titre": "Table de coûts fausse dans les deux sens",
+      "gravite": "G2",
+      "etat": "ouvert",
+      "lot": null,
+      "note": "`claude/opus` à 30 $/Mtok alors que le chemin passe par l'abonnement ; `ollama/*` à 0 alors que tout passe par Ollama Cloud payant."
+    },
+    {
+      "id": "B15",
+      "titre": "Règle de centralisation des gates non tenue",
+      "gravite": "G2",
+      "etat": "ouvert",
+      "lot": null,
+      "note": "65 `process.env.X === \"on\"` hors `flags.ts`."
+    },
+    {
+      "id": "B16",
+      "titre": "Deux registres de modèles sans source commune",
+      "gravite": "G2",
+      "etat": "ouvert",
+      "lot": null,
+      "note": ""
+    },
+    {
+      "id": "B17",
+      "titre": "Un visage annoncé non câblé",
+      "gravite": "G2",
+      "etat": "ouvert",
+      "lot": null,
+      "note": "Observateur-Conseil : README dit « Visage 2 », FAILLES dit « non câblé »."
+    },
+    {
+      "id": "B18",
+      "titre": "Entrée de répertoire accidentelle dans `server/`",
+      "gravite": "G3",
+      "etat": "fait",
+      "lot": null,
+      "note": "Fermé le 2026-09-29 : dossier parasite supprimé, cause corrigée dans `test-axioms-design.ts` — le test vérifie désormais qu'aucun dossier parasite n'est créé."
+    },
+    {
+      "id": "B19",
+      "titre": "Clés en clair et dupliquées",
+      "gravite": "G3",
+      "etat": "ouvert",
+      "lot": null,
+      "note": "`OLLAMA_API_KEY` = `ELEVE_API_KEY`, même valeur dans `server/.env` et `mangoqa/.env` (les deux `.env` sont bien git-ignorés)."
+    }
   ],
   "horsAudit": [
-    { "id": "H1", "titre": "Élève basculé sur `deepseek-v4.1-flash`", "etat": "fait", "date": "2026-09-29", "note": "Partition créée (`models/deepseek.ts`), rôles du registre alignés, 9 tests." },
-    { "id": "H2", "titre": "8 rôles sur 15 pointaient un modèle retiré", "etat": "fait", "date": "2026-09-29", "note": "Modèle retiré par Ollama le 2026-09-25 (`deepseek-v4-flash:0731`) : tout build qui les sollicitait mourait en HTTP 400 silencieux. Corrigé, plus un contrôle de pré-vol `/v1/models`." },
-    { "id": "H3", "titre": "`orchestrateur` sorti de Xiaomi (quota épuisé)", "etat": "fait", "date": "2026-09-29", "note": "429 mesuré. Basculé sur Ollama Cloud." },
-    { "id": "H4", "titre": "Le HTTP 400 « invalid tool call arguments » qui tuait chaque tour", "etat": "fait", "date": "2026-09-29", "note": "Cause trouvée par sonde : la compaction tronquait les arguments d'outil à 300 caractères bruts, coupant le JSON. Corrigé + invariant verrouillé par test + le corps d'erreur est désormais journalisé (il était jeté)." },
-    { "id": "H5", "titre": "Maître d'escalade porté à Opus 5.5", "etat": "fait", "date": "2026-09-29", "note": "3 défauts pointaient encore Sonnet." },
-    { "id": "H6", "titre": "MangoQA : Sonnet 5 primaire, repli Ollama DeepSeek v4.1 flash", "etat": "fait", "date": "2026-09-29", "note": "Le repli était lui-même un modèle mort." },
-    { "id": "H7", "titre": "Premier build complet prouvé de bout en bout", "etat": "fait", "date": "2026-09-29", "note": "App Pomodoro générée par l'Élève : build vert, 16/16 tests, 0×400, gate visuel 6/6 lois aux deux viewports après 3 FAIL corrigés à la cause, compteur prouvé par clic réel (25:00→24:56), aperçu durable `:8099`." },
-    { "id": "H8", "titre": "Pré-vol « les modèles du registre existent-ils encore ? »", "etat": "fait", "date": "2026-09-29", "note": "Ajouté aux skills." },
-    { "id": "H9", "titre": "Deux commits posés, non poussés", "etat": "fait", "date": "2026-09-29", "note": "`mangoai c7cead1`, `mangoqa 3f5a395`." }
+    {
+      "id": "H1",
+      "titre": "Élève basculé sur `deepseek-v4.1-flash`",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "Partition créée (`models/deepseek.ts`), rôles du registre alignés, 9 tests."
+    },
+    {
+      "id": "H2",
+      "titre": "8 rôles sur 15 pointaient un modèle retiré",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "Modèle retiré par Ollama le 2026-09-25 (`deepseek-v4-flash:0731`) : tout build qui les sollicitait mourait en HTTP 400 silencieux. Corrigé, plus un contrôle de pré-vol `/v1/models`."
+    },
+    {
+      "id": "H3",
+      "titre": "`orchestrateur` sorti de Xiaomi (quota épuisé)",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "429 mesuré. Basculé sur Ollama Cloud."
+    },
+    {
+      "id": "H4",
+      "titre": "Le HTTP 400 « invalid tool call arguments » qui tuait chaque tour",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "Cause trouvée par sonde : la compaction tronquait les arguments d'outil à 300 caractères bruts, coupant le JSON. Corrigé + invariant verrouillé par test + le corps d'erreur est désormais journalisé (il était jeté)."
+    },
+    {
+      "id": "H5",
+      "titre": "Maître d'escalade porté à Opus 5.5",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "3 défauts pointaient encore Sonnet."
+    },
+    {
+      "id": "H6",
+      "titre": "MangoQA : Sonnet 5 primaire, repli Ollama DeepSeek v4.1 flash",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "Le repli était lui-même un modèle mort."
+    },
+    {
+      "id": "H7",
+      "titre": "Premier build complet prouvé de bout en bout",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "App Pomodoro générée par l'Élève : build vert, 16/16 tests, 0×400, gate visuel 6/6 lois aux deux viewports après 3 FAIL corrigés à la cause, compteur prouvé par clic réel (25:00→24:56), aperçu durable `:8099`."
+    },
+    {
+      "id": "H8",
+      "titre": "Pré-vol « les modèles du registre existent-ils encore ? »",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "Ajouté aux skills."
+    },
+    {
+      "id": "H9",
+      "titre": "Deux commits posés, non poussés",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "`mangoai c7cead1`, `mangoqa 3f5a395`."
+    },
+    {
+      "id": "H10",
+      "titre": "5 runners écrivaient sur le disque réel malgré un writer injecté",
+      "etat": "fait",
+      "date": "2026-09-29",
+      "note": "`fs.mkdirSync` appelé inconditionnellement avant le writer : l'injection en test était court-circuitée et deux tests manuels échouaient en EACCES sur des chemins codés en dur (`/ws`, `/proj`). Le mkdir appartient désormais au writer par défaut. Corrigé dans `breakers`, `design-eye`, `suite-eye`, `observer`, `flux-eye` (tier 0 et 1). Production inchangée (aucun writer n'y est injecté) : `disjoncteur-runner` 21/21, `œil-design` 67/67."
+    }
   ]
 }
