@@ -365,5 +365,10 @@
       "etat": "ecarte",
       "note": "D5 portait sur le routage DeepSeek/Ops. Ecarte par ta decision : le modele de delegation retenu est Sonnet 5.5 par defaut, escalade Opus 5.5 via sous-agent."
     }
-  ]
+  ],
+  "commits": {
+    "mangoqa": "f8e0f5b — B16 + B17 + B11",
+    "mangoai": "07f82a0 — B14 + B19 + B7 + B11 + tracker",
+    "avant": "4640924 D3+D4 · edbcd1b D6 · 24c8420 D2 · 8c1e013 preuve pixel"
+  }
 }

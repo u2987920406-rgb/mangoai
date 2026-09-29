@@ -244,7 +244,11 @@ ${decisions.length ? `<section>
   <div class="liste"><ul class="liste-grille">${horsAudit.map((h) => faiblesse({ ...h, note: [h.date && `Le ${h.date}.`, h.note].filter(Boolean).join(" ") })).join("\n")}</ul></div>
 </section>` : ""}
 
-<footer><p>Ne pas éditer ce fichier : modifier <code>suivi/plan.json</code> puis lancer <code>node suivi/build-suivi.mjs</code>.</p></footer>
+<footer>
+  ${plan.commits ? `<p><b>Commits de cette passe :</b> ${esc(plan.commits.mangoqa ?? "")} · ${esc(plan.commits.mangoai ?? "")}</p>` : ""}
+  ${plan.commits?.avant ? `<p class="sous">Passes precedentes : ${esc(plan.commits.avant)}</p>` : ""}
+  <p>Ne pas éditer ce fichier : modifier <code>suivi/plan.json</code> puis lancer <code>node suivi/build-suivi.mjs</code>.</p>
+</footer>
 </main>
 </body>
 </html>
