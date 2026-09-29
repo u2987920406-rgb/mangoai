@@ -111,6 +111,22 @@ const lot = (l) => {
 </article>`;
 };
 
+const chantier = (c) => `<article class="carte carte-${c.fait ? "vert" : "orange"}">
+  <header class="carte-tete">
+    ${coche(c.fait ? "fait" : "en-cours")}
+    <div>
+      <h3><span class="id">${esc(c.id)}</span> ${txt(c.titre)}</h3>
+      <p class="metas">${pastille(c.fait ? "fait" : "en-cours")}</p>
+    </div>
+  </header>
+  ${c.mesure ? `<p class="bloc"><b class="lib">Mesure</b> ${txt(c.mesure)}</p>` : ""}
+  ${c.correctif ? `<p class="bloc"><b class="lib lib-vert">Correctif</b> ${txt(c.correctif)}</p>` : ""}
+  ${c.preuve ? `<p class="bloc"><b class="lib">Preuve</b> ${txt(c.preuve)}</p>` : ""}
+</article>`;
+
+// Les chantiers portent `fait` (bool), pas `etat` — pas de comptage via compte().
+const chantiers = plan.chantiers ?? [];
+
 const decision = (q) => `<article class="carte carte-decision">
   <header class="carte-tete">
     <div>
@@ -243,7 +259,13 @@ ${plan.preuveE2E ? `<section>
   </div>
 </section>` : ""}
 
-${decisions.length ? `<section>
+${chantiers.length ? `<section>
+  <h2>Chantiers correctifs — mesurés sur les données réelles (${chantiers.filter((c) => c.fait).length}/${chantiers.length} livrés)</h2>
+  <p class="sous">Aucune idée, aucune opinion : chaque chantier part d'un chiffre lu dans le workspace MangoOS et finit sur sa preuve.</p>
+  <div class="grille">${chantiers.map(chantier).join("\n")}</div>
+</section>
+
+` : ""}${decisions.length ? `<section>
   <h2>Décisions de Raf — tranchées (${decisions.length})</h2>
   <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
   <div class="grille">${decisions.map(decision).join("\n")}</div>
@@ -255,7 +277,8 @@ ${decisions.length ? `<section>
 </section>` : ""}
 
 <footer>
-  ${plan.commits ? `<p><b>Commits de cette passe :</b> ${esc(plan.commits.mangoqa ?? "")} · ${esc(plan.commits.mangoai ?? "")}</p>` : ""}
+  ${Array.isArray(plan.commits) && plan.commits.length ? `<p><b>Commits de cette passe :</b> ${plan.commits.map((c) => `<code>${esc(c.hash)}</code> (${esc(c.repo)})`).join(" · ")}</p>
+  <ul class="liste-commits">${plan.commits.map((c) => `<li><code>${esc(c.hash)}</code> ${txt(c.texte)}</li>`).join("")}</ul>` : ""}
   ${plan.commits?.avant ? `<p class="sous">Passes precedentes : ${esc(plan.commits.avant)}</p>` : ""}
   <p>Ne pas éditer ce fichier : modifier <code>suivi/plan.json</code> puis lancer <code>node suivi/build-suivi.mjs</code>.</p>
 </footer>

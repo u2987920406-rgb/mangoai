@@ -385,6 +385,59 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <section>
+  <h2>Chantiers correctifs — mesurés sur les données réelles (4/4 livrés)</h2>
+  <p class="sous">Aucune idée, aucune opinion : chaque chantier part d'un chiffre lu dans le workspace MangoOS et finit sur sa preuve.</p>
+  <div class="grille"><article class="carte carte-vert">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">C1</span> L&#39;echec devient recuperable et dit la verite</h3>
+      <p class="metas"><span class="etat etat-vert">Fait</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib">Mesure</b> 37 runs, 14 echecs (37 %) ; escalade desarmee depuis 2026-07-13 -&gt; 0 escalade, 0 $, 0 livraison en 5 semaines</p>
+  <p class="bloc"><b class="lib lib-vert">Correctif</b> ELEVE_ESCALATE_ON_BLOCK=on, ELEVE_MAITRE_MODEL=opus cable (variable morte), message d&#39;echec nommant la cause reelle (build-casse, aucun-changement, cerveau-injoignable, maitre-non-appele)</p>
+  <p class="bloc"><b class="lib">Preuve</b> test-message-echec 10/10 (24 combinaisons signal x cause) ; test-relay : boucle Eleve -&gt; juge -&gt; escalade Maitre PROUVEE</p>
+</article>
+<article class="carte carte-vert">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">C3</span> Le timeout du role est enfin honore</h3>
+      <p class="metas"><span class="etat etat-vert">Fait</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib">Mesure</b> le registre declare un timeoutMs par role depuis toujours (codeur 1_800_000 = 30 min) et elevePost ne le recevait JAMAIS ; les runs en echec ont paye 1801 s / 1707 s / 1664 s pour conclure &#39;injoignable&#39;</p>
+  <p class="bloc"><b class="lib lib-vert">Correctif</b> timeoutMs traverse registre -&gt; binding -&gt; transport ; plafond effectif 30 min -&gt; 5 min (marge x2 sur le besoin mesure : deepseek depasse 180 s)</p>
+  <p class="bloc"><b class="lib">Preuve</b> binding relu en direct : codeur timeoutMs = 300000 ; 8 suites vertes ; eleve-runtime 70/70</p>
+</article>
+<article class="carte carte-vert">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">C4</span> Le generateur porte la regle que le juge applique</h3>
+      <p class="metas"><span class="etat etat-vert">Fait</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib">Mesure</b> 15 rejets MangoQA : architecture = 9/15 (60 %), dont 6 &#39;Separation des responsabilites&#39; ; fichiers reellement monolithes mesures : GameScene.js 839 l., render.js 405 l., abyssData.js 395 l., places.js 383 l. (seuil juge ~300)</p>
+  <p class="bloc"><b class="lib lib-vert">Correctif</b> MODULARITY_RULES (1461 chars) cablee dans le bloc <code>architecture</code>, injecte par les 4 phases (elite/mvp/projet/finition) ; criteres exacts du juge enonces, cas JEU nomme (assets decoupes, canvas qui monte sans implementer)</p>
+  <p class="bloc"><b class="lib">Preuve</b> test-regle-structurelle 14/14 (4 criteres couverts, presence dans 4 phases, poids borne, contre-preuve) ; presence verifiee dans le prompt assemble (elite 40 333 chars, projet 26 875)</p>
+</article>
+<article class="carte carte-vert">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">C4b</span> Garde-fou : plus aucun test invisible</h3>
+      <p class="metas"><span class="etat etat-vert">Fait</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib">Mesure</b> 256 fichiers de test, 8 sans entree au manifeste (dont 7 ecrits cette seance) : le runner filtre <code>e &amp;&amp; wanted.has(e.tier)</code> donc ils n&#39;etaient executes dans AUCUN tier</p>
+  <p class="bloc"><b class="lib lib-vert">Correctif</b> 7 tests declares (tier offline) + test-tests-declares.ts qui fait echouer la suite des qu&#39;un fichier de test n&#39;a pas son entree</p>
+  <p class="bloc"><b class="lib">Preuve</b> tier offline complet avec .env de production charge : 251 PASS / 1 FAIL (seul echec = binaire Playwright 1223 pre-existant) ; 256/256 declares</p>
+</article></div>
+</section>
+
+<section>
   <h2>Décisions de Raf — tranchées (4)</h2>
   <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
   <div class="grille"><article class="carte carte-decision">
@@ -510,7 +563,8 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <footer>
-  <p><b>Commits de cette passe :</b> 75ad70f — Q1 + Q2 + B16 corrige · f8e0f5b — B16/B17/B11 · df5dd75 — Q3 + Q4 + B11 · 07f82a0 — B14/B19/B7/B11 · 55bf687 — tracker final</p>
+  <p><b>Commits de cette passe :</b> <code>d3d8718</code> (mangoai) · <code>e2ffa5c</code> (mangoai) · <code>125c47a</code> (mangoai) · <code>10f8231</code> (mangoai)</p>
+  <ul class="liste-commits"><li><code>d3d8718</code> Chantier 4 : le generateur porte la regle que le juge applique (+ garde-fou tests declares)</li><li><code>e2ffa5c</code> Chantier 3 : le timeout du role est enfin honore (30 min -&gt; 5 min)</li><li><code>125c47a</code> test-relay : 3 echecs pre-existants corriges (gates ambiants non isoles)</li><li><code>10f8231</code> Chantier 1 : l&#39;echec devient recuperable ET dit la verite</li></ul>
   
   <p>Ne pas éditer ce fichier : modifier <code>suivi/plan.json</code> puis lancer <code>node suivi/build-suivi.mjs</code>.</p>
 </footer>

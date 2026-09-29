@@ -366,10 +366,28 @@
       "note": "ACTE. Eleve = codeur, DeepSeek v4.1-flash (il apprend, cout minimal) ; Maitre = codeur_frontiere, Opus 5.5 (il tranche quand l'eleve cale). Les deux roles du registre vivant portent cette doctrine. C'est une decision d'architecture, pas un basculement : le role codeur RESTE sur le tier economique."
     }
   ],
-  "commits": {
-    "mangoqa": "75ad70f — Q1 + Q2 + B16 corrige · f8e0f5b — B16/B17/B11",
-    "mangoai": "df5dd75 — Q3 + Q4 + B11 · 07f82a0 — B14/B19/B7/B11 · 55bf687 — tracker final"
-  },
+  "commits": [
+    {
+      "hash": "d3d8718",
+      "repo": "mangoai",
+      "texte": "Chantier 4 : le generateur porte la regle que le juge applique (+ garde-fou tests declares)"
+    },
+    {
+      "hash": "e2ffa5c",
+      "repo": "mangoai",
+      "texte": "Chantier 3 : le timeout du role est enfin honore (30 min -> 5 min)"
+    },
+    {
+      "hash": "125c47a",
+      "repo": "mangoai",
+      "texte": "test-relay : 3 echecs pre-existants corriges (gates ambiants non isoles)"
+    },
+    {
+      "hash": "10f8231",
+      "repo": "mangoai",
+      "texte": "Chantier 1 : l'echec devient recuperable ET dit la verite"
+    }
+  ],
   "preuveE2E": {
     "date": "2026-09-29",
     "objet": "Prouver Q1 (Observateur arme) et Q2 (auditeur Sonnet) de bout en bout, sur un vrai cycle d'audit — pas sur des tests unitaires.",
@@ -381,5 +399,39 @@
       "Artefacts produits : audit-verdict.json, design-observations.json, flux-observations.json, observer-report.json, breaker-verdict.json."
     ],
     "reserve": "Laya signale « fetch failed » sur les 6 branches (pont non demarre sur ce workspace) — fail-open attendu, sans effet sur le verdict."
-  }
+  },
+  "chantiers": [
+    {
+      "id": "C1",
+      "titre": "L'echec devient recuperable et dit la verite",
+      "mesure": "37 runs, 14 echecs (37 %) ; escalade desarmee depuis 2026-07-13 -> 0 escalade, 0 $, 0 livraison en 5 semaines",
+      "correctif": "ELEVE_ESCALATE_ON_BLOCK=on, ELEVE_MAITRE_MODEL=opus cable (variable morte), message d'echec nommant la cause reelle (build-casse, aucun-changement, cerveau-injoignable, maitre-non-appele)",
+      "preuve": "test-message-echec 10/10 (24 combinaisons signal x cause) ; test-relay : boucle Eleve -> juge -> escalade Maitre PROUVEE",
+      "fait": true
+    },
+    {
+      "id": "C3",
+      "titre": "Le timeout du role est enfin honore",
+      "mesure": "le registre declare un timeoutMs par role depuis toujours (codeur 1_800_000 = 30 min) et elevePost ne le recevait JAMAIS ; les runs en echec ont paye 1801 s / 1707 s / 1664 s pour conclure 'injoignable'",
+      "correctif": "timeoutMs traverse registre -> binding -> transport ; plafond effectif 30 min -> 5 min (marge x2 sur le besoin mesure : deepseek depasse 180 s)",
+      "preuve": "binding relu en direct : codeur timeoutMs = 300000 ; 8 suites vertes ; eleve-runtime 70/70",
+      "fait": true
+    },
+    {
+      "id": "C4",
+      "titre": "Le generateur porte la regle que le juge applique",
+      "mesure": "15 rejets MangoQA : architecture = 9/15 (60 %), dont 6 'Separation des responsabilites' ; fichiers reellement monolithes mesures : GameScene.js 839 l., render.js 405 l., abyssData.js 395 l., places.js 383 l. (seuil juge ~300)",
+      "correctif": "MODULARITY_RULES (1461 chars) cablee dans le bloc `architecture`, injecte par les 4 phases (elite/mvp/projet/finition) ; criteres exacts du juge enonces, cas JEU nomme (assets decoupes, canvas qui monte sans implementer)",
+      "preuve": "test-regle-structurelle 14/14 (4 criteres couverts, presence dans 4 phases, poids borne, contre-preuve) ; presence verifiee dans le prompt assemble (elite 40 333 chars, projet 26 875)",
+      "fait": true
+    },
+    {
+      "id": "C4b",
+      "titre": "Garde-fou : plus aucun test invisible",
+      "mesure": "256 fichiers de test, 8 sans entree au manifeste (dont 7 ecrits cette seance) : le runner filtre `e && wanted.has(e.tier)` donc ils n'etaient executes dans AUCUN tier",
+      "correctif": "7 tests declares (tier offline) + test-tests-declares.ts qui fait echouer la suite des qu'un fichier de test n'a pas son entree",
+      "preuve": "tier offline complet avec .env de production charge : 251 PASS / 1 FAIL (seul echec = binaire Playwright 1223 pre-existant) ; 256/256 declares",
+      "fait": true
+    }
+  ]
 }
