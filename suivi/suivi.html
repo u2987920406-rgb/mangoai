@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Suivi de l'audit MangoOS/MangoQA — 2026-09-29</title>
+<style>
+*{box-sizing:border-box}
+html{font-size:16px;-webkit-text-size-adjust:100%}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Ubuntu,sans-serif;font-size:1rem;line-height:1.5;color:#1c1c1c;background:#f5f5f2}
+main{max-width:1200px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:1.75rem;line-height:1.25;margin:0 0 4px}
+h2{font-size:1.375rem;margin:40px 0 16px}
+h3{font-size:1.125rem;line-height:1.35;margin:0}
+p{margin:0}
+code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:1em;background:#ebebE6;padding:0 4px;border-radius:4px;overflow-wrap:anywhere}
+.sous{color:#4a4a4a}
+.compteurs{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin-top:24px}
+.compteur{background:#fff;border:1px solid #d6d6d0;border-radius:12px;padding:16px}
+.compteur-titre{font-weight:600}
+.compteur-chiffre{font-size:1.25rem;margin:4px 0 8px}
+.compteur-chiffre strong{font-size:2rem}
+.compteur-detail{color:#4a4a4a}
+.barre{height:12px;background:#e2e2dc;border-radius:6px;overflow:hidden;margin-bottom:8px}
+.barre span{display:block;height:100%;background:#1a7f37}
+.legende{display:flex;flex-wrap:wrap;gap:8px 20px;margin-top:20px;padding:0;list-style:none}
+.legende li{display:flex;align-items:center;gap:8px}
+.grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));gap:16px;align-items:start}
+.carte{background:#fff;border:1px solid #d6d6d0;border-left-width:6px;border-radius:12px;padding:16px;min-width:0;overflow-wrap:anywhere}
+.carte-vert{border-left-color:#1a7f37}
+.carte-orange{border-left-color:#a14f00}
+.carte-gris{border-left-color:#6b6b6b}
+.carte-barre{border-left-color:#6b6b6b;background:#fafaf8}
+.carte-tete{display:flex;gap:12px;align-items:flex-start;margin-bottom:12px}
+.carte-tete>div{min-width:0}
+.coche{flex:0 0 44px;width:44px;height:44px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;font-size:1.5rem;font-weight:700;line-height:1;border:2px solid}
+.coche-vert{background:#1a7f37;border-color:#1a7f37;color:#fff}
+.coche-orange{background:#fff4e5;border-color:#a14f00;color:#a14f00}
+.coche-gris{background:#fff;border-color:#6b6b6b;color:#6b6b6b}
+.coche-barre{background:#ececE8;border-color:#6b6b6b;color:#4a4a4a}
+.id{font-family:ui-monospace,Consolas,monospace;font-weight:700;color:#333}
+.metas,.f-meta{display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:6px;align-items:center}
+.meta{color:#3d3d3d}
+.meta b{font-weight:600}
+.etat,.grav{display:inline-block;font-size:1rem;font-weight:600;padding:0 8px;border-radius:6px;line-height:1.6}
+.etat-vert{background:#1a7f37;color:#fff}
+.etat-orange{background:#a14f00;color:#fff}
+.etat-gris{background:#5c5c5c;color:#fff}
+.etat-barre{background:#e2e2dc;color:#333;text-decoration:line-through}
+.grav{background:#fff;border:1px solid #8a8a84;color:#1c1c1c}
+.grav-G0{border-color:#b3261e;color:#9c1f18}
+.grav-G1{border-color:#a14f00;color:#8a4300}
+.bloc{margin-top:8px}
+.lib{font-weight:700;margin-right:4px}
+.lib-vert{color:#16692e}
+.lib-gris{color:#4a4a4a}
+.rattachees{margin-top:16px;border-top:1px solid #e2e2dc;padding-top:12px}
+.sous-titre{font-weight:600;margin-bottom:8px}
+ul{list-style:none;margin:0;padding:0}
+.faiblesse{display:flex;gap:12px;align-items:flex-start;padding:8px 0;min-width:0}
+.faiblesse>div{min-width:0}
+.faiblesse+.faiblesse{border-top:1px dashed #e2e2dc}
+.f-titre{font-weight:600}
+.f-note{color:#3d3d3d;margin-top:4px}
+.liste{background:#fff;border:1px solid #d6d6d0;border-radius:12px;padding:8px 16px;overflow-wrap:anywhere}
+.liste-grille{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,360px),1fr));column-gap:24px}
+.liste-grille .faiblesse+.faiblesse{border-top:none}
+.liste-grille .faiblesse{border-bottom:1px dashed #e2e2dc}
+footer{margin-top:40px;color:#4a4a4a}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Suivi de l'audit MangoOS / MangoQA</h1>
+  <p class="sous">Audit du 2026-09-28 · mis à jour le 2026-09-29 · généré depuis <code>suivi/plan.json</code></p>
+  <div class="compteurs">
+    <div class="compteur">
+  <p class="compteur-titre">Lots du plan (D)</p>
+  <p class="compteur-chiffre"><strong>2</strong> faits / 8</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="2" aria-label="Lots du plan (D)"><span style="width:25%"></span></div>
+  <p class="compteur-detail">1 en cours/partiel · 4 restants · 1 écarté</p>
+</div>
+    <div class="compteur">
+  <p class="compteur-titre">Faiblesses (B)</p>
+  <p class="compteur-chiffre"><strong>6</strong> fermées / 19</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="6" aria-label="Faiblesses (B)"><span style="width:32%"></span></div>
+  <p class="compteur-detail">13 restants</p>
+</div>
+    <div class="compteur">
+  <p class="compteur-titre">Traités hors audit (H)</p>
+  <p class="compteur-chiffre"><strong>9</strong> faits / 9</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="9" aria-valuenow="9" aria-label="Traités hors audit (H)"><span style="width:100%"></span></div>
+  <p class="compteur-detail">tout est fait</p>
+</div>
+  </div>
+  <ul class="legende" aria-label="Légende">
+    <li><span class="coche coche-vert" role="img" aria-label="Fait">✓</span> Fait / fermé</li>
+    <li><span class="coche coche-orange" role="img" aria-label="Partiel">◐</span> Partiel ou en cours</li>
+    <li><span class="coche coche-gris" role="img" aria-label="À venir"></span> À venir / ouvert</li>
+    <li><span class="coche coche-barre" role="img" aria-label="Écarté">✕</span> Écarté</li>
+  </ul>
+</header>
+
+<section>
+  <h2>Plan D1 → D8</h2>
+  <div class="grille">
+<article class="carte carte-orange" id="D1">
+  <header class="carte-tete">
+    <span class="coche coche-orange" role="img" aria-label="Partiel">◐</span>
+    <div>
+      <h3><span class="id">D1</span> Mesurer la consommation</h3>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-orange">Partiel</span><span class="meta"><b>Effort</b> M</span><span class="meta"><b>Régression</b> aucune</span><span class="meta"><b>Acteur</b> Hermès</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> Compteur <code>llm/llm-usage.ts</code> branché sur les 4 briques du transport (<code>openAiChat</code>, <code>openAiChatTools</code>, ollama, claude). Compteur par run ventilé par modèle, avec un compteur explicite des appels non mesurés. 28 tests.</p>
+  <p class="bloc"><b class="lib lib-gris">Reste</b> La donnée n&#39;est exposée nulle part : pas d&#39;endpoint, pas d&#39;UI. Le compteur compte dans le vide.</p>
+  <p class="bloc"><b class="lib">Preuve</b> <code>server/src/llm/llm-usage.ts</code>, <code>wiki/compteur-jetons.md</code></p>
+  
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (1/1 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">B4</span> Consommation structurellement non mesurable</p>
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé par D1 (mesure) — la lecture reste ouverte.</p>
+  </div>
+</li></ul></div>
+</article>
+<article class="carte carte-gris" id="D2">
+  <header class="carte-tete">
+    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <div>
+      <h3><span class="id">D2</span> Armer le fusible de boucle</h3>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> S</span><span class="meta"><b>Régression</b> faible (assumée)</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> Le garde existe (<code>eleve-runtime.ts</code> via <code>relay-agentic.ts:249-253</code>).</p>
+  <p class="bloc"><b class="lib lib-gris">Reste</b> <code>ELEVE_BUDGET_PROMPT_CHARS</code> et <code>ELEVE_BUDGET_TOOL_CALLS</code> sont absents de <code>server/.env</code> : le fusible est strictement inerte. À calibrer après D1.</p>
+  <p class="bloc"><b class="lib">Preuve</b> <code>relay-agentic.ts:249-253</code></p>
+  <p class="bloc"><b class="lib">Dépend de</b> D1</p>
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/1 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B5</span> Fusible de coût inerte</p>
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li></ul></div>
+</article>
+<article class="carte carte-gris" id="D3">
+  <header class="carte-tete">
+    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <div>
+      <h3><span class="id">D3</span> Sonde MangoQA + règle verte durcie</h3>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> M</span></p>
+    </div>
+  </header>
+  
+  <p class="bloc"><b class="lib lib-gris">Reste</b> (a) Sonde de cerveau au démarrage : vérifier que le cerveau répond, pas seulement que le process vit. (b) Dans <code>mangoqa/src/verdict.ts:25</code>, compter les <code>not_applicable</code> des branches bloquantes dans <code>incomplete</code> — aujourd&#39;hui seul <code>skip</code> est compté, donc un audit qui n&#39;a rien vu peut sortir vert.</p>
+  <p class="bloc"><b class="lib">Preuve</b> <code>mangoqa/src/verdict.ts:25</code></p>
+  
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/2 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B1</span> MangoQA aveugle au dernier run sans alerte</p>
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B2</span> Feu Vert possible sur couverture quasi nulle</p>
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li></ul></div>
+</article>
+<article class="carte carte-gris" id="D4">
+  <header class="carte-tete">
+    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <div>
+      <h3><span class="id">D4</span> Faire voir le projet entier à l&#39;audit</h3>
+      <p class="metas"><span class="grav grav-G0">G0</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> M</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> <code>sortByPriority</code> est déjà appliqué en amont (<code>orchestrator.ts:115</code>, <code>MAX_FILES=40</code>).</p>
+  <p class="bloc"><b class="lib lib-gris">Reste</b> <code>llm.ts:265</code> passe toujours un seul lot de 24 000 caractères par branche, sans agrégation des constats. Visibilité mesurée : 12 % sur <code>etang-des-roseaux</code>.</p>
+  <p class="bloc"><b class="lib">Preuve</b> <code>orchestrator.ts:115</code>, <code>llm.ts:265</code></p>
+  
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/1 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B3</span> L&#39;audit voit un préfixe du projet, pas le projet</p>
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li></ul></div>
+</article>
+<article class="carte carte-barre" id="D5">
+  <header class="carte-tete">
+    <span class="coche coche-barre" role="img" aria-label="Écarté">✕</span>
+    <div>
+      <h3><span class="id">D5</span> <code>codeur</code> sur Claude + A/B</h3>
+      <p class="metas"><span class="etat etat-barre">Écarté</span><span class="meta"><b>Acteur</b> Raf</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> Décision de Raf du 2026-09-29 : Élève = <code>deepseek-v4.1-flash</code>, Maître d&#39;escalade = Opus 5.5.</p>
+  <p class="bloc"><b class="lib lib-gris">Reste</b> Remplacé par une mesure A/B DeepSeek↔GLM, pas par une bascule sèche.</p>
+  
+  
+  
+</article>
+<article class="carte carte-gris" id="D6">
+  <header class="carte-tete">
+    <span class="coche coche-gris" role="img" aria-label="À venir"></span>
+    <div>
+      <h3><span class="id">D6</span> Promouvoir les gates éprouvés, un par un</h3>
+      <p class="metas"><span class="grav grav-G1">G1</span><span class="etat etat-gris">À venir</span><span class="meta"><b>Effort</b> M</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> État mesuré : 4 actifs sur 43 (<code>TEMPORAL_AWARENESS</code>, <code>ELEVE_GATE_IMAGES</code>, <code>ELEVE_GATE_CONSTANTS</code> en défaut ; <code>ELEVE_CLOSURE_GATE=on</code> par <code>.env</code>) → 39 dormants.</p>
+  <p class="bloc"><b class="lib lib-gris">Reste</b> Candidats dans l&#39;ordre : <code>ELEVE_GATE_DUAL_SKIP_BLOCK</code> (corrige un faux vert, B8), <code>BRAIN_FALLBACK</code> (B7), <code>ELEVE_ETAT</code>, <code>ELEVE_RESUME</code>, puis <code>ELEVE_REFLEXION</code>, <code>ELEVE_MEMOIRE</code>.</p>
+  
+  
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/3 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B6</span> 39 gates dormants sur 43</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B7</span> Repli inter-cerveaux déclaré dans les données, désarmé par le code</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B8</span> Gardien aveugle rendant quand même un vert</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li></ul></div>
+</article>
+<article class="carte carte-vert" id="D7">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">D7</span> Cache du registre des cerveaux</h3>
+      <p class="metas"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> S</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> Cache invalidé sur <code>mtime</code>+taille, copie défensive, invalidation explicite à l&#39;écriture ; l&#39;édition à chaud de l&#39;Atelier reste prise en compte. 13 tests.</p>
+  
+  <p class="bloc"><b class="lib">Preuve</b> 13 tests</p>
+  
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (1/1 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">B10</span> <code>getBrain()</code> relisait le registre à chaque appel</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé par D7.</p>
+  </div>
+</li></ul></div>
+</article>
+<article class="carte carte-vert" id="D8">
+  <header class="carte-tete">
+    <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+    <div>
+      <h3><span class="id">D8</span> Doc de données + <code>tools</code> forgés</h3>
+      <p class="metas"><span class="grav grav-G2">G2</span><span class="etat etat-vert">Fait</span><span class="meta"><b>Effort</b> S</span><span class="meta"><b>Régression</b> aucune</span></p>
+    </div>
+  </header>
+  <p class="bloc"><b class="lib lib-vert">Fait</b> Chemins <code>server/src/data/</code> → <code>server/data/</code> corrigés dans <code>pipeline-eleve-qa.md</code> et <code>PRELAUNCH_CHECKLIST.md</code>. Champ <code>tools</code> fantôme retiré du contrat de forge : le sous-agent reçoit désormais la liste de ses outils réels. 11 specs conservées.</p>
+  
+  <p class="bloc"><b class="lib">Preuve</b> <code>pipeline-eleve-qa.md</code>, <code>PRELAUNCH_CHECKLIST.md</code></p>
+  
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (3/3 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">B9</span> Spécialistes annonçant des outils inexistants</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé par D8.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">B12</span> Dérive documentaire sur l&#39;emplacement des données</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé par D8.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">B13</span> Écart doc/code sur les budgets de boucle</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé par D8.</p>
+  </div>
+</li></ul></div>
+</article>
+  </div>
+</section>
+
+<section>
+  <h2>Faiblesses sans lot (1/7 fermées)</h2>
+  <div class="liste"><ul class="liste-grille"><li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B11</span> Registre vivant incomplet d&#39;un rôle</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
+    <p class="f-note"><code>codeur_frontiere</code> absent des 15 rôles.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B14</span> Table de coûts fausse dans les deux sens</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
+    <p class="f-note"><code>claude/opus</code> à 30 $/Mtok alors que le chemin passe par l&#39;abonnement ; <code>ollama/*</code> à 0 alors que tout passe par Ollama Cloud payant.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B15</span> Règle de centralisation des gates non tenue</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
+    <p class="f-note">65 <code>process.env.X === &quot;on&quot;</code> hors <code>flags.ts</code>.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B16</span> Deux registres de modèles sans source commune</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
+    
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B17</span> Un visage annoncé non câblé</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
+    <p class="f-note">Observateur-Conseil : README dit « Visage 2 », FAILLES dit « non câblé ».</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">B18</span> Entrée de répertoire accidentelle dans <code>server/</code></p>
+    <p class="f-meta"><span class="grav grav-G3">G3</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Fermé le 2026-09-29 : dossier parasite supprimé, cause corrigée dans <code>test-axioms-design.ts</code> — le test vérifie désormais qu&#39;aucun dossier parasite n&#39;est créé.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div>
+    <p class="f-titre"><span class="id">B19</span> Clés en clair et dupliquées</p>
+    <p class="f-meta"><span class="grav grav-G3">G3</span><span class="etat etat-gris">Ouvert</span></p>
+    <p class="f-note"><code>OLLAMA_API_KEY</code> = <code>ELEVE_API_KEY</code>, même valeur dans <code>server/.env</code> et <code>mangoqa/.env</code> (les deux <code>.env</code> sont bien git-ignorés).</p>
+  </div>
+</li></ul></div>
+</section>
+
+<section>
+  <h2>Traités hors audit</h2>
+  <div class="liste"><ul class="liste-grille"><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H1</span> Élève basculé sur <code>deepseek-v4.1-flash</code></p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. Partition créée (<code>models/deepseek.ts</code>), rôles du registre alignés, 9 tests.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H2</span> 8 rôles sur 15 pointaient un modèle retiré</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. Modèle retiré par Ollama le 2026-09-25 (<code>deepseek-v4-flash:0731</code>) : tout build qui les sollicitait mourait en HTTP 400 silencieux. Corrigé, plus un contrôle de pré-vol <code>/v1/models</code>.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H3</span> <code>orchestrateur</code> sorti de Xiaomi (quota épuisé)</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. 429 mesuré. Basculé sur Ollama Cloud.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H4</span> Le HTTP 400 « invalid tool call arguments » qui tuait chaque tour</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. Cause trouvée par sonde : la compaction tronquait les arguments d&#39;outil à 300 caractères bruts, coupant le JSON. Corrigé + invariant verrouillé par test + le corps d&#39;erreur est désormais journalisé (il était jeté).</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H5</span> Maître d&#39;escalade porté à Opus 5.5</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. 3 défauts pointaient encore Sonnet.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H6</span> MangoQA : Sonnet 5 primaire, repli Ollama DeepSeek v4.1 flash</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. Le repli était lui-même un modèle mort.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H7</span> Premier build complet prouvé de bout en bout</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. App Pomodoro générée par l&#39;Élève : build vert, 16/16 tests, 0×400, gate visuel 6/6 lois aux deux viewports après 3 FAIL corrigés à la cause, compteur prouvé par clic réel (25:00→24:56), aperçu durable <code>:8099</code>.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H8</span> Pré-vol « les modèles du registre existent-ils encore ? »</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. Ajouté aux skills.</p>
+  </div>
+</li>
+<li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
+  <div>
+    <p class="f-titre"><span class="id">H9</span> Deux commits posés, non poussés</p>
+    <p class="f-meta"><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Le 2026-09-29. <code>mangoai c7cead1</code>, <code>mangoqa 3f5a395</code>.</p>
+  </div>
+</li></ul></div>
+</section>
+
+<footer><p>Ne pas éditer ce fichier : modifier <code>suivi/plan.json</code> puis lancer <code>node suivi/build-suivi.mjs</code>.</p></footer>
+</main>
+</body>
+</html>
