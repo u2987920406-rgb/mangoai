@@ -20,7 +20,7 @@ import { DESIGN_SYSTEM_RULES, designSystemPromptSection } from "./design/design-
 import { identityPromptSection } from "./identity.js";
 import { selfKnowledgePromptSection } from "./self-knowledge.js";
 import { CAPABILITIES_CLAUSE, brainArchitectureClause } from "./capabilities.js";
-import { ARCHITECTURE_RULES, architecturePromptSection } from "./architecture.js";
+import { ARCHITECTURE_RULES, MODULARITY_RULES, architecturePromptSection } from "./architecture.js";
 import { LEXIQUE_RULES, lexiquePromptSection } from "./lexique.js";
 import { MIROIR_RULES, miroirPromptSection } from "./miroir.js";
 import { CLARIFICATION_RULES } from "./clarification.js";
@@ -517,7 +517,7 @@ Autonomous moodboard (night generation): run the moodboard above WITHOUT asking 
   // Chantier #38 — living architecture map: per-project technical structure
   // (components, pages, API, data, stack, decisions). Injected only when the
   // file exists (non-empty), so it never pollutes brand-new projects.
-  architecture: (ctx) => ARCHITECTURE_RULES + architecturePromptSection(ctx.projectDir),
+  architecture: (ctx) => ARCHITECTURE_RULES + MODULARITY_RULES + architecturePromptSection(ctx.projectDir),
   // Idée #45 — language contract (Ubiquitous Language): per-project shared
   // lexicon (natural term ↔ domain term ↔ component/file). Same "founding
   // project context" family as architecture, injected right after it. RULES

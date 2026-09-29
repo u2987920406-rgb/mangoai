@@ -98,6 +98,10 @@
     "test-backend-generator": {
       "tier": "offline"
     },
+    "test-blackboard-decay": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
     "test-blackboard-prune": {
       "tier": "offline"
     },
@@ -107,10 +111,10 @@
     "test-brain-endpoints": {
       "tier": "offline"
     },
-    "test-brain-facade": {
+    "test-brain-ensemble": {
       "tier": "offline"
     },
-    "test-brain-ensemble": {
+    "test-brain-facade": {
       "tier": "offline"
     },
     "test-brain-fallback": {
@@ -137,6 +141,9 @@
     "test-clapet": {
       "tier": "smoke"
     },
+    "test-cle-unique": {
+      "tier": "offline"
+    },
     "test-clicksource": {
       "tier": "offline"
     },
@@ -146,19 +153,22 @@
     "test-concept-registry": {
       "tier": "offline"
     },
+    "test-consommation-lue": {
+      "tier": "offline"
+    },
     "test-constellations": {
       "tier": "offline"
     },
     "test-core-utils": {
       "tier": "smoke"
     },
+    "test-cout-veridique": {
+      "tier": "offline"
+    },
     "test-cron-breaker": {
       "tier": "offline"
     },
     "test-cron-scheduler": {
-      "tier": "offline"
-    },
-    "test-watchdog-core": {
       "tier": "offline"
     },
     "test-delegate-live": {
@@ -215,11 +225,23 @@
     "test-eleve-bricks": {
       "tier": "offline"
     },
+    "test-eleve-compaction": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
     "test-eleve-content": {
       "tier": "offline"
     },
+    "test-eleve-design-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
     "test-eleve-document-tools": {
       "tier": "offline"
+    },
+    "test-eleve-external-vision-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
     },
     "test-eleve-flux-tools": {
       "tier": "offline"
@@ -241,6 +263,10 @@
     },
     "test-eleve-http-tools": {
       "tier": "offline"
+    },
+    "test-eleve-image-bank": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
     },
     "test-eleve-image-check": {
       "tier": "offline"
@@ -274,6 +300,10 @@
     },
     "test-eleve-runtime": {
       "tier": "offline"
+    },
+    "test-eleve-sharingan-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
     },
     "test-eleve-site-tools": {
       "tier": "offline"
@@ -311,6 +341,14 @@
     },
     "test-eleve-web-tools": {
       "tier": "offline"
+    },
+    "test-eleve-workflow": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
+    "test-eleve-youtube-tools": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
     },
     "test-esthete-agent": {
       "tier": "offline"
@@ -471,6 +509,9 @@
     "test-memory-migration": {
       "tier": "offline"
     },
+    "test-message-echec": {
+      "tier": "offline"
+    },
     "test-miroir": {
       "tier": "offline"
     },
@@ -531,6 +572,10 @@
     "test-preview": {
       "tier": "offline"
     },
+    "test-preview-live": {
+      "tier": "full",
+      "reason": "Installe réellement un template npm et lance Chromium/Vite. Aucun LLM."
+    },
     "test-preview-sweep": {
       "tier": "offline"
     },
@@ -546,14 +591,31 @@
     "test-projects": {
       "tier": "offline"
     },
+    "test-promotion-gates": {
+      "tier": "offline"
+    },
     "test-prompt-evolution": {
       "tier": "offline"
+    },
+    "test-publication-check": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
     },
     "test-radar": {
       "tier": "offline"
     },
+    "test-raf-tom": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
     "test-references": {
       "tier": "smoke"
+    },
+    "test-registre-complet": {
+      "tier": "offline"
+    },
+    "test-regle-structurelle": {
+      "tier": "offline"
     },
     "test-regression-catalog": {
       "tier": "offline"
@@ -612,6 +674,9 @@
     "test-sharingan-live": {
       "tier": "full",
       "reason": "Visite réellement stripe.com : accès réseau externe requis, pas un test offline."
+    },
+    "test-short-model-label": {
+      "tier": "offline"
     },
     "test-site-artifacts": {
       "tier": "offline"
@@ -724,6 +789,10 @@
     "test-temporal-context": {
       "tier": "offline"
     },
+    "test-tests-declares": {
+      "tier": "offline",
+      "reason": "garde-fou : tout fichier de test doit avoir son entree (sinon invisible en CI)"
+    },
     "test-tool-call-coerce": {
       "tier": "offline"
     },
@@ -751,6 +820,13 @@
     "test-vision-prewarm": {
       "tier": "offline"
     },
+    "test-watchdog-core": {
+      "tier": "offline"
+    },
+    "test-web-search": {
+      "tier": "offline",
+      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
+    },
     "test-webclone": {
       "tier": "offline"
     },
@@ -759,57 +835,6 @@
     },
     "test-working-memory": {
       "tier": "offline"
-    },
-    "test-short-model-label": {
-      "tier": "offline"
-    },
-    "test-eleve-compaction": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-blackboard-decay": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-web-search": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-eleve-workflow": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-eleve-sharingan-tools": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-eleve-youtube-tools": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-eleve-design-tools": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-eleve-external-vision-tools": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-publication-check": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-raf-tom": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-eleve-image-bank": {
-      "tier": "offline",
-      "reason": "Suite déterministe sans fournisseur réel ; intégrée à la vérification standalone."
-    },
-    "test-preview-live": {
-      "tier": "full",
-      "reason": "Installe réellement un template npm et lance Chromium/Vite. Aucun LLM."
     }
   }
 }
