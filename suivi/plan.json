@@ -367,8 +367,7 @@
     }
   ],
   "commits": {
-    "mangoqa": "f8e0f5b — B16 + B17 + B11",
-    "mangoai": "07f82a0 — B14 + B19 + B7 + B11 + tracker",
-    "avant": "4640924 D3+D4 · edbcd1b D6 · 24c8420 D2 · 8c1e013 preuve pixel"
+    "mangoqa": "75ad70f — Q1 + Q2 + B16 corrige · f8e0f5b — B16/B17/B11",
+    "mangoai": "df5dd75 — Q3 + Q4 + B11 · 07f82a0 — B14/B19/B7/B11 · 55bf687 — tracker final"
   }
 }
