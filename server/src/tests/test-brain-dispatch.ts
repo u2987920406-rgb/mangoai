@@ -114,15 +114,27 @@ async function run() {
 
   console.log("\n[7] estimatePipelineCost");
   {
-    // (2026-07-11) codeur = l'Élève Qwythos v2 Q6 LOCAL (ollama) : $0, souveraineté
-    // prouvée en réel — inclus ici pour couvrir le cas ollama à 3 agents.
-    const local = estimatePipelineCost(["optimiseur", "vision", "codeur"], 100_000);
-    check("agents ollama (optimiseur+vision+codeur) → coût 0", local.usd === 0 && !local.warning);
-    // orchestrateur = claude/opus : resté TARIFÉ (openai/* et claude/* = payant, plus $0).
-    const cloudOne = estimatePipelineCost(["orchestrateur"], 1_000_000);
-    check("orchestrateur claude/opus → coût > 0 (cloud tarifé)", cloudOne.usd > 0);
-    const cloud = estimatePipelineCost(["orchestrateur", "architecte"], 1_000_000);
-    check("2× claude/opus sur 1M tokens → coût élevé + warning", cloud.usd > 2 && cloud.warning);
+    // B14 (audit 2026-09-28) — la table indexe desormais sur la DESTINATION reelle.
+    // Ici le registre est celui des DEFAUTS : codeur/stratege/vision = daemon ollama
+    // LOCAL (vraiment gratuit) et orchestrateur/architecte = claude sur ABONNEMENT
+    // (0 credit API). Les deux valent donc 0 — et c'est la VERITE, pas un mensonge.
+    const localDefaut = estimatePipelineCost(["codeur", "stratege"], 100_000);
+    check("roles sur daemon ollama LOCAL → cout credits nul", localDefaut.usd === 0 && !localDefaut.warning);
+    const aboClaude = estimatePipelineCost(["orchestrateur"], 1_000_000);
+    check("role sur Claude ABONNEMENT → cout credits nul (pas d'alerte trompeuse)", aboClaude.usd === 0);
+
+    // La distinction qui compte : un role route vers Ollama CLOUD (facture) ne doit plus
+    // etre annonce a 0. On force un role sur le cloud et on verifie que le cout apparait.
+    const defauts = loadBrainRegistry();
+    const cloud: BrainConfig = { provider: "openai", model: "deepseek-v4.1-flash", baseUrl: "https://ollama.com/v1" };
+    saveBrainRegistry({ ...defauts, orchestrateur: { ...defauts.orchestrateur, ...cloud } });
+    const cloudCout = estimatePipelineCost(["orchestrateur"], 1_000_000);
+    check(`role sur Ollama CLOUD → cout NON nul (usd=${cloudCout.usd})`, cloudCout.usd > 0);
+    // L'alerte anti-derive se declenche sur une VRAIE derive, pas sur un run normal.
+    const gros = estimatePipelineCost(["orchestrateur"], 300_000_000);
+    check("volume de derive (300M tokens) → alerte", gros.usd > 2 && gros.warning);
+    // On rend le registre de test dans son etat d'origine pour les sections suivantes.
+    saveBrainRegistry(defauts);
   }
 
   console.log("\n[8] dispatch — mock ask, anti-injection, session");

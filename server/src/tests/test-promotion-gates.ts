@@ -96,7 +96,7 @@ check(`aucun gate actif n'est inconnu du registre (${inconnus.length} inconnu(s)
 // 2. Tout gate PROMU via D6 doit etre EXERCE par un test — c'est la condition de la methode.
 const promusSansTest = [...promus].filter((g) => !sourcesTests.includes(g));
 check(
-  `tout gate promu via D6 est couvert par un test (${promus.length} promu(s), ${promusSansTest.length} sans test : ${promusSansTest.join(",")})`,
+  `tout gate promu via D6 est couvert par un test (${promus.size} promu(s), ${promusSansTest.length} sans test : ${promusSansTest.join(",")})`,
   promusSansTest.length === 0,
 );
 

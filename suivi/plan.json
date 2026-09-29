@@ -145,15 +145,15 @@
       "gravite": "G0",
       "etat": "fait",
       "lot": "D1",
-      "note": "Fermé par D1 (mesure) — la lecture reste ouverte."
+      "note": "Ferme par D1 : le comptage ET la lecture. Le transport enregistrait l'usage depuis le debut, mais getLLMRun n'etait appele par aucun code de production — la consommation restait invisible. Desormais lue en fin de build et exposee par GET /api/llm-usage."
     },
     {
       "id": "B5",
       "titre": "Fusible de coût inerte",
       "gravite": "G0",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": "D2",
-      "note": ""
+      "note": "Ferme par D2 : le fusible etait cable mais jamais arme (ELEVE_BUDGET_* absents). Seuils poses et ancres sur l'existant (ELEVE_AGENTIC_MAX_ITER=36, CTX_MAX=60000) : 120000 car. de contexte, 60 appels d'outils. Sonde : arme et coherent. Test eleve-runtime : 70/70 dont budgetExhausted."
     },
     {
       "id": "B6",
@@ -167,9 +167,9 @@
       "id": "B7",
       "titre": "Repli inter-cerveaux déclaré dans les données, désarmé par le code",
       "gravite": "G1",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": "D6",
-      "note": ""
+      "note": "Ferme le 2026-09-29 (methode D6). Le registre declairait le repli (vision -> claude/haiku) et brain-dispatch.ts savait le jouer, mais le gate BRAIN_FALLBACK etait OFF : un cerveau en panne echouait SANS essayer son repli declare. Promu via D6 (preuve + garde localOnly respectee). Preuve : test-brain-fallback.ts 18/18 dont la garde localOnly ; test-promotion-gates.ts 7/7."
     },
     {
       "id": "B8",
@@ -199,9 +199,9 @@
       "id": "B11",
       "titre": "Registre vivant incomplet d'un rôle",
       "gravite": "G1",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": null,
-      "note": "`codeur_frontiere` absent des 15 rôles."
+      "note": "Ferme le 2026-09-29. Le type AgentId declare 16 roles, le registre vivant n'en avait que 15 : codeur_frontiere retombait sur son defaut de code {provider:'none'}, un role mort. Materialise sur un cerveau exploitable (claude/opus). Preuve : test-registre-complet.ts 4/4 (verrouille l'invariant tout role declare = une entree exploitable)."
     },
     {
       "id": "B12",
@@ -223,9 +223,9 @@
       "id": "B14",
       "titre": "Table de coûts fausse dans les deux sens",
       "gravite": "G2",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": null,
-      "note": "`claude/opus` à 30 $/Mtok alors que le chemin passe par l'abonnement ; `ollama/*` à 0 alors que tout passe par Ollama Cloud payant."
+      "note": "Ferme le 2026-09-29. La table indexait sur le TRANSPORT (provider) au lieu de la destination reelle : Opus a 30 $/Mtok alors que le chemin Claude passe par l'abonnement, et ollama/* a 0 alors que le registre route openai -> ollama.com donc FACTURE. Corrige a la source : cle sur baseUrl, trois voies distinctes (local 0, abonnement 0, cloud facture). Preuve : test-cout-veridique.ts 9/9, test-brain-dispatch.ts 39/39 (l'ancien test affirmait le mensonge, il a ete corrige)."
     },
     {
       "id": "B15",
@@ -239,17 +239,17 @@
       "id": "B16",
       "titre": "Deux registres de modèles sans source commune",
       "gravite": "G2",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": null,
-      "note": ""
+      "note": "Ferme le 2026-09-29. Aucun lien entre le registre de l'Atelier et le cerveau de l'auditeur : changer de cerveau cote MangoOS ne changeait rien a MangoQA, en silence. Cree src/cerveau-partage.ts : MangoQA lit le role auditeur du registre partage, aligne sa voie Ollama si l'exploitant n'a rien fixe, et SIGNALE toute divergence (le defaut etait le silence, pas la divergence). Cable au demarrage. Preuve : test-cerveau-partage.ts 18/18. Mesure sur la config reelle : divergence TROUVEE (registre=glm-5.3, QA_OLLAMA_MODEL=deepseek-v4.1-flash)."
     },
     {
       "id": "B17",
       "titre": "Un visage annoncé non câblé",
       "gravite": "G2",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": null,
-      "note": "Observateur-Conseil : README dit « Visage 2 », FAILLES dit « non câblé »."
+      "note": "Ferme le 2026-09-29 — l'audit etait PERIME sur ce point. Le code cable bien le visage 2 (index.ts l.99 et l.112, gate OBSERVER_ON) et sa fenetre temporelle est implementee (30 j, override QA_OBSERVER_WINDOW_DAYS) ; c'est FAILLES.md qui niait le cablage. Vrai defaut residuel : le gate QA_OBSERVER n'est PAS arme en prod, donc le README annoncait un visage actif qui ne tourne pas. Les deux docs corrigees pour dire l'etat REEL. Preuve : test-doc-honnete.ts 8/8."
     },
     {
       "id": "B18",
@@ -263,9 +263,9 @@
       "id": "B19",
       "titre": "Clés en clair et dupliquées",
       "gravite": "G3",
-      "etat": "ouvert",
+      "etat": "fait",
       "lot": null,
-      "note": "`OLLAMA_API_KEY` = `ELEVE_API_KEY`, même valeur dans `server/.env` et `mangoqa/.env` (les deux `.env` sont bien git-ignorés)."
+      "note": "Ferme le 2026-09-29. La meme valeur servait de OLLAMA_API_KEY ET ELEVE_API_KEY dans server/.env, et 15 roles du registre pointaient OLLAMA_API_KEY alors que le code ne resout que via apiKeyEnv/ELEVE_API_KEY : OLLAMA_API_KEY n'etait lu par AUCUN code. Unifie sur ELEVE_API_KEY (registre + .env), doublon neutralise en commentaire de trace, sauvegarde .env.bak-b19-* creee. Rotation = 1 seul endroit. Preuve : test-cle-unique.ts 7/7 (ne lit jamais la valeur d'une cle, seulement les noms). Cle de mangoqa intacte (son propre client Ollama la lit toujours)."
     }
   ],
   "horsAudit": [
@@ -338,6 +338,32 @@
       "etat": "fait",
       "date": "2026-09-29",
       "note": "`fs.mkdirSync` appelé inconditionnellement avant le writer : l'injection en test était court-circuitée et deux tests manuels échouaient en EACCES sur des chemins codés en dur (`/ws`, `/proj`). Le mkdir appartient désormais au writer par défaut. Corrigé dans `breakers`, `design-eye`, `suite-eye`, `observer`, `flux-eye` (tier 0 et 1). Production inchangée (aucun writer n'y est injecté) : `disjoncteur-runner` 21/21, `œil-design` 67/67."
+    }
+  ],
+  "decisions": [
+    {
+      "id": "Q1",
+      "titre": "Armer l'Observateur-Conseil (visage 2) ?",
+      "etat": "a trancher",
+      "note": "Le visage est CABLE et sa fenetre temporelle implementee, mais le gate QA_OBSERVER est ABSENT de .env donc OFF : il ne tourne pas. L'activer = QA_OBSERVER=on. Effet : suggestions texte, aucun garde-fou, aucun verdict. Risque nul pour l'audit."
+    },
+    {
+      "id": "Q2",
+      "titre": "Quel cerveau pour l'auditeur ? (divergence mesuree)",
+      "etat": "a trancher",
+      "note": "Divergence REELLE mesuree le 2026-09-29 : le registre de l'Atelier declare le role auditeur = openai/glm-5.3, alors que MangoQA tourne sur QA_OLLAMA_MODEL=deepseek-v4.1-flash. Depuis B16 cette divergence est SIGNALEE au demarrage (avant, elle etait muette). Deux sorties : changer le registre, ou assumer l'ecart."
+    },
+    {
+      "id": "Q3",
+      "titre": "Surveiller le fusible de boucle (D2)",
+      "etat": "a surveiller",
+      "note": "ELEVE_BUDGET_PROMPT_CHARS=120000 et ELEVE_BUDGET_TOOL_CALLS=60 sont ARMES et ancrees sur MAX_ITER=36 / CTX_MAX=60000. Le seuil de 60 appels n'a jamais ete atteint en usage reel : il n'est donc pas encore eprouve en conditions de production."
+    },
+    {
+      "id": "Q4",
+      "titre": "Lot D5 ecarte (ta decision)",
+      "etat": "ecarte",
+      "note": "D5 portait sur le routage DeepSeek/Ops. Ecarte par ta decision : le modele de delegation retenu est Sonnet 5.5 par defaut, escalade Opus 5.5 via sous-agent."
     }
   ]
 }

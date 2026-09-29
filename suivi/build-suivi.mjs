@@ -111,8 +111,19 @@ const lot = (l) => {
 </article>`;
 };
 
+const decision = (q) => `<article class="carte carte-decision">
+  <header class="carte-tete">
+    <div>
+      <h3><span class="id">${esc(q.id)}</span> ${txt(q.titre)}</h3>
+      <p class="metas"><span class="etat etat-decision">${txt(q.etat)}</span></p>
+    </div>
+  </header>
+  ${q.note ? `<p class="f-note">${txt(q.note)}</p>` : ""}
+</article>`;
+
 const orphelines = plan.faiblesses.filter((f) => f.lot == null);
 const horsAudit = plan.horsAudit ?? [];
+const decisions = plan.decisions ?? [];
 const cLots = compte(plan.lots);
 const cFaib = compte(plan.faiblesses);
 const cHors = compte(horsAudit);
@@ -162,6 +173,8 @@ code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:1em;b
 .etat-barre{background:#e2e2dc;color:#333;text-decoration:line-through}
 .grav{background:#fff;border:1px solid #8a8a84;color:#1c1c1c}
 .grav-G0{border-color:#b3261e;color:#9c1f18}
+.carte-decision{border-left-color:#7a3ea1}
+.etat-decision{background:#f3ecfa;color:#4a2168;border:1px solid #7a3ea1}
 .grav-G1{border-color:#a14f00;color:#8a4300}
 .bloc{margin-top:8px}
 .lib{font-weight:700;margin-right:4px}
@@ -220,7 +233,13 @@ ${orphelines.length ? `<section>
   <div class="liste"><ul class="liste-grille">${orphelines.map(faiblesse).join("\n")}</ul></div>
 </section>` : ""}
 
-${horsAudit.length ? `<section>
+${decisions.length ? `<section>
+  <h2>Décisions en attente — elles appartiennent à Raf</h2>
+  <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
+  <div class="grille">${decisions.map(decision).join("\n")}</div>
+</section>
+
+` : ""}${horsAudit.length ? `<section>
   <h2>Traités hors audit</h2>
   <div class="liste"><ul class="liste-grille">${horsAudit.map((h) => faiblesse({ ...h, note: [h.date && `Le ${h.date}.`, h.note].filter(Boolean).join(" ") })).join("\n")}</ul></div>
 </section>` : ""}
@@ -234,5 +253,6 @@ ${horsAudit.length ? `<section>
 writeFileSync(join(DIR, "suivi.html"), html);
 console.log(
   `suivi.html écrit — lots ${cLots.fait}/${cLots.total} faits · faiblesses ${cFaib.fait}/${cFaib.total} fermées` +
-    (horsAudit.length ? ` · hors audit ${cHors.fait}/${cHors.total}` : ""),
+    (horsAudit.length ? ` · hors audit ${cHors.fait}/${cHors.total}` : "") +
+    (decisions.length ? ` · décisions ${decisions.length}` : ""),
 );

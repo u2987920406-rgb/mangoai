@@ -160,26 +160,76 @@ export function sessionBudgetExceeded(s: PipelineSession): boolean {
 // Estimation de coût avant exécution
 // ---------------------------------------------------------------------------
 
-/** Prix indicatif en USD par million de tokens (entrée+sortie mélangés, ordre de grandeur). */
+/** Prix indicatif en USD par million de tokens (entrée+sortie mélangés, ordre de grandeur).
+ *
+ *  B14 (audit 2026-09-28) — cette table indexait sur le TRANSPORT (`provider`), pas sur la
+ *  RÉALITÉ DE FACTURATION. Deux erreurs en sens inverse, mesurées sur la config réelle :
+ *
+ *  1. `claude/*` à 6-30 $ alors que le chemin Claude de ce harnais passe par l'ABONNEMENT
+ *     Claude Code (`subscriptionEnv()` neutralise les clés API — jamais les crédits) et
+ *     qu'un audit MangoQA tourne sur Ollama Cloud. Coût crédits RÉEL = 0. Ce chiffre
+ *     dissuadait donc d'utiliser le meilleur modèle pour une raison financière qui
+ *     n'existe pas, et déclenchait l'alerte « anti-dérive » à tort.
+ *  2. `ollama/*` à 0 « local → gratuit » alors qu'il n'y a PAS de daemon Ollama local ici :
+ *     tous les rôles pointent `https://ollama.com/v1` (Ollama Cloud) derrière un provider
+ *     `openai`. Le coût réel n'était donc pas nul ET il était invisible.
+ *
+ *  On indexe désormais sur la DESTINATION réelle. `ABONNEMENT_*` = quota d'abonnement
+ *  (pas de crédits consommés : informer, ne pas alarmer). `PLATEFORME_*` = plateforme
+ *  cloud payante, tarifée. Un modèle cloud inconnu est volontairement PRUDENT (tarifé) :
+ *  mieux vaut une alerte à vérifier qu'une fausse gratuité. */
+const ABONNEMENT_CLAUDE = 0
+/** Plateformes cloud par défaut (baseUrl ≠ localhost) : tarifées. */
+const PLATEFORME_PAR_DEFAUT = 2
 const PRICE_PER_MTOK: Record<string, number> = {
-  "claude/opus": 30,
-  "claude/sonnet": 6,
-  "claude/haiku": 1.5,
-  "claude/*": 6,
+  // Voie ABONNEMENT Claude Code — 0 crédit. La chaîne de repli MangoQA en dépend.
+  "claude/opus": ABONNEMENT_CLAUDE,
+  "claude/sonnet": ABONNEMENT_CLAUDE,
+  "claude/haiku": ABONNEMENT_CLAUDE,
+  "claude/*": ABONNEMENT_CLAUDE,
+  // Voie CRÉDITS API explicite (hors abonnement) : là, les tarifs sont réels.
+  "anthropic/opus": 30,
+  "anthropic/sonnet": 6,
+  "anthropic/haiku": 1.5,
+  "anthropic/*": 6,
   "openai/*": 2,
   "deepseek/*": 0.5,
   "mistral/*": 1,
   "groq/*": 0.5,
   "litellm/*": 1,
-  "ollama/*": 0,   // local → gratuit
+  // Ollama Cloud (https://ollama.com/v1) — PAS gratuit. Un daemon LOCAL (localhost)
+  // reste, lui, réellement gratuit : voir `priceFor`, qui distingue les deux.
+  "ollama-cloud/*": 0.3,
 }
 
 const COST_WARNING_USD = 2
 
-function priceFor(provider: string, model?: string): number {
-  if (model && PRICE_PER_MTOK[`${provider}/${model}`] !== undefined) return PRICE_PER_MTOK[`${provider}/${model}`]
-  if (PRICE_PER_MTOK[`${provider}/*`] !== undefined) return PRICE_PER_MTOK[`${provider}/*`]
-  return 1
+/** L'endpoint est-il LOCAL (aucun coût plateforme) ? */
+function estLocal(baseUrl?: string): boolean {
+  if (!baseUrl) return false
+  return /localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\]/.test(baseUrl)
+}
+
+/** Le rôle est-il routé vers Ollama Cloud (payant) plutôt qu'un daemon local ? */
+function estOllamaCloud(baseUrl?: string): boolean {
+  return !!baseUrl && /ollama\.com/i.test(baseUrl)
+}
+
+function priceFor(provider: string, model?: string, baseUrl?: string): number {
+  // 1. Un endpoint LOCAL est réellement gratuit, quel que soit le transport.
+  if (estLocal(baseUrl)) return 0
+  // 2. Transport ollama NATIF sans baseUrl distant = le daemon LOCAL par défaut →
+  //    réellement gratuit (c'est le cas des défauts du registre).
+  if (provider === "ollama" && !baseUrl) return 0
+  // 3. Ollama Cloud : facturé (le registre route `openai` → `ollama.com`).
+  if (estOllamaCloud(baseUrl)) {
+    return PRICE_PER_MTOK[`${provider}/${model ?? ''}`] ?? PRICE_PER_MTOK['ollama-cloud/*']!
+  }
+  // 4. Modèle précis, puis joker du transport.
+  if (model && PRICE_PER_MTOK[`${provider}/${model}`] !== undefined) return PRICE_PER_MTOK[`${provider}/${model}`]!
+  if (PRICE_PER_MTOK[`${provider}/*`] !== undefined) return PRICE_PER_MTOK[`${provider}/*`]!
+  // 5. Transport non local non répertorié : prudent.
+  return baseUrl ? PLATEFORME_PAR_DEFAUT : 1
 }
 
 /**
@@ -194,7 +244,7 @@ export function estimatePipelineCost(
   let usd = 0
   for (const id of agents) {
     const brain = getBrain(id)
-    usd += priceFor(brain.provider, brain.model) * (tokens / 1_000_000)
+    usd += priceFor(brain.provider, brain.model, brain.baseUrl) * (tokens / 1_000_000)
   }
   usd = Math.round(usd * 10_000) / 10_000
   return { usd, warning: usd > COST_WARNING_USD }

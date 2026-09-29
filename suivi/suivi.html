@@ -49,6 +49,8 @@ code{font-family:ui-monospace,"Cascadia Mono",Consolas,monospace;font-size:1em;b
 .etat-barre{background:#e2e2dc;color:#333;text-decoration:line-through}
 .grav{background:#fff;border:1px solid #8a8a84;color:#1c1c1c}
 .grav-G0{border-color:#b3261e;color:#9c1f18}
+.carte-decision{border-left-color:#7a3ea1}
+.etat-decision{background:#f3ecfa;color:#4a2168;border:1px solid #7a3ea1}
 .grav-G1{border-color:#a14f00;color:#8a4300}
 .bloc{margin-top:8px}
 .lib{font-weight:700;margin-right:4px}
@@ -83,9 +85,9 @@ footer{margin-top:40px;color:#4a4a4a}
 </div>
     <div class="compteur">
   <p class="compteur-titre">Faiblesses (B)</p>
-  <p class="compteur-chiffre"><strong>12</strong> fermées / 19</p>
-  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="12" aria-label="Faiblesses (B)"><span style="width:63%"></span></div>
-  <p class="compteur-detail">7 restants</p>
+  <p class="compteur-chiffre"><strong>19</strong> fermées / 19</p>
+  <div class="barre" role="progressbar" aria-valuemin="0" aria-valuemax="19" aria-valuenow="19" aria-label="Faiblesses (B)"><span style="width:100%"></span></div>
+  <p class="compteur-detail">tout est fait</p>
 </div>
     <div class="compteur">
   <p class="compteur-titre">Traités hors audit (H)</p>
@@ -122,7 +124,7 @@ footer{margin-top:40px;color:#4a4a4a}
   <div>
     <p class="f-titre"><span class="id">B4</span> Consommation structurellement non mesurable</p>
     <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span></p>
-    <p class="f-note">Fermé par D1 (mesure) — la lecture reste ouverte.</p>
+    <p class="f-note">Ferme par D1 : le comptage ET la lecture. Le transport enregistrait l&#39;usage depuis le debut, mais getLLMRun n&#39;etait appele par aucun code de production — la consommation restait invisible. Desormais lue en fin de build et exposee par GET /api/llm-usage.</p>
   </div>
 </li></ul></div>
 </article>
@@ -138,12 +140,12 @@ footer{margin-top:40px;color:#4a4a4a}
   <p class="bloc"><b class="lib lib-gris">Reste</b> <code>ELEVE_BUDGET_PROMPT_CHARS</code> et <code>ELEVE_BUDGET_TOOL_CALLS</code> sont absents de <code>server/.env</code> : le fusible est strictement inerte. À calibrer après D1.</p>
   <p class="bloc"><b class="lib">Preuve</b> <code>relay-agentic.ts:249-253</code></p>
   <p class="bloc"><b class="lib">Dépend de</b> D1</p>
-  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (0/1 fermées)</p><ul><li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (1/1 fermées)</p><ul><li class="faiblesse">
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B5</span> Fusible de coût inerte</p>
-    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G0">G0</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme par D2 : le fusible etait cable mais jamais arme (ELEVE_BUDGET_* absents). Seuils poses et ancres sur l&#39;existant (ELEVE_AGENTIC_MAX_ITER=36, CTX_MAX=60000) : 120000 car. de contexte, 60 appels d&#39;outils. Sonde : arme et coherent. Test eleve-runtime : 70/70 dont budgetExhausted.</p>
   </div>
 </li></ul></div>
 </article>
@@ -223,7 +225,7 @@ footer{margin-top:40px;color:#4a4a4a}
   <p class="bloc"><b class="lib lib-gris">Reste</b> Candidats dans l&#39;ordre : <code>ELEVE_GATE_DUAL_SKIP_BLOCK</code> (corrige un faux vert, B8), <code>BRAIN_FALLBACK</code> (B7), <code>ELEVE_ETAT</code>, <code>ELEVE_RESUME</code>, puis <code>ELEVE_REFLEXION</code>, <code>ELEVE_MEMOIRE</code>.</p>
   
   
-  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (2/3 fermées)</p><ul><li class="faiblesse">
+  <div class="rattachees"><p class="sous-titre">Faiblesses rattachées (3/3 fermées)</p><ul><li class="faiblesse">
   <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B6</span> 39 gates dormants sur 43</p>
@@ -232,11 +234,11 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B7</span> Repli inter-cerveaux déclaré dans les données, désarmé par le code</p>
-    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme le 2026-09-29 (methode D6). Le registre declairait le repli (vision -&gt; claude/haiku) et brain-dispatch.ts savait le jouer, mais le gate BRAIN_FALLBACK etait OFF : un cerveau en panne echouait SANS essayer son repli declare. Promu via D6 (preuve + garde localOnly respectee). Preuve : test-brain-fallback.ts 18/18 dont la garde localOnly ; test-promotion-gates.ts 7/7.</p>
   </div>
 </li>
 <li class="faiblesse">
@@ -310,21 +312,21 @@ footer{margin-top:40px;color:#4a4a4a}
 </section>
 
 <section>
-  <h2>Faiblesses sans lot (2/7 fermées)</h2>
+  <h2>Faiblesses sans lot (7/7 fermées)</h2>
   <div class="liste"><ul class="liste-grille"><li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B11</span> Registre vivant incomplet d&#39;un rôle</p>
-    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-gris">Ouvert</span></p>
-    <p class="f-note"><code>codeur_frontiere</code> absent des 15 rôles.</p>
+    <p class="f-meta"><span class="grav grav-G1">G1</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme le 2026-09-29. Le type AgentId declare 16 roles, le registre vivant n&#39;en avait que 15 : codeur_frontiere retombait sur son defaut de code {provider:&#39;none&#39;}, un role mort. Materialise sur un cerveau exploitable (claude/opus). Preuve : test-registre-complet.ts 4/4 (verrouille l&#39;invariant tout role declare = une entree exploitable).</p>
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B14</span> Table de coûts fausse dans les deux sens</p>
-    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
-    <p class="f-note"><code>claude/opus</code> à 30 $/Mtok alors que le chemin passe par l&#39;abonnement ; <code>ollama/*</code> à 0 alors que tout passe par Ollama Cloud payant.</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme le 2026-09-29. La table indexait sur le TRANSPORT (provider) au lieu de la destination reelle : Opus a 30 $/Mtok alors que le chemin Claude passe par l&#39;abonnement, et ollama/* a 0 alors que le registre route openai -&gt; ollama.com donc FACTURE. Corrige a la source : cle sur baseUrl, trois voies distinctes (local 0, abonnement 0, cloud facture). Preuve : test-cout-veridique.ts 9/9, test-brain-dispatch.ts 39/39 (l&#39;ancien test affirmait le mensonge, il a ete corrige).</p>
   </div>
 </li>
 <li class="faiblesse">
@@ -336,19 +338,19 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B16</span> Deux registres de modèles sans source commune</p>
-    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
-    
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme le 2026-09-29. Aucun lien entre le registre de l&#39;Atelier et le cerveau de l&#39;auditeur : changer de cerveau cote MangoOS ne changeait rien a MangoQA, en silence. Cree src/cerveau-partage.ts : MangoQA lit le role auditeur du registre partage, aligne sa voie Ollama si l&#39;exploitant n&#39;a rien fixe, et SIGNALE toute divergence (le defaut etait le silence, pas la divergence). Cable au demarrage. Preuve : test-cerveau-partage.ts 18/18. Mesure sur la config reelle : divergence TROUVEE (registre=glm-5.3, QA_OLLAMA_MODEL=deepseek-v4.1-flash).</p>
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B17</span> Un visage annoncé non câblé</p>
-    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-gris">Ouvert</span></p>
-    <p class="f-note">Observateur-Conseil : README dit « Visage 2 », FAILLES dit « non câblé ».</p>
+    <p class="f-meta"><span class="grav grav-G2">G2</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme le 2026-09-29 — l&#39;audit etait PERIME sur ce point. Le code cable bien le visage 2 (index.ts l.99 et l.112, gate OBSERVER_ON) et sa fenetre temporelle est implementee (30 j, override QA_OBSERVER_WINDOW_DAYS) ; c&#39;est FAILLES.md qui niait le cablage. Vrai defaut residuel : le gate QA_OBSERVER n&#39;est PAS arme en prod, donc le README annoncait un visage actif qui ne tourne pas. Les deux docs corrigees pour dire l&#39;etat REEL. Preuve : test-doc-honnete.ts 8/8.</p>
   </div>
 </li>
 <li class="faiblesse">
@@ -360,13 +362,54 @@ footer{margin-top:40px;color:#4a4a4a}
   </div>
 </li>
 <li class="faiblesse">
-  <span class="coche coche-gris" role="img" aria-label="Ouvert"></span>
+  <span class="coche coche-vert" role="img" aria-label="Fait">✓</span>
   <div>
     <p class="f-titre"><span class="id">B19</span> Clés en clair et dupliquées</p>
-    <p class="f-meta"><span class="grav grav-G3">G3</span><span class="etat etat-gris">Ouvert</span></p>
-    <p class="f-note"><code>OLLAMA_API_KEY</code> = <code>ELEVE_API_KEY</code>, même valeur dans <code>server/.env</code> et <code>mangoqa/.env</code> (les deux <code>.env</code> sont bien git-ignorés).</p>
+    <p class="f-meta"><span class="grav grav-G3">G3</span><span class="etat etat-vert">Fait</span></p>
+    <p class="f-note">Ferme le 2026-09-29. La meme valeur servait de OLLAMA_API_KEY ET ELEVE_API_KEY dans server/.env, et 15 roles du registre pointaient OLLAMA_API_KEY alors que le code ne resout que via apiKeyEnv/ELEVE_API_KEY : OLLAMA_API_KEY n&#39;etait lu par AUCUN code. Unifie sur ELEVE_API_KEY (registre + .env), doublon neutralise en commentaire de trace, sauvegarde .env.bak-b19-* creee. Rotation = 1 seul endroit. Preuve : test-cle-unique.ts 7/7 (ne lit jamais la valeur d&#39;une cle, seulement les noms). Cle de mangoqa intacte (son propre client Ollama la lit toujours).</p>
   </div>
 </li></ul></div>
+</section>
+
+<section>
+  <h2>Décisions en attente — elles appartiennent à Raf</h2>
+  <p class="sous">Ni « fait » ni « à faire » : ces points ne se ferment pas par du code, ils se tranchent.</p>
+  <div class="grille"><article class="carte carte-decision">
+  <header class="carte-tete">
+    <div>
+      <h3><span class="id">Q1</span> Armer l&#39;Observateur-Conseil (visage 2) ?</h3>
+      <p class="metas"><span class="etat etat-decision">a trancher</span></p>
+    </div>
+  </header>
+  <p class="f-note">Le visage est CABLE et sa fenetre temporelle implementee, mais le gate QA_OBSERVER est ABSENT de .env donc OFF : il ne tourne pas. L&#39;activer = QA_OBSERVER=on. Effet : suggestions texte, aucun garde-fou, aucun verdict. Risque nul pour l&#39;audit.</p>
+</article>
+<article class="carte carte-decision">
+  <header class="carte-tete">
+    <div>
+      <h3><span class="id">Q2</span> Quel cerveau pour l&#39;auditeur ? (divergence mesuree)</h3>
+      <p class="metas"><span class="etat etat-decision">a trancher</span></p>
+    </div>
+  </header>
+  <p class="f-note">Divergence REELLE mesuree le 2026-09-29 : le registre de l&#39;Atelier declare le role auditeur = openai/glm-5.3, alors que MangoQA tourne sur QA_OLLAMA_MODEL=deepseek-v4.1-flash. Depuis B16 cette divergence est SIGNALEE au demarrage (avant, elle etait muette). Deux sorties : changer le registre, ou assumer l&#39;ecart.</p>
+</article>
+<article class="carte carte-decision">
+  <header class="carte-tete">
+    <div>
+      <h3><span class="id">Q3</span> Surveiller le fusible de boucle (D2)</h3>
+      <p class="metas"><span class="etat etat-decision">a surveiller</span></p>
+    </div>
+  </header>
+  <p class="f-note">ELEVE_BUDGET_PROMPT_CHARS=120000 et ELEVE_BUDGET_TOOL_CALLS=60 sont ARMES et ancrees sur MAX_ITER=36 / CTX_MAX=60000. Le seuil de 60 appels n&#39;a jamais ete atteint en usage reel : il n&#39;est donc pas encore eprouve en conditions de production.</p>
+</article>
+<article class="carte carte-decision">
+  <header class="carte-tete">
+    <div>
+      <h3><span class="id">Q4</span> Lot D5 ecarte (ta decision)</h3>
+      <p class="metas"><span class="etat etat-decision">ecarte</span></p>
+    </div>
+  </header>
+  <p class="f-note">D5 portait sur le routage DeepSeek/Ops. Ecarte par ta decision : le modele de delegation retenu est Sonnet 5.5 par defaut, escalade Opus 5.5 via sous-agent.</p>
+</article></div>
 </section>
 
 <section>
