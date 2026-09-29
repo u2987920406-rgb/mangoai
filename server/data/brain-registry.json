@@ -18,7 +18,7 @@
     "model": "deepseek-v4.1-flash",
     "baseUrl": "https://ollama.com/v1",
     "apiKeyEnv": "ELEVE_API_KEY",
-    "timeoutMs": 1800000
+    "timeoutMs": 300000
   },
   "vision": {
     "provider": "openai",

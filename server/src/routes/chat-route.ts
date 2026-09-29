@@ -560,7 +560,7 @@ app.post("/api/chat", async (req, res) => {
         ...(specialistProfile
           ? { profile: specialistProfile, eleveModel: specialistModel }
           : buildBinding
-            ? { profile: buildBinding.profile, eleveModel: buildBinding.model, provider: buildBinding.provider, toolPolicy: policyForBinding(buildBinding), endpoint: { baseUrl: buildBinding.baseUrl, apiKeyEnv: buildBinding.apiKeyEnv } }
+            ? { profile: buildBinding.profile, eleveModel: buildBinding.model, provider: buildBinding.provider, toolPolicy: policyForBinding(buildBinding), endpoint: { baseUrl: buildBinding.baseUrl, apiKeyEnv: buildBinding.apiKeyEnv, timeoutMs: buildBinding.timeoutMs } }
             : {}),
         systemFull,
         onLog: (line) => {

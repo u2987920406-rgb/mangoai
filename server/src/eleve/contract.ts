@@ -57,7 +57,9 @@ async function postEleveCompletions(
   // défaut. Comportement identique à l'ancienne boucle inline (mêmes codes, mêmes
   // libellés, timeout frais par tentative). Sinon un Élève cloud capable (Gemini free /
   // GLM) abandonnait au 1ᵉʳ 429 alors qu'il mène la boucle agentique.
-  return openAiChatTools({ url, key, model: model ?? ELEVE_MODEL, timeoutMs: ELEVE_FETCH_TIMEOUT_MS, messages, tools, retry: eleveRetryPolicy() });
+  // CHANTIER 3 — le timeout du ROLE (registre) prime sur la valeur globale :
+  // un role cloud ne doit pas heriter des 30 min prevus pour un runner local.
+  return openAiChatTools({ url, key, model: model ?? ELEVE_MODEL, timeoutMs: endpoint?.timeoutMs ?? ELEVE_FETCH_TIMEOUT_MS, messages, tools, retry: eleveRetryPolicy() });
 }
 
 /** Le transport injecté au runtime agentique (eleve-runtime.buildAgentic), lié à

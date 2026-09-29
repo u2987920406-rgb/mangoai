@@ -59,6 +59,10 @@ export interface BrainCard {
   baseUrl?: string;
   /** Nom de la variable d'env qui porte la clé API (ex. "ZHIPU_API_KEY") — jamais la clé elle-même. */
   apiKeyEnv?: string;
+  /** CHANTIER 3 (2026-09-29) — plafond de temps par appel pour ce rôle. Le registre
+   *  le déclarait DÉJÀ (`codeur: 1800000`) mais rien ne le lisait : le transport
+   *  utilisait ELEVE_FETCH_TIMEOUT_MS pour tous les rôles. */
+  timeoutMs?: number;
 }
 
 export interface BrainRegistry {

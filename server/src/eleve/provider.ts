@@ -97,6 +97,12 @@ export function isOpenAICompat(p: LLMProvider): boolean {
 export interface EndpointOverride {
   baseUrl?: string;
   apiKeyEnv?: string;
+  /** CHANTIER 3 (2026-09-29) - le registre DECLARE un timeoutMs par role
+   *  (codeur: 1_800_000 = 30 min) et personne ne le lisait : elevePost ne le
+   *  recevait jamais, donc le transport utilisait ELEVE_FETCH_TIMEOUT_MS pour
+   *  TOUS les roles, cloud compris. Mesure : les runs en echec ont paye 1801 s /
+   *  1707 s / 1664 s pour conclure 'injoignable'. Cable ici. */
+  timeoutMs?: number;
 }
 
 /** Résout l'endpoint (url + clé) d'un provider openai-compat. Défaut = endpoint

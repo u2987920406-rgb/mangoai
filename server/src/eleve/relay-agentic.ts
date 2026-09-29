@@ -193,7 +193,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       const pol = policyForBinding(b);
       return {
         system: agenticSystem,
-        post: elevePost(b.model, b.provider, { baseUrl: b.baseUrl, apiKeyEnv: b.apiKeyEnv }),
+        post: elevePost(b.model, b.provider, { baseUrl: b.baseUrl, apiKeyEnv: b.apiKeyEnv, timeoutMs: b.timeoutMs }),
         buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: pol.allowRun }),
         buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
         allowDelegate: pol.allowDelegate,

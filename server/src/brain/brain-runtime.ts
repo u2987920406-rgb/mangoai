@@ -33,6 +33,12 @@ export interface EleveBinding {
   baseUrl?: string;
   /** Nom de la variable d'env qui porte la clé API — JAMAIS la clé elle-même. */
   apiKeyEnv?: string;
+  /** CHANTIER 3 (2026-09-29) — timeout du ROLE, déclaré au registre (codeur:
+   *  1_800_000 = 30 min) mais JAMAIS transmis au transport avant ce correctif.
+   *  Un rôle cloud héritait donc des 30 min prévus pour un runner local : mesure,
+   *  les runs en échec ont payé 1801 s / 1707 s / 1664 s pour conclure
+   *  « injoignable ». Renseigné = le transport le respecte. */
+  timeoutMs?: number;
 }
 
 export interface RuntimeFallback {
@@ -43,6 +49,8 @@ export interface RuntimeFallback {
   baseUrl?: string;
   /** Nom de la variable d'env qui porte la clé API — JAMAIS la clé elle-même. */
   apiKeyEnv?: string;
+  /** CHANTIER 3 — timeout déclaré au registre pour ce rôle (cf. EleveBinding). */
+  timeoutMs?: number;
 }
 
 /** Le cerveau Élève « par défaut » (sans routage par intention) = l'agent `codeur`
@@ -61,7 +69,7 @@ export function globalFallback(): RuntimeFallback {
   // custom (baseUrl + NOM de variable d'env pour la clé). Absents aujourd'hui →
   // undefined ici, donc AUCUN changement de comportement (repli .env inchangé,
   // résolu au tout dernier moment dans eleve.ts:openAiEndpoint).
-  return { model, provider, profile: resolveProfile(model), baseUrl: c.baseUrl, apiKeyEnv: c.apiKeyEnv };
+  return { model, provider, profile: resolveProfile(model), baseUrl: c.baseUrl, apiKeyEnv: c.apiKeyEnv, timeoutMs: c.timeoutMs };
 }
 
 /** Profil RUNTIME d'un cerveau mesuré : la prose de famille (system, fichiers
@@ -77,12 +85,12 @@ export function resolveBinding(intention: Intention, fallback: RuntimeFallback =
   if (!card) {
     return {
       intention, model: fallback.model, provider: fallback.provider, profile: fallback.profile, card: null,
-      baseUrl: fallback.baseUrl, apiKeyEnv: fallback.apiKeyEnv,
+      baseUrl: fallback.baseUrl, apiKeyEnv: fallback.apiKeyEnv, timeoutMs: fallback.timeoutMs,
     };
   }
   return {
     intention, model: card.model, provider: card.provider, profile: profileForBrain(card), card,
-    baseUrl: card.baseUrl, apiKeyEnv: card.apiKeyEnv,
+    baseUrl: card.baseUrl, apiKeyEnv: card.apiKeyEnv, timeoutMs: card.timeoutMs,
   };
 }
 
