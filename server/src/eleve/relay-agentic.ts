@@ -58,6 +58,7 @@ import { ELEVE_MODEL, ELEVE_PROVIDER_DEFAULT, PROFILE, askEleveDispatch } from "
 import { elevePost, supportsTools, askEleveAgentic, AGENTIC_TOOL_CONTRACT, AGENTIC_FALLBACK_SYSTEM, AGENTIC_VISION_CLAUSE, ELEVE_BUILDER_PROMPT, ELEVE_CONTROLEUR_PROMPT } from "./contract.js";
 import { brainArchitectureClause } from "../capabilities.js";
 import { escalateToClaude } from "./escalade.js";
+import { withBrainFallback } from "./post-fallback.js";
 import { type RelayResult, type RelayOptions, type RelayDeps } from "./types.js";
 import { buildEleveUser } from "./relay-prompt.js";
 import { measureCraftSummary, runClosureParcours, runClosureMangoQA } from "./relay-closure.js";
@@ -180,7 +181,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
       if (agentType === "builder" || agentType === "controleur") {
         return {
           system: `${agenticSystem}\n\n${PERSONAS[agentType]}`,
-          post: elevePost(callModel, callProvider, callEndpoint),
+          post: withBrainFallback(elevePost(callModel, callProvider, callEndpoint), callModel, "codeur"),
           buildRegistry: (pd) => buildEleveActionTools(pd, { allowRun: false }),
           buildUser: (subtask) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
           allowDelegate: false,
@@ -219,7 +220,7 @@ export async function runAgenticEngine(ctx: RelayContext): Promise<RelayResult> 
     const runCtx = {
       projectDir,
       system: agenticSystem,
-      post: deps.agenticPost ?? elevePost(callModel, callProvider, callEndpoint),
+      post: deps.agenticPost ?? withBrainFallback(elevePost(callModel, callProvider, callEndpoint), callModel, "codeur"),
       buildRegistry: (pd: string) => withMemoire(pd, callPolicy.allowRun),
       buildUser: (subtask: string) => buildEleveUser(subtask, projectDir, "", injectMeans, callCaps, "", true),
       depth: 0,

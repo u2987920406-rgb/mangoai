@@ -531,6 +531,9 @@
     "test-nocturnal": {
       "tier": "offline"
     },
+    "test-post-fallback": {
+      "tier": "offline"
+    },
     "test-relay-bus": {
       "tier": "offline"
     },
