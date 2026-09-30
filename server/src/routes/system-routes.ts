@@ -12,6 +12,9 @@ import { isAgentBusy, releaseAgent } from "../agent/agent-lock.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
 import { loadHooks } from "../mango-hooks-config.js";
 import { getLLMRun, listLLMRuns } from "../llm/llm-usage.js";
+import { scanModel } from "../model-scan.js";
+import { ollamaChatTools } from "../llm/llm-transport.js";
+import { OLLAMA } from "../eleve/provider.js";
 import { gatesReport } from "../gates-status.js";
 import { hasProfile, bootstrapProfile, type OnboardingAnswers } from "../onboarding.js";
 
@@ -24,6 +27,28 @@ export function registerSystemRoutes(app: express.Express): void {
 // État de TOUS les interrupteurs (armés / OFF) + plafonds $ effectifs — gates-status.ts (audit dormant).
 app.get("/api/gates", (_req, res) => {
   res.json(gatesReport());
+});
+
+// Examen d'entrée d'un modèle Ollama LOCAL (#148) — bouton « scanner » de l'Atelier des cerveaux.
+// Audit dormant #36 : l'UI appelait cette route (AtelierCerveaux.jsx, AddModelModal.jsx) mais elle
+// n'existait plus côté serveur (scanModel n'avait plus que son CLI) → 404 à chaque clic. Local
+// uniquement : scanner un modèle cloud coûterait de l'argent à chaque clic.
+app.post("/api/brains/scan", express.json(), async (req, res) => {
+  const model = typeof req.body?.model === "string" ? req.body.model.trim() : "";
+  const provider = typeof req.body?.provider === "string" ? req.body.provider : "ollama";
+  if (!model || model.length > 200) return res.status(400).json({ error: "modèle manquant ou invalide" });
+  if (provider !== "ollama") return res.status(400).json({ error: "seuls les modèles Ollama locaux sont scannables ici" });
+  const run = (messages: Parameters<typeof ollamaChatTools>[0]["messages"], tools: Parameters<typeof ollamaChatTools>[0]["tools"]) =>
+    ollamaChatTools({ baseUrl: OLLAMA, model, timeoutMs: 120_000, messages, tools });
+  try {
+    const report = await scanModel(model, {
+      ask: async (system, user) => (await run([{ role: "system", content: system }, { role: "user", content: user }], null)).content,
+      post: (messages, tools) => run(messages, tools),
+    });
+    res.json({ card: { verdict: report.verdict }, summary: report.summary, report });
+  } catch (e) {
+    res.status(502).json({ error: `examen impossible : ${(e as Error).message}` });
+  }
 });
 
 app.get("/api/llm-usage", (_req, res) => {

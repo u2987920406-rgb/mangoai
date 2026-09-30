@@ -353,7 +353,7 @@ export interface BreakerTripLite {
 }
 
 export type BreakerVerdictResult =
-  | { available: true; safe: boolean; trips: BreakerTripLite[]; evaluatedAt: number }
+  | { available: true; safe: boolean; trips: BreakerTripLite[]; evaluatedAt: number; /** Bus silencieux (busLiveness.stale du verdict) : le Disjoncteur est aveugle. */ busStale?: boolean; busAgeMs?: number }
   | { available: false; reason: 'absent' | 'invalide' | 'illisible' }
 
 // Garde de forme minimale : on n'exige que `safe: boolean` + `trips: array` — le
@@ -380,6 +380,16 @@ function normalizeTrips(raw: unknown[]): BreakerTripLite[] {
     })
   }
   return out
+}
+
+// #9 (audit dormant) : `busLiveness.stale` était écrit par MangoQA mais lu par personne. On le remonte.
+function busLivenessOf(v: unknown): { busStale?: boolean; busAgeMs?: number } {
+  if (!v || typeof v !== 'object') return {}
+  const o = v as Record<string, unknown>
+  return {
+    ...(typeof o.stale === 'boolean' ? { busStale: o.stale } : {}),
+    ...(typeof o.ageMs === 'number' ? { busAgeMs: o.ageMs } : {}),
+  }
 }
 
 // Résout, lit et valide breaker-verdict.json. `workspaceDir` injectable pour les
@@ -417,6 +427,7 @@ export function readBreakerVerdict(workspaceDir: string = WORKSPACE_DIR): Breake
     safe: parsed.safe,
     trips: normalizeTrips(parsed.trips),
     evaluatedAt: typeof o.evaluatedAt === 'number' ? o.evaluatedAt : 0,
+    ...busLivenessOf(o.busLiveness),
   }
 }
 

@@ -2,6 +2,8 @@
 import assert from "node:assert/strict";
 import { flag } from "../flags.js";
 import { freshBreakerVerdict, BREAKER_VERDICT_MAX_AGE_MS } from "../mangoqa.js";
+import { warnIfBusSilent, resetBusSilenceWarning } from "../night-guards.js";
+import { readPerimeterFlags } from "../perimeter.js";
 import { decideBreakerStop } from "../nocturnal.js";
 import { finiteBudgetUsd, DEFAULT_NIGHT_BUDGET_USD } from "../nocturnal-budget.js";
 
@@ -28,4 +30,18 @@ assert.equal(read, 0);
 // budgets à valeur propre : jamais 0
 for (const raw of [undefined, "", "0", "x"]) assert.equal(finiteBudgetUsd(raw), DEFAULT_NIGHT_BUDGET_USD);
 assert.equal(finiteBudgetUsd("3"), 3);
+// Audit dormant #3 : les 3 garde-fous exigés par le périmètre autonome sont désormais armés d'emblée
+for (const k of ["MANGOQA_STOP_AUTHORITY", "NOCTURNAL_BUDGET_HARD", "NOCTURNAL_QA_BUS"]) delete process.env[k];
+assert.deepEqual(readPerimeterFlags(), { stopAuthority: true, budgetHard: true, qaBus: true });
+
+// Bus silencieux : alerte une fois, jamais un arrêt
+resetBusSilenceWarning();
+const msgs: string[] = [];
+const silent = { available: true as const, safe: true, trips: [], evaluatedAt: now, busStale: true, busAgeMs: 4 * 3600_000 };
+assert.equal(warnIfBusSilent(silent, (m) => msgs.push(m)), true);
+assert.equal(warnIfBusSilent(silent, (m) => msgs.push(m)), false, "une seule fois");
+assert.match(msgs[0], /BUS SILENCIEUX depuis 240 min/);
+assert.equal(decideBreakerStop(true, () => silent).stop, false, "un Bus muet n'arrête pas la nuit");
+resetBusSilenceWarning();
+assert.equal(warnIfBusSilent({ ...silent, busStale: false }, () => {}), false);
 console.log("✓ test-night-guards");

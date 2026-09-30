@@ -12,7 +12,7 @@
 import { flag } from "./flags.js";
 import { getBus } from "./kernel/kernel-bus.js";
 import { installMangoQaBridge } from "./kernel/kernel-mangoqa-bridge.js";
-import { freshBreakerVerdict } from "./mangoqa.js";
+import { freshBreakerVerdict, type BreakerVerdictResult } from "./mangoqa.js";
 import { decideBreakerStop } from "./nocturnal.js";
 import { nightBudgetGate } from "./nocturnal-budget.js";
 import { combineBreakerVerdict, listPerimeterIncidents } from "./perimeter-incidents.js";
@@ -29,14 +29,28 @@ export function installNightBusExport(): void {
   installMangoQaBridge(getBus());
 }
 
+let busSilenceWarned = false;
+/** Alerte (une fois par process) quand le Disjoncteur signale un Bus silencieux : ses protections de coût
+ * sont alors aveugles. N'ARRÊTE pas la nuit (un Bus muet n'est pas une preuve de danger, et MangoQA seul
+ * ne peut pas trancher) — mais l'information n'est plus perdue. Audit dormant #9. */
+export function warnIfBusSilent(v: BreakerVerdictResult, warn: (s: string) => void = console.warn): boolean {
+  if (busSilenceWarned || !v.available || !v.busStale) return false;
+  busSilenceWarned = true;
+  warn(`[night-guards] ⚠ BUS SILENCIEUX depuis ${Math.round((v.busAgeMs ?? 0) / 60_000)} min — le Disjoncteur MangoQA est aveugle sur les coûts (pont d'export du Bus mort ?).`);
+  return true;
+}
+export function resetBusSilenceWarning(): void { busSilenceWarned = false; }
+
 export function nightStopGate(): NightStopDecision {
   // Les runners autonomes sont des PROCESS SÉPARÉS du serveur : sans ce pont, leurs événements
   // de coût resteraient dans la mémoire du script et jamais dans bus-events.jsonl (idempotent ;
   // le serveur l'installe déjà de son côté). Installé ici, à la première frontière d'itération.
   installNightBusExport();
-  const breaker = decideBreakerStop(flag("MANGOQA_STOP_AUTHORITY"), () =>
-    combineBreakerVerdict(freshBreakerVerdict(), listPerimeterIncidents()),
-  );
+  const breaker = decideBreakerStop(flag("MANGOQA_STOP_AUTHORITY"), () => {
+    const v = freshBreakerVerdict();
+    warnIfBusSilent(v);
+    return combineBreakerVerdict(v, listPerimeterIncidents());
+  });
   if (breaker.stop) return { stop: true, cause: "mangoqa-breaker", reason: breaker.reason };
   const budget = nightBudgetGate();
   if (budget.stop) return { stop: true, cause: "budget-hard", reason: budget.reason };

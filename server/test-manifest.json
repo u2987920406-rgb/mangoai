@@ -531,6 +531,9 @@
     "test-nocturnal": {
       "tier": "offline"
     },
+    "test-brains-scan-route": {
+      "tier": "offline"
+    },
     "test-gates-status": {
       "tier": "offline"
     },
