@@ -33,6 +33,11 @@ export interface RelayConfig {
 }
 
 export interface RelayContext extends RelayConfig {
+  /** CHANTIER 5b — horodatage de DEBUT du tour (ms epoch), lu sur .turn-ledger.json.
+   *  Ancre du signal « ce tour a produit du code » : les fichiers naissent PENDANT le
+   *  run, donc ni HEAD-au-demarrage ni `git status` (propre apres le commit du tour) ne
+   *  peuvent trancher. 0 = ledger absent -> aucune conclusion. */
+  turnStartedAt: number;
   inspectReady: () => Promise<Inspection>;
   finalizeEscalation: (
     lastErr: string,

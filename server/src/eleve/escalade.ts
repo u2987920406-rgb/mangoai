@@ -116,8 +116,12 @@ export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom:
     escProfile.escalateAppendix, // "" pour GENERIC → prompt inchangé
   ].join("\n");
 
-  // CHANTIER 5b — l'Élève a-t-il DÉJÀ écrit du code avant l'escalade ? (voir types.ts)
-  const codeChangedBefore = hasRealCodeChange(await gitDirtyPaths(ctx.projectDir), new Set<string>());
+  // CHANTIER 5b — l'Élève a-t-il DÉJÀ écrit du code avant l'escalade ?
+  // PIEGE MESURE (4 runs reels) : cette ligne RECALCULAIT le drapeau au lieu de lire
+  // `ctx.codeChangedBefore` — une valeur declaree dans le type et JAMAIS lue. Le
+  // recalcul (git status au moment de l'escalade) est faux des que le tour a committe
+  // son travail, et ecrasait l'ancre de tour posee par l'appelant. Meme famille que B11.
+  const codeChangedBefore = ctx.codeChangedBefore ?? hasRealCodeChange(await gitDirtyPaths(ctx.projectDir), new Set<string>());
   const filesBefore = await gitDirtyPaths(ctx.projectDir);
 
   const q = query({

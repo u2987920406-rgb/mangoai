@@ -279,13 +279,28 @@ async function deterministic(): Promise<void> {
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
-  // D5) git-signals : un fichier de code sale AVANT l'escalade = vrai changement.
+  // D5) CHANTIER 5b — le signal reel : un projet COMMITTE son travail, donc au moment
+  // de l'escalade `git status` est PROPRE. Le seul signal fiable est HEAD qui bouge.
   {
-    const vide = new Set<string>();
-    check("code écrit avant l'escalade = vrai changement",
-      hasRealCodeChange(vide, new Set(["src/game/loop.js"])));
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-D5-"));
+    execSync("git init -q", { cwd: dir });
+    execSync("git config user.email t@t && git config user.name t", { cwd: dir, shell: "/bin/bash" });
+    fs.writeFileSync(path.join(dir, "a.js"), "export const a = 1;\n");
+    execSync("git add -A && git commit -q -m init", { cwd: dir, shell: "/bin/bash" });
+    const headAvant = execSync("git rev-parse HEAD", { cwd: dir }).toString().trim();
+    // le tour ecrit du code PUIS committe (comportement reel : commitVersion).
+    fs.writeFileSync(path.join(dir, "b.js"), "export const b = 1;\n");
+    execSync("git add -A && git commit -q -m tour", { cwd: dir, shell: "/bin/bash" });
+    const headApres = execSync("git rev-parse HEAD", { cwd: dir }).toString().trim();
+    check("cas (b) depot PROPRE apres le commit du tour (le piege)", execSync("git status --porcelain", { cwd: dir }).toString().trim() === "");
+    check("cas (b) HEAD a bouge -> le tour a produit du code", headApres !== headAvant);
+    // cas (a) : les fichiers sont encore NON COMMITES -> c'est git status qui parle.
+    fs.writeFileSync(path.join(dir, "c.js"), "export const c = 1;\n");
+    check("cas (a) non committe -> git status le voit",
+      hasRealCodeChange(new Set<string>(), new Set(execSync("git status --porcelain", { cwd: dir }).toString().split("\n").map((l) => l.slice(3).trim()).filter(Boolean))));
     check("les métadonnées seules ne comptent pas",
-      !hasRealCodeChange(vide, new Set([".lexique.md", ".architecture.md"])));
+      !hasRealCodeChange(new Set<string>(), new Set([".lexique.md", ".architecture.md"])));
+    fs.rmSync(dir, { recursive: true, force: true });
   }
 
   // D6) LA combinaison qui a causé le faux négatif — les 4 cas, exhaustifs.

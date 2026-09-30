@@ -55,7 +55,11 @@ import { constellationsSection } from "../constellations.js";
 import { ELEVE_MODEL, ELEVE_PROVIDER_DEFAULT, PROFILE, askEleveDispatch } from "./provider.js";
 import { elevePost, supportsTools, askEleveAgentic, AGENTIC_TOOL_CONTRACT, AGENTIC_FALLBACK_SYSTEM, AGENTIC_VISION_CLAUSE } from "./contract.js";
 import { escalateToClaude } from "./escalade.js";
-import { gitDirtyPaths, hasRealCodeChange } from "../git-signals.js";
+import { execFile } from "node:child_process";
+import { tourAProduitDuCode } from "../git-signals.js";
+import { promisify } from "node:util";
+
+const execFileAsync = promisify(execFile);
 
 import { type RelayResult, type RelayOptions, type RelayDeps } from "./types.js";
 import { type RelayContext } from "./relay-config.js";
@@ -76,17 +80,13 @@ export async function finalizeEscalationPhase(
     let axiomAny = false;
     let costTotal = 0;
     // CHANTIER 5b — le TOUR a-t-il produit du code, AVANT que le Maître soit appelé ?
-    // (mesure 2026-09-29 : l'Élève écrit ses 19 modules puis atteint son plafond ; le
-    // Maître reçoit un projet déjà fait, ne change rien, et le tour — pourtant jouable —
-    // était déclaré « aucun fichier modifié »). Comparaison HEAD avant / après : fiable,
-    // l'Élève committe son travail (commitVersion) en fin de tour.
-    // Vérifié sur le run réel : le commit du projet arrive APRÈS l'escalade, donc
-    // HEAD n'a pas encore bougé. Le signal fiable est l'état NON COMMITTÉ du dépôt
-    // (les modules écrits par l'Élève y sont encore).
-    let eleveCodeChanged = false;
-    try {
-      eleveCodeChanged = hasRealCodeChange(new Set<string>(), await gitDirtyPaths(projectDir));
-    } catch { /* pas un dépôt git : rien de prouvable */ }
+    // Mesure 2026-09-30 (4 runs reels de suite) : l'Élève écrit ses modules, atteint son
+    // plafond, le Maître recoit un projet DEJA FAIT et ne change rien (a raison) — et le
+    // tour, pourtant jouable, etait declare « aucun fichier modifie ».
+    // Ancres rejetees, mesurees : HEAD-au-demarrage (lu avant la creation du depot par le
+    // template -> ""), git status (propre des que le tour a committe : cas normal).
+    // Ancre retenue : l'horodatage de debut de tour, pose par la route a l'ouverture.
+    const eleveCodeChanged = await tourAProduitDuCode(projectDir, ctx.turnStartedAt);
 
     for (let gTour = 0; ; gTour++) {
       push(`⤴ ESCALADE vers le MAÎTRE (Claude/${maitreModel})${gTour > 0 ? ` — re-correction clôture (${gTour}/${maxMaitreGate})` : esc2?.incomplete ? " — TERMINER la tâche" : ""}`);

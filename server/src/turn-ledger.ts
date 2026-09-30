@@ -53,6 +53,19 @@ export function readTurnLedger(dir: string): TurnLedgerEntry | null {
 
 /** Pose le marqueur "en vol" — appelé le PLUS TÔT possible dans un tour, avant tout
  *  travail long. Écrit SYNCHRONE (pas de throttle) : c'est l'ancre anti-crash. */
+/** CHANTIER 5b — l'horodatage de DEBUT du tour en cours (ms epoch), lu sur le ledger.
+ *  Sert d'ancre fiable : tout fichier de code modifie apres cet instant est du travail
+ *  de CE tour. 0 si le ledger est absent ou illisible (aucune conclusion possible). */
+export function turnStartedAtMs(dir: string): number {
+  try {
+    const raw = fs.readFileSync(file(dir), "utf8");
+    const t = Date.parse(JSON.parse(raw).startedAt ?? "");
+    return Number.isFinite(t) ? t : 0;
+  } catch {
+    return 0;
+  }
+}
+
 export function startTurn(dir: string, turnId: string): void {
   try {
     fs.mkdirSync(dir, { recursive: true });

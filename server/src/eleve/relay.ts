@@ -5,6 +5,7 @@
 //   1. L'Élève (modèle OSS local) tente à coût zéro ; 2. MangoOS applique & juge ;
 //   3. build vert → succès Élève ; 4. après MAX échecs → escalade Maître (Claude).
 import fs from "node:fs";
+import { turnStartedAtMs } from "../turn-ledger.js";
 import path from "node:path";
 import { spawn } from "node:child_process";
 import { inspectProject, type Inspection } from "../inspection.js";
@@ -82,7 +83,16 @@ export async function runRelay(
   deps: RelayDeps = defaultRelayDeps,
 ): Promise<RelayResult> {
   // Config résolue (surcharge par appel + ENV) — corps extrait dans relay-config.
-  const cfg = resolveRelayConfig(task, projectDir, opts, deps);
+  // CHANTIER 5b — HEAD du projet AVANT le tour. Les projets COMMITTENT leur travail
+  // (commitVersion) : au moment de l'escalade, `git status` est donc PROPRE et
+  // l'ancien controle (dirty + Maitre seul) voyait « aucun fichier modifie » sur un
+  // jeu pourtant ecrit et JOUABLE (mesure 2026-09-29/30, 2 runs de suite).
+  // CHANTIER 5b — ancre du tour : les fichiers sont crees PAR LE RUN, donc un
+  // `git rev-parse` au demarrage ne voit encore aucun depot, et le tour committe son
+  // travail (git status devient propre). L'horodatage de debut de tour (.turn-ledger)
+  // est la seule ancre valable dans tous les cas.
+  const turnStartedAt = turnStartedAtMs(projectDir);
+  const cfg = { ...resolveRelayConfig(task, projectDir, opts, deps), turnStartedAt };
   const { push } = cfg;
 
   // Sans dépendances, l'inspection renverrait un faux "no-deps" — on les pose une fois.
