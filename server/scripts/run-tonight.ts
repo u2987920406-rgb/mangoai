@@ -23,6 +23,7 @@ import { runEvolution } from "../src/prompt-evolution.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "../src/vision.js";
 import { TONIGHT, type Spec } from "../src/tonight-specs.js";
 import { flag } from "../src/flags.js";
+import { nightStopGate } from "../src/night-guards.js";
 import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "../src/nocturnal-budget.js";
 
 const STATE_FILE   = path.join(WORKSPACE_DIR, ".tonight.state.json");
@@ -290,7 +291,7 @@ async function main(): Promise<void> {
       break;
     }
     // Frontière d'itération — jamais en cours de génération. Gate OFF → 0 I/O.
-    const budgetStop = decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd, globalBudgetToday(), () => readGlobalBudgetState());
+    const budgetStop = nightStopGate(); // Disjoncteur MangoQA + plafond $ fini, une seule porte (night-guards.ts)
     if (budgetStop.stop) {
       log(`💰 ${budgetStop.reason} — arrêt propre (${results.length}/${SPECS.length} projet(s) traité(s)).`);
       break;

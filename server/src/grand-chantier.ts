@@ -9,7 +9,7 @@
 // Garde-fous (non négociables, fidèles au reste du système) :
 //   • CHECKPOINT resumable (.grand-chantier.state.json) calqué sur run-finish.ts →
 //     survit à une coupure : on reprend à l'incrément non fait.
-//   • BUDGET coût (GRAND_CHANTIER_BUDGET_USD, 0 = illimité) → arrêt PROPRE à la limite.
+//   • BUDGET coût (GRAND_CHANTIER_BUDGET_USD, défaut FINI 20 $ ; seul opts.budgetUsd=0 explicite = illimité) → arrêt PROPRE à la limite.
 //   • DISJONCTEUR par incrément : un incrément qui échoue (build/tests rouges) après
 //     son budget de tentatives est mis en QUARANTAINE (state.failed) → on ne boucle pas
 //     dessus à l'infini ; on passe au suivant (ou on s'arrête selon stopOnFailure).
@@ -32,6 +32,7 @@ import {
   type ProjectPlan,
   type Increment,
 } from "./project-plan.js";
+import { finiteBudgetUsd } from "./nocturnal-budget.js";
 import { runRelay } from "./eleve.js";
 import { inspectProject, runProjectTests } from "./inspection.js";
 
@@ -158,7 +159,7 @@ export async function runGrandChantier(
   opts: GrandChantierOptions = {},
   deps: GrandChantierDeps = realGrandChantierDeps,
 ): Promise<GrandChantierResult> {
-  const budgetUsd = opts.budgetUsd ?? Number(process.env.GRAND_CHANTIER_BUDGET_USD ?? 0);
+  const budgetUsd = opts.budgetUsd ?? finiteBudgetUsd(process.env.GRAND_CHANTIER_BUDGET_USD); // fini par défaut (audit dormant 2026-09-30)
   const attempts = Math.max(1, opts.attemptsPerIncrement ?? 2);
   const maxTurns = Math.max(1, opts.maxTurns ?? 200);
   const stopOnFailure = opts.stopOnFailure ?? false;

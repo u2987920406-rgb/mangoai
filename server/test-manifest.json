@@ -531,6 +531,9 @@
     "test-nocturnal": {
       "tier": "offline"
     },
+    "test-night-guards": {
+      "tier": "offline"
+    },
     "test-nocturnal-budget-default": {
       "tier": "offline"
     },

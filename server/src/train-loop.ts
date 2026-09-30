@@ -29,6 +29,7 @@ import { runAsActor } from "./perimeter-context.js";
 import { recordTurnMetrics } from "./metrics.js";
 import { inferProjectType } from "./blueprints.js";
 import { flag } from "./flags.js";
+import { nightStopGate } from "./night-guards.js";
 import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { interruptAgent } from "./agent/agent.js";
 
@@ -293,12 +294,7 @@ async function main(): Promise<void> {
     // Même frontière que le cap --max-escalations ci-dessus : arrêt NET AVANT
     // l'itération suivante si le cumul $ (partagé Phase 0/1/2) dépasse le
     // plafond — jamais en cours de génération. Gate OFF → 0 I/O.
-    const budgetStop = decideBudgetStop(
-      flag("NOCTURNAL_BUDGET_HARD"),
-      globalBudgetCapUsd,
-      globalBudgetToday(),
-      () => readGlobalBudgetState(),
-    );
+    const budgetStop = nightStopGate(); // Disjoncteur MangoQA + plafond $ fini, une seule porte (night-guards.ts)
     if (budgetStop.stop) {
       console.warn(`[train] 💰 ${budgetStop.reason} — arrêt propre (${stats.done}/${i} itération(s) faite(s)).`);
       break;

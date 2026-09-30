@@ -29,7 +29,7 @@ import { runAxiomValidation, appendConfirmedAxiom } from "./axioms-validation.js
 import { safeEmbed } from "./notes-rag.js";
 import { recordCurationSample, getTunedCurationPriority } from "./kernel/kernel-curation-effect.js";
 import { flag } from "./flags.js";
-import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
+import { freshBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel/kernel-chat-bridge.js";
 import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { maybeRunStrategistCycle } from "./stratege/stratege-run.js";
@@ -608,7 +608,7 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
       // PAS modifié, il continue de recevoir un simple `() => BreakerVerdictResult`.
       const breakerStop = decideBreakerStop(
         flag("MANGOQA_STOP_AUTHORITY"),
-        () => combineBreakerVerdict(readBreakerVerdict(WORKSPACE_DIR), listPerimeterIncidents()),
+        () => combineBreakerVerdict(freshBreakerVerdict(), listPerimeterIncidents()),
       );
       if (breakerStop.stop) {
         console.warn(`[nocturnal] ⚡ ${breakerStop.reason} — arrêt propre du lot (${i}/${prompts.length} projet(s) générés).`);

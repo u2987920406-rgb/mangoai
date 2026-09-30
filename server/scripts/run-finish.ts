@@ -14,6 +14,8 @@ import "dotenv/config";
 import fs from "node:fs";
 import path from "node:path";
 import { projectDir, projectExists, WORKSPACE_DIR } from "../src/projects.js";
+import { nightStopGate } from "../src/night-guards.js";
+import { finiteBudgetUsd, nightBudgetSpend } from "../src/nocturnal-budget.js";
 import { judgeProject } from "../src/nocturnal.js";
 import { FINISH_SPECS } from "../src/tonight-specs.js";
 import { flag } from "../src/flags.js";
@@ -208,7 +210,7 @@ async function main(): Promise<void> {
   // Garde-budget : Claude finit les apps une par une ; dès que le cumul atteint
   // FINISH_BUDGET_USD, on s'arrête PROPREMENT (les apps non finies restent en
   // l'état Gemma — toujours exploitables en Phase 2 via leur snapshot). $0 / absent = illimité.
-  const budgetUsd = Number(process.env.FINISH_BUDGET_USD ?? 0);
+  const budgetUsd = finiteBudgetUsd(process.env.FINISH_BUDGET_USD); // fini par défaut (audit dormant : jamais illimité)
   const spent = () => results.reduce((s, r) => s + r.costUsd, 0);
   // (N17, watchdog mural par run) Deadline du run entier, regarde nocturnal.ts ligne 558.
   // Défaut 480 min (8 h), configurable via FINISH_BUDGET_MIN.
@@ -223,6 +225,8 @@ async function main(): Promise<void> {
       log(`⏱ Deadline du run atteinte — ${results.length}/${Object.keys(SPECS).length} projet(s) traité(s), arrêt propre.`);
       break;
     }
+    const nightStop = nightStopGate(); // Disjoncteur MangoQA + plafond $ partagé de la nuit
+    if (nightStop.stop) { log(`\n⚡ ${nightStop.reason} — arrêt propre.`); break; }
     if (budgetUsd > 0 && spent() >= budgetUsd) {
       log(`\n💰 Budget $${budgetUsd} atteint (dépensé $${spent().toFixed(2)}) — arrêt propre. Apps restantes laissées en l'état Gemma.`);
       break;
@@ -258,6 +262,7 @@ async function main(): Promise<void> {
       } catch { log(`⚠ juge indisponible`); }
     }
     results.push({ name, phases: phaseResults, buildOk, costUsd: cost, score, dims, comment });
+    nightBudgetSpend(cost); // ledger partagé : le plafond de la nuit voit aussi la finition
     fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
   }
 

@@ -420,6 +420,21 @@ export function readBreakerVerdict(workspaceDir: string = WORKSPACE_DIR): Breake
   }
 }
 
+/** Âge max d'un verdict pour être cru (le runner MangoQA le réécrit toutes les 5 s). */
+export const BREAKER_VERDICT_MAX_AGE_MS = 10 * 60_000;
+
+/** Verdict du Disjoncteur, traité comme indisponible s'il est périmé. PUR sur `read`/`now`. */
+export function freshBreakerVerdict(
+  read: () => BreakerVerdictResult = () => readBreakerVerdict(WORKSPACE_DIR),
+  now: number = Date.now(),
+  maxAgeMs: number = BREAKER_VERDICT_MAX_AGE_MS,
+): BreakerVerdictResult {
+  const v = read();
+  if (!v.available) return v;
+  if (v.evaluatedAt > 0 && now - v.evaluatedAt > maxAgeMs) return { available: false, reason: "absent" };
+  return v;
+}
+
 // Route additive en lecture seule — pas de gate nécessaire (fail-open assuré
 // par readObserverReport). Enregistrée dans index.ts près de registerControleurRoutes.
 export function registerMangoQaRoutes(app: Express): void {

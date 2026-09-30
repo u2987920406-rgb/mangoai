@@ -44,6 +44,13 @@ export function globalBudgetCapUsd(env: NodeJS.ProcessEnv = process.env): number
   return Number.isFinite(n) && n > 0 ? n : DEFAULT_NIGHT_BUDGET_USD;
 }
 
+/** Plafond $ fini d'un runner à budget propre (FINISH_BUDGET_USD, GRAND_CHANTIER_BUDGET_USD) :
+ * valeur env si > 0, sinon plafond par défaut FINI. Un `0` n'est plus « illimité ». */
+export function finiteBudgetUsd(raw: string | undefined, fallback: number = DEFAULT_NIGHT_BUDGET_USD): number {
+  const n = Number(raw);
+  return Number.isFinite(n) && n > 0 ? n : fallback;
+}
+
 /** Cumul de dépense $ pour LA fenêtre (nuit) courante. */
 export interface GlobalBudgetState {
   date: string; // YYYY-MM-DD — fenêtre courante

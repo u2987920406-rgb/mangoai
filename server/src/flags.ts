@@ -105,8 +105,11 @@ export const FLAGS = {
   // ── MangoQA — autorité d'arrêt du Disjoncteur (Visage 1) ─────────────────
   MANGOQA_STOP_AUTHORITY: {
     env: "MANGOQA_STOP_AUTHORITY",
-    default: false,
-    description: "Autorité d'arrêt réelle du Disjoncteur MangoQA : la boucle nocturne LIT breaker-verdict.json entre deux projets et s'arrête elle-même si safe:false (jamais MangoQA qui agit). OFF → verdict ignoré (comportement historique, byte-identique).",
+    // ARMÉ par défaut (chantier gate-optim 2026-09-30) : le Disjoncteur écrivait safe:false en permanence
+    // (cost-guard) sans que personne ne le lise — une protection annoncée mais sans autorité d'arrêt.
+    // Fail-open conservé : MangoQA absent / verdict illisible ou périmé → la nuit continue.
+    default: true,
+    description: "ARMÉ PAR DÉFAUT. Autorité d'arrêt réelle du Disjoncteur MangoQA : la boucle nocturne LIT breaker-verdict.json entre deux projets et s'arrête elle-même si safe:false (jamais MangoQA qui agit). Désarmement explicite MANGOQA_STOP_AUTHORITY=off → verdict ignoré.",
   },
   // ── #180 É2 — périmètre d'action (interface de bureau autonome) ──────────
   DESKTOP_PERIMETER: {

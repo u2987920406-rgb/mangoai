@@ -26,7 +26,8 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { atomicWriteFileSync } from "../src/safe-io.js";
-import { nightBudgetGate, nightBudgetSpend } from "../src/nocturnal-budget.js";
+import { nightStopGate } from "../src/night-guards.js";
+import { nightBudgetSpend } from "../src/nocturnal-budget.js";
 import { createProject, projectDir, projectExists, WORKSPACE_DIR } from "../src/projects.js";
 import { runRelay, defaultRelayDeps } from "../src/eleve.js";
 import { judgeProject } from "../src/nocturnal.js";
@@ -435,7 +436,7 @@ async function main(): Promise<void> {
   const results: ProjectResult[] = [];
   for (const spec of SPECS) {
     // Plafond $ de la nuit (frontière d'itération, jamais en cours de génération).
-    const budgetStop = nightBudgetGate();
+    const budgetStop = nightStopGate();
     if (budgetStop.stop) { log(`💰 ${budgetStop.reason} — arrêt propre (${results.length}/${SPECS.length} projet(s) traité(s)).`); break; }
     try {
       const r = await runProject(spec, state);

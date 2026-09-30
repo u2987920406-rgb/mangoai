@@ -24,6 +24,7 @@ import { sharinganAnalyze, capturePreview, type SharinganResult } from "../src/v
 import { MANGO_NUIT, type MangoNuitSpec } from "../src/mango-nuit-specs.js";
 import { flag } from "../src/flags.js";
 import { runAsActor } from "../src/perimeter-context.js";
+import { nightStopGate } from "../src/night-guards.js";
 import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "../src/nocturnal-budget.js";
 
 const STATE_FILE = path.join(WORKSPACE_DIR, ".mango-nuit.state.json");
@@ -305,7 +306,7 @@ async function main(): Promise<void> {
   const globalBudgetCapUsd = resolveGlobalBudgetCapUsd(); // fini par défaut (jamais 0 = illimité)
   for (const spec of MANGO_NUIT) {
     // Frontière d'itération — jamais en cours de génération. Gate OFF → 0 I/O.
-    const budgetStop = decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd, globalBudgetToday(), () => readGlobalBudgetState());
+    const budgetStop = nightStopGate(); // Disjoncteur MangoQA + plafond $ fini, une seule porte (night-guards.ts)
     if (budgetStop.stop) {
       log(`💰 ${budgetStop.reason} — arrêt propre (${results.length}/${MANGO_NUIT.length} projet(s) traité(s)).`);
       break;
