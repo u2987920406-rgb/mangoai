@@ -329,8 +329,13 @@ export type FlagName = keyof typeof FLAGS;
 /** Vrai si le gate est actif. Convention d'activation : "on" | "1" | "true"
  *  (insensible à la casse). Toute autre valeur = OFF ; absence = valeur par défaut. */
 export function flag(name: FlagName): boolean {
+  return flagFrom(name, process.env);
+}
+
+/** Même règle que flag() sur un environnement INJECTÉ (rapport gates-status, tests). */
+export function flagFrom(name: FlagName, env: NodeJS.ProcessEnv): boolean {
   const spec = FLAGS[name];
-  const raw = process.env[spec.env];
+  const raw = env[spec.env];
   // Absent OU vide (`X=` laissé tel quel par copie de .env.example) → défaut : une ligne vide ne doit pas
   // désarmer en silence un gate armé par défaut.
   if (raw === undefined || raw.trim() === "") return spec.default;

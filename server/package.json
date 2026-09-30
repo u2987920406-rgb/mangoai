@@ -11,6 +11,7 @@
     "start": "node --import tsx src/index.ts",
     "watch:supervised": "tsx src/watchdog.ts",
     "check-key": "tsx src/check-key.ts",
+    "gates": "tsx src/gates-cli.ts",
     "test": "node --import tsx src/test-runner.ts --tier smoke",
     "test:offline": "node --import tsx src/test-runner.ts --tier offline",
     "test:llm": "node --import tsx src/test-runner.ts --tier llm",

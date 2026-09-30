@@ -12,6 +12,7 @@ import { isAgentBusy, releaseAgent } from "../agent/agent-lock.js";
 import { sovereigntyReport, formatSovereignty } from "../sovereignty-metrics.js";
 import { loadHooks } from "../mango-hooks-config.js";
 import { getLLMRun, listLLMRuns } from "../llm/llm-usage.js";
+import { gatesReport } from "../gates-status.js";
 import { hasProfile, bootstrapProfile, type OnboardingAnswers } from "../onboarding.js";
 
 export function registerSystemRoutes(app: express.Express): void {
@@ -20,6 +21,11 @@ export function registerSystemRoutes(app: express.Express): void {
 // `runLlm` : le run qui a DÉJÀ été mesuré (celui du Maître, chemin SDK Claude, que
 // `agent.ts` comptait séparément) — on l'ajoute au rapport pour que le chiffre du
 // build couvre les DEUX chemins en un seul endroit lisible.
+// État de TOUS les interrupteurs (armés / OFF) + plafonds $ effectifs — gates-status.ts (audit dormant).
+app.get("/api/gates", (_req, res) => {
+  res.json(gatesReport());
+});
+
 app.get("/api/llm-usage", (_req, res) => {
   const courant = getLLMRun();
   res.json({
