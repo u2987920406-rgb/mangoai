@@ -7,6 +7,8 @@ import { WORKSPACE_DIR } from "../projects.js";
 import { gitDirtyPaths, hasRealCodeChange } from "../git-signals.js";
 import { PROFILE } from "./provider.js";
 import { type EscalationContext } from "./types.js";
+import { subscriptionEnv } from "../llm/llm-transport.js";
+import { priceFor, claudeSubscriptionUsd } from "../agent/agent-contract.js";
 
 // ── Cerveau Maître par défaut : Claude corrige + écrit l'axiome ────────────────
 const ESCALATE_SYSTEM = `Tu es le MAÎTRE dans l'apprentissage de MangoOS. Un modèle
@@ -61,8 +63,9 @@ export function combinerChangementCode(parLeMaitre: boolean, avantEscalade: bool
   return parLeMaitre || avantEscalade;
 }
 
-async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_cost_usd?: number }>): Promise<{ costUsd: number; timedOut: boolean }> {
+async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_cost_usd?: number; contextTokens?: number }>): Promise<{ costUsd: number; contextTokens: number; timedOut: boolean }> {
   let costUsd = 0;
+  let contextTokens = 0;
   let timedOut = false;
   const iterator = q[Symbol.asyncIterator]();
   for (;;) {
@@ -80,12 +83,15 @@ async function consumeEscalationStream(q: AsyncIterable<{ type: string; total_co
       break;
     }
     if (step.r.done) break;
-    if (step.r.value.type === "result") costUsd = step.r.value.total_cost_usd ?? 0;
+    if (step.r.value.type === "result") {
+      costUsd = step.r.value.total_cost_usd ?? 0;
+      contextTokens = step.r.value.contextTokens ?? 0;
+    }
   }
-  return { costUsd, timedOut };
+  return { costUsd, contextTokens, timedOut };
 }
 
-export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean; codeChangedByMaitre: boolean }> {
+export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom: boolean; costUsd: number; contextTokens: number; codeChanged: boolean; codeChangedByMaitre: boolean }> {
   // Détection de l'axiome appris sur l'UNION des fichiers de la partition (un
   // axiome rangé dans .axioms.<famille>.md compte aussi), via une empreinte NON
   // plafonnée : un nouvel axiome est appendé en fin de registre, donc au-delà du
@@ -133,9 +139,13 @@ export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom:
       permissionMode: "acceptEdits",
       allowedTools: ["Read", "Write", "Edit", "Bash", "Glob", "Grep"],
       systemPrompt: { type: "preset", preset: "claude_code", append: incomplete ? ESCALATE_FINISH_SYSTEM : ESCALATE_SYSTEM },
+      // ABONNEMENT : la clé API est neutralisée (comme agent.ts). Sans ce garde-fou,
+      // l'escalade pourrait partir sur la facturation à l'usage. Le coût publié est
+      // ensuite ramené à la destination RÉELLE (0 crédit) plus bas.
+      env: subscriptionEnv(),
     },
   });
-  const { costUsd, timedOut } = await consumeEscalationStream(q);
+  const { costUsd: sdkCostUsd, contextTokens, timedOut } = await consumeEscalationStream(q);
 
   const axiom = axiomsFingerprint(WORKSPACE_DIR, escProfile.axiomFiles) !== axBefore;
   const filesAfter = await gitDirtyPaths(ctx.projectDir);
@@ -143,5 +153,15 @@ export async function escalateToClaude(ctx: EscalationContext): Promise<{ axiom:
   // `codeChangedByMaitre` = ce que le Maître a apporté ; l'appelant combine avec
   // `codeChangedBefore` pour juger si le TOUR a produit du code (pas le Maître seul).
   const codeChangedByMaitre = codeChanged;
-  return { axiom, costUsd, codeChanged: combinerChangementCode(codeChanged, codeChangedBefore), codeChangedByMaitre };
+  // Coût PUBLICABLE : la destination réelle est l'abonnement Claude (env neutralisé
+  // ci-dessus) → 0 crédit. `priceFor('claude', …)` conserve l'équivalence tarifaire
+  // pour un suivi d'intérêt, mais on ne publie jamais ce chiffre sur le Bus de coûts :
+  // c'est lui qui a fait « stopper » 3 nuits pour 0 $ dépensé.
+  const costForBus = priceFor("claude", ctx.maitreModel);
+  if (costForBus !== 0) {
+    // Garde-fou : si un jour l'escalade repasse sur la facturation à l'usage, le prix
+    // redevient réel — on publie alors le total du SDK, pas 0.
+    return { axiom, costUsd: sdkCostUsd, contextTokens, codeChanged: combinerChangementCode(codeChanged, codeChangedBefore), codeChangedByMaitre };
+  }
+  return { axiom, costUsd: claudeSubscriptionUsd(), contextTokens, codeChanged: combinerChangementCode(codeChanged, codeChangedBefore), codeChangedByMaitre };
 }

@@ -17,6 +17,9 @@ export interface RelayResult {
   inspection: Inspection; // verdict objectif final
   axiom: boolean; // un axiome a-t-il été écrit lors de l'escalade
   costUsd: number; // coût Claude (0 si l'Élève a suffi)
+  /** Effort du tour — plus grande taille de contexte vue (escalades Maître). Alimente
+   *  le kill switch du Disjoncteur ; l'Élève agentique (llama-server) n'en remonte pas. */
+  contextTokens?: number;
   log: string[]; // trace lisible
   // Moteur agentique : build vert MAIS le moteur s'est arrêté sans conclure
   // (plafond/blocage) → la tâche n'est peut-être pas terminée (honnêteté #146).
@@ -84,7 +87,7 @@ export interface RelayDeps {
   askEleve: (system: string, user: string) => Promise<string>;
   inspect: (projectDir: string) => Promise<Inspection>;
   ensureDeps: (projectDir: string, log: (s: string) => void) => Promise<void>;
-  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number; codeChanged: boolean; codeChangedByMaitre?: boolean }>;
+  escalate: (ctx: EscalationContext) => Promise<{ axiom: boolean; costUsd: number; contextTokens?: number; codeChanged: boolean; codeChangedByMaitre?: boolean }>;
   // #104 Phase 2 — juge fonctionnel optionnel (injectable). Absent de
   // defaultRelayDeps → la porte ne peut JAMAIS se déclencher par défaut.
   judge?: (projectDir: string, task: string) => Promise<{ fonctionnel: number; note: string } | null>;

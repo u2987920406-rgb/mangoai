@@ -63,6 +63,7 @@ import { installTraceCollector, registerTraceRoutes } from "../trace-dashboard.j
 import { installArtifactStore, registerArtifactRoutes } from "../kernel/kernel-artifacts.js";
 import { installReuseCollector, installReuseImpactCollector, registerReuseRoutes, detectArtifactReads, detectPaletteReuse, detectArtefactReuse, publishReuse } from "../kernel/kernel-reuse-metrics.js";
 import { takeArtefactUsage } from "../eleve-artefact-usage.js";
+import { claudeSubscriptionUsd } from "../agent/agent-contract.js";
 import { registerCurationEffectRoutes } from "../kernel/kernel-curation-effect.js";
 import { startChatTurn, finishChatTurn } from "../kernel/kernel-chat-bridge.js";
 import type { Span } from "../kernel/kernel-trace.js";
@@ -796,7 +797,10 @@ app.post("/api/chat", async (req, res) => {
       mode: chosenMode,
       model: useEleve ? "eleve" : (chosenModel ?? "sonnet"),
       ok: !turn.some((e) => e.role === "error"),
-      costUsd: lastResult.current?.costUsd ?? 0,
+      // Chemin Claude direct (query()/SDK, abonnement) : le `total_cost_usd` du SDK est
+      // un équivalent tarifaire API — FICTIF côté dépense (0 crédit). On publie 0. Le
+      // chemin Élève/relais remonte, lui, un coût déjà ramené à la destination réelle.
+      costUsd: useEleve ? (lastResult.current?.costUsd ?? 0) : claudeSubscriptionUsd(),
       numTurns: lastResult.current?.numTurns ?? 0,
       durationMs: Date.now() - turnStart,
       contextTokens: lastContext.current?.tokens,

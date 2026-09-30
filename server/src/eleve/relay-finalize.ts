@@ -79,6 +79,12 @@ export async function finalizeEscalationPhase(
     let feedback = lastErr;
     let axiomAny = false;
     let costTotal = 0;
+    // Effort du tour (signal d'emballement pour le kill switch) : la taille de contexte
+    // la plus haute vue sur les escalades Maître. L'Élève agentique passe par l'API
+    // llama-server, qui ne remonte pas de tokens — le Maître (SDK, qui les remonte) est
+    // donc le meilleur proxy disponible côté pipeline relay. Constat 2026-09-30 : le
+    // Bus recevait `contextTokens` mais le kill switch lisait `tokens` → borgne.
+    let maxContextTokens = 0;
     // CHANTIER 5b — le TOUR a-t-il produit du code, AVANT que le Maître soit appelé ?
     // Mesure 2026-09-30 (4 runs reels de suite) : l'Élève écrit ses modules, atteint son
     // plafond, le Maître recoit un projet DEJA FAIT et ne change rien (a raison) — et le
@@ -101,10 +107,11 @@ export async function finalizeEscalationPhase(
       });
       axiomAny = axiomAny || esc.axiom;
       costTotal += esc.costUsd;
+      maxContextTokens = Math.max(maxContextTokens, esc.contextTokens ?? 0);
       const insp = await inspectReady();
       if (!insp.ok) {
         push(`✗ build encore cassé après escalade — échec`);
-        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, echecCause: "build-casse", maitreAppele: true };
+        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, contextTokens: maxContextTokens, log, echecCause: "build-casse", maitreAppele: true };
       }
       // (L113, run showcase 2026-07-09) build vert ne suffit PAS : un placeholder
       // jamais touché compile déjà. Sans changement de code réel, ce n'était pas
@@ -115,7 +122,7 @@ export async function finalizeEscalationPhase(
         // CHANTIER 1 — le build passe ici (on vient de le verifier) : annoncer
         // « le build ne passe pas » etait FAUX. La cause reelle est l'absence de
         // changement de code (un placeholder compile deja).
-        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, echecCause: "aucun-changement", maitreAppele: true };
+        return { resolvedBy: "none", attempts, success: false, inspection: insp, axiom: axiomAny, costUsd: costTotal, contextTokens: maxContextTokens, log, echecCause: "aucun-changement", maitreAppele: true };
       }
       // CHANTIER 5b — DIRE qui a produit le code. Mesure 2026-09-29 : le Maître a été
       // appelé alors que l'Élève venait d'écrire 19 modules (plafond atteint) ; il n'a
@@ -164,11 +171,11 @@ export async function finalizeEscalationPhase(
       }
 
       if (issues.length === 0) {
-        return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: axiomAny, costUsd: costTotal, log };
+        return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: axiomAny, costUsd: costTotal, contextTokens: maxContextTokens, log };
       }
       if (gTour >= maxMaitreGate) {
         push(`⚠ Clôture encore RED après ${gTour} re-correction(s) du Maître — livré mais INCOMPLET`);
-        return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: axiomAny, costUsd: costTotal, log, incomplete: true };
+        return { resolvedBy: "maitre", attempts, success: true, inspection: insp, axiom: axiomAny, costUsd: costTotal, contextTokens: maxContextTokens, log, incomplete: true };
       }
       push(`↻ Clôture RED → le Maître RE-CORRIGE (${gTour + 1}/${maxMaitreGate})`);
       feedback = `Le livrable compile mais ne passe pas la clôture qualité : ${issues.join(" ; ")}. Corrige EXACTEMENT ces points et garde le build vert.`;

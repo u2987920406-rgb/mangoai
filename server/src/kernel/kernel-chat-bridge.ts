@@ -37,7 +37,8 @@ export interface ChatTurnOutcome extends ChatTurnStart {
   /** Itérations agentiques internes du tour (signal d'emballement). */
   numTurns?: number
   durationMs?: number
-  /** Taille de contexte (informatif — PAS mappé au kill switch tokens). */
+  /** Taille de contexte du tour — signal d'EMBALLEMENT lu par le kill switch
+   *  (`agent-killswitch` lit `tokens` OU `contextTokens`, cf. disjoncteur.ts). */
   contextTokens?: number
   resolvedBy?: 'eleve' | 'maitre' | 'none'
   error?: string
@@ -79,8 +80,9 @@ export function finishChatTurn(span: Span | null, info: ChatTurnOutcome, deps: C
   }
 
   // 2. Enveloppe d'issue — le signal que les disjoncteurs lisent. Les noms de
-  //    champs (costUsd / turns / durationMs) correspondent exactement à ce que
-  //    le moteur du Disjoncteur inspecte. contextTokens reste informatif.
+  //    champs (costUsd / turns / durationMs / contextTokens) correspondent exactement
+  //    à ce que le moteur du Disjoncteur inspecte (le kill switch lit `tokens` OU
+  //    `contextTokens`).
   try {
     const bus = deps.bus ?? getBus()
     void bus.publish({

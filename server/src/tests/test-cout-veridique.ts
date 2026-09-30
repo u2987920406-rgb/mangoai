@@ -84,5 +84,20 @@ console.log("[B14] la table de couts dit la verite");
   check("Ollama Cloud est tarife dans la table", src.includes('"ollama-cloud/*"'));
 }
 
+// 6. Le COUT PUBLIE sur le Bus doit refleter la DESTINATION REELLE (2026-09-30).
+//    Defaut mesure : `total_cost_usd` du SDK (equivalent tarifaire API) etait publie tel
+//    quel sur bus-events.jsonl alors que le chemin passe par l'ABONNEMENT → 3 halt-spend
+//    declenches pour 0 $ depense. `claudeSubscriptionUsd()` est la source unique du 0.
+{
+  const { claudeSubscriptionUsd, priceFor } = await import("../agent/agent-contract.js");
+  check("claudeSubscriptionUsd() = 0 (aucun credit consomme)", claudeSubscriptionUsd() === 0);
+  check("priceFor('claude', 'opus') = 0 (abonnement, pas de credits)", priceFor("claude", "opus") === 0);
+  check("priceFor('anthropic', 'opus') > 0 (credits API : tarif reel)", priceFor("anthropic", "opus")! > 0);
+  check("priceFor('openai', 'x', 'https://ollama.com/v1') > 0 (Ollama Cloud facture)",
+    priceFor("openai", "x", "https://ollama.com/v1")! > 0);
+  check("priceFor('openai', 'x', 'http://127.0.0.1:8080') = 0 (endpoint local gratuit)",
+    priceFor("openai", "x", "http://127.0.0.1:8080") === 0);
+}
+
 console.log(`\n${fail === 0 ? "OK" : "ECHEC"} cout veridique (B14) : ${pass} pass, ${fail} fail`);
 if (fail > 0) process.exit(1);

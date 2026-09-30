@@ -171,6 +171,7 @@ export async function runRelay(
     finishChatTurn(span, {
       project, mode: "relay", model: opts.eleveModel ?? "eleve",
       ok: r.success || r.aborted === true, costUsd: r.costUsd, numTurns: r.attempts,
+      contextTokens: r.contextTokens,
       durationMs: Date.now() - started, resolvedBy: r.resolvedBy === "eleve" || r.resolvedBy === "maitre" ? r.resolvedBy : "none",
       ...(r.success || r.aborted ? {} : { error: r.echecCause ?? r.inspection.signal }),
     });

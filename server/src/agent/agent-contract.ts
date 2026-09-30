@@ -215,7 +215,7 @@ function estOllamaCloud(baseUrl?: string): boolean {
   return !!baseUrl && /ollama\.com/i.test(baseUrl)
 }
 
-function priceFor(provider: string, model?: string, baseUrl?: string): number {
+export function priceFor(provider: string, model?: string, baseUrl?: string): number {
   // 1. Un endpoint LOCAL est réellement gratuit, quel que soit le transport.
   if (estLocal(baseUrl)) return 0
   // 2. Transport ollama NATIF sans baseUrl distant = le daemon LOCAL par défaut →
@@ -230,6 +230,18 @@ function priceFor(provider: string, model?: string, baseUrl?: string): number {
   if (PRICE_PER_MTOK[`${provider}/*`] !== undefined) return PRICE_PER_MTOK[`${provider}/*`]!
   // 5. Transport non local non répertorié : prudent.
   return baseUrl ? PLATEFORME_PAR_DEFAUT : 1
+}
+
+/**
+ * Coût RÉEL d'un appel passant par l'ABONNEMENT Claude (query()/SDK, clé API
+ * neutralisée par subscriptionEnv) : 0 crédit. Le `total_cost_usd` du SDK est un
+ * équivalent tarifaire API — un chiffre FICTIF côté dépense, mesuré le 2026-09-30
+ * (5,60 « $ » cumulés ont déclenché 3 halt-spend alors que la dépense était nulle).
+ * Ne PAS publier ce chiffre sur le Bus : le plafond dollar MangoQA lit le Bus.
+ * `priceFor('claude', …)` reste, lui, le prix API pour le suivi d'équivalence.
+ */
+export function claudeSubscriptionUsd(): number {
+  return 0;
 }
 
 /**
