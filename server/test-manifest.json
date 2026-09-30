@@ -71,6 +71,10 @@
     "test-agent-scheduler": {
       "tier": "offline"
     },
+    "test-ancre-tour": {
+      "tier": "offline",
+      "reason": "chantier5b — l'ancre de tour voit le travail des projets REELS (depend du workspace local : vert si les projets existent, sinon inoffensif)"
+    },
     "test-assign-mode": {
       "tier": "offline"
     },
