@@ -23,7 +23,7 @@ import { runEvolution } from "../src/prompt-evolution.js";
 import { sharinganAnalyze, capturePreview, type SharinganResult } from "../src/vision.js";
 import { TONIGHT, type Spec } from "../src/tonight-specs.js";
 import { flag } from "../src/flags.js";
-import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "../src/nocturnal-budget.js";
+import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "../src/nocturnal-budget.js";
 
 const STATE_FILE   = path.join(WORKSPACE_DIR, ".tonight.state.json");
 const LOG_FILE     = path.join(WORKSPACE_DIR, ".tonight.log");
@@ -275,7 +275,7 @@ async function main(): Promise<void> {
   // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 0
   // (train-loop.ts) et Phase 2 (nocturnal.ts) via le ledger data/global-budget.json
   // (nocturnal-budget.ts). $0/absent = illimité.
-  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
+  const globalBudgetCapUsd = resolveGlobalBudgetCapUsd(); // fini par défaut (jamais 0 = illimité)
   // (N17, watchdog mural par run) Deadline du run entier, regarde nocturnal.ts ligne 558.
   // Défaut 480 min (8 h), configurable via TONIGHT_BUDGET_MIN.
   const tonightBudgetMs = Math.max(60 * 60_000, Number(process.env.TONIGHT_BUDGET_MIN ?? 480) * 60_000);

@@ -31,7 +31,7 @@ import { recordCurationSample, getTunedCurationPriority } from "./kernel/kernel-
 import { flag } from "./flags.js";
 import { readBreakerVerdict, emitPhaseComplete, isMangoQaActive, type BreakerVerdictResult, type BreakerTripLite } from "./mangoqa.js";
 import { startChatTurn, finishChatTurn, type ChatTurnOutcome } from "./kernel/kernel-chat-bridge.js";
-import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
+import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { maybeRunStrategistCycle } from "./stratege/stratege-run.js";
 import { maybeRunTuteurCycle } from "./formation/formation-tuteur.js";
 import { runAsActor } from "./perimeter-context.js";
@@ -572,7 +572,7 @@ export async function runNocturnalBatch(count: number, opts: { freeStyle?: boole
   // (train-loop.ts) et Phase 1 (run-tonight.ts/run-mango-nuit.ts) via le ledger
   // data/global-budget.json (nocturnal-budget.ts). $0/absent = illimité — même
   // convention que FINISH_BUDGET_USD (run-finish.ts).
-  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
+  const globalBudgetCapUsd = resolveGlobalBudgetCapUsd(); // fini par défaut (jamais 0 = illimité)
   try {
     const prompts = generateUniquePrompts(n, opts);
     // Curation pondérée par le rendement (#125) : calculée UNE fois pour la nuit,

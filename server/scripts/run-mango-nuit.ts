@@ -24,7 +24,7 @@ import { sharinganAnalyze, capturePreview, type SharinganResult } from "../src/v
 import { MANGO_NUIT, type MangoNuitSpec } from "../src/mango-nuit-specs.js";
 import { flag } from "../src/flags.js";
 import { runAsActor } from "../src/perimeter-context.js";
-import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "../src/nocturnal-budget.js";
+import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "../src/nocturnal-budget.js";
 
 const STATE_FILE = path.join(WORKSPACE_DIR, ".mango-nuit.state.json");
 const LOG_FILE = path.join(WORKSPACE_DIR, ".mango-nuit.log");
@@ -302,7 +302,7 @@ async function main(): Promise<void> {
   // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 0
   // (train-loop.ts) et Phase 2 (nocturnal.ts) via le ledger data/global-budget.json
   // (nocturnal-budget.ts). $0/absent = illimité.
-  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
+  const globalBudgetCapUsd = resolveGlobalBudgetCapUsd(); // fini par défaut (jamais 0 = illimité)
   for (const spec of MANGO_NUIT) {
     // Frontière d'itération — jamais en cours de génération. Gate OFF → 0 I/O.
     const budgetStop = decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd, globalBudgetToday(), () => readGlobalBudgetState());

@@ -29,7 +29,7 @@ import { runAsActor } from "./perimeter-context.js";
 import { recordTurnMetrics } from "./metrics.js";
 import { inferProjectType } from "./blueprints.js";
 import { flag } from "./flags.js";
-import { decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
+import { globalBudgetCapUsd as resolveGlobalBudgetCapUsd, decideBudgetStop, spendGlobalBudget, localDateStr as globalBudgetToday, readGlobalBudgetState } from "./nocturnal-budget.js";
 import { interruptAgent } from "./agent/agent.js";
 
 const OLLAMA = process.env.OLLAMA_URL ?? "http://localhost:11434";
@@ -282,7 +282,7 @@ async function main(): Promise<void> {
   // Budget-$ DUR global (gaté NOCTURNAL_BUDGET_HARD), PARTAGÉ avec Phase 1
   // (run-tonight.ts/run-mango-nuit.ts) et Phase 2 (nocturnal.ts) via le ledger
   // data/global-budget.json (nocturnal-budget.ts). $0/absent = illimité.
-  const globalBudgetCapUsd = Number(process.env.NOCTURNAL_GLOBAL_BUDGET_USD ?? 0);
+  const globalBudgetCapUsd = resolveGlobalBudgetCapUsd(); // fini par défaut (jamais 0 = illimité)
   // Circuit breaker Ollama (gaté TRAIN_LOOP_OLLAMA_BREAKER) : compteur d'échecs
   // CONSÉCUTIFS, remis à zéro à la première réussite. Seuil configurable, défaut 3.
   let consecutiveFailures = 0;

@@ -27,9 +27,22 @@
 import fs from "node:fs";
 import path from "node:path";
 import { atomicWriteFileSync, dataDir } from "./safe-io.js";
+import { flag } from "./flags.js";
 
 const DATA_DIR = dataDir();
 const GLOBAL_BUDGET_FILE = path.join(DATA_DIR, "global-budget.json");
+
+/** Plafond $ par défaut d'une nuit quand NOCTURNAL_GLOBAL_BUDGET_USD est absent/invalide/≤ 0.
+ * Pourquoi FINI : l'audit dormant (2026-09-30) a constaté que « 0/absent = illimité » laissait
+ * la nuit sans aucun frein monétaire (coût réel possible $10-30/nuit, cf. en-tête). Jamais 0. */
+export const DEFAULT_NIGHT_BUDGET_USD = 20;
+
+/** Plafond $ effectif de la nuit : env si valide (> 0, fini), sinon DEFAULT_NIGHT_BUDGET_USD.
+ * Source UNIQUE pour tous les runners (nocturnal, train-loop, run-tonight, run-mango-nuit…). */
+export function globalBudgetCapUsd(env: NodeJS.ProcessEnv = process.env): number {
+  const n = Number(env.NOCTURNAL_GLOBAL_BUDGET_USD);
+  return Number.isFinite(n) && n > 0 ? n : DEFAULT_NIGHT_BUDGET_USD;
+}
 
 /** Cumul de dépense $ pour LA fenêtre (nuit) courante. */
 export interface GlobalBudgetState {
@@ -133,4 +146,20 @@ export function spendGlobalBudget(costUsd: number, file: string = GLOBAL_BUDGET_
   const next = recordSpend(readGlobalBudgetState(file), today, costUsd);
   writeGlobalBudgetState(next, file);
   return next;
+}
+
+/**
+ * Garde-fou « prêt à l'emploi » pour les scripts de génération (run-6-souv-d,
+ * run-3-complex-apps, run-souv-d-polish…) : à appeler à la FRONTIÈRE d'itération,
+ * avant chaque projet. Pourquoi ici : l'audit dormant (2026-09-30) a relevé que
+ * ces scripts n'importaient pas ce module du tout — le plafond nocturne ne les
+ * voyait pas. Gate + plafond fini lus au même endroit que les autres runners.
+ */
+export function nightBudgetGate(): BudgetStopDecision {
+  return decideBudgetStop(flag("NOCTURNAL_BUDGET_HARD"), globalBudgetCapUsd(), localDateStr(), () => readGlobalBudgetState());
+}
+
+/** Comptabilise le coût d'un projet terminé sur le ledger partagé (no-op si le gate est désarmé). */
+export function nightBudgetSpend(costUsd: number): void {
+  if (flag("NOCTURNAL_BUDGET_HARD")) spendGlobalBudget(costUsd);
 }

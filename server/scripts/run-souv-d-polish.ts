@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { spawn, type ChildProcess } from "node:child_process";
 import { atomicWriteFileSync } from "../src/safe-io.js";
+import { nightBudgetGate, nightBudgetSpend } from "../src/nocturnal-budget.js";
 import { projectDir, WORKSPACE_DIR } from "../src/projects.js";
 import { runRelay, defaultRelayDeps } from "../src/eleve.js";
 import { judgeProject } from "../src/nocturnal.js";
@@ -188,6 +189,7 @@ async function polishProject(spec: PolishSpec, state: State): Promise<PolishResu
         },
       },
     );
+    nightBudgetSpend(r.costUsd);
     buildOk = r.success;
     resolvedBy = r.resolvedBy;
     attempts = r.attempts;
@@ -277,6 +279,9 @@ async function main(): Promise<void> {
   const state = loadState();
   const results: PolishResult[] = [];
   for (const spec of SPECS) {
+    // Plafond $ de la nuit (frontière d'itération, jamais en cours de génération).
+    const budgetStop = nightBudgetGate();
+    if (budgetStop.stop) { log(`💰 ${budgetStop.reason} — arrêt propre (${results.length}/${SPECS.length} projet(s) traité(s)).`); break; }
     try {
       const r = await polishProject(spec, state);
       if (r) {

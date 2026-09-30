@@ -6,6 +6,7 @@
 // Lancer : npx tsx src/run-showcase.ts
 // Reprendre : npx tsx src/run-showcase.ts  (même commande, l'état est gardé)
 
+import { nightBudgetGate, nightBudgetSpend } from "../src/nocturnal-budget.js";
 import fs from "node:fs";
 import path from "node:path";
 import { projectDir, WORKSPACE_DIR } from "../src/projects.js";
@@ -480,20 +481,22 @@ async function main(): Promise<void> {
     log("⏭  Super-agent UX SaaS déjà créé.");
   }
 
-  if (!state.done.includes("claude-saas-contact-test-done")) {
+  if (!state.done.includes("claude-saas-contact-test-done") && !nightBudgetGate().stop) {
     const rC = await runClaudeProject("saas-contact-test", "shadcn", SPEC_C, PHASES_C,
       ["constellation Formulaire #74", "super-agent UX SaaS #40", "Supabase #17", "tests Vitest #24", "patrouilleur sécurité #73", "diff vision #80"], state);
     results.push(rC);
+    nightBudgetSpend(rC.costUsd);
     fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
     if (rC.buildOk) markDone(state, "claude-saas-contact-test-done");
   } else {
     log("⏭  saas-contact-test déjà fait.");
   }
 
-  if (!state.done.includes("claude-vitrine-showcase-test-done")) {
+  if (!state.done.includes("claude-vitrine-showcase-test-done") && !nightBudgetGate().stop) {
     const rE = await runClaudeProject("vitrine-showcase-test", "vitrine", SPEC_E, PHASES_E,
       ["cadrage multimodal #47", "moodboard Sharingan #46/#8", "constellations #74", "diff vision #80", "LE projet waouh"], state);
     results.push(rE);
+    nightBudgetSpend(rE.costUsd);
     fs.writeFileSync(RESULTS_FILE, JSON.stringify(results, null, 2));
     if (rE.buildOk) markDone(state, "claude-vitrine-showcase-test-done");
   } else {

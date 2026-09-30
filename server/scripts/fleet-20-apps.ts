@@ -23,6 +23,7 @@ import { curateImageBank, guaranteeLocalImages, formatImageBankForPrompt } from 
 import { runClosureGate } from "../src/eleve-gate.js";
 import { runClosureParcours, runClosureMangoQA, measureCraftSummary } from "../src/eleve/relay-closure.js";
 import { inferProjectType } from "../src/blueprints.js";
+import { nightBudgetGate, nightBudgetSpend } from "../src/nocturnal-budget.js";
 import { saveProcedure, type ProcedureEntry } from "../src/procedures.js";
 
 function log(m: string): void { console.log(`[${new Date().toISOString()}] ${m}`); }
@@ -275,11 +276,15 @@ async function runPool(items: AppSpec[], concurrency: number): Promise<AppRunLog
     for (;;) {
       const idx = i++;
       if (idx >= items.length) return;
+      // Plafond $ de la nuit à la frontière d'app (jamais en cours de génération) : audit dormant 2026-09-30.
+      const budgetStop = nightBudgetGate();
+      if (budgetStop.stop) { log(`💰 ${budgetStop.reason} — app ${items[idx].name} non jouée.`); return; }
       results[idx] = await buildOneApp(items[idx]);
+      nightBudgetSpend(results[idx].costUsd);
     }
   }
   await Promise.all(Array.from({ length: concurrency }, () => worker()));
-  return results;
+  return results.filter(Boolean); // apps non jouées (plafond $) = trous du tableau, à écarter
 }
 
 /** --limit N (argv[2]) : ne (re)joue que les N premières apps NON-réussies (prudence
