@@ -49,6 +49,28 @@ export const DEFAULT_CONSTELLATIONS: Constellation[] = [
 - Robustness: trim inputs, guard empty/whitespace, prevent double submit; never trust client values alone.
 - Tests: add a Vitest test on the pure validation logic when it is non-trivial.`,
   },
+  {
+    // Née de la mesure MangoQA (2026-09-30) : sur 21 projets audités, 9 sortaient
+    // "red" et TOUJOURS sur les mêmes 3 branches — tests (6), accessibility (5),
+    // architecture (5). Cause racine : seul le pack `form` portait des règles a11y,
+    // donc une app catalogue/tableau de bord/liste ne recevait STRICTEMENT RIEN.
+    // Ce pack rend généraliste ce qui n'était vrai que pour les formulaires.
+    id: "interface",
+    label: "Interface",
+    emoji: "🖥️",
+    keywords: [
+      "liste", "list", "catalogue", "catalog", "tableau", "dashboard",
+      "galerie", "gallery", "carte", "card", "grille", "grid",
+      "navigation", "menu", "barre", "sidebar", "recherche", "search",
+      "filtre", "filter", "tri", "sort", "page", "ecran", "section",
+    ],
+    rules: `Constellation INTERFACE — when this turn builds or edits any screen, list, card grid or navigation, apply ALL of:
+- Accessibility (every interactive element): a real <button>/<a> for anything clickable — never a bare <div onClick> (unreachable by keyboard); an accessible name on every control (visible text, or aria-label for icon-only buttons); every <img> gets a meaningful alt (alt="" only if purely decorative); visible focus ring that is NOT permanently lit; heading order h1→h2→h3 with a single h1.
+- Contraste & lisibilité: body text at least 16px and a contrast ratio >= 4.5:1 — check muted greys on tinted backgrounds, they are the usual offender.
+- Responsive: no horizontal overflow at 320px width; tap targets >= 44x44px; text never truncated by an overflow:hidden that hides the end of a word.
+- Architecture (non-trivial logic only): keep components focused — split a file that both fetches data, holds state and renders a big tree; extract a component the moment it is duplicated in a second file (DRY); no dead code.
+- Tests: any non-trivial non-visual logic that this screen relies on (filtering, sorting, computing, formatting, validation) gets a focused Vitest test on the pure function (happy path + 1-2 edge cases). Never ask for tests on markup or styling.`,
+  },
 ];
 
 // ── Normalisation + matching par mot entier ──────────────────────────────────

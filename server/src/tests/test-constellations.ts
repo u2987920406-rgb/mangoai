@@ -78,6 +78,17 @@ check("'un jeu de plateforme' → aucune", detectConstellations("un jeu de plate
 check("matching insensible à la casse/accents (FORMULAIRE)", detectConstellations("Ajoute un FORMULAIRE", "webapp", d7).some((c) => c.id === "form"));
 check("pas de faux positif mot-dans-mot ('information' ne déclenche pas 'form')", detectConstellations("affiche une information", "webapp", d7).length === 0);
 
+// 2026-09-30 — constellation `interface` (généralisation a11y/tests/archi).
+// Mesure de départ : 9/21 projets red, toujours sur tests (6), accessibility (5),
+// architecture (5), parce que seul le pack `form` portait des règles a11y.
+const dInt = mkdir();
+check("'un catalogue de vélos' → interface déclenchée", detectConstellations("Crée un catalogue de vélos", "webapp", dInt).some((c) => c.id === "interface"));
+check("'un tableau de bord' → interface déclenchée", detectConstellations("ajoute un tableau de bord", "dashboard", dInt).some((c) => c.id === "interface"));
+check("'une galerie photo' → interface déclenchée", detectConstellations("une galerie photo", "vitrine", dInt).some((c) => c.id === "interface"));
+check("interface ne se déclenche pas sur un simple formulaire", !detectConstellations("un formulaire de contact", "webapp", dInt).some((c) => c.id === "interface"));
+const secInt = constellationsSection("Crée un catalogue de vélos", "webapp", dInt);
+check("section interface porte l'a11y (aria-label) et les tests", secInt.includes("Constellation INTERFACE") && secInt.includes("aria-label") && secInt.includes("Vitest"));
+
 // projectTypes en signal complémentaire
 const d8 = mkdir();
 writeConfig(d8, [{ id: "dash", label: "Dash", emoji: "📊", keywords: [], projectTypes: ["dashboard"], rules: "régles dashboard" }]);
