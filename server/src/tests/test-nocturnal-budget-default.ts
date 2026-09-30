@@ -7,6 +7,9 @@ delete process.env.NOCTURNAL_BUDGET_HARD;
 assert.equal(flag("NOCTURNAL_BUDGET_HARD"), true, "armé par défaut");
 process.env.NOCTURNAL_BUDGET_HARD = "off";
 assert.equal(flag("NOCTURNAL_BUDGET_HARD"), false, "désarmement explicite possible");
+// une ligne vide (`X=` copiée de .env.example) ne doit pas désarmer en silence
+process.env.NOCTURNAL_BUDGET_HARD = "";
+assert.equal(flag("NOCTURNAL_BUDGET_HARD"), true, "valeur vide = défaut (armé)");
 delete process.env.NOCTURNAL_BUDGET_HARD;
 
 for (const raw of [undefined, "", "0", "-3", "abc", "NaN"]) {

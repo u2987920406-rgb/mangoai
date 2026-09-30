@@ -40,6 +40,10 @@ export interface RelayResult {
 }
 
 export interface RelayOptions {
+  /** false → ne PAS publier ce run sur le Bus de coûts (l'appelant publie déjà son propre
+   *  tour : chat-route.ts). Défaut : publié (audit dormant #27 — le pipeline Élève ne
+   *  publiait RIEN, le Disjoncteur était aveugle sur ce qui coûte). */
+  busTurn?: boolean;
   maxEleveAttempts?: number;
   /** Modèle Claude pour l'escalade (défaut sonnet). */
   maitreModel?: string;

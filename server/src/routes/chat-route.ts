@@ -557,6 +557,7 @@ app.post("/api/chat", async (req, res) => {
       }
       const systemFull = assembleSystemPrompt({ mode: chosenMode, model: "eleve", projectDir: dir, clientMode: Boolean(clientMode), styleStrength: styleStrengthN, templateSection });
       const r = await runRelay(agentPrompt, dir, {
+        busTurn: false, // ce tour publie déjà son propre chat.turn (finally) — pas de double compte
         ...(specialistProfile
           ? { profile: specialistProfile, eleveModel: specialistModel }
           : buildBinding

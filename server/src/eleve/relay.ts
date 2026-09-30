@@ -19,6 +19,7 @@ import { finalizeEscalationPhase } from "./relay-finalize.js";
 import { runAgenticEngine } from "./relay-agentic.js";
 import { runContractPath } from "./relay-contract.js";
 import { getLLMRun } from "../llm/llm-usage.js";
+import { startChatTurn, finishChatTurn } from "../kernel/kernel-chat-bridge.js";
 
 /** D1 (audit 2026-09-28, B4) — LA LECTURE du compteur de consommation, qui manquait :
  *  `startLLMRun` ouvrait un compteur et `getLLMRun()` n'était appelé par AUCUN code de
@@ -74,9 +75,18 @@ export const defaultRelayDeps: RelayDeps = {
   inspect: inspectProject,
   ensureDeps: ensureDepsNpm,
   escalate: escalateToClaude,
+  // Juge de la porte FONCTIONNELLE (#104), enfin branché par défaut (audit dormant #11) : avant, seule
+  // scripts/run-learn.ts en injectait un, donc « build vert ≠ app vide » ne se vérifiait jamais. Import
+  // dynamique : nocturnal.ts importe eleve.ts (cycle). Fail-open : sans verdict (pas de source, juge
+  // injoignable) la porte ne bloque rien.
+  judge: async (dir, task) => {
+    const { judgeProject } = await import("../nocturnal.js");
+    const j = await judgeProject(dir, task);
+    return j ? { fonctionnel: j.dims.fonctionnel, note: j.comment } : null;
+  },
 };
 
-export async function runRelay(
+async function runRelayCore(
   task: string,
   projectDir: string,
   opts: RelayOptions = {},
@@ -134,4 +144,39 @@ export async function runRelay(
   const r = await runContractPath(ctx);
   journaliserConsommation(cfg.push);
   return r;
+}
+
+/**
+ * Point d'entrée UNIQUE du relais Élève, désormais alimentateur du Bus de coûts.
+ * Pourquoi ici (et pas dans chaque script) : runRelay est le goulot par lequel passent TOUS
+ * les consommateurs réels (scripts nocturnes, train-loop, cron, grand-chantier, audit-scan,
+ * design-coach). Avant, seuls le chat UI et nocturnal.ts (gate OFF) publiaient `chat.turn` :
+ * le cost-guard / nightly-circuit du Disjoncteur ne voyaient rien du pipeline réel.
+ * Fire-and-forget (finishChatTurn ne lève jamais) ; ne change ni le résultat ni les erreurs.
+ * L'export vers .mangoqa/bus-events.jsonl (process séparé) est fait par le pont MangoQA :
+ * installé par le serveur au boot, et par nightStopGate() pour les runners autonomes.
+ */
+export async function runRelay(
+  task: string,
+  projectDir: string,
+  opts: RelayOptions = {},
+  deps: RelayDeps = defaultRelayDeps,
+): Promise<RelayResult> {
+  if (opts.busTurn === false) return runRelayCore(task, projectDir, opts, deps);
+  const project = path.basename(projectDir) || "projet";
+  const started = Date.now();
+  const span = startChatTurn({ project, mode: "relay", model: opts.eleveModel ?? "eleve" });
+  try {
+    const r = await runRelayCore(task, projectDir, opts, deps);
+    finishChatTurn(span, {
+      project, mode: "relay", model: opts.eleveModel ?? "eleve",
+      ok: r.success || r.aborted === true, costUsd: r.costUsd, numTurns: r.attempts,
+      durationMs: Date.now() - started, resolvedBy: r.resolvedBy === "eleve" || r.resolvedBy === "maitre" ? r.resolvedBy : "none",
+      ...(r.success || r.aborted ? {} : { error: r.echecCause ?? r.inspection.signal }),
+    });
+    return r;
+  } catch (e) {
+    finishChatTurn(span, { project, mode: "relay", model: opts.eleveModel ?? "eleve", ok: false, durationMs: Date.now() - started, error: (e as Error).message });
+    throw e;
+  }
 }

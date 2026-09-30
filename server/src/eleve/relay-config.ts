@@ -91,7 +91,7 @@ export function resolveRelayConfig(
   // comme TRAIN_ESCALATE_MODEL l'est deja pour le train-loop. Sans ca, changer
   // de Maitre imposait de toucher au code (defaut fige "opus").
   const maitreModel = opts.maitreModel ?? (process.env.ELEVE_MAITRE_MODEL?.trim() || "opus");
-  const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE === "1");
+  const functionalGate = opts.functionalGate ?? (process.env.RELAY_FUNCTIONAL_GATE !== "0") // ARMÉE par défaut (audit dormant #11) ; RELAY_FUNCTIONAL_GATE=0 désarme;
   const functionalMin = opts.functionalMin ?? Number(process.env.RELAY_FUNCTIONAL_MIN ?? 5);
   const injectMeans = opts.injectMeans ?? (process.env.RELAY_INJECT_MEANS === "1");
   const log: string[] = [];

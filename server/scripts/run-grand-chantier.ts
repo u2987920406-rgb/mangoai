@@ -9,6 +9,7 @@
 import "dotenv/config";
 import { projectDir } from "../src/projects.js";
 import { runGrandChantier } from "../src/grand-chantier.js";
+import { installNightBusExport } from "../src/night-guards.js";
 
 function argFlag(name: string): boolean {
   return process.argv.includes(`--${name}`);
@@ -19,6 +20,7 @@ function argValue(name: string): string | undefined {
 }
 
 async function main() {
+  installNightBusExport(); // le coût de ce chantier doit atteindre le Bus (Disjoncteur MangoQA)
   if (process.env.GRAND_CHANTIER !== "on") {
     console.error("⛔ Grand Chantier désactivé. Relance avec GRAND_CHANTIER=on pour l'autoriser.");
     process.exit(2);

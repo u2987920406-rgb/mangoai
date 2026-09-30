@@ -294,9 +294,14 @@ async function run() {
     const failing = async (): Promise<TestRun> => ({ ok: false, signal: "tests-failed", detail: "3 failed", durationMs: 10 });
     const passing = async (): Promise<TestRun> => ({ ok: true, signal: "tests-ok", detail: "12 passed", durationMs: 10 });
 
-    // Gate OFF (défaut) → tests jamais lancés, même si runTests renverrait rouge.
-    delete process.env.ELEVE_GATE_TESTS;
+    // Gate DÉSARMÉ explicitement (gate-optim 2026-09-30 : ARMÉ par défaut, audit dormant #30) → tests
+    // jamais lancés, même si runTests renverrait rouge.
+    process.env.ELEVE_GATE_TESTS = "off";
     const vOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", {}, deps({ runTests: failing }));
+    delete process.env.ELEVE_GATE_TESTS;
+    const vDef = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", {}, deps({ runTests: failing }));
+    check("défaut (variable absente) → ARMÉ : tests lancés, rouge bloque", vDef.testsRan === true && vDef.ok === false);
+    process.env.ELEVE_GATE_TESTS = "off";
     check("gate off → testsRan:false, ok:true (volet ignoré)", vOff.testsRan === false && vOff.testsOk === true && vOff.ok === true);
 
     // Gate ON + tests ROUGES → ok:false, raison TESTS (signal fiable).
@@ -374,8 +379,8 @@ async function run() {
 
   console.log("\n[15] runClosureGate — signalGap (axiome 17) : surfacé mais JAMAIS bloquant");
   {
-    // Script réel présent + gate OFF → signalGap surfacé, ok INCHANGÉ (true).
-    delete process.env.ELEVE_GATE_TESTS;
+    // Script réel présent + gate désarmé explicitement → signalGap surfacé, ok INCHANGÉ (true).
+    process.env.ELEVE_GATE_TESTS = "off";
     const vGapOff = await runClosureGate("/proj", "t", result("fait"), "/ws", "dashboard", {}, deps({ hasTestScript: () => true }));
     check("gate off + script réel → signalGap présent", typeof vGapOff.signalGap === "string" && /ELEVE_GATE_TESTS=off/.test(vGapOff.signalGap ?? ""));
     check("signalGap ne bloque JAMAIS ok", vGapOff.ok === true);

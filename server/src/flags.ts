@@ -141,8 +141,10 @@ export const FLAGS = {
   // ── Nocturne — fabrique QA + budget-$ dur (revue globale 2026-07-03) ─────
   NOCTURNAL_QA_BUS: {
     env: "NOCTURNAL_QA_BUS",
-    default: false,
-    description: "Branche la boucle nocturne (Phase 1/2, nocturnal.ts) sur la fabrique QA : émet chat.turn (Bus — cost/turns/durationMs, comme kernel-chat-bridge.ts pour le chat interactif) + un phase-complete (mangoqa.ts) par projet généré. OFF → génération inchangée, AUCUN événement émis (comportement historique, byte-identique).",
+    // ARMÉ par défaut (chantier gate-optim 2026-09-30) : sans ce flux, le cost-guard/nightly-circuit du Disjoncteur
+    // n'ont aucune donnée sur la nuit. (Le relais Élève publie de plus, indépendamment de ce flag : eleve/relay.ts.)
+    default: true,
+    description: "ARMÉ PAR DÉFAUT. Branche la boucle nocturne (Phase 1/2, nocturnal.ts) sur la fabrique QA : émet chat.turn (Bus — cost/turns/durationMs, comme kernel-chat-bridge.ts pour le chat interactif) + un phase-complete (mangoqa.ts) par projet généré. Désarmement explicite NOCTURNAL_QA_BUS=off → AUCUN événement émis.",
   },
   NOCTURNAL_BUDGET_HARD: {
     env: "NOCTURNAL_BUDGET_HARD",
@@ -152,6 +154,14 @@ export const FLAGS = {
     description: "ARMÉ PAR DÉFAUT. Budget-$ DUR partagé entre Phase 0 (train-loop), Phase 1 (run-tonight/run-mango-nuit) et Phase 2 (nocturnal) : arrêt NET à la frontière d'itération (jamais en cours de génération) si le cumul dépensé (ledger partagé data/global-budget.json, fenêtre = la nuit courante) dépasse le plafond (NOCTURNAL_GLOBAL_BUDGET_USD si > 0, sinon plafond par défaut FINI de nocturnal-budget.ts — jamais illimité). Désarmement explicite NOCTURNAL_BUDGET_HARD=off → l'état n'est jamais lu, 0 I/O.",
   },
   // ── Robustesse boucle nocturne (revue globale 2026-07-03, actions #6/#7 backlog) ─
+  ELEVE_GATE_TESTS: {
+    env: "ELEVE_GATE_TESTS",
+    // ARMÉ par défaut (chantier gate-optim 2026-09-30) : « build vert ≠ réussi » — le Gardien lançait tout sauf
+    // les tests du projet (eleve-gate.ts avouait « signal disponible non exploité »). Sans risque pour les projets
+    // sans test : runProjectTests renvoie no-test-script/no-deps → ne pénalise pas ; timeout borné à 120 s.
+    default: true,
+    description: "ARMÉ PAR DÉFAUT. Volet TESTS du Gardien de clôture (eleve-gate.ts, grand-chantier.ts) : lance le script `test` réel du projet ; rouge → l'Élève corrige. Sauté si pas de script / pas de node_modules. Désarmement : ELEVE_GATE_TESTS=off.",
+  },
   ELEVE_GATE_PARCOURS: {
     env: "ELEVE_GATE_PARCOURS",
     default: false,
@@ -321,7 +331,9 @@ export type FlagName = keyof typeof FLAGS;
 export function flag(name: FlagName): boolean {
   const spec = FLAGS[name];
   const raw = process.env[spec.env];
-  if (raw === undefined) return spec.default;
+  // Absent OU vide (`X=` laissé tel quel par copie de .env.example) → défaut : une ligne vide ne doit pas
+  // désarmer en silence un gate armé par défaut.
+  if (raw === undefined || raw.trim() === "") return spec.default;
   return /^(on|1|true|yes)$/i.test(raw.trim());
 }
 

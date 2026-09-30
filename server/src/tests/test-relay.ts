@@ -196,7 +196,9 @@ async function deterministic(): Promise<void> {
     fs.rmSync(dir, { recursive: true, force: true });
   }
   {
-    // E2 — gate OFF (défaut) : build vert = succès immédiat, juge JAMAIS appelé
+    // E2 — gate DÉSARMÉE explicitement : build vert = succès immédiat, juge JAMAIS appelé.
+    // (gate-optim 2026-09-30 : la porte est ARMÉE par défaut — audit dormant #11 ; ce cas défend donc
+    // le désarmement explicite `functionalGate:false`, plus le défaut historique.)
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "relay-E2-"));
     let judgeCalls = 0, eleveCalls = 0;
     const deps: RelayDeps = {
@@ -206,8 +208,8 @@ async function deterministic(): Promise<void> {
       escalate: async () => ({ axiom: false, costUsd: 0, codeChanged: true }),
       judge: async () => { judgeCalls++; return { fonctionnel: 1, note: "vide" }; },
     };
-    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2 }, deps); // gate non passé → OFF
-    console.log("\n  [E2] Porte OFF par défaut → comportement historique :");
+    const r = await runRelay("tâche", dir, { profile: nonAgentic, maxEleveAttempts: 2, functionalGate: false }, deps); // désarmée explicitement
+    console.log("\n  [E2] Porte désarmée explicitement → comportement historique :");
     check("succès dès la 1re tentative", eleveCalls === 1 && r.attempts === 1 && r.success);
     check("juge JAMAIS appelé (porte inerte)", judgeCalls === 0);
     fs.rmSync(dir, { recursive: true, force: true });

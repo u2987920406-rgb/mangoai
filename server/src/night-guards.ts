@@ -10,6 +10,8 @@
 // de plusieurs minutes vient d'un MangoQA mort — un `safe:false` figé ne doit pas
 // bloquer les nuits à jamais (le cost-guard, lui, est glissant sur 12 h).
 import { flag } from "./flags.js";
+import { getBus } from "./kernel/kernel-bus.js";
+import { installMangoQaBridge } from "./kernel/kernel-mangoqa-bridge.js";
 import { freshBreakerVerdict } from "./mangoqa.js";
 import { decideBreakerStop } from "./nocturnal.js";
 import { nightBudgetGate } from "./nocturnal-budget.js";
@@ -22,7 +24,16 @@ export interface NightStopDecision {
 }
 
 /** Faut-il s'arrêter AVANT le prochain projet ? Disjoncteur d'abord, plafond $ ensuite. */
+/** Branche l'export du Bus vers .mangoqa/bus-events.jsonl pour un runner autonome (idempotent). */
+export function installNightBusExport(): void {
+  installMangoQaBridge(getBus());
+}
+
 export function nightStopGate(): NightStopDecision {
+  // Les runners autonomes sont des PROCESS SÉPARÉS du serveur : sans ce pont, leurs événements
+  // de coût resteraient dans la mémoire du script et jamais dans bus-events.jsonl (idempotent ;
+  // le serveur l'installe déjà de son côté). Installé ici, à la première frontière d'itération.
+  installNightBusExport();
   const breaker = decideBreakerStop(flag("MANGOQA_STOP_AUTHORITY"), () =>
     combineBreakerVerdict(freshBreakerVerdict(), listPerimeterIncidents()),
   );

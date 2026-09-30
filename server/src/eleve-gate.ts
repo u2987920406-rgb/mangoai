@@ -337,7 +337,7 @@ export async function runClosureGate(
   let testsRan = false;
   let testsOk = true;
   let tests: TestRun | undefined;
-  if (process.env.ELEVE_GATE_TESTS === "on") {
+  if (flag("ELEVE_GATE_TESTS")) {
     try {
       tests = await deps.runTests(projectDir);
       if (tests.signal === "tests-ok" || tests.signal === "tests-failed") {
@@ -360,7 +360,7 @@ export async function runClosureGate(
   try {
     if (!testsRan && deps.hasTestScript(projectDir)) {
       signalGap =
-        process.env.ELEVE_GATE_TESTS === "on"
+        flag("ELEVE_GATE_TESTS")
           ? "un script `test` réel existe mais n'a pas produit de signal exploitable ce tour (voir `tests`)"
           : "un script `test` réel existe dans package.json mais n'est pas exécuté à la clôture (ELEVE_GATE_TESTS=off) — signal disponible non exploité";
     }

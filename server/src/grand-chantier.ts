@@ -32,6 +32,7 @@ import {
   type ProjectPlan,
   type Increment,
 } from "./project-plan.js";
+import { flag } from "./flags.js";
 import { finiteBudgetUsd } from "./nocturnal-budget.js";
 import { runRelay } from "./eleve.js";
 import { inspectProject, runProjectTests } from "./inspection.js";
@@ -312,7 +313,7 @@ export const realGrandChantierDeps: GrandChantierDeps = {
     let testsOk = true;
     let testsRan = false;
     // Aligné sur le Gardien #161 (eleve-gate) : tests pris en compte seulement si ELEVE_GATE_TESTS=on.
-    if (insp.ok && process.env.ELEVE_GATE_TESTS === "on") {
+    if (insp.ok && flag("ELEVE_GATE_TESTS")) {
       try {
         const t = await runProjectTests(dir);
         if (t.signal === "tests-ok" || t.signal === "tests-failed") {

@@ -531,6 +531,9 @@
     "test-nocturnal": {
       "tier": "offline"
     },
+    "test-relay-bus": {
+      "tier": "offline"
+    },
     "test-night-guards": {
       "tier": "offline"
     },
