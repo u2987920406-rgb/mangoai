@@ -657,12 +657,6 @@
     "test-sandbox-net": {
       "tier": "offline"
     },
-    "test-savoir-extraction": {
-      "tier": "offline"
-    },
-    "test-savoir-reconcile": {
-      "tier": "offline"
-    },
     "test-savoir-store": {
       "tier": "offline"
     },

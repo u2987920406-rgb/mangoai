@@ -184,21 +184,20 @@ export const FLAGS = {
     default: false,
     description: "Base de connaissance vidéo (#177) : ingestion de transcripts YouTube (yt-dlp → repli scraping maison → métadonnées-seules, cache disque à vie) et les surfaces qui l'exposent (outil Élève, route). OFF → aucune surface exposée ; le module savoir-transcript.ts reste appelable directement par les runners/tests (utile en développement) mais aucun chemin utilisateur n'y touche.",
   },
-  SAVOIR_EXTRACTION: {
-    env: "SAVOIR_EXTRACTION",
-    default: false,
-    description: "Base de connaissance vidéo (#177 É3) : extraction de claims candidats depuis les segments d'un transcript (fenêtrage → prompt LLM avec type contrôlé + entités connues → validation VERBATIM déterministe : un extrait introuvable dans le segment source est rejeté mécaniquement, jamais inséré). OFF → aucune surface (runner/route) n'appelle l'extraction ; le module savoir-extraction.ts reste appelable directement par les runners/tests (deps injectées).",
-  },
-  SAVOIR_RECONCILE: {
-    env: "SAVOIR_RECONCILE",
-    default: false,
-    description: "Base de connaissance vidéo (#177 É4/D3) : réconciliation des claims candidats en groupes (clustering déterministe par sujet normalisé + similarité d'embedding, seuil SAVOIR_CLUSTER_MIN=0.78) puis arbitrage par le JUGE souverain (cerveau `juge` distinct, JSON borné, fail-open → verdict `isole` si le juge est muet) qui classe chaque groupe en consensus|conditionnel|desaccord|isole. Application journalisée (savoir_journal, jamais de suppression d'un côté d'un désaccord). OFF → aucune surface n'appelle la réconciliation ; le module savoir-reconcile.ts reste appelable par runners/tests (deps injectées).",
-  },
+  // (Raf, 2026-09-30) SAVOIR_EXTRACTION et SAVOIR_RECONCILE ont été retirés avec leurs
+  // modules : leurs descriptions disaient « OFF → aucune surface n'appelle l'extraction »
+  // — mesuré, c'était vrai AUSSI gate ON (0 appelant hors tests dans tout le dépôt).
+  // Gater un module que personne n'appelle ne protège rien. Supprimés avec leurs tests.
+  // SAVOIR_TRANSCRIPT reste (vrai appelant : eleve-youtube-tools.ts). `savoir-store.ts`
+  // reste aussi : ses 2 seuls importeurs étaient les 2 modules retirés, mais son test
+  // (33 assertions, dont les migrations SQL) le couvre seul — à ne pas jeter.
+  // DRY_RUN conserve son module `dry-run.ts` malgré 0 appelant en production : il porte
+  // une capacité planifiée (#167, worktree jetable) et un test VERT vérifie son
+  // interaction avec 2 autres gates (cache × dry-run, dry-run × registre). Le supprimer
+  // retirerait de la couverture réelle — ce n'est pas du bruit.
   // (Audit d'allègement 2026-07-24) SAVOIR_RUNNER retiré : le flag gatait `run-savoir.ts`,
   // un fichier qui N'A JAMAIS ÉTÉ CONSTRUIT (vérifié : absent du disque, zéro référence dans
-  // tout le repo). Fantôme pur — les 3 modules savoir réels (extraction/reconcile/transcript)
-  // gardent leurs propres flags ci-dessus. Le sous-système #177 reste à moitié câblé (décision
-  // produit en attente : finir le runner, ou retirer l'échafaudage dormant en entier).
+  // tout le repo). Fantôme pur.
   // ── #182 — Intention/dispatch + conscience temporelle ─────────────────────
   TEMPORAL_AWARENESS: {
     env: "TEMPORAL_AWARENESS",
